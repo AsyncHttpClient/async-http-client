@@ -364,6 +364,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         httpsClientCodecMaxChunkSize = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
     }
 
+    SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
+        SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config, peerHost, peerPort);
+        return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
+                handshakeTimeoutInMillis) : new SslHandler(sslEngine);
+    }
+    
     void constructSSLPipeline(final NettyConnectListener<?> cl) {
 
         secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
@@ -371,16 +377,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
-
-                try {
-                    SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config);
-                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
-                            handshakeTimeoutInMillis) : new SslHandler(sslEngine);
-                    pipeline.addLast(SSL_HANDLER, sslHandler);
-                } catch (Throwable ex) {
-                    abort(cl.future(), ex);
-                }
-
+                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
                 pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
 
                 if (config.isCompressionEnabled()) {
@@ -397,13 +394,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
-
-                try {
-                    pipeline.addLast(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
-                } catch (Throwable ex) {
-                    abort(cl.future(), ex);
-                }
-
+                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
                 pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
                 pipeline.addLast(WS_PROCESSOR, NettyAsyncHttpProvider.this);
 
@@ -452,7 +443,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (channel.getPipeline().get(HTTP_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
             return channel;
         } else if (channel.getPipeline().get(SSL_HANDLER) == null && isSecure(scheme)) {
-            channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
+            channel.getPipeline().addFirst(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
         }
         return channel;
     }
@@ -1367,7 +1358,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.abort(t);
     }
 
-    private void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
+    private void upgradeProtocol(ChannelPipeline p, String scheme, String host, int port) throws IOException, GeneralSecurityException {
         if (p.get(HTTP_HANDLER) != null) {
             p.remove(HTTP_HANDLER);
         }
@@ -1375,7 +1366,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, createHttpClientCodec());
-                p.addFirst(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
+                p.addFirst(SSL_HANDLER, createSslHandler(host, port));
             } else {
                 p.addAfter(SSL_HANDLER, HTTP_HANDLER, createHttpClientCodec());
             }
@@ -2136,9 +2127,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         try {
-                            String scheme = request.getURI().getScheme();
+                            UriComponents requestURI = request.getURI();
+                            String scheme = requestURI.getScheme();
+                            String host = requestURI.getHost();
+                            int port = AsyncHttpProviderUtils.getDefaultPort(requestURI);
+
                             log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
-                            upgradeProtocol(ctx.getChannel().getPipeline(), scheme);
+                            upgradeProtocol(ctx.getChannel().getPipeline(), scheme, host, port);
                         } catch (Throwable ex) {
                             abort(future, ex);
                         }

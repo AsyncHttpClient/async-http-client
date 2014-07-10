@@ -36,12 +36,12 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLEngine createClientSSLEngine(AsyncHttpClientConfig config) throws GeneralSecurityException, IOException {
+    public SSLEngine createClientSSLEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) throws GeneralSecurityException, IOException {
         SSLContext sslContext = config.getSSLContext();
         if (sslContext == null) {
             sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
         }
-        SSLEngine sslEngine = sslContext.createSSLEngine();
+        SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(true);
         return sslEngine;
     }
