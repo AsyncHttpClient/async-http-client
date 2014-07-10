@@ -25,15 +25,18 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -297,6 +300,35 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             assertEquals(response.getResponseBody(), body);
         } finally {
             c.close();
+        }
+    }
+
+    @Test(timeOut = 5000)
+    public void failInstantlyIfHostNamesDiffer() throws Exception {
+        AsyncHttpClient client = null;
+
+        try {
+            final Builder builder = new Builder().setHostnameVerifier(new HostnameVerifier() {
+
+                public boolean verify(String arg0, SSLSession arg1) {
+                    return false;
+                }
+            }).setRequestTimeoutInMs(20000);
+
+            client = getAsyncHttpClient(builder.build());
+
+            try {
+            client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            
+            Assert.assertTrue(false, "Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                Assert.assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
+            } catch (Exception e) {
+                Assert.assertTrue(false, "Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
+            
+        } finally {
+            client.close();
         }
     }
 

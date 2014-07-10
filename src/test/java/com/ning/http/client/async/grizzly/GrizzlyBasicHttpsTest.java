@@ -13,6 +13,8 @@
 
 package com.ning.http.client.async.grizzly;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicHttpsTest;
@@ -23,5 +25,9 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
+    }
+
+    @Test(enabled = false)
+    public void failInstantlyIfHostNamesDiffer() throws Exception {
     }
 }
