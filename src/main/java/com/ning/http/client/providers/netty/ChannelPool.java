@@ -14,21 +14,23 @@
  * under the License.
  *
  */
-package com.ning.http.client;
+package com.ning.http.client.providers.netty;
+
+import org.jboss.netty.channel.Channel;
 
 /**
  * An interface used by an {@link AsyncHttpProvider} for caching http connections.
  */
-public interface ConnectionsPool<U, V> {
+public interface ChannelPool {
 
     /**
-     * Add a connection tpo the pool
+     * Add a connection to the pool
      *
      * @param uri        a uri used to retrieve the cached connection
      * @param connection an I/O connection
      * @return true if added.
      */
-    boolean offer(U uri, V connection);
+    boolean offer(String uri, Channel connection);
 
     /**
      * Remove the connection associated with the uri.
@@ -36,7 +38,7 @@ public interface ConnectionsPool<U, V> {
      * @param uri the uri used when invoking addConnection
      * @return the connection associated with the uri
      */
-    V poll(U uri);
+    Channel poll(String uri);
 
     /**
      * Remove all connections from the cache. A connection might have been associated with several uri.
@@ -44,11 +46,11 @@ public interface ConnectionsPool<U, V> {
      * @param connection a connection
      * @return the true if the connection has been removed
      */
-    boolean removeAll(V connection);
+    boolean removeAll(Channel connection);
 
     /**
      * Return true if a connection can be cached. A implementation can decide based on some rules to allow caching
-     * Calling this method is equivalent of checking the returned value of {@link ConnectionsPool#offer(Object, Object)}
+     * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Object, Object)}
      *
      * @return true if a connection can be cached.
      */

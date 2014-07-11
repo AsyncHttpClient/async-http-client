@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
@@ -90,7 +91,9 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
     } // END PROPERTY
     
     private final Map<Property,Object> attributes = new HashMap<Property,Object>();
-    
+
+    protected ConnectionPool connectionPool;
+
     // ------------------------------------ Methods from AsyncHttpProviderConfig
 
     /**
@@ -157,4 +160,11 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
         return attributes.entrySet();
     }
 
+    public ConnectionPool getConnectionPool() {
+        return connectionPool;
+    }
+
+    public void setConnectionPool(ConnectionPool connectionPool) {
+        this.connectionPool = connectionPool;
+    }
 }

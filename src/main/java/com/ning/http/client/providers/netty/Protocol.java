@@ -19,7 +19,7 @@ import org.jboss.netty.channel.MessageEvent;
 
 public interface Protocol {
 
-    void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception;
+    void handle(ChannelHandlerContext ctx, MessageEvent e, NettyResponseFuture<?> future) throws Exception;
 
     void onError(ChannelHandlerContext ctx, ExceptionEvent e);
 

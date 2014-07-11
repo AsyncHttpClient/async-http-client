@@ -29,7 +29,7 @@ public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
     @Test
     public void bossThreadPoolExecutor() throws Throwable {
         NettyAsyncHttpProviderConfig conf = new NettyAsyncHttpProviderConfig();
-        conf.addProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE, Executors.newSingleThreadExecutor());
+        conf.setBossExecutorService(Executors.newSingleThreadExecutor());
 
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(conf).build();
         AsyncHttpClient c = getAsyncHttpClient(cf);

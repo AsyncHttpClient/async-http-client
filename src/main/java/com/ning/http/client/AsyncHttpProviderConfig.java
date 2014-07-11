@@ -29,7 +29,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      * @param value the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
-    AsyncHttpProviderConfig addProperty(U name, V value);
+    AsyncHttpProviderConfig<U, V> addProperty(U name, V value);
 
     /**
      * Return the value associated with the property's name

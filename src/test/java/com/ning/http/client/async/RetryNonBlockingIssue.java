@@ -183,11 +183,6 @@ public class RetryNonBlockingIssue {
             bc.setConnectionTimeoutInMs(60000);
             bc.setRequestTimeoutInMs(30000);
 
-            NettyAsyncHttpProviderConfig config = new
-                    NettyAsyncHttpProviderConfig();
-            config.addProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT, "true");
-
-            bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
 
             for (int i = 0; i < 32; i++) {
@@ -228,11 +223,6 @@ public class RetryNonBlockingIssue {
             bc.setConnectionTimeoutInMs(30000);
             bc.setRequestTimeoutInMs(30000);
 
-            NettyAsyncHttpProviderConfig config = new
-                    NettyAsyncHttpProviderConfig();
-            config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
-
-            bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
 
             for (int i = 0; i < 32; i++) {

@@ -15,18 +15,6 @@
  */
 package com.ning.http.client.providers.netty;
 
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.REUSE_ADDRESS;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
@@ -37,7 +25,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.nio.channels.ClosedChannelException;
@@ -48,7 +35,6 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -78,9 +64,7 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.PrematureChannelClosureException;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -97,7 +81,6 @@ import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
-import org.jboss.netty.handler.ssl.ImmediateExecutor;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
@@ -116,7 +99,6 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.ConnectionPoolKeyStrategy;
-import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -163,32 +145,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     static {
         REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
     }
-    public final static String HTTP_HANDLER = "httpHandler";
-    public final static String SSL_HANDLER = "sslHandler";
-    public final static String HTTP_PROCESSOR = "httpProcessor";
-    public final static String WS_PROCESSOR = "wsProcessor";
+    public static final String HTTP_HANDLER = "httpHandler";
+    public static final String SSL_HANDLER = "sslHandler";
+    public static final String HTTP_PROCESSOR = "httpProcessor";
+    public static final String WS_PROCESSOR = "wsProcessor";
 
-    private final static String HTTPS = "https";
-    private final static String HTTP = "http";
+    private static final String HTTPS = "https";
+    private static final String HTTP = "http";
     private static final String WEBSOCKET = "ws";
     private static final String WEBSOCKET_SSL = "wss";
-    private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
-    private final static Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+    
     private final ClientBootstrap plainBootstrap;
     private final ClientBootstrap secureBootstrap;
     private final ClientBootstrap webSocketBootstrap;
     private final ClientBootstrap secureWebSocketBootstrap;
-    private final static int MAX_BUFFERED_BYTES = 8192;
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
     private final ClientSocketChannelFactory socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
-    private int httpClientCodecMaxInitialLineLength = 4096;
-    private int httpClientCodecMaxHeaderSize = 8192;
-    private int httpClientCodecMaxChunkSize = 8192;
-    private int httpsClientCodecMaxInitialLineLength = 4096;
-    private int httpsClientCodecMaxHeaderSize = 8192;
-    private int httpsClientCodecMaxChunkSize = 8192;
 
     private final ChannelGroup openChannels = new CleanupChannelGroup("asyncHttpClient") {
         @Override
@@ -200,14 +175,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return removed;
         }
     };
-    private final ConnectionsPool<String, Channel> connectionsPool;
+    private final ChannelPool connectionsPool;
+    // FIXME should be the pool responsibility
     private Semaphore freeConnections = null;
     private final NettyAsyncHttpProviderConfig providerConfig;
-    private boolean executeConnectAsync = true;
-    public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
     private final boolean trackConnections;
     private final boolean disableZeroCopy;
-    private final static NTLMEngine ntlmEngine = new NTLMEngine();
+    private static final NTLMEngine ntlmEngine = new NTLMEngine();
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
@@ -231,30 +205,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             LOGGER.warn("Request was enabled but Netty actually doesn't support this feature");
         }
 
-        if (providerConfig.getProperty(USE_BLOCKING_IO) != null) {
-            socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
-            allowReleaseSocketChannelFactory = true;
-        } else {
-            // check if external NioClientSocketChannelFactory is defined
-            Object oo = providerConfig.getProperty(SOCKET_CHANNEL_FACTORY);
-            if (oo instanceof NioClientSocketChannelFactory) {
-                socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
+        // check if external NioClientSocketChannelFactory is defined
+        if (providerConfig.getSocketChannelFactory() != null) {
+            socketChannelFactory = providerConfig.getSocketChannelFactory();
+            // cannot allow releasing shared channel factory
+            allowReleaseSocketChannelFactory = false;
 
-                // cannot allow releasing shared channel factory
-                allowReleaseSocketChannelFactory = false;
-            } else {
-                ExecutorService e;
-                Object o = providerConfig.getProperty(BOSS_EXECUTOR_SERVICE);
-                if (o instanceof ExecutorService) {
-                    e = ExecutorService.class.cast(o);
-                } else {
-                    e = Executors.newCachedThreadPool();
-                }
-                int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
-                log.trace("Number of application's worker threads is {}", numWorkers);
-                socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
-                allowReleaseSocketChannelFactory = true;
-            }
+        } else {
+            ExecutorService e = providerConfig.getBossExecutorService();
+            if (e == null)
+                e = Executors.newCachedThreadPool();
+            int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
+            LOGGER.trace("Number of application's worker threads is {}", numWorkers);
+            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
+            allowReleaseSocketChannelFactory = true;
         }
 
         allowStopNettyTimer = providerConfig.getNettyTimer() == null;
@@ -266,16 +230,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
         webSocketBootstrap = new ClientBootstrap(socketChannelFactory);
         secureWebSocketBootstrap = new ClientBootstrap(socketChannelFactory);
+        disableZeroCopy = providerConfig.isDisableZeroCopy();
+
         this.config = config;
 
         configureNetty();
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
-        ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
+        ChannelPool cp = providerConfig.getChannelPool();
         if (cp == null && config.isAllowPoolingConnection()) {
-            cp = new NettyConnectionsPool(this, nettyTimer);
+            cp = new DefaultChannelPool(this, nettyTimer);
         } else if (cp == null) {
-            cp = new NonConnectionsPool();
+            cp = new NonChannelPool();
         }
         this.connectionsPool = cp;
 
@@ -285,8 +251,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             trackConnections = false;
         }
-
-        disableZeroCopy = providerConfig.isDisableZeroCopy();
     }
 
     private Timer newNettyTimer() {
@@ -305,13 +269,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     void configureNetty() {
-        if (providerConfig != null) {
-            for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
-                plainBootstrap.setOption(entry.getKey(), entry.getValue());
-            }
-            configureHttpClientCodec();
-            configureHttpsClientCodec();
+
+        // FIXME why not do that for other bootstraps
+        for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
+            plainBootstrap.setOption(entry.getKey(), entry.getValue());
         }
+
+        DefaultChannelFuture.setUseDeadLockChecker(providerConfig.isUseDeadLockChecker());
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -328,16 +292,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return pipeline;
             }
         });
-        DefaultChannelFuture.setUseDeadLockChecker(false);
-
-        if (providerConfig != null) {
-            Object value = providerConfig.getProperty(EXECUTE_ASYNC_CONNECT);
-            if (value instanceof Boolean) {
-                executeConnectAsync = Boolean.class.cast(value);
-            } else if (providerConfig.getProperty(DISABLE_NESTED_REQUEST) != null) {
-                DefaultChannelFuture.setUseDeadLockChecker(true);
-            }
-        }
 
         webSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -351,22 +305,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         });
     }
 
-    protected void configureHttpClientCodec() {
-        httpClientCodecMaxInitialLineLength = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpClientCodecMaxInitialLineLength);
-        httpClientCodecMaxHeaderSize = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpClientCodecMaxHeaderSize);
-        httpClientCodecMaxChunkSize = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpClientCodecMaxChunkSize);
-    }
-
-    protected void configureHttpsClientCodec() {
-        httpsClientCodecMaxInitialLineLength = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpsClientCodecMaxInitialLineLength);
-        httpsClientCodecMaxHeaderSize = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpsClientCodecMaxHeaderSize);
-        httpsClientCodecMaxChunkSize = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
-    }
-
     SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
         SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config, peerHost, peerPort);
-        return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
-                handshakeTimeoutInMillis) : new SslHandler(sslEngine);
+        return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis) : new SslHandler(sslEngine);
     }
     
     void constructSSLPipeline(final NettyConnectListener<?> cl) {
@@ -413,7 +354,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         final Channel channel = connectionsPool.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
-            log.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
+            LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
@@ -421,18 +362,22 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 // https.
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
-                log.debug(ex.getMessage(), ex);
+                LOGGER.debug(ex.getMessage(), ex);
             }
         }
         return null;
     }
 
     private HttpClientCodec createHttpClientCodec() {
-        return new HttpClientCodec(httpClientCodecMaxInitialLineLength, httpClientCodecMaxHeaderSize, httpClientCodecMaxChunkSize);
+        return new HttpClientCodec(providerConfig.getHttpClientCodecMaxInitialLineLength(),//
+                providerConfig.getHttpClientCodecMaxHeaderSize(),//
+                providerConfig.getHttpClientCodecMaxChunkSize());
     }
 
     private HttpClientCodec createHttpsClientCodec() {
-        return new HttpClientCodec(httpsClientCodecMaxInitialLineLength, httpsClientCodecMaxHeaderSize, httpsClientCodecMaxChunkSize);
+        return new HttpClientCodec(providerConfig.getHttpClientCodecMaxInitialLineLength(),//
+                providerConfig.getHttpClientCodecMaxHeaderSize(),//
+                providerConfig.getHttpClientCodecMaxChunkSize());
     }
 
     private Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
@@ -450,6 +395,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
 
         HttpRequest nettyRequest = future.getNettyRequest();
+        HttpHeaders nettyRequestHeaders = nettyRequest.headers();
         boolean ssl = channel.getPipeline().get(SslHandler.class) != null;
 
         try {
@@ -481,20 +427,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                     long length = body.getContentLength();
                     if (length >= 0) {
-                        nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
+                        nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, length);
                     } else {
-                        nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                        nettyRequestHeaders.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
                     }
 
                 } else if (isNonEmpty(future.getRequest().getParts())) {
-                    String contentType = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
-                    String contentLength = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_LENGTH);
+                    String contentType = nettyRequestHeaders.get(HttpHeaders.Names.CONTENT_TYPE);
+                    String contentLength = nettyRequestHeaders.get(HttpHeaders.Names.CONTENT_LENGTH);
 
                     long length = -1;
                     if (contentLength != null) {
                         length = Long.parseLong(contentLength);
                     } else {
-                        nettyRequest.addHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                        nettyRequestHeaders.add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
                     }
 
                     body = new MultipartBody(future.getRequest().getParts(), contentType, length);
@@ -504,8 +450,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (future.getAsyncHandler() instanceof TransferCompletionHandler) {
 
                 FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-                for (String s : nettyRequest.getHeaderNames()) {
-                    for (String header : nettyRequest.getHeaders(s)) {
+                for (String s : nettyRequestHeaders.names()) {
+                    for (String header : nettyRequestHeaders.getAll(s)) {
                         h.add(s, header);
                     }
                 }
@@ -522,11 +468,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
-                    log.debug(cause.getMessage(), cause);
+                    LOGGER.debug(cause.getMessage(), cause);
                     try {
                         channel.close();
                     } catch (RuntimeException ex) {
-                        log.debug(ex.getMessage(), ex);
+                        LOGGER.debug(ex.getMessage(), ex);
                     }
                     return;
                 }
@@ -542,7 +488,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         try {
                             ChannelFuture writeFuture;
                             if (disableZeroCopy || ssl) {
-                                writeFuture = channel.write(new ChunkedFile(raf, 0, raf.length(), MAX_BUFFERED_BYTES));
+                                writeFuture = channel.write(new ChunkedFile(raf, 0, raf.length(), providerConfig.getChunkedFileChunkSize()));
                             } else {
                                 final FileRegion region = new OptimizedFileRegion(raf, 0, raf.length());
                                 writeFuture = channel.write(region);
@@ -552,7 +498,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     try {
                                         raf.close();
                                     } catch (IOException e) {
-                                        log.warn("Failed to close request body: {}", e.getMessage(), e);
+                                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
                                     }
                                     super.operationComplete(cf);
                                 }
@@ -582,7 +528,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 try {
                                     b.close();
                                 } catch (IOException e) {
-                                    log.warn("Failed to close request body: {}", e.getMessage(), e);
+                                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
                                 }
                                 super.operationComplete(cf);
                             }
@@ -594,7 +540,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             try {
                 channel.close();
             } catch (RuntimeException ex) {
-                log.debug(ex.getMessage(), ex);
+                LOGGER.debug(ex.getMessage(), ex);
             }
         }
 
@@ -621,7 +567,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, UriComponents uri, boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer)
+    protected static final HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, UriComponents uri, boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer)
             throws IOException {
 
         String method = request.getMethod();
@@ -650,28 +596,32 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
 
         HttpRequest nettyRequest;
+        
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             String path = computeNonConnectRequestPath(config, uri, proxyServer);
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path);
         }
+
+        HttpHeaders nettyRequestHeaders = nettyRequest.headers();
+
         boolean webSocket = isWebSocket(uri.getScheme());
         if (webSocket && !m.equals(HttpMethod.CONNECT)) {
-            nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
-            nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + uri.getPort());
-            nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
-            nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
+            nettyRequestHeaders.add(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
+            nettyRequestHeaders.add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
+            nettyRequestHeaders.add(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + uri.getPort());
+            nettyRequestHeaders.add(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
+            nettyRequestHeaders.add(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
         }
 
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
         if (host != null) {
             // FIXME why write port when regular host?
             if (request.getVirtualHost() != null || uri.getPort() == -1) {
-                nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
+                nettyRequestHeaders.set(HttpHeaders.Names.HOST, host);
             } else {
-                nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
+                nettyRequestHeaders.set(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
             }
         } else {
             host = "127.0.0.1";
@@ -682,18 +632,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 String name = header.getKey();
                 if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
                     for (String value : header.getValue()) {
-                        nettyRequest.addHeader(name, value);
+                        nettyRequestHeaders.add(name, value);
                     }
                 }
             }
 
             if (config.isCompressionEnabled()) {
-                nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
+                nettyRequestHeaders.set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
             if (isNTLM(auth)) {
-                nettyRequest.addHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
+                nettyRequestHeaders.add(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
@@ -712,12 +662,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             switch (realm.getAuthScheme()) {
             case BASIC:
-                nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
+                nettyRequestHeaders.add(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
                 break;
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
+                        nettyRequestHeaders.add(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -725,7 +675,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 break;
             case NTLM:
                 try {
-                    nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
+                    nettyRequestHeaders.add(HttpHeaders.Names.AUTHORIZATION, ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
                 } catch (NTLMEngineException e) {
                     IOException ie = new IOException();
                     ie.initCause(e);
@@ -743,7 +693,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     ie.initCause(e);
                     throw ie;
                 }
-                nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+                nettyRequestHeaders.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
                 break;
             case NONE:
                 break;
@@ -753,12 +703,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!webSocket && !request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
-            nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
+            nettyRequestHeaders.set(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
         if (proxyServer != null) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
-                nettyRequest.setHeader("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
+                nettyRequestHeaders.set("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
             }
 
             if (proxyServer.getPrincipal() != null) {
@@ -768,7 +718,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (!isNTLM(auth)) {
                         try {
                             String msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), proxyServer.getHost());
-                            nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
+                            nettyRequestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
                         } catch (NTLMEngineException e) {
                             IOException ie = new IOException();
                             ie.initCause(e);
@@ -776,62 +726,62 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
                     }
                 } else {
-                    nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+                    nettyRequestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
             }
         }
 
         // Add default accept headers.
         if (!request.getHeaders().containsKey(HttpHeaders.Names.ACCEPT)) {
-            nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
+            nettyRequestHeaders.set(HttpHeaders.Names.ACCEPT, "*/*");
         }
 
         String userAgentHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT);
         if (userAgentHeader != null) {
-            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, userAgentHeader);
+            nettyRequestHeaders.set(HttpHeaders.Names.USER_AGENT, userAgentHeader);
         } else if (config.getUserAgent() != null) {
-            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
+            nettyRequestHeaders.set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
         } else {
-            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
+            nettyRequestHeaders.set(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
             if (isNonEmpty(request.getCookies())) {
-                nettyRequest.setHeader(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
+                nettyRequestHeaders.set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
             }
 
             String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
             // We already have processed the body.
             if (buffer != null && buffer.writerIndex() != 0) {
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
                 nettyRequest.setContent(buffer);
 
             } else if (request.getByteData() != null) {
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(request.getByteData()));
 
             } else if (request.getStringData() != null) {
                 byte[] bytes = request.getStringData().getBytes(bodyCharset);
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
 
             } else if (isNonEmpty(request.getFormParams())) {
                 String formBody = AsyncHttpProviderUtils.formParams2UTF8String(request.getFormParams());
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(formBody.length()));
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(formBody.length()));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(formBody.getBytes(bodyCharset)));
 
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+                    nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
                 }
 
             } else if (isNonEmpty(request.getParts())) {
                 MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                 long contentLength = mre.getContentLength();
                 if (contentLength >= 0) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
+                    nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
                 }
 
             } else if (request.getFile() != null) {
@@ -839,7 +789,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (!file.isFile()) {
                     throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
                 }
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, file.length());
+                nettyRequestHeaders.set(HttpHeaders.Names.CONTENT_LENGTH, file.length());
             }
         }
         return nettyRequest;
@@ -872,7 +822,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyTimer.stop();
 
             } catch (Throwable t) {
-                log.warn("Unexpected error on close", t);
+                LOGGER.warn("Unexpected error on close", t);
             }
         }
     }
@@ -886,11 +836,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     /* @Override */
 
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return doConnect(request, asyncHandler, null, true, executeConnectAsync, false);
+        return doConnect(request, asyncHandler, null, true, false);
     }
 
-    private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
-        doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, reclaimCache);
+    private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean reclaimCache) throws IOException {
+        doConnect(request, f.getAsyncHandler(), f, useCache, reclaimCache);
     }
 
     private <T> NettyResponseFuture<T> buildNettyResponseFutureWithCachedChannel(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, ProxyServer proxyServer,
@@ -934,7 +884,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return null;
     }
 
-    private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect,
+    private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache,
             boolean reclaimCache) throws IOException {
 
         if (isClose()) {
@@ -964,20 +914,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             NettyResponseFuture<T> connectedFuture = buildNettyResponseFutureWithCachedChannel(request, asyncHandler, f, proxyServer, uri, bufferedBytes, 3);
 
             if (connectedFuture != null) {
-                log.debug("\nUsing cached Channel {}\n for request \n{}\n", connectedFuture.channel(), connectedFuture.getNettyRequest());
+                LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", connectedFuture.channel(), connectedFuture.getNettyRequest());
 
                 try {
                     writeRequest(connectedFuture.channel(), config, connectedFuture);
                 } catch (Exception ex) {
-                    log.debug("writeRequest failure", ex);
+                    LOGGER.debug("writeRequest failure", ex);
                     if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
-                        log.debug("SSLEngine failure", ex);
+                        LOGGER.debug("SSLEngine failure", ex);
                         connectedFuture = null;
                     } else {
                         try {
                             asyncHandler.onThrowable(ex);
                         } catch (Throwable t) {
-                            log.warn("doConnect.writeRequest()", t);
+                            LOGGER.warn("doConnect.writeRequest()", t);
                         }
                         IOException ioe = new IOException(ex.getMessage());
                         ioe.initCause(ex);
@@ -988,27 +938,27 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        // Do not throw an exception when we need an extra connection for a redirect.
-        if (!reclaimCache && !connectionsPool.canCacheConnection()) {
-            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
-            try {
-                asyncHandler.onThrowable(ex);
-            } catch (Throwable t) {
-                log.warn("!connectionsPool.canCacheConnection()", t);
-            }
-            throw ex;
-        }
-
         boolean acquiredConnection = false;
 
-        if (trackConnections) {
-            if (!reclaimCache) {
+        // Do not throw an exception when we need an extra connection for a redirect.
+        if (!reclaimCache) {
+            if (!connectionsPool.canCacheConnection()) {
+                IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+                try {
+                    asyncHandler.onThrowable(ex);
+                } catch (Throwable t) {
+                    LOGGER.warn("!connectionsPool.canCacheConnection()", t);
+                }
+                throw ex;
+            }
+            
+            if (trackConnections) {
                 if (!freeConnections.tryAcquire()) {
                     IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
                     try {
                         asyncHandler.onThrowable(ex);
                     } catch (Throwable t) {
-                        log.warn("!connectionsPool.canCacheConnection()", t);
+                        LOGGER.warn("!connectionsPool.canCacheConnection()", t);
                     }
                     throw ex;
                 } else {
@@ -1017,21 +967,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
+        NettyConnectListener<T> connectListener = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
 
-        if (useSSl) {
-            constructSSLPipeline(c);
-        }
+        if (useSSl)
+            constructSSLPipeline(connectListener);
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = (request.getURI().getScheme().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap
                 : plainBootstrap);
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
-
-        // Do no enable this with win.
-        if (!System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win")) {
-            bootstrap.setOption("reuseAddress", providerConfig.getProperty(REUSE_ADDRESS));
-        }
 
         try {
             InetSocketAddress remoteAddress;
@@ -1053,52 +997,23 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (acquiredConnection) {
                 freeConnections.release();
             }
-            abort(c.future(), t.getCause() == null ? t : t.getCause());
-            return c.future();
+            abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
+            return connectListener.future();
         }
 
-        boolean directInvokation = !(IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker());
+        channelFuture.addListener(connectListener);
 
-        if (directInvokation && !asyncConnect && request.getFile() == null) {
-            int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
-            if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
-                if (acquiredConnection) {
-                    freeConnections.release();
-                }
-                channelFuture.cancel();
-                abort(c.future(), new ConnectException(String.format("Connect operation to %s timeout %s", uri, timeOut)));
-            }
+        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", connectListener.future().getNettyRequest(), channelFuture.getChannel());
 
-            try {
-                c.operationComplete(channelFuture);
-            } catch (Exception e) {
-                if (acquiredConnection) {
-                    freeConnections.release();
-                }
-                IOException ioe = new IOException(e.getMessage());
-                ioe.initCause(e);
-                try {
-                    asyncHandler.onThrowable(ioe);
-                } catch (Throwable t) {
-                    log.warn("c.operationComplete()", t);
-                }
-                throw ioe;
-            }
-        } else {
-            channelFuture.addListener(c);
-        }
-
-        log.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", c.future().getNettyRequest(), channelFuture.getChannel());
-
-        if (!c.future().isCancelled() || !c.future().isDone()) {
+        if (!connectListener.future().isCancelled() || !connectListener.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
-            c.future().attachChannel(channelFuture.getChannel(), false);
+            connectListener.future().attachChannel(channelFuture.getChannel(), false);
         } else {
             if (acquiredConnection) {
                 freeConnections.release();
             }
         }
-        return c.future();
+        return connectListener.future();
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
@@ -1107,19 +1022,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void finishChannel(final ChannelHandlerContext ctx) {
-        ctx.setAttachment(new DiscardEvent());
+        ctx.setAttachment(DiscardEvent.INSTANCE);
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
         if (ctx.getChannel() == null) {
             return;
         }
 
-        log.debug("Closing Channel {} ", ctx.getChannel());
+        LOGGER.debug("Closing Channel {} ", ctx.getChannel());
 
         try {
             ctx.getChannel().close();
         } catch (Throwable t) {
-            log.debug("Error closing a connection", t);
+            LOGGER.debug("Error closing a connection", t);
         }
 
         if (ctx.getChannel() != null) {
@@ -1130,41 +1045,43 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     @Override
     public void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+
         // call super to reset the read timeout
         super.messageReceived(ctx, e);
-        IN_IO_THREAD.set(Boolean.TRUE);
-        if (ctx.getAttachment() == null) {
-            log.debug("ChannelHandlerContext wasn't having any attachment");
-        }
 
-        if (ctx.getAttachment() instanceof DiscardEvent) {
-            return;
-        } else if (ctx.getAttachment() instanceof AsyncCallable) {
-            if (e.getMessage() instanceof HttpChunk) {
-                HttpChunk chunk = (HttpChunk) e.getMessage();
-                if (chunk.isLast()) {
-                    AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
+        Object attachment = ctx.getAttachment();
+
+        if (attachment == null)
+            LOGGER.debug("ChannelHandlerContext doesn't have any attachment");
+
+        if (attachment == DiscardEvent.INSTANCE) {
+            // discard
+
+        } else if (attachment instanceof AsyncCallable) {
+            Object message = e.getMessage();
+            AsyncCallable ac = (AsyncCallable) attachment;
+            if (message instanceof HttpChunk) {
+                // the AsyncCallable is to be processed on the last chunk
+                if (HttpChunk.class.cast(message).isLast())
+                    // process the AsyncCallable before passing the message to the protocol
                     ac.call();
-                } else {
-                    return;
-                }
             } else {
-                AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
                 ac.call();
+                ctx.setAttachment(DiscardEvent.INSTANCE);
             }
-            ctx.setAttachment(new DiscardEvent());
-            return;
-        } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
+
+        } else if (attachment instanceof NettyResponseFuture<?>) {
+            Protocol p = (ctx.getPipeline().get(HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol);
+            p.handle(ctx, e, NettyResponseFuture.class.cast(attachment));
+
+        } else {
+            // unhandled message
             try {
                 ctx.getChannel().close();
             } catch (Throwable t) {
-                log.trace("Closing an orphan channel {}", ctx.getChannel());
+                LOGGER.trace("Closing an orphan channel {}", ctx.getChannel());
             }
-            return;
         }
-
-        Protocol p = (ctx.getPipeline().get(HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol);
-        p.handle(ctx, e);
     }
 
     private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
@@ -1266,25 +1183,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
-        ctx.setAttachment(new AsyncCallable(future) {
-            public Object call() throws Exception {
-
-                if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
-                    return null;
-                }
-
-                finishChannel(ctx);
-                return null;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("Draining task for channel %s", ctx.getChannel());
-            }
-        });
+        ctx.setAttachment(newDrainCallable(future, ctx, future.getKeepAlive(), getPoolKey(future)));
     }
 
-    private FilterContext handleIoException(FilterContext fc, NettyResponseFuture<?> future) {
+    private FilterContext<?> handleIoException(FilterContext<?> fc, NettyResponseFuture<?> future) {
         for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
@@ -1298,7 +1200,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return fc;
     }
 
-    private void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, HttpResponse response, ChannelHandlerContext ctx) throws IOException {
+    private void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, ChannelHandlerContext ctx) throws IOException {
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
         }
@@ -1307,16 +1209,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.setState(NettyResponseFuture.STATE.NEW);
         future.touch();
 
-        log.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
+        LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
         drainChannel(ctx, future);
         nextRequest(newRequest, future);
         return;
     }
 
-    private List<String> getAuthorizationToken(List<Entry<String, String>> list, String headerAuth) {
+    private List<String> getNettyHeaderValuesByCaseInsensitiveName(HttpHeaders headers, String name) {
         ArrayList<String> l = new ArrayList<String>();
-        for (Entry<String, String> e : list) {
-            if (e.getKey().equalsIgnoreCase(headerAuth)) {
+        for (Entry<String, String> e : headers) {
+            if (e.getKey().equalsIgnoreCase(name)) {
                 l.add(e.getValue().trim());
             }
         }
@@ -1328,7 +1230,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void nextRequest(final Request request, final NettyResponseFuture<?> future, final boolean useCache) throws IOException {
-        execute(request, future, useCache, true, true);
+        execute(request, future, useCache, true);
     }
 
     public void abort(NettyResponseFuture<?> future, Throwable t) {
@@ -1339,8 +1241,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!future.isCancelled() && !future.isDone()) {
-            log.debug("Aborting Future {}\n", future);
-            log.debug(t.getMessage(), t);
+            LOGGER.debug("Aborting Future {}\n", future);
+            LOGGER.debug(t.getMessage(), t);
         }
 
         future.abort(t);
@@ -1378,10 +1280,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
-            log.trace("super.channelClosed", ex);
+            LOGGER.trace("super.channelClosed", ex);
         }
 
-        log.debug("Channel Closed: {} with attachment {}", e.getChannel(), ctx.getAttachment());
+        LOGGER.debug("Channel Closed: {} with attachment {}", e.getChannel(), ctx.getAttachment());
 
         if (ctx.getAttachment() instanceof AsyncCallable) {
             AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
@@ -1400,7 +1302,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 fc = handleIoException(fc, future);
 
                 if (fc.replayRequest() && !future.cannotBeReplay()) {
-                    replayRequest(future, fc, null, ctx);
+                    replayRequest(future, fc, ctx);
                     return;
                 }
             }
@@ -1433,13 +1335,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (future == null || future.cannotBeReplay()) {
-            log.debug("Unable to recover future {}\n", future);
+            LOGGER.debug("Unable to recover future {}\n", future);
             return true;
         }
 
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
 
-        log.debug("Trying to recover request {}\n", future.getNettyRequest());
+        LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
         }
@@ -1450,7 +1352,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } catch (IOException iox) {
             future.setState(NettyResponseFuture.STATE.CLOSED);
             future.abort(iox);
-            log.error("Remotely Closed, unable to recover", iox);
+            LOGGER.error("Remotely Closed, unable to recover", iox);
             return true;
         }
     }
@@ -1461,7 +1363,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             future.done();
         } catch (Throwable t) {
             // Never propagate exception once we know we are done.
-            log.debug(t.getMessage(), t);
+            LOGGER.debug(t.getMessage(), t);
         }
 
         if (!future.getKeepAlive() || !ctx.getChannel().isReadable()) {
@@ -1469,41 +1371,34 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
-        if (lastValidChunk && future.getKeepAlive()) {
+    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean expectOtherChunks) throws IOException {
+        boolean keepAlive = future.getKeepAlive();
+        if (expectOtherChunks && keepAlive)
             drainChannel(ctx, future);
-        } else {
-            if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
-                markAsDone(future, ctx);
-                return;
-            }
-            finishChannel(ctx);
-        }
+        else
+            tryToOfferChannelToPool(ctx, keepAlive, getPoolKey(future));
         markAsDone(future, ctx);
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateStatusAndInterrupt(AsyncHandler handler, HttpResponseStatus c) throws Exception {
+    private final boolean updateStatusAndInterrupt(AsyncHandler<?> handler, HttpResponseStatus c) throws Exception {
         return handler.onStatusReceived(c) != STATE.CONTINUE;
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateHeadersAndInterrupt(AsyncHandler handler, HttpResponseHeaders c) throws Exception {
+    private final boolean updateHeadersAndInterrupt(AsyncHandler<?> handler, HttpResponseHeaders c) throws Exception {
         return handler.onHeadersReceived(c) != STATE.CONTINUE;
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
+    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
         boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
-        if (c.closeUnderlyingConnection()) {
+        if (c.closeUnderlyingConnection())
             future.setKeepAlive(false);
-        }
         return state;
     }
 
     // Simple marker for stopping publishing bytes.
 
-    final static class DiscardEvent {
+    enum DiscardEvent {
+        INSTANCE
     }
 
     @Override
@@ -1516,8 +1411,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Unexpected I/O exception on channel {}", channel, cause);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
         }
 
         try {
@@ -1539,7 +1434,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         fc = handleIoException(fc, future);
 
                         if (fc.replayRequest()) {
-                            replayRequest(future, fc, null, ctx);
+                            replayRequest(future, fc, ctx);
                             return;
                         }
                     } else {
@@ -1554,7 +1449,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
-                    log.debug("Trying to recover from dead Channel: {}", channel);
+                    LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }
             } else if (ctx.getAttachment() instanceof AsyncCallable) {
@@ -1566,10 +1461,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (future != null) {
             try {
-                log.debug("Was unable to recover Future: {}", future);
+                LOGGER.debug("Was unable to recover Future: {}", future);
                 abort(future, cause);
             } catch (Throwable t) {
-                log.error(t.getMessage(), t);
+                LOGGER.error(t.getMessage(), t);
             }
         }
 
@@ -1667,10 +1562,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private class ProgressListener implements ChannelFutureProgressListener {
 
         private final boolean notifyHeaders;
-        private final AsyncHandler asyncHandler;
+        private final AsyncHandler<?> asyncHandler;
         private final NettyResponseFuture<?> future;
 
-        public ProgressListener(boolean notifyHeaders, AsyncHandler asyncHandler, NettyResponseFuture<?> future) {
+        public ProgressListener(boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
             this.notifyHeaders = notifyHeaders;
             this.asyncHandler = asyncHandler;
             this.future = future;
@@ -1683,25 +1578,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
 
                 if (cause instanceof IllegalStateException) {
-                    log.debug(cause.getMessage(), cause);
+                    LOGGER.debug(cause.getMessage(), cause);
                     try {
                         cf.getChannel().close();
                     } catch (RuntimeException ex) {
-                        log.debug(ex.getMessage(), ex);
+                        LOGGER.debug(ex.getMessage(), ex);
                     }
                     return;
                 }
 
                 if (cause instanceof ClosedChannelException || abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
 
-                    if (log.isDebugEnabled()) {
-                        log.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
                     }
 
                     try {
                         cf.getChannel().close();
                     } catch (RuntimeException ex) {
-                        log.debug(ex.getMessage(), ex);
+                        LOGGER.debug(ex.getMessage(), ex);
                     }
                     return;
                 } else {
@@ -1812,13 +1707,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             try {
                 file.close();
             } catch (IOException e) {
-                log.warn("Failed to close a file.", e);
+                LOGGER.warn("Failed to close a file.", e);
             }
 
             try {
                 raf.close();
             } catch (IOException e) {
-                log.warn("Failed to close a file.", e);
+                LOGGER.warn("Failed to close a file.", e);
             }
         }
     }
@@ -1848,7 +1743,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 try {
                     byteRead += file.read(bytes);
                 } catch (IOException e) {
-                    log.error(e.getMessage(), e);
+                    LOGGER.error(e.getMessage(), e);
                 }
             }
         }
@@ -1858,7 +1753,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return config;
     }
 
-    private static class NonConnectionsPool implements ConnectionsPool<String, Channel> {
+    private static class NonChannelPool implements ChannelPool {
 
         public boolean offer(String uri, Channel connection) {
             return false;
@@ -1887,16 +1782,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return true;
     }
 
-    private boolean redirect(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
+    private boolean exitAfterHandlingRedirect(ChannelHandlerContext ctx, NettyResponseFuture<?> future, Request request, HttpResponse response, int statusCode) throws Exception {
 
-        int statusCode = response.getStatus().getCode();
         if (AsyncHttpProviderUtils.followRedirect(config, request) && (statusCode == 302 || statusCode == 301 || statusCode == 303 || statusCode == 307)) {
 
             if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
-                // We must allow 401 handling again.
+                // allow 401 handling again
                 future.getAndSetAuth(false);
 
-                String location = response.getHeader(HttpHeaders.Names.LOCATION);
+                HttpHeaders responseHeaders = response.headers();
+
+                String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 UriComponents uri = UriComponents.create(future.getURI(), location);
                 if (!uri.equals(future.getURI())) {
                     final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
@@ -1920,25 +1816,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         newURI = newURI.withNewScheme(WEBSOCKET_SSL);
                     }
 
-                    log.debug("Redirecting to {}", newURI);
-                    List<String> setCookieHeaders = future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2);
+                    LOGGER.debug("Redirecting to {}", newURI);
+                    List<String> setCookieHeaders = responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE2);
                     if (!isNonEmpty(setCookieHeaders)) {
-                        setCookieHeaders = future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE);
+                        setCookieHeaders = responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE);
                     }
 
                     for (String cookieStr : setCookieHeaders) {
                         nBuilder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
                     }
 
-                    AsyncCallable ac = new AsyncCallable(future) {
-                        public Object call() throws Exception {
-                            if (initialConnectionKeepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(initialPoolKey, ctx.getChannel())) {
-                                return null;
-                            }
-                            finishChannel(ctx);
-                            return null;
-                        }
-                    };
+                    AsyncCallable ac = newDrainCallable(future, ctx, initialConnectionKeepAlive, initialPoolKey);
 
                     if (response.isChunked()) {
                         // We must make sure there is no bytes left before executing the next request.
@@ -1956,225 +1844,335 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private final class HttpProtocol implements Protocol {
-        // @Override
-        public void handle(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception {
-            final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-            future.touch();
+    private final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
+        Channel channel = ctx.getChannel();
+        if (keepAlive && channel.isReadable() && connectionsPool.offer(poolKey, channel)) {
+            LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
+            ctx.setAttachment(DiscardEvent.INSTANCE);
+            return true;
+        } else {
+            // not offered
+            finishChannel(ctx);
+            return false;
+        }
+    }
+    
+    private final AsyncCallable newDrainCallable(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, final boolean keepAlive, final String poolKey) {
+        
+        return new AsyncCallable(future) {
+            public Object call() throws Exception {
+                tryToOfferChannelToPool(ctx, keepAlive, poolKey);
+                return null;
+            }
+        };
+    }
 
-            // The connect timeout occured.
+    private final void configureKeepAlive(NettyResponseFuture<?> future, HttpResponse response) {
+        String connectionHeader = response.headers().get(HttpHeaders.Names.CONNECTION);
+        future.setKeepAlive(connectionHeader == null || connectionHeader.equalsIgnoreCase(HttpHeaders.Values.KEEP_ALIVE));
+    }
+
+    private final boolean exitAfterProcessingFilters(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler handler, Request request, HttpResponseStatus status, HttpResponseHeaders responseHeaders) throws IOException {
+        if (!config.getResponseFilters().isEmpty()) {
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status)
+                    .responseHeaders(responseHeaders).build();
+
+            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                try {
+                    fc = asyncFilter.filter(fc);
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                } catch (FilterException efe) {
+                    abort(future, efe);
+                }
+            }
+
+            // The handler may have been wrapped.
+            future.setAsyncHandler(fc.getAsyncHandler());
+
+            // The request has changed
+            if (fc.replayRequest()) {
+                replayRequest(future, fc, ctx);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private final boolean exitAfterHandling401(//
+            final ChannelHandlerContext ctx,//
+            final NettyResponseFuture<?> future,//
+            HttpResponse response,//
+            Request request,//
+            int statusCode,//
+            Realm realm,//
+            ProxyServer proxyServer,//
+            final RequestBuilder requestBuilder) throws Exception {
+
+        if (statusCode == 401 && realm != null && !future.getAndSetAuth(true)) {
+
+            List<String> wwwAuthHeaders = getNettyHeaderValuesByCaseInsensitiveName(response.headers(), HttpHeaders.Names.WWW_AUTHENTICATE);
+
+            if (!wwwAuthHeaders.isEmpty()) {
+                future.setState(NettyResponseFuture.STATE.NEW);
+                Realm newRealm = null;
+
+                FluentCaseInsensitiveStringsMap requestHeaders = request.getHeaders();
+
+                if (!wwwAuthHeaders.contains("Kerberos") && (isNTLM(wwwAuthHeaders) || (wwwAuthHeaders.contains("Negotiate")))) {
+                    // NTLM
+                    newRealm = ntlmChallenge(wwwAuthHeaders, request, proxyServer, requestHeaders, realm, future, false);
+                } else if (wwwAuthHeaders.contains("Negotiate")) {
+                    // SPNEGO KERBEROS
+                    newRealm = kerberosChallenge(wwwAuthHeaders, request, proxyServer, requestHeaders, realm, future, false);
+                    if (newRealm == null)
+                        return true;
+                } else {
+                    newRealm = new Realm.RealmBuilder().clone(realm) //
+                            .setScheme(realm.getAuthScheme()) //
+                            .setUri(request.getURI()) //
+                            .setMethodName(request.getMethod()) //
+                            .setUsePreemptiveAuth(true) //
+                            .parseWWWAuthenticateHeader(wwwAuthHeaders.get(0))//
+                            .build();
+                }
+
+                final Realm nr = newRealm;
+
+                LOGGER.debug("Sending authentication to {}", request.getURI());
+                final Request nextRequest = requestBuilder.setHeaders(requestHeaders).setRealm(nr).build();
+                AsyncCallable ac = new AsyncCallable(future) {
+                    public Object call() throws Exception {
+                        // not waiting for the channel to be drained, so we might ended up pooling the initial channel and creating a new one
+                        drainChannel(ctx, future);
+                        nextRequest(nextRequest, future);
+                        return null;
+                    }
+                };
+
+                if (future.getKeepAlive() && response.isChunked())
+                    // we must make sure there is no chunk left before executing the next request
+                    ctx.setAttachment(ac);
+                else
+                    // FIXME couldn't we reuse the channel right now?
+                    ac.call();
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private final boolean exitAfterHandling407(//
+            NettyResponseFuture<?> future,//
+            HttpResponse response,//
+            Request request,//
+            int statusCode,//
+            Realm realm,//
+            ProxyServer proxyServer,//
+            final RequestBuilder requestBuilder) throws Exception {
+
+        if (statusCode == 407 && realm != null && !future.getAndSetAuth(true)) {
+            List<String> proxyAuth = getNettyHeaderValuesByCaseInsensitiveName(response.headers(), HttpHeaders.Names.PROXY_AUTHENTICATE);
+            if (!proxyAuth.isEmpty()) {
+                LOGGER.debug("Sending proxy authentication to {}", request.getURI());
+
+                future.setState(NettyResponseFuture.STATE.NEW);
+                Realm newRealm = null;
+                FluentCaseInsensitiveStringsMap requestHeaders = request.getHeaders();
+
+                if (!proxyAuth.contains("Kerberos") && (isNTLM(proxyAuth) || (proxyAuth.contains("Negotiate")))) {
+                    newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, requestHeaders, realm, future);
+                    // SPNEGO KERBEROS
+                } else if (proxyAuth.contains("Negotiate")) {
+                    newRealm = kerberosChallenge(proxyAuth, request, proxyServer, requestHeaders, realm, future, true);
+                    if (newRealm == null)
+                        return true;
+                } else {
+                    newRealm = new Realm.RealmBuilder().clone(realm)//
+                            .setScheme(realm.getAuthScheme())//
+                            .setUri(request.getURI())//
+                            .setMethodName("CONNECT")//
+                            .setTargetProxy(true)//
+                            .setUsePreemptiveAuth(true)//
+                            .parseProxyAuthenticateHeader(proxyAuth.get(0))//
+                            .build();
+                }
+
+                Request req = requestBuilder.setHeaders(requestHeaders).setRealm(newRealm).build();
+                future.setReuseChannel(true);
+                future.setConnectAllowed(true);
+                nextRequest(req, future);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    
+    private boolean exitAfterHandling100(ChannelHandlerContext ctx, NettyResponseFuture<?> future, int statusCode) {
+        if (statusCode == 100) {
+            future.getAndSetWriteHeaders(false);
+            future.getAndSetWriteBody(true);
+            writeRequest(ctx.getChannel(), config, future);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean exitAfterHandlingConnect(ChannelHandlerContext ctx,//
+            NettyResponseFuture<?> future,//
+            Request request,//
+            ProxyServer proxyServer,//
+            int statusCode,//
+            RequestBuilder requestBuilder,//
+            HttpRequest nettyRequest) throws IOException {
+
+        if (nettyRequest.getMethod().equals(HttpMethod.CONNECT) && statusCode == 200) {
+
+            LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
+
+            if (future.getKeepAlive()) {
+                future.attachChannel(ctx.getChannel(), true);
+            }
+
+            try {
+                UriComponents requestURI = request.getURI();
+                String scheme = requestURI.getScheme();
+                String host = requestURI.getHost();
+                int port = AsyncHttpProviderUtils.getDefaultPort(requestURI);
+
+                LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+                upgradeProtocol(ctx.getChannel().getPipeline(), scheme, host, port);
+
+            } catch (Throwable ex) {
+                abort(future, ex);
+            }
+            Request req = requestBuilder.build();
+            future.setReuseChannel(true);
+            future.setConnectAllowed(false);
+            nextRequest(req, future);
+            return true;
+        }
+        return false;
+    }
+    
+    private final boolean exitAfterHandlingStatus(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpResponseStatus status) throws IOException, Exception {
+        if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
+            finishUpdate(future, ctx, response.isChunked());
+            return true;
+        }
+        return false;
+    }
+    
+    private final boolean exitAfterHandlingHeaders(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpResponseHeaders responseHeaders) throws IOException, Exception {
+        if (!response.headers().isEmpty() && updateHeadersAndInterrupt(handler, responseHeaders)) {
+            finishUpdate(future, ctx, response.isChunked());
+            return true;
+        }
+        return false;
+    }
+    
+    private final boolean exitAfterHandlingBody(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler) throws Exception {
+        if (!response.isChunked()) {
+            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+            finishUpdate(future, ctx, false);
+            return true;
+        }
+        return false;
+    }
+  
+    private final boolean exitAfterHandlingHead(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpRequest nettyRequest) throws Exception {
+        if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+            markAsDone(future, ctx);
+            drainChannel(ctx, future);
+        }
+        return false;
+    }
+    
+    private final void handleHttpResponse(final HttpResponse response, final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
+
+        HttpRequest nettyRequest = future.getNettyRequest();
+        Request request = future.getRequest();
+        ProxyServer proxyServer = future.getProxyServer();
+        LOGGER.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
+        
+        // Required if there is some trailing headers.
+        future.setHttpResponse(response);
+
+        configureKeepAlive(future, response);
+
+        HttpResponseStatus status = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
+        HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
+        
+        if (exitAfterProcessingFilters(ctx, future, response, handler, request, status, responseHeaders))
+            return;
+
+        final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
+
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+
+        int statusCode = response.getStatus().getCode();
+
+        // FIXME
+        if (exitAfterHandling401(ctx, future, response, request, statusCode, realm, proxyServer, requestBuilder) || //
+                exitAfterHandling407(future, response, request, statusCode, realm, proxyServer, requestBuilder) || //
+                exitAfterHandling100(ctx, future, statusCode) || //
+                exitAfterHandlingRedirect(ctx, future, request, response, statusCode) || //
+                exitAfterHandlingConnect(ctx, future, request, proxyServer, statusCode, requestBuilder, nettyRequest) || //
+                exitAfterHandlingStatus(ctx, future, response, handler, status) || //
+                exitAfterHandlingHeaders(ctx, future, response, handler, responseHeaders) || //
+                exitAfterHandlingBody(ctx, future, response, handler) || //
+                exitAfterHandlingHead(ctx, future, response, handler, nettyRequest)) {
+            return;
+        }
+    }
+
+    private final void handleChunk(final HttpChunk chunk, final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final AsyncHandler<?> handler) throws Exception {
+        boolean last = chunk.isLast();
+        // we don't notify updateBodyAndInterrupt with the last chunk as it's empty
+        if (last || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, this, chunk, last))) {
+
+            if (chunk instanceof HttpChunkTrailer) {
+                HttpChunkTrailer chunkTrailer = (HttpChunkTrailer) chunk;
+                if (!chunkTrailer.trailingHeaders().isEmpty()) {
+                    ResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), future.getHttpResponse(), this, chunkTrailer);
+                    updateHeadersAndInterrupt(handler, responseHeaders);
+                }
+            }
+            finishUpdate(future, ctx, !chunk.isLast());
+        }
+    }
+    private final class HttpProtocol implements Protocol {
+
+        public void handle(final ChannelHandlerContext ctx, final MessageEvent e, final NettyResponseFuture<?> future) throws Exception {
+
+            // The connect timeout occurred.
             if (future.isCancelled() || future.isDone()) {
                 finishChannel(ctx);
                 return;
             }
 
-            HttpRequest nettyRequest = future.getNettyRequest();
-            AsyncHandler handler = future.getAsyncHandler();
-            Request request = future.getRequest();
-            ProxyServer proxyServer = future.getProxyServer();
-            HttpResponse response = null;
+            future.touch();
+
+            AsyncHandler<?> handler = future.getAsyncHandler();
+            Object message = e.getMessage();
             try {
-                if (e.getMessage() instanceof HttpResponse) {
-                    response = (HttpResponse) e.getMessage();
+                if (message instanceof HttpResponse)
+                    handleHttpResponse((HttpResponse) message, ctx, future, handler);
 
-                    log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
+                else if (message instanceof HttpChunk)
+                    handleChunk((HttpChunk) message, ctx, future, handler);
 
-                    // Required if there is some trailing headers.
-                    future.setHttpResponse(response);
-
-                    int statusCode = response.getStatus().getCode();
-
-                    String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
-                    future.setKeepAlive(ka == null || ka.equalsIgnoreCase(HttpHeaders.Values.KEEP_ALIVE));
-
-                    List<String> wwwAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.WWW_AUTHENTICATE);
-                    Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
-                    HttpResponseStatus status = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                    HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
-                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).responseHeaders(responseHeaders)
-                            .build();
-
-                    for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-                        try {
-                            fc = asyncFilter.filter(fc);
-                            if (fc == null) {
-                                throw new NullPointerException("FilterContext is null");
-                            }
-                        } catch (FilterException efe) {
-                            abort(future, efe);
-                        }
-                    }
-
-                    // The handler may have been wrapped.
-                    handler = fc.getAsyncHandler();
-                    future.setAsyncHandler(handler);
-
-                    // The request has changed
-                    if (fc.replayRequest()) {
-                        replayRequest(future, fc, response, ctx);
-                        return;
-                    }
-
-                    final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
-                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
-
-                    // if (realm != null && !future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
-                    // builder.setUrl(future.getURI().toString());
-                    // }
-
-                    if (statusCode == 401 && realm != null && !wwwAuth.isEmpty() && !future.getAndSetAuth(true)) {
-
-                        future.setState(NettyResponseFuture.STATE.NEW);
-                        Realm newRealm = null;
-
-                        if (!wwwAuth.contains("Kerberos") && (isNTLM(wwwAuth) || (wwwAuth.contains("Negotiate")))) {
-                            // NTLM
-                            newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future, false);
-                        } else if (wwwAuth.contains("Negotiate")) {
-                            // SPNEGO KERBEROS
-                            newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future, false);
-                            if (newRealm == null)
-                                return;
-                        } else {
-                            newRealm = new Realm.RealmBuilder().clone(realm) //
-                                    .setScheme(realm.getAuthScheme()) //
-                                    .setUri(request.getURI()) //
-                                    .setMethodName(request.getMethod()) //
-                                    .setUsePreemptiveAuth(true) //
-                                    .parseWWWAuthenticateHeader(wwwAuth.get(0))//
-                                    .build();
-                        }
-                        
-                        final Realm nr = newRealm;
-
-                        log.debug("Sending authentication to {}", request.getURI());
-                        AsyncCallable ac = new AsyncCallable(future) {
-                            public Object call() throws Exception {
-                                drainChannel(ctx, future);
-                                nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
-                                return null;
-                            }
-                        };
-
-                        if (future.getKeepAlive() && response.isChunked()) {
-                            // We must make sure there is no bytes left before executing the next request.
-                            ctx.setAttachment(ac);
-                        } else {
-                            ac.call();
-                        }
-                        return;
-                    }
-
-                    if (statusCode == 100) {
-                        future.getAndSetWriteHeaders(false);
-                        future.getAndSetWriteBody(true);
-                        writeRequest(ctx.getChannel(), config, future);
-                        return;
-                    }
-
-                    List<String> proxyAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.PROXY_AUTHENTICATE);
-                    if (statusCode == 407 && realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
-
-                        log.debug("Sending proxy authentication to {}", request.getURI());
-
-                        future.setState(NettyResponseFuture.STATE.NEW);
-                        Realm newRealm = null;
-
-                        if (!proxyAuth.contains("Kerberos") && (isNTLM(proxyAuth) || (proxyAuth.contains("Negotiate")))) {
-                            newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, headers, realm, future);
-                            // SPNEGO KERBEROS
-                        } else if (proxyAuth.contains("Negotiate")) {
-                            newRealm = kerberosChallenge(proxyAuth, request, proxyServer, headers, realm, future, true);
-                            if (newRealm == null)
-                                return;
-                        } else {
-                            newRealm = new Realm.RealmBuilder().clone(realm)//
-                                    .setScheme(realm.getAuthScheme())//
-                                    .setUri(request.getURI())//
-                                    .setMethodName("CONNECT")//
-                                    .setTargetProxy(true)//
-                                    .setUsePreemptiveAuth(true)//
-                                    .parseProxyAuthenticateHeader(proxyAuth.get(0))//
-                                    .build();
-                        }
-
-                        Request req = builder.setHeaders(headers).setRealm(newRealm).build();
-                        future.setReuseChannel(true);
-                        future.setConnectAllowed(true);
-                        nextRequest(req, future);
-                        return;
-                    }
-
-                    if (future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT) && statusCode == 200) {
-
-                        log.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
-
-                        if (future.getKeepAlive()) {
-                            future.attachChannel(ctx.getChannel(), true);
-                        }
-
-                        try {
-                            UriComponents requestURI = request.getURI();
-                            String scheme = requestURI.getScheme();
-                            String host = requestURI.getHost();
-                            int port = AsyncHttpProviderUtils.getDefaultPort(requestURI);
-
-                            log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
-                            upgradeProtocol(ctx.getChannel().getPipeline(), scheme, host, port);
-                        } catch (Throwable ex) {
-                            abort(future, ex);
-                        }
-                        Request req = builder.build();
-                        future.setReuseChannel(true);
-                        future.setConnectAllowed(false);
-                        nextRequest(req, future);
-                        return;
-                    }
-
-                    if (redirect(request, future, response, ctx))
-                        return;
-
-                    if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
-                        finishUpdate(future, ctx, response.isChunked());
-                        return;
-                    } else if (!response.getHeaders().isEmpty() && updateHeadersAndInterrupt(handler, responseHeaders)) {
-                        finishUpdate(future, ctx, response.isChunked());
-                        return;
-                    } else if (!response.isChunked()) {
-                        updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
-                        finishUpdate(future, ctx, false);
-                        return;
-                    }
-
-                    if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                        updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
-                        markAsDone(future, ctx);
-                        drainChannel(ctx, future);
-                    }
-
-                } else if (e.getMessage() instanceof HttpChunk) {
-                    HttpChunk chunk = (HttpChunk) e.getMessage();
-
-                    if (handler != null) {
-                        if (chunk.isLast()
-                                || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, chunk, chunk.isLast()))) {
-                            if (chunk instanceof DefaultHttpChunkTrailer) {
-                                updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), future.getHttpResponse(), NettyAsyncHttpProvider.this,
-                                        (HttpChunkTrailer) chunk));
-                            }
-                            finishUpdate(future, ctx, !chunk.isLast());
-                        }
-                    }
-                }
             } catch (Exception t) {
                 if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()) {
-                    FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest())
+                    FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest())
                             .ioException(IOException.class.cast(t)).build();
                     fc = handleIoException(fc, future);
 
                     if (fc.replayRequest()) {
-                        replayRequest(future, fc, response, ctx);
+                        replayRequest(future, fc, ctx);
                         return;
                     }
                 }
@@ -2188,11 +2186,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        // @Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
         }
 
-        // @Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
         }
     }
@@ -2209,23 +2205,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 try {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 } catch (Exception ex) {
-                    NettyAsyncHttpProvider.this.log.warn("onSuccess unexexpected exception", ex);
+                    NettyAsyncHttpProvider.this.LOGGER.warn("onSuccess unexexpected exception", ex);
                 }
             }
         }
 
         // @Override
-        public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-            NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+        public void handle(ChannelHandlerContext ctx, MessageEvent e, final NettyResponseFuture future) throws Exception {
+
+            WebSocketUpgradeHandler wsUpgradeHandler = (WebSocketUpgradeHandler) future.getAsyncHandler();
             Request request = future.getRequest();
 
             if (e.getMessage() instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e.getMessage();
+                HttpHeaders nettyResponseHeaders = response.headers();
 
                 HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
-                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(wsUpgradeHandler).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
@@ -2243,45 +2240,45 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 // The request has changed
                 if (fc.replayRequest()) {
-                    replayRequest(future, fc, response, ctx);
+                    replayRequest(future, fc, ctx);
                     return;
                 }
 
                 future.setHttpResponse(response);
-                if (redirect(request, future, response, ctx))
+                if (exitAfterHandlingRedirect(ctx, future, request, response, response.getStatus().getCode()))
                     return;
 
                 final org.jboss.netty.handler.codec.http.HttpResponseStatus status = new org.jboss.netty.handler.codec.http.HttpResponseStatus(101, "Web Socket Protocol Handshake");
 
                 final boolean validStatus = response.getStatus().equals(status);
-                final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
-                String c = response.getHeader(HttpHeaders.Names.CONNECTION);
+                final boolean validUpgrade = nettyResponseHeaders.contains(HttpHeaders.Names.UPGRADE);
+                String c = nettyResponseHeaders.get(HttpHeaders.Names.CONNECTION);
                 if (c == null) {
-                    c = response.getHeader("connection");
+                    c = nettyResponseHeaders.get("connection");
                 }
 
                 final boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
+                final boolean statusReceived = wsUpgradeHandler.onStatusReceived(s) == STATE.UPGRADE;
 
                 if (!statusReceived) {
                     try {
-                        h.onCompleted();
+                        wsUpgradeHandler.onCompleted();
                     } finally {
                         future.done();
                     }
                     return;
                 }
 
-                final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
+                final boolean headerOK = wsUpgradeHandler.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
                 if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
                     abort(future, new IOException("Invalid handshake response"));
                     return;
                 }
 
-                String accept = response.getHeader(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
+                String accept = nettyResponseHeaders.get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
+                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
                 if (accept == null || !accept.equals(key)) {
                     abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
                     return;
@@ -2290,11 +2287,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ctx.getPipeline().replace(HTTP_HANDLER, "ws-encoder", new WebSocket08FrameEncoder(true));
                 ctx.getPipeline().addBefore(WS_PROCESSOR, "ws-decoder", new WebSocket08FrameDecoder(false, false));
 
-                invokeOnSucces(ctx, h);
+                invokeOnSucces(ctx, wsUpgradeHandler);
                 future.done();
             } else if (e.getMessage() instanceof WebSocketFrame) {
 
-                invokeOnSucces(ctx, h);
+                invokeOnSucces(ctx, wsUpgradeHandler);
 
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
@@ -2327,9 +2324,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (frame.getBinaryData() != null) {
                     webSocketChunk.setContent(ChannelBuffers.wrappedBuffer(frame.getBinaryData()));
                     ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, webSocketChunk, true);
-                    h.onBodyPartReceived(rp);
+                    wsUpgradeHandler.onBodyPartReceived(rp);
 
-                    NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
+                    NettyWebSocket webSocket = NettyWebSocket.class.cast(wsUpgradeHandler.onCompleted());
 
                     if (webSocket != null) {
                         if (pendingOpcode == OPCODE_BINARY) {
@@ -2340,28 +2337,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         if (frame instanceof CloseWebSocketFrame) {
                             try {
-                                ctx.setAttachment(DiscardEvent.class);
+                                ctx.setAttachment(DiscardEvent.INSTANCE);
                                 webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
-                            } catch (Throwable t) {
-                                // Swallow any exception that may comes from a Netty version released before 3.4.0
-                                log.trace("", t);
                             } finally {
-                                h.resetSuccess();
+                                wsUpgradeHandler.resetSuccess();
                             }
                         }
                     } else {
-                        log.debug("UpgradeHandler returned a null NettyWebSocket ");
+                        LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
                     }
                 }
             } else {
-                log.error("Invalid attachment {}", ctx.getAttachment());
+                LOGGER.error("Invalid attachment {}", ctx.getAttachment());
             }
         }
 
         // @Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
-                log.warn("onError {}", e);
+                LOGGER.warn("onError {}", e);
                 if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
                     return;
                 }
@@ -2375,13 +2369,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     webSocket.close();
                 }
             } catch (Throwable t) {
-                log.error("onError", t);
+                LOGGER.error("onError", t);
             }
         }
 
         // @Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
-            log.trace("onClose {}", e);
+            LOGGER.trace("onClose {}", e);
             if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
                 return;
             }
@@ -2392,11 +2386,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 h.resetSuccess();
 
-                log.trace("Connection was closed abnormally (that is, with no close frame being sent).");
-                if (!(ctx.getAttachment() instanceof DiscardEvent) && webSocket != null)
+                LOGGER.trace("Connection was closed abnormally (that is, with no close frame being sent).");
+                if (ctx.getAttachment() != DiscardEvent.INSTANCE && webSocket != null)
                     webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
             } catch (Throwable t) {
-                log.error("onError", t);
+                LOGGER.error("onError", t);
             }
         }
     }

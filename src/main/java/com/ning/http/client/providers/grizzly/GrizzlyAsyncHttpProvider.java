@@ -88,7 +88,6 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
-import org.glassfish.grizzly.utils.BufferOutputStream;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.Futures;
@@ -112,7 +111,6 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -180,6 +178,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final TCPNIOTransport clientTransport;
     private final AsyncHttpClientConfig clientConfig;
+    private final GrizzlyAsyncHttpProviderConfig providerConfig;
     private final ConnectionManager connectionManager;
 
     DelayedExecutor.Resolver<Connection> resolver;
@@ -194,10 +193,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public GrizzlyAsyncHttpProvider(final AsyncHttpClientConfig clientConfig) {
 
         this.clientConfig = clientConfig;
+        this.providerConfig =
+                clientConfig.getAsyncHttpProviderConfig() instanceof GrizzlyAsyncHttpProviderConfig ?
+                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig()
+                : new GrizzlyAsyncHttpProviderConfig();
         final TCPNIOTransportBuilder builder = TCPNIOTransportBuilder.newInstance();
         clientTransport = builder.build();
         initializeTransport(clientConfig);
-        connectionManager = new ConnectionManager(this, clientTransport);
+        connectionManager = new ConnectionManager(this, clientTransport, providerConfig);
         try {
             clientTransport.start();
         } catch (IOException ioe) {
@@ -395,10 +398,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         false);
         final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
         fcb.add(filter);
-        final GrizzlyAsyncHttpProviderConfig providerConfig =
-                clientConfig.getAsyncHttpProviderConfig() instanceof GrizzlyAsyncHttpProviderConfig ?
-                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig()
-                : new GrizzlyAsyncHttpProviderConfig();
         final AsyncHttpClientEventFilter eventFilter = new
                 AsyncHttpClientEventFilter(this, (Integer) providerConfig.getProperty(MAX_HTTP_PACKET_HEADER_SIZE));
         final AsyncHttpClientFilter clientFilter =
@@ -1789,7 +1788,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ClientContentEncoding
 
 
-    private static final class NonCachingPool implements ConnectionsPool<String,Connection> {
+    private static final class NonCachingPool implements ConnectionPool {
 
 
         // ---------------------------------------- Methods from ConnectionsPool
@@ -2316,7 +2315,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         private static final Attribute<Boolean> DO_NOT_CACHE =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
-        private final ConnectionsPool<String,Connection> pool;
+        private final ConnectionPool pool;
         private final TCPNIOConnectorHandler connectionHandler;
         private final ConnectionMonitor connectionMonitor;
         private final GrizzlyAsyncHttpProvider provider;
@@ -2324,18 +2323,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // -------------------------------------------------------- Constructors
 
         ConnectionManager(final GrizzlyAsyncHttpProvider provider,
-                          final TCPNIOTransport transport) {
+                          final TCPNIOTransport transport,
+                          final GrizzlyAsyncHttpProviderConfig providerConfig) {
 
-            ConnectionsPool<String,Connection> connectionPool;
+            ConnectionPool connectionPool;
             this.provider = provider;
             final AsyncHttpClientConfig config = provider.clientConfig;
             if (config.isAllowPoolingConnection()) {
-                ConnectionsPool pool = config.getConnectionsPool();
+                ConnectionPool pool = providerConfig != null ? providerConfig.getConnectionPool() : null;
                 if (pool != null) {
-                    //noinspection unchecked
-                    connectionPool = (ConnectionsPool<String, Connection>) pool;
+                    connectionPool = pool;
                 } else {
-                    connectionPool = new GrizzlyConnectionsPool((config));
+                    connectionPool = new GrizzlyConnectionPool((config));
                 }
             } else {
                 connectionPool = new NonCachingPool();

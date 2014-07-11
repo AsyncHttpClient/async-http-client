@@ -40,6 +40,7 @@ import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider.DiscardEvent;
 import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
 
@@ -168,7 +169,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return false;
 
         try {
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(DiscardEvent.INSTANCE);
             channel.close();
         } catch (Throwable t) {
             // Ignore
@@ -250,14 +251,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             if (expired) {
                 isCancelled.set(true);
                 try {
-                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(DiscardEvent.INSTANCE);
                     channel.close();
                 } catch (Throwable t) {
                     // Ignore
                 }
                 if (!onThrowableCalled.getAndSet(true)) {
                     try {
-                        TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
+                        TimeoutException te = new TimeoutException(String.format("No response received after %s ms", l));
                         try {
                             asyncHandler.onThrowable(te);
                         } catch (Throwable t) {

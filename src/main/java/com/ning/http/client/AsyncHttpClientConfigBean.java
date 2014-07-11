@@ -179,11 +179,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setConnectionsPool(ConnectionsPool<?, ?> connectionsPool) {
-        this.connectionsPool = connectionsPool;
-        return this;
-    }
-
     public AsyncHttpClientConfigBean setRealm(Realm realm) {
         this.realm = realm;
         return this;

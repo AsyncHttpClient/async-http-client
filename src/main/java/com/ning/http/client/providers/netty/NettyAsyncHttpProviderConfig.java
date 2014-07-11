@@ -16,82 +16,22 @@
  */
 package com.ning.http.client.providers.netty;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
-
-    /**
-     * Use Netty's blocking IO stategy.
-     */
-    public final static String USE_BLOCKING_IO = "useBlockingIO";
-
-    /**
-     * Use direct {@link java.nio.ByteBuffer}
-     */
-    public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
-
-    /**
-     * Execute the connect operation asynchronously.
-     */
-    public final static String EXECUTE_ASYNC_CONNECT = "asyncConnect";
-
-    /**
-     * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
-     */
-    public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
-
-    /**
-     * Allow configuring the Netty's boss executor service.
-     */
-    public final static String BOSS_EXECUTOR_SERVICE = "bossExecutorService";
-
-    /**
-     * See {@link java.net.Socket#setReuseAddress(boolean)}
-     */
-    public final static String REUSE_ADDRESS = "reuseAddress";
-
-    /**
-     * Allow configuring the Netty's HttpClientCodec.
-     */
-    public final static String HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH = "httpClientCodecMaxInitialLineLength";
-    public final static String HTTP_CLIENT_CODEC_MAX_HEADER_SIZE = "httpClientCodecMaxHeaderSize";
-    public final static String HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpClientCodecMaxChunkSize";
-
-    /**
-     * Allow configuring the Netty's HttpClientCodec.
-     */
-    public final static String HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH = "httpsClientCodecMaxInitialLineLength";
-    public final static String HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE = "httpsClientCodecMaxHeaderSize";
-    public final static String HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpsClientCodecMaxChunkSize";
-
-    /**
-     * Allow configuring the Netty's socket channel factory.
-     */
-    public final static String SOCKET_CHANNEL_FACTORY = "socketChannelFactory";
-
-    private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
-
-    /**
-     * Allow one to disable zero copy for bodies and use chunking instead;
-     */
-    private boolean disableZeroCopy;
-
-    private Timer nettyTimer;
     
-    private long handshakeTimeoutInMillis = 10000L;
-
-    public NettyAsyncHttpProviderConfig() {
-        properties.put(REUSE_ADDRESS, "false");
-    }
+    private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
@@ -150,6 +90,92 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         return properties.entrySet();
     }
 
+    /**
+     * Enable Netty DeadLockChecker
+     */
+    private boolean useDeadLockChecker;
+
+    /**
+     * Allow configuring the Netty's boss executor service.
+     */
+    private ExecutorService bossExecutorService;
+
+    /**
+     * Allow configuring Netty's HttpClientCodecs.
+     */
+    private int httpClientCodecMaxInitialLineLength = 4096;
+    private int httpClientCodecMaxHeaderSize = 8192;
+    private int httpClientCodecMaxChunkSize = 8192;
+    
+    /**
+     * Allow configuring the Netty's socket channel factory.
+     */
+    private NioClientSocketChannelFactory socketChannelFactory;
+
+    /**
+     * Allow one to disable zero copy for bodies and use chunking instead;
+     */
+    private boolean disableZeroCopy;
+
+    private Timer nettyTimer;
+
+    private long handshakeTimeoutInMillis = 10000L;
+
+    private ChannelPool channelPool;
+
+    /**
+     * chunkedFileChunkSize
+     */
+    private int chunkedFileChunkSize = 8192;
+
+    public boolean isUseDeadLockChecker() {
+        return useDeadLockChecker;
+    }
+
+    public void setUseDeadLockChecker(boolean useDeadLockChecker) {
+        this.useDeadLockChecker = useDeadLockChecker;
+    }
+
+    public ExecutorService getBossExecutorService() {
+        return bossExecutorService;
+    }
+
+    public void setBossExecutorService(ExecutorService bossExecutorService) {
+        this.bossExecutorService = bossExecutorService;
+    }
+
+    public int getHttpClientCodecMaxInitialLineLength() {
+        return httpClientCodecMaxInitialLineLength;
+    }
+
+    public void setHttpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
+        this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
+    }
+
+    public int getHttpClientCodecMaxHeaderSize() {
+        return httpClientCodecMaxHeaderSize;
+    }
+
+    public void setHttpClientCodecMaxHeaderSize(int httpClientCodecMaxHeaderSize) {
+        this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
+    }
+
+    public int getHttpClientCodecMaxChunkSize() {
+        return httpClientCodecMaxChunkSize;
+    }
+
+    public void setHttpClientCodecMaxChunkSize(int httpClientCodecMaxChunkSize) {
+        this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
+    }
+
+    public NioClientSocketChannelFactory getSocketChannelFactory() {
+        return socketChannelFactory;
+    }
+
+    public void setSocketChannelFactory(NioClientSocketChannelFactory socketChannelFactory) {
+        this.socketChannelFactory = socketChannelFactory;
+    }
+
     public void setDisableZeroCopy(boolean disableZeroCopy) {
         this.disableZeroCopy = disableZeroCopy;
     }
@@ -172,5 +198,21 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
         this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
+    }
+
+    public ChannelPool getChannelPool() {
+        return channelPool;
+    }
+
+    public void setChannelPool(ChannelPool channelPool) {
+        this.channelPool = channelPool;
+    }
+
+    public int getChunkedFileChunkSize() {
+        return chunkedFileChunkSize;
+    }
+
+    public void setChunkedFileChunkSize(int chunkedFileChunkSize) {
+        this.chunkedFileChunkSize = chunkedFileChunkSize;
     }
 }

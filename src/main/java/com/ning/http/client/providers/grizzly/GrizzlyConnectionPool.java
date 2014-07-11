@@ -16,7 +16,6 @@ package com.ning.http.client.providers.grizzly;
 import static com.ning.http.util.DateUtils.millisTime;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionsPool;
 
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
@@ -41,14 +40,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * {@link ConnectionsPool} implementation.
+ * {@link ConnectionPool} implementation.
  * 
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection> {
+public class GrizzlyConnectionPool implements ConnectionPool {
 
-    private final static Logger LOG = LoggerFactory.getLogger(GrizzlyConnectionsPool.class);
+    private final static Logger LOG = LoggerFactory.getLogger(GrizzlyConnectionPool.class);
 
     private final ConcurrentHashMap<String,DelayedExecutor.IdleConnectionQueue> connectionsPool =
             new ConcurrentHashMap<String,DelayedExecutor.IdleConnectionQueue>();
@@ -74,7 +73,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                                      connection.toString());
                         }
                     }
-                    GrizzlyConnectionsPool.this.removeAll(connection);
+                    GrizzlyConnectionPool.this.removeAll(connection);
                 }
             };
 
@@ -83,7 +82,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
 
     @SuppressWarnings("UnusedDeclaration")
-    public GrizzlyConnectionsPool(final boolean cacheSSLConnections,
+    public GrizzlyConnectionPool(final boolean cacheSSLConnections,
                                   final int timeout,
                                   final int maxConnectionLifeTimeInMs,
                                   final int maxConnectionsPerHost,
@@ -109,8 +108,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         }
     }
 
-
-    public GrizzlyConnectionsPool(final AsyncHttpClientConfig config) {
+    public GrizzlyConnectionPool(final AsyncHttpClientConfig config) {
 
         cacheSSLConnections = config.isSslConnectionPoolEnabled();
         timeout = config.getIdleConnectionInPoolTimeoutInMs();
@@ -299,7 +297,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
 
         public DelayedExecutor(final ExecutorService threadPool,
-                        final GrizzlyConnectionsPool connectionsPool) {
+                        final GrizzlyConnectionPool connectionsPool) {
             this(threadPool, 1000, TimeUnit.MILLISECONDS, connectionsPool);
         }
 
@@ -307,7 +305,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         public DelayedExecutor(final ExecutorService threadPool,
                                final long checkInterval,
                                final TimeUnit timeunit,
-                               final GrizzlyConnectionsPool connectionsPool) {
+                               final GrizzlyConnectionPool connectionsPool) {
             this.threadPool = threadPool;
             this.checkIntervalMs = TimeUnit.MILLISECONDS.convert(checkInterval, timeunit);
             totalCachedConnections = connectionsPool.totalCachedConnections;
