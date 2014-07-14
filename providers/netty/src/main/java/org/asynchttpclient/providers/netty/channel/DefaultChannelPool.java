@@ -27,144 +27,207 @@ import io.netty.util.TimerTask;
 import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple implementation of {@link ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
 public class DefaultChannelPool implements ChannelPool {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
+
     private final ConcurrentHashMapV8<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMapV8<String, ConcurrentLinkedQueue<IdleChannel>>();
-    private final ConcurrentHashMapV8<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMapV8<Channel, IdleChannel>();
-    private final ConcurrentHashMapV8<Channel, Long> channel2CreationDate = new ConcurrentHashMapV8<Channel, Long>();
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final ConcurrentHashMapV8<Channel, ChannelCreation> channel2Creation = new ConcurrentHashMapV8<Channel, ChannelCreation>();
+    private final AtomicInteger size = new AtomicInteger();
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
+    private final boolean maxTotalConnectionsDisabled;
     private final int maxConnectionPerHost;
-    private final int maxConnectionLifeTimeInMs;
+    private final boolean maxConnectionPerHostDisabled;
+    private final int maxConnectionTTL;
+    private final boolean maxConnectionTTLDisabled;
     private final long maxIdleTime;
+    private final boolean maxIdleTimeDisabled;
+    private final long cleanerPeriod;
 
-    public DefaultChannelPool(AsyncHttpClientConfig config, Timer nettyTimer) {
+    public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
         this(config.getMaxTotalConnections(),//
                 config.getMaxConnectionPerHost(),//
                 config.getIdleConnectionInPoolTimeoutInMs(),//
-                config.isSslConnectionPoolEnabled(),//
                 config.getMaxConnectionLifeTimeInMs(),//
-                nettyTimer);
+                config.isSslConnectionPoolEnabled(),//
+                hashedWheelTimer);
     }
 
     public DefaultChannelPool(//
             int maxTotalConnections,//
             int maxConnectionPerHost,//
             long maxIdleTime,//
+            int maxConnectionTTL,//
             boolean sslConnectionPoolEnabled,//
-            int maxConnectionLifeTimeInMs,//
             Timer nettyTimer) {
         this.maxTotalConnections = maxTotalConnections;
+        maxTotalConnectionsDisabled = maxTotalConnections <= 0;
         this.maxConnectionPerHost = maxConnectionPerHost;
+        maxConnectionPerHostDisabled = maxConnectionPerHost <= 0;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
-        this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
+        this.maxConnectionTTL = maxConnectionTTL;
+        maxConnectionTTLDisabled = maxConnectionTTL <= 0;
         this.nettyTimer = nettyTimer;
-        if (maxIdleTime > 0L) {
+        maxIdleTimeDisabled = maxIdleTime <= 0;
+
+        cleanerPeriod = Math.min(maxConnectionTTLDisabled ? Long.MAX_VALUE : maxConnectionTTL, maxIdleTimeDisabled ? Long.MAX_VALUE
+                : maxIdleTime);
+
+        if (!maxConnectionTTLDisabled || !maxIdleTimeDisabled)
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
-        }
     }
 
     private void scheduleNewIdleChannelDetector(TimerTask task) {
-        nettyTimer.newTimeout(task, maxIdleTime, TimeUnit.MILLISECONDS);
+        nettyTimer.newTimeout(task, cleanerPeriod, TimeUnit.MILLISECONDS);
+    }
+
+    private static final class ChannelCreation {
+        final long creationTime;
+        final String key;
+
+        ChannelCreation(long creationTime, String key) {
+            this.creationTime = creationTime;
+            this.key = key;
+        }
     }
 
     private static final class IdleChannel {
-        final String key;
         final Channel channel;
         final long start;
 
-        IdleChannel(String key, Channel channel) {
-            if (key == null)
-                throw new NullPointerException("key");
+        IdleChannel(Channel channel, long start) {
             if (channel == null)
                 throw new NullPointerException("channel");
-            this.key = key;
             this.channel = channel;
-            this.start = millisTime();
+            this.start = start;
         }
 
         @Override
+        // only depends on channel
         public boolean equals(Object o) {
             return this == o || (o instanceof IdleChannel && channel.equals(IdleChannel.class.cast(o).channel));
         }
 
         @Override
         public int hashCode() {
-            return channel != null ? channel.hashCode() : 0;
+            return channel.hashCode();
         }
     }
 
-    private class IdleChannelDetector implements TimerTask {
+    private boolean isTTLExpired(Channel channel, long now) {
+        if (maxConnectionTTLDisabled)
+            return false;
 
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            try {
-                if (closed.get())
-                    return;
+        ChannelCreation creation = channel2Creation.get(channel);
+        return creation == null || now - creation.creationTime >= maxConnectionTTL;
+    }
 
-                if (LOGGER.isDebugEnabled()) {
-                    Set<String> keys = connectionsPool.keySet();
+    private boolean isRemotelyClosed(Channel channel) {
+        return !channel.isOpen();
+    }
 
-                    for (String s : keys) {
-                        LOGGER.debug("Entry count for : {} : {}", s, connectionsPool.get(s).size());
-                    }
+    private final class IdleChannelDetector implements TimerTask {
+
+        private boolean isIdleTimeoutExpired(IdleChannel idleChannel, long now) {
+            return !maxIdleTimeDisabled && now - idleChannel.start >= maxIdleTime;
+        }
+
+        private List<IdleChannel> expiredChannels(ConcurrentLinkedQueue<IdleChannel> pool, long now) {
+            // lazy create
+            List<IdleChannel> idleTimeoutChannels = null;
+            for (IdleChannel idleChannel : pool) {
+                if (isTTLExpired(idleChannel.channel, now) || isIdleTimeoutExpired(idleChannel, now)
+                        || isRemotelyClosed(idleChannel.channel)) {
+                    LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
+                    if (idleTimeoutChannels == null)
+                        idleTimeoutChannels = new ArrayList<IdleChannel>();
+                    idleTimeoutChannels.add(idleChannel);
                 }
+            }
 
-                List<IdleChannel> channelsInTimeout = new ArrayList<IdleChannel>();
-                long currentTime = millisTime();
+            return idleTimeoutChannels != null ? idleTimeoutChannels : Collections.<IdleChannel> emptyList();
+        }
 
-                for (IdleChannel idleChannel : channel2IdleChannel.values()) {
-                    long age = currentTime - idleChannel.start;
-                    if (age > maxIdleTime) {
+        private boolean isChannelCloseable(Channel channel) {
+            boolean closeable = true;
+            Object attachment = Channels.getDefaultAttribute(channel);
+            if (attachment instanceof NettyResponseFuture) {
+                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+                closeable = !future.isDone() || !future.isCancelled();
+                if (!closeable)
+                    LOGGER.error("Future not in appropriate state %s, not closing", future);
+            }
+            return true;
+        }
 
-                        LOGGER.debug("Adding Candidate Idle Channel {}", idleChannel.channel);
+        private final List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
 
-                        // store in an unsynchronized list to minimize the impact on the ConcurrentHashMap.
-                        channelsInTimeout.add(idleChannel);
-                    }
-                }
-                long endConcurrentLoop = millisTime();
-
-                for (IdleChannel idleChannel : channelsInTimeout) {
-                    Object attachment = Channels.getDefaultAttribute(idleChannel.channel);
-                    if (attachment != null) {
-                        if (attachment instanceof NettyResponseFuture) {
-                            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-
-                            if (!future.isDone() && !future.isCancelled()) {
-                                LOGGER.debug("Future not in appropriate state %s\n", future);
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (remove(idleChannel)) {
+            // lazy create, only if we have a non-closeable channel
+            List<IdleChannel> closedChannels = null;
+            for (int i = 0; i < candidates.size(); i++) {
+                IdleChannel idleChannel = candidates.get(i);
+                if (!isChannelCloseable(idleChannel.channel))
+                    if (closedChannels == null) {
+                        // first non closeable to be skipped, copy all previously skipped closeable channels
+                        closedChannels = new ArrayList<IdleChannel>(candidates.size());
+                        for (int j = 0; j < i; j++)
+                            closedChannels.add(candidates.get(j));
+                    } else {
                         LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
                         close(idleChannel.channel);
+                        if (closedChannels != null) {
+                            closedChannels.add(idleChannel);
+                        }
+                    }
+            }
+
+            return closedChannels != null ? closedChannels : candidates;
+        }
+
+        public void run(Timeout timeout) throws Exception {
+
+            if (isClosed.get())
+                return;
+
+            try {
+                if (LOGGER.isDebugEnabled()) {
+                    for (String key : connectionsPool.keySet()) {
+                        LOGGER.debug("Entry count for : {} : {}", key, connectionsPool.get(key).size());
                     }
                 }
 
-                if (LOGGER.isTraceEnabled()) {
-                    int openChannels = 0;
-                    for (ConcurrentLinkedQueue<IdleChannel> hostChannels : connectionsPool.values()) {
-                        openChannels += hostChannels.size();
-                    }
-                    LOGGER.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels,
-                            channelsInTimeout.size(), endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
+                long start = millisTime();
+                int totalCount = size.get();
+                int closedCount = 0;
+
+                for (ConcurrentLinkedQueue<IdleChannel> pool : connectionsPool.values()) {
+                    // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
+                    List<IdleChannel> candidateExpiredChannels = expiredChannels(pool, start);
+                    List<IdleChannel> closedChannels = closeChannels(candidateExpiredChannels);
+                    pool.removeAll(closedChannels);
+                    int poolClosedCount = closedChannels.size();
+                    size.addAndGet(-poolClosedCount);
+                    closedCount += poolClosedCount;
                 }
+
+                long duration = millisTime() - start;
+
+                LOGGER.debug("Closed {} connections out of {} in {}ms", closedCount, totalCount, duration);
+
             } catch (Throwable t) {
                 LOGGER.error("uncaught exception!", t);
             }
@@ -173,137 +236,120 @@ public class DefaultChannelPool implements ChannelPool {
         }
     }
 
+    private boolean addIdleChannel(ConcurrentLinkedQueue<IdleChannel> idleConnectionForKey, String key, Channel channel, long now) {
+
+        // FIXME computing CLQ.size is not efficient
+        if (maxConnectionPerHostDisabled || idleConnectionForKey.size() < maxConnectionPerHost) {
+            IdleChannel idleChannel = new IdleChannel(channel, now);
+            return idleConnectionForKey.add(idleChannel);
+        }
+        LOGGER.debug("Maximum number of requests per key reached {} for {}", maxConnectionPerHost, key);
+        return false;
+    }
+
     /**
      * {@inheritDoc}
      */
-    public boolean offer(String uri, Channel channel) {
-        if (closed.get() || (!sslConnectionPoolEnabled && uri.startsWith("https")))
+    public boolean offer(String key, Channel channel) {
+        if (isClosed.get() || (!sslConnectionPoolEnabled && key.startsWith("https")))
             return false;
 
-        Long createTime = channel2CreationDate.get(channel);
-        if (createTime == null) {
-            channel2CreationDate.putIfAbsent(channel, millisTime());
+        long now = millisTime();
 
-        } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime()) {
-            LOGGER.debug("Channel {} expired", channel);
+        if (isTTLExpired(channel, now))
             return false;
-        }
 
-        LOGGER.debug("Adding uri: {} for channel {}", uri, channel);
-        Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
-
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(uri);
-        if (pooledConnectionForKey == null) {
+        ConcurrentLinkedQueue<IdleChannel> idleConnectionForKey = connectionsPool.get(key);
+        if (idleConnectionForKey == null) {
             ConcurrentLinkedQueue<IdleChannel> newPool = new ConcurrentLinkedQueue<IdleChannel>();
-            pooledConnectionForKey = connectionsPool.putIfAbsent(uri, newPool);
-            if (pooledConnectionForKey == null)
-                pooledConnectionForKey = newPool;
+            idleConnectionForKey = connectionsPool.putIfAbsent(key, newPool);
+            if (idleConnectionForKey == null)
+                idleConnectionForKey = newPool;
         }
 
-        boolean added;
-        int size = pooledConnectionForKey.size();
-        if (maxConnectionPerHost == -1 || size < maxConnectionPerHost) {
-            IdleChannel idleChannel = new IdleChannel(uri, channel);
-            synchronized (pooledConnectionForKey) {
-                added = pooledConnectionForKey.add(idleChannel);
-
-                if (channel2IdleChannel.put(channel, idleChannel) != null) {
-                    LOGGER.error("Channel {} already exists in the connections pool!", channel);
-                }
-            }
-        } else {
-            LOGGER.debug("Maximum number of requests per host reached {} for {}", maxConnectionPerHost, uri);
-            added = false;
+        boolean added = addIdleChannel(idleConnectionForKey, key, channel, now);
+        if (added) {
+            size.incrementAndGet();
+            channel2Creation.putIfAbsent(channel, new ChannelCreation(now, key));
         }
+
         return added;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Channel poll(String uri) {
-        if (!sslConnectionPoolEnabled && uri.startsWith("https")) {
+    public Channel poll(String key) {
+        if (!sslConnectionPoolEnabled && key.startsWith("https"))
             return null;
-        }
 
         IdleChannel idleChannel = null;
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(uri);
+        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(key);
         if (pooledConnectionForKey != null) {
-            boolean poolEmpty = false;
-            while (!poolEmpty && idleChannel == null) {
-                if (pooledConnectionForKey.size() > 0) {
-                    synchronized (pooledConnectionForKey) {
-                        idleChannel = pooledConnectionForKey.poll();
-                        if (idleChannel != null) {
-                            channel2IdleChannel.remove(idleChannel.channel);
-                        }
-                    }
-                }
+            while (idleChannel == null) {
+                idleChannel = pooledConnectionForKey.poll();
 
-                if (idleChannel == null) {
-                    poolEmpty = true;
-                } else if (!idleChannel.channel.isActive() || !idleChannel.channel.isOpen()) {
+                if (idleChannel == null)
+                    // pool is empty
+                    break;
+                else if (isRemotelyClosed(idleChannel.channel)) {
                     idleChannel = null;
-                    LOGGER.trace("Channel not connected or not opened!");
+                    LOGGER.trace("Channel not connected or not opened, probably remotely closed!");
                 }
             }
         }
-        return idleChannel != null ? idleChannel.channel : null;
-    }
-
-    private boolean remove(IdleChannel pooledChannel) {
-        if (pooledChannel == null || closed.get())
-            return false;
-
-        boolean isRemoved = false;
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForHost = connectionsPool.get(pooledChannel.key);
-        if (pooledConnectionForHost != null) {
-            isRemoved = pooledConnectionForHost.remove(pooledChannel);
-        }
-        return isRemoved |= channel2IdleChannel.remove(pooledChannel.channel) != null;
+        if (idleChannel != null) {
+            size.decrementAndGet();
+            return idleChannel.channel;
+        } else
+            return null;
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        channel2CreationDate.remove(channel);
-        return !closed.get() && remove(channel2IdleChannel.get(channel));
+        ChannelCreation creation = channel2Creation.remove(channel);
+        return !isClosed.get() && creation != null && connectionsPool.get(creation.key).remove(channel);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        return !closed.get() && (maxTotalConnections == -1 || channel2IdleChannel.size() < maxTotalConnections);
+        // FIXME: doesn't honor per host limit
+        // FIXME: doesn't account for borrowed channels
+        return !isClosed.get() && (maxTotalConnectionsDisabled || size.get() < maxTotalConnections);
     }
 
     /**
      * {@inheritDoc}
      */
     public void destroy() {
-        if (closed.getAndSet(true))
+        if (isClosed.getAndSet(true))
             return;
 
-        for (Channel channel : channel2IdleChannel.keySet()) {
-            close(channel);
+        for (ConcurrentLinkedQueue<IdleChannel> pool : connectionsPool.values()) {
+            for (IdleChannel idleChannel : pool)
+                close(idleChannel.channel);
         }
+
         connectionsPool.clear();
-        channel2IdleChannel.clear();
-        channel2CreationDate.clear();
+        channel2Creation.clear();
+        size.set(0);
     }
 
     private void close(Channel channel) {
         try {
             Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
-            channel2CreationDate.remove(channel);
+            channel2Creation.remove(channel);
             channel.close();
         } catch (Throwable t) {
             // noop
         }
     }
 
-    public final String toString() {
-        return String.format("NettyConnectionPool: {pool-size: %d}", channel2IdleChannel.size());
+    public String toString() {
+        return String.format("NettyConnectionPool: {pool-size: %d}", size.get());
     }
 }
