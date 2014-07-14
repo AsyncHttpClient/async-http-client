@@ -38,7 +38,7 @@ public class AsyncHttpClientRegistryTest {
 
     @BeforeClass
     public void setUpBeforeTest() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, "org.asynchttpclient.TestAsyncHttpClient");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.TEST_CLIENT_CLASS_NAME);
     }
 
     @AfterClass
@@ -100,14 +100,14 @@ public class AsyncHttpClientRegistryTest {
 
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testNonExistentAsyncHttpClientRegistry() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, "org.asynchttpclient.NonExistentAsyncRegistry");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.NON_EXISTENT_CLIENT_CLASS_NAME);
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }
 
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testBadAsyncHttpClientRegistry() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, "org.asynchttpclient.BadAsyncHttpClientRegistry");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.BAD_CLIENT_CLASS_NAME);
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }
