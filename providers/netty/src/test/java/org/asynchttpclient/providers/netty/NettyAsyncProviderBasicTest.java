@@ -17,6 +17,8 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.AsyncProvidersBasicTest;
 
+import io.netty.channel.ChannelOption;
+
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override
@@ -26,9 +28,7 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override
     protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
-        final NettyAsyncHttpProviderConfig config = new NettyAsyncHttpProviderConfig();
-        config.addProperty("TCP_NODELAY", true);
-        return config;
+        return new NettyAsyncHttpProviderConfig().addChannelOption(ChannelOption.TCP_NODELAY, Boolean.TRUE);
     }
 
     @Override

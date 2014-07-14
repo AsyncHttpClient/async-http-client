@@ -63,10 +63,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -162,31 +159,13 @@ public class Channels {
             freeConnections = null;
         }
 
-        Map<String, ChannelOption<Object>> optionMap = new HashMap<String, ChannelOption<Object>>();
-        for (Field field : ChannelOption.class.getDeclaredFields()) {
-            if (field.getType().isAssignableFrom(ChannelOption.class)) {
-                field.setAccessible(true);
-                try {
-                    optionMap.put(field.getName(), (ChannelOption<Object>) field.get(null));
-                } catch (IllegalAccessException ex) {
-                    throw new Error(ex);
-                }
-            }
-        }
-
-        if (nettyProviderConfig != null) {
-            for (Entry<String, Object> entry : nettyProviderConfig.propertiesSet()) {
-                ChannelOption<Object> key = optionMap.get(entry.getKey());
-                if (key != null) {
-                    Object value = entry.getValue();
-                    plainBootstrap.option(key, value);
-                    webSocketBootstrap.option(key, value);
-                    secureBootstrap.option(key, value);
-                    secureWebSocketBootstrap.option(key, value);
-                } else {
-                    throw new IllegalArgumentException("Unknown config property " + entry.getKey());
-                }
-            }
+        for (Entry<ChannelOption<Object>, Object> entry : nettyProviderConfig.propertiesSet()) {
+            ChannelOption<Object> key = entry.getKey();
+            Object value = entry.getValue();
+            plainBootstrap.option(key, value);
+            webSocketBootstrap.option(key, value);
+            secureBootstrap.option(key, value);
+            secureWebSocketBootstrap.option(key, value);
         }
 
         int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
