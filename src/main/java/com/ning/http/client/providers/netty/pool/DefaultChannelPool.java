@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.pool;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
@@ -30,8 +30,12 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.providers.netty.Channels;
+import com.ning.http.client.providers.netty.NettyResponseFuture;
+
 /**
- * A simple implementation of {@link com.ning.http.client.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * A simple implementation of {@link com.ning.http.client.providers.netty.pool.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
 public final class DefaultChannelPool implements ChannelPool {
 
@@ -53,12 +57,12 @@ public final class DefaultChannelPool implements ChannelPool {
     private final boolean maxIdleTimeDisabled;
     private final long cleanerPeriod;
 
-    public DefaultChannelPool(NettyAsyncHttpProvider provider, Timer hashedWheelTimer) {
-        this(provider.getConfig().getMaxTotalConnections(),//
-                provider.getConfig().getMaxConnectionPerHost(),//
-                provider.getConfig().getIdleConnectionInPoolTimeoutInMs(),//
-                provider.getConfig().getMaxConnectionLifeTimeInMs(),//
-                provider.getConfig().isSslConnectionPoolEnabled(),//
+    public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
+        this(config.getMaxTotalConnections(),//
+                config.getMaxConnectionPerHost(),//
+                config.getIdleConnectionInPoolTimeoutInMs(),//
+                config.getMaxConnectionLifeTimeInMs(),//
+                config.isSslConnectionPoolEnabled(),//
                 hashedWheelTimer);
     }
 

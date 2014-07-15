@@ -20,6 +20,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.pool.ChannelPool;
 
 import java.util.Map;
 import java.util.Set;

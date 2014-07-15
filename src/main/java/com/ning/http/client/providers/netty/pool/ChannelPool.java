@@ -14,7 +14,7 @@
  * under the License.
  *
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.pool;
 
 import org.jboss.netty.channel.Channel;
 

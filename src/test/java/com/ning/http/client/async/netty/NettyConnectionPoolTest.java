@@ -26,8 +26,8 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.ConnectionPoolTest;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.netty.ChannelPool;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.pool.ChannelPool;
 
 import java.net.ConnectException;
 import java.util.concurrent.TimeUnit;

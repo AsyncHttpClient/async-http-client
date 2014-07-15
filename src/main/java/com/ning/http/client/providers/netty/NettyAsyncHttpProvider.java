@@ -122,6 +122,9 @@ import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
+import com.ning.http.client.providers.netty.pool.ChannelPool;
+import com.ning.http.client.providers.netty.pool.DefaultChannelPool;
+import com.ning.http.client.providers.netty.pool.NonChannelPool;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.providers.netty.timeout.IdleConnectionTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
@@ -239,7 +242,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ChannelPool cp = providerConfig.getChannelPool();
         if (cp == null && config.isAllowPoolingConnection()) {
-            cp = new DefaultChannelPool(this, nettyTimer);
+            cp = new DefaultChannelPool(config, nettyTimer);
         } else if (cp == null) {
             cp = new NonChannelPool();
         }
@@ -1745,30 +1748,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    protected AsyncHttpClientConfig getConfig() {
+    public AsyncHttpClientConfig getConfig() {
         return config;
-    }
-
-    private static class NonChannelPool implements ChannelPool {
-
-        public boolean offer(String uri, Channel connection) {
-            return false;
-        }
-
-        public Channel poll(String uri) {
-            return null;
-        }
-
-        public boolean removeAll(Channel connection) {
-            return false;
-        }
-
-        public boolean canCacheConnection() {
-            return true;
-        }
-
-        public void destroy() {
-        }
     }
 
     private static final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
