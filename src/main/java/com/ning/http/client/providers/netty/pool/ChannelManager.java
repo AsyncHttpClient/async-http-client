@@ -16,6 +16,8 @@ package com.ning.http.client.providers.netty.pool;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.group.ChannelGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.Channels;
@@ -26,6 +28,8 @@ import com.ning.http.client.providers.netty.NettyResponseFuture;
 import java.util.concurrent.Semaphore;
 
 public class ChannelManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
 
     private final ChannelPool channelPool;
     private final Semaphore freeConnections;
@@ -66,7 +70,7 @@ public class ChannelManager {
         return channelPool.removeAll(connection);
     }
 
-    public boolean canCacheConnection() {
+    public boolean preemptChannel() {
         return channelPool.canCacheConnection() && (!trackConnections || freeConnections.tryAcquire());
     }
 
@@ -82,18 +86,33 @@ public class ChannelManager {
             }
         }
     }
-    
+
+    public void closeChannel(final ChannelHandlerContext ctx) {
+        removeAll(ctx.getChannel());
+        Channels.setDiscard(ctx);
+
+        Channel channel = ctx.getChannel();
+
+        // The channel may have already been removed if a timeout occurred, and this method may be called just after.
+        if (channel != null) {
+            // FIXME can the context channel really be null?
+            LOGGER.debug("Closing Channel {} ", channel);
+            try {
+                channel.close();
+            } catch (Throwable t) {
+                LOGGER.debug("Error closing a connection", t);
+            }
+            openChannels.remove(channel);
+        }
+    }
+
     // temp
-    public void releaseFreeConnection() {
+    public void abortChannelPreemption() {
         if (trackConnections)
             freeConnections.release();
     }
-    
+
     public void registerOpenChannel(Channel channel) {
         openChannels.add(channel);
-    }
-    
-    public boolean unregisterOpenChannel(Channel channel) {
-        return openChannels.remove(channel);
     }
 }

@@ -71,9 +71,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         return future;
     }
 
-    private void release() {
+    private void abortChannelPreemption() {
         if (acquiredConnection)
-            channelManager.releaseFreeConnection();
+            channelManager.abortChannelPreemption();
     }
     
     private void writeRequest(Channel channel) {
@@ -86,7 +86,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             provider.writeRequest(channel, config, future);
 
         } else {
-            release();
+            abortChannelPreemption();
         }
     }
 
@@ -125,7 +125,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             }
 
         } else {
-            release();
+            abortChannelPreemption();
             Throwable cause = f.getCause();
 
             boolean canRetry = future.canRetry();
