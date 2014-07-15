@@ -175,7 +175,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return removed;
         }
     };
-    private final ChannelPool connectionsPool;
+    private final ChannelPool channelPool;
     // FIXME should be the pool responsibility
     private Semaphore freeConnections = null;
     private final NettyAsyncHttpProviderConfig providerConfig;
@@ -243,7 +243,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (cp == null) {
             cp = new NonChannelPool();
         }
-        this.connectionsPool = cp;
+        this.channelPool = cp;
 
         if (config.getMaxTotalConnections() != -1) {
             trackConnections = true;
@@ -265,7 +265,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",//
                 config.getMaxTotalConnections() - availablePermits,//
                 openChannels.toString(),//
-                connectionsPool.toString());
+                channelPool.toString());
     }
 
     void configureNetty() {
@@ -351,7 +351,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private Channel lookupInCache(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
-        final Channel channel = connectionsPool.poll(getPoolKey(uri, proxy, strategy));
+        final Channel channel = channelPool.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -798,7 +798,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public void close() {
         if (isClose.compareAndSet(false, true)) {
             try {
-                connectionsPool.destroy();
+                channelPool.destroy();
                 openChannels.close();
 
                 for (Channel channel : openChannels) {
@@ -943,7 +943,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache) {
-            if (!connectionsPool.canCacheConnection()) {
+            if (!channelPool.canCacheConnection()) {
                 IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
                 try {
                     asyncHandler.onThrowable(ex);
@@ -1018,7 +1018,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
-        connectionsPool.removeAll(ctx.getChannel());
+        channelPool.removeAll(ctx.getChannel());
         finishChannel(ctx);
     }
 
@@ -1273,7 +1273,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return;
         }
 
-        connectionsPool.removeAll(ctx.getChannel());
+        channelPool.removeAll(ctx.getChannel());
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
@@ -1322,7 +1322,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return true;
         }
 
-        connectionsPool.removeAll(channel);
+        channelPool.removeAll(channel);
 
         if (future == null) {
             Object attachment = Channels.getAttachment(channel);
@@ -1842,7 +1842,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
         Channel channel = ctx.getChannel();
-        if (keepAlive && channel.isReadable() && connectionsPool.offer(poolKey, channel)) {
+        if (keepAlive && channel.isReadable() && channelPool.offer(poolKey, channel)) {
             LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
             Channels.setDiscard(ctx);
             return true;
