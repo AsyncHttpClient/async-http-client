@@ -40,7 +40,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -61,7 +60,6 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.PrematureChannelClosureException;
@@ -169,21 +167,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final ClientSocketChannelFactory socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
 
-    private final ChannelGroup openChannels = new CleanupChannelGroup("asyncHttpClient") {
-        @Override
-        public boolean remove(Object o) {
-            boolean removed = super.remove(o);
-            if (trackConnections && removed) {
-                freeConnections.release();
-            }
-            return removed;
-        }
-    };
     private final ChannelManager channelManager;
-    // FIXME should be the pool responsibility
-    private Semaphore freeConnections = null;
     private final NettyAsyncHttpProviderConfig providerConfig;
-    private final boolean trackConnections;
     private final boolean disableZeroCopy;
     private static final NTLMEngine ntlmEngine = new NTLMEngine();
     private static SpnegoEngine spnegoEngine = null;
@@ -247,14 +232,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (cp == null) {
             cp = new NonChannelPool();
         }
-        this.channelManager = new ChannelManager(cp);
-
-        if (config.getMaxTotalConnections() != -1) {
-            trackConnections = true;
-            freeConnections = new Semaphore(config.getMaxTotalConnections());
-        } else {
-            trackConnections = false;
-        }
+        this.channelManager = new ChannelManager(config, cp);
     }
 
     private Timer newNettyTimer() {
@@ -794,16 +772,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (isClose.compareAndSet(false, true)) {
             try {
                 channelManager.destroy();
-                openChannels.close();
-
-                for (Channel channel : openChannels) {
-                    ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
-                    Object attachment = Channels.getAttachment(ctx);
-                    if (attachment instanceof NettyResponseFuture<?>) {
-                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-                        future.cancelTimeouts();
-                    }
-                }
 
                 config.executorService().shutdown();
                 if (allowReleaseSocketChannelFactory) {
@@ -938,28 +906,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache) {
-            if (!channelManager.canCacheConnection()) {
+            if (channelManager.canCacheConnection()) {
+                acquiredConnection = true;
+            } else {
                 IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
                 try {
                     asyncHandler.onThrowable(ex);
-                } catch (Throwable t) {
-                    LOGGER.warn("!connectionsPool.canCacheConnection()", t);
+                } catch (Exception e) {
+                    LOGGER.warn("asyncHandler.onThrowable crashed", e);
                 }
                 throw ex;
-            }
-            
-            if (trackConnections) {
-                if (!freeConnections.tryAcquire()) {
-                    IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
-                    try {
-                        asyncHandler.onThrowable(ex);
-                    } catch (Throwable t) {
-                        LOGGER.warn("!connectionsPool.canCacheConnection()", t);
-                    }
-                    throw ex;
-                } else {
-                    acquiredConnection = true;
-                }
             }
         }
 
@@ -990,9 +946,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
         } catch (Throwable t) {
-            if (acquiredConnection) {
-                freeConnections.release();
-            }
+            if (acquiredConnection)
+                channelManager.releaseFreeConnection();
             abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
             return connectListener.future();
         }
@@ -1001,13 +956,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", connectListener.future().getNettyRequest(), channelFuture.getChannel());
 
+        // FIXME this should be done in the listener + properly handler connection failures
         if (!connectListener.future().isCancelled() || !connectListener.future().isDone()) {
-            openChannels.add(channelFuture.getChannel());
+            channelManager.registerOpenChannel(channelFuture.getChannel());
             connectListener.future().attachChannel(channelFuture.getChannel(), false);
-        } else {
-            if (acquiredConnection) {
-                freeConnections.release();
-            }
+        } else if (acquiredConnection) {
+            channelManager.releaseFreeConnection();
         }
         return connectListener.future();
     }
@@ -1031,7 +985,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } catch (Throwable t) {
                 LOGGER.debug("Error closing a connection", t);
             }
-            openChannels.remove(channel);
+            channelManager.unregisterOpenChannel(channel);
         }
     }
 
@@ -1227,9 +1181,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
-        if (channel != null && openChannels.contains(channel)) {
+        if (channel != null && channelManager.unregisterOpenChannel(channel)) {
             closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
-            openChannels.remove(channel);
         }
 
         if (!future.isCancelled() && !future.isDone()) {
