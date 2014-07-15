@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,7 +13,6 @@
 
 package com.ning.http.client.async.grizzly;
 
-import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -25,9 +24,5 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
-    }
-
-    @Test(enabled = false)
-    public void failInstantlyIfHostNamesDiffer() throws Exception {
     }
 }

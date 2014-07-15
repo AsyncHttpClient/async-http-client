@@ -13,12 +13,52 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHandlerExtensions;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Body;
+import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Param;
+import com.ning.http.client.Part;
+import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.UpgradeHandler;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.ntlm.NTLMEngine;
+import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.websocket.WebSocket;
+import com.ning.http.client.websocket.WebSocketByteListener;
+import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
+import com.ning.http.client.websocket.WebSocketListener;
+import com.ning.http.client.websocket.WebSocketPingListener;
+import com.ning.http.client.websocket.WebSocketPongListener;
+import com.ning.http.client.websocket.WebSocketTextListener;
+import com.ning.http.client.websocket.WebSocketUpgradeHandler;
+import com.ning.http.multipart.MultipartBody;
+import com.ning.http.multipart.MultipartRequestEntity;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import com.ning.http.util.AuthenticatorUtils;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
+import com.ning.http.util.ProxyUtils;
+import com.ning.http.util.SslUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,10 +83,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.CloseListener;
+import org.glassfish.grizzly.CloseType;
+import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
@@ -103,53 +145,9 @@ import org.glassfish.grizzly.websockets.WebSocketHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHandlerExtensions;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Param;
-import com.ning.http.client.Part;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.UpgradeHandler;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.cookie.CookieDecoder;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.ntlm.NTLMEngine;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.client.websocket.WebSocket;
-import com.ning.http.client.websocket.WebSocketByteListener;
-import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
-import com.ning.http.client.websocket.WebSocketListener;
-import com.ning.http.client.websocket.WebSocketPingListener;
-import com.ning.http.client.websocket.WebSocketPongListener;
-import com.ning.http.client.websocket.WebSocketTextListener;
-import com.ning.http.client.websocket.WebSocketUpgradeHandler;
-import com.ning.http.multipart.MultipartBody;
-import com.ning.http.multipart.MultipartRequestEntity;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.AuthenticatorUtils;
-import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.SslUtils;
-
-import org.glassfish.grizzly.CloseListener;
-import org.glassfish.grizzly.CloseType;
-import org.glassfish.grizzly.Closeable;
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -396,8 +394,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         true,
                         false,
                         false);
-        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
-        fcb.add(filter);
+        final SwitchingSSLFilter sslFilter =
+                new SwitchingSSLFilter(configurator, defaultSecState);
+        if (clientConfig.getHostnameVerifier() != null) {
+            sslFilter.addHandshakeListener(new HostnameVerifierListener());
+        }
+        fcb.add(sslFilter);
+        
         final AsyncHttpClientEventFilter eventFilter = new
                 AsyncHttpClientEventFilter(this, (Integer) providerConfig.getProperty(MAX_HTTP_PACKET_HEADER_SIZE));
         final AsyncHttpClientFilter clientFilter =
@@ -2394,12 +2397,29 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final UriComponents uri = request.getURI();
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
-            if(request.getLocalAddress()!=null) {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)), new InetSocketAddress(request.getLocalAddress(), 0),
-                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
+            
+            CompletionHandler<Connection> completionHandler =
+                    createConnectionCompletionHandler(request, requestFuture,
+                            connectHandler);
+            
+            final HostnameVerifier verifier =
+                    provider.clientConfig.getHostnameVerifier();
+            
+            if (Utils.isSecure(uri) && verifier != null) {
+                completionHandler =
+                        HostnameVerifierListener.wrapWithHostnameVerifierHandler(
+                                completionHandler, verifier, uri.getHost());
+            }
+
+            if (request.getLocalAddress() != null) {
+                connectionHandler.connect(new InetSocketAddress(host,
+                        getPort(uri, port)),
+                        new InetSocketAddress(request.getLocalAddress(), 0),
+                        completionHandler);
             } else {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
+                connectionHandler.connect(new InetSocketAddress(host,
+                        getPort(uri, port)),
+                        completionHandler);
             }
 
         }
@@ -2452,7 +2472,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             pool.destroy();
 
         }
-
+        
         CompletionHandler<Connection> createConnectionCompletionHandler(final Request request,
                                                                         final GrizzlyResponseFuture future,
                                                                         final CompletionHandler<Connection> wrappedHandler) {
