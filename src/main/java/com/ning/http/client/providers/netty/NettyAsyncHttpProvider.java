@@ -1304,7 +1304,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (expectOtherChunks && keepAlive)
             drainChannel(ctx, future);
         else
-            tryToOfferChannelToPool(ctx, keepAlive, getPoolKey(future));
+            channelManager.tryToOfferChannelToPool(ctx, keepAlive, getPoolKey(future));
         markAsDone(future, ctx);
     }
 
@@ -1750,24 +1750,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
-        Channel channel = ctx.getChannel();
-        if (keepAlive && channel.isReadable() && channelManager.offer(poolKey, channel)) {
-            LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
-            Channels.setDiscard(ctx);
-            return true;
-        } else {
-            // not offered
-            channelManager.closeChannel(ctx);
-            return false;
-        }
-    }
-    
     private final AsyncCallable newDrainCallable(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, final boolean keepAlive, final String poolKey) {
         
         return new AsyncCallable(future) {
             public Object call() throws Exception {
-                tryToOfferChannelToPool(ctx, keepAlive, poolKey);
+                channelManager.tryToOfferChannelToPool(ctx, keepAlive, poolKey);
                 return null;
             }
         };

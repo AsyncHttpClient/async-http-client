@@ -58,8 +58,17 @@ public class ChannelManager {
         this.channelPool = channelPool;
     }
 
-    public boolean offer(String uri, Channel connection) {
-        return channelPool.offer(uri, connection);
+    public final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
+        Channel channel = ctx.getChannel();
+        if (keepAlive && channel.isReadable() && channelPool.offer(poolKey, channel)) {
+            LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
+            Channels.setDiscard(ctx);
+            return true;
+        } else {
+            // not offered
+            closeChannel(ctx);
+            return false;
+        }
     }
 
     public Channel poll(String uri) {
