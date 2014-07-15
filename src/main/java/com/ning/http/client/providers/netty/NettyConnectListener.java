@@ -49,11 +49,13 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
     private final HttpRequest nettyRequest;
+    private final NettyAsyncHttpProvider provider;
 
-    private NettyConnectListener(AsyncHttpClientConfig config, NettyResponseFuture<T> future) {
+    private NettyConnectListener(AsyncHttpClientConfig config, NettyResponseFuture<T> future, NettyAsyncHttpProvider provider) {
         this.config = config;
         this.future = future;
         this.nettyRequest = future.getNettyRequest();
+        this.provider = provider;
     }
 
     public NettyResponseFuture<T> future() {
@@ -85,13 +87,13 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                                 future.abort(exception);
                                 throw exception;
                             } else {
-                                future.provider().writeRequest(channel, config, future);
+                                provider.writeRequest(channel, config, future);
                             }
                         }
                     }
                 });
             } else {
-                future.provider().writeRequest(f.getChannel(), config, future);
+                provider.writeRequest(f.getChannel(), config, future);
             }
 
         } else {
@@ -105,7 +107,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                             .getState() != NettyResponseFuture.STATE.NEW)) {
 
                 LOGGER.debug("Retrying {} ", nettyRequest);
-                if (future.provider().remotelyClosed(channel, future)) {
+                if (provider.remotelyClosed(channel, future)) {
                     return;
                 }
             }
@@ -155,7 +157,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 future.setNettyRequest(nettyRequest);
                 future.setRequest(request);
             }
-            return new NettyConnectListener<T>(config, future);
+            return new NettyConnectListener<T>(config, future, provider);
         }
     }
 }

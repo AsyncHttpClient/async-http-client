@@ -78,7 +78,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
     private final long start = millisTime();
-    private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private Channel channel;
@@ -108,7 +107,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.asyncHttpProvider = asyncHttpProvider;
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
 
@@ -438,10 +436,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         boolean b = this.writeBody;
         this.writeBody = writeBody;
         return b;
-    }
-
-    protected NettyAsyncHttpProvider provider() {
-        return asyncHttpProvider;
     }
 
     protected void attachChannel(Channel channel) {
