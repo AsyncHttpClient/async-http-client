@@ -919,7 +919,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        NettyConnectListener<T> connectListener = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
+        NettyConnectListener<T> connectListener = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes, channelManager, acquiredConnection).build(uri);
 
         if (useSSl)
             constructSSLPipeline(connectListener);
@@ -945,24 +945,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 channelFuture = bootstrap.connect(remoteAddress);
             }
 
+            channelFuture.addListener(connectListener);
+
         } catch (Throwable t) {
             if (acquiredConnection)
                 channelManager.releaseFreeConnection();
             abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
-            return connectListener.future();
         }
 
-        channelFuture.addListener(connectListener);
-
-        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", connectListener.future().getNettyRequest(), channelFuture.getChannel());
-
-        // FIXME this should be done in the listener + properly handler connection failures
-        if (!connectListener.future().isCancelled() || !connectListener.future().isDone()) {
-            channelManager.registerOpenChannel(channelFuture.getChannel());
-            connectListener.future().attachChannel(channelFuture.getChannel(), false);
-        } else if (acquiredConnection) {
-            channelManager.releaseFreeConnection();
-        }
         return connectListener.future();
     }
 
