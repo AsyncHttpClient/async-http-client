@@ -106,12 +106,12 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                             if (LOGGER.isDebugEnabled())
                                 LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
                                         Base64.encode(session.getId()), session.isValid(), host);
-                            if (!hostnameVerifier.verify(host, session)) {
+                            if (hostnameVerifier.verify(host, session)) {
+                                writeRequest(channel);
+                            } else {
                                 ConnectException exception = new ConnectException("HostnameVerifier exception");
                                 future.abort(exception);
                                 throw exception;
-                            } else {
-                                writeRequest(channel);
                             }
                         }
                     }
