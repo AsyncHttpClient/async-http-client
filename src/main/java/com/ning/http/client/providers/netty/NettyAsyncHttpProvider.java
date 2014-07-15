@@ -1238,7 +1238,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Protocol p = (ctx.getPipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
             p.onClose(ctx, e);
 
-            if (future != null && !future.isDone() && !future.isCancelled()) {
+            if (future != null && !future.isDone()) {
                 if (remotelyClosed(ctx.getChannel(), future)) {
                     abort(future, REMOTELY_CLOSED_EXCEPTION);
                 }
