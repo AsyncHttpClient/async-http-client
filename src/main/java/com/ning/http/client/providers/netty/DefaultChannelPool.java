@@ -30,8 +30,6 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider.DiscardEvent;
-
 /**
  * A simple implementation of {@link com.ning.http.client.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
@@ -162,7 +160,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
         private boolean isChannelCloseable(Channel channel) {
             boolean closeable = true;
-            Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+            Object attachment = Channels.getAttachment(channel);
             if (attachment instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
                 closeable = !future.isDone() || !future.isCancelled();
@@ -339,7 +337,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private void close(Channel channel) {
         try {
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(DiscardEvent.INSTANCE);
+            // FIXME pity to have to do this here
+            Channels.setDiscard(channel);
             channel2Creation.remove(channel);
             channel.close();
         } catch (Throwable t) {

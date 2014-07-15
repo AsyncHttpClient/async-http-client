@@ -803,8 +803,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 for (Channel channel : openChannels) {
                     ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
-                    if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
-                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+                    Object attachment = Channels.getAttachment(ctx);
+                    if (attachment instanceof NettyResponseFuture<?>) {
+                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
                         future.cancelTimeouts();
                     }
                 }
@@ -1022,7 +1023,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void finishChannel(final ChannelHandlerContext ctx) {
-        ctx.setAttachment(DiscardEvent.INSTANCE);
+        Channels.setDiscard(ctx);
 
         Channel channel = ctx.getChannel();
 
@@ -1045,7 +1046,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // call super to reset the read timeout
         super.messageReceived(ctx, e);
 
-        Object attachment = ctx.getAttachment();
+        Object attachment = Channels.getAttachment(ctx);
 
         if (attachment == null)
             LOGGER.debug("ChannelHandlerContext doesn't have any attachment");
@@ -1063,7 +1064,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     ac.call();
             } else {
                 ac.call();
-                ctx.setAttachment(DiscardEvent.INSTANCE);
+                Channels.setDiscard(ctx);
             }
 
         } else if (attachment instanceof NettyResponseFuture<?>) {
@@ -1279,17 +1280,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             LOGGER.trace("super.channelClosed", ex);
         }
 
-        LOGGER.debug("Channel Closed: {} with attachment {}", e.getChannel(), ctx.getAttachment());
+        Object attachment = Channels.getAttachment(ctx);
+        LOGGER.debug("Channel Closed: {} with attachment {}", e.getChannel(), attachment);
 
-        if (ctx.getAttachment() instanceof AsyncCallable) {
-            AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
+        if (attachment instanceof AsyncCallable) {
+            AsyncCallable ac = (AsyncCallable) attachment;
             ctx.setAttachment(ac.future());
             ac.call();
-            return;
-        }
 
-        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+        } else if (attachment instanceof NettyResponseFuture<?>) {
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty()) {
@@ -1325,7 +1325,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         connectionsPool.removeAll(channel);
 
         if (future == null) {
-            Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+            Object attachment = Channels.getAttachment(channel);
             if (attachment instanceof NettyResponseFuture)
                 future = (NettyResponseFuture<?>) attachment;
         }
@@ -1412,13 +1412,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         try {
-
             if (cause instanceof ClosedChannelException) {
                 return;
             }
 
-            if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
-                future = (NettyResponseFuture<?>) ctx.getAttachment();
+            Object attachment = Channels.getAttachment(ctx);
+            if (attachment instanceof NettyResponseFuture<?>) {
+                future = (NettyResponseFuture<?>) attachment;
                 future.attachChannel(null, false);
                 future.touch();
 
@@ -1448,8 +1448,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }
-            } else if (ctx.getAttachment() instanceof AsyncCallable) {
-                future = ((AsyncCallable) ctx.getAttachment()).future();
+            } else if (attachment instanceof AsyncCallable) {
+                future = ((AsyncCallable) attachment).future();
             }
         } catch (Throwable t) {
             cause = t;
@@ -1844,7 +1844,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Channel channel = ctx.getChannel();
         if (keepAlive && channel.isReadable() && connectionsPool.offer(poolKey, channel)) {
             LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
-            ctx.setAttachment(DiscardEvent.INSTANCE);
+            Channels.setDiscard(ctx);
             return true;
         } else {
             // not offered
@@ -2228,7 +2228,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     } catch (FilterException efe) {
                         abort(future, efe);
                     }
-
                 }
 
                 // The handler may have been wrapped.
@@ -2333,7 +2332,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         if (frame instanceof CloseWebSocketFrame) {
                             try {
-                                ctx.setAttachment(DiscardEvent.INSTANCE);
+                                Channels.setDiscard(ctx);
                                 webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
                             } finally {
                                 wsUpgradeHandler.resetSuccess();
@@ -2344,19 +2343,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
             } else {
-                LOGGER.error("Invalid attachment {}", ctx.getAttachment());
+                LOGGER.error("Invalid message {}", e.getMessage());
             }
         }
 
         // @Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
+                Object attachment = Channels.getAttachment(ctx);
                 LOGGER.warn("onError {}", e);
-                if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
+                if (!(attachment instanceof NettyResponseFuture)) {
                     return;
                 }
 
-                NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(ctx.getAttachment());
+                NettyResponseFuture<?> nettyResponse = (NettyResponseFuture<?>) attachment;
                 WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
 
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
@@ -2372,21 +2372,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // @Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
             LOGGER.trace("onClose {}", e);
-            if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
-                return;
-            }
+            
+            Object attachment = Channels.getAttachment(ctx);
+            if (attachment instanceof NettyResponseFuture) {
+                try {
+                    NettyResponseFuture<?> nettyResponse = (NettyResponseFuture<?>) attachment;
+                    WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
+                    h.resetSuccess();
 
-            try {
-                NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(ctx.getAttachment());
-                WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
-                NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-                h.resetSuccess();
-
-                LOGGER.trace("Connection was closed abnormally (that is, with no close frame being sent).");
-                if (ctx.getAttachment() != DiscardEvent.INSTANCE && webSocket != null)
-                    webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
-            } catch (Throwable t) {
-                LOGGER.error("onError", t);
+                } catch (Throwable t) {
+                    LOGGER.error("onError", t);
+                }
             }
         }
     }

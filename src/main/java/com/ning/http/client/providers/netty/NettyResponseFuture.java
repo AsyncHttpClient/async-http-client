@@ -40,7 +40,6 @@ import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider.DiscardEvent;
 import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
 
@@ -169,7 +168,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return false;
 
         try {
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(DiscardEvent.INSTANCE);
+            Channels.setDiscard(channel);
             channel.close();
         } catch (Throwable t) {
             // Ignore
@@ -251,7 +250,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             if (expired) {
                 isCancelled.set(true);
                 try {
-                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(DiscardEvent.INSTANCE);
+                    Channels.setDiscard(channel);
                     channel.close();
                 } catch (Throwable t) {
                     // Ignore

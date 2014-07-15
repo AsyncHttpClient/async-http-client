@@ -62,8 +62,8 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
+        Channel channel = f.getChannel();
         if (f.isSuccess()) {
-            Channel channel = f.getChannel();
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
             final SslHandler sslHandler = (SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER);
             
@@ -104,7 +104,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
                 LOGGER.debug("Retrying {} ", nettyRequest);
-                if (future.provider().remotelyClosed(f.getChannel(), future)) {
+                if (future.provider().remotelyClosed(channel, future)) {
                     return;
                 }
             }
