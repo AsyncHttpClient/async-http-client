@@ -1030,7 +1030,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
         if (channel != null) {
             // FIXME can the context channel really be null?
-            LOGGER.debug("Closing Channel {} ", ctx.getChannel());
+            LOGGER.debug("Closing Channel {} ", channel);
             try {
                 channel.close();
             } catch (Throwable t) {
