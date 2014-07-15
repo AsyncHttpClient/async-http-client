@@ -1229,7 +1229,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         .ioException(new IOException("Channel Closed")).build();
                 fc = handleIoException(fc, future);
 
-                if (fc.replayRequest() && !future.cannotBeReplay()) {
+                if (fc.replayRequest() && future.canBeReplay()) {
                     replayRequest(future, fc, ctx);
                     return;
                 }
@@ -1250,9 +1250,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
 
-        if (isClose()) {
+        if (isClose())
             return true;
-        }
 
         channelManager.removeAll(channel);
 
@@ -1262,25 +1261,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future = (NettyResponseFuture<?>) attachment;
         }
 
-        if (future == null || future.cannotBeReplay()) {
+        if (future != null && future.canBeReplay()) {
+            future.setState(NettyResponseFuture.STATE.RECONNECTED);
+
+            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
+            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+
+            try {
+                nextRequest(future.getRequest(), future);
+                return false;
+
+            } catch (IOException iox) {
+                future.setState(NettyResponseFuture.STATE.CLOSED);
+                future.abort(iox);
+                LOGGER.error("Remotely Closed, unable to recover", iox);
+                return true;
+            }
+            
+        } else {
             LOGGER.debug("Unable to recover future {}\n", future);
-            return true;
-        }
-
-        future.setState(NettyResponseFuture.STATE.RECONNECTED);
-
-        LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
-        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
-        }
-
-        try {
-            nextRequest(future.getRequest(), future);
-            return false;
-        } catch (IOException iox) {
-            future.setState(NettyResponseFuture.STATE.CLOSED);
-            future.abort(iox);
-            LOGGER.error("Remotely Closed, unable to recover", iox);
             return true;
         }
     }

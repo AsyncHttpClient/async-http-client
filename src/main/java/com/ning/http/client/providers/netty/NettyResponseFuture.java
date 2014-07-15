@@ -487,8 +487,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
-    public boolean cannotBeReplay() {
-        return isDone() || !canRetry() || isCancelled() || (channel() != null && channel().isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) || isInAuth();
+    public boolean canBeReplay() {
+        return !isDone() && canRetry() && !isCancelled() && !(channel() != null && channel().isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) && !isInAuth();
     }
 
     public long getStart() {
