@@ -78,8 +78,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                             SSLEngine engine = sslHandler.getEngine();
                             SSLSession session = engine.getSession();
 
-                            LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
-                                    Base64.encode(session.getId()), session.isValid(), host);
+                            if (LOGGER.isDebugEnabled())
+                                LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
+                                        Base64.encode(session.getId()), session.isValid(), host);
                             if (!hostnameVerifier.verify(host, session)) {
                                 ConnectException exception = new ConnectException("HostnameVerifier exception");
                                 future.abort(exception);
