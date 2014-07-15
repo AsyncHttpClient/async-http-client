@@ -1206,6 +1206,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         channelManager.removeAll(ctx.getChannel());
+
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
@@ -1252,8 +1253,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (isClose())
             return true;
-
-        channelManager.removeAll(channel);
 
         if (future == null) {
             Object attachment = Channels.getAttachment(channel);
