@@ -16,7 +16,6 @@
  */
 package com.ning.http.client.providers.netty;
 
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -25,20 +24,14 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
 import com.ning.http.client.providers.netty.pool.ChannelManager;
-import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.Base64;
-import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 
@@ -54,7 +47,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final ChannelManager channelManager;
     private final boolean acquiredConnection;
 
-    private NettyConnectListener(AsyncHttpClientConfig config,//
+    public NettyConnectListener(AsyncHttpClientConfig config,//
             NettyResponseFuture<T> future,//
             NettyAsyncHttpProvider provider,//
             ChannelManager channelManager,//
@@ -150,49 +143,6 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 e.initCause(cause);
             }
             future.abort(e);
-        }
-    }
-
-    public static class Builder<T> {
-        private final AsyncHttpClientConfig config;
-
-        private final Request request;
-        private final AsyncHandler<T> asyncHandler;
-        private NettyResponseFuture<T> future;
-        private final NettyAsyncHttpProvider provider;
-        private final ChannelBuffer buffer;
-        private final ChannelManager channelManager;
-        private final boolean acquiredConnection;
-
-        public Builder(AsyncHttpClientConfig config,//
-                Request request,//
-                AsyncHandler<T> asyncHandler,//
-                NettyResponseFuture<T> future,//
-                NettyAsyncHttpProvider provider,//
-                ChannelBuffer buffer,//
-                ChannelManager channelManager,//
-                boolean acquiredConnection) {
-
-            this.config = config;
-            this.request = request;
-            this.asyncHandler = asyncHandler;
-            this.future = future;
-            this.provider = provider;
-            this.buffer = buffer;
-            this.channelManager = channelManager;
-            this.acquiredConnection = acquiredConnection;
-        }
-
-        public NettyConnectListener<T> build(final UriComponents uri) throws IOException {
-            ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer, proxyServer);
-            if (future == null) {
-                future = NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider, proxyServer);
-            } else {
-                future.setNettyRequest(nettyRequest);
-                future.setRequest(request);
-            }
-            return new NettyConnectListener<T>(config, future, provider, channelManager, acquiredConnection);
         }
     }
 }

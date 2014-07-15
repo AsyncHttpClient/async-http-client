@@ -848,6 +848,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return null;
     }
 
+    private <T> NettyResponseFuture<T> buildConnectListenerFuture(AsyncHttpClientConfig config,//
+            Request request,//
+            AsyncHandler<T> asyncHandler,//
+            NettyResponseFuture<T> future,//
+            NettyAsyncHttpProvider provider,//
+            ChannelBuffer buffer,//
+            UriComponents uri) throws IOException {
+        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
+        HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer, proxyServer);
+        if (future == null) {
+            return NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider, proxyServer);
+        } else {
+            future.setNettyRequest(nettyRequest);
+            future.setRequest(request);
+            return future;
+        }
+    }
+    
     private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache,
             boolean reclaimCache) throws IOException {
 
@@ -919,7 +937,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        NettyConnectListener<T> connectListener = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes, channelManager, acquiredConnection).build(uri);
+        NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, this, bufferedBytes, uri);
+        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager, acquiredConnection);
 
         if (useSSl)
             constructSSLPipeline(connectListener);
