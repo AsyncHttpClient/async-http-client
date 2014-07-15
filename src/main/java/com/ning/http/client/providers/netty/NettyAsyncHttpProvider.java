@@ -122,6 +122,7 @@ import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
+import com.ning.http.client.providers.netty.pool.ChannelManager;
 import com.ning.http.client.providers.netty.pool.ChannelPool;
 import com.ning.http.client.providers.netty.pool.DefaultChannelPool;
 import com.ning.http.client.providers.netty.pool.NonChannelPool;
@@ -178,7 +179,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return removed;
         }
     };
-    private final ChannelPool channelPool;
+    private final ChannelManager channelManager;
     // FIXME should be the pool responsibility
     private Semaphore freeConnections = null;
     private final NettyAsyncHttpProviderConfig providerConfig;
@@ -246,7 +247,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (cp == null) {
             cp = new NonChannelPool();
         }
-        this.channelPool = cp;
+        this.channelManager = new ChannelManager(cp);
 
         if (config.getMaxTotalConnections() != -1) {
             trackConnections = true;
@@ -260,15 +261,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         HashedWheelTimer timer = new HashedWheelTimer();
         timer.start();
         return timer;
-    }
-    
-    @Override
-    public String toString() {
-        int availablePermits = freeConnections != null ? freeConnections.availablePermits() : 0;
-        return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",//
-                config.getMaxTotalConnections() - availablePermits,//
-                openChannels.toString(),//
-                channelPool.toString());
     }
 
     void configureNetty() {
@@ -354,7 +346,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private Channel lookupInCache(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
-        final Channel channel = channelPool.poll(getPoolKey(uri, proxy, strategy));
+        final Channel channel = channelManager.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -801,7 +793,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public void close() {
         if (isClose.compareAndSet(false, true)) {
             try {
-                channelPool.destroy();
+                channelManager.destroy();
                 openChannels.close();
 
                 for (Channel channel : openChannels) {
@@ -946,7 +938,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache) {
-            if (!channelPool.canCacheConnection()) {
+            if (!channelManager.canCacheConnection()) {
                 IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
                 try {
                     asyncHandler.onThrowable(ex);
@@ -1021,7 +1013,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
-        channelPool.removeAll(ctx.getChannel());
+        channelManager.removeAll(ctx.getChannel());
         finishChannel(ctx);
     }
 
@@ -1276,7 +1268,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return;
         }
 
-        channelPool.removeAll(ctx.getChannel());
+        channelManager.removeAll(ctx.getChannel());
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
@@ -1325,7 +1317,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return true;
         }
 
-        channelPool.removeAll(channel);
+        channelManager.removeAll(channel);
 
         if (future == null) {
             Object attachment = Channels.getAttachment(channel);
@@ -1823,7 +1815,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
         Channel channel = ctx.getChannel();
-        if (keepAlive && channel.isReadable() && channelPool.offer(poolKey, channel)) {
+        if (keepAlive && channel.isReadable() && channelManager.offer(poolKey, channel)) {
             LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
             Channels.setDiscard(ctx);
             return true;
