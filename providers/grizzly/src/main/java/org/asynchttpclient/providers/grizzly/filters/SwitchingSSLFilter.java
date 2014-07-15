@@ -191,20 +191,26 @@ public final class SwitchingSSLFilter extends SSLFilter {
             }
 
             public void completed(final Connection connection) {
-                final SSLSession session = SSLUtils.getSSLEngine(connection).getSession();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("SSL Handshake onComplete: session = {}, id = {}, isValid = {}, host = {}",
-                            session.toString(), Base64.encode(session.getId()), session.isValid(), host);
-                }
-
-                if (!verifier.verify(host, session)) {
-                    connection.terminateSilently();
-                    
-                    if (delegateCompletionHandler != null) {
-                        IOException e = new ConnectException("Host name verification failed for host " + host);
-                        delegateCompletionHandler.failed(e);
+                if (getHandshakeError(connection) == null) {
+                    final SSLSession session = SSLUtils.getSSLEngine(connection).getSession();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("SSL Handshake onComplete: session = {}, id = {}, isValid = {}, host = {}",
+                                session.toString(), Base64.encode(session.getId()), session.isValid(), host);
                     }
-                } else if (delegateCompletionHandler != null) {
+
+                    if (!verifier.verify(host, session)) {
+                        connection.terminateSilently();
+
+                        if (delegateCompletionHandler != null) {
+                            IOException e = new ConnectException("Host name verification failed for host " + host);
+                            delegateCompletionHandler.failed(e);
+                        }
+
+                        return;
+                    }
+                }
+                
+                if (delegateCompletionHandler != null) {
                     delegateCompletionHandler.completed(connection);
                 }
             }
