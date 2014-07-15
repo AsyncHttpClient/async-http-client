@@ -85,7 +85,8 @@ public class ChannelManager {
     
     // temp
     public void releaseFreeConnection() {
-        freeConnections.release();
+        if (trackConnections)
+            freeConnections.release();
     }
     
     public void registerOpenChannel(Channel channel) {

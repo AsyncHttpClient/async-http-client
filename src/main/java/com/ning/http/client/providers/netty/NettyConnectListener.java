@@ -71,19 +71,23 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         return future;
     }
 
+    private void release() {
+        if (acquiredConnection)
+            channelManager.releaseFreeConnection();
+    }
+    
     private void writeRequest(Channel channel) {
 
         LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", future.getNettyRequest(), channel);
 
-        // FIXME this should be done in the listener + properly handler connection failures
-        if (!future.isCancelled() || !future.isDone()) {
+        if (!future.isDone()) {
             channelManager.registerOpenChannel(channel);
             future.attachChannel(channel, false);
-        } else if (acquiredConnection) {
-            channelManager.releaseFreeConnection();
-        }
+            provider.writeRequest(channel, config, future);
 
-        provider.writeRequest(channel, config, future);
+        } else {
+            release();
+        }
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
@@ -121,6 +125,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             }
 
         } else {
+            release();
             Throwable cause = f.getCause();
 
             boolean canRetry = future.canRetry();
