@@ -259,8 +259,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
         final SSLEngineConfigurator configurator = new SSLEngineConfigurator(context, true, false, false);
-        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator);
-        secure.add(filter);
+        final SwitchingSSLFilter sslFilter = new SwitchingSSLFilter(configurator);
+        secure.add(sslFilter);
+        
         GrizzlyAsyncHttpProviderConfig providerConfig = (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
 
         boolean npnEnabled = NextProtoNegSupport.isEnabled();
@@ -335,7 +336,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             pool = null;
         }
-        connectionManager = new ConnectionManager(this, pool, secure, nonSecure, filter);
+        connectionManager = new ConnectionManager(this, pool, secure, nonSecure);
 
     }
 
