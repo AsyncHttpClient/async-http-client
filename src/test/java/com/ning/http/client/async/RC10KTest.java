@@ -102,12 +102,12 @@ public abstract class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsPerHost(C10K).setAllowPoolingConnection(true).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsPerHost(C10K).setAllowPoolingConnection(true).build());
         try {
             List<Future<Integer>> resps = new ArrayList<Future<Integer>>(C10K);
             int i = 0;
             while (i < C10K) {
-                resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
+                resps.add(client.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
             }
             i = 0;
             for (Future<Integer> fResp : resps) {
@@ -116,7 +116,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
                 assertEquals(resp.intValue(), i++);
             }
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 

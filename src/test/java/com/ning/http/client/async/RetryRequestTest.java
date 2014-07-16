@@ -69,9 +69,9 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Throwable {
-        AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
         try {
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
+            client.executeRequest(client.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {
             assertNotNull(t.getCause());
@@ -80,7 +80,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
                 fail();
             }
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 }

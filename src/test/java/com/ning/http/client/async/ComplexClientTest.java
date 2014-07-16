@@ -27,36 +27,36 @@ public abstract class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleRequestsTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
 
             // twice
-            response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithoutSlashTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

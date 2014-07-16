@@ -356,7 +356,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    // TODO: fix test
+    // FIXME: fix test
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(120 * 1000).build());

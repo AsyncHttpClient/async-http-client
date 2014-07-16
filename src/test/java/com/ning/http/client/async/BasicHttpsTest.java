@@ -71,7 +71,6 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     public static class EchoHandler extends AbstractHandler {
 
-        /* @Override */
         public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
@@ -253,18 +252,18 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
         try {
             String body = "hello there";
-            c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
+            client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
-            c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
+            client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
-            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get();
+            Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get();
 
             assertEquals(response.getResponseBody(), body);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -272,14 +271,14 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
         
         AtomicBoolean trust = new AtomicBoolean(false);
-        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build());
+        AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build());
         try {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
             Throwable cause = null;
             try {
-                c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+                client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (final ExecutionException e) {
                 cause = e.getCause();
                 if (cause instanceof ConnectException) {
@@ -293,28 +292,26 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
             // second request should succeed
             trust.set(true);
-            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(timeOut = 5000)
     public void failInstantlyIfHostNamesDiffer() throws Exception {
-        AsyncHttpClient client = null;
+
+        HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+            public boolean verify(String arg0, SSLSession arg1) {
+                return false;
+            }
+        };
+
+        AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(hostnameVerifier).setRequestTimeoutInMs(20000).build());
 
         try {
-            final Builder builder = new Builder().setHostnameVerifier(new HostnameVerifier() {
-
-                public boolean verify(String arg0, SSLSession arg1) {
-                    return false;
-                }
-            }).setRequestTimeoutInMs(20000);
-
-            client = getAsyncHttpClient(builder.build());
-
             try {
             client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
             
@@ -406,6 +403,5 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     private static TrustManager dummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
         return new DummyTrustManager(trust, tm);
-
     }
 }

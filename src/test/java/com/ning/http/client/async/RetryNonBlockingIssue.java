@@ -127,26 +127,17 @@ public class RetryNonBlockingIssue {
     @Test
     public void testRetryNonBlocking() throws IOException, InterruptedException,
             ExecutionException {
-        AsyncHttpClient c = null;
-        List<ListenableFuture<Response>> res = new
-                ArrayList<ListenableFuture<Response>>();
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+        .setAllowPoolingConnection(true)//
+        .setMaximumConnectionsTotal(100)//
+        .setConnectionTimeoutInMs(60000)//
+        .setRequestTimeoutInMs(30000);
+        
+        AsyncHttpClient client = new AsyncHttpClient(bc.build());
+        List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsTotal(100);
-            bc.setConnectionTimeoutInMs(60000);
-            bc.setRequestTimeoutInMs(30000);
-
-            NettyAsyncHttpProviderConfig config = new
-                    NettyAsyncHttpProviderConfig();
-
-            bc.setAsyncHttpClientProviderConfig(config);
-            c = new AsyncHttpClient(bc.build());
-
             for (int i = 0; i < 32; i++) {
-                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+                res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
 
             StringBuilder b = new StringBuilder();
@@ -162,31 +153,24 @@ public class RetryNonBlockingIssue {
             System.out.println(b.toString());
             System.out.flush();
 
-        }
-        finally {
-            if (c != null) c.close();
+        } finally {
+            client.close();
         }
     }
 
     @Test
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException,
             ExecutionException {
-        AsyncHttpClient c = null;
-        List<ListenableFuture<Response>> res = new
-                ArrayList<ListenableFuture<Response>>();
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+        .setAllowPoolingConnection(true)//
+        .setMaximumConnectionsTotal(100)//
+        .setConnectionTimeoutInMs(60000)//
+        .setRequestTimeoutInMs(30000);
+        AsyncHttpClient client = new AsyncHttpClient(bc.build());
+        List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsTotal(100);
-            bc.setConnectionTimeoutInMs(60000);
-            bc.setRequestTimeoutInMs(30000);
-
-            c = new AsyncHttpClient(bc.build());
-
             for (int i = 0; i < 32; i++) {
-                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+                res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
 
             StringBuilder b = new StringBuilder();
@@ -202,31 +186,25 @@ public class RetryNonBlockingIssue {
             System.out.println(b.toString());
             System.out.flush();
 
-        }
-        finally {
-            if (c != null) c.close();
+        }finally {
+            client.close();
         }
     }
 
     @Test
     public void testRetryBlocking() throws IOException, InterruptedException,
             ExecutionException {
-        AsyncHttpClient c = null;
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+        .setAllowPoolingConnection(true)//
+        .setMaximumConnectionsTotal(100)//
+        .setConnectionTimeoutInMs(30000)//
+        .setRequestTimeoutInMs(30000);
+        AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new
                 ArrayList<ListenableFuture<Response>>();
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsTotal(100);
-            bc.setConnectionTimeoutInMs(30000);
-            bc.setRequestTimeoutInMs(30000);
-
-            c = new AsyncHttpClient(bc.build());
-
             for (int i = 0; i < 32; i++) {
-                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+                res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
 
             StringBuilder b = new StringBuilder();
@@ -243,17 +221,15 @@ public class RetryNonBlockingIssue {
             System.out.println(b.toString());
             System.out.flush();
 
-        }
-        finally {
-            if (c != null) c.close();
+        } finally {
+            client.close();
         }
     }
 
     @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
-        private Map<String, Integer> requests = new
-                ConcurrentHashMap<String, Integer>();
+        private Map<String, Integer> requests = new ConcurrentHashMap<String, Integer>();
 
         private synchronized int increment(String id) {
             int val = 0;

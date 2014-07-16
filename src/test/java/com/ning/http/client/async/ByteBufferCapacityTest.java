@@ -77,7 +77,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
             long repeats = (1024 * 100 * 10 / bytes.length) + 1;
@@ -85,7 +85,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
             final AtomicInteger byteReceived = new AtomicInteger();
 
             try {
-                Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(new AsyncCompletionHandlerAdapter() {
+                Response response = client.preparePut(getTargetUrl()).setBody(largeFile).execute(new AsyncCompletionHandlerAdapter() {
                     /* @Override */
                     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
                         byteReceived.addAndGet(content.getBodyByteBuffer().capacity());
@@ -103,7 +103,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
                 fail("Should have timed out");
             }
         } finally {
-            c.close();
+            client.close();
         }
     }
 

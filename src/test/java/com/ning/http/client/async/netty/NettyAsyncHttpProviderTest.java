@@ -32,12 +32,15 @@ public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
         conf.setBossExecutorService(Executors.newSingleThreadExecutor());
 
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(conf).build();
-        AsyncHttpClient c = getAsyncHttpClient(cf);
+        AsyncHttpClient client = getAsyncHttpClient(cf);
 
-        Response r = c.prepareGet(getTargetUrl()).execute().get();
-        assertEquals(r.getStatusCode(), 200);
+        try {
+            Response response = client.prepareGet(getTargetUrl()).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            client.close();
+        }
     }
-
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

@@ -103,19 +103,16 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
     @Test
     public void testGetRedirectFinalUrl() {
 
-        AsyncHttpClient c = null;
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+                .setAllowPoolingConnection(true)//
+                .setMaximumConnectionsPerHost(1)//
+                .setMaximumConnectionsTotal(1)//
+                .setConnectionTimeoutInMs(1000)//
+                .setRequestTimeoutInMs(1000)//
+                .setFollowRedirect(true);
+
+        AsyncHttpClient client = getAsyncHttpClient(bc.build());
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsPerHost(1);
-            bc.setMaximumConnectionsTotal(1);
-            bc.setConnectionTimeoutInMs(1000);
-            bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirect(true);
-
-            c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("GET");
             builder.setUrl(servletEndpointRedirectUrl);
@@ -123,7 +120,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             com.ning.http.client.Request r = builder.build();
 
             try {
-                ListenableFuture<Response> response = c.executeRequest(r);
+                ListenableFuture<Response> response = client.executeRequest(r);
                 Response res = null;
                 res = response.get();
                 assertNotNull(res.getResponseBody());
@@ -141,7 +138,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
         }
         finally {
             // can hang here
-            if (c != null) c.close();
+            if (client != null) client.close();
         }
     }
 

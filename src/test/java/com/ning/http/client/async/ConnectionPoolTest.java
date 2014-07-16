@@ -135,19 +135,19 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
 
             // twice
             Exception exception = null;
             try {
-                c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                client.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
                 fail("Should throw exception. Too many connections issued.");
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -156,26 +156,26 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             assertNotNull(exception);
             assertEquals(exception.getMessage(), "Too many connections 1");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(getTargetUrl() + "?foo=bar").setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(getTargetUrl() + "?foo=bar").setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), "foo_" + body);
 
             // twice
             Exception exception = null;
             try {
-                response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                response = client.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 exception = ex;
@@ -184,7 +184,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } finally {
-            c.close();
+            client.close();
         }
     }
 

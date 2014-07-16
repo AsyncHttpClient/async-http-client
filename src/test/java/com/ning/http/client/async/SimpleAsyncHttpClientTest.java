@@ -218,11 +218,11 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
-        SimpleAsyncHttpClient c = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
         try {
             assertTrue(true);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -255,6 +255,9 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             fail("Expected closed AHC");
         } catch (IOException e) {
             // expected -- Seems to me that this behavior conflicts with the requirements of Future.get()
+        } finally {
+            client.close();
+            derived.close();
         }
     }
 
@@ -305,5 +308,4 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

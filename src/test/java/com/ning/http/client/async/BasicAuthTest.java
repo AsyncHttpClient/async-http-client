@@ -147,7 +147,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 }
             }
         }
-
     }
 
     private void setUpSecondServer() throws Exception {
@@ -298,10 +297,9 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = null;
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaximumNumberOfRedirects(10).build());
         try {
             setUpSecondServer();
-            client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaximumNumberOfRedirects(10).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
             // .setHeader( "X-302", "/bla" )
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
@@ -313,8 +311,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"), "X-Auth shouldn't be null");
 
         } finally {
-            if (client != null)
-                client.close();
+            client.close();
             stopSecondServer();
         }
     }
@@ -330,6 +327,11 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     protected String getTargetUrlNoAuth() {
         return "http://127.0.0.1:" + portNoAuth + "/";
+    }
+
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new SimpleHandler();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -495,11 +497,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         } finally {
             client.close();
         }
-    }
-
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new SimpleHandler();
     }
 
     @Test(groups = { "standalone", "default_provider" })

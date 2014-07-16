@@ -329,5 +329,4 @@ public abstract class ProxyTest extends AbstractBasicTest {
             ProxySelector.setDefault(originalProxySelector);
         }
     }
-
 }

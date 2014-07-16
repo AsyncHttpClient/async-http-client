@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -125,13 +124,16 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
 
-        Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
+        try {
+        Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        c.close();
+        } finally {
+            client.close();
+        }
     }
 
     public String getTargetUrl2() {
@@ -147,20 +149,20 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
+            Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
 
             // Test if the internal channel is downgraded to clean http.
-            response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/foo2").execute().get();
+            response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/foo2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -173,14 +175,14 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
+            Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
             assertEquals(response.getUri().toString(), getTargetUrl());
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

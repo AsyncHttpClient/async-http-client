@@ -103,12 +103,12 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(config);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = asyncHttpClient.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
@@ -141,7 +141,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             latch.await();
             assertEquals(text.get(), "ECHO");
         } finally {
-            asyncHttpClient.close();
+            client.close();
         }
     }
 }

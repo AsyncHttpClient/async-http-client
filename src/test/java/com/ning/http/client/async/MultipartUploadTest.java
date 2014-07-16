@@ -130,7 +130,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
     /**
      * Tests that the streaming of a file works.
      */
-    @Test(enabled = true)
+    @Test
     public void testSendingSmallFilesAndByteArray() {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -211,10 +211,9 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         bc.setFollowRedirect(true);
 
-        AsyncHttpClient c = new AsyncHttpClient(bc.build());
+        AsyncHttpClient client = new AsyncHttpClient(bc.build());
 
         try {
-
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
@@ -230,7 +229,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             com.ning.http.client.Request r = builder.build();
 
-            Response res = c.executeRequest(r).get();
+            Response res = client.executeRequest(r).get();
 
             assertEquals(200, res.getStatusCode());
 
@@ -240,7 +239,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             e.printStackTrace();
             fail("Download Exception");
         } finally {
-            c.close();
+            client.close();
             FileUtils.deleteQuietly(tmpFile);
         }
     }
@@ -460,9 +459,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 w.write("||");
                 w.close();
             }
-
         }
-
     }
-
 }

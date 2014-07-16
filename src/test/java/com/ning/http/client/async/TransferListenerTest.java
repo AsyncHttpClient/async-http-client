@@ -109,9 +109,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
+            Response response = client.prepareGet(getTargetUrl()).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -122,7 +122,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -169,9 +169,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
+            Response response = client.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -182,7 +182,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -229,9 +229,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
+            Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -242,7 +242,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         } finally {
-            c.close();
+            client.close();
         }
     }
 

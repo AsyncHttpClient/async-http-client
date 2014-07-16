@@ -55,8 +55,6 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     private final static String admin = "admin";
 
-    protected AsyncHttpClient client;
-
     public void setUpServer(String auth) throws Exception {
         server = new Server();
         Logger root = Logger.getRootLogger();
@@ -127,8 +125,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(false);
+            Future<Response> f = execute(client, false);
             try {
                 f.get();
                 fail("expected timeout");
@@ -143,8 +143,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(true);
+            Future<Response> f = execute(client, true);
             try {
                 f.get();
                 fail("expected timeout");
@@ -159,8 +161,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(false);
+            Future<Response> f = execute(client, false);
             try {
                 f.get();
                 fail("expected timeout");
@@ -175,9 +179,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
 
         try {
-            Future<Response> f = execute(true);
+            Future<Response> f = execute(client, true);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
@@ -190,8 +195,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(false);
+            Future<Response> f = execute(client, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
@@ -204,8 +211,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(true);
+            Future<Response> f = execute(client, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
@@ -218,8 +227,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+
         try {
-            Future<Response> f = execute(false);
+            Future<Response> f = execute(client, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
@@ -232,9 +243,10 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
 
         try {
-            Future<Response> f = execute(true);
+            Future<Response> f = execute(client, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
@@ -250,11 +262,9 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
             fail();
         }
-        ;
     }
 
-    protected Future<Response> execute(boolean preemptive) throws IOException {
-        client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+    protected Future<Response> execute(AsyncHttpClient client, boolean preemptive) throws IOException {
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test");
         Future<Response> f = r.execute();
         return f;

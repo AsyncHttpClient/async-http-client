@@ -84,12 +84,12 @@ public abstract class RedirectTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = c.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            WebSocket websocket = client.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
@@ -112,7 +112,7 @@ public abstract class RedirectTest extends AbstractBasicTest {
             assertEquals(text.get(), "OnOpen");
             websocket.close();
         } finally {
-            c.close();
+            client.close();
         }
     }
 

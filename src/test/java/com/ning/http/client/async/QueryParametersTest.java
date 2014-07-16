@@ -103,29 +103,28 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithColonTest_Netty() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         try {
             String query = "test:colon:";
-            Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithColonTest_JDK() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             String query = "test:colon:";
-            Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
         } finally {
-            c.close();
+            client.close();
         }
     }
-
 }

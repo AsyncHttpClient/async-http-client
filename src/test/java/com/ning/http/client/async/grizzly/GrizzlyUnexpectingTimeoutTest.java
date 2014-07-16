@@ -85,6 +85,7 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
         final int timeout = 100;
 
         final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(timeout).build());
+        try {
         Future<Response> responseFuture =
                 client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                     @Override
@@ -118,6 +119,8 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
         }
         // the result should be either onCompleted or onThrowable.
         assertEquals(1, counts.get(), "result should be one");
-        client.close();
+        } finally {
+            client.close();
+        }
     }
 }

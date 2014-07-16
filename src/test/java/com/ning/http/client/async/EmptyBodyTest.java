@@ -69,14 +69,14 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testEmptyBody() throws IOException {
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
             final AtomicBoolean status = new AtomicBoolean(false);
             final AtomicInteger headers = new AtomicInteger(0);
             final CountDownLatch latch = new CountDownLatch(1);
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build(), new AsyncHandler<Object>() {
+            client.executeRequest(client.prepareGet(getTargetUrl()).build(), new AsyncHandler<Object>() {
                 public void onThrowable(Throwable t) {
                     fail("Got throwable.", t);
                     err.set(true);
@@ -122,15 +122,15 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
             assertTrue(status.get());
             assertEquals(headers.get(), 1);
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testPutEmptyBody() throws Throwable {
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody("String").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 204);
@@ -139,7 +139,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
             assertEquals(response.getResponseBodyAsStream().read(), -1);
 
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 }

@@ -65,12 +65,12 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -103,18 +103,18 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             latch.await();
             assertEquals(text.get(), "ECHO".getBytes());
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -154,18 +154,18 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test
     public void echoOnOpenMessagesTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -204,17 +204,17 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -253,7 +253,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

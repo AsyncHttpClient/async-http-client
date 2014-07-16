@@ -98,10 +98,10 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setAcceptAnyCertificate(true)//
         .build();
 
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(config);
         try {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+            Future<Response> responseFuture = client.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
@@ -118,7 +118,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
 
         } finally {
-            asyncHttpClient.close();
+            client.close();
         }
     }
 
@@ -130,10 +130,10 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setFollowRedirect(true)//
         .build();
 
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(config);
         try {
             RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+            Future<Response> responseFuture = client.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
@@ -149,7 +149,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
         } finally {
-            asyncHttpClient.close();
+            client.close();
         }
     }
 

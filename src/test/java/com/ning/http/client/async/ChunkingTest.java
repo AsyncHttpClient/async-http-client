@@ -74,19 +74,16 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     }
 
     private void doTest(boolean customChunkedInputStream) throws Exception {
-        AsyncHttpClient c = null;
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+                .setAllowPoolingConnection(true)//
+                .setMaximumConnectionsPerHost(1)//
+                .setMaximumConnectionsTotal(1)//
+                .setConnectionTimeoutInMs(1000)//
+                .setRequestTimeoutInMs(1000)//
+                .setFollowRedirect(true);
+
+        AsyncHttpClient client = getAsyncHttpClient(bc.build());
         try {
-            AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsPerHost(1);
-            bc.setMaximumConnectionsTotal(1);
-            bc.setConnectionTimeoutInMs(1000);
-            bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirect(true);
-
-            c = getAsyncHttpClient(bc.build());
-
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
             if (customChunkedInputStream) {
@@ -100,7 +97,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             Response res = null;
 
             try {
-                ListenableFuture<Response> response = c.executeRequest(r);
+                ListenableFuture<Response> response = client.executeRequest(r);
                 res = response.get();
                 assertNotNull(res.getResponseBodyAsStream());
                 if (500 == res.getStatusCode()) {
@@ -120,8 +117,8 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                 fail("Exception Thrown:" + e.getMessage());
             }
         } finally {
-            if (c != null)
-                c.close();
+            if (client != null)
+                client.close();
         }
     }
 
@@ -163,5 +160,4 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
         return testResource1File;
     }
-
 }

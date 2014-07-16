@@ -31,16 +31,18 @@ public class GrizzlyBodyDeferringAsyncHandlerTest extends BodyDeferringAsyncHand
         return ProviderUtil.grizzlyProvider(config);
     }
 
+    // FIXME
     @Test(enabled = false)
     public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     }
 
+    // FIXME
     @Test(enabled = false)
     public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     }
 
+    // FIXME
     @Test(enabled = false)
     public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     }
-
 }

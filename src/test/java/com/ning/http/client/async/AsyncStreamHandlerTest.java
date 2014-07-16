@@ -51,11 +51,11 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamGETTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         try {
-            c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
+            client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
@@ -87,7 +87,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertNull(throwable.get(), "Unexpected exception");
             
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -96,9 +96,9 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Future<String> f = c.preparePost(getTargetUrl())//
+            Future<String> f = client.preparePost(getTargetUrl())//
                     .setHeader("Content-Type", "application/x-www-form-urlencoded")//
                     .addFormParam("param_1", "value_1")//
                     .execute(new AsyncHandlerAdapter() {
@@ -129,7 +129,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertEquals(responseBody, RESPONSE);
             
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -137,13 +137,13 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamInterruptTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicBoolean bodyReceived = new AtomicBoolean(false);
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         try {
-            c.preparePost(getTargetUrl())//
+            client.preparePost(getTargetUrl())//
             .setHeader("Content-Type", "application/x-www-form-urlencoded")//
             .addFormParam("param_1", "value_1")//
             .execute(new AsyncHandlerAdapter() {
@@ -175,17 +175,17 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertNull(throwable.get(), "Should get an exception");
             
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamFutureTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         try {
-            Future<String> f = c.preparePost(getTargetUrl()).addFormParam("param_1", "value_1").execute(new AsyncHandlerAdapter() {
+            Future<String> f = client.preparePost(getTargetUrl()).addFormParam("param_1", "value_1").execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
@@ -220,7 +220,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertNull(throwable.get(), "Unexpected exception");
 
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -228,9 +228,9 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamThrowableRefusedTest() throws Exception {
 
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
+            client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
@@ -253,17 +253,17 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 fail("Timed out");
             }
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamReusePOSTTest() throws Exception {
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         try {
-            BoundRequestBuilder rb = c.preparePost(getTargetUrl())//
+            BoundRequestBuilder rb = client.preparePost(getTargetUrl())//
                     .setHeader("Content-Type", "application/x-www-form-urlencoded")
                     .addFormParam("param_1", "value_1");
             
@@ -326,17 +326,17 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertNotNull(r, "No response body");
             assertEquals(r.trim(), RESPONSE, "Unexpected response body");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStream302WithBody() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
         final AtomicReference<FluentCaseInsensitiveStringsMap> headers = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         try {
-            Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
+            Future<String> f = client.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
                     statusCode.set(status.getStatusCode());
@@ -367,17 +367,17 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET.toLowerCase(Locale.ENGLISH));
             
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStream302RedirectWithBody() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
         final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         try {
-            Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
+            Future<String> f = client.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
                     statusCode.set(status.getStatusCode());
@@ -410,7 +410,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             //
             // assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -480,12 +480,12 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncOptionsTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
 
         try {
             final String[] expected = { "GET", "HEAD", "OPTIONS", "POST", "TRACE" };
-            Future<String> f = c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
+            Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
@@ -509,15 +509,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertEquals(values, expected);
             
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void closeConnectionTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response r = c.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
+            Response r = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
 
                 private Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
@@ -552,7 +552,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             assertNotNull(r);
             assertEquals(r.getStatusCode(), 200);
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

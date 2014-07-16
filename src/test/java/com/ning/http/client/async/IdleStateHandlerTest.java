@@ -76,14 +76,14 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient client = getAsyncHttpClient(cg);
 
         try {
-            c.prepareGet(getTargetUrl()).execute().get();
+            client.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

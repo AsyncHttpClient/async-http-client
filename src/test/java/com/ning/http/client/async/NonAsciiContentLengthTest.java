@@ -92,5 +92,4 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

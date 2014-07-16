@@ -52,11 +52,11 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
 
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
             final CountDownLatch latch = new CountDownLatch(1);
-            ahc.executeRequest(req, new AsyncHandler<Void>() {
+            client.executeRequest(req, new AsyncHandler<Void>() {
                 public void onThrowable(Throwable t) {
                     t.printStackTrace(System.out);
                 }
@@ -96,7 +96,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                 Assert.assertEquals(xffHeaders[0], "def");
             }
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 
@@ -104,11 +104,11 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[] { null, null };
 
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
             final CountDownLatch latch = new CountDownLatch(1);
-            ahc.executeRequest(req, new AsyncHandler<Void>() {
+            client.executeRequest(req, new AsyncHandler<Void>() {
                 public void onThrowable(Throwable t) {
                     t.printStackTrace(System.out);
                 }
@@ -153,7 +153,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                 Assert.assertEquals(clHeaders[1], "2");
             }
         } finally {
-            ahc.close();
+            client.close();
         }
     }
 

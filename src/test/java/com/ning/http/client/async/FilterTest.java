@@ -67,13 +67,13 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClient client = getAsyncHttpClient(b.build());
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get();
+            Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -82,11 +82,11 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClient client = getAsyncHttpClient(b.build());
         try {
             List<Future<Response>> futures = new ArrayList<Future<Response>>();
             for (int i = 0; i < 200; i++) {
-                futures.add(c.preparePost(getTargetUrl()).execute());
+                futures.add(client.preparePost(getTargetUrl()).execute());
             }
 
             for (Future<Response> f : futures) {
@@ -95,7 +95,7 @@ public abstract class FilterTest extends AbstractBasicTest {
                 assertEquals(r.getStatusCode(), 200);
             }
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -103,16 +103,16 @@ public abstract class FilterTest extends AbstractBasicTest {
     public void maxConnectionsText() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClient client = getAsyncHttpClient(b.build());
 
         try {
-            c.preparePost(getTargetUrl()).execute().get();
+            client.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (IOException ex) {
             assertNotNull(ex);
             assertEquals(ex.getCause().getClass(), FilterException.class);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -130,17 +130,17 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClient client = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get();
+            Response response = client.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } catch (IOException ex) {
             fail("Should have timed out");
         } finally {
-            c.close();
+            client.close();
         }
     }
 

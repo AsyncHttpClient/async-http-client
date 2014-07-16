@@ -26,30 +26,30 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
             websocket.close();
 
             latch.await();
             assertTrue(text.get().startsWith("1000"));
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
             latch.await();
             final String[] parts = text.get().split(" ");
@@ -60,7 +60,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             assertEquals(parts[3], ">");
             assertEquals(parts[4], "10000ms");
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -96,12 +96,12 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void wrongStatusCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
-            WebSocket websocket = c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
@@ -130,18 +130,18 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void wrongProtocolCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
-            WebSocket websocket = c.prepareGet("ws://www.google.com/").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = client.prepareGet("ws://www.google.com/").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
@@ -170,7 +170,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
         } finally {
-            c.close();
+            client.close();
         }
     }
 }

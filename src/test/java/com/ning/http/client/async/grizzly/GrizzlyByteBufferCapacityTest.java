@@ -27,6 +27,7 @@ public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
         return ProviderUtil.grizzlyProvider(config);
     }
 
+    // FIXME
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicByteBufferTest() throws Throwable {
     }

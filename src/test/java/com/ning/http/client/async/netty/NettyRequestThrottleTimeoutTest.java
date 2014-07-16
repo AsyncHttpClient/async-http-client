@@ -46,7 +46,8 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     }
 
     private class SlowHandler extends AbstractHandler {
-        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response)
+                throws IOException, ServletException {
             response.setStatus(HttpServletResponse.SC_OK);
             final Continuation continuation = ContinuationSupport.getContinuation(request);
             continuation.suspend();
@@ -68,65 +69,66 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "netty_provider"})
+    @Test(groups = { "standalone", "netty_provider" })
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setCompressionEnabled(true)
-                .setAllowPoolingConnection(true)
-                .setMaximumConnectionsTotal(1).build());
-
-        final CountDownLatch latch = new CountDownLatch(2);
-
-        final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
-        for(int i=0;i<2;i++) {
-            new Thread(new Runnable() {
-
-                public void run() {
-                    try {
-                        requestThrottle.acquire();
-                        Future<Response> responseFuture = null;
-                        try {
-                             responseFuture =
-                                    client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(SLEEPTIME_MS/2).execute(new AsyncCompletionHandler<Response>() {
-
-                                        @Override
-                                        public Response onCompleted(Response response) throws Exception {
-                                            requestThrottle.release();
-                                            return response;
-                                        }
-
-                                        @Override
-                                        public void onThrowable(Throwable t) {
-                                            requestThrottle.release();
-                                        }
-                                    });
-                        } catch(Exception e) {
-                            tooManyConnections.add(e);
-                        }
-
-                        if(responseFuture!=null)
-                            responseFuture.get();
-                    } catch (Exception e) {
-                    } finally {
-                        latch.countDown();
-                    }
-
-                }
-            }).start();
-
-
-        }
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true)
+                .setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
 
         try {
-            latch.await(30,TimeUnit.SECONDS);
-        } catch (Exception e) {
-            fail("failed to wait for requests to complete");
+            final CountDownLatch latch = new CountDownLatch(2);
+
+            final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
+            for (int i = 0; i < 2; i++) {
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        try {
+                            requestThrottle.acquire();
+                            Future<Response> responseFuture = null;
+                            try {
+                                responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(SLEEPTIME_MS / 2)
+                                        .execute(new AsyncCompletionHandler<Response>() {
+
+                                            @Override
+                                            public Response onCompleted(Response response) throws Exception {
+                                                requestThrottle.release();
+                                                return response;
+                                            }
+
+                                            @Override
+                                            public void onThrowable(Throwable t) {
+                                                requestThrottle.release();
+                                            }
+                                        });
+                            } catch (Exception e) {
+                                tooManyConnections.add(e);
+                            }
+
+                            if (responseFuture != null)
+                                responseFuture.get();
+                        } catch (Exception e) {
+                        } finally {
+                            latch.countDown();
+                        }
+
+                    }
+                }).start();
+
+            }
+
+            try {
+                latch.await(30, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                fail("failed to wait for requests to complete");
+            }
+
+            assertTrue(tooManyConnections.size() == 0,
+                    "Should not have any connection errors where too many connections have been attempted");
+
+        } finally {
+            client.close();
         }
-
-        assertTrue(tooManyConnections.size()==0,"Should not have any connection errors where too many connections have been attempted");
-
-        client.close();
     }
 }
