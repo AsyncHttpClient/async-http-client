@@ -124,7 +124,7 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
             }
 
             if (!verifier.verify(host, session)) {
-                connection.close(); // XXX what's the correct way to kill a connection?
+                connection.terminateSilently();
                 IOException e = new ConnectException("Host name verification failed for host " + host);
                 delegate.failed(e);
             }
