@@ -26,11 +26,11 @@ public interface ChannelPool {
     /**
      * Add a connection to the pool
      *
-     * @param uri        a uri used to retrieve the cached connection
+     * @param poolKey        a key used to retrieve the cached connection
      * @param connection an I/O connection
      * @return true if added.
      */
-    boolean offer(String uri, Channel connection);
+    boolean offer(Channel connection, String poolKey);
 
     /**
      * Remove the connection associated with the uri.

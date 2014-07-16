@@ -25,6 +25,7 @@ import com.ning.http.client.providers.netty.CleanupChannelGroup;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyResponseFuture;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
 public class ChannelManager {
@@ -35,6 +36,10 @@ public class ChannelManager {
     private final boolean maxTotalConnectionsEnabled;
     private final Semaphore freeChannels;
     private final ChannelGroup openChannels;
+    private final int maxConnectionsPerHost;
+    private final boolean maxConnectionsPerHostEnabled;
+    private final ConcurrentHashMap<String, Semaphore> freeChannelsPerHost;
+    private final ConcurrentHashMap<Integer, String> channelId2KeyPool;
 
     public ChannelManager(AsyncHttpClientConfig config, ChannelPool channelPool) {
         this.channelPool = channelPool;
@@ -46,8 +51,17 @@ public class ChannelManager {
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
-                    if (removed)
+                    if (removed) {
                         freeChannels.release();
+                        if (maxConnectionsPerHostEnabled) {
+                            String poolKey = channelId2KeyPool.remove(Channel.class.cast(o).getId());
+                            if (poolKey != null) {
+                                Semaphore freeChannelsForHost = freeChannelsPerHost.get(poolKey);
+                                if (freeChannelsForHost != null)
+                                    freeChannelsForHost.release();
+                            }
+                        }
+                    }
                     return removed;
                 }
             };
@@ -56,18 +70,30 @@ public class ChannelManager {
             openChannels = new CleanupChannelGroup("asyncHttpClient");
             freeChannels = null;
         }
+
+        maxConnectionsPerHost = config.getMaxConnectionPerHost();
+        maxConnectionsPerHostEnabled = config.getMaxConnectionPerHost() > 0;
+        
+        if (maxConnectionsPerHostEnabled) {
+            freeChannelsPerHost = new ConcurrentHashMap<String, Semaphore>();
+            channelId2KeyPool = new ConcurrentHashMap<Integer, String>();
+        } else {
+            freeChannelsPerHost = null;
+            channelId2KeyPool = null;
+        }
     }
 
-    public final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
+    public final void tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
         Channel channel = ctx.getChannel();
-        if (keepAlive && channel.isReadable() && channelPool.offer(poolKey, channel)) {
+        if (keepAlive && channel.isReadable()) {
             LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
+            channelPool.offer(channel, poolKey);
+            if (maxConnectionsPerHostEnabled)
+                channelId2KeyPool.putIfAbsent(channel.getId(), poolKey);
             Channels.setDiscard(ctx);
-            return true;
         } else {
             // not offered
             closeChannel(ctx);
-            return false;
         }
     }
 
@@ -79,13 +105,34 @@ public class ChannelManager {
         return channelPool.removeAll(connection);
     }
 
-    public boolean preemptChannel() {
-        return channelPool.isOpen() && (!maxTotalConnectionsEnabled || freeChannels.tryAcquire());
+    private boolean tryAcquireGlobal() {
+        return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
+    }
+
+    private Semaphore getFreeConnectionsForHost(String poolKey) {
+        Semaphore freeConnections = freeChannelsPerHost.get(poolKey);
+        if (freeConnections == null) {
+            // lazy create the semaphore
+            Semaphore newFreeConnections = new Semaphore(maxConnectionsPerHost);
+            freeConnections = freeChannelsPerHost.putIfAbsent(poolKey, newFreeConnections);
+            if (freeConnections == null)
+                freeConnections = newFreeConnections;
+        }
+        return freeConnections;
+    }
+    
+    private boolean tryAcquirePerHost(String poolKey) {
+        return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(poolKey).tryAcquire();
+    }
+    
+    public boolean preemptChannel(String poolKey) {
+        return channelPool.isOpen() && tryAcquireGlobal() && tryAcquirePerHost(poolKey);
     }
 
     public void destroy() {
         channelPool.destroy();
         openChannels.close();
+        
         for (Channel channel : openChannels) {
             ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
             Object attachment = Channels.getAttachment(ctx);
@@ -104,7 +151,6 @@ public class ChannelManager {
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
         if (channel != null) {
-            // FIXME can the context channel really be null?
             LOGGER.debug("Closing Channel {} ", channel);
             try {
                 channel.close();
@@ -115,10 +161,11 @@ public class ChannelManager {
         }
     }
 
-    // temp
-    public void abortChannelPreemption() {
+    public void abortChannelPreemption(String poolKey) {
         if (maxTotalConnectionsEnabled)
             freeChannels.release();
+        if (maxConnectionsPerHostEnabled)
+            getFreeConnectionsForHost(poolKey).release();
     }
 
     public void registerOpenChannel(Channel channel) {

@@ -40,8 +40,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
-    private final ConcurrentHashMap<Integer, ChannelCreation> channel2Creation = new ConcurrentHashMap<Integer, ChannelCreation>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> poolsPerKey = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
+    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<Integer, ChannelCreation>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
@@ -85,11 +85,11 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final class ChannelCreation {
         final long creationTime;
-        final String key;
+        final String poolKey;
 
-        ChannelCreation(long creationTime, String key) {
+        ChannelCreation(long creationTime, String poolKey) {
             this.creationTime = creationTime;
-            this.key = key;
+            this.poolKey = poolKey;
         }
     }
 
@@ -120,7 +120,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (maxConnectionTTLDisabled)
             return false;
 
-        ChannelCreation creation = channel2Creation.get(channel.getId());
+        ChannelCreation creation = channelId2Creation.get(channel.getId());
         return creation == null || now - creation.creationTime >= maxConnectionTTL;
     }
 
@@ -192,23 +192,21 @@ public final class DefaultChannelPool implements ChannelPool {
                 return;
 
             try {
-                if (LOGGER.isDebugEnabled()) {
-                    for (String key : connectionsPool.keySet()) {
-                        LOGGER.debug("Entry count for : {} : {}", key, connectionsPool.get(key).size());
+                if (LOGGER.isDebugEnabled())
+                    for (String key : poolsPerKey.keySet()) {
+                        LOGGER.debug("Entry count for : {} : {}", key, poolsPerKey.get(key).size());
                     }
-                }
 
                 long start = millisTime();
                 int closedCount = 0;
                 int totalCount = 0;
 
-                for (ConcurrentLinkedQueue<IdleChannel> pool : connectionsPool.values()) {
+                for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
-                    if (LOGGER.isDebugEnabled()) {
+                    if (LOGGER.isDebugEnabled())
                         totalCount += pool.size();
-                    }
-                    List<IdleChannel> candidateExpiredChannels = expiredChannels(pool, start);
-                    List<IdleChannel> closedChannels = closeChannels(candidateExpiredChannels);
+
+                    List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
                     pool.removeAll(closedChannels);
                     int poolClosedCount = closedChannels.size();
                     closedCount += poolClosedCount;
@@ -226,11 +224,23 @@ public final class DefaultChannelPool implements ChannelPool {
         }
     }
 
+    private ConcurrentLinkedQueue<IdleChannel> getPoolForKey(String key) {
+        ConcurrentLinkedQueue<IdleChannel> pool = poolsPerKey.get(key);
+        if (pool == null) {
+            // lazy init pool
+            ConcurrentLinkedQueue<IdleChannel> newPool = new ConcurrentLinkedQueue<IdleChannel>();
+            pool = poolsPerKey.putIfAbsent(key, newPool);
+            if (pool == null)
+                pool = newPool;
+        }
+        return pool;
+    }
+    
     /**
      * {@inheritDoc}
      */
-    public boolean offer(String key, Channel channel) {
-        if (isClosed.get() || (!sslConnectionPoolEnabled && key.startsWith("https")))
+    public boolean offer(Channel channel, String poolKey) {
+        if (isClosed.get() || (!sslConnectionPoolEnabled && poolKey.startsWith("https")))
             return false;
 
         long now = millisTime();
@@ -238,17 +248,9 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isTTLExpired(channel, now))
             return false;
 
-        ConcurrentLinkedQueue<IdleChannel> idleConnectionForKey = connectionsPool.get(key);
-        if (idleConnectionForKey == null) {
-            ConcurrentLinkedQueue<IdleChannel> newPool = new ConcurrentLinkedQueue<IdleChannel>();
-            idleConnectionForKey = connectionsPool.putIfAbsent(key, newPool);
-            if (idleConnectionForKey == null)
-                idleConnectionForKey = newPool;
-        }
-
-        boolean added = idleConnectionForKey.add(new IdleChannel(channel, now));
+        boolean added = getPoolForKey(poolKey).add(new IdleChannel(channel, now));
         if (added)
-            channel2Creation.putIfAbsent(channel.getId(), new ChannelCreation(now, key));
+            channelId2Creation.putIfAbsent(channel.getId(), new ChannelCreation(now, poolKey));
 
         return added;
     }
@@ -256,12 +258,12 @@ public final class DefaultChannelPool implements ChannelPool {
     /**
      * {@inheritDoc}
      */
-    public Channel poll(String key) {
-        if (!sslConnectionPoolEnabled && key.startsWith("https"))
+    public Channel poll(String poolKey) {
+        if (!sslConnectionPoolEnabled && poolKey.startsWith("https"))
             return null;
 
         IdleChannel idleChannel = null;
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(key);
+        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = poolsPerKey.get(poolKey);
         if (pooledConnectionForKey != null) {
             while (idleChannel == null) {
                 idleChannel = pooledConnectionForKey.poll();
@@ -282,8 +284,8 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = channel2Creation.remove(channel.getId());
-        return !isClosed.get() && creation != null && connectionsPool.get(creation.key).remove(channel);
+        ChannelCreation creation = channelId2Creation.remove(channel.getId());
+        return !isClosed.get() && creation != null && poolsPerKey.get(creation.poolKey).remove(channel);
     }
 
     /**
@@ -300,20 +302,20 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isClosed.getAndSet(true))
             return;
 
-        for (ConcurrentLinkedQueue<IdleChannel> pool : connectionsPool.values()) {
+        for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
             for (IdleChannel idleChannel : pool)
                 close(idleChannel.channel);
         }
 
-        connectionsPool.clear();
-        channel2Creation.clear();
+        poolsPerKey.clear();
+        channelId2Creation.clear();
     }
 
     private void close(Channel channel) {
         try {
             // FIXME pity to have to do this here
             Channels.setDiscard(channel);
-            channel2Creation.remove(channel.getId());
+            channelId2Creation.remove(channel.getId());
             channel.close();
         } catch (Throwable t) {
             // noop

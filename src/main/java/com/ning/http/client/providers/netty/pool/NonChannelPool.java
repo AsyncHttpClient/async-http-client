@@ -20,7 +20,7 @@ import org.jboss.netty.channel.Channel;
 
 public class NonChannelPool implements ChannelPool {
 
-    public boolean offer(String uri, Channel connection) {
+    public boolean offer(Channel connection, String poolKey) {
         return false;
     }
 

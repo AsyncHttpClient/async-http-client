@@ -919,11 +919,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
+        NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, this, bufferedBytes, uri);
+
         boolean channelPreempted = false;
+        String poolKey = null;
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache) {
-            if (channelManager.preemptChannel()) {
+
+            // only compute when maxConnectionPerHost is enabled
+            // FIXME clean up
+            if (config.getMaxConnectionPerHost() > 0)
+            poolKey = getPoolKey(connectListenerFuture);
+
+            if (channelManager.preemptChannel(poolKey)) {
                 channelPreempted = true;
             } else {
                 IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
@@ -936,8 +945,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, this, bufferedBytes, uri);
-        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager, channelPreempted);
+        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager, channelPreempted, poolKey);
 
         if (useSSl)
             constructSSLPipeline(connectListener);
@@ -967,7 +975,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         } catch (Throwable t) {
             if (channelPreempted)
-                channelManager.abortChannelPreemption();
+                channelManager.abortChannelPreemption(poolKey);
             abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
         }
 

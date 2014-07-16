@@ -46,30 +46,33 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final NettyAsyncHttpProvider provider;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
+    private final String poolKey;
 
     public NettyConnectListener(AsyncHttpClientConfig config,//
             NettyResponseFuture<T> future,//
             NettyAsyncHttpProvider provider,//
             ChannelManager channelManager,//
-            boolean channelPreempted) {
+            boolean channelPreempted,//
+            String poolKey) {
         this.config = config;
         this.future = future;
         this.nettyRequest = future.getNettyRequest();
         this.provider = provider;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
+        this.poolKey = poolKey;
     }
 
     public NettyResponseFuture<T> future() {
         return future;
     }
 
-    private void abortChannelPreemption() {
+    private void abortChannelPreemption(String poolKey) {
         if (channelPreempted)
-            channelManager.abortChannelPreemption();
+            channelManager.abortChannelPreemption(poolKey);
     }
     
-    private void writeRequest(Channel channel) {
+    private void writeRequest(Channel channel, String poolKey) {
 
         LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", future.getNettyRequest(), channel);
 
@@ -79,7 +82,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             provider.writeRequest(channel, config, future);
 
         } else {
-            abortChannelPreemption();
+            abortChannelPreemption(poolKey);
         }
     }
 
@@ -104,9 +107,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                                 LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
                                         Base64.encode(session.getId()), session.isValid(), host);
                             if (hostnameVerifier.verify(host, session)) {
-                                writeRequest(channel);
+                                writeRequest(channel, poolKey);
                             } else {
-                                abortChannelPreemption();
+                                abortChannelPreemption(poolKey);
                                 ConnectException exception = new ConnectException("HostnameVerifier exception");
                                 future.abort(exception);
                                 throw exception;
@@ -115,11 +118,11 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                     }
                 });
             } else {
-                writeRequest(f.getChannel());
+                writeRequest(f.getChannel(), poolKey);
             }
 
         } else {
-            abortChannelPreemption();
+            abortChannelPreemption(poolKey);
             Throwable cause = f.getCause();
 
             boolean canRetry = future.canRetry();

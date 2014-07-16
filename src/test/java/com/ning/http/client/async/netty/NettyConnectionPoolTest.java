@@ -44,7 +44,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel connection, String poolKey) {
                 return false;
             }
 
@@ -88,7 +88,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel connection, String poolKey) {
                 return true;
             }
 
