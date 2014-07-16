@@ -369,7 +369,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return asyncHandler;
     }
 
-    protected final boolean getKeepAlive() {
+    protected final boolean isKeepAlive() {
         return keepAlive;
     }
 
