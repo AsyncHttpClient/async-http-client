@@ -469,10 +469,13 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private static void convertToUpgradeRequest(final HttpTxContext ctx) {
         
-        UriComponents originalUri = ctx.getRequestUri();
-        String newScheme = originalUri.getScheme().equalsIgnoreCase("https") ? "wss" : "ws";
-        ctx.setWsRequestURI(originalUri);
-        ctx.setRequestUri(originalUri.withNewScheme(newScheme));
+        final UriComponents requestUri = ctx.getRequestUri();
+
+        ctx.setWsRequestURI(requestUri);
+        ctx.setRequestUri(requestUri.withNewScheme(
+                "ws".equals(requestUri.getScheme())
+                        ? "http"
+                        : "https"));
     }
 
     private void addGeneralHeaders(final Request request, final HttpRequestPacket requestPacket) {

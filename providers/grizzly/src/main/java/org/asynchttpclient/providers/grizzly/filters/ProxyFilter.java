@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -29,6 +29,7 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.util.Header;
 
 import java.io.IOException;
+import org.glassfish.grizzly.http.HttpPacket;
 
 /**
  * This Filter will be placed in the FilterChain when a request is being
@@ -56,15 +57,21 @@ public final class ProxyFilter extends BaseFilter {
 
     @Override
     public NextAction handleWrite(FilterChainContext ctx) throws IOException {
-        org.glassfish.grizzly.http.HttpContent content = ctx.getMessage();
-        HttpRequestPacket request = (HttpRequestPacket) content.getHttpHeader();
-        HttpTxContext context = HttpTxContext.get(ctx);
-        assert (context != null);
-        Request req = context.getRequest();
-        if (!secure) {
-            request.setRequestURI(req.getURI().toUrl());
+        final Object msg = ctx.getMessage();
+        if (HttpPacket.isHttp(msg)) {
+            HttpPacket httpPacket = (HttpPacket) msg;
+            final HttpRequestPacket request = (HttpRequestPacket) httpPacket.getHttpHeader();
+            if (!request.isCommitted()) {
+                HttpTxContext context = HttpTxContext.get(ctx);
+                assert (context != null);
+                Request req = context.getRequest();
+                if (!secure) {
+                    request.setRequestURI(req.getURI().toUrl());
+                }
+                addProxyHeaders(getRealm(req), request);
+            }
         }
-        addProxyHeaders(getRealm(req), request);
+        
         return ctx.getInvokeAction();
     }
 

@@ -14,7 +14,7 @@
     </description>
 
     <properties>
-        <grizzly.version>2.3.14</grizzly.version>
+        <grizzly.version>2.3.16</grizzly.version>
         <grizzly.npn.version>1.1</grizzly.npn.version>
     </properties>
 
