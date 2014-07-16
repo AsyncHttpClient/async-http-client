@@ -1010,11 +1010,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         
         private void convertToUpgradeRequest(final HttpTransactionContext ctx) {
-            UriComponents originalUri = ctx.requestUri;
-            String newScheme = originalUri.getScheme().equalsIgnoreCase("https") ? "wss" : "ws";
+            final UriComponents requestUri = ctx.requestUri;
 
-            ctx.wsRequestURI = originalUri;
-            ctx.requestUri = originalUri.withNewScheme(newScheme);
+            ctx.wsRequestURI = requestUri;
+            ctx.requestUri = requestUri.withNewScheme(
+                    "ws".equals(requestUri.getScheme())
+                            ? "http"
+                            : "https");
         }
 
         private void addHeaders(final Request request,
