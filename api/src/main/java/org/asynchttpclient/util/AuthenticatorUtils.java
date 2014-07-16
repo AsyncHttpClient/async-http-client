@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.util;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.ProxyServer;
@@ -37,12 +38,11 @@ public final class AuthenticatorUtils {
             return "/";
         } else {
             UriComponents uri = realm.getUri();
-            boolean omitQuery = realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery());
             if (realm.isUseAbsoluteURI()) {
-                return omitQuery ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+                return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
             } else {
-                String path = uri.getPath();
-                return omitQuery ? path : path + "?" + uri.getQuery();
+                String path = getNonEmptyPath(uri);
+                return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
             }
         }
     }
