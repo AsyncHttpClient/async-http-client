@@ -14,47 +14,47 @@
  * under the License.
  *
  */
-package org.asynchttpclient.providers.netty.channel;
+package org.asynchttpclient.providers.netty.channel.pool;
 
 import io.netty.channel.Channel;
 
 public interface ChannelPool {
 
     /**
-     * Add a connection to the pool
+     * Add a channel to the pool
      * 
-     * @param uri a uri used to retrieve the cached connection
-     * @param connection an I/O connection
+     * @param poolKey a key used to retrieve the cached channel
+     * @param channel an I/O channel
      * @return true if added.
      */
-    boolean offer(String uri, Channel connection);
+    boolean offer(Channel channel, String poolKey);
 
     /**
-     * Remove the connection associated with the uri.
+     * Remove the channel associated with the uri.
      * 
      * @param uri the uri used when invoking addConnection
-     * @return the connection associated with the uri
+     * @return the channel associated with the uri
      */
     Channel poll(String uri);
 
     /**
-     * Remove all connections from the cache. A connection might have been associated with several uri.
+     * Remove all channels from the cache. A channel might have been associated with several uri.
      * 
-     * @param connection a connection
-     * @return the true if the connection has been removed
+     * @param channel a channel
+     * @return the true if the channel has been removed
      */
-    boolean removeAll(Channel connection);
+    boolean removeAll(Channel channel);
 
     /**
-     * Return true if a connection can be cached. A implementation can decide based on some rules to allow caching
+     * Return true if a channel can be cached. A implementation can decide based on some rules to allow caching
      * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Object, Object)}
      * 
-     * @return true if a connection can be cached.
+     * @return true if a channel can be cached.
      */
-    boolean canCacheConnection();
+    boolean isOpen();
 
     /**
-     * Destroy all connections that has been cached by this instance.
+     * Destroy all channels that has been cached by this instance.
      */
     void destroy();
 }

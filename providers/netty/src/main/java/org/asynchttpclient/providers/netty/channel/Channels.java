@@ -25,13 +25,14 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.DefaultChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.NoopChannelPool;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
 import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
@@ -43,7 +44,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -65,7 +65,7 @@ import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -95,20 +95,7 @@ public class Channels {
     private final Bootstrap webSocketBootstrap;
     private final Bootstrap secureWebSocketBootstrap;
 
-    public final ChannelPool channelPool;
-    public final Semaphore freeConnections;
-    public final boolean trackConnections;
-    public final ChannelGroup openChannels = new CleanupChannelGroup("asyncHttpClient") {
-        @Override
-        public boolean remove(Object o) {
-            boolean removed = super.remove(o);
-            if (removed && trackConnections) {
-                freeConnections.release();
-            }
-            return removed;
-        }
-    };
-
+    public final ChannelManager channelManager;
     private final boolean allowStopNettyTimer;
     private final Timer nettyTimer;
     private final long handshakeTimeoutInMillis;
@@ -147,17 +134,10 @@ public class Channels {
             if (config.isAllowPoolingConnection()) {
                 cp = new DefaultChannelPool(config, nettyTimer);
             } else {
-                cp = new NonChannelPool();
+                cp = new NoopChannelPool();
             }
         }
-        this.channelPool = cp;
-        if (config.getMaxTotalConnections() != -1) {
-            trackConnections = true;
-            freeConnections = new Semaphore(config.getMaxTotalConnections());
-        } else {
-            trackConnections = false;
-            freeConnections = null;
-        }
+        this.channelManager = new ChannelManager(config, cp);
 
         for (Entry<ChannelOption<Object>, Object> entry : nettyProviderConfig.propertiesSet()) {
             ChannelOption<Object> key = entry.getKey();
@@ -182,11 +162,11 @@ public class Channels {
     }
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
-        
+
         SSLEngine sslEngine = null;
         if (nettyProviderConfig.getSslEngineFactory() != null) {
             sslEngine = nettyProviderConfig.getSslEngineFactory().newSSLEngine();
-        
+
         } else {
             SSLContext sslContext = config.getSSLContext();
             if (sslContext == null)
@@ -195,11 +175,11 @@ public class Channels {
             sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
             sslEngine.setUseClientMode(true);
         }
-        
+
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeoutInMillis > 0)
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
-        
+
         return sslHandler;
     }
 
@@ -244,8 +224,7 @@ public class Channels {
             protected void initChannel(Channel ch) throws Exception {
 
                 ChannelPipeline pipeline = ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslInitializer(Channels.this))
-                        .addLast(HTTP_HANDLER, newHttpClientCodec());
+                        .addLast(SSL_HANDLER, new SslInitializer(Channels.this)).addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
@@ -281,15 +260,7 @@ public class Channels {
     }
 
     public void close() {
-        channelPool.destroy();
-        for (Channel channel : openChannels) {
-            Object attribute = getDefaultAttribute(channel);
-            if (attribute instanceof NettyResponseFuture<?>) {
-                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-                future.cancelTimeouts();
-            }
-        }
-        openChannels.close();
+        channelManager.destroy();
 
         if (allowReleaseEventLoopGroup)
             eventLoopGroup.shutdownGracefully();
@@ -354,7 +325,7 @@ public class Channels {
     }
 
     public Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        final Channel channel = channelPool.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
+        final Channel channel = channelManager.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -368,82 +339,48 @@ public class Channels {
         return channel;
     }
 
-    public boolean acquireConnection(AsyncHandler<?> asyncHandler) throws IOException {
+    public boolean preemptChannel(AsyncHandler<?> asyncHandler, String poolKey) throws IOException {
 
-        if (!channelPool.canCacheConnection()) {
-            IOException ex = new IOException("Too many connections " + config.getMaxTotalConnections());
+        boolean channelPreempted = false;
+        if (channelManager.preemptChannel(poolKey)) {
+            channelPreempted = true;
+        } else {
+            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
             try {
                 asyncHandler.onThrowable(ex);
-            } catch (Throwable t) {
-                LOGGER.warn("!connectionsPool.canCacheConnection()", t);
+            } catch (Exception e) {
+                LOGGER.warn("asyncHandler.onThrowable crashed", e);
             }
             throw ex;
         }
-
-        if (trackConnections) {
-            if (freeConnections.tryAcquire()) {
-                return true;
-            } else {
-                IOException ex = new IOException("Too many connections " + config.getMaxTotalConnections());
-                try {
-                    asyncHandler.onThrowable(ex);
-                } catch (Throwable t) {
-                    LOGGER.warn("!connectionsPool.canCacheConnection()", t);
-                }
-                throw ex;
-            }
-        }
-
-        return false;
+        return channelPreempted;
     }
 
-    public void registerChannel(Channel channel) {
-        openChannels.add(channel);
+    public void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String poolKey) {
+        channelManager.tryToOfferChannelToPool(channel, keepAlive, poolKey);
     }
 
-    public boolean offerToPool(String key, Channel channel) {
-        return channelPool.offer(key, channel);
-    }
-
-    public void releaseFreeConnections() {
-        freeConnections.release();
-    }
-
-    public void removeFromPool(Channel channel) {
-        channelPool.removeAll(channel);
+    public void abortChannelPreemption(String poolKey) {
+        channelManager.abortChannelPreemption(poolKey);
     }
 
     public void closeChannel(Channel channel) {
-        removeFromPool(channel);
-        finishChannel(channel);
+        channelManager.closeChannel(channel);
     }
 
-    public void finishChannel(Channel channel) {
-        setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+    public final Callable<NettyResponseFuture<?>> newDrainCallable(final NettyResponseFuture<?> future, final Channel channel,
+            final boolean keepAlive, final String poolKey) {
 
-        // The channel may have already been removed if a timeout occurred, and
-        // this method may be called just after.
-        if (channel == null)
-            return;
-
-        LOGGER.debug("Closing Channel {} ", channel);
-        try {
-            channel.close();
-        } catch (Throwable t) {
-            LOGGER.debug("Error closing a connection", t);
-        }
-
-        openChannels.remove(channel);
+        return new Callable<NettyResponseFuture<?>>() {
+            public NettyResponseFuture<?> call() throws Exception {
+                channelManager.tryToOfferChannelToPool(channel, keepAlive, poolKey);
+                return null;
+            }
+        };
     }
 
     public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
-        setDefaultAttribute(channel, new Callback(future) {
-            public void call() throws Exception {
-                if (!(future.isKeepAlive() && channel.isActive() && channelPool.offer(getPoolKey(future), channel))) {
-                    finishChannel(channel);
-                }
-            }
-        });
+        setDefaultAttribute(channel, newDrainCallable(future, channel, future.isKeepAlive(), getPoolKey(future)));
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
@@ -451,17 +388,16 @@ public class Channels {
     }
 
     public void removeAll(Channel channel) {
-        channelPool.removeAll(channel);
+        channelManager.removeAll(channel);
     }
 
     public void abort(NettyResponseFuture<?> future, Throwable t) {
+        
         Channel channel = future.channel();
-        if (channel != null && openChannels.contains(channel)) {
-            closeChannel(channel);
-            openChannels.remove(channel);
-        }
+        if (channel != null)
+            channelManager.closeChannel(channel);
 
-        if (!future.isCancelled() && !future.isDone()) {
+        if (!future.isDone()) {
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
         }
@@ -484,5 +420,13 @@ public class Channels {
 
     public static void setDefaultAttribute(Channel channel, Object o) {
         channel.attr(DEFAULT_ATTRIBUTE).set(o);
+    }
+
+    public static void setDiscard(Channel channel) {
+        setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+    }
+    
+    public void registerOpenChannel(Channel channel) {
+        channelManager.registerOpenChannel(channel);
     }
 }

@@ -13,25 +13,25 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.asynchttpclient.providers.netty.channel;
+package org.asynchttpclient.providers.netty.channel.pool;
 
 import io.netty.channel.Channel;
 
-public class NonChannelPool implements ChannelPool {
+public class NoopChannelPool implements ChannelPool {
 
-    public boolean offer(String uri, Channel connection) {
+    public boolean offer(Channel channel, String poolKey) {
         return false;
     }
 
-    public Channel poll(String uri) {
+    public Channel poll(String poolKey) {
         return null;
     }
 
-    public boolean removeAll(Channel connection) {
+    public boolean removeAll(Channel channel) {
         return false;
     }
 
-    public boolean canCacheConnection() {
+    public boolean isOpen() {
         return true;
     }
 

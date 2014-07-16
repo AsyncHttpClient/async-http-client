@@ -18,7 +18,7 @@ package org.asynchttpclient.providers.netty;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.SSLEngineFactory;
-import org.asynchttpclient.providers.netty.channel.ChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;

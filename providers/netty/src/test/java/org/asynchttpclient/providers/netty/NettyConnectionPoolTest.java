@@ -19,7 +19,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
-import org.asynchttpclient.providers.netty.channel.ChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
 import org.testng.annotations.Test;
 
 import io.netty.channel.Channel;
@@ -38,19 +38,19 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     public void testInvalidConnectionsPool() {
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel channel, String poolKey) {
                 return false;
             }
 
-            public Channel poll(String connection) {
+            public Channel poll(String poolKey) {
                 return null;
             }
 
-            public boolean removeAll(Channel connection) {
+            public boolean removeAll(Channel channel) {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return false;
             }
 
@@ -82,19 +82,19 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     public void testValidConnectionsPool() {
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel channel, String poolKey) {
                 return true;
             }
 
-            public Channel poll(String connection) {
+            public Channel poll(String poolKey) {
                 return null;
             }
 
-            public boolean removeAll(Channel connection) {
+            public boolean removeAll(Channel channel) {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return true;
             }
 

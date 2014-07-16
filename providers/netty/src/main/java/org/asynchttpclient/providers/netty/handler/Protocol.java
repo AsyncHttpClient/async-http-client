@@ -32,7 +32,6 @@ import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
@@ -50,6 +49,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 public abstract class Protocol {
 
@@ -91,7 +91,7 @@ public abstract class Protocol {
 
     public abstract void onClose(Channel channel);
 
-    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final Channel channel)
+    protected boolean handleRedirectAndExit(Request request, final NettyResponseFuture<?> future, HttpResponse response, final Channel channel)
             throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
@@ -147,13 +147,7 @@ public abstract class Protocol {
                         }
                     }
 
-                    Callback callback = new Callback(future) {
-                        public void call() throws Exception {
-                            if (!(initialConnectionKeepAlive && channel.isActive() && channels.offerToPool(initialPoolKey, channel))) {
-                                channels.finishChannel(channel);
-                            }
-                        }
-                    };
+                    Callable<NettyResponseFuture<?>> callback = channels.newDrainCallable(future, channel, initialConnectionKeepAlive, initialPoolKey);
 
                     if (HttpHeaders.isTransferEncodingChunked(response)) {
                         // We must make sure there is no bytes left before

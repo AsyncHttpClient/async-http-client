@@ -168,16 +168,13 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean lastValidChunk) throws IOException {
-        if (lastValidChunk && future.isKeepAlive()) {
+    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
+
+        boolean keepAlive = future.isKeepAlive();
+        if (expectOtherChunks && keepAlive)
             channels.drainChannel(channel, future);
-        } else {
-            if (future.isKeepAlive() && channel.isActive() && channels.offerToPool(channels.getPoolKey(future), channel)) {
-                markAsDone(future, channel);
-                return;
-            }
-            channels.finishChannel(channel);
-        }
+        else
+            channels.tryToOfferChannelToPool(channel, keepAlive, channels.getPoolKey(future));
         markAsDone(future, channel);
     }
 
@@ -383,11 +380,12 @@ final class HttpProtocol extends Protocol {
 
     @Override
     public void handle(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
+
         future.touch();
 
         // The connect timeout occurred.
-        if (future.isCancelled() || future.isDone()) {
-            channels.finishChannel(channel);
+        if (future.isDone()) {
+            channels.closeChannel(channel);
             return;
         }
 

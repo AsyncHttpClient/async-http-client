@@ -47,15 +47,41 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
+    private final Channels channels;
+    private final boolean channelPreempted;
+    private final String poolKey;
 
-    public NettyConnectListener(AsyncHttpClientConfig config, NettyRequestSender requestSender, NettyResponseFuture<T> future) {
+    public NettyConnectListener(AsyncHttpClientConfig config,//
+            NettyRequestSender requestSender,//
+            NettyResponseFuture<T> future,//
+            Channels channels,//
+            boolean channelPreempted,//
+            String poolKey) {
         this.requestSender = requestSender;
         this.config = config;
         this.future = future;
+        this.channels = channels;
+        this.channelPreempted = channelPreempted;
+        this.poolKey = poolKey;
     }
 
-    public NettyResponseFuture<T> future() {
-        return future;
+    private void abortChannelPreemption(String poolKey) {
+        if (channelPreempted)
+            channels.abortChannelPreemption(poolKey);
+    }
+
+    private void writeRequest(Channel channel) {
+
+        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", future.getNettyRequest(), channel);
+
+        if (future.isDone()) {
+            abortChannelPreemption(poolKey);
+            return;
+        }
+
+        channels.registerOpenChannel(channel);
+        future.attachChannel(channel, false);
+        requestSender.writeRequest(future, channel);
     }
 
     public void onFutureSuccess(final Channel channel) throws ConnectException {
@@ -72,23 +98,27 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                         SSLEngine engine = sslHandler.engine();
                         SSLSession session = engine.getSession();
 
-                        LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(), Base64.encode(session.getId()), session.isValid(), host);
-                        if (!hostnameVerifier.verify(host, session)) {
+                        LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
+                                Base64.encode(session.getId()), session.isValid(), host);
+                        if (hostnameVerifier.verify(host, session)) {
+                            writeRequest(channel);
+                        } else {
+                            abortChannelPreemption(poolKey);
                             ConnectException exception = new ConnectException("HostnameVerifier exception");
                             future.abort(exception);
                             throw exception;
-                        } else {
-                            requestSender.writeRequest(future, channel);
                         }
                     }
                 }
             });
         } else {
-            requestSender.writeRequest(future, channel);
+            writeRequest(channel);
         }
     }
 
     public void onFutureFailure(Channel channel, Throwable cause) {
+
+        abortChannelPreemption(poolKey);
 
         boolean canRetry = future.canRetry();
         LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);

@@ -32,7 +32,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
 
-    private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig nettyConfig;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Channels channels;
@@ -40,23 +39,13 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
-        this.config = config;
         nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
-        NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig())
+        (NettyAsyncHttpProviderConfig) config.getAsyncHttpProviderConfig()
                 : new NettyAsyncHttpProviderConfig();
 
         channels = new Channels(config, nettyConfig);
         requestSender = new NettyRequestSender(closed, config, nettyConfig, channels);
         channels.configureProcessor(requestSender, closed);
-    }
-
-    @Override
-    public String toString() {
-        int availablePermits = channels.freeConnections != null ? channels.freeConnections.availablePermits() : 0;
-        return String.format("NettyAsyncHttpProvider4:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",
-                config.getMaxTotalConnections() - availablePermits,//
-                channels.openChannels.toString(),//
-                channels.channelPool.toString());
     }
 
     @Override
