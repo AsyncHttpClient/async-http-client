@@ -39,12 +39,11 @@ public final class AuthenticatorUtils {
         if (realm.isTargetProxy()) {
             return "/";
         } else {
-            boolean omitQuery = realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery());
             if (realm.isUseAbsoluteURI()) {
-                return omitQuery ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+                return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
             } else {
                 String path = getNonEmptyPath(uri);
-                return omitQuery ? path : path + "?" + uri.getQuery();
+                return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
             }
         }
     }
