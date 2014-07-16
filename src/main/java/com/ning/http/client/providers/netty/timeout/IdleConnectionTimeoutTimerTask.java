@@ -32,36 +32,31 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
     }
 
     public void run(Timeout timeout) throws Exception {
-        if (provider.isClose()) {
+
+        if (provider.isClose() || nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
             return;
         }
 
-        if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
+        long now = millisTime();
 
-            long now = millisTime();
+        long currentIdleConnectionTimeoutInstant = idleConnectionTimeout + nettyResponseFuture.getLastTouch();
+        long durationBeforeCurrentIdleConnectionTimeout = currentIdleConnectionTimeoutInstant - now;
 
-            long currentIdleConnectionTimeoutInstant = idleConnectionTimeout + nettyResponseFuture.getLastTouch();
-            long durationBeforeCurrentIdleConnectionTimeout = currentIdleConnectionTimeoutInstant - now;
+        if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
+            // idleConnectionTimeout reached
+            String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + idleConnectionTimeout + " ms";
+            long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
+            expire(message, durationSinceLastTouch);
+            nettyResponseFuture.setIdleConnectionTimeoutReached();
 
-            if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
-                // idleConnectionTimeout reached
-                String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + idleConnectionTimeout + " ms";
-                long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-                expire(message, durationSinceLastTouch);
-                nettyResponseFuture.setIdleConnectionTimeoutReached();
-
-            } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {
-                // reschedule
-                timeoutsHolder.idleConnectionTimeout = provider.newTimeoutInMs(this, durationBeforeCurrentIdleConnectionTimeout);
-
-            } else {
-                // otherwise, no need to reschedule: requestTimeout will happen sooner
-                timeoutsHolder.idleConnectionTimeout = null;
-            }
+        } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {
+            // reschedule
+            timeoutsHolder.idleConnectionTimeout = provider.newTimeoutInMs(this, durationBeforeCurrentIdleConnectionTimeout);
 
         } else {
-            timeoutsHolder.cancel();
+            // otherwise, no need to reschedule: requestTimeout will happen sooner
+            timeoutsHolder.idleConnectionTimeout = null;
         }
     }
 }

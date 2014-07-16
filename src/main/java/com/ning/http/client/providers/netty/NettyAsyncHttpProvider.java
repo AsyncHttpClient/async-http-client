@@ -1247,13 +1247,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Protocol p = (ctx.getPipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
             p.onClose(ctx, e);
 
-            if (future != null && !future.isDone()) {
-                if (remotelyClosed(ctx.getChannel(), future)) {
-                    abort(future, REMOTELY_CLOSED_EXCEPTION);
-                }
-            } else {
+            if (future == null || future.isDone())
                 channelManager.closeChannel(ctx);
-            }
+
+            else if (remotelyClosed(ctx.getChannel(), future))
+                abort(future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
 
@@ -2049,7 +2047,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         public void handle(final ChannelHandlerContext ctx, final MessageEvent e, final NettyResponseFuture<?> future) throws Exception {
 
             // The connect timeout occurred.
-            if (future.isCancelled() || future.isDone()) {
+            if (future.isDone()) {
                 channelManager.closeChannel(ctx);
                 return;
             }

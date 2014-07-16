@@ -237,7 +237,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
-        if (!isDone() && !isCancelled()) {
+        if (!isDone()) {
             boolean expired = false;
             if (l == -1) {
                 latch.await();
@@ -488,7 +488,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplay() {
-        return !isDone() && canRetry() && !isCancelled() && !(channel() != null && channel().isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) && !isInAuth();
+        return !isDone() && canRetry() && !(channel != null && channel.isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) && !isInAuth();
     }
 
     public long getStart() {

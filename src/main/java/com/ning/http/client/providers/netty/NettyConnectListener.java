@@ -76,14 +76,14 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
         LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", future.getNettyRequest(), channel);
 
-        if (!future.isDone()) {
-            channelManager.registerOpenChannel(channel);
-            future.attachChannel(channel, false);
-            provider.writeRequest(channel, config, future);
-
-        } else {
+        if (future.isDone()) {
             abortChannelPreemption(poolKey);
+            return;
         }
+
+        channelManager.registerOpenChannel(channel);
+        future.attachChannel(channel, false);
+        provider.writeRequest(channel, config, future);
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {

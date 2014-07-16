@@ -152,12 +152,10 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         private boolean isChannelCloseable(Channel channel) {
-            boolean closeable = true;
             Object attachment = Channels.getAttachment(channel);
             if (attachment instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-                closeable = !future.isDone() || !future.isCancelled();
-                if (!closeable)
+                if (!future.isDone())
                     LOGGER.error("Future not in appropriate state %s, not closing", future);
             }
             return true;

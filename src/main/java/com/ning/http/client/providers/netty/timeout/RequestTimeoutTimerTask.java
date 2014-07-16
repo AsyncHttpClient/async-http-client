@@ -30,15 +30,13 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         // in any case, cancel possible idleConnectionTimeout
         timeoutsHolder.cancel();
 
-        if (provider.isClose()) {
+        if (provider.isClose() || nettyResponseFuture.isDone()) {
             return;
         }
 
-        if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
-            String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms";
-            long age = millisTime() - nettyResponseFuture.getStart();
-            expire(message, age);
-            nettyResponseFuture.setRequestTimeoutReached();
-        }
+        String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms";
+        long age = millisTime() - nettyResponseFuture.getStart();
+        expire(message, age);
+        nettyResponseFuture.setRequestTimeoutReached();
     }
 }
