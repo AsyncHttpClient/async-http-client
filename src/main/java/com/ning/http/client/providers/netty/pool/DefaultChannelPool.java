@@ -41,7 +41,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
-    private final ConcurrentHashMap<Channel, ChannelCreation> channel2Creation = new ConcurrentHashMap<Channel, ChannelCreation>();
+    private final ConcurrentHashMap<Integer, ChannelCreation> channel2Creation = new ConcurrentHashMap<Integer, ChannelCreation>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
@@ -120,7 +120,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (maxConnectionTTLDisabled)
             return false;
 
-        ChannelCreation creation = channel2Creation.get(channel);
+        ChannelCreation creation = channel2Creation.get(channel.getId());
         return creation == null || now - creation.creationTime >= maxConnectionTTL;
     }
 
@@ -248,7 +248,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
         boolean added = idleConnectionForKey.add(new IdleChannel(channel, now));
         if (added)
-            channel2Creation.putIfAbsent(channel, new ChannelCreation(now, key));
+            channel2Creation.putIfAbsent(channel.getId(), new ChannelCreation(now, key));
 
         return added;
     }
@@ -282,7 +282,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = channel2Creation.remove(channel);
+        ChannelCreation creation = channel2Creation.remove(channel.getId());
         return !isClosed.get() && creation != null && connectionsPool.get(creation.key).remove(channel);
     }
 
@@ -313,7 +313,7 @@ public final class DefaultChannelPool implements ChannelPool {
         try {
             // FIXME pity to have to do this here
             Channels.setDiscard(channel);
-            channel2Creation.remove(channel);
+            channel2Creation.remove(channel.getId());
             channel.close();
         } catch (Throwable t) {
             // noop
