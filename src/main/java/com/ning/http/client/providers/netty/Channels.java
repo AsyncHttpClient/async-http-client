@@ -23,28 +23,24 @@ public final class Channels {
     private Channels() {
     }
 
-    private static ChannelHandlerContext getAHCHandlerContext(Channel channel) {
-        return channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
-    }
-
-    public static Object getAttachment(ChannelHandlerContext ctx) {
-        return ctx.getAttachment();
-    }
-
     public static void setAttachment(ChannelHandlerContext ctx, Object attachment) {
-        ctx.setAttachment(attachment);
-    }
-
-    public static Object getAttachment(Channel channel) {
-        return getAHCHandlerContext(channel).getAttachment();
+        setAttachment(ctx.getChannel(), attachment);
     }
 
     public static void setAttachment(Channel channel, Object attachment) {
-        setAttachment(getAHCHandlerContext(channel), attachment);
+        channel.setAttachment(attachment);
+    }
+
+    public static Object getAttachment(ChannelHandlerContext ctx) {
+        return getAttachment(ctx.getChannel());
+    }
+
+    public static Object getAttachment(Channel channel) {
+        return channel.getAttachment();
     }
 
     public static void setDiscard(ChannelHandlerContext ctx) {
-        ctx.setAttachment(DiscardEvent.INSTANCE);
+        setAttachment(ctx, DiscardEvent.INSTANCE);
     }
 
     public static void setDiscard(Channel channel) {
