@@ -14,7 +14,6 @@
 package com.ning.http.client.providers.netty;
 
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
 
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider.DiscardEvent;
 
@@ -23,24 +22,12 @@ public final class Channels {
     private Channels() {
     }
 
-    public static void setAttachment(ChannelHandlerContext ctx, Object attachment) {
-        setAttachment(ctx.getChannel(), attachment);
-    }
-
     public static void setAttachment(Channel channel, Object attachment) {
         channel.setAttachment(attachment);
     }
 
-    public static Object getAttachment(ChannelHandlerContext ctx) {
-        return getAttachment(ctx.getChannel());
-    }
-
     public static Object getAttachment(Channel channel) {
         return channel.getAttachment();
-    }
-
-    public static void setDiscard(ChannelHandlerContext ctx) {
-        setAttachment(ctx, DiscardEvent.INSTANCE);
     }
 
     public static void setDiscard(Channel channel) {

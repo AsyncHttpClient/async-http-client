@@ -14,7 +14,6 @@
 package com.ning.http.client.providers.netty.pool;
 
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.Channels;
 import com.ning.http.client.providers.netty.CleanupChannelGroup;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyResponseFuture;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,17 +81,16 @@ public class ChannelManager {
         }
     }
 
-    public final void tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
-        Channel channel = ctx.getChannel();
+    public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String poolKey) {
         if (keepAlive && channel.isReadable()) {
             LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
             channelPool.offer(channel, poolKey);
             if (maxConnectionsPerHostEnabled)
                 channelId2KeyPool.putIfAbsent(channel.getId(), poolKey);
-            Channels.setDiscard(ctx);
+            Channels.setDiscard(channel);
         } else {
             // not offered
-            closeChannel(ctx);
+            closeChannel(channel);
         }
     }
 
@@ -134,8 +131,7 @@ public class ChannelManager {
         openChannels.close();
         
         for (Channel channel : openChannels) {
-            ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
-            Object attachment = Channels.getAttachment(ctx);
+            Object attachment = Channels.getAttachment(channel);
             if (attachment instanceof NettyResponseFuture<?>) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
                 future.cancelTimeouts();
@@ -143,11 +139,9 @@ public class ChannelManager {
         }
     }
 
-    public void closeChannel(final ChannelHandlerContext ctx) {
-        removeAll(ctx.getChannel());
-        Channels.setDiscard(ctx);
-
-        Channel channel = ctx.getChannel();
+    public void closeChannel(Channel channel) {
+        removeAll(channel);
+        Channels.setDiscard(channel);
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
         if (channel != null) {
