@@ -123,7 +123,7 @@ import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.providers.netty.pool.ChannelManager;
 import com.ning.http.client.providers.netty.pool.ChannelPool;
 import com.ning.http.client.providers.netty.pool.DefaultChannelPool;
-import com.ning.http.client.providers.netty.pool.NonChannelPool;
+import com.ning.http.client.providers.netty.pool.NoopChannelPool;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.providers.netty.timeout.IdleConnectionTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
@@ -230,7 +230,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (cp == null && config.isAllowPoolingConnection()) {
             cp = new DefaultChannelPool(config, nettyTimer);
         } else if (cp == null) {
-            cp = new NonChannelPool();
+            cp = new NoopChannelPool();
         }
         this.channelManager = new ChannelManager(config, cp);
     }

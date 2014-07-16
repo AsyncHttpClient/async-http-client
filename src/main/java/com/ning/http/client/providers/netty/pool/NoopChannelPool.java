@@ -15,7 +15,7 @@ package com.ning.http.client.providers.netty.pool;
 
 import org.jboss.netty.channel.Channel;
 
-public class NonChannelPool implements ChannelPool {
+public class NoopChannelPool implements ChannelPool {
 
     public boolean offer(Channel connection, String poolKey) {
         return false;
