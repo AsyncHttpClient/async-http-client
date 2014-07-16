@@ -133,9 +133,8 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                             .getState() != NettyResponseFuture.STATE.NEW)) {
 
                 LOGGER.debug("Retrying {} ", nettyRequest);
-                if (provider.remotelyClosed(channel, future)) {
+                if (!provider.retry(channel, future))
                     return;
-                }
             }
 
             LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());

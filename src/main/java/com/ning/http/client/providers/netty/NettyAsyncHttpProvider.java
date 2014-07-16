@@ -1265,15 +1265,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (future == null || future.isDone())
                 channelManager.closeChannel(channel);
 
-            else if (remotelyClosed(ctx.getChannel(), future))
+            else if (!retry(ctx.getChannel(), future))
                 abort(future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
 
-    protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
+    protected boolean retry(Channel channel, NettyResponseFuture<?> future) {
 
         if (isClose())
-            return true;
+            return false;
 
         if (future == null) {
             Object attachment = Channels.getAttachment(channel);
@@ -1290,18 +1290,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             try {
                 nextRequest(future.getRequest(), future);
-                return false;
+                return true;
 
             } catch (IOException iox) {
                 future.setState(NettyResponseFuture.STATE.CLOSED);
                 future.abort(iox);
                 LOGGER.error("Remotely Closed, unable to recover", iox);
-                return true;
+                return false;
             }
 
         } else {
             LOGGER.debug("Unable to recover future {}\n", future);
-            return true;
+            return false;
         }
     }
 
