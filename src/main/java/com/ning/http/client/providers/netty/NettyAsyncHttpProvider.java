@@ -567,7 +567,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     
     private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, UriComponents uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
 
-
         HttpRequest nettyRequest;
         
         if (m.equals(HttpMethod.CONNECT)) {
@@ -920,12 +919,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        boolean acquiredConnection = false;
+        boolean channelPreempted = false;
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache) {
             if (channelManager.preemptChannel()) {
-                acquiredConnection = true;
+                channelPreempted = true;
             } else {
                 IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
                 try {
@@ -938,7 +937,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, this, bufferedBytes, uri);
-        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager, acquiredConnection);
+        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager, channelPreempted);
 
         if (useSSl)
             constructSSLPipeline(connectListener);
@@ -967,7 +966,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             channelFuture.addListener(connectListener);
 
         } catch (Throwable t) {
-            if (acquiredConnection)
+            if (channelPreempted)
                 channelManager.abortChannelPreemption();
             abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
         }
@@ -1167,9 +1166,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
-        channelManager.closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+        if (channel != null)
+            channelManager.closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
 
-        if (!future.isCancelled() && !future.isDone()) {
+        if (!future.isDone()) {
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
         }

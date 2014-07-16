@@ -54,7 +54,7 @@ public interface ChannelPool {
      *
      * @return true if a connection can be cached.
      */
-    boolean canCacheConnection();
+    boolean isOpen();
 
     /**
      * Destroy all connections that has been cached by this instance.

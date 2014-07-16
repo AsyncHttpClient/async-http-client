@@ -32,30 +32,30 @@ public class ChannelManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
 
     private final ChannelPool channelPool;
-    private final Semaphore freeConnections;
-    private final boolean trackConnections;
-
+    private final boolean maxTotalConnectionsEnabled;
+    private final Semaphore freeChannels;
     private final ChannelGroup openChannels;
 
     public ChannelManager(AsyncHttpClientConfig config, ChannelPool channelPool) {
-        if (config.getMaxTotalConnections() != -1) {
-            trackConnections = true;
+        this.channelPool = channelPool;
+
+        maxTotalConnectionsEnabled = config.getMaxTotalConnections() > 0;
+        
+        if (maxTotalConnectionsEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
                     if (removed)
-                        freeConnections.release();
+                        freeChannels.release();
                     return removed;
                 }
             };
-            freeConnections = new Semaphore(config.getMaxTotalConnections());
+            freeChannels = new Semaphore(config.getMaxTotalConnections());
         } else {
-            trackConnections = false;
             openChannels = new CleanupChannelGroup("asyncHttpClient");
-            freeConnections = null;
+            freeChannels = null;
         }
-        this.channelPool = channelPool;
     }
 
     public final boolean tryToOfferChannelToPool(ChannelHandlerContext ctx, boolean keepAlive, String poolKey) {
@@ -80,7 +80,7 @@ public class ChannelManager {
     }
 
     public boolean preemptChannel() {
-        return channelPool.canCacheConnection() && (!trackConnections || freeConnections.tryAcquire());
+        return channelPool.isOpen() && (!maxTotalConnectionsEnabled || freeChannels.tryAcquire());
     }
 
     public void destroy() {
@@ -117,8 +117,8 @@ public class ChannelManager {
 
     // temp
     public void abortChannelPreemption() {
-        if (trackConnections)
-            freeConnections.release();
+        if (maxTotalConnectionsEnabled)
+            freeChannels.release();
     }
 
     public void registerOpenChannel(Channel channel) {

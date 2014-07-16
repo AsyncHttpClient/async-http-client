@@ -32,7 +32,7 @@ public class NonChannelPool implements ChannelPool {
         return false;
     }
 
-    public boolean canCacheConnection() {
+    public boolean isOpen() {
         return true;
     }
 

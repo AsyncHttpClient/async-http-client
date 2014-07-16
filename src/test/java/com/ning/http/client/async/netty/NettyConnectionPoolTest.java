@@ -56,7 +56,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return false;
             }
 
@@ -100,7 +100,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return true;
             }
 

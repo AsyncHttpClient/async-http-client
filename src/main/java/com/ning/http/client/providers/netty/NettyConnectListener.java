@@ -45,19 +45,19 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final HttpRequest nettyRequest;
     private final NettyAsyncHttpProvider provider;
     private final ChannelManager channelManager;
-    private final boolean acquiredConnection;
+    private final boolean channelPreempted;
 
     public NettyConnectListener(AsyncHttpClientConfig config,//
             NettyResponseFuture<T> future,//
             NettyAsyncHttpProvider provider,//
             ChannelManager channelManager,//
-            boolean acquiredConnection) {
+            boolean channelPreempted) {
         this.config = config;
         this.future = future;
         this.nettyRequest = future.getNettyRequest();
         this.provider = provider;
         this.channelManager = channelManager;
-        this.acquiredConnection = acquiredConnection;
+        this.channelPreempted = channelPreempted;
     }
 
     public NettyResponseFuture<T> future() {
@@ -65,7 +65,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void abortChannelPreemption() {
-        if (acquiredConnection)
+        if (channelPreempted)
             channelManager.abortChannelPreemption();
     }
     
@@ -106,6 +106,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                             if (hostnameVerifier.verify(host, session)) {
                                 writeRequest(channel);
                             } else {
+                                abortChannelPreemption();
                                 ConnectException exception = new ConnectException("HostnameVerifier exception");
                                 future.abort(exception);
                                 throw exception;
