@@ -288,8 +288,6 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
                 } else {
                    assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
                 }
-            } catch (Exception e) {
-                System.err.println("WTF"+ e.getMessage());
             }
             assertNotNull(cause);
 

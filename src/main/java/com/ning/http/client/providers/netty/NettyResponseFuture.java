@@ -78,7 +78,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
     private final long start = millisTime();
-    private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private Channel channel;
@@ -108,7 +107,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.asyncHttpProvider = asyncHttpProvider;
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
 
@@ -239,7 +237,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
-        if (!isDone() && !isCancelled()) {
+        if (!isDone()) {
             boolean expired = false;
             if (l == -1) {
                 latch.await();
@@ -440,10 +438,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return b;
     }
 
-    protected NettyAsyncHttpProvider provider() {
-        return asyncHttpProvider;
-    }
-
     protected void attachChannel(Channel channel) {
         this.channel = channel;
     }
@@ -493,8 +487,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
-    public boolean cannotBeReplay() {
-        return isDone() || !canRetry() || isCancelled() || (channel() != null && channel().isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) || isInAuth();
+    public boolean canBeReplay() {
+        return !isDone() && canRetry() && !(channel != null && channel.isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0) && !isInAuth();
     }
 
     public long getStart() {

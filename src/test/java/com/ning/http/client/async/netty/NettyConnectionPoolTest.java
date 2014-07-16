@@ -26,8 +26,8 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.ConnectionPoolTest;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.netty.ChannelPool;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.pool.ChannelPool;
 
 import java.net.ConnectException;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +44,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel connection, String poolKey) {
                 return false;
             }
 
@@ -56,7 +56,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return false;
             }
 
@@ -88,7 +88,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         ChannelPool cp = new ChannelPool() {
 
-            public boolean offer(String key, Channel connection) {
+            public boolean offer(Channel connection, String poolKey) {
                 return true;
             }
 
@@ -100,7 +100,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 return false;
             }
 
-            public boolean canCacheConnection() {
+            public boolean isOpen() {
                 return true;
             }
 
