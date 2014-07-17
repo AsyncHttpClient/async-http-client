@@ -356,36 +356,38 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    // FIXME: fix test
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(120 * 1000).build());
         try {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
+            final AtomicReference<Response> responseRef = new AtomicReference<Response>(null);
+            final AtomicReference<Throwable> throwableRef = new AtomicReference<Throwable>(null);
 
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
-                    Assert.fail();
+                    responseRef.set(response);
                     return response;
                 }
 
                 @Override
                 public void onThrowable(Throwable t) {
-                    try {
-                        assertEquals(t.getClass(), IOException.class);
-                        assertEquals(t.getMessage(), "No response received. Connection timed out");
-                    } finally {
-                        l.countDown();
-                    }
-
+                    throwableRef.set(t);
+                    l.countDown();
                 }
             }).get();
 
             if (!l.await(10 * 5 * 1000, TimeUnit.SECONDS)) {
                 Assert.fail("Timeout out");
             }
+            Assert.assertNull(responseRef.get(), "Got a Response while expecting a Throwable");
+            Throwable t = throwableRef.get();
+            Assert.assertNotNull(t, "Expected a Throwable");
+            assertEquals(t.getClass(), IOException.class);
+            assertEquals(t.getMessage(), "No response received. Connection timed out");
+
         } finally {
             client.close();
         }
