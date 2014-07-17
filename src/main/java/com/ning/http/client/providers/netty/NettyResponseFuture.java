@@ -209,12 +209,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
         cancelTimeouts();
 
+        if (!isDone.getAndSet(true) || isCancelled.get())
+            return;
+
         try {
-            if (exEx.get() != null) {
-                return;
-            }
             getContent();
-            isDone.set(true);
+
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
