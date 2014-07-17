@@ -25,8 +25,8 @@ import static org.glassfish.grizzly.http.server.NetworkListener.DEFAULT_NETWORK_
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class GrizzlyNoTransferEncodingTest {
@@ -37,7 +37,7 @@ public class GrizzlyNoTransferEncodingTest {
     // ------------------------------------------------------------------- Setup
 
 
-    @BeforeTest
+    @BeforeMethod
     public void setup() throws Exception {
         server = new HttpServer();
         final NetworkListener listener =
@@ -70,7 +70,7 @@ public class GrizzlyNoTransferEncodingTest {
     // --------------------------------------------------------------- Tear Down
 
 
-    @AfterTest
+    @AfterMethod
     public void tearDown() {
         server.shutdownNow();
         server = null;

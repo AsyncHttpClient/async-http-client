@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,8 +12,6 @@
  */
 
 package com.ning.http.client.providers.grizzly;
-
-import static com.ning.http.util.DateUtil.millisTime;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
@@ -39,6 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.ning.http.util.DateUtil.millisTime;
+import static com.ning.http.client.providers.grizzly.Utils.*;
 
 /**
  * {@link ConnectionsPool} implementation.
@@ -265,16 +266,6 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             delayedExecutor.stop();
             delayedExecutor.getThreadPool().shutdownNow();
         }
-
-    }
-
-
-    // --------------------------------------------------------- Private Methods
-
-
-    private boolean isSecure(String uri) {
-
-        return (uri.startsWith("https") || uri.startsWith("wss"));
 
     }
 
