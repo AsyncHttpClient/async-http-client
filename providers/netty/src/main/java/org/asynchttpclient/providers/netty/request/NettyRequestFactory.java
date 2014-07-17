@@ -88,20 +88,9 @@ public final class NettyRequestFactory {
         }
     }
 
-    private String hostHeader(Request request, UriComponents uri, Realm realm) {
-
-        String hostHeader = null;
-
+    private String hostHeader(Request request, UriComponents uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-
-        if (host != null) {
-            if (request.getVirtualHost() != null || uri.getPort() == -1)
-                hostHeader = host;
-            else
-                hostHeader = host + ":" + uri.getPort();
-        }
-
-        return hostHeader;
+        return uri.getPort() == -1 ? host : host + ":" + uri.getPort();
     }
 
     private String authorizationHeader(Request request, UriComponents uri, ProxyServer proxyServer, Realm realm) throws IOException {
@@ -147,9 +136,6 @@ public final class NettyRequestFactory {
                     host = request.getVirtualHost();
                 else
                     host = uri.getHost();
-
-                if (host == null)
-                    host = "127.0.0.1";
 
                 try {
                     authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
@@ -318,12 +304,11 @@ public final class NettyRequestFactory {
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
-        String hostHeader = hostHeader(request, uri, realm);
+        String hostHeader = hostHeader(request, uri);
         if (hostHeader != null)
             httpRequest.headers().set(HttpHeaders.Names.HOST, hostHeader);
 
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         String authorizationHeader = authorizationHeader(request, uri, proxyServer, realm);
         if (authorizationHeader != null)
             // don't override authorization but append
