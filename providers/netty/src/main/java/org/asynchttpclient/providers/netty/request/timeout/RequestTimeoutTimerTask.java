@@ -26,12 +26,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
+    private final long requestTimeout;
+
     public RequestTimeoutTimerTask(//
             NettyResponseFuture<?> nettyResponseFuture,//
             Channels channels,//
             TimeoutsHolder timeoutsHolder,//
-            AtomicBoolean clientClosed) {
+            AtomicBoolean clientClosed,//
+            long requestTimeout) {
         super(nettyResponseFuture, channels, timeoutsHolder, clientClosed);
+        this.requestTimeout = requestTimeout;
     }
 
     @Override
@@ -45,7 +49,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         }
 
         if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
-            String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms";
+            String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + requestTimeout + " ms";
             long age = millisTime() - nettyResponseFuture.getStart();
             expire(message, age);
             nettyResponseFuture.setRequestTimeoutReached();

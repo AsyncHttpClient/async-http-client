@@ -253,14 +253,12 @@ public class NettyRequestSender {
     private <T> NettyResponseFuture<T> newNettyResponseFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler,
             NettyRequest nettyRequest, ProxyServer proxyServer) {
 
-        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(//
                 uri,//
                 request,//
                 asyncHandler,//
                 nettyRequest,//
-                requestTimeout,//
-                config,//
+                config.getMaxRequestRetry(),//
                 request.getConnectionPoolKeyStrategy(),//
                 proxyServer);
 
@@ -388,7 +386,7 @@ public class NettyRequestSender {
             TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
             if (requestTimeoutInMs != -1) {
                 Timeout requestTimeout = channels.newTimeoutInMs(new RequestTimeoutTimerTask(nettyResponseFuture, channels, timeoutsHolder,
-                        closed), requestTimeoutInMs);
+                        closed, requestTimeoutInMs), requestTimeoutInMs);
                 timeoutsHolder.requestTimeout = requestTimeout;
             }
 
