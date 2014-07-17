@@ -107,11 +107,6 @@ public class Channels {
         this.config = config;
         this.nettyProviderConfig = nettyProviderConfig;
 
-        // FIXME https://github.com/netty/netty/issues/2132
-        if (config.getRequestCompressionLevel() > 0) {
-            LOGGER.warn("Request was enabled but Netty actually doesn't support this feature, see https://github.com/netty/netty/issues/2132");
-        }
-
         // check if external EventLoopGroup is defined
         allowReleaseEventLoopGroup = nettyProviderConfig.getEventLoopGroup() == null;
         eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyProviderConfig.getEventLoopGroup();

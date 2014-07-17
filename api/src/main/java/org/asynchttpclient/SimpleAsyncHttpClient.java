@@ -565,11 +565,6 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
-            configBuilder.setRequestCompressionLevel(requestCompressionLevel);
-            return this;
-        }
-
         public Builder setRealmNtlmDomain(String domain) {
             realm().setNtlmDomain(domain);
             return this;
