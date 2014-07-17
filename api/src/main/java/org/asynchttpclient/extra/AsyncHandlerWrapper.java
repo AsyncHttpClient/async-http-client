@@ -8,16 +8,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 
-    private final static Logger logger = LoggerFactory.getLogger(AsyncHandlerWrapper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncHandlerWrapper.class);
     private final AsyncHandler<T> asyncHandler;
     private final Semaphore available;
+    private final AtomicBoolean complete = new AtomicBoolean(false);
 
     public AsyncHandlerWrapper(AsyncHandler<T> asyncHandler, Semaphore available) {
         this.asyncHandler = asyncHandler;
         this.available = available;
+    }
+
+    private void complete() {
+        if (complete.compareAndSet(false, true))
+            available.release();
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
     }
 
     /**
@@ -28,10 +37,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
         try {
             asyncHandler.onThrowable(t);
         } finally {
-            available.release();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
-            }
+            complete();
         }
     }
 
@@ -64,10 +70,10 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
      */
     @Override
     public T onCompleted() throws Exception {
-        available.release();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Current Throttling Status {}", available.availablePermits());
+        try {
+            return asyncHandler.onCompleted();
+        } finally {
+            complete();
         }
-        return asyncHandler.onCompleted();
     }
 }
