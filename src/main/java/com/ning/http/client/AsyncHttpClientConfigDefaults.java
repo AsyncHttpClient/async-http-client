@@ -105,8 +105,8 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowPoolingSslConnections", true);
     }
 
-    public static boolean defaultDisableUrlEncodingForBoundedRequests() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundedRequests");
+    public static boolean defaultDisableUrlEncodingForBoundRequests() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
     }
 
     public static boolean defaultRemoveQueryParamOnRedirect() {

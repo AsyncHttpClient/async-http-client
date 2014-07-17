@@ -75,7 +75,7 @@ public class AsyncHttpClientConfig {
     protected List<ResponseFilter> responseFilters;
     protected List<IOExceptionFilter> ioExceptionFilters;
     protected int maxRequestRetry;
-    protected boolean disableUrlEncodingForBoundedRequests;
+    protected boolean disableUrlEncodingForBoundRequests;
     protected int ioThreadMultiplier;
     protected TimeConverter timeConverter;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -142,7 +142,7 @@ public class AsyncHttpClientConfig {
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
         this.maxRequestRetry = maxRequestRetry;
-        this.disableUrlEncodingForBoundedRequests = disableUrlEncodingForBoundedRequests;
+        this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundedRequests;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.timeConverter = timeConverter;
         this.providerConfig = providerConfig;
@@ -353,7 +353,7 @@ public class AsyncHttpClientConfig {
      * @return the disableUrlEncodingForBoundedRequests
      */
     public boolean isDisableUrlEncodingForBoundedRequests() {
-        return disableUrlEncodingForBoundedRequests;
+        return disableUrlEncodingForBoundRequests;
     }
 
     /**
@@ -481,7 +481,7 @@ public class AsyncHttpClientConfig {
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
         private int maxRequestRetry = defaultMaxRequestRetry();
-        private boolean disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundedRequests();
+        private boolean disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundRequests();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private TimeConverter timeConverter;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
