@@ -33,7 +33,7 @@ import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.request.timeout.IdleConnectionTimeoutTimerTask;
+import org.asynchttpclient.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
 import org.asynchttpclient.uri.UriComponents;
@@ -393,9 +393,9 @@ public class NettyRequestSender {
             int readTimeout = config.getReadTimeout();
             if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
                 // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
-                Timeout idleConnectionTimeout = channels.newTimeoutInMs(new IdleConnectionTimeoutTimerTask(nettyResponseFuture, channels,
+                Timeout idleConnectionTimeout = channels.newTimeoutInMs(new ReadTimeoutTimerTask(nettyResponseFuture, channels,
                         timeoutsHolder, closed, requestTimeoutInMs, readTimeout), readTimeout);
-                timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
+                timeoutsHolder.readTimeout = idleConnectionTimeout;
             }
             nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
         } catch (RejectedExecutionException ex) {

@@ -23,7 +23,7 @@ public class TimeoutsHolder {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
     public volatile Timeout requestTimeout;
-    public volatile Timeout idleConnectionTimeout;
+    public volatile Timeout readTimeout;
 
     public void cancel() {
         if (cancelled.compareAndSet(false, true)) {
@@ -31,9 +31,9 @@ public class TimeoutsHolder {
                 requestTimeout.cancel();
                 requestTimeout = null;
             }
-            if (idleConnectionTimeout != null) {
-                idleConnectionTimeout.cancel();
-                idleConnectionTimeout = null;
+            if (readTimeout != null) {
+                readTimeout.cancel();
+                readTimeout = null;
             }
         }
     }
