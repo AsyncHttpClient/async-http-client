@@ -169,16 +169,15 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     private V getContent() throws ExecutionException {
-        // FIXME why lose the exception???
-        ExecutionException e = exEx.getAndSet(null);
-        if (e != null) {
+
+        ExecutionException e = exEx.get();
+        if (e != null)
             throw e;
-        }
 
         V update = content.get();
         // No more retry
         currentRetry.set(maxRetry);
-        if (exEx.get() == null && !contentProcessed.getAndSet(true)) {
+        if (!contentProcessed.getAndSet(true)) {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
