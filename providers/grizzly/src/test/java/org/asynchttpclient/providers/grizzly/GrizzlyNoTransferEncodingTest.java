@@ -13,21 +13,21 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
+import static org.glassfish.grizzly.http.server.NetworkListener.DEFAULT_NETWORK_HOST;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import static org.glassfish.grizzly.http.server.NetworkListener.DEFAULT_NETWORK_HOST;
 
 public class GrizzlyNoTransferEncodingTest {
     private static final String TEST_MESSAGE = "Hello World!";
@@ -37,7 +37,7 @@ public class GrizzlyNoTransferEncodingTest {
     // ------------------------------------------------------------------- Setup
 
 
-    @BeforeTest
+    @BeforeMethod
     public void setup() throws Exception {
         server = new HttpServer();
         final NetworkListener listener =
@@ -70,7 +70,7 @@ public class GrizzlyNoTransferEncodingTest {
     // --------------------------------------------------------------- Tear Down
 
 
-    @AfterTest
+    @AfterMethod
     public void tearDown() {
         server.shutdownNow();
         server = null;

@@ -73,7 +73,9 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.glassfish.grizzly.nio.RoundRobinConnectionDistributor;
 import org.glassfish.grizzly.spdy.SpdyVersion;
+import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -305,6 +307,23 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         secure.add(new WebSocketClientFilter());
 
         clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(AUTO_SIZE);
+        
+        clientTransport.setNIOChannelDistributor(
+                new RoundRobinConnectionDistributor(clientTransport, false, false));
+        
+        final int kernelThreadsCount =
+                clientConfig.getIoThreadMultiplier() *
+                Runtime.getRuntime().availableProcessors();
+        
+        clientTransport.setSelectorRunnersCount(kernelThreadsCount);
+        clientTransport.setKernelThreadPoolConfig(
+                ThreadPoolConfig.defaultConfig()
+                .setCorePoolSize(kernelThreadsCount)
+                .setMaxPoolSize(kernelThreadsCount)
+                .setPoolName("grizzly-ahc-kernel")
+//                .setPoolName(Utils.discoverTestName("grizzly-ahc-kernel")) // uncomment for tests to track down the leaked threads
+        );
+        
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer) providerConfig.getProperty(Property.TRANSPORT_CUSTOMIZER);
             if (customizer != null) {

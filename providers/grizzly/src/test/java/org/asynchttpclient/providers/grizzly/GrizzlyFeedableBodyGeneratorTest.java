@@ -13,24 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.RequestBuilder;
-import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.http.server.HttpHandler;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.grizzly.http.server.NetworkListener;
-import org.glassfish.grizzly.http.server.Request;
-import org.glassfish.grizzly.http.server.Response;
-import org.glassfish.grizzly.memory.Buffers;
-import org.glassfish.grizzly.ssl.SSLContextConfigurator;
-import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
-import org.glassfish.grizzly.utils.Charsets;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,14 +24,30 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.providers.grizzly.FeedableBodyGenerator.NonBlockingFeeder;
-
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.http.server.HttpHandler;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.NetworkListener;
 import static org.glassfish.grizzly.http.server.NetworkListener.DEFAULT_NETWORK_HOST;
+import org.glassfish.grizzly.http.server.Request;
+import org.glassfish.grizzly.http.server.Response;
+import org.glassfish.grizzly.memory.Buffers;
 import static org.glassfish.grizzly.memory.MemoryManager.DEFAULT_MEMORY_MANAGER;
+import org.glassfish.grizzly.ssl.SSLContextConfigurator;
+import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
+import org.glassfish.grizzly.utils.Charsets;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 import static org.testng.AssertJUnit.assertEquals;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 public class GrizzlyFeedableBodyGeneratorTest {
 
@@ -67,7 +65,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
     // ------------------------------------------------------------------- Setup
 
 
-    @BeforeTest
+    @BeforeMethod
     public void setup() throws Exception {
         generateTempFile();
         server = new HttpServer();
@@ -91,7 +89,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
     // --------------------------------------------------------------- Tear Down
 
 
-    @AfterTest
+    @AfterMethod
     public void tearDown() {
         if (!tempFile.delete()) {
             tempFile.deleteOnExit();
