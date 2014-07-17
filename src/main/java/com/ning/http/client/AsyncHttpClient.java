@@ -136,12 +136,12 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
  * <p/>
  * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
  * <blockquote><pre>
- *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
+ *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(...).build());
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
  * <p/>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
 public class AsyncHttpClient implements Closeable {
