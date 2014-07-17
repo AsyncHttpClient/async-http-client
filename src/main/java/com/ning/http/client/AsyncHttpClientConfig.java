@@ -71,7 +71,6 @@ public class AsyncHttpClientConfig {
     protected List<RequestFilter> requestFilters;
     protected List<ResponseFilter> responseFilters;
     protected List<IOExceptionFilter> ioExceptionFilters;
-    protected int requestCompressionLevel;
     protected int maxRequestRetry;
     protected boolean allowSslConnectionPool;
     protected boolean disableUrlEncodingForBoundedRequests;
@@ -108,7 +107,6 @@ public class AsyncHttpClientConfig {
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
-                                  int requestCompressionLevel,
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
                                   boolean disableUrlEncodingForBoundedRequests,
@@ -139,7 +137,6 @@ public class AsyncHttpClientConfig {
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
-        this.requestCompressionLevel = requestCompressionLevel;
         this.maxRequestRetry = maxRequestRetry;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
@@ -343,15 +340,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the compression level, or -1 if no compression is used.
-     *
-     * @return the compression level, or -1 if no compression is use
-     */
-    public int getRequestCompressionLevel() {
-        return requestCompressionLevel;
-    }
-
-    /**
      * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
      *
      * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
@@ -489,7 +477,6 @@ public class AsyncHttpClientConfig {
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean allowPoolingConnection = defaultAllowPoolingConnection();
         private boolean useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
-        private int requestCompressionLevel = defaultRequestCompressionLevel();
         private int maxRequestRetry = defaultMaxRequestRetry();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private boolean allowSslConnectionPool = defaultAllowSslConnectionPool();
@@ -788,26 +775,6 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Return the compression level, or -1 if no compression is used.
-         *
-         * @return the compression level, or -1 if no compression is use
-         */
-        public int getRequestCompressionLevel() {
-            return requestCompressionLevel;
-        }
-
-        /**
-         * Set the compression level, or -1 if no compression is used.
-         *
-         * @param requestCompressionLevel compression level, or -1 if no compression is use
-         * @return this
-         */
-        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
-            this.requestCompressionLevel = requestCompressionLevel;
-            return this;
-        }
-
-        /**
          * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
          *
          * @param maxRequestRetry the number of time a request will be retried
@@ -977,7 +944,6 @@ public class AsyncHttpClientConfig {
             responseFilters.addAll(prototype.getResponseFilters());
             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
 
-            requestCompressionLevel = prototype.getRequestCompressionLevel();
             disableUrlEncodingForBoundedRequests = prototype.isDisableUrlEncodingForBoundedRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
@@ -1040,7 +1006,6 @@ public class AsyncHttpClientConfig {
                     requestFilters, //
                     responseFilters, //
                     ioExceptionFilters, //
-                    requestCompressionLevel, //
                     maxRequestRetry, //
                     allowSslConnectionPool, //
                     disableUrlEncodingForBoundedRequests, //

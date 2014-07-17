@@ -544,11 +544,6 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
-            configBuilder.setRequestCompressionLevel(requestCompressionLevel);
-            return this;
-        }
-
         public Builder setRealmNtlmDomain(String ntlmDomain) {
             realm().setNtlmDomain(ntlmDomain);
             return this;

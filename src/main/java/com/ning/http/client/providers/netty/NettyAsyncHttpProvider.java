@@ -190,10 +190,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             providerConfig = new NettyAsyncHttpProviderConfig();
         }
 
-        if (config.getRequestCompressionLevel() > 0) {
-            LOGGER.warn("Request was enabled but Netty actually doesn't support this feature");
-        }
-
         // check if external NioClientSocketChannelFactory is defined
         if (providerConfig.getSocketChannelFactory() != null) {
             socketChannelFactory = providerConfig.getSocketChannelFactory();

@@ -97,11 +97,6 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
     }
 
-    // unused/broken, left there for compatibility, fixed in Netty 4
-    public static int defaultRequestCompressionLevel() {
-        return Integer.getInteger(ASYNC_CLIENT + "requestCompressionLevel", -1);
-    }
-
     public static int defaultMaxRequestRetry() {
         return Integer.getInteger(ASYNC_CLIENT + "maxRequestRetry", 5);
     }
