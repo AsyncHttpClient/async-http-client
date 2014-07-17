@@ -232,7 +232,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final HttpTxContext context = HttpTxContext.get(ctx);
                     if (context != null) {
                         if (context.isWSRequest()) {
-                            return clientConfig.getWebSocketReadTimeout();
+                            return clientConfig.getWebSocketTimeout();
                         }
                         int requestTimeout = AsyncHttpProviderUtils.requestTimeout(clientConfig, context.getRequest());
                         if (requestTimeout > 0) {

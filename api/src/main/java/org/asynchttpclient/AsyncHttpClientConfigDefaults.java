@@ -49,8 +49,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "requestTimeout", 60 * 1000);
     }
 
-    public static int defaultWebSocketReadTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "webSocketReadTimeout", 15 * 60 * 1000);
+    public static int defaultWebSocketTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "webSocketTimeout", 15 * 60 * 1000);
     }
 
     public static int defaultConnectionTTL() {
