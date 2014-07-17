@@ -148,6 +148,8 @@ import org.slf4j.LoggerFactory;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import org.glassfish.grizzly.nio.RoundRobinConnectionDistributor;
+import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -421,6 +423,24 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         fcb.add(clientFilter);
         clientTransport.getAsyncQueueIO().getWriter()
                        .setMaxPendingBytesPerConnection(AsyncQueueWriter.AUTO_SIZE);
+        
+        clientTransport.setNIOChannelDistributor(
+                new RoundRobinConnectionDistributor(clientTransport, false, false));
+        
+        final int kernelThreadsCount =
+                clientConfig.getIoThreadMultiplier() *
+                Runtime.getRuntime().availableProcessors();
+        
+        clientTransport.setSelectorRunnersCount(kernelThreadsCount);
+        clientTransport.setKernelThreadPoolConfig(
+                ThreadPoolConfig.defaultConfig()
+                .setCorePoolSize(kernelThreadsCount)
+                .setMaxPoolSize(kernelThreadsCount)
+                .setPoolName("grizzly-ahc-kernel")
+//                .setPoolName(discoverTestName("grizzly-ahc-kernel")) // uncomment for tests to track down the leaked threads
+        );
+
+        
         final TransportCustomizer customizer = (TransportCustomizer)
                 providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
         if (customizer != null) {
@@ -429,7 +449,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             doDefaultTransportConfig();
         }
         fcb.add(new WebSocketFilter());
-
+        
         clientTransport.setProcessor(fcb.build());
 
     }

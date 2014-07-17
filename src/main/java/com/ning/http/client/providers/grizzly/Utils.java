@@ -31,4 +31,20 @@ public class Utils {
         final String scheme = uri.getScheme();
         return ("https".equals(scheme) || "wss".equals(scheme));
     }
+    
+    static String discoverTestName(final String defaultName) {
+        final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        final int strackTraceLen = stackTrace.length;
+        
+        if (stackTrace[strackTraceLen - 1].getClassName().contains("surefire")) {
+            for (int i = strackTraceLen - 2; i >= 0; i--) {
+                if (stackTrace[i].getClassName().contains("com.ning.http.client.async")) {
+                    return "grizzly-kernel-" +
+                            stackTrace[i].getClassName() + "." + stackTrace[i].getMethodName();
+                }
+            }
+        }
+        
+        return defaultName;
+    }    
 }
