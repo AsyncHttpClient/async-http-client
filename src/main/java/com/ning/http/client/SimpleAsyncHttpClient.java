@@ -40,9 +40,9 @@ import com.ning.http.client.uri.UriComponents;
  * {@link AsyncHandler} are required. As simple as:
  * <blockquote><pre>
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
- * .setIdleConnectionInPoolTimeoutInMs(100)
+ * .setIdleConnectionInPoolTimeout(100)
  * .setMaximumConnectionsTotal(50)
- * .setRequestTimeoutInMs(5 * 60 * 1000)
+ * .setRequestTimeout(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
  * <p/>
@@ -490,32 +490,32 @@ public class SimpleAsyncHttpClient {
         }
 
         public Builder setMaximumConnectionsTotal(int defaultMaxTotalConnections) {
-            configBuilder.setMaximumConnectionsTotal(defaultMaxTotalConnections);
+            configBuilder.setMaxConnections(defaultMaxTotalConnections);
             return this;
         }
 
         public Builder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
-            configBuilder.setMaximumConnectionsPerHost(defaultMaxConnectionPerHost);
+            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionPerHost);
             return this;
         }
 
-        public Builder setConnectionTimeoutInMs(int connectionTimeuot) {
-            configBuilder.setConnectionTimeoutInMs(connectionTimeuot);
+        public Builder setConnectionTimeout(int connectionTimeuot) {
+            configBuilder.setConnectionTimeout(connectionTimeuot);
             return this;
         }
 
-        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPoolTimeoutInMs) {
-            configBuilder.setIdleConnectionInPoolTimeoutInMs(defaultIdleConnectionInPoolTimeoutInMs);
+        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+            configBuilder.setPooledConnectionIdleTimeout(pooledConnectionIdleTimeout);
             return this;
         }
 
-        public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
-            configBuilder.setRequestTimeoutInMs(defaultRequestTimeoutInMs);
+        public Builder setRequestTimeout(int defaultRequestTimeout) {
+            configBuilder.setRequestTimeout(defaultRequestTimeout);
             return this;
         }
 
         public Builder setMaximumNumberOfRedirects(int maxDefaultRedirects) {
-            configBuilder.setMaximumNumberOfRedirects(maxDefaultRedirects);
+            configBuilder.setMaxRedirects(maxDefaultRedirects);
             return this;
         }
 
@@ -529,8 +529,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
-            configBuilder.setAllowPoolingConnection(allowPoolingConnection);
+        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
+            configBuilder.setAllowPoolingConnections(allowPoolingConnections);
             return this;
         }
 

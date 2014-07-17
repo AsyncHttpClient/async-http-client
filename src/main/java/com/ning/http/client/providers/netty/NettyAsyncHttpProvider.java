@@ -222,7 +222,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ChannelPool channelPool = providerConfig.getChannelPool();
-        if (channelPool == null && config.isAllowPoolingConnection()) {
+        if (channelPool == null && config.isAllowPoolingConnections()) {
             channelPool = new DefaultChannelPool(config, nettyTimer);
         } else if (channelPool == null) {
             channelPool = new NoopChannelPool();
@@ -503,19 +503,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             future.touch();
-            int requestTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
+            int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
             TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
-            if (requestTimeoutInMs != -1) {
-                Timeout requestTimeout = newTimeoutInMs(new RequestTimeoutTimerTask(future, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
-                timeoutsHolder.requestTimeout = requestTimeout;
+            if (requestTimeout != -1) {
+                timeoutsHolder.requestTimeout = newTimeout(new RequestTimeoutTimerTask(future, this, timeoutsHolder, requestTimeout), requestTimeout);
             }
 
-            int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
-            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs <= requestTimeoutInMs) {
-                // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
-                Timeout idleConnectionTimeout = newTimeoutInMs(new IdleConnectionTimeoutTimerTask(future, this, timeoutsHolder,
-                        requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
-                timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
+            int idleConnectionTimeout = config.getReadTimeout();
+            if (idleConnectionTimeout != -1 && idleConnectionTimeout <= requestTimeout) {
+                // no need for a idleConnectionTimeout that's less than the requestTimeout
+                timeoutsHolder.idleConnectionTimeout = newTimeout(new IdleConnectionTimeoutTimerTask(future, this, timeoutsHolder,
+                        requestTimeout, idleConnectionTimeout), idleConnectionTimeout);
             }
             future.setTimeoutsHolder(timeoutsHolder);
 
@@ -912,13 +910,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             // only compute when maxConnectionPerHost is enabled
             // FIXME clean up
-            if (config.getMaxConnectionPerHost() > 0)
+            if (config.getMaxConnectionsPerHost() > 0)
                 poolKey = getPoolKey(connectListenerFuture);
 
             if (channelManager.preemptChannel(poolKey)) {
                 channelPreempted = true;
             } else {
-                IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+                IOException ex = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
                 try {
                     asyncHandler.onThrowable(ex);
                 } catch (Exception e) {
@@ -934,7 +932,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = (request.getURI().getScheme().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap
                 : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
-        bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
+        bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeout());
 
         try {
             InetSocketAddress remoteAddress;
@@ -2293,8 +2291,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return isClose.get();
     }
 
-    public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
-        return nettyTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
+    public Timeout newTimeout(TimerTask task, long delay) {
+        return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     }
 
     private static boolean isWebSocket(String scheme) {

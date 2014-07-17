@@ -74,7 +74,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         final Semaphore requestThrottle = new Semaphore(1);
 
         final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true)
-                .setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+                .setAllowPoolingConnections(true).setMaxConnections(1).build());
 
         try {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -88,7 +88,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                             requestThrottle.acquire();
                             Future<Response> responseFuture = null;
                             try {
-                                responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(SLEEPTIME_MS / 2)
+                                responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(SLEEPTIME_MS / 2)
                                         .execute(new AsyncCompletionHandler<Response>() {
 
                                             @Override

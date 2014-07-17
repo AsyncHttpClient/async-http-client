@@ -345,7 +345,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final FilterChainBuilder fcb = FilterChainBuilder.stateless();
         fcb.add(new TransportFilter());
 
-        final int timeout = clientConfig.getRequestTimeoutInMs();
+        final int timeout = clientConfig.getRequestTimeout();
         if (timeout > 0) {
             int delay = 500;
             if (timeout < delay) {
@@ -361,9 +361,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     HttpTransactionContext.get(ctx.getConnection());
                             if (context != null) {
                                 if (context.isWSRequest) {
-                                    return clientConfig.getWebSocketIdleTimeoutInMs();
+                                    return clientConfig.getWebSocketReadTimeout();
                                 }
-                                final long timeout = context.request.getRequestTimeoutInMs();
+                                final long timeout = context.request.getRequestTimeout();
                                 if (timeout > 0) {
                                     return timeout;
                                 }
@@ -460,14 +460,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     void touchConnection(final Connection c, final Request request) {
 
-        final long perRequestTimeout = request.getRequestTimeoutInMs();
+        final long perRequestTimeout = request.getRequestTimeout();
         if (perRequestTimeout > 0) {
             final long newTimeout = System.currentTimeMillis() + perRequestTimeout;
             if (resolver != null) {
                 resolver.setTimeoutMillis(c, newTimeout);
             }
         } else {
-            final long timeout = clientConfig.getRequestTimeoutInMs();
+            final long timeout = clientConfig.getRequestTimeout();
             if (timeout > 0) {
                 if (resolver != null) {
                     resolver.setTimeoutMillis(c, System.currentTimeMillis() + timeout);
@@ -1407,7 +1407,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                             context.protocolHandler,
                                             ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
-                        final int wsTimeout = context.provider.clientConfig.getWebSocketIdleTimeoutInMs();
+                        final int wsTimeout = context.provider.clientConfig.getWebSocketReadTimeout();
                         IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(),
                                 ((wsTimeout <= 0)
                                         ? IdleTimeoutFilter.FOREVER
@@ -2354,7 +2354,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ConnectionPool connectionPool;
             this.provider = provider;
             final AsyncHttpClientConfig config = provider.clientConfig;
-            if (config.isAllowPoolingConnection()) {
+            if (config.isAllowPoolingConnections()) {
                 ConnectionPool pool = providerConfig != null ? providerConfig.getConnectionPool() : null;
                 if (pool != null) {
                     connectionPool = pool;
@@ -2366,7 +2366,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             pool = connectionPool;
             connectionHandler = TCPNIOConnectorHandler.builder(transport).build();
-            final int maxConns = provider.clientConfig.getMaxTotalConnections();
+            final int maxConns = provider.clientConfig.getMaxConnections();
             connectionMonitor = new ConnectionMonitor(maxConns);
 
 
@@ -2454,7 +2454,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final ProxyServer proxy = requestFuture.getProxy();
             String host = (proxy != null) ? proxy.getHost() : uri.getHost();
             int port = (proxy != null) ? proxy.getPort() : uri.getPort();
-            int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
+            int cTimeout = provider.clientConfig.getConnectionTimeout();
             FutureImpl<Connection> future = Futures.createSafeFuture();
             CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                     createConnectionCompletionHandler(request, requestFuture, null));
@@ -2967,7 +2967,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 e.printStackTrace();
             }
             AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                    .setConnectionTimeoutInMs(5000)
+                    .setConnectionTimeout(5000)
                     .setSSLContext(sslContext).build();
             AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
             try {

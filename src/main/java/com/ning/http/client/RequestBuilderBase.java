@@ -63,7 +63,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private Realm realm;
         private File file;
         private Boolean followRedirects;
-        private int requestTimeoutInMs;
+        private int requestTimeout;
         private long rangeOffset;
         public String charset;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
@@ -92,7 +92,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
                 this.followRedirects = prototype.getFollowRedirect();
-                this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
+                this.requestTimeout = prototype.getRequestTimeout();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
@@ -171,8 +171,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return followRedirects;
         }
 
-        public int getRequestTimeoutInMs() {
-            return requestTimeoutInMs;
+        public int getRequestTimeout() {
+            return requestTimeout;
         }
 
         public long getRangeOffset() {
@@ -489,8 +489,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setRequestTimeoutInMs(int requestTimeoutInMs) {
-        request.requestTimeoutInMs = requestTimeoutInMs;
+    public T setRequestTimeout(int requestTimeout) {
+        request.requestTimeout = requestTimeout;
         return derived.cast(this);
     }
 

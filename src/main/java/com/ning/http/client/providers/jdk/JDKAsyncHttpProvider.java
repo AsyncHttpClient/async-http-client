@@ -128,8 +128,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             throw new IOException("Closed");
         }
 
-        if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
-            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+        if (config.getMaxConnections() > -1 && (maxConnections.get() + 1) > config.getMaxConnections()) {
+            throw new IOException(String.format("Too many connections %s", config.getMaxConnections()));
         }
 
         ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
@@ -373,7 +373,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     try {
                         fc = handleIoException(fc);
                     } catch (FilterException e) {
-                        if (config.getMaxTotalConnections() != -1) {
+                        if (config.getMaxConnections() != -1) {
                             maxConnections.decrementAndGet();
                         }
                         future.done();
@@ -393,7 +393,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 }
             } finally {
                 if (terminate) {
-                    if (config.getMaxTotalConnections() != -1) {
+                    if (config.getMaxConnections() != -1) {
                         maxConnections.decrementAndGet();
                     }
                     urlConnection.disconnect();
@@ -421,8 +421,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 t = new ConnectException(t.getMessage());
 
             } else if (t instanceof SocketTimeoutException) {
-                int responseTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, request);
-                t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+                int responseTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
+                t = new TimeoutException(String.format("No response received after %s", responseTimeout));
 
             } else if (t instanceof SSLHandshakeException) {
                 Throwable t2 = new ConnectException();
@@ -437,7 +437,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
-            urlConnection.setConnectTimeout(config.getConnectionTimeoutInMs());
+            urlConnection.setConnectTimeout(config.getConnectionTimeout());
 
             if (requestTimeout != -1)
                 urlConnection.setReadTimeout(requestTimeout);

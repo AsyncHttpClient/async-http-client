@@ -75,7 +75,7 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     @Test(groups = {"online", "default_provider"})
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(10 * 1000).build();
         AsyncHttpClient client = getAsyncHttpClient(cg);
 
         try {

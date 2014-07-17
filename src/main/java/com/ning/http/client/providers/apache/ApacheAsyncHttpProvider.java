@@ -191,8 +191,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
         }
 
-        if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
-            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+        if (config.getMaxConnections() > -1 && (maxConnections.get() + 1) > config.getMaxConnections()) {
+            throw new IOException(String.format("Too many connections %s", config.getMaxConnections()));
         }
 
         if (idleConnectionTimeoutThread != null) {
@@ -201,9 +201,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
-        if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout != -1 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
+        if (config.getReadTimeout() > 0 && requestTimeout != -1 && requestTimeout < config.getReadTimeout()) {
             idleConnectionTimeoutThread = new IdleConnectionTimeoutThread();
-            idleConnectionTimeoutThread.setConnectionTimeout(config.getIdleConnectionTimeoutInMs());
+            idleConnectionTimeoutThread.setConnectionTimeout(config.getReadTimeout());
             idleConnectionTimeoutThread.addConnectionManager(connectionManager);
             idleConnectionTimeoutThread.start();
         }
@@ -605,7 +605,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     try {
                         fc = handleIoException(fc);
                     } catch (FilterException e) {
-                        if (config.getMaxTotalConnections() != -1) {
+                        if (config.getMaxConnections() != -1) {
                             maxConnections.decrementAndGet();
                         }
                         future.done();
@@ -631,7 +631,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
             } finally {
                 if (terminate) {
-                    if (config.getMaxTotalConnections() != -1) {
+                    if (config.getMaxConnections() != -1) {
                         maxConnections.decrementAndGet();
                     }
                     future.done();
@@ -653,8 +653,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 t = new ConnectException(t.getMessage());
 
             } else if (t instanceof NoHttpResponseException) {
-                int responseTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, request);
-                t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+                int responseTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
+                t = new TimeoutException(String.format("No response received after %s", responseTimeout));
 
             } else if (t instanceof SSLHandshakeException) {
                 Throwable t2 = new ConnectException();

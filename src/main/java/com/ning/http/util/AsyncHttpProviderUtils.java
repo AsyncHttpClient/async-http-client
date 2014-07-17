@@ -216,11 +216,11 @@ public class AsyncHttpProviderUtils {
     }
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
-        return config.isAllowPoolingConnection() ? "keep-alive" : "close";
+        return config.isAllowPoolingConnections() ? "keep-alive" : "close";
     }
     
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
-        return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+        return request.getRequestTimeout() != 0 ? request.getRequestTimeout() : config.getRequestTimeout();
     }
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {

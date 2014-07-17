@@ -129,7 +129,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     @Test
     public void testHostNotContactable() {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+                .setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = null;
             try {

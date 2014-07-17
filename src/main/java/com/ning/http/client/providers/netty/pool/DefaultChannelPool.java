@@ -53,10 +53,10 @@ public final class DefaultChannelPool implements ChannelPool {
     private final long cleanerPeriod;
 
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
-        this(config.getMaxConnectionPerHost(),//
-                config.getIdleConnectionInPoolTimeoutInMs(),//
-                config.getMaxConnectionLifeTimeInMs(),//
-                config.isSslConnectionPoolEnabled(),//
+        this(config.getMaxConnectionsPerHost(),//
+                config.getPooledConnectionIdleTimeout(),//
+                config.getConnectionTTL(),//
+                config.isAllowPoolingSslConnections(),//
                 hashedWheelTimer);
     }
 

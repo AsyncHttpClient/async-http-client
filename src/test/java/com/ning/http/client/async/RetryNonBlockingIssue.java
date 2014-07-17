@@ -128,10 +128,10 @@ public class RetryNonBlockingIssue {
     public void testRetryNonBlocking() throws IOException, InterruptedException,
             ExecutionException {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
-        .setAllowPoolingConnection(true)//
-        .setMaximumConnectionsTotal(100)//
-        .setConnectionTimeoutInMs(60000)//
-        .setRequestTimeoutInMs(30000);
+        .setAllowPoolingConnections(true)//
+        .setMaxConnections(100)//
+        .setConnectionTimeout(60000)//
+        .setRequestTimeout(30000);
         
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
@@ -162,10 +162,10 @@ public class RetryNonBlockingIssue {
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException,
             ExecutionException {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
-        .setAllowPoolingConnection(true)//
-        .setMaximumConnectionsTotal(100)//
-        .setConnectionTimeoutInMs(60000)//
-        .setRequestTimeoutInMs(30000);
+        .setAllowPoolingConnections(true)//
+        .setMaxConnections(100)//
+        .setConnectionTimeout(60000)//
+        .setRequestTimeout(30000);
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
         try {
@@ -195,10 +195,10 @@ public class RetryNonBlockingIssue {
     public void testRetryBlocking() throws IOException, InterruptedException,
             ExecutionException {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
-        .setAllowPoolingConnection(true)//
-        .setMaximumConnectionsTotal(100)//
-        .setConnectionTimeoutInMs(30000)//
-        .setRequestTimeoutInMs(30000);
+        .setAllowPoolingConnections(true)//
+        .setMaxConnections(100)//
+        .setConnectionTimeout(30000)//
+        .setRequestTimeout(30000);
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new
                 ArrayList<ListenableFuture<Response>>();

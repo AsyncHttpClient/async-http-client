@@ -104,11 +104,11 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
     public void testGetRedirectFinalUrl() {
 
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnection(true)//
-                .setMaximumConnectionsPerHost(1)//
-                .setMaximumConnectionsTotal(1)//
-                .setConnectionTimeoutInMs(1000)//
-                .setRequestTimeoutInMs(1000)//
+                .setAllowPoolingConnections(true)//
+                .setMaxConnectionsPerHost(1)//
+                .setMaxConnections(1)//
+                .setConnectionTimeout(1000)//
+                .setRequestTimeout(1000)//
                 .setFollowRedirect(true);
 
         AsyncHttpClient client = getAsyncHttpClient(bc.build());

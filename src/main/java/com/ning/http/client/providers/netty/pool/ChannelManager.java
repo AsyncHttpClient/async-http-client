@@ -42,7 +42,7 @@ public class ChannelManager {
     public ChannelManager(AsyncHttpClientConfig config, ChannelPool channelPool) {
         this.channelPool = channelPool;
 
-        maxTotalConnectionsEnabled = config.getMaxTotalConnections() > 0;
+        maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         
         if (maxTotalConnectionsEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
@@ -63,14 +63,14 @@ public class ChannelManager {
                     return removed;
                 }
             };
-            freeChannels = new Semaphore(config.getMaxTotalConnections());
+            freeChannels = new Semaphore(config.getMaxConnections());
         } else {
             openChannels = new CleanupChannelGroup("asyncHttpClient");
             freeChannels = null;
         }
 
-        maxConnectionsPerHost = config.getMaxConnectionPerHost();
-        maxConnectionsPerHostEnabled = config.getMaxConnectionPerHost() > 0;
+        maxConnectionsPerHost = config.getMaxConnectionsPerHost();
+        maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
         
         if (maxConnectionsPerHostEnabled) {
             freeChannelsPerHost = new ConcurrentHashMap<String, Semaphore>();

@@ -25,36 +25,36 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static final String ASYNC_CLIENT = AsyncHttpClientConfig.class.getName() + ".";
 
-    public static int defaultMaxTotalConnections() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxTotalConnections", -1);
+    public static int defaultMaxConnections() {
+        return Integer.getInteger(ASYNC_CLIENT + "maxConnections", -1);
     }
 
-    public static int defaultMaxConnectionPerHost() {
+    public static int defaultMaxConnectionsPerHost() {
         return Integer.getInteger(ASYNC_CLIENT + "maxConnectionsPerHost", -1);
     }
 
-    public static int defaultConnectionTimeOutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "connectionTimeoutInMs", 60 * 1000);
+    public static int defaultConnectionTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "connectionTimeout", 60 * 1000);
     }
 
-    public static int defaultIdleConnectionInPoolTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "idleConnectionInPoolTimeoutInMs", 60 * 1000);
+    public static int defaultPooledConnectionIdleTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "pooledConnectionIdleTimeout", 60 * 1000);
     }
 
-    public static int defaultIdleConnectionTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "idleConnectionTimeoutInMs", 60 * 1000);
+    public static int defaultReadTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "readTimeout", 60 * 1000);
     }
 
-    public static int defaultRequestTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "requestTimeoutInMs", 60 * 1000);
+    public static int defaultRequestTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "requestTimeout", 60 * 1000);
     }
 
-    public static int defaultWebSocketIdleTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "webSocketTimoutInMS", 15 * 60 * 1000);
+    public static int defaultWebSocketReadTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "webSocketReadTimeout", 15 * 60 * 1000);
     }
 
-    public static int defaultMaxConnectionLifeTimeInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxConnectionLifeTimeInMs", -1);
+    public static int defaultConnectionTTL() {
+        return Integer.getInteger(ASYNC_CLIENT + "connectionTTL", -1);
     }
 
     public static boolean defaultFollowRedirect() {
@@ -89,8 +89,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Boolean.getBoolean(ASYNC_CLIENT + "strict302Handling");
     }
 
-    public static boolean defaultAllowPoolingConnection() {
-        return getBoolean(ASYNC_CLIENT + "allowPoolingConnection", true);
+    public static boolean defaultAllowPoolingConnections() {
+        return getBoolean(ASYNC_CLIENT + "allowPoolingConnections", true);
     }
 
     public static boolean defaultUseRelativeURIsWithSSLProxies() {
@@ -101,8 +101,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "maxRequestRetry", 5);
     }
 
-    public static boolean defaultAllowSslConnectionPool() {
-        return getBoolean(ASYNC_CLIENT + "allowSslConnectionPool", true);
+    public static boolean defaultAllowPoolingSslConnections() {
+        return getBoolean(ASYNC_CLIENT + "allowPoolingSslConnections", true);
     }
 
     public static boolean defaultDisableUrlEncodingForBoundedRequests() {

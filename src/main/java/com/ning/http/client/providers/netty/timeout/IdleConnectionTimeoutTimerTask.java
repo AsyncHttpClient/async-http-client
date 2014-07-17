@@ -51,7 +51,7 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
 
         } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {
             // reschedule
-            timeoutsHolder.idleConnectionTimeout = provider.newTimeoutInMs(this, durationBeforeCurrentIdleConnectionTimeout);
+            timeoutsHolder.idleConnectionTimeout = provider.newTimeout(this, durationBeforeCurrentIdleConnectionTimeout);
 
         } else {
             // otherwise, no need to reschedule: requestTimeout will happen sooner

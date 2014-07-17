@@ -135,8 +135,8 @@ public class GrizzlyFeedableBodyGeneratorTest {
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                .setMaximumConnectionsPerHost(60)
-                .setMaximumConnectionsTotal(60)
+                .setMaxConnectionsPerHost(60)
+                .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
         final AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
@@ -234,8 +234,8 @@ public class GrizzlyFeedableBodyGeneratorTest {
         final ExecutorService service = Executors.newCachedThreadPool();
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                .setMaximumConnectionsPerHost(60)
-                .setMaximumConnectionsTotal(60)
+                .setMaxConnectionsPerHost(60)
+                .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
         final AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);

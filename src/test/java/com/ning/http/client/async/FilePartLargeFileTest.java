@@ -41,7 +41,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
         File largeFile = getTestFile();
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build();
         AsyncHttpClient client = getAsyncHttpClient(config);
         try {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());

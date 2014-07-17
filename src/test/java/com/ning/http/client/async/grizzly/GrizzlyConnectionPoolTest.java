@@ -39,7 +39,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Override
     @Test
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = getTargetUrl();
             ListenableFuture lockRequest = null;
@@ -65,7 +65,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Override
     @Test
     public void multipleMaxConnectionOpenTest() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectionTimeout(5000).setMaxConnections(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";

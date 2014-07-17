@@ -45,23 +45,23 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureDefaults() {
-        maxTotalConnections = defaultMaxTotalConnections();
-        maxConnectionPerHost = defaultMaxConnectionPerHost();
-        connectionTimeOutInMs = defaultConnectionTimeOutInMs();
-        webSocketIdleTimeoutInMs = defaultWebSocketIdleTimeoutInMs();
-        idleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs();
-        idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
-        requestTimeoutInMs = defaultRequestTimeoutInMs();
-        maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
+        maxConnections = defaultMaxConnections();
+        maxConnectionsPerHost = defaultMaxConnectionsPerHost();
+        connectionTimeout = defaultConnectionTimeout();
+        webSocketReadTimeout = defaultWebSocketReadTimeout();
+        pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
+        readTimeout = defaultReadTimeout();
+        requestTimeout = defaultRequestTimeout();
+        connectionTTL = defaultConnectionTTL();
         followRedirect = defaultFollowRedirect();
         maxRedirects = defaultMaxRedirects();
         compressionEnabled = defaultCompressionEnabled();
         userAgent = defaultUserAgent();
-        allowPoolingConnection = defaultAllowPoolingConnection();
+        allowPoolingConnections = defaultAllowPoolingConnections();
         useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
         maxRequestRetry = defaultMaxRequestRetry();
         ioThreadMultiplier = defaultIoThreadMultiplier();
-        allowSslConnectionPool = defaultAllowSslConnectionPool();
+        allowPoolingSslConnections = defaultAllowPoolingSslConnections();
         disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundedRequests();
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
@@ -86,22 +86,22 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setMaxTotalConnections(int maxTotalConnections) {
-        this.maxTotalConnections = maxTotalConnections;
+        this.maxConnections = maxTotalConnections;
         return this;
     }
 
     public AsyncHttpClientConfigBean setMaxConnectionPerHost(int maxConnectionPerHost) {
-        this.maxConnectionPerHost = maxConnectionPerHost;
+        this.maxConnectionsPerHost = maxConnectionPerHost;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setConnectionTimeOutInMs(int connectionTimeOutInMs) {
-        this.connectionTimeOutInMs = connectionTimeOutInMs;
+    public AsyncHttpClientConfigBean setConnectionTimeOut(int connectionTimeOut) {
+        this.connectionTimeout = connectionTimeOut;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setIdleConnectionInPoolTimeoutInMs(int idleConnectionInPoolTimeoutInMs) {
-        this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
+    public AsyncHttpClientConfigBean setIdleConnectionInPoolTimeout(int idleConnectionInPoolTimeout) {
+        this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
         return this;
     }
 
@@ -110,18 +110,18 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
-        this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+    public AsyncHttpClientConfigBean setIdleConnectionTimeout(int idleConnectionTimeout) {
+        this.readTimeout = idleConnectionTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRequestTimeoutInMs(int requestTimeoutInMs) {
-        this.requestTimeoutInMs = requestTimeoutInMs;
+    public AsyncHttpClientConfigBean setRequestTimeout(int requestTimeout) {
+        this.requestTimeout = requestTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setMaxConnectionLifeTimeInMs(int maxConnectionLifeTimeInMs) {
-        this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
+    public AsyncHttpClientConfigBean setMaxConnectionLifeTime(int maxConnectionLifeTime) {
+        this.connectionTTL = maxConnectionLifeTime;
         return this;
     }
 
@@ -146,7 +146,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setAllowPoolingConnection(boolean allowPoolingConnection) {
-        this.allowPoolingConnection = allowPoolingConnection;
+        this.allowPoolingConnections = allowPoolingConnection;
         return this;
     }
 
@@ -204,7 +204,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setAllowSslConnectionPool(boolean allowSslConnectionPool) {
-        this.allowSslConnectionPool = allowSslConnectionPool;
+        this.allowPoolingSslConnections = allowSslConnectionPool;
         return this;
     }
 
