@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
-    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ThrottleRequestFilter.class);
     private final Semaphore available;
     private final int maxWait;
 
@@ -52,9 +52,9 @@ public class ThrottleRequestFilter implements RequestFilter {
     public FilterContext filter(FilterContext ctx) throws FilterException {
 
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status {}", available.availablePermits());
-            }
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("Current Throttling Status {}", available.availablePermits());
+
             if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
                 throw new FilterException(
                         String.format("No slot available for processing Request %s with AsyncHandler %s",
@@ -70,9 +70,8 @@ public class ThrottleRequestFilter implements RequestFilter {
 
     private class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 
-        private AtomicBoolean complete = new AtomicBoolean(false);
-
         private final AsyncHandler<T> asyncHandler;
+        private final AtomicBoolean complete = new AtomicBoolean(false);
 
         public AsyncHandlerWrapper(AsyncHandler<T> asyncHandler) {
             this.asyncHandler = asyncHandler;
@@ -81,15 +80,14 @@ public class ThrottleRequestFilter implements RequestFilter {
         private void complete() {
             if (complete.compareAndSet(false, true))
                 available.release();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
             }
         }
         
         /**
          * {@inheritDoc}
          */
-        /* @Override */
         public void onThrowable(Throwable t) {
             try {
                 asyncHandler.onThrowable(t);
@@ -101,7 +99,6 @@ public class ThrottleRequestFilter implements RequestFilter {
         /**
          * {@inheritDoc}
          */
-        /* @Override */
         public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
             return asyncHandler.onBodyPartReceived(bodyPart);
         }
@@ -109,7 +106,6 @@ public class ThrottleRequestFilter implements RequestFilter {
         /**
          * {@inheritDoc}
          */
-        /* @Override */
         public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
             return asyncHandler.onStatusReceived(responseStatus);
         }
@@ -117,7 +113,6 @@ public class ThrottleRequestFilter implements RequestFilter {
         /**
          * {@inheritDoc}
          */
-        /* @Override */
         public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             return asyncHandler.onHeadersReceived(headers);
         }
@@ -125,7 +120,6 @@ public class ThrottleRequestFilter implements RequestFilter {
         /**
          * {@inheritDoc}
          */
-        /* @Override */
         public T onCompleted() throws Exception {
             try {
                 return asyncHandler.onCompleted();
