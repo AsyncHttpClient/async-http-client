@@ -361,7 +361,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     HttpTransactionContext.get(ctx.getConnection());
                             if (context != null) {
                                 if (context.isWSRequest) {
-                                    return clientConfig.getWebSocketReadTimeout();
+                                    return clientConfig.getWebSocketTimeout();
                                 }
                                 final long timeout = context.request.getRequestTimeout();
                                 if (timeout > 0) {
@@ -1407,7 +1407,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                             context.protocolHandler,
                                             ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
-                        final int wsTimeout = context.provider.clientConfig.getWebSocketReadTimeout();
+                        final int wsTimeout = context.provider.clientConfig.getWebSocketTimeout();
                         IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(),
                                 ((wsTimeout <= 0)
                                         ? IdleTimeoutFilter.FOREVER

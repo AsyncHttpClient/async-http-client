@@ -48,7 +48,7 @@ public class AsyncHttpClientConfig {
 
     protected int requestTimeout;
     protected int readTimeout;
-    protected int webSocketReadTimeout;
+    protected int webSocketTimeout;
 
     protected boolean allowPoolingConnections;
     protected boolean allowPoolingSslConnections;
@@ -120,7 +120,7 @@ public class AsyncHttpClientConfig {
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         this.requestTimeout = requestTimeout;
         this.readTimeout = readTimeout;
-        this.webSocketReadTimeout = webSocketIdleTimeout;
+        this.webSocketTimeout = webSocketIdleTimeout;
         this.allowPoolingConnections = allowPoolingConnection;
         this.allowPoolingSslConnections = allowSslConnectionPool;
         this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
@@ -179,8 +179,8 @@ public class AsyncHttpClientConfig {
      * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
      * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
      */
-    public int getWebSocketReadTimeout() {
-        return webSocketReadTimeout;
+    public int getWebSocketTimeout() {
+        return webSocketTimeout;
     }
 
     /**
@@ -457,7 +457,7 @@ public class AsyncHttpClientConfig {
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private int requestTimeout = defaultRequestTimeout();
         private int readTimeout = defaultReadTimeout();
-        private int webSocketReadTimeout = defaultWebSocketReadTimeout();
+        private int webSocketTimeout = defaultWebSocketTimeout();
         private boolean allowPoolingConnections = defaultAllowPoolingConnections();
         private boolean allowPoolingSslConnections = defaultAllowPoolingSslConnections();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
@@ -525,12 +525,12 @@ public class AsyncHttpClientConfig {
         /**
          * Set the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
          *
-         * @param webSocketIdleTimeout
+         * @param webSocketTimeout
          *         the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
          * @return a {@link Builder}
          */
-        public Builder setWebSocketIdleTimeout(int webSocketIdleTimeout) {
-            this.webSocketReadTimeout = webSocketIdleTimeout;
+        public Builder setWebSocketTimeout(int webSocketTimeout) {
+            this.webSocketTimeout = webSocketTimeout;
             return this;
         }
 
@@ -978,7 +978,7 @@ public class AsyncHttpClientConfig {
                     maxConnectionsPerHost,//
                     requestTimeout,//
                     readTimeout,//
-                    webSocketReadTimeout,//
+                    webSocketTimeout,//
                     allowPoolingConnections,//
                     allowPoolingSslConnections,//
                     pooledConnectionIdleTimeout,//
