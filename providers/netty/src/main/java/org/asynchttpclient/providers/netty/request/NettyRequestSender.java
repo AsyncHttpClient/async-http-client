@@ -230,7 +230,7 @@ public class NettyRequestSender {
 
             // only compute when maxConnectionPerHost is enabled
             // FIXME clean up
-            if (config.getMaxConnectionPerHost() > 0)
+            if (config.getMaxConnectionsPerHost() > 0)
                 poolKey = channels.getPoolKey(future);
 
             channelPreempted = channels.preemptChannel(asyncHandler, poolKey);
@@ -390,11 +390,11 @@ public class NettyRequestSender {
                 timeoutsHolder.requestTimeout = requestTimeout;
             }
 
-            int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
-            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs < requestTimeoutInMs) {
+            int readTimeout = config.getReadTimeout();
+            if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
                 // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
                 Timeout idleConnectionTimeout = channels.newTimeoutInMs(new IdleConnectionTimeoutTimerTask(nettyResponseFuture, channels,
-                        timeoutsHolder, closed, requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
+                        timeoutsHolder, closed, requestTimeoutInMs, readTimeout), readTimeout);
                 timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
             }
             nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);

@@ -39,7 +39,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsExceedingException() {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(false).setMaxConnectionsTotal(1).setMaxConnectionsPerHost(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
         try {
             boolean caughtError = false;
             for (int i = 0; i < urls.length; i++) {
@@ -61,7 +61,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnections() {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(false).setMaxConnectionsTotal(2).setMaxConnectionsPerHost(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build());
         try {
             for (String url : urls) {
                 try {
@@ -82,7 +82,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsCorrectExceptionHandling() {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(false).setMaxConnectionsTotal(1).setMaxConnectionsPerHost(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
         try {
             List<Future<Response>> futures = new ArrayList<Future<Response>>();
             boolean caughtError = false;

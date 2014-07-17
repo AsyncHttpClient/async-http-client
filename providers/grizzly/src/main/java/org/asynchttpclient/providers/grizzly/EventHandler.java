@@ -277,7 +277,7 @@ public final class EventHandler {
                     ws.onConnect();
                     WebSocketHolder.set(ctx.getConnection(), context.getProtocolHandler(), ws);
                     ((WebSocketUpgradeHandler) context.getHandler()).onSuccess(context.getWebSocket());
-                    final int wsTimeout = context.getProvider().getClientConfig().getWebSocketIdleTimeoutInMs();
+                    final int wsTimeout = context.getProvider().getClientConfig().getWebSocketReadTimeout();
                     IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(), ((wsTimeout <= 0) ? IdleTimeoutFilter.FOREVER : wsTimeout),
                             TimeUnit.MILLISECONDS);
                     context.result(handler.onCompleted());

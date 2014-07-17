@@ -126,7 +126,7 @@ public class Channels {
 
         ChannelPool cp = nettyProviderConfig.getChannelPool();
         if (cp == null) {
-            if (config.isAllowPoolingConnection()) {
+            if (config.isAllowPoolingConnections()) {
                 cp = new DefaultChannelPool(config, nettyTimer);
             } else {
                 cp = new NoopChannelPool();
@@ -143,7 +143,7 @@ public class Channels {
             secureWebSocketBootstrap.option(key, value);
         }
 
-        int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
+        int timeOut = config.getConnectionTimeout() > 0 ? config.getConnectionTimeout() : Integer.MAX_VALUE;
         plainBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         webSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
@@ -340,7 +340,7 @@ public class Channels {
         if (channelManager.preemptChannel(poolKey)) {
             channelPreempted = true;
         } else {
-            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
             try {
                 asyncHandler.onThrowable(ex);
             } catch (Exception e) {

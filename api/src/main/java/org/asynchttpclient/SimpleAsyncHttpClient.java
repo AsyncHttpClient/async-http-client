@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
@@ -42,9 +41,9 @@ import java.util.concurrent.ScheduledExecutorService;
  * {@link AsyncHandler} are required. As simple as:
  * <blockquote><pre>
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
- * .setIdleConnectionInPoolTimeoutInMs(100)
+ * .setIdleConnectionInPoolTimeout(100)
  * .setMaximumConnectionsTotal(50)
- * .setRequestTimeoutInMs(5 * 60 * 1000)
+ * .setRequestTimeout(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
  * <p/>
@@ -500,28 +499,28 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setMaxConnectionsTotal(int defaultMaxTotalConnections) {
-            configBuilder.setMaxConnectionsTotal(defaultMaxTotalConnections);
+        public Builder setMaxConnections(int defaultMaxConnections) {
+            configBuilder.setMaxConnections(defaultMaxConnections);
             return this;
         }
 
-        public Builder setMaxConnectionsPerHost(int defaultMaxConnectionPerHost) {
-            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionPerHost);
+        public Builder setMaxConnectionsPerHost(int defaultMaxConnectionsPerHost) {
+            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionsPerHost);
             return this;
         }
 
-        public Builder setConnectionTimeoutInMs(int connectionTimeuot) {
-            configBuilder.setConnectionTimeoutInMs(connectionTimeuot);
+        public Builder setConnectionTimeout(int connectionTimeuot) {
+            configBuilder.setConnectionTimeout(connectionTimeuot);
             return this;
         }
 
-        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPoolTimeoutInMs) {
-            configBuilder.setIdleConnectionInPoolTimeoutInMs(defaultIdleConnectionInPoolTimeoutInMs);
+        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+            configBuilder.setPooledConnectionIdleTimeout(pooledConnectionIdleTimeout);
             return this;
         }
 
-        public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
-            configBuilder.setRequestTimeoutInMs(defaultRequestTimeoutInMs);
+        public Builder setRequestTimeout(int defaultRequestTimeout) {
+            configBuilder.setRequestTimeout(defaultRequestTimeout);
             return this;
         }
 
@@ -540,23 +539,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
-            configBuilder.setAllowPoolingConnection(allowPoolingConnection);
-            return this;
-        }
-
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            configBuilder.setScheduledExecutorService(reaper);
+        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
+            configBuilder.setAllowPoolingConnections(allowPoolingConnections);
             return this;
         }
 
         public Builder setExecutorService(ExecutorService applicationThreadPool) {
             configBuilder.setExecutorService(applicationThreadPool);
-            return this;
-        }
-
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-            configBuilder.setSSLEngineFactory(sslEngineFactory);
             return this;
         }
 

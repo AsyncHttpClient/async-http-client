@@ -31,7 +31,7 @@ public class ChannelManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
 
     private final ChannelPool channelPool;
-    private final boolean maxTotalConnectionsEnabled;
+    private final boolean maxConnectionsEnabled;
     private final Semaphore freeChannels;
     private final ChannelGroup openChannels;
     private final int maxConnectionsPerHost;
@@ -42,9 +42,9 @@ public class ChannelManager {
     public ChannelManager(AsyncHttpClientConfig config, ChannelPool channelPool) {
         this.channelPool = channelPool;
 
-        maxTotalConnectionsEnabled = config.getMaxTotalConnections() > 0;
+        maxConnectionsEnabled = config.getMaxConnections() > 0;
         
-        if (maxTotalConnectionsEnabled) {
+        if (maxConnectionsEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
@@ -63,14 +63,14 @@ public class ChannelManager {
                     return removed;
                 }
             };
-            freeChannels = new Semaphore(config.getMaxTotalConnections());
+            freeChannels = new Semaphore(config.getMaxConnections());
         } else {
             openChannels = new CleanupChannelGroup("asyncHttpClient");
             freeChannels = null;
         }
 
-        maxConnectionsPerHost = config.getMaxConnectionPerHost();
-        maxConnectionsPerHostEnabled = config.getMaxConnectionPerHost() > 0;
+        maxConnectionsPerHost = config.getMaxConnectionsPerHost();
+        maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
         
         if (maxConnectionsPerHostEnabled) {
             freeChannelsPerHost = new ConcurrentHashMap<String, Semaphore>();
@@ -103,7 +103,7 @@ public class ChannelManager {
     }
 
     private boolean tryAcquireGlobal() {
-        return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
+        return !maxConnectionsEnabled || freeChannels.tryAcquire();
     }
 
     private Semaphore getFreeConnectionsForHost(String poolKey) {
@@ -156,7 +156,7 @@ public class ChannelManager {
     }
 
     public void abortChannelPreemption(String poolKey) {
-        if (maxTotalConnectionsEnabled)
+        if (maxConnectionsEnabled)
             freeChannels.release();
         if (maxConnectionsPerHostEnabled)
             getFreeConnectionsForHost(poolKey).release();

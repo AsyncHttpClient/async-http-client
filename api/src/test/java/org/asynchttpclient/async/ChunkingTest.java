@@ -45,11 +45,11 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     public void testCustomChunking() throws Exception {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
-        bc.setAllowPoolingConnection(true);
+        bc.setAllowPoolingConnections(true);
         bc.setMaxConnectionsPerHost(1);
-        bc.setMaxConnectionsTotal(1);
-        bc.setConnectionTimeoutInMs(1000);
-        bc.setRequestTimeoutInMs(1000);
+        bc.setMaxConnections(1);
+        bc.setConnectionTimeout(1000);
+        bc.setRequestTimeout(1000);
         bc.setFollowRedirect(true);
 
         AsyncHttpClient c = getAsyncHttpClient(bc.build());

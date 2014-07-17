@@ -214,7 +214,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final FilterChainBuilder secure = FilterChainBuilder.stateless();
         secure.add(new TransportFilter());
 
-        final int timeout = clientConfig.getRequestTimeoutInMs();
+        final int timeout = clientConfig.getRequestTimeout();
         if (timeout > 0) {
             int delay = 500;
             //noinspection ConstantConditions
@@ -232,7 +232,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final HttpTxContext context = HttpTxContext.get(ctx);
                     if (context != null) {
                         if (context.isWSRequest()) {
-                            return clientConfig.getWebSocketIdleTimeoutInMs();
+                            return clientConfig.getWebSocketReadTimeout();
                         }
                         int requestTimeout = AsyncHttpProviderUtils.requestTimeout(clientConfig, context.getRequest());
                         if (requestTimeout > 0) {

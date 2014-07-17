@@ -41,7 +41,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(timeout).build());
         try {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);

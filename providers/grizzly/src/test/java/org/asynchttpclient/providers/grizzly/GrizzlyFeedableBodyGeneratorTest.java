@@ -135,7 +135,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
                 .setMaxConnectionsPerHost(60)
-                .setMaxConnectionsTotal(60)
+                .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
         final AsyncHttpClient client =
@@ -238,7 +238,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
                 .setMaxConnectionsPerHost(60)
-                .setMaxConnectionsTotal(60)
+                .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
         final AsyncHttpClient client =

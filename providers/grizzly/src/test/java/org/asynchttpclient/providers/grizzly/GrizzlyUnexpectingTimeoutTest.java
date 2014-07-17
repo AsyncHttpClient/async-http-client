@@ -82,7 +82,7 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
         final AtomicInteger counts = new AtomicInteger();
         final int timeout = 100;
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(timeout).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(timeout).build());
         try {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                 @Override

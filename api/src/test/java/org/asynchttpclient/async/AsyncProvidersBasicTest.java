@@ -357,7 +357,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     // TODO: fix test
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncStatusHEADContentLenghtTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(120 * 1000).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(120 * 1000).build());
         try {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
@@ -1226,7 +1226,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoGetDelayHandlerTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(5 * 1000).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(5 * 1000).build());
         try {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("LockThread", "true");
@@ -1486,7 +1486,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void idleRequestTimeoutTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(5000).setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(5000).setRequestTimeout(10000).build());
         try {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");

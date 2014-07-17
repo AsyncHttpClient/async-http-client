@@ -74,11 +74,11 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
     public void testGetRedirectFinalUrl() throws Exception {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnection(true)//
+                .setAllowPoolingConnections(true)//
                 .setMaxConnectionsPerHost(1)//
-                .setMaxConnectionsTotal(1)//
-                .setConnectionTimeoutInMs(1000)//
-                .setRequestTimeoutInMs(1000)//
+                .setMaxConnections(1)//
+                .setConnectionTimeout(1000)//
+                .setRequestTimeout(1000)//
                 .setFollowRedirect(true)//
                 .build();
 

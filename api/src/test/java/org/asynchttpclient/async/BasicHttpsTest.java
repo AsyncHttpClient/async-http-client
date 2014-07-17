@@ -81,7 +81,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
+        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build());
         try {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
@@ -139,7 +139,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
                 public boolean verify(String arg0, SSLSession arg1) {
                     return false;
                 }
-            }).setRequestTimeoutInMs(20000);
+            }).setRequestTimeout(20000);
 
             client = getAsyncHttpClient(builder.build());
 

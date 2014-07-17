@@ -82,7 +82,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         final Semaphore requestThrottle = new Semaphore(1);
 
         final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true)
-                .setAllowPoolingConnection(true).setMaxConnectionsTotal(1).build());
+                .setAllowPoolingConnections(true).setMaxConnections(1).build());
 
         int samples = 10;
 

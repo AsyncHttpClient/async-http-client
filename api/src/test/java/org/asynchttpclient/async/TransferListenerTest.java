@@ -147,7 +147,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 100 * 10);
 
         int timeout = (int) (file.length() / 1000);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(timeout).build());
 
         try {
             TransferCompletionHandler tl = new TransferCompletionHandler();

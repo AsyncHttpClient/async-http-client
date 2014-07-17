@@ -211,7 +211,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient newClient() {
-        return getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+        return getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectionTimeout(20000).setRequestTimeout(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {

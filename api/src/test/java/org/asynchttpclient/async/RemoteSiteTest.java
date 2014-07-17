@@ -53,7 +53,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://www.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -64,7 +64,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testMailGoogleCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -77,7 +77,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -90,7 +90,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testWwwMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -103,7 +103,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testUpdateMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -115,7 +115,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleComWithTimeout() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         try {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
@@ -154,8 +154,8 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void invalidStreamTest2() throws Exception {
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).setFollowRedirect(true)
-                .setAllowPoolingConnection(false).setMaxRedirects(6).build();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).setFollowRedirect(true)
+                .setAllowPoolingConnections(false).setMaxRedirects(6).build();
 
         AsyncHttpClient c = getAsyncHttpClient(config);
         try {

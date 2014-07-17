@@ -34,24 +34,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
  * object default behavior by doing:
  * <p/>
  * -Dorg.asynchttpclient.AsyncHttpClientConfig.nameOfTheProperty
- * ex:
- * <p/>
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.maxTotalConnections
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.maxTotalConnections
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.maxConnectionsPerHost
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.connectionTimeoutInMs
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.idleConnectionInPoolTimeoutInMs
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.requestTimeoutInMs
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.redirectsEnabled
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.maxRedirects
  */
 public class AsyncHttpClientConfig {
 
@@ -78,115 +66,122 @@ public class AsyncHttpClientConfig {
         AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
 
-    protected int maxTotalConnections;
-    protected int maxConnectionPerHost;
-    protected int connectionTimeOutInMs;
-    protected int webSocketIdleTimeoutInMs;
-    protected int idleConnectionInPoolTimeoutInMs;
-    protected int idleConnectionTimeoutInMs;
-    protected int requestTimeoutInMs;
+    protected int connectionTimeout;
+
+    protected int maxConnections;
+    protected int maxConnectionsPerHost;
+
+    protected int requestTimeout;
+    protected int readTimeout;
+    protected int webSocketReadTimeout;
+
+    protected boolean allowPoolingConnections;
+    protected boolean allowPoolingSslConnections;
+    protected int pooledConnectionIdleTimeout;
+    protected int connectionTTL;
+
+    protected SSLContext sslContext;
+    protected HostnameVerifier hostnameVerifier;
+    protected boolean acceptAnyCertificate;
+
     protected boolean followRedirect;
     protected int maxRedirects;
+    protected boolean removeQueryParamOnRedirect;
+    protected boolean strict302Handling;
+
+    protected ProxyServerSelector proxyServerSelector;
+    protected boolean useRelativeURIsWithSSLProxies;
+
     protected boolean compressionEnabled;
     protected String userAgent;
-    protected boolean allowPoolingConnection;
     protected ExecutorService applicationThreadPool;
-    protected ProxyServerSelector proxyServerSelector;
-    protected SSLContext sslContext;
-    protected AsyncHttpProviderConfig<?, ?> providerConfig;
     protected Realm realm;
     protected List<RequestFilter> requestFilters;
     protected List<ResponseFilter> responseFilters;
     protected List<IOExceptionFilter> ioExceptionFilters;
     protected int maxRequestRetry;
-    protected boolean allowSslConnectionPool;
     protected boolean disableUrlEncodingForBoundRequests;
-    protected boolean removeQueryParamOnRedirect;
-    protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
-    protected boolean strict302Handling;
-    protected int maxConnectionLifeTimeInMs;
-    protected boolean useRelativeURIsWithSSLProxies;
+    protected TimeConverter timeConverter;
+    protected AsyncHttpProviderConfig<?, ?> providerConfig;
+    
+    // AHC 2 specific
     protected boolean spdyEnabled;
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
-    protected TimeConverter timeConverter;
-    protected boolean acceptAnyCertificate;
 
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(int maxTotalConnections, //
-            int maxConnectionPerHost, //
-            int connectionTimeOutInMs, //
-            int webSocketTimeoutInMs, //
-            int idleConnectionInPoolTimeoutInMs, //
-            int idleConnectionTimeoutInMs, //
-            int requestTimeoutInMs, //
-            int connectionMaxLifeTimeInMs, //
+    private AsyncHttpClientConfig(int connectionTimeout,//
+            int maxConnections,//
+            int maxConnectionsPerHost,//
+            int requestTimeout,//
+            int readTimeout,//
+            int webSocketIdleTimeout,//
+            boolean allowPoolingConnection,//
+            boolean allowSslConnectionPool,//
+            int idleConnectionInPoolTimeout,//
+            int maxConnectionLifeTime,//
+            SSLContext sslContext, //
+            HostnameVerifier hostnameVerifier,//
+            boolean acceptAnyCertificate, //
             boolean followRedirect, //
             int maxRedirects, //
-            boolean compressionEnabled, //
-            String userAgent, //
-            boolean keepAlive, //
-            ScheduledExecutorService reaper, //
-            ExecutorService applicationThreadPool, //
-            ProxyServerSelector proxyServerSelector, //
-            SSLContext sslContext, //
-            SSLEngineFactory sslEngineFactory, //
-            AsyncHttpProviderConfig<?, ?> providerConfig, //
-            Realm realm, //
-            List<RequestFilter> requestFilters, //
-            List<ResponseFilter> responseFilters, //
-            List<IOExceptionFilter> ioExceptionFilters, //
-            int maxRequestRetry, //
-            boolean allowSslConnectionCaching, //
-            boolean disableUrlEncodingForBoundRequests, //
-            boolean removeQueryParamOnRedirect, //
-            HostnameVerifier hostnameVerifier, //
-            int ioThreadMultiplier, //
+            boolean removeQueryParamOnRedirect,//
             boolean strict302Handling, //
+            ExecutorService applicationThreadPool,//
+            ProxyServerSelector proxyServerSelector, //
             boolean useRelativeURIsWithSSLProxies, //
+            boolean compressionEnabled, //
+            String userAgent,//
+            Realm realm,//
+            List<RequestFilter> requestFilters,//
+            List<ResponseFilter> responseFilters,//
+            List<IOExceptionFilter> ioExceptionFilters,//
+            int maxRequestRetry, //
+            boolean disableUrlEncodingForBoundRequests, //
+            int ioThreadMultiplier, //
+            TimeConverter timeConverter,//
+            AsyncHttpProviderConfig<?, ?> providerConfig,//
             boolean spdyEnabled, //
             int spdyInitialWindowSize, //
-            int spdyMaxConcurrentStreams, //
-            TimeConverter timeConverter, //
-            boolean acceptAnyCertificate) {
+            int spdyMaxConcurrentStreams) {
 
-        this.maxTotalConnections = maxTotalConnections;
-        this.maxConnectionPerHost = maxConnectionPerHost;
-        this.connectionTimeOutInMs = connectionTimeOutInMs;
-        this.webSocketIdleTimeoutInMs = webSocketTimeoutInMs;
-        this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
-        this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
-        this.requestTimeoutInMs = requestTimeoutInMs;
-        this.maxConnectionLifeTimeInMs = connectionMaxLifeTimeInMs;
+        this.connectionTimeout = connectionTimeout;
+        this.maxConnections = maxConnections;
+        this.maxConnectionsPerHost = maxConnectionsPerHost;
+        this.requestTimeout = requestTimeout;
+        this.readTimeout = readTimeout;
+        this.webSocketReadTimeout = webSocketIdleTimeout;
+        this.allowPoolingConnections = allowPoolingConnection;
+        this.allowPoolingSslConnections = allowSslConnectionPool;
+        this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
+        this.connectionTTL = maxConnectionLifeTime;
+        this.sslContext = sslContext;
+        this.hostnameVerifier = hostnameVerifier;
+        this.acceptAnyCertificate = acceptAnyCertificate;
         this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
+        this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+        this.strict302Handling = strict302Handling;
+        this.proxyServerSelector = proxyServerSelector;
+        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
-        this.allowPoolingConnection = keepAlive;
-        this.sslContext = sslContext;
-        this.providerConfig = providerConfig;
+        this.applicationThreadPool = applicationThreadPool == null ? Executors.newCachedThreadPool() : applicationThreadPool;
         this.realm = realm;
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
         this.maxRequestRetry = maxRequestRetry;
-        this.allowSslConnectionPool = allowSslConnectionCaching;
-        this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
-        this.hostnameVerifier = hostnameVerifier;
-        this.ioThreadMultiplier = ioThreadMultiplier;
-        this.strict302Handling = strict302Handling;
-        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
-        this.applicationThreadPool = applicationThreadPool;
-        this.proxyServerSelector = proxyServerSelector;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
+        this.ioThreadMultiplier = ioThreadMultiplier;
+        this.timeConverter = timeConverter;
+        this.providerConfig = providerConfig;
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
-        this.timeConverter = timeConverter;
-        this.acceptAnyCertificate = acceptAnyCertificate;
         
     }
 
@@ -195,8 +190,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum number of connections an {@link AsyncHttpClient} can handle.
      */
-    public int getMaxTotalConnections() {
-        return maxTotalConnections;
+    public int getMaxConnections() {
+        return maxConnections;
     }
 
     /**
@@ -204,8 +199,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum number of connections per host an {@link AsyncHttpClient} can handle.
      */
-    public int getMaxConnectionPerHost() {
-        return maxConnectionPerHost;
+    public int getMaxConnectionsPerHost() {
+        return maxConnectionsPerHost;
     }
 
     /**
@@ -213,16 +208,16 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
      */
-    public int getConnectionTimeoutInMs() {
-        return connectionTimeOutInMs;
+    public int getConnectionTimeout() {
+        return connectionTimeout;
     }
 
     /**
      * Return the maximum time, in milliseconds, a {@link org.asynchttpclient.websocket.WebSocket} may be idle before being timed out.
      * @return the maximum time, in milliseconds, a {@link org.asynchttpclient.websocket.WebSocket} may be idle before being timed out.
      */
-    public int getWebSocketIdleTimeoutInMs() {
-        return webSocketIdleTimeoutInMs;
+    public int getWebSocketReadTimeout() {
+        return webSocketReadTimeout;
     }
 
     /**
@@ -230,8 +225,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
      */
-    public int getIdleConnectionTimeoutInMs() {
-        return idleConnectionTimeoutInMs;
+    public int getReadTimeout() {
+        return readTimeout;
     }
 
     /**
@@ -241,8 +236,8 @@ public class AsyncHttpClientConfig {
      * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
      *         in pool.
      */
-    public int getIdleConnectionInPoolTimeoutInMs() {
-        return idleConnectionInPoolTimeoutInMs;
+    public int getPooledConnectionIdleTimeout() {
+        return pooledConnectionIdleTimeout;
     }
 
     /**
@@ -250,8 +245,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
      */
-    public int getRequestTimeoutInMs() {
-        return requestTimeoutInMs;
+    public int getRequestTimeout() {
+        return requestTimeout;
     }
 
     /**
@@ -277,8 +272,8 @@ public class AsyncHttpClientConfig {
      *
      * @return true if keep-alive is enabled
      */
-    public boolean isAllowPoolingConnection() {
-        return allowPoolingConnection;
+    public boolean isAllowPoolingConnections() {
+        return allowPoolingConnections;
     }
 
     /**
@@ -405,8 +400,8 @@ public class AsyncHttpClientConfig {
      *
      * @return true is enabled.
      */
-    public boolean isSslConnectionPoolEnabled() {
-        return allowSslConnectionPool;
+    public boolean isAllowPoolingSslConnections() {
+        return allowPoolingSslConnections;
     }
 
     /**
@@ -511,8 +506,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
      */
-    public int getMaxConnectionLifeTimeInMs() {
-        return maxConnectionLifeTimeInMs;
+    public int getConnectionTTL() {
+        return connectionTTL;
     }
 
     /**
@@ -532,103 +527,102 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
-        private int maxTotalConnections = defaultMaxTotalConnections();
-        private int maxConnectionPerHost = defaultMaxConnectionPerHost();
-        private int connectionTimeOutInMs = defaultConnectionTimeOutInMs();
-        private int webSocketIdleTimeoutInMs = defaultWebSocketIdleTimeoutInMs();
-        private int idleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs();
-        private int idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
-        private int requestTimeoutInMs = defaultRequestTimeoutInMs();
-        private int maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
+        private int connectionTimeout = defaultConnectionTimeout();
+        private int maxConnections = defaultMaxConnections();
+        private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
+        private int requestTimeout = defaultRequestTimeout();
+        private int readTimeout = defaultReadTimeout();
+        private int webSocketReadTimeout = defaultWebSocketReadTimeout();
+        private boolean allowPoolingConnections = defaultAllowPoolingConnections();
+        private boolean allowPoolingSslConnections = defaultAllowPoolingSslConnections();
+        private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
+        private int connectionTTL = defaultConnectionTTL();
+        private SSLContext sslContext;
+        private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
+        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
-        private boolean compressionEnabled = defaultCompressionEnabled();
-        private String userAgent = defaultUserAgent();
-        private boolean useProxyProperties = defaultUseProxyProperties();
-        private boolean useProxySelector = defaultUseProxySelector();
-        private boolean allowPoolingConnection = defaultAllowPoolingConnection();
-        private boolean useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
-        private int maxRequestRetry = defaultMaxRequestRetry();
-        private int ioThreadMultiplier = defaultIoThreadMultiplier();
-        private boolean allowSslConnectionPool = defaultAllowSslConnectionPool();
-        private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
-        private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
-        private boolean spdyEnabled = defaultSpdyEnabled();
-        private int spdyInitialWindowSize = defaultSpdyInitialWindowSize();
-        private int spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
-        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
-
-        private ScheduledExecutorService reaper;
-        private ExecutorService applicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
-        private SSLContext sslContext;
-        private SSLEngineFactory sslEngineFactory;
-        private AsyncHttpProviderConfig<?, ?> providerConfig;
+        private boolean useProxySelector = defaultUseProxySelector();
+        private boolean useProxyProperties = defaultUseProxyProperties();
+        private boolean useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
+        private boolean compressionEnabled = defaultCompressionEnabled();
+        private String userAgent = defaultUserAgent();
+        private ExecutorService applicationThreadPool;
         private Realm realm;
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
+        private int maxRequestRetry = defaultMaxRequestRetry();
+        private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
+        private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private TimeConverter timeConverter;
-
+        private AsyncHttpProviderConfig<?, ?> providerConfig;
+        
+        // AHC 2
+        private boolean spdyEnabled = defaultSpdyEnabled();
+        private int spdyInitialWindowSize = defaultSpdyInitialWindowSize();
+        private int spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
+        
         public Builder() {
         }
 
         /**
          * Set the maximum number of connections an {@link AsyncHttpClient} can handle.
          *
-         * @param maxTotalConnections the maximum number of connections an {@link AsyncHttpClient} can handle.
+         * @param maxConnections the maximum number of connections an {@link AsyncHttpClient} can handle.
          * @return a {@link Builder}
          */
-        public Builder setMaxConnectionsTotal(int maxTotalConnections) {
-            this.maxTotalConnections = maxTotalConnections;
+        public Builder setMaxConnections(int maxConnections) {
+            this.maxConnections = maxConnections;
             return this;
         }
 
         /**
          * Set the maximum number of connections per hosts an {@link AsyncHttpClient} can handle.
          *
-         * @param maxConnectionPerHost the maximum number of connections per host an {@link AsyncHttpClient} can handle.
+         * @param maxConnectionsPerHost the maximum number of connections per host an {@link AsyncHttpClient} can handle.
          * @return a {@link Builder}
          */
-        public Builder setMaxConnectionsPerHost(int maxConnectionPerHost) {
-            this.maxConnectionPerHost = maxConnectionPerHost;
+        public Builder setMaxConnectionsPerHost(int maxConnectionsPerHost) {
+            this.maxConnectionsPerHost = maxConnectionsPerHost;
             return this;
         }
 
         /**
          * Set the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
          *
-         * @param connectionTimeOutInMs the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * @param connectionTimeout the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
          * @return a {@link Builder}
          */
-        public Builder setConnectionTimeoutInMs(int connectionTimeOutInMs) {
-            this.connectionTimeOutInMs = connectionTimeOutInMs;
+        public Builder setConnectionTimeout(int connectionTimeout) {
+            this.connectionTimeout = connectionTimeout;
             return this;
         }
 
         /**
          * Set the maximum time in millisecond an {@link org.asynchttpclient.websocket.WebSocket} can stay idle.
          *
-         * @param webSocketIdleTimeoutInMs
+         * @param webSocketIdleTimeout
          *         the maximum time in millisecond an {@link org.asynchttpclient.websocket.WebSocket} can stay idle.
          * @return a {@link Builder}
          */
-        public Builder setWebSocketIdleTimeoutInMs(int webSocketIdleTimeoutInMs) {
-            this.webSocketIdleTimeoutInMs = webSocketIdleTimeoutInMs;
+        public Builder setWebSocketReadTimeout(int webSocketReadTimeout) {
+            this.webSocketReadTimeout = webSocketReadTimeout;
             return this;
         }
 
         /**
          * Set the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
          *
-         * @param idleConnectionTimeoutInMs
+         * @param readTimeout
          *         the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
          * @return a {@link Builder}
          */
-        public Builder setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
-            this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+        public Builder setReadTimeout(int readTimeout) {
+            this.readTimeout = readTimeout;
             return this;
         }
 
@@ -636,24 +630,24 @@ public class AsyncHttpClientConfig {
          * Set the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
          * idle in pool.
          *
-         * @param idleConnectionInPoolTimeoutInMs
+         * @param pooledConnectionIdleTimeout
          *         the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
          *         idle in pool.
          * @return a {@link Builder}
          */
-        public Builder setIdleConnectionInPoolTimeoutInMs(int idleConnectionInPoolTimeoutInMs) {
-            this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
+        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+            this.pooledConnectionIdleTimeout = pooledConnectionIdleTimeout;
             return this;
         }
 
         /**
          * Set the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
          *
-         * @param requestTimeoutInMs the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+         * @param requestTimeout the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
          * @return a {@link Builder}
          */
-        public Builder setRequestTimeoutInMs(int requestTimeoutInMs) {
-            this.requestTimeoutInMs = requestTimeoutInMs;
+        public Builder setRequestTimeout(int requestTimeout) {
+            this.requestTimeout = requestTimeout;
             return this;
         }
 
@@ -704,22 +698,11 @@ public class AsyncHttpClientConfig {
         /**
          * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.
          *
-         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}
+         * @param allowPoolingConnections true if connection can be pooled by a {@link ConnectionsPool}
          * @return a {@link Builder}
          */
-        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
-            this.allowPoolingConnection = allowPoolingConnection;
-            return this;
-        }
-
-        /**
-         * Set the{@link ScheduledExecutorService} used to expire idle connections.
-         *
-         * @param reaper the{@link ScheduledExecutorService} used to expire idle connections.
-         * @return a {@link Builder}
-         */
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            this.reaper = reaper;
+        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
+            this.allowPoolingConnections = allowPoolingConnections;
             return this;
         }
 
@@ -759,25 +742,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link SSLEngineFactory} for secure connection.
-         *
-         * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection
-         * @return a {@link Builder}
-         */
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-            this.sslEngineFactory = sslEngineFactory;
-            return this;
-        }
-
-        /**
          * Set the {@link SSLContext} for secure connection.
          *
          * @param sslContext the {@link SSLContext} for secure connection
          * @return a {@link Builder}
          */
         public Builder setSSLContext(final SSLContext sslContext) {
-            // reset previously set value so it will be lazily recreated
-            this.sslEngineFactory = null;
             this.sslContext = sslContext;
             return this;
         }
@@ -888,11 +858,11 @@ public class AsyncHttpClientConfig {
         /**
          * Return true is if connections pooling is enabled.
          *
-         * @param allowSslConnectionPool true if enabled
+         * @param pooledConnectionIdleTimeout true if enabled
          * @return this
          */
-        public Builder setAllowSslConnectionPool(boolean allowSslConnectionPool) {
-            this.allowSslConnectionPool = allowSslConnectionPool;
+        public Builder setAllowPoolingSslConnections(boolean allowPoolingSslConnections) {
+            this.allowPoolingSslConnections = allowPoolingSslConnections;
             return this;
         }
 
@@ -982,11 +952,11 @@ public class AsyncHttpClientConfig {
         /**
          * Set the maximum time in millisecond connection can be added to the pool for further reuse
          *
-         * @param maxConnectionLifeTimeInMs the maximum time in millisecond connection can be added to the pool for further reuse
+         * @param connectionTTL the maximum time in millisecond connection can be added to the pool for further reuse
          * @return a {@link Builder}
          */
-        public Builder setMaxConnectionLifeTimeInMs(int maxConnectionLifeTimeInMs) {
-            this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
+        public Builder setConnectionTTL(int connectionTTL) {
+            this.connectionTTL = connectionTTL;
             return this;
         }
 
@@ -1064,18 +1034,18 @@ public class AsyncHttpClientConfig {
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
-            allowPoolingConnection = prototype.isAllowPoolingConnection();
+            allowPoolingConnections = prototype.isAllowPoolingConnections();
             providerConfig = prototype.getAsyncHttpProviderConfig();
-            connectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
-            idleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
-            idleConnectionTimeoutInMs = prototype.getIdleConnectionTimeoutInMs();
-            maxConnectionPerHost = prototype.getMaxConnectionPerHost();
-            maxConnectionLifeTimeInMs = prototype.getMaxConnectionLifeTimeInMs();
+            connectionTimeout = prototype.getConnectionTimeout();
+            pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
+            readTimeout = prototype.getReadTimeout();
+            maxConnectionsPerHost = prototype.getMaxConnectionsPerHost();
+            connectionTTL = prototype.getConnectionTTL();
             maxRedirects = prototype.getMaxRedirects();
-            maxTotalConnections = prototype.getMaxTotalConnections();
+            maxConnections = prototype.getMaxConnections();
             proxyServerSelector = prototype.getProxyServerSelector();
             realm = prototype.getRealm();
-            requestTimeoutInMs = prototype.getRequestTimeoutInMs();
+            requestTimeout = prototype.getRequestTimeout();
             sslContext = prototype.getSSLContext();
             userAgent = prototype.getUserAgent();
             followRedirect = prototype.isFollowRedirect();
@@ -1093,13 +1063,16 @@ public class AsyncHttpClientConfig {
             disableUrlEncodingForBoundRequests = prototype.isDisableUrlEncodingForBoundRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
-            allowSslConnectionPool = prototype.isAllowPoolingConnection();
+            allowPoolingSslConnections = prototype.isAllowPoolingConnections();
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
-            useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
-            timeConverter = prototype.getTimeConverter();
-            acceptAnyCertificate = prototype.isAcceptAnyCertificate();
+            timeConverter = prototype.timeConverter;
+            acceptAnyCertificate = prototype.acceptAnyCertificate;
+            
+            spdyEnabled = prototype.isSpdyEnabled();
+            spdyInitialWindowSize = prototype.getSpdyInitialWindowSize();
+            spdyMaxConcurrentStreams = prototype.getSpdyMaxConcurrentStreams();
         }
 
         /**
@@ -1108,16 +1081,6 @@ public class AsyncHttpClientConfig {
          * @return an {@link AsyncHttpClientConfig}
          */
         public AsyncHttpClientConfig build() {
-
-            if (reaper == null) {
-                reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r, "AsyncHttpClient-Reaper");
-                        t.setDaemon(true);
-                        return t;
-                    }
-                });
-            }
 
             if (proxyServerSelector == null && useProxySelector) {
                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
@@ -1131,42 +1094,40 @@ public class AsyncHttpClientConfig {
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
             }
 
-            return new AsyncHttpClientConfig(maxTotalConnections, //
-                    maxConnectionPerHost, //
-                    connectionTimeOutInMs, //
-                    webSocketIdleTimeoutInMs, //
-                    idleConnectionInPoolTimeoutInMs, //
-                    idleConnectionTimeoutInMs, //
-                    requestTimeoutInMs, //
-                    maxConnectionLifeTimeInMs, //
+            return new AsyncHttpClientConfig(connectionTimeout,//
+                    maxConnections,//
+                    maxConnectionsPerHost,//
+                    requestTimeout,//
+                    readTimeout,//
+                    webSocketReadTimeout,//
+                    allowPoolingConnections,//
+                    allowPoolingSslConnections,//
+                    pooledConnectionIdleTimeout,//
+                    connectionTTL,//
+                    sslContext, //
+                    hostnameVerifier,//
+                    acceptAnyCertificate, //
                     followRedirect, //
                     maxRedirects, //
-                    compressionEnabled, //
-                    userAgent, //
-                    allowPoolingConnection, //
-                    reaper, //
+                    removeQueryParamOnRedirect,//
+                    strict302Handling, //
                     applicationThreadPool, //
                     proxyServerSelector, //
-                    sslContext, //
-                    sslEngineFactory, //
-                    providerConfig, //
-                    realm, //
-                    requestFilters, //
-                    responseFilters, //
-                    ioExceptionFilters, //
-                    maxRequestRetry, //
-                    allowSslConnectionPool, //
-                    disableUrlEncodingForBoundRequests, //
-                    removeQueryParamOnRedirect, //
-                    hostnameVerifier, //
-                    ioThreadMultiplier, //
-                    strict302Handling, //
                     useRelativeURIsWithSSLProxies, //
+                    compressionEnabled, //
+                    userAgent,//
+                    realm,//
+                    requestFilters, //
+                    responseFilters,//
+                    ioExceptionFilters,//
+                    maxRequestRetry, //
+                    disableUrlEncodingForBoundRequests, //
+                    ioThreadMultiplier, //
+                    timeConverter,//
+                    providerConfig, //
                     spdyEnabled, //
                     spdyInitialWindowSize, //
-                    spdyMaxConcurrentStreams, //
-                    timeConverter, //
-                    acceptAnyCertificate);
+                    spdyMaxConcurrentStreams);
         }
     }
 }
