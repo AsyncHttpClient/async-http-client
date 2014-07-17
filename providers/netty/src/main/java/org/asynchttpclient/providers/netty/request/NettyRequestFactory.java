@@ -90,7 +90,7 @@ public final class NettyRequestFactory {
 
     private String hostHeader(Request request, UriComponents uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-        return uri.getPort() == -1 ? host : host + ":" + uri.getPort();
+        return request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
     }
 
     private String authorizationHeader(Request request, UriComponents uri, ProxyServer proxyServer, Realm realm) throws IOException {
