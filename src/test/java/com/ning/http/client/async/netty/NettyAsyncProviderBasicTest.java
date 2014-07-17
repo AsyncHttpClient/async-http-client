@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.async.netty;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
@@ -19,6 +21,7 @@ import com.ning.http.client.async.AsyncProvidersBasicTest;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 
+@Test
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override

@@ -506,7 +506,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int requestTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
             TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
             if (requestTimeoutInMs != -1) {
-                Timeout requestTimeout = newTimeoutInMs(new RequestTimeoutTimerTask(future, this, timeoutsHolder), requestTimeoutInMs);
+                Timeout requestTimeout = newTimeoutInMs(new RequestTimeoutTimerTask(future, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
                 timeoutsHolder.requestTimeout = requestTimeout;
             }
 
@@ -573,7 +573,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-        String hostHeader = uri.getPort() == -1 ? host : host + ":" + uri.getPort();
+        String hostHeader = request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
         nettyRequestHeaders.set(HttpHeaders.Names.HOST, hostHeader);
 
         if (!m.equals(HttpMethod.CONNECT)) {
@@ -808,7 +808,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (f == null) {
                     nettyRequest = buildRequest(config, request, uri, false, bufferedBytes, proxyServer);
-                    f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
+                    f = newFuture(uri, request, asyncHandler, nettyRequest, config, proxyServer);
                 } else if (i == 0) {
                     // only build request on first try
                     nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes, proxyServer);
@@ -832,13 +832,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Request request,//
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
-            NettyAsyncHttpProvider provider,//
             ChannelBuffer buffer,//
             UriComponents uri) throws IOException {
         ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer, proxyServer);
         if (future == null) {
-            return NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider, proxyServer);
+            return NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, proxyServer);
         } else {
             future.setNettyRequest(nettyRequest);
             future.setRequest(request);
@@ -902,7 +901,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, this, bufferedBytes,
+        NettyResponseFuture<T> connectListenerFuture = buildConnectListenerFuture(config, request, asyncHandler, f, bufferedBytes,
                 uri);
 
         boolean channelPreempted = false;
@@ -1461,15 +1460,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public static <T> NettyResponseFuture<T> newFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler,
-            HttpRequest nettyRequest, AsyncHttpClientConfig config, NettyAsyncHttpProvider provider, ProxyServer proxyServer) {
+            HttpRequest nettyRequest, AsyncHttpClientConfig config, ProxyServer proxyServer) {
 
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//
                 request,//
                 asyncHandler,//
                 nettyRequest,//
-                AsyncHttpProviderUtils.requestTimeout(config, request),//
-                config.getIdleConnectionTimeoutInMs(),//
-                provider,//
+                config.getMaxRequestRetry(),//
                 request.getConnectionPoolKeyStrategy(),//
                 proxyServer);
 

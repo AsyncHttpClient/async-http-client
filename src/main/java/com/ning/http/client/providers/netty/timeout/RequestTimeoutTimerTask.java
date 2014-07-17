@@ -21,8 +21,11 @@ import com.ning.http.client.providers.netty.NettyResponseFuture;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
-    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder) {
+    private final long requestTimeout;
+    
+    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder, long requestTimeout) {
         super(nettyResponseFuture, provider, timeoutsHolder);
+        this.requestTimeout = requestTimeout;
     }
 
     public void run(Timeout timeout) throws Exception {
@@ -34,9 +37,8 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
             return;
         }
 
-        String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms";
+        String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + requestTimeout + " ms";
         long age = millisTime() - nettyResponseFuture.getStart();
         expire(message, age);
-        nettyResponseFuture.setRequestTimeoutReached();
     }
 }
