@@ -19,11 +19,13 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.RequestFilter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link com.ning.http.client.filter.RequestFilter} throttles requests and block when the number of permits is reached, waiting for
@@ -31,18 +33,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class ThrottleRequestFilter implements RequestFilter {
     private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
-    private final int maxConnections;
     private final Semaphore available;
     private final int maxWait;
 
     public ThrottleRequestFilter(int maxConnections) {
-        this.maxConnections = maxConnections;
-        this.maxWait = Integer.MAX_VALUE;
-        available = new Semaphore(maxConnections, true);
+        this(maxConnections, Integer.MAX_VALUE);
     }
 
     public ThrottleRequestFilter(int maxConnections, int maxWait) {
-        this.maxConnections = maxConnections;
         this.maxWait = maxWait;
         available = new Semaphore(maxConnections, true);
     }
@@ -62,7 +60,6 @@ public class ThrottleRequestFilter implements RequestFilter {
                         String.format("No slot available for processing Request %s with AsyncHandler %s",
                                 ctx.getRequest(), ctx.getAsyncHandler()));
             }
-            ;
         } catch (InterruptedException e) {
             throw new FilterException(
                     String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
@@ -71,7 +68,9 @@ public class ThrottleRequestFilter implements RequestFilter {
         return new FilterContext.FilterContextBuilder(ctx).asyncHandler(new AsyncHandlerWrapper(ctx.getAsyncHandler())).build();
     }
 
-    private class AsyncHandlerWrapper<T> implements AsyncHandler {
+    private class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
+
+        private AtomicBoolean complete = new AtomicBoolean(false);
 
         private final AsyncHandler<T> asyncHandler;
 
@@ -79,6 +78,14 @@ public class ThrottleRequestFilter implements RequestFilter {
             this.asyncHandler = asyncHandler;
         }
 
+        private void complete() {
+            if (complete.compareAndSet(false, true))
+                available.release();
+            if (logger.isDebugEnabled()) {
+                logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
+            }
+        }
+        
         /**
          * {@inheritDoc}
          */
@@ -87,10 +94,7 @@ public class ThrottleRequestFilter implements RequestFilter {
             try {
                 asyncHandler.onThrowable(t);
             } finally {
-                available.release();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
-                }
+                complete();
             }
         }
 
@@ -123,11 +127,11 @@ public class ThrottleRequestFilter implements RequestFilter {
          */
         /* @Override */
         public T onCompleted() throws Exception {
-            available.release();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status {}", available.availablePermits());
+            try {
+                return asyncHandler.onCompleted();
+            } finally {
+                complete();
             }
-            return asyncHandler.onCompleted();
         }
     }
 }
