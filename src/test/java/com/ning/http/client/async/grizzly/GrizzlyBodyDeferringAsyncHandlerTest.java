@@ -13,36 +13,15 @@
 
 package com.ning.http.client.async.grizzly;
 
-import org.testng.annotations.Test;
-
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BodyDeferringAsyncHandlerTest;
 import com.ning.http.client.async.ProviderUtil;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public class GrizzlyBodyDeferringAsyncHandlerTest extends BodyDeferringAsyncHandlerTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
-    }
-
-    // FIXME
-    @Test(enabled = false)
-    public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    }
-
-    // FIXME
-    @Test(enabled = false)
-    public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    }
-
-    // FIXME
-    @Test(enabled = false)
-    public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     }
 }
