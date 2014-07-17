@@ -125,7 +125,7 @@ import com.ning.http.client.providers.netty.pool.ChannelPool;
 import com.ning.http.client.providers.netty.pool.DefaultChannelPool;
 import com.ning.http.client.providers.netty.pool.NoopChannelPool;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.client.providers.netty.timeout.IdleConnectionTimeoutTimerTask;
+import com.ning.http.client.providers.netty.timeout.ReadTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
@@ -509,11 +509,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 timeoutsHolder.requestTimeout = newTimeout(new RequestTimeoutTimerTask(future, this, timeoutsHolder, requestTimeout), requestTimeout);
             }
 
-            int idleConnectionTimeout = config.getReadTimeout();
-            if (idleConnectionTimeout != -1 && idleConnectionTimeout <= requestTimeout) {
+            int readTimeout = config.getReadTimeout();
+            if (readTimeout != -1 && readTimeout <= requestTimeout) {
                 // no need for a idleConnectionTimeout that's less than the requestTimeout
-                timeoutsHolder.idleConnectionTimeout = newTimeout(new IdleConnectionTimeoutTimerTask(future, this, timeoutsHolder,
-                        requestTimeout, idleConnectionTimeout), idleConnectionTimeout);
+                timeoutsHolder.readTimeout = newTimeout(new ReadTimeoutTimerTask(future, this, timeoutsHolder,
+                        requestTimeout, readTimeout), readTimeout);
             }
             future.setTimeoutsHolder(timeoutsHolder);
 

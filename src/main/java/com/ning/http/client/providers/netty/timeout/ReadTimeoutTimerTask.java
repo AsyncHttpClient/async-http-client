@@ -19,15 +19,15 @@ import org.jboss.netty.util.Timeout;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyResponseFuture;
 
-public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
+public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
-    private final long idleConnectionTimeout;
+    private final long readTimeout;
     private final long requestTimeoutInstant;
 
-    public IdleConnectionTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder,
-            long requestTimeout, long idleConnectionTimeout) {
+    public ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder,
+            long requestTimeout, long readTimeout) {
         super(nettyResponseFuture, provider, timeoutsHolder);
-        this.idleConnectionTimeout = idleConnectionTimeout;
+        this.readTimeout = readTimeout;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
@@ -40,22 +40,22 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
 
         long now = millisTime();
 
-        long currentIdleConnectionTimeoutInstant = idleConnectionTimeout + nettyResponseFuture.getLastTouch();
-        long durationBeforeCurrentIdleConnectionTimeout = currentIdleConnectionTimeoutInstant - now;
+        long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
+        long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
 
-        if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
+        if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectionTimeout reached
-            String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + idleConnectionTimeout + " ms";
+            String message = "Read timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
 
-        } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {
+        } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
             // reschedule
-            timeoutsHolder.idleConnectionTimeout = provider.newTimeout(this, durationBeforeCurrentIdleConnectionTimeout);
+            timeoutsHolder.readTimeout = provider.newTimeout(this, durationBeforeCurrentReadTimeout);
 
         } else {
             // otherwise, no need to reschedule: requestTimeout will happen sooner
-            timeoutsHolder.idleConnectionTimeout = null;
+            timeoutsHolder.readTimeout = null;
         }
     }
 }
