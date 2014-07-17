@@ -54,6 +54,7 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     }
     
     // FIXME server replies with a foo=bar cookie and yet Grizzly decodes it into foo=value; domain=/; path=/
+    // see https://github.com/AsyncHttpClient/async-http-client/issues/631
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncDoGetCookieTest() throws Throwable {
     }
