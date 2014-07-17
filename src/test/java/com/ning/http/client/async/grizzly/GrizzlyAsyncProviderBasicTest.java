@@ -36,12 +36,6 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     }
 
     @Override
-    @Test
-    public void asyncHeaderPOSTTest() throws Throwable {
-        super.asyncHeaderPOSTTest(); // To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
         config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {
@@ -54,9 +48,9 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         return config;
     }
 
-    // FIXME why disabled?
-    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
-    public void asyncDoPostBasicGZIPTest() throws Throwable {
+    @Override
+    protected String generatedAcceptEncodingHeader() {
+        return "gzip";
     }
     
     // FIXME server replies with a foo=bar cookie and yet Grizzly decodes it into foo=value; domain=/; path=/

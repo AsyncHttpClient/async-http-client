@@ -700,6 +700,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
+    protected abstract String generatedAcceptEncodingHeader();
+    
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Throwable {
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build();
@@ -724,7 +726,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getHeader("X-Accept-Encoding"), "gzip,deflate");
+                        assertEquals(response.getHeader("X-Accept-Encoding"), generatedAcceptEncodingHeader());
                     } finally {
                         l.countDown();
                     }

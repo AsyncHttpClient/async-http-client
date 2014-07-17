@@ -28,9 +28,11 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override
     protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
-        final NettyAsyncHttpProviderConfig config = 
-                new NettyAsyncHttpProviderConfig();
-        config.addProperty("tcpNoDelay", true);
-        return config;
+        return new NettyAsyncHttpProviderConfig().addProperty("tcpNoDelay", true);
+    }
+
+    @Override
+    protected String generatedAcceptEncodingHeader() {
+        return "gzip,deflate";
     }
 }
