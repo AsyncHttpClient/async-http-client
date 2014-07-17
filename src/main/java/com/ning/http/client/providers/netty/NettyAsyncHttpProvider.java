@@ -573,16 +573,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-        if (host != null) {
-            // FIXME why write port when regular host?
-            if (request.getVirtualHost() != null || uri.getPort() == -1) {
-                nettyRequestHeaders.set(HttpHeaders.Names.HOST, host);
-            } else {
-                nettyRequestHeaders.set(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
-            }
-        } else {
-            host = "127.0.0.1";
-        }
+        String hostHeader = uri.getPort() == -1 ? host : host + ":" + uri.getPort();
+        nettyRequestHeaders.set(HttpHeaders.Names.HOST, hostHeader);
 
         if (!m.equals(HttpMethod.CONNECT)) {
             for (Entry<String, List<String>> header : request.getHeaders()) {
