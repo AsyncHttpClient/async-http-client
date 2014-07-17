@@ -162,16 +162,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final ClientBootstrap secureBootstrap;
     private final ClientBootstrap webSocketBootstrap;
     private final ClientBootstrap secureWebSocketBootstrap;
+
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
     private final ClientSocketChannelFactory socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
-
     private final ChannelManager channelManager;
     private final NettyAsyncHttpProviderConfig providerConfig;
     private final boolean disableZeroCopy;
     private static final NTLMEngine ntlmEngine = new NTLMEngine();
-    private static SpnegoEngine spnegoEngine = null;
+    private static SpnegoEngine spnegoEngine;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
     private final boolean allowStopNettyTimer;
@@ -184,11 +184,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
-        if (config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig) {
-            providerConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
-        } else {
+        this.config = config;
+
+        if (config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig)
+            providerConfig = (NettyAsyncHttpProviderConfig) config.getAsyncHttpProviderConfig();
+        else
             providerConfig = new NettyAsyncHttpProviderConfig();
-        }
 
         // check if external NioClientSocketChannelFactory is defined
         if (providerConfig.getSocketChannelFactory() != null) {
@@ -217,18 +218,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         secureWebSocketBootstrap = new ClientBootstrap(socketChannelFactory);
         disableZeroCopy = providerConfig.isDisableZeroCopy();
 
-        this.config = config;
-
         configureNetty();
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
-        ChannelPool cp = providerConfig.getChannelPool();
-        if (cp == null && config.isAllowPoolingConnection()) {
-            cp = new DefaultChannelPool(config, nettyTimer);
-        } else if (cp == null) {
-            cp = new NoopChannelPool();
+        ChannelPool channelPool = providerConfig.getChannelPool();
+        if (channelPool == null && config.isAllowPoolingConnection()) {
+            channelPool = new DefaultChannelPool(config, nettyTimer);
+        } else if (channelPool == null) {
+            channelPool = new NoopChannelPool();
         }
-        this.channelManager = new ChannelManager(config, cp);
+        this.channelManager = new ChannelManager(config, channelPool);
     }
 
     private Timer newNettyTimer() {
@@ -239,23 +238,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     void configureNetty() {
 
-        // FIXME why not do that for other bootstraps
+        DefaultChannelFuture.setUseDeadLockChecker(providerConfig.isUseDeadLockChecker());
+
         for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
-            plainBootstrap.setOption(entry.getKey(), entry.getValue());
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            plainBootstrap.setOption(key, value);
+            webSocketBootstrap.setOption(key, value);
+            secureBootstrap.setOption(key, value);
+            secureWebSocketBootstrap.setOption(key, value);
         }
 
-        DefaultChannelFuture.setUseDeadLockChecker(providerConfig.isUseDeadLockChecker());
+        final boolean compressionEnabled = config.isCompressionEnabled();
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
-
                 pipeline.addLast(HTTP_HANDLER, createHttpClientCodec());
-
-                if (config.isCompressionEnabled()) {
+                if (compressionEnabled)
                     pipeline.addLast("inflater", new HttpContentDecompressor());
-                }
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, NettyAsyncHttpProvider.this);
                 return pipeline;
@@ -264,10 +266,34 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         webSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
-            /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(HTTP_HANDLER, createHttpClientCodec());
+                pipeline.addLast(WS_PROCESSOR, NettyAsyncHttpProvider.this);
+                return pipeline;
+            }
+        });
+
+        secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+
+            public ChannelPipeline getPipeline() throws Exception {
+                ChannelPipeline pipeline = pipeline();
+                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
+                pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
+                if (compressionEnabled)
+                    pipeline.addLast("inflater", new HttpContentDecompressor());
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+                pipeline.addLast(HTTP_PROCESSOR, NettyAsyncHttpProvider.this);
+                return pipeline;
+            }
+        });
+
+        secureWebSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+
+            public ChannelPipeline getPipeline() throws Exception {
+                ChannelPipeline pipeline = pipeline();
+                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
+                pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
                 pipeline.addLast(WS_PROCESSOR, NettyAsyncHttpProvider.this);
                 return pipeline;
             }
@@ -278,46 +304,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config, peerHost, peerPort);
         return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis)
                 : new SslHandler(sslEngine);
-    }
-
-    void constructSSLPipeline(final NettyConnectListener<?> cl) {
-
-        secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-
-            /* @Override */
-            public ChannelPipeline getPipeline() throws Exception {
-                ChannelPipeline pipeline = pipeline();
-                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
-                pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
-
-                if (config.isCompressionEnabled()) {
-                    pipeline.addLast("inflater", new HttpContentDecompressor());
-                }
-                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-                pipeline.addLast(HTTP_PROCESSOR, NettyAsyncHttpProvider.this);
-                return pipeline;
-            }
-        });
-
-        secureWebSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-
-            /* @Override */
-            public ChannelPipeline getPipeline() throws Exception {
-                ChannelPipeline pipeline = pipeline();
-                pipeline.addLast(SSL_HANDLER, new SslInitializer(NettyAsyncHttpProvider.this));
-                pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
-                pipeline.addLast(WS_PROCESSOR, NettyAsyncHttpProvider.this);
-
-                return pipeline;
-            }
-        });
-
-        if (providerConfig != null) {
-            for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
-                secureBootstrap.setOption(entry.getKey(), entry.getValue());
-                secureWebSocketBootstrap.setOption(entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     private Channel lookupInCache(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
@@ -953,9 +939,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, connectListenerFuture, this, channelManager,
                 channelPreempted, poolKey);
-
-        if (useSSl)
-            constructSSLPipeline(connectListener);
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = (request.getURI().getScheme().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap
@@ -2011,8 +1994,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private final void handleHttpResponse(final HttpResponse response, final Channel channel,
-            final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
+    private final void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future,
+            AsyncHandler<?> handler) throws Exception {
 
         HttpRequest nettyRequest = future.getNettyRequest();
         Request request = future.getRequest();
