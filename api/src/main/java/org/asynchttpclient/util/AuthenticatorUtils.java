@@ -50,38 +50,30 @@ public final class AuthenticatorUtils {
     public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
-        construct(builder, "username", realm.getPrincipal());
-        construct(builder, "realm", realm.getRealmName());
-        construct(builder, "nonce", realm.getNonce());
-        construct(builder, "uri", computeRealmURI(realm));
-        builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
+        append(builder, "username", realm.getPrincipal(), true);
+        append(builder, "realm", realm.getRealmName(), true);
+        append(builder, "nonce", realm.getNonce(), true);
+        append(builder, "uri", computeRealmURI(realm), true);
+        append(builder, "algorithm", realm.getAlgorithm(), false);
 
-        construct(builder, "response", realm.getResponse());
+        append(builder, "response", realm.getResponse(), true);
         if (isNonEmpty(realm.getOpaque()))
-            construct(builder, "opaque", realm.getOpaque());
-        builder.append("qop").append('=').append(realm.getQop()).append(", ");
-        builder.append("nc").append('=').append(realm.getNc()).append(", ");
-        construct(builder, "cnonce", realm.getCnonce(), true);
+            append(builder, "opaque", realm.getOpaque(), true);
+        append(builder, "qop", realm.getQop(), false);
+        append(builder, "nc", realm.getNc(), false);
+        append(builder, "cnonce", realm.getCnonce(), true);
+        builder.setLength(builder.length() - 2); // remove tailing ", "
 
         return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static String computeDigestAuthentication(ProxyServer proxy) {
-        try {
-            StringBuilder builder = new StringBuilder().append("Digest ");
-            construct(builder, "username", proxy.getPrincipal(), true);
-            return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {
+        builder.append(name).append('=');
+        if (quoted)
+            builder.append('"').append(value).append('"');
+        else
+            builder.append(value);
 
-    private static StringBuilder construct(StringBuilder builder, String name, String value) {
-        return construct(builder, name, value, false);
-    }
-
-    private static StringBuilder construct(StringBuilder builder, String name, String value, boolean tail) {
-        return builder.append(name).append('=').append('"').append(value).append(tail ? "\"" : "\", ");
+        return builder.append(", ");
     }
 }
