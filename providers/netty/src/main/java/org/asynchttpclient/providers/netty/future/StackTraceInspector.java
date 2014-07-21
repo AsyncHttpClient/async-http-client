@@ -14,57 +14,57 @@ package org.asynchttpclient.providers.netty.future;
 
 public class StackTraceInspector {
 
-    private static boolean exceptionInMethod(Throwable cause, String className, String methodName) {
+    private static boolean exceptionInMethod(Throwable t, String className, String methodName) {
         try {
-            for (StackTraceElement element : cause.getStackTrace()) {
+            for (StackTraceElement element : t.getStackTrace()) {
                 if (element.getClassName().equals(className) && element.getMethodName().equals(methodName))
                     return true;
             }
-        } catch (Throwable t) {
+        } catch (Throwable ignore) {
         }
         return false;
     }
 
-    private static boolean abortOnConnectCloseException(Throwable cause) {
+    private static boolean abortOnConnectCloseException(Throwable t) {
 
-        if (exceptionInMethod(cause, "sun.nio.ch.SocketChannelImpl", "checkConnect"))
+        if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect"))
             return true;
 
-        if (cause.getCause() != null)
-            return abortOnConnectCloseException(cause.getCause());
+        if (t.getCause() != null)
+            return abortOnConnectCloseException(t.getCause());
 
         return false;
     }
 
-    public static boolean abortOnDisconnectException(Throwable cause) {
+    public static boolean abortOnDisconnectException(Throwable t) {
 
-        if (exceptionInMethod(cause, "io.netty.handler.ssl.SslHandler", "disconnect"))
+        if (exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect"))
             return true;
 
-        if (cause.getCause() != null)
-            return abortOnConnectCloseException(cause.getCause());
+        if (t.getCause() != null)
+            return abortOnConnectCloseException(t.getCause());
 
         return false;
     }
 
-    public static boolean abortOnReadCloseException(Throwable cause) {
+    public static boolean abortOnReadCloseException(Throwable t) {
 
-        if (exceptionInMethod(cause, "sun.nio.ch.SocketDispatcher", "read"))
+        if (exceptionInMethod(t, "sun.nio.ch.SocketDispatcher", "read"))
             return true;
 
-        if (cause.getCause() != null)
-            return abortOnReadCloseException(cause.getCause());
+        if (t.getCause() != null)
+            return abortOnReadCloseException(t.getCause());
 
         return false;
     }
 
-    public static boolean abortOnWriteCloseException(Throwable cause) {
+    public static boolean abortOnWriteCloseException(Throwable t) {
 
-        if (exceptionInMethod(cause, "sun.nio.ch.SocketDispatcher", "write"))
+        if (exceptionInMethod(t, "sun.nio.ch.SocketDispatcher", "write"))
             return true;
 
-        if (cause.getCause() != null)
-            return abortOnWriteCloseException(cause.getCause());
+        if (t.getCause() != null)
+            return abortOnWriteCloseException(t.getCause());
 
         return false;
     }
