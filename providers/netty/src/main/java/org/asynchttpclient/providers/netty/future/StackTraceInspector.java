@@ -26,25 +26,13 @@ public class StackTraceInspector {
     }
 
     private static boolean abortOnConnectCloseException(Throwable t) {
-
-        if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect"))
-            return true;
-
-        if (t.getCause() != null)
-            return abortOnConnectCloseException(t.getCause());
-
-        return false;
+        return exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
+                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
     }
 
     public static boolean abortOnDisconnectException(Throwable t) {
-
-        if (exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect"))
-            return true;
-
-        if (t.getCause() != null)
-            return abortOnConnectCloseException(t.getCause());
-
-        return false;
+        return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
+                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
     }
 
     public static boolean abortOnReadOrWriteException(Throwable t) {
