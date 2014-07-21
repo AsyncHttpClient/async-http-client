@@ -1365,7 +1365,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
 
-                if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
+                if (StackTraceInspector.abortOnReadOrWriteException(cause)) {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }
@@ -1390,71 +1390,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         channelManager.closeChannel(channel);
         ctx.sendUpstream(e);
-    }
-
-    protected static boolean abortOnConnectCloseException(Throwable cause) {
-        try {
-            for (StackTraceElement element : cause.getStackTrace()) {
-                if (element.getClassName().equals("sun.nio.ch.SocketChannelImpl") && element.getMethodName().equals("checkConnect")) {
-                    return true;
-                }
-            }
-
-            if (cause.getCause() != null) {
-                return abortOnConnectCloseException(cause.getCause());
-            }
-
-        } catch (Throwable t) {
-        }
-        return false;
-    }
-
-    protected static boolean abortOnDisconnectException(Throwable cause) {
-        try {
-            for (StackTraceElement element : cause.getStackTrace()) {
-                if (element.getClassName().equals("org.jboss.netty.handler.ssl.SslHandler")
-                        && element.getMethodName().equals("channelDisconnected")) {
-                    return true;
-                }
-            }
-
-            if (cause.getCause() != null) {
-                return abortOnConnectCloseException(cause.getCause());
-            }
-
-        } catch (Throwable t) {
-        }
-        return false;
-    }
-
-    protected static boolean abortOnReadCloseException(Throwable cause) {
-
-        for (StackTraceElement element : cause.getStackTrace()) {
-            if (element.getClassName().equals("sun.nio.ch.SocketDispatcher") && element.getMethodName().equals("read")) {
-                return true;
-            }
-        }
-
-        if (cause.getCause() != null) {
-            return abortOnReadCloseException(cause.getCause());
-        }
-
-        return false;
-    }
-
-    protected static boolean abortOnWriteCloseException(Throwable cause) {
-
-        for (StackTraceElement element : cause.getStackTrace()) {
-            if (element.getClassName().equals("sun.nio.ch.SocketDispatcher") && element.getMethodName().equals("write")) {
-                return true;
-            }
-        }
-
-        if (cause.getCause() != null) {
-            return abortOnWriteCloseException(cause.getCause());
-        }
-
-        return false;
     }
 
     public static <T> NettyResponseFuture<T> newFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler,
@@ -1503,7 +1438,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 }
 
-                if (cause instanceof ClosedChannelException || abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
+                if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
 
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
