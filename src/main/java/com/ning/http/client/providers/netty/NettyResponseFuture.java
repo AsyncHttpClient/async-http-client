@@ -157,8 +157,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * {@inheritDoc}
      */
     public V get() throws InterruptedException, ExecutionException {
-        if (!isDone())
-            latch.await();
+        latch.await();
         return getContent();
     }
 
@@ -166,7 +165,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * {@inheritDoc}
      */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
-        if (!isDone() && !latch.await(l, tu))
+        if (!latch.await(l, tu))
             throw new TimeoutException();
         return getContent();
     }
