@@ -1609,8 +1609,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                              AuthenticatorUtils.computeDigestAuthentication(realm));
                     } catch (NoSuchAlgorithmException e) {
                         throw new IllegalStateException("Digest authentication not supported", e);
-                    } catch (UnsupportedEncodingException e) {
-                        throw new IllegalStateException("Unsupported encoding.", e);
                     }
                 } else {
                     throw new IllegalStateException("Unsupported authorization method: " + auth);

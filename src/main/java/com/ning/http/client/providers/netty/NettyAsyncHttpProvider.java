@@ -30,7 +30,6 @@ import java.net.MalformedURLException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -136,6 +135,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
+import com.ning.http.util.StandardCharsets;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
 
@@ -156,7 +156,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static final String HTTP = "http";
     private static final String WEBSOCKET = "ws";
     private static final String WEBSOCKET_SSL = "wss";
-    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     private final ClientBootstrap plainBootstrap;
     private final ClientBootstrap secureBootstrap;
@@ -2161,7 +2160,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         if (pendingOpcode == OPCODE_BINARY) {
                             webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                         } else if (pendingOpcode == OPCODE_TEXT) {
-                            webSocket.onTextFragment(frame.getBinaryData().toString(UTF8), frame.isFinalFragment());
+                            webSocket.onTextFragment(frame.getBinaryData().toString(StandardCharsets.UTF_8), frame.isFinalFragment());
                         }
 
                         if (frame instanceof CloseWebSocketFrame) {

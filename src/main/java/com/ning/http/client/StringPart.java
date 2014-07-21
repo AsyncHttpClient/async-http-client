@@ -16,6 +16,8 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.util.StandardCharsets;
+
 /**
  * A string multipart part.
  */
@@ -33,7 +35,7 @@ public class StringPart implements Part {
     public StringPart(String name, String value) {
         this.name = name;
         this.value = value;
-        this.charset = "UTF-8";
+        this.charset = StandardCharsets.UTF_8.name();
     }
 
     /**

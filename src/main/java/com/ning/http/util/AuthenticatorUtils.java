@@ -48,7 +48,7 @@ public final class AuthenticatorUtils {
         }
     }
     
-    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
@@ -65,7 +65,7 @@ public final class AuthenticatorUtils {
         append(builder, "cnonce", realm.getCnonce(), true);
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
-        return new String(builder.toString().getBytes("ISO-8859-1"));
+        return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
     private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {

@@ -19,6 +19,7 @@ package com.ning.http.client;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.uri.UriComponents;
+import com.ning.http.util.StandardCharsets;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -297,7 +298,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive = false;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
-        private String enc = "UTF-8";
+        private String enc = StandardCharsets.UTF_8.name();
         private String host = "localhost";
         private boolean messageType2Received = false;
         private boolean useAbsoluteURI = true;

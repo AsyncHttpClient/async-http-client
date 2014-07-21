@@ -13,6 +13,7 @@
 package com.ning.http.client.consumers;
 
 import com.ning.http.client.BodyConsumer;
+import com.ning.http.util.StandardCharsets;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
 
     public AppendableBodyConsumer(Appendable appendable) {
         this.appendable = appendable;
-        this.encoding = "UTF-8";
+        this.encoding = StandardCharsets.UTF_8.name();
     }
 
     /**

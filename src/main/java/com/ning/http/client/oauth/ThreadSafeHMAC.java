@@ -16,7 +16,7 @@
  */
 package com.ning.http.client.oauth;
 
-import com.ning.http.util.UTF8Codec;
+import com.ning.http.util.StandardCharsets;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import javax.crypto.Mac;
@@ -41,7 +41,7 @@ public class ThreadSafeHMAC {
         UTF8UrlEncoder.appendEncoded(sb, consumerAuth.getSecret());
         sb.append('&');
         UTF8UrlEncoder.appendEncoded(sb, userAuth.getSecret());
-        byte[] keyBytes = UTF8Codec.toUTF8(sb.toString());
+        byte[] keyBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key
