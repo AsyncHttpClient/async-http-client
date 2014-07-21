@@ -45,6 +45,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
+import com.ning.http.util.StandardCharsets;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import org.apache.commons.httpclient.CircularRedirectException;
@@ -251,9 +252,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
             EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getURI().toUrl()) : new PutMethod(request.getURI().toUrl());
 
-            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET.name() : request.getBodyEncoding();
 
-            post.getParams().setContentCharset("ISO-8859-1");
+            post.getParams().setContentCharset(StandardCharsets.ISO_8859_1.name());
             if (request.getByteData() != null) {
                 post.setRequestEntity(new ByteArrayRequestEntity(request.getByteData()));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getByteData().length));
@@ -279,7 +280,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
 
                 post.setRequestHeader("Content-Length", String.valueOf(sb.length()));
-                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", "ISO-8859-1"));
+                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", StandardCharsets.ISO_8859_1.name()));
 
                 if (!request.getHeaders().containsKey("Content-Type")) {
                     post.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");

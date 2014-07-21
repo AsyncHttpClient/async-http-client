@@ -30,6 +30,7 @@ import java.net.MalformedURLException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -697,7 +698,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequestHeaders.set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
             }
 
-            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+            Charset bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : Charset.forName(request.getBodyEncoding());
 
             // We already have processed the body.
             if (buffer != null && buffer.writerIndex() != 0) {

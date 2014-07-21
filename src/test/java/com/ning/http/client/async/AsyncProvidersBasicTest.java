@@ -60,6 +60,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.util.StandardCharsets;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
@@ -535,7 +536,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("\u017D\u017D\u017D\u017D\u017D\u017D").execute().get();
-            assertEquals(r.getResponseBody().getBytes("ISO-8859-1"), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes("ISO-8859-1"));
+            assertEquals(r.getResponseBody().getBytes(StandardCharsets.ISO_8859_1), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(StandardCharsets.ISO_8859_1));
         } finally {
             client.close();
         }

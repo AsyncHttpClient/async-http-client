@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.List;
 
 /**
@@ -44,7 +45,7 @@ import java.util.List;
  */
 public class AsyncHttpProviderUtils {
 
-    public final static String DEFAULT_CHARSET = "ISO-8859-1";
+    public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
     

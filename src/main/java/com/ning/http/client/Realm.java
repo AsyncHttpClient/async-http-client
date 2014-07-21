@@ -530,7 +530,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes("ISO-8859-1"));
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(StandardCharsets.ISO_8859_1));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                 throw new SecurityException(e);
@@ -577,7 +577,7 @@ public class Realm {
                     .append(realmName)
                     .append(":")
                     .append(password)
-                    .toString().getBytes("ISO-8859-1"));
+                    .toString().getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha1 = md.digest();
 
             md.reset();
@@ -585,7 +585,7 @@ public class Realm {
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
             md.update(new StringBuilder(methodName)
                     .append(':')
-                    .append(uri).toString().getBytes("ISO-8859-1"));
+                    .append(uri).toString().getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha2 = md.digest();
 
             if(qop==null || qop.equals("")) {
@@ -593,7 +593,7 @@ public class Realm {
                     .append(':')
                     .append(nonce)
                     .append(':')
-                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+                    .append(toBase16(ha2)).toString().getBytes(StandardCharsets.ISO_8859_1));
 
              } else {
                  //qop ="auth" or "auth-int"
@@ -607,7 +607,7 @@ public class Realm {
                     .append(':')
                     .append(qop)
                     .append(':')
-                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+                    .append(toBase16(ha2)).toString().getBytes(StandardCharsets.ISO_8859_1));
             }
 
             byte[] digest = md.digest();

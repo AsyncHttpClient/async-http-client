@@ -545,7 +545,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             if ("POST".equals(reqType) || "PUT".equals(reqType)) {
                 urlConnection.setRequestProperty("Content-Length", "0");
                 urlConnection.setDoOutput(true);
-                String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+                String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET.name() : request.getBodyEncoding();
 
                 if (cachedBytes != null) {
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(cachedBytesLenght));

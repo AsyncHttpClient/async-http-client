@@ -39,12 +39,13 @@ import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.StandardCharsets;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
 public class NettyResponse implements Response {
-    private final static Charset DEFAULT_CHARSET = Charset.forName("ISO-8859-1");
+    private final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private final List<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;

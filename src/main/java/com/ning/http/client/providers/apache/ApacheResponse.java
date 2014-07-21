@@ -31,9 +31,10 @@ import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.StandardCharsets;
 
 public class ApacheResponse implements Response {
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";
+    private final static String DEFAULT_CHARSET = StandardCharsets.ISO_8859_1.name();
 
     private final UriComponents uri;
     private final List<HttpResponseBodyPart> bodyParts;

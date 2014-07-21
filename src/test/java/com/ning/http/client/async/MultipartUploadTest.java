@@ -20,6 +20,8 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.StandardCharsets;
+
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
@@ -40,6 +42,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -221,11 +224,11 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.addBodyPart(new StringPart("Name", "Dominic"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
 
-            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
+            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
+            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
 
-            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes("UTF-8"), "text/plain", "UTF-8"));
+            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8.name()));
 
             com.ning.http.client.Request r = builder.build();
 
