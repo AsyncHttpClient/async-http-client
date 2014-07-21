@@ -61,8 +61,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
                 } catch (RuntimeException ex) {
                     LOGGER.debug(ex.getMessage(), ex);
                 }
-            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadCloseException(cause)
-                    || StackTraceInspector.abortOnWriteCloseException(cause)) {
+            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
 
                 if (LOGGER.isDebugEnabled())
                     LOGGER.debug(cause.getMessage(), cause);

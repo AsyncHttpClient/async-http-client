@@ -47,24 +47,20 @@ public class StackTraceInspector {
         return false;
     }
 
-    public static boolean abortOnReadCloseException(Throwable t) {
+    public static boolean abortOnReadOrWriteException(Throwable t) {
 
-        if (exceptionInMethod(t, "sun.nio.ch.SocketDispatcher", "read"))
-            return true;
-
-        if (t.getCause() != null)
-            return abortOnReadCloseException(t.getCause());
-
-        return false;
-    }
-
-    public static boolean abortOnWriteCloseException(Throwable t) {
-
-        if (exceptionInMethod(t, "sun.nio.ch.SocketDispatcher", "write"))
-            return true;
+        try {
+            for (StackTraceElement element : t.getStackTrace()) {
+                String className = element.getClassName();
+                String methodName = element.getMethodName();
+                if (className.equals("sun.nio.ch.SocketDispatcher") && (methodName.equals("read") || methodName.equals("write")))
+                    return true;
+            }
+        } catch (Throwable ignore) {
+        }
 
         if (t.getCause() != null)
-            return abortOnWriteCloseException(t.getCause());
+            return abortOnReadOrWriteException(t.getCause());
 
         return false;
     }
