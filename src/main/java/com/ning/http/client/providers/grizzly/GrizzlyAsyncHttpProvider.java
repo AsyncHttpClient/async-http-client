@@ -1440,6 +1440,22 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        @Override
+        protected boolean onHttpHeaderParsed(final HttpHeader httpHeader,
+                final Buffer buffer, final FilterChainContext ctx) {
+            super.onHttpHeaderParsed(httpHeader, buffer, ctx);
+            
+            final HttpRequestPacket request = ((HttpResponsePacket) httpHeader).getRequest();
+            if (Method.CONNECT.equals(request.getMethod())) {
+                // finish request/response processing, because Grizzly itself
+                // treats CONNECT traffic as part of request-response processing
+                // and we don't want it be treated like that
+                httpHeader.setExpectContent(false);
+            }
+            
+            return false;
+        }
+
 
         @SuppressWarnings({"unchecked"})
         @Override
