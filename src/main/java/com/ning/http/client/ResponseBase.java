@@ -15,21 +15,15 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class ResponseBase implements Response {
-
-    protected final static String DEFAULT_CHARSET = "ISO-8859-1";
 
     protected final HttpResponseStatus status;
     protected final HttpResponseHeaders headers;
@@ -44,14 +38,14 @@ public abstract class ResponseBase implements Response {
 
     protected abstract List<Cookie> buildCookies();
 
-    protected String calculateCharset(String charset) {
+    protected Charset calculateCharset(String charset) {
 
         if (charset == null) {
             String contentType = getContentType();
             if (contentType != null)
                 charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
         }
-        return charset != null ? charset : DEFAULT_CHARSET;
+        return charset != null ? Charset.forName(charset) : AsyncHttpProviderUtils.DEFAULT_CHARSET;
     }
 
     @Override

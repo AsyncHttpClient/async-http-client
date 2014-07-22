@@ -45,12 +45,12 @@ public class ApacheResponse extends ResponseBase {
 
     @Override
     public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
+        return getResponseBody(null);
     }
 
     @Override
     public String getResponseBody(String charset) throws IOException {
-        return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
+        return AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
     }
 
     @Override
@@ -60,24 +60,13 @@ public class ApacheResponse extends ResponseBase {
 
     @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
+        return getResponseBodyExcerpt(maxLength, null);
     }
 
     @Override
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        charset = computeCharset(charset);
-
-        String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        String response = AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
-    }
-
-    private String computeCharset(String charset) {
-        if (charset == null) {
-            String contentType = getContentType();
-            if (contentType != null)
-                charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
-        }
-        return charset != null ? charset : DEFAULT_CHARSET;
     }
 
     @Override

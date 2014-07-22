@@ -67,7 +67,7 @@ public class AsyncHttpProviderUtils {
         return uri.getHost() + ":" + port;
     }
 
-    public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
+    public final static String contentToString(List<HttpResponseBodyPart> bodyParts, Charset charset) throws UnsupportedEncodingException {
         return new String(contentToByte(bodyParts), charset);
     }
 

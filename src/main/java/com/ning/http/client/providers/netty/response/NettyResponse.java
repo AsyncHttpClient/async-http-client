@@ -66,7 +66,7 @@ public class NettyResponse extends ResponseBase {
     }
 
     public String getResponseBody(String charset) throws IOException {
-        return getResponseBodyAsChannelBuffer().toString(computeCharset(charset));
+        return getResponseBodyAsChannelBuffer().toString(calculateCharset(charset));
     }
 
     @Override
@@ -102,15 +102,6 @@ public class NettyResponse extends ResponseBase {
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String response = getResponseBody(charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
-    }
-
-    private Charset computeCharset(String charset) {
-        if (charset == null) {
-            String contentType = getContentType();
-            if (contentType != null)
-                charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
-        }
-        return charset != null ? Charset.forName(charset) : Charset.forName(DEFAULT_CHARSET);
     }
 
     @Override

@@ -40,7 +40,7 @@ public class JDKResponse extends ResponseBase {
 
     @Override
     public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
+        return getResponseBody(null);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class JDKResponse extends ResponseBase {
     public String getResponseBody(String charset) throws IOException {
 
         if (!contentComputed.get()) {
-            content = AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
+            content = AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
         }
         return content;
     }
@@ -65,7 +65,7 @@ public class JDKResponse extends ResponseBase {
     @Override
     public InputStream getResponseBodyAsStream() throws IOException {
         if (contentComputed.get()) {
-            return new ByteArrayInputStream(content.getBytes(DEFAULT_CHARSET));
+            return new ByteArrayInputStream(content.getBytes(calculateCharset(null)));
         }
 
         return AsyncHttpProviderUtils.contentToInputStream(bodyParts);
@@ -73,27 +73,17 @@ public class JDKResponse extends ResponseBase {
 
     @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
+        return getResponseBodyExcerpt(maxLength, null);
     }
 
     @Override
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        charset = computeCharset(charset);
 
         if (!contentComputed.get()) {
-            content = AsyncHttpProviderUtils.contentToString(bodyParts, charset == null ? DEFAULT_CHARSET : charset);
+            content = AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
         }
 
         return content.length() <= maxLength ? content : content.substring(0, maxLength);
-    }
-
-    private String computeCharset(String charset) {
-        if (charset == null) {
-            String contentType = getContentType();
-            if (contentType != null)
-                charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
-        }
-        return charset != null ? charset : DEFAULT_CHARSET;
     }
 
     @Override
