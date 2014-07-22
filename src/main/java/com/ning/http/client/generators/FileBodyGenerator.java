@@ -48,10 +48,7 @@ public class FileBodyGenerator
         this.regionSeek = regionSeek;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public RandomAccessBody createBody()
             throws IOException {
         return new FileBody(file, regionSeek, regionLength);
@@ -83,15 +80,18 @@ public class FileBodyGenerator
             }
         }
 
+        @Override
         public long getContentLength() {
             return length;
         }
 
+        @Override
         public long read(ByteBuffer buffer)
                 throws IOException {
             return channel.read(buffer);
         }
 
+        @Override
         public long transferTo(long position, long count, WritableByteChannel target)
                 throws IOException {
             if (count > length) {
@@ -100,11 +100,11 @@ public class FileBodyGenerator
             return channel.transferTo(position, count, target);
         }
 
+        @Override
         public void close()
                 throws IOException {
             file.close();
         }
-
     }
-
 }
+

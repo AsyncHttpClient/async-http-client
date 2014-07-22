@@ -53,19 +53,17 @@ public class ApacheResponse implements Response {
         uri = this.status.getUri();
     }
 
-    /* @Override */
-
+    @Override
     public int getStatusCode() {
         return status.getStatusCode();
     }
 
-    /* @Override */
-
+    @Override
     public String getStatusText() {
         return status.getStatusText();
     }
 
-    /* @Override */
+    @Override
     public byte[] getResponseBodyAsBytes() throws IOException {
         return AsyncHttpProviderUtils.contentToByte(bodyParts);
     }
@@ -74,7 +72,7 @@ public class ApacheResponse implements Response {
         return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
 
-    /* @Override */
+    @Override
     public String getResponseBody() throws IOException {
         return getResponseBody(DEFAULT_CHARSET);
     }
@@ -83,19 +81,17 @@ public class ApacheResponse implements Response {
         return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
     }
     
-    /* @Override */
+    @Override
     public InputStream getResponseBodyAsStream() throws IOException {
     	return AsyncHttpProviderUtils.contentToInputStream(bodyParts);
     }
 
-    /* @Override */
-
+    @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
     }
 
-    /* @Override */
-
+    @Override
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         charset = computeCharset(charset);
 
@@ -112,38 +108,32 @@ public class ApacheResponse implements Response {
         return charset != null? charset: DEFAULT_CHARSET;
     }
 
-    /* @Override */
-
+    @Override
     public UriComponents getUri() {
         return uri;
     }
 
-    /* @Override */
-
+    @Override
     public String getContentType() {
         return getHeader("Content-Type");
     }
 
-    /* @Override */
-
+    @Override
     public String getHeader(String name) {
         return headers != null? headers.getHeaders().getFirstValue(name): null;
     }
 
-    /* @Override */
-
+    @Override
     public List<String> getHeaders(String name) {
         return headers != null? headers.getHeaders().get(name): Collections.<String> emptyList();
     }
 
-    /* @Override */
-
+    @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {
         return headers != null? headers.getHeaders(): new FluentCaseInsensitiveStringsMap();
     }
 
-    /* @Override */
-
+    @Override
     public boolean isRedirected() {
         switch (status.getStatusCode()) {
         case 301:
@@ -157,8 +147,7 @@ public class ApacheResponse implements Response {
         }
     }
 
-    /* @Override */
-
+    @Override
     public List<Cookie> getCookies() {
         if (headers == null) {
             return Collections.emptyList();
@@ -180,26 +169,17 @@ public class ApacheResponse implements Response {
         return cookies;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean hasResponseStatus() {
         return bodyParts != null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean hasResponseHeaders() {
         return headers != null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean hasResponseBody() {
         return isNonEmpty(bodyParts);
     }

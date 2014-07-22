@@ -74,11 +74,11 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             this.text = text;
         }
 
-        // @Override
+        @Override
         public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
         }
 
-        // @Override
+        @Override
         public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
         }
 
@@ -87,7 +87,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             latch.countDown();
         }
 
-        // @Override
+        @Override
         public void onError(Throwable t) {
             t.printStackTrace();
             latch.countDown();

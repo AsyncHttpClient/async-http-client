@@ -29,20 +29,14 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
         this.outputStream = outputStream;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         outputStream.write(byteBuffer.array(),
                            byteBuffer.arrayOffset() + byteBuffer.position(),
                            byteBuffer.remaining());
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void close() throws IOException {
         outputStream.close();
     }

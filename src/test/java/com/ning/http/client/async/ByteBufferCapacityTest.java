@@ -86,7 +86,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
             try {
                 Response response = client.preparePut(getTargetUrl()).setBody(largeFile).execute(new AsyncCompletionHandlerAdapter() {
-                    /* @Override */
+                    @Override
                     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
                         byteReceived.addAndGet(content.getBodyByteBuffer().capacity());
                         return super.onBodyPartReceived(content);

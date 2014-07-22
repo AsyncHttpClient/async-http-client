@@ -26,16 +26,10 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     
     // -------------------------------------- Methods from WebSocketByteListener
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onMessage(byte[] message) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onFragment(byte[] fragment, boolean last) {
     }
@@ -43,9 +37,6 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     
     // -------------------------------------- Methods from WebSocketPingListener
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onPing(byte[] message) {
     }
@@ -53,9 +44,6 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     
     // -------------------------------------- Methods from WebSocketPongListener
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onPong(byte[] message) {
     }
@@ -64,16 +52,10 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     // -------------------------------------- Methods from WebSocketTextListener
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onMessage(String message) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onFragment(String fragment, boolean last) {
     }
@@ -81,25 +63,16 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     
     // ------------------------------------------ Methods from WebSocketListener
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onOpen(WebSocket websocket) {
         this.webSocket = websocket;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onClose(WebSocket websocket) {
         this.webSocket = null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onError(Throwable t) {
     }

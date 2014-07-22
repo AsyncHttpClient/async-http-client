@@ -766,15 +766,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    /* @Override */
-
+    @Override
     public Response prepareResponse(final HttpResponseStatus status, final HttpResponseHeaders headers,
             final List<HttpResponseBodyPart> bodyParts) {
         return new NettyResponse(status, headers, bodyParts);
     }
 
-    /* @Override */
-
+    @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         return doConnect(request, asyncHandler, null, true, false);
     }
@@ -2038,7 +2036,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        // @Override
+        @Override
         public void handle(Channel channel, MessageEvent e, final NettyResponseFuture future) throws Exception {
 
             WebSocketUpgradeHandler wsUpgradeHandler = (WebSocketUpgradeHandler) future.getAsyncHandler();
@@ -2134,17 +2132,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 HttpChunk webSocketChunk = new HttpChunk() {
                     private ChannelBuffer content;
 
-                    // @Override
+                    @Override
                     public boolean isLast() {
                         return false;
                     }
 
-                    // @Override
+                    @Override
                     public ChannelBuffer getContent() {
                         return content;
                     }
 
-                    // @Override
+                    @Override
                     public void setContent(ChannelBuffer content) {
                         this.content = content;
                     }
@@ -2182,7 +2180,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        // @Override
+        @Override
         public void onError(Channel channel, ExceptionEvent e) {
             try {
                 Object attachment = Channels.getAttachment(channel);
@@ -2204,7 +2202,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        // @Override
+        @Override
         public void onClose(Channel channel, ChannelStateEvent e) {
             LOGGER.trace("onClose {}", e);
 

@@ -51,9 +51,6 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
     // ---------------------------------------- Methods from HttpResponseHeaders
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {
         if (!initialized) {

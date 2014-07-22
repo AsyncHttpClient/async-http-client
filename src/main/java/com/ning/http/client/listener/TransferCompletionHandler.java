@@ -17,6 +17,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,10 +117,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         this.transferAdapter = transferAdapter;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         fireOnHeaderReceived(headers.getHeaders());
         return super.onHeadersReceived(headers);
@@ -141,9 +139,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         return response;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onHeaderWriteCompleted() {
         List<String> list = transferAdapter.getHeaders().get("Content-Length");
         if (isNonEmpty(list) && list.get(0) != "") {
@@ -154,16 +150,12 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onContentWriteCompleted() {
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onContentWriteProgress(long amount, long current, long total) {
         if (bytesTransferred.get() == -1) {
             return STATE.CONTINUE;

@@ -740,9 +740,6 @@ public class SimpleAsyncHttpClient {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         */
         public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             fireReceived(content);
             if (omitBody) {
@@ -758,9 +755,6 @@ public class SimpleAsyncHttpClient {
         }
 
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public Response onCompleted(Response response) throws Exception {
             fireCompleted(response);

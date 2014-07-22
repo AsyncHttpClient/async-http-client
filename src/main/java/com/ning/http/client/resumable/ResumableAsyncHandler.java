@@ -20,6 +20,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response.ResponseBuilder;
 import com.ning.http.client.listener.TransferCompletionHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,10 +98,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         this(0, resumableProcessor, null, accumulateBody);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
@@ -116,10 +114,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         return AsyncHandler.STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void onThrowable(Throwable t) {
         if (decoratedAsyncHandler != null) {
             decoratedAsyncHandler.onThrowable(t);
@@ -128,10 +123,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 
         if (accumulateBody) {
@@ -155,10 +147,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         return state;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public T onCompleted() throws Exception {
         resumableProcessor.remove(url);
         resumableListener.onAllBytesReceived();
@@ -170,10 +159,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         return (T) responseBuilder.build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
@@ -283,15 +269,19 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
 
     private static class NULLResumableHandler implements ResumableProcessor {
 
+        @Override
         public void put(String url, long transferredBytes) {
         }
 
+        @Override
         public void remove(String uri) {
         }
 
+        @Override
         public void save(Map<String, Long> map) {
         }
 
+        @Override
         public Map<String, Long> load() {
             return new HashMap<String, Long>();
         }

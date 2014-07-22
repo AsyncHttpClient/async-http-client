@@ -13,6 +13,7 @@
 package com.ning.http.client.extra;
 
 import com.ning.http.client.resumable.ResumableListener;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +39,13 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
      * @param buffer a {@link ByteBuffer}
      * @throws IOException
      */
+    @Override
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
         file.seek(file.length());
         file.write(buffer.array());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void onAllBytesReceived() {
         if (file != null) {
             try {
@@ -56,9 +56,6 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public long length() {
         try {
             return file.length();

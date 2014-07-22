@@ -33,10 +33,12 @@ public class ByteArrayBodyGenerator implements BodyGenerator {
         private boolean eof = false;
         private int lastPosition = 0;
 
+        @Override
         public long getContentLength() {
             return bytes.length;
         }
 
+        @Override
         public long read(ByteBuffer byteBuffer) throws IOException {
 
             if (eof) {
@@ -55,16 +57,14 @@ public class ByteArrayBodyGenerator implements BodyGenerator {
             }
         }
 
+        @Override
         public void close() throws IOException {
             lastPosition = 0;
             eof = false;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public Body createBody() throws IOException {
         return new ByteBody();
     }

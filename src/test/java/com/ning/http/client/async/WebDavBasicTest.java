@@ -18,6 +18,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.webdav.WebDavCompletionHandlerBase;
 import com.ning.http.client.webdav.WebDavResponse;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
@@ -168,12 +169,8 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
 
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
             WebDavResponse webDavResponse = client.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
-                /**
-                 * {@inheritDoc}
-                 */
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
-
                     t.printStackTrace();
                 }
 

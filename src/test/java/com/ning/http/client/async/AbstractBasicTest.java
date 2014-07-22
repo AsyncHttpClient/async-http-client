@@ -56,7 +56,7 @@ public abstract class AbstractBasicTest {
 
     public static class EchoHandler extends AbstractHandler {
 
-        /* @Override */
+        @Override
         public void handle(String pathInContext,
                            Request request,
                            HttpServletRequest httpRequest,
@@ -212,7 +212,7 @@ public abstract class AbstractBasicTest {
             return response;
         }
 
-        /* @Override */
+        @Override
         public void onThrowable(Throwable t) {
             t.printStackTrace();
             Assert.fail("Unexpected exception: " + t.getMessage(), t);
@@ -223,28 +223,28 @@ public abstract class AbstractBasicTest {
     public static class AsyncHandlerAdapter implements AsyncHandler<String> {
 
 
-        /* @Override */
+        @Override
         public void onThrowable(Throwable t) {
             t.printStackTrace();
             Assert.fail("Unexpected exception", t);
         }
 
-        /* @Override */
+        @Override
         public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public STATE onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public String onCompleted() throws Exception {
             return "";
         }

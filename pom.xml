@@ -81,13 +81,26 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.9.2.Final</version>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-websockets</artifactId>
+            <version>${grizzly.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http-server</artifactId>
+            <version>${grizzly.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.7</version>
         </dependency>
 
         <dependency>
@@ -101,7 +114,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.0.13</version>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -257,13 +270,13 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
+                        <artifactId>java16</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>check-java-1.5-compat</id>
+                        <id>check-java-1.6-compat</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>check</goal>
@@ -319,7 +332,7 @@
                                     <version>2.0.9</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>1.5</version>
+                                    <version>1.6</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
@@ -475,32 +488,6 @@
     </reporting>
     <profiles>
         <profile>
-            <id>grizzly</id>
-            <activation>
-                <jdk>[1.6,)</jdk>
-            </activation>
-            <properties>
-                <compiler.exclude>asdfasfd/**</compiler.exclude>
-                <test.compiler.exclude>asdfasdf/**</test.compiler.exclude>
-                <javadoc.package.exclude>asdfasdf</javadoc.package.exclude>
-                <target.property>1.5</target.property>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-websockets</artifactId>
-                    <version>${grizzly.version}</version>
-                    <optional>true</optional>
-                </dependency>
-                <dependency>
-                    <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-http-server</artifactId>
-                    <version>${grizzly.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
@@ -588,12 +575,10 @@
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
-        <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
-        <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
-        <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
+        <netty.version>3.9.2.Final</netty.version>
         <grizzly.version>2.3.16</grizzly.version>
-        <source.property>1.5</source.property>
-        <target.property>1.5</target.property>
+        <source.property>1.6</source.property>
+        <target.property>1.6</target.property>
         <surefire.version>2.12</surefire.version>
     </properties>
 </project>

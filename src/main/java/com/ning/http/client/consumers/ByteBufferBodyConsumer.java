@@ -28,18 +28,12 @@ public class ByteBufferBodyConsumer implements BodyConsumer {
         this.byteBuffer = byteBuffer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         byteBuffer.put(byteBuffer);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void close() throws IOException {
         byteBuffer.flip();
     }

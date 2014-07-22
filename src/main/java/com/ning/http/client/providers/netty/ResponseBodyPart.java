@@ -86,25 +86,16 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return ByteBuffer.wrap(getBodyPartBytes());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isLast() {
         return isLast;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void markUnderlyingConnectionAsClosed() {
         closeConnection = true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean closeUnderlyingConnection() {
         return closeConnection;

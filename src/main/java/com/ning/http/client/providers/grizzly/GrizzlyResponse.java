@@ -94,9 +94,7 @@ public class GrizzlyResponse implements Response {
     // --------------------------------------------------- Methods from Response
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int getStatusCode() {
 
         return status.getStatusCode();
@@ -104,9 +102,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getStatusText() {
 
         return status.getStatusText();
@@ -114,9 +110,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public InputStream getResponseBodyAsStream() throws IOException {
 
         return new BufferInputStream(responseBody);
@@ -124,9 +118,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
 
         final int len = Math.min(responseBody.remaining(), maxLength);
@@ -136,9 +128,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getResponseBody(String charset) throws IOException {
 
         return responseBody.toStringContent(getCharset(charset));
@@ -146,9 +136,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
 
         // TODO FIX NULL
@@ -157,9 +145,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getResponseBody() throws IOException {
 
         return getResponseBody(null);
@@ -167,9 +153,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public byte[] getResponseBodyAsBytes() throws IOException {
         final byte[] responseBodyBytes = new byte[responseBody.remaining()];
         final int origPos = responseBody.position();
@@ -178,6 +162,7 @@ public class GrizzlyResponse implements Response {
         return responseBodyBytes;
     }
 
+    @Override
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
         return responseBody.toByteBuffer();
     }
@@ -193,9 +178,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public UriComponents getUri() {
 
         return status.getUri();
@@ -203,9 +186,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getContentType() {
 
         return headers.getHeaders().getFirstValue("Content-Type");
@@ -213,9 +194,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getHeader(String name) {
 
         return headers.getHeaders().getFirstValue(name);
@@ -223,9 +202,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public List<String> getHeaders(String name) {
 
         return headers.getHeaders().get(name);
@@ -233,9 +210,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {
 
         return headers.getHeaders();
@@ -243,9 +218,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isRedirected() {
         switch (status.getStatusCode()) {
         case 301:
@@ -260,9 +233,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public List<Cookie> getCookies() {
 
         if (headers == null) {
@@ -288,25 +259,19 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean hasResponseStatus() {
         return (status != null);
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean hasResponseHeaders() {
         return headers != null && !headers.getHeaders().isEmpty();
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean hasResponseBody() {
         return isNonEmpty(bodyParts);
     }

@@ -125,10 +125,7 @@ public class GrizzlyConnectionPool implements ConnectionPool {
 
     // -------------------------------------------- Methods from ConnectionsPool
 
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean offer(String uri, Connection connection) {
 
         if (isSecure(uri) && !cacheSSLConnections) {
@@ -169,10 +166,7 @@ public class GrizzlyConnectionPool implements ConnectionPool {
         return false;
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Connection poll(String uri) {
 
         if (!cacheSSLConnections && isSecure(uri)) {
@@ -213,10 +207,7 @@ public class GrizzlyConnectionPool implements ConnectionPool {
 
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean removeAll(Connection connection) {
 
         if (connection == null || closed.get()) {
@@ -235,10 +226,7 @@ public class GrizzlyConnectionPool implements ConnectionPool {
 
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean canCacheConnection() {
 
         return !(!closed.get()
@@ -247,9 +235,7 @@ public class GrizzlyConnectionPool implements ConnectionPool {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void destroy() {
 
         if (closed.getAndSet(true)) {

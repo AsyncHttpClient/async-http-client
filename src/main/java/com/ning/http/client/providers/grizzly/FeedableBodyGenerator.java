@@ -82,9 +82,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
     // ---------------------------------------------- Methods from BodyGenerator
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Body createBody() throws IOException {
         return EMPTY_BODY;
@@ -320,10 +317,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // --------------------------------------------- Package Private Methods
 
 
-        /**
-         * {@inheritDoc}
-         */
         @SuppressWarnings("UnusedDeclaration")
+        @Override
         public final synchronized void feed(final Buffer buffer, final boolean last)
         throws IOException {
             if (buffer == null) {
@@ -511,9 +506,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // ------------------------------------------------- Methods from Feeder
 
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public synchronized void flush() throws IOException {
             final Connection c = feedableBodyGenerator.context.getConnection();

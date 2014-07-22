@@ -81,8 +81,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
     }
 
-    //@Override // silly 1.5; doesn't allow this for interfaces
-
+    @Override
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
@@ -248,8 +247,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
             return value;
         }
 
-        //@Override // silly 1.5; doesn't allow this for interfaces
-
+        @Override
         public int compareTo(Parameter other) {
             int diff = key.compareTo(other.key);
             if (diff == 0) {

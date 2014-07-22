@@ -53,7 +53,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
 
     public static class EchoHandler extends AbstractHandler {
 
-        /* @Override */
+        @Override
         public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");

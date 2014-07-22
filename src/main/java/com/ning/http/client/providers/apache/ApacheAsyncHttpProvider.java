@@ -763,14 +763,18 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
     }
 
     private static class TrustEveryoneTrustManager implements X509TrustManager {
+        
+        @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             // do nothing
         }
 
+        @Override
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             // do nothing
         }
 
+        @Override
         public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
         }
@@ -788,9 +792,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             this.scheduledFuture = scheduledFuture;
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public synchronized boolean cancel(boolean mayInterruptIfRunning) {
             //cleanup references to allow gc to reclaim memory independently
             //of this Future lifecycle
@@ -798,39 +800,29 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             return this.scheduledFuture.cancel(mayInterruptIfRunning);
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public Object get() throws InterruptedException, ExecutionException {
             return this.scheduledFuture.get();
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public Object get(long timeout, TimeUnit unit)
                 throws InterruptedException, ExecutionException,
                 TimeoutException {
             return this.scheduledFuture.get(timeout, unit);
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public boolean isCancelled() {
             return this.scheduledFuture.isCancelled();
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public boolean isDone() {
             return this.scheduledFuture.isDone();
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public synchronized void run() {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
                 logger.debug("Request Timeout expired for " + this.apacheResponseFuture);

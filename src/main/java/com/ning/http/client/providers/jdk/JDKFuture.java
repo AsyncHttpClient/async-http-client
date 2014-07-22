@@ -16,6 +16,7 @@ import static com.ning.http.util.DateUtils.millisTime;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,28 +154,19 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
         return responseTimeoutInMs != -1 && ((millisTime() - touch.get()) > responseTimeoutInMs);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override  */
+    @Override
     public void touch() {
         touch.set(millisTime());
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override  */
+    @Override
     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
         boolean b = this.writeHeaders;
         this.writeHeaders = writeHeaders;
         return b;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean getAndSetWriteBody(boolean writeBody) {
         boolean b = this.writeBody;
         this.writeBody = writeBody;

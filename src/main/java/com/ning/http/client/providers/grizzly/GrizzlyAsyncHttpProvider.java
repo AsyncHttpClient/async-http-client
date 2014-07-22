@@ -53,12 +53,16 @@ import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
+
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
+
 import com.ning.http.util.AuthenticatorUtils;
+
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -83,8 +87,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
@@ -148,6 +154,7 @@ import org.slf4j.LoggerFactory;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+
 import org.glassfish.grizzly.nio.RoundRobinConnectionDistributor;
 import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 
@@ -213,10 +220,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     // ------------------------------------------ Methods from AsyncHttpProvider
 
 
-    /**
-     * {@inheritDoc}
-     */
     @SuppressWarnings({"unchecked"})
+    @Override
     public <T> ListenableFuture<T> execute(final Request request,
                                            final AsyncHandler<T> handler) throws IOException {
 
@@ -275,9 +280,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         return future;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void close() {
 
         try {
@@ -296,9 +299,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Response prepareResponse(HttpResponseStatus status,
                                     HttpResponseHeaders headers,
                                     List<HttpResponseBodyPart> bodyParts) {

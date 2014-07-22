@@ -31,10 +31,7 @@ public class ByteArrayPart implements Part {
         this.charSet = charSet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public String getName() {
         return name;
     }

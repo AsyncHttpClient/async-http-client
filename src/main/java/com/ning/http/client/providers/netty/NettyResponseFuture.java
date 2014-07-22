@@ -109,23 +109,17 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**       java.util.concurrent.Future       **/
     /*********************************************/
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isDone() {
         return isDone.get() || isCancelled.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isCancelled() {
         return isCancelled.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean cancel(boolean force) {
 
         cancelTimeouts();
@@ -153,17 +147,13 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V get() throws InterruptedException, ExecutionException {
         latch.await();
         return getContent();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
         if (!latch.await(l, tu))
             throw new TimeoutException();
@@ -204,6 +194,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /*********************************************/
     /**   com.ning.http.clientListenableFuture  **/
     /*********************************************/
+    @Override
     public final void done() {
 
         cancelTimeouts();
@@ -227,6 +218,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         runListeners();
     }
 
+    @Override
     public final void abort(final Throwable t) {
 
         cancelTimeouts();
@@ -247,13 +239,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         runListeners();
     }
 
+    @Override
     public void content(V v) {
         content.set(v);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void touch() {
         touch.set(millisTime());
     }
@@ -262,18 +253,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return touch.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
         boolean b = this.writeHeaders;
         this.writeHeaders = writeHeaders;
         return b;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean getAndSetWriteBody(boolean writeBody) {
         boolean b = this.writeBody;
         this.writeBody = writeBody;
@@ -449,5 +436,4 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\ttouch=" + touch + //
                 '}';
     }
-
 }

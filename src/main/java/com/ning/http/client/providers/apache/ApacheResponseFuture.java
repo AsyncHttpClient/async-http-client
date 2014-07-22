@@ -17,6 +17,7 @@ import static com.ning.http.util.DateUtils.millisTime;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,20 +211,14 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
         boolean b = this.writeHeaders;
         this.writeHeaders = writeHeaders;
         return b;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public boolean getAndSetWriteBody(boolean writeBody) {
         boolean b = this.writeBody;
         this.writeBody = writeBody;

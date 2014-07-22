@@ -15,6 +15,7 @@ package com.ning.http.client.generators;
 
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +48,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public Body createBody() throws IOException {
         return new ISBody();
     }
@@ -60,10 +58,12 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         private int endDataCount = 0;
         private byte[] chunk;
 
+        @Override
         public long getContentLength() {
             return -1;
         }
 
+        @Override
         public long read(ByteBuffer buffer) throws IOException {
 
             // To be safe.
@@ -126,6 +126,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
             return read;
         }
 
+        @Override
         public void close() throws IOException {
             inputStream.close();
         }

@@ -233,9 +233,6 @@ public final class DefaultChannelPool implements ChannelPool {
         return pool;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     public boolean offer(Channel channel, String poolKey) {
         if (isClosed.get() || (!sslConnectionPoolEnabled && poolKey.startsWith("https")))
             return false;
@@ -252,9 +249,6 @@ public final class DefaultChannelPool implements ChannelPool {
         return added;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public Channel poll(String poolKey) {
         if (!sslConnectionPoolEnabled && poolKey.startsWith("https"))
             return null;
@@ -277,24 +271,18 @@ public final class DefaultChannelPool implements ChannelPool {
         return idleChannel != null ? idleChannel.channel : null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = channelId2Creation.remove(channel.getId());
         return !isClosed.get() && creation != null && poolsPerKey.get(creation.poolKey).remove(channel);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isOpen() {
         return !isClosed.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void destroy() {
         if (isClosed.getAndSet(true))
             return;

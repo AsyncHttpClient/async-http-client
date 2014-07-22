@@ -42,9 +42,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         maxTextSize = b.maxTextSize;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onThrowable(Throwable t) {
         onFailure(t);
@@ -58,17 +55,11 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         onSuccessCalled.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
@@ -79,17 +70,11 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public WebSocket onCompleted() throws Exception {
 
@@ -106,9 +91,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         return webSocket;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
@@ -119,9 +101,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         ok.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onFailure(Throwable t) {
         for (WebSocketListener w : l) {

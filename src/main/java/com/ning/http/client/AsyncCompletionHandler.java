@@ -31,41 +31,31 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     private final Logger log = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
     private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         builder.accumulate(content);
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         builder.reset();
         builder.accumulate(status);
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         builder.accumulate(headers);
         return STATE.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public final T onCompleted() throws Exception {
         return onCompleted(builder.build());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void onThrowable(Throwable t) {
         log.debug(t.getMessage(), t);
     }
@@ -88,6 +78,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      *
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
+    @Override
     public STATE onHeaderWriteCompleted() {
         return STATE.CONTINUE;
     }
@@ -98,6 +89,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      *
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
+    @Override
     public STATE onContentWriteCompleted() {
         return STATE.CONTINUE;
     }
@@ -110,6 +102,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * @param total   The total number of bytes transferred
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
+    @Override
     public STATE onContentWriteProgress(long amount, long current, long total) {
         return STATE.CONTINUE;
     }

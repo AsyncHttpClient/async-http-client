@@ -78,7 +78,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                     return response.getUri().toString();
                 }
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                     Assert.fail("Unexpected exception: " + t.getMessage(), t);
@@ -104,7 +104,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                     return response.getUri().toString();
                 }
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                     Assert.fail("Unexpected exception: " + t.getMessage(), t);
@@ -130,7 +130,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                     return response.getUri().toString();
                 }
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                     Assert.fail("Unexpected exception: " + t.getMessage(), t);
@@ -1005,7 +1005,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             for (int i = 0; i < 20; i++) {
                 try {
                     Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                        /* @Override */
+                        @Override
                         public void onThrowable(Throwable t) {
                             count.incrementAndGet();
                         }
@@ -1031,7 +1031,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             int dummyPort = findFreePort();
             try {
                 Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                    /* @Override */
+                    @Override
                     public void onThrowable(Throwable t) {
                         t.printStackTrace();
                     }
@@ -1057,7 +1057,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             try {
                 Response response = client.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
-                    /* @Override */
+                    @Override
                     public void onThrowable(Throwable t) {
                         t.printStackTrace();
                     }
@@ -1079,7 +1079,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             int port = findFreePort();
 
             client.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     try {
                         assertEquals(t.getClass(), ConnectException.class);
@@ -1104,7 +1104,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             final CountDownLatch l = new CountDownLatch(1);
 
             client.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter() {
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     if (t != null) {
                         if (t.getClass().equals(ConnectException.class)) {
@@ -1548,7 +1548,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             try {
                 client.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
-                    /* @Override */
+                    @Override
                     public void onThrowable(Throwable t) {
                         // t.printStackTrace();
                     }

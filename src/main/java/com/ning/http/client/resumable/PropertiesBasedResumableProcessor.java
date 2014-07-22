@@ -35,28 +35,19 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     private final static String storeName = "ResumableAsyncHandler.properties";
     private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<String, Long>();
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void put(String url, long transferredBytes) {
         properties.put(url, transferredBytes);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void remove(String uri) {
         if (uri != null) {
             properties.remove(uri);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void save(Map<String, Long> map) {
         log.debug("Saving current download state {}", properties.toString());
         FileOutputStream os = null;
@@ -95,10 +86,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         return new StringBuilder(e.getKey()).append("=").append(e.getValue()).append("\n").toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public Map<String, Long> load() {
         Scanner scan = null;
         try {

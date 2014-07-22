@@ -97,8 +97,6 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
     // ------------------------------------ Methods from AsyncHttpProviderConfig
 
     /**
-     * {@inheritDoc}
-     * 
      * @throws IllegalArgumentException if the type of the specified value
      *  does not match the expected type of the specified {@link Property}.
      */
@@ -127,9 +125,6 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object getProperty(Property name) {
         Object ret = attributes.get(name);
@@ -141,9 +136,6 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
         return ret;
     }
 
-    /**
-      * {@inheritDoc}
-      */
     @Override
     public Object removeProperty(Property name) {
         if (name == null) {
@@ -152,9 +144,6 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
         return attributes.remove(name);
     }
 
-    /**
-      * {@inheritDoc}
-      */
     @Override
     public Set<Map.Entry<Property,Object>> propertiesSet() {
         return attributes.entrySet();

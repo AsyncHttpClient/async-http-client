@@ -60,9 +60,6 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     // --------------------------------------- Methods from HttpResponseBodyPart
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public byte[] getBodyPartBytes() {
 
@@ -82,9 +79,6 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int writeTo(OutputStream outputStream) throws IOException {
 
@@ -95,9 +89,6 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ByteBuffer getBodyByteBuffer() {
 
@@ -105,25 +96,16 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isLast() {
         return content.isLast();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void markUnderlyingConnectionAsClosed() {
         markConnectionAsDoNotCache(connection);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean closeUnderlyingConnection() {
         return !isConnectionCacheable(connection);

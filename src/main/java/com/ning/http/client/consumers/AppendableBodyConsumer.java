@@ -37,10 +37,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
         this.encoding = StandardCharsets.UTF_8.name();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         appendable.append(new String(byteBuffer.array(),
                                      byteBuffer.arrayOffset() + byteBuffer.position(),
@@ -48,10 +45,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
                                      encoding));
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
+    @Override
     public void close() throws IOException {
         if (appendable instanceof Closeable) {
             Closeable.class.cast(appendable).close();
