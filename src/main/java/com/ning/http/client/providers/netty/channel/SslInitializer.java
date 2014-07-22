@@ -20,8 +20,6 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import org.jboss.netty.handler.ssl.SslHandler;
 
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-
 import java.net.InetSocketAddress;
 
 /**
@@ -31,21 +29,21 @@ import java.net.InetSocketAddress;
  */
 public class SslInitializer extends SimpleChannelDownstreamHandler {
 
-    private final NettyAsyncHttpProvider provider;
+    private final ChannelManager channelManager;
 
-    public SslInitializer(NettyAsyncHttpProvider provider) {
-        this.provider = provider;
+    public SslInitializer(ChannelManager channelManager) {
+        this.channelManager = channelManager;
     }
 
     public void connectRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        
+
         InetSocketAddress remoteInetSocketAddress = (InetSocketAddress) e.getValue();
         String peerHost = remoteInetSocketAddress.getHostName();
         int peerPort = remoteInetSocketAddress.getPort();
 
-        SslHandler sslHandler = provider.createSslHandler(peerHost, peerPort);
+        SslHandler sslHandler = channelManager.createSslHandler(peerHost, peerPort);
 
-        ctx.getPipeline().replace(NettyAsyncHttpProvider.SSL_HANDLER, NettyAsyncHttpProvider.SSL_HANDLER, sslHandler);
+        ctx.getPipeline().replace(ChannelManager.SSL_HANDLER, ChannelManager.SSL_HANDLER, sslHandler);
 
         ctx.sendDownstream(e);
     }

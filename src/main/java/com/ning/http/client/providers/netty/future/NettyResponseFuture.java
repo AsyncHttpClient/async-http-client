@@ -17,18 +17,6 @@ package com.ning.http.client.providers.netty.future;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
-import java.net.SocketAddress;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -43,6 +31,18 @@ import com.ning.http.client.listenable.AbstractListenableFuture;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
+
+import java.net.SocketAddress;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.

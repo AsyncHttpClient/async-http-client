@@ -16,24 +16,24 @@ import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.util.Timeout;
 
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.request.NettyRequestSender;
 
 public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
     private final long requestTimeoutInstant;
 
-    public ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder,
+    public ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender nettyRequestSender, TimeoutsHolder timeoutsHolder,
             long requestTimeout, long readTimeout) {
-        super(nettyResponseFuture, provider, timeoutsHolder);
+        super(nettyResponseFuture, nettyRequestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
     public void run(Timeout timeout) throws Exception {
 
-        if (provider.isClose() || nettyResponseFuture.isDone()) {
+        if (nettyRequestSender.isClosed() || nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
             return;
         }
@@ -51,7 +51,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
             // reschedule
-            timeoutsHolder.readTimeout = provider.newTimeout(this, durationBeforeCurrentReadTimeout);
+            timeoutsHolder.readTimeout = nettyRequestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
 
         } else {
             // otherwise, no need to reschedule: requestTimeout will happen sooner

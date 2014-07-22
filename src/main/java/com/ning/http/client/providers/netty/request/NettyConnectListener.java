@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
@@ -47,21 +46,21 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
     private final HttpRequest nettyRequest;
-    private final NettyAsyncHttpProvider provider;
+    private final NettyRequestSender nettyRequestSender;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
     private final String poolKey;
 
     public NettyConnectListener(AsyncHttpClientConfig config,//
             NettyResponseFuture<T> future,//
-            NettyAsyncHttpProvider provider,//
+            NettyRequestSender nettyRequestSender,//
             ChannelManager channelManager,//
             boolean channelPreempted,//
             String poolKey) {
         this.config = config;
         this.future = future;
         this.nettyRequest = future.getNettyRequest();
-        this.provider = provider;
+        this.nettyRequestSender = nettyRequestSender;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
         this.poolKey = poolKey;
@@ -87,14 +86,14 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
         channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);
-        provider.writeRequest(channel, config, future);
+        nettyRequestSender.writeRequest(channel, config, future);
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
         Channel channel = f.getChannel();
         if (f.isSuccess()) {
             Channels.setAttachment(channel, future);
-            final SslHandler sslHandler = (SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER);
+            final SslHandler sslHandler = (SslHandler) channel.getPipeline().get(ChannelManager.SSL_HANDLER);
 
             final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
             if (hostnameVerifier != null && sslHandler != null) {
@@ -136,7 +135,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                     && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
 
                 LOGGER.debug("Retrying {} ", nettyRequest);
-                if (!provider.retry(channel, future))
+                if (!nettyRequestSender.retry(channel, future))
                     return;
             }
 

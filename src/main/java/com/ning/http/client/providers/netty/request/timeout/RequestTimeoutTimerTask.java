@@ -16,15 +16,15 @@ import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.util.Timeout;
 
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.request.NettyRequestSender;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long requestTimeout;
     
-    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyAsyncHttpProvider provider, TimeoutsHolder timeoutsHolder, long requestTimeout) {
-        super(nettyResponseFuture, provider, timeoutsHolder);
+    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender nettyRequestSender, TimeoutsHolder timeoutsHolder, long requestTimeout) {
+        super(nettyResponseFuture, nettyRequestSender, timeoutsHolder);
         this.requestTimeout = requestTimeout;
     }
 
@@ -33,9 +33,8 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         // in any case, cancel possible idleConnectionTimeout
         timeoutsHolder.cancel();
 
-        if (provider.isClose() || nettyResponseFuture.isDone()) {
+        if (nettyRequestSender.isClosed() || nettyResponseFuture.isDone())
             return;
-        }
 
         String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + requestTimeout + " ms";
         long age = millisTime() - nettyResponseFuture.getStart();

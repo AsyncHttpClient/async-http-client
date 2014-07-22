@@ -28,16 +28,16 @@ package com.ning.http.client.ntlm;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
+import com.ning.http.util.Base64;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Locale;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.ning.http.util.Base64;
 
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM
@@ -98,6 +98,8 @@ public class NTLMEngine {
         System.arraycopy(bytesWithoutNull, 0, SIGNATURE, 0, bytesWithoutNull.length);
         SIGNATURE[bytesWithoutNull.length] = (byte) 0x00;
     }
+
+    public static final NTLMEngine INSTANCE = new NTLMEngine();
 
     /**
      * Returns the response for the given message.
@@ -1337,5 +1339,4 @@ public class NTLMEngine {
                 t2m.getTarget(),
                 t2m.getTargetInfo());
     }
-
 }

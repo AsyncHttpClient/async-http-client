@@ -37,7 +37,6 @@
 
 package com.ning.http.client.providers.netty.spnego;
 
-import com.ning.http.util.Base64;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -45,6 +44,8 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.ning.http.util.Base64;
 
 import java.io.IOException;
 
@@ -55,6 +56,7 @@ import java.io.IOException;
  * @since 4.1
  */
 public class SpnegoEngine {
+
     private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
     private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
 
@@ -62,6 +64,8 @@ public class SpnegoEngine {
 
     private final SpnegoTokenGenerator spnegoGenerator;
 
+    public static final SpnegoEngine INSTANCE = new SpnegoEngine();
+    
     public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
         this.spnegoGenerator = spnegoGenerator;
     }
