@@ -26,16 +26,13 @@ import java.util.Map;
  */
 public class ResponseHeaders extends HttpResponseHeaders {
 
-    private final HttpURLConnection urlConnection;
     private final FluentCaseInsensitiveStringsMap headers;
 
     public ResponseHeaders(UriComponents uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
-        super(uri, provider, false);
-        this.urlConnection = urlConnection;
-        headers = computerHeaders();
+        headers = computerHeaders(urlConnection);
     }
 
-    private FluentCaseInsensitiveStringsMap computerHeaders() {
+    private FluentCaseInsensitiveStringsMap computerHeaders(HttpURLConnection urlConnection) {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
 
         Map<String, List<String>> uh = urlConnection.getHeaderFields();

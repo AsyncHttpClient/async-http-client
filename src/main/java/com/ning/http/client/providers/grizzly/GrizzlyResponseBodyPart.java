@@ -13,15 +13,15 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.uri.UriComponents;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,10 +47,8 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
 
     public GrizzlyResponseBodyPart(final HttpContent content,
-                                   final UriComponents uri,
-                                   final Connection connection,
-                                   final AsyncHttpProvider provider) {
-        super(uri, provider);
+                                   final Connection connection) {
+        super(false);
         this.content = content;
         this.connection = connection;
 
@@ -102,15 +100,19 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     }
 
     @Override
-    public void markUnderlyingConnectionAsClosed() {
+    public void markUnderlyingConnectionAsToBeClosed() {
         markConnectionAsDoNotCache(connection);
     }
 
     @Override
-    public boolean closeUnderlyingConnection() {
+    public boolean isUnderlyingConnectionToBeClosed() {
         return !isConnectionCacheable(connection);
     }
 
+    @Override
+    public InputStream readBodyPartBytes() {
+        return new ByteArrayInputStream(getBodyPartBytes());
+    }
 
     // ----------------------------------------------- Package Protected Methods
 

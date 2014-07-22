@@ -12,11 +12,11 @@
  */
 package com.ning.http.client.providers.jdk;
 
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.uri.UriComponents;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -26,13 +26,10 @@ import java.nio.ByteBuffer;
 public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] chunk;
-    private final boolean isLast;
-    private boolean closeConnection;
 
-    public ResponseBodyPart(UriComponents uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
-        super(uri, provider);
+    public ResponseBodyPart(byte[] chunk, boolean last) {
+        super(last);
         this.chunk = chunk;
-        isLast = last;
     }
 
     /**
@@ -56,22 +53,12 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     }
 
     @Override
-    public boolean isLast() {
-        return isLast;
-    }
-
-    @Override
-    public void markUnderlyingConnectionAsClosed() {
-        closeConnection = true;
-    }
-
-    @Override
-    public boolean closeUnderlyingConnection() {
-        return closeConnection;
-    }
-
-    @Override
     public int length() {
         return chunk != null? chunk.length: 0;
+    }
+
+    @Override
+    public InputStream readBodyPartBytes() {
+        return chunk != null ? new ByteArrayInputStream(chunk) : null;
     }
 }

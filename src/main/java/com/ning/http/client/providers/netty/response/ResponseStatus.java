@@ -16,9 +16,14 @@
  */
 package com.ning.http.client.providers.netty.response;
 
-import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import com.ning.http.client.uri.UriComponents;
+
+import java.util.List;
 
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
@@ -29,8 +34,8 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public ResponseStatus(UriComponents uri, HttpResponse response, AsyncHttpProvider provider) {
-        super(uri, provider);
+    public ResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpResponse response) {
+        super(uri, config);
         this.response = response;
     }
 
@@ -72,4 +77,8 @@ public class ResponseStatus extends HttpResponseStatus {
         return response.getProtocolVersion().getText();
     }
 
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new NettyResponse(this, headers, bodyParts);
+    }
 }

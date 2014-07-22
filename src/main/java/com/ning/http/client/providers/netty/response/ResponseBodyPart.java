@@ -15,19 +15,18 @@
  */
 package com.ning.http.client.providers.netty.response;
 
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
-import com.ning.http.client.uri.UriComponents;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A callback class used when an HTTP response body is received.
@@ -35,20 +34,17 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final ChannelBuffer content;
-    private final AtomicReference<byte[]> bytes = new AtomicReference<byte[]>(null);
-    private final boolean isLast;
+    private volatile byte[] bytes;
     private final int length;
-    private boolean closeConnection = false;
 
-    public ResponseBodyPart(UriComponents uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
-        this(uri, response, provider, null, last);
+    public ResponseBodyPart(HttpResponse response, boolean last) {
+        this(response, null, last);
     }
 
-    public ResponseBodyPart(UriComponents uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
-        super(uri, provider);
+    public ResponseBodyPart(HttpResponse response, HttpChunk chunk, boolean last) {
+        super(last);
         content = chunk != null ? chunk.getContent() : response.getContent();
         length = content.readableBytes();
-        isLast = last;
     }
 
     /**
@@ -57,14 +53,9 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      * @return the response body's part bytes received.
      */
     public byte[] getBodyPartBytes() {
-
-        if (bytes.get() != null) {
-            return bytes.get();
-        }
-
-        byte[] b = ChannelBufferUtil.channelBuffer2bytes(content);
-        bytes.set(b);
-        return b;
+        if (bytes == null)
+            bytes = ChannelBufferUtil.channelBuffer2bytes(content);
+        return bytes;
     }
 
     public int writeTo(OutputStream outputStream) throws IOException {
@@ -88,22 +79,12 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     }
 
     @Override
-    public boolean isLast() {
-        return isLast;
-    }
-
-    @Override
-    public void markUnderlyingConnectionAsClosed() {
-        closeConnection = true;
-    }
-
-    @Override
-    public boolean closeUnderlyingConnection() {
-        return closeConnection;
-    }
-
-    @Override
     public int length() {
         return length;
+    }
+
+    @Override
+    public InputStream readBodyPartBytes() {
+        return new ByteArrayInputStream(getBodyPartBytes());
     }
 }

@@ -18,54 +18,82 @@ package com.ning.http.client;
 
 import com.ning.http.client.uri.UriComponents;
 
+import java.util.List;
+
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
-public abstract class HttpResponseStatus extends HttpContent {
+public abstract class HttpResponseStatus {
 
-    public HttpResponseStatus(UriComponents uri, AsyncHttpProvider provider) {
-        super(uri, provider);
+    private final UriComponents uri;
+    protected final AsyncHttpClientConfig config;
+
+    public HttpResponseStatus(UriComponents uri, AsyncHttpClientConfig config) {
+        this.uri = uri;
+        this.config = config;
     }
 
     /**
-     * Return the response status code
+     * Return the request {@link UriComponents}
+     * 
+     * @return the request {@link UriComponents}
+     */
+    public final UriComponents getUri() {
+        return uri;
+    }
+
+    public AsyncHttpClientConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * Prepare a {@link Response}
      *
+     * @param headers   {@link HttpResponseHeaders}
+     * @param bodyParts list of {@link HttpResponseBodyPart}
+     * @return a {@link Response}
+     */
+    public abstract Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts);
+
+    /**
+     * Return the response status code
+     * 
      * @return the response status code
      */
-    abstract public int getStatusCode();
+    public abstract int getStatusCode();
 
     /**
      * Return the response status text
-     *
+     * 
      * @return the response status text
      */
-    abstract public String getStatusText();
+    public abstract String getStatusText();
 
     /**
      * Protocol name from status line.
-     *
+     * 
      * @return Protocol name.
      */
-    abstract public String getProtocolName();
+    public abstract String getProtocolName();
 
     /**
      * Protocol major version.
-     *
+     * 
      * @return Major version.
      */
-    abstract public int getProtocolMajorVersion();
+    public abstract int getProtocolMajorVersion();
 
     /**
      * Protocol minor version.
-     *
+     * 
      * @return Minor version.
      */
-    abstract public int getProtocolMinorVersion();
+    public abstract int getProtocolMinorVersion();
 
     /**
      * Full protocol name + version
-     *
+     * 
      * @return protocol name + version
      */
-    abstract public String getProtocolText();
+    public abstract String getProtocolText();
 }

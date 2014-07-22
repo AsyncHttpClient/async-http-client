@@ -533,7 +533,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                     builder.accumulate(content);
 
                     if (content.isLast()) {
-                        content.closeUnderlyingConnection();
+                        content.markUnderlyingConnectionAsToBeClosed();
                     }
                     return STATE.CONTINUE;
                 }

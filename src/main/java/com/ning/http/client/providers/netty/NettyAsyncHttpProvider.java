@@ -106,7 +106,6 @@ import com.ning.http.client.RandomAccessBody;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.cookie.CookieEncoder;
 import com.ning.http.client.filter.FilterContext;
@@ -132,7 +131,6 @@ import com.ning.http.client.providers.netty.request.body.BodyFileRegion;
 import com.ning.http.client.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
-import com.ning.http.client.providers.netty.response.NettyResponse;
 import com.ning.http.client.providers.netty.response.ResponseBodyPart;
 import com.ning.http.client.providers.netty.response.ResponseHeaders;
 import com.ning.http.client.providers.netty.response.ResponseStatus;
@@ -778,12 +776,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     @Override
-    public Response prepareResponse(final HttpResponseStatus status, final HttpResponseHeaders headers,
-            final List<HttpResponseBodyPart> bodyParts) {
-        return new NettyResponse(status, headers, bodyParts);
-    }
-
-    @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         return doConnect(request, asyncHandler, null, true, false);
     }
@@ -1316,7 +1308,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c)
             throws Exception {
         boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
-        if (c.closeUnderlyingConnection())
+        if (c.isUnderlyingConnectionToBeClosed())
             future.setKeepAlive(false);
         return state;
     }
@@ -1813,7 +1805,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final boolean exitAfterHandlingBody(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
             AsyncHandler<?> handler) throws Exception {
         if (!response.isChunked()) {
-            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(response, null, true));
             finishUpdate(future, channel, false);
             return true;
         }
@@ -1823,7 +1815,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final boolean exitAfterHandlingHead(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
             AsyncHandler<?> handler, HttpRequest nettyRequest) throws Exception {
         if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(response, null, true));
             markAsDone(future, channel);
             drainChannel(channel, future);
         }
@@ -1843,8 +1835,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         configureKeepAlive(future, response);
 
-        HttpResponseStatus status = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-        HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
+        HttpResponseStatus status = new ResponseStatus(future.getURI(), config, response);
+        HttpResponseHeaders responseHeaders = new ResponseHeaders(response);
 
         if (exitAfterProcessingFilters(channel, future, response, handler, request, status, responseHeaders))
             return;
@@ -1873,12 +1865,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             final AsyncHandler<?> handler) throws Exception {
         boolean last = chunk.isLast();
         // we don't notify updateBodyAndInterrupt with the last chunk as it's empty
-        if (last || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, this, chunk, last))) {
+        if (last || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(null, chunk, last))) {
 
             if (chunk instanceof HttpChunkTrailer) {
                 HttpChunkTrailer chunkTrailer = (HttpChunkTrailer) chunk;
                 if (!chunkTrailer.trailingHeaders().isEmpty()) {
-                    ResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), future.getHttpResponse(), this, chunkTrailer);
+                    ResponseHeaders responseHeaders = new ResponseHeaders(future.getHttpResponse(), chunkTrailer);
                     updateHeadersAndInterrupt(handler, responseHeaders);
                 }
             }
@@ -1962,8 +1954,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 HttpResponse response = (HttpResponse) e.getMessage();
                 HttpHeaders nettyResponseHeaders = response.headers();
 
-                HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
+                HttpResponseStatus s = new ResponseStatus(future.getURI(), config, response);
+                HttpResponseHeaders responseHeaders = new ResponseHeaders(response);
                 FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(wsUpgradeHandler).request(request)
                         .responseStatus(s).responseHeaders(responseHeaders).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
@@ -2002,7 +1994,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 final boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-                s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
+                s = new ResponseStatus(future.getURI(), config, response);
                 final boolean statusReceived = wsUpgradeHandler.onStatusReceived(s) == STATE.UPGRADE;
 
                 if (!statusReceived) {
@@ -2066,7 +2058,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (frame.getBinaryData() != null) {
                     webSocketChunk.setContent(ChannelBuffers.wrappedBuffer(frame.getBinaryData()));
-                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, webSocketChunk, true);
+                    ResponseBodyPart rp = new ResponseBodyPart(null, webSocketChunk, true);
                     wsUpgradeHandler.onBodyPartReceived(rp);
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(wsUpgradeHandler.onCompleted());

@@ -13,9 +13,14 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import com.ning.http.client.uri.UriComponents;
+
+import java.util.List;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 
@@ -36,9 +41,9 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
     public GrizzlyResponseStatus(final HttpResponsePacket response,
                                  final UriComponents uri,
-                                 final AsyncHttpProvider provider) {
+                                 final AsyncHttpClientConfig config) {
 
-        super(uri, provider);
+        super(uri, config);
         this.response = response;
 
     }
@@ -94,5 +99,10 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
     public HttpResponsePacket getResponse() {
         return response;
+    }
+    
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new GrizzlyResponse(this, headers, bodyParts);
     }
 }

@@ -481,7 +481,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     currentRedirectCount = config.getMaxRedirects();
                 }
 
-                ApacheResponseStatus status = new ApacheResponseStatus(uri, method, ApacheAsyncHttpProvider.this);
+                ApacheResponseStatus status = new ApacheResponseStatus(uri, config, method);
                 FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);
@@ -525,7 +525,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                 state = asyncHandler.onStatusReceived(status);
                 if (state == AsyncHandler.STATE.CONTINUE) {
-                    state = asyncHandler.onHeadersReceived(new ApacheResponseHeaders(uri, method, ApacheAsyncHttpProvider.this));
+                    state = asyncHandler.onHeadersReceived(new ApacheResponseHeaders(method));
                 }
 
                 if (state == AsyncHandler.STATE.CONTINUE) {
@@ -573,14 +573,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                                 System.arraycopy(bytes, 0, b, 0, read);
                                 leftBytes -= read;
 
-                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this, leftBytes > -1));
+                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(b, leftBytes > -1));
 
                             }
                         }
                     }
 
                     if (method.getName().equalsIgnoreCase("HEAD")) {
-                        asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, "".getBytes(), ApacheAsyncHttpProvider.this, true));
+                        asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart("".getBytes(), true));
                     }
                 }
 

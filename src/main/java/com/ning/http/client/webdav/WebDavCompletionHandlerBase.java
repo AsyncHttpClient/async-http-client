@@ -69,12 +69,12 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     @Override
     public final T onCompleted() throws Exception {
         if (status != null) {
-            Response response = status.provider().prepareResponse(status, headers, bodies);
+            Response response = status.prepareResponse(headers, bodies);
             Document document = null;
             if (status.getStatusCode() == 207) {
                 document = readXMLResponse(response.getResponseBodyAsStream());
             }
-            return onCompleted(new WebDavResponse(status.provider().prepareResponse(status, headers, bodies), document));
+            return onCompleted(new WebDavResponse(status.prepareResponse(headers, bodies), document));
         } else {
             throw new IllegalStateException("Status is null");
         }
@@ -103,7 +103,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         private final int statusCode;
 
         public HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
-            super(wrapper.getUri(), wrapper.provider());
+            super(wrapper.getUri(), wrapper.getConfig());
             this.wrapper = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;
@@ -137,6 +137,11 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         @Override
         public String getProtocolText() {
             return wrapper.getStatusText();
+        }
+
+        @Override
+        public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+            return wrapper.prepareResponse(headers, bodyParts);
         }
     }
 

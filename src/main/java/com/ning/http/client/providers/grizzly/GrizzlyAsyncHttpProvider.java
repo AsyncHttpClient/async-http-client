@@ -22,9 +22,6 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Param;
@@ -33,7 +30,6 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 import com.ning.http.client.UpgradeHandler;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
@@ -297,17 +293,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } catch (IOException ignored) { }
 
     }
-
-
-    @Override
-    public Response prepareResponse(HttpResponseStatus status,
-                                    HttpResponseHeaders headers,
-                                    List<HttpResponseBodyPart> bodyParts) {
-
-        return new GrizzlyResponse(status, headers, bodyParts);
-
-    }
-
 
     // ------------------------------------------------------- Protected Methods
 
@@ -1181,9 +1166,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     context.currentState = handler.onBodyPartReceived(
                             new GrizzlyResponseBodyPart(content,
-                                    null,
-                                    ctx.getConnection(),
-                                    provider));
+                                    ctx.getConnection()));
                 } catch (Exception e) {
                     handler.onThrowable(e);
                 }
@@ -1274,7 +1257,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final GrizzlyResponseStatus responseStatus =
                     new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
                             context.request.getURI(),
-                            provider);
+                            provider.clientConfig);
             context.responseStatus = responseStatus;
             if (context.statusHandler != null) {
                 return;
@@ -1342,9 +1325,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final AsyncHandler handler = context.handler;
             final List<ResponseFilter> filters = context.provider.clientConfig.getResponseFilters();
-            final GrizzlyResponseHeaders responseHeaders = new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                    context.request.getURI(),
-                    provider);
+            final GrizzlyResponseHeaders responseHeaders = new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader);
             if (!filters.isEmpty()) {
                 FilterContext fc = new FilterContext.FilterContextBuilder()
                         .asyncHandler(handler).request(context.request)

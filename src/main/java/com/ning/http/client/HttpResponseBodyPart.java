@@ -15,20 +15,54 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.uri.UriComponents;
-
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public abstract class HttpResponseBodyPart extends HttpContent {
+public abstract class HttpResponseBodyPart {
 
-    public HttpResponseBodyPart(UriComponents uri, AsyncHttpProvider provider) {
-        super(uri, provider);
+    private final boolean last;
+    private boolean closeConnection;
+
+    public HttpResponseBodyPart(boolean last) {
+        this.last = last;
     }
+
+    /**
+     * Close the underlying connection once the processing has completed. Invoking that method means the
+     * underlying TCP connection will be closed as soon as the processing of the response is completed. That
+     * means the underlying connection will never get pooled.
+     */
+    public void markUnderlyingConnectionAsToBeClosed() {
+        closeConnection = true;
+    }
+
+    /**
+     * Return true of the underlying connection will be closed once the response has been fully processed.
+     *
+     * @return true of the underlying connection will be closed once the response has been fully processed.
+     */
+    public boolean isUnderlyingConnectionToBeClosed() {
+        return closeConnection;
+    }
+
+    /**
+     * Return true if this is the last part.
+     *
+     * @return true if this is the last part.
+     */
+    public boolean isLast() {
+        return last;
+    }
+
+    /**
+     * Return length of this part in bytes.
+     */
+    public abstract int length();
 
     /**
      * Return the response body's part bytes received.
@@ -36,6 +70,11 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      * @return the response body's part bytes received.
      */
     public abstract byte[] getBodyPartBytes();
+
+    /**
+     * Method for accessing contents of this part via stream.
+     */
+    public abstract InputStream readBodyPartBytes();
 
     /**
      * Write the available bytes to the {@link java.io.OutputStream}
@@ -53,27 +92,4 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      * @return {@link ByteBuffer}
      */
     public abstract ByteBuffer getBodyByteBuffer();
-
-    /**
-     * Return true if this is the last part.
-     *
-     * @return true if this is the last part.
-     */
-    public abstract boolean isLast();
-
-    /**
-     * Close the underlying connection once the processing has completed. Invoking that method means the
-     * underlying TCP connection will be closed as soon as the processing of the response is completed. That
-     * means the underlying connection will never get pooled.
-     */
-    public abstract void markUnderlyingConnectionAsClosed();
-
-    /**
-     * Return true of the underlying connection will be closed once the response has been fully processed.
-     *
-     * @return true of the underlying connection will be closed once the response has been fully processed.
-     */
-    public abstract boolean closeUnderlyingConnection();
-
-    public abstract int length();
 }

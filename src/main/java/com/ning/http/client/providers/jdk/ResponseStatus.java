@@ -12,12 +12,16 @@
  */
 package com.ning.http.client.providers.jdk;
 
-import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import com.ning.http.client.uri.UriComponents;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.List;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
@@ -26,8 +30,8 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpURLConnection urlConnection;
 
-    public ResponseStatus(UriComponents uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
-        super(uri, provider);
+    public ResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpURLConnection urlConnection) {
+        super(uri, config);
         this.urlConnection = urlConnection;
     }
 
@@ -77,4 +81,8 @@ public class ResponseStatus extends HttpResponseStatus {
         return ""; //TODO
     }
 
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new JDKResponse(this, headers, bodyParts);
+    }
 }

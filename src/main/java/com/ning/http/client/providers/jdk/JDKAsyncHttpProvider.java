@@ -35,7 +35,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -57,9 +56,6 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.ProgressAsyncHandler;
@@ -67,7 +63,6 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 import com.ning.http.client.cookie.CookieEncoder;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
@@ -203,10 +198,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         isClose.set(true);
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new JDKResponse(status, headers, bodyParts);
-    }
-
     private final class AsyncHttpUrlConnection<T> implements Callable<T> {
 
         private HttpURLConnection urlConnection;
@@ -243,7 +234,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
-                ResponseStatus status = new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this);
+                ResponseStatus status = new ResponseStatus(uri, config, urlConnection);
                 FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);
@@ -339,12 +330,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                             byte[] b = new byte[read];
                             System.arraycopy(bytes, 0, b, 0, read);
                             leftBytes -= read;
-                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, JDKAsyncHttpProvider.this, leftBytes > -1));
+                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(b, leftBytes > -1));
                         }
                     }
 
                     if (request.getMethod().equalsIgnoreCase("HEAD")) {
-                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, "".getBytes(), JDKAsyncHttpProvider.this, true));
+                        asyncHandler.onBodyPartReceived(new ResponseBodyPart("".getBytes(), true));
                     }
                 }
 

@@ -43,7 +43,7 @@ public class NettyAsyncResponseTest {
         Date date = new Date(System.currentTimeMillis() + 60000); // sdf.parse( dateString );
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
-        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(null, null, false) {
+        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(false) {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
@@ -61,7 +61,7 @@ public class NettyAsyncResponseTest {
     @Test(groups = "standalone")
     public void testCookieParseMaxAge() {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
-        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(null, null, false) {
+        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(false) {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
@@ -77,7 +77,7 @@ public class NettyAsyncResponseTest {
     @Test(groups = "standalone")
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
-        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(null, null, false) {
+        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(false) {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);

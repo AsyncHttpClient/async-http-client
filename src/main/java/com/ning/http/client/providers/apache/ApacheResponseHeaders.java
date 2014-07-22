@@ -12,12 +12,11 @@
  */
 package com.ning.http.client.providers.apache;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.uri.UriComponents;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
+
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseHeaders;
 
 /**
  * A class that represent the HTTP headers.
@@ -27,8 +26,8 @@ public class ApacheResponseHeaders extends HttpResponseHeaders {
     private final HttpMethodBase method;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ApacheResponseHeaders(UriComponents uri, HttpMethodBase method, AsyncHttpProvider provider) {
-        super(uri, provider, false);
+    public ApacheResponseHeaders(HttpMethodBase method) {
+        super(false);
         this.method = method;
         headers = computerHeaders();
     }
