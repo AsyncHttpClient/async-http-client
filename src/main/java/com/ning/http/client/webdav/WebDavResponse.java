@@ -51,7 +51,7 @@ public class WebDavResponse implements Response {
     }
 
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
-        return ByteBuffer.wrap(getResponseBodyAsBytes());
+        return response.getResponseBodyAsByteBuffer();
     }
 
     public InputStream getResponseBodyAsStream() throws IOException {

@@ -13,12 +13,6 @@
 
 package com.ning.http.client.webdav;
 
-import com.ning.http.client.AsyncCompletionHandlerBase;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -27,13 +21,25 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.ning.http.client.AsyncCompletionHandlerBase;
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.uri.UriComponents;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
@@ -96,7 +102,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
     private class HttpStatusWrapper extends HttpResponseStatus {
 
-        private final HttpResponseStatus wrapper;
+        private final HttpResponseStatus wrapped;
 
         private final String statusText;
 
@@ -104,44 +110,142 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
         public HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
             super(wrapper.getUri(), wrapper.getConfig());
-            this.wrapper = wrapper;
+            this.wrapped = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;
         }
 
         @Override
+        public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+            final Response wrappedResponse = wrapped.prepareResponse(headers, bodyParts);
+
+            return new Response() {
+
+                @Override
+                public int getStatusCode() {
+                    return statusCode;
+                }
+
+                @Override
+                public String getStatusText() {
+                    return statusText;
+                }
+
+                @Override
+                public byte[] getResponseBodyAsBytes() throws IOException {
+                    return wrappedResponse.getResponseBodyAsBytes();
+                }
+
+                @Override
+                public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+                    return wrappedResponse.getResponseBodyAsByteBuffer();
+                }
+
+                @Override
+                public InputStream getResponseBodyAsStream() throws IOException {
+                    return wrappedResponse.getResponseBodyAsStream();
+                }
+
+                @Override
+                public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+                    return wrappedResponse.getResponseBodyExcerpt(maxLength, charset);
+                }
+
+                @Override
+                public String getResponseBody(String charset) throws IOException {
+                    return wrappedResponse.getResponseBody(charset);
+                }
+
+                @Override
+                public String getResponseBodyExcerpt(int maxLength) throws IOException {
+                    return wrappedResponse.getResponseBodyExcerpt(maxLength);
+                }
+
+                @Override
+                public String getResponseBody() throws IOException {
+                    return wrappedResponse.getResponseBody();
+                }
+
+                @Override
+                public UriComponents getUri() {
+                    return wrappedResponse.getUri();
+                }
+
+                @Override
+                public String getContentType() {
+                    return wrappedResponse.getContentType();
+                }
+
+                @Override
+                public String getHeader(String name) {
+                    return wrappedResponse.getHeader(name);
+                }
+
+                @Override
+                public List<String> getHeaders(String name) {
+                    return wrappedResponse.getHeaders(name);
+                }
+
+                @Override
+                public FluentCaseInsensitiveStringsMap getHeaders() {
+                    return wrappedResponse.getHeaders();
+                }
+
+                @Override
+                public boolean isRedirected() {
+                    return wrappedResponse.isRedirected();
+                }
+
+                @Override
+                public List<Cookie> getCookies() {
+                    return wrappedResponse.getCookies();
+                }
+
+                @Override
+                public boolean hasResponseStatus() {
+                    return wrappedResponse.hasResponseStatus();
+                }
+
+                @Override
+                public boolean hasResponseHeaders() {
+                    return wrappedResponse.hasResponseHeaders();
+                }
+
+                @Override
+                public boolean hasResponseBody() {
+                    return wrappedResponse.hasResponseBody();
+                }
+            };
+        }
+
+        @Override
         public int getStatusCode() {
-            return (statusText == null ? wrapper.getStatusCode() : statusCode);
+            return (statusText == null ? wrapped.getStatusCode() : statusCode);
         }
 
         @Override
         public String getStatusText() {
-            return (statusText == null ? wrapper.getStatusText() : statusText);
+            return (statusText == null ? wrapped.getStatusText() : statusText);
         }
 
         @Override
         public String getProtocolName() {
-            return wrapper.getProtocolName();
+            return wrapped.getProtocolName();
         }
 
         @Override
         public int getProtocolMajorVersion() {
-            return wrapper.getProtocolMajorVersion();
+            return wrapped.getProtocolMajorVersion();
         }
 
         @Override
         public int getProtocolMinorVersion() {
-            return wrapper.getProtocolMinorVersion();
+            return wrapped.getProtocolMinorVersion();
         }
 
         @Override
         public String getProtocolText() {
-            return wrapper.getStatusText();
-        }
-
-        @Override
-        public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-            return wrapper.prepareResponse(headers, bodyParts);
+            return wrapped.getStatusText();
         }
     }
 
