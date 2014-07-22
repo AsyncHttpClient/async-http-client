@@ -22,6 +22,7 @@ import org.glassfish.grizzly.http.HttpHeader;
 
 import java.io.IOException;
 import org.asynchttpclient.providers.grizzly.filters.events.GracefulCloseEvent;
+import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.http.HttpResponsePacket;
@@ -111,6 +112,13 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter implement
         eventHandler.onHttpHeadersParsed(httpHeader, ctx);
     }
 
+    @Override
+    protected boolean onHttpHeaderParsed(final HttpHeader httpHeader,
+            final Buffer buffer, final FilterChainContext ctx) {
+        super.onHttpHeaderParsed(httpHeader, buffer, ctx);
+        return eventHandler.onHttpHeaderParsed(httpHeader, buffer, ctx);
+    }
+    
     @Override
     protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
         return eventHandler.onHttpPacketParsed(httpHeader, ctx);

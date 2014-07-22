@@ -100,7 +100,7 @@ public final class ProxyFilter extends BaseFilter {
             case BASIC:
                 return computeBasicAuthentication(realm);
             case DIGEST:
-                return computeDigestAuthentication(proxyServer);
+                return computeDigestAuthentication(realm);
             case NTLM:
                 return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
             default:

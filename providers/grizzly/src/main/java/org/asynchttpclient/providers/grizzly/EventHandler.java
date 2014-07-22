@@ -55,6 +55,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.http.HttpRequestPacket;
 
 public final class EventHandler {
 
@@ -302,6 +304,19 @@ public final class EventHandler {
             }
         }
 
+    }
+
+    public boolean onHttpHeaderParsed(final HttpHeader httpHeader,
+            final Buffer buffer, final FilterChainContext ctx) {
+        final HttpRequestPacket request = ((HttpResponsePacket) httpHeader).getRequest();
+        if (Method.CONNECT.equals(request.getMethod())) {
+            // finish request/response processing, because Grizzly itself
+            // treats CONNECT traffic as part of request-response processing
+            // and we don't want it be treated like that
+            httpHeader.setExpectContent(false);
+        }
+
+        return false;
     }
 
     @SuppressWarnings("rawtypes")
