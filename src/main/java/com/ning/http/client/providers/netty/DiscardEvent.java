@@ -13,24 +13,9 @@
  */
 package com.ning.http.client.providers.netty;
 
-import org.jboss.netty.channel.Channel;
-
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider.DiscardEvent;
-
-public final class Channels {
-
-    private Channels() {
-    }
-
-    public static void setAttachment(Channel channel, Object attachment) {
-        channel.setAttachment(attachment);
-    }
-
-    public static Object getAttachment(Channel channel) {
-        return channel.getAttachment();
-    }
-
-    public static void setDiscard(Channel channel) {
-        setAttachment(channel, DiscardEvent.INSTANCE);
-    }
+/**
+ * Simple marker for stopping publishing bytes
+ */
+public enum DiscardEvent {
+    INSTANCE
 }

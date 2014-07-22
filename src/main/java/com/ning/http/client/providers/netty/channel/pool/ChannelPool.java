@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.pool;
+package com.ning.http.client.providers.netty.channel.pool;
 
 import org.jboss.netty.channel.Channel;
 

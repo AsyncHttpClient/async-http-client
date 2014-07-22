@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.response;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
@@ -37,6 +37,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.StandardCharsets;

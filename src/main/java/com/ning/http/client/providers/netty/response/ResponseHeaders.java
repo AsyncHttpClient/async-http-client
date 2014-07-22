@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.response;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;

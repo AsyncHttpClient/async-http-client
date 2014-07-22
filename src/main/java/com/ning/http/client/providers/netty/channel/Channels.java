@@ -11,21 +11,26 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.channel;
 
-import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import org.jboss.netty.channel.Channel;
 
-public abstract class Callback {
+import com.ning.http.client.providers.netty.DiscardEvent;
 
-    private final NettyResponseFuture<?> future;
+public final class Channels {
 
-    public Callback(NettyResponseFuture<?> future) {
-        this.future = future;
+    private Channels() {
     }
 
-    abstract public void call() throws Exception;
+    public static void setAttachment(Channel channel, Object attachment) {
+        channel.setAttachment(attachment);
+    }
 
-    public NettyResponseFuture<?> future() {
-        return future;
+    public static Object getAttachment(Channel channel) {
+        return channel.getAttachment();
+    }
+
+    public static void setDiscard(Channel channel) {
+        setAttachment(channel, DiscardEvent.INSTANCE);
     }
 }

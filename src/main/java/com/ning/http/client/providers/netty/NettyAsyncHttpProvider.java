@@ -49,7 +49,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -102,7 +101,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RandomAccessBody;
 import com.ning.http.client.Realm;
@@ -119,14 +117,28 @@ import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
-import com.ning.http.client.providers.netty.pool.ChannelManager;
-import com.ning.http.client.providers.netty.pool.ChannelPool;
-import com.ning.http.client.providers.netty.pool.DefaultChannelPool;
-import com.ning.http.client.providers.netty.pool.NoopChannelPool;
+import com.ning.http.client.providers.netty.channel.ChannelManager;
+import com.ning.http.client.providers.netty.channel.Channels;
+import com.ning.http.client.providers.netty.channel.SslInitializer;
+import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
+import com.ning.http.client.providers.netty.channel.pool.DefaultChannelPool;
+import com.ning.http.client.providers.netty.channel.pool.NoopChannelPool;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.future.StackTraceInspector;
+import com.ning.http.client.providers.netty.request.NettyConnectListener;
+import com.ning.http.client.providers.netty.request.ProgressListener;
+import com.ning.http.client.providers.netty.request.body.BodyChunkedInput;
+import com.ning.http.client.providers.netty.request.body.BodyFileRegion;
+import com.ning.http.client.providers.netty.request.timeout.ReadTimeoutTimerTask;
+import com.ning.http.client.providers.netty.request.timeout.RequestTimeoutTimerTask;
+import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
+import com.ning.http.client.providers.netty.response.NettyResponse;
+import com.ning.http.client.providers.netty.response.ResponseBodyPart;
+import com.ning.http.client.providers.netty.response.ResponseHeaders;
+import com.ning.http.client.providers.netty.response.ResponseStatus;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.client.providers.netty.timeout.ReadTimeoutTimerTask;
-import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
-import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
+import com.ning.http.client.providers.netty.ws.NettyWebSocket;
+import com.ning.http.client.providers.netty.ws.WebSocketUtil;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartBody;
@@ -139,7 +151,7 @@ import com.ning.http.util.StandardCharsets;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
@@ -299,7 +311,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         });
     }
 
-    SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
+    public SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
         SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config, peerHost, peerPort);
         return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis)
                 : new SslHandler(sslEngine);
@@ -347,7 +359,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return channel;
     }
 
-    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
+    public final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
 
         HttpRequest nettyRequest = future.getNettyRequest();
         HttpHeaders nettyRequestHeaders = nettyRequest.headers();
@@ -421,7 +433,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
                         AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
 
-                    channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
+                    channel.write(nettyRequest).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
                     LOGGER.debug(cause.getMessage(), cause);
                     try {
@@ -449,7 +461,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 final FileRegion region = new OptimizedFileRegion(raf, 0, raf.length());
                                 writeFuture = channel.write(region);
                             }
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+                            writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
                                 public void operationComplete(ChannelFuture cf) {
                                     try {
                                         raf.close();
@@ -479,7 +491,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
                             writeFuture = channel.write(bodyFileRegion);
                         }
-                        writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+                        writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
                             public void operationComplete(ChannelFuture cf) {
                                 try {
                                     b.close();
@@ -1235,7 +1247,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    protected boolean retry(Channel channel, NettyResponseFuture<?> future) {
+    public boolean retry(Channel channel, NettyResponseFuture<?> future) {
 
         if (isClose())
             return false;
@@ -1307,12 +1319,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (c.closeUnderlyingConnection())
             future.setKeepAlive(false);
         return state;
-    }
-
-    // Simple marker for stopping publishing bytes.
-
-    enum DiscardEvent {
-        INSTANCE
     }
 
     @Override
@@ -1405,78 +1411,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             f.getAndSetWriteBody(false);
         }
         return f;
-    }
-
-    private class ProgressListener implements ChannelFutureProgressListener {
-
-        private final boolean notifyHeaders;
-        private final AsyncHandler<?> asyncHandler;
-        private final NettyResponseFuture<?> future;
-
-        public ProgressListener(boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
-            this.notifyHeaders = notifyHeaders;
-            this.asyncHandler = asyncHandler;
-            this.future = future;
-        }
-
-        public void operationComplete(ChannelFuture cf) {
-            // The write operation failed. If the channel was cached, it means it got asynchronously closed.
-            // Let's retry a second time.
-            Throwable cause = cf.getCause();
-            if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
-
-                if (cause instanceof IllegalStateException) {
-                    LOGGER.debug(cause.getMessage(), cause);
-                    try {
-                        cf.getChannel().close();
-                    } catch (RuntimeException ex) {
-                        LOGGER.debug(ex.getMessage(), ex);
-                    }
-                    return;
-                }
-
-                if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
-
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
-                    }
-
-                    try {
-                        cf.getChannel().close();
-                    } catch (RuntimeException ex) {
-                        LOGGER.debug(ex.getMessage(), ex);
-                    }
-                    return;
-                } else {
-                    future.abort(cause);
-                }
-                return;
-            }
-            future.touch();
-
-            /**
-             * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
-             * causing unpredictable behavior.
-             */
-            Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : NettyAsyncHttpProvider.this.getConfig()
-                    .getRealm();
-            boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
-
-            if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
-                if (notifyHeaders) {
-                    ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
-                } else {
-                    ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
-                }
-            }
-        }
-
-        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
-            future.touch();
-            if (asyncHandler instanceof ProgressAsyncHandler) {
-                ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
-            }
-        }
     }
 
     public static class ThreadLocalBoolean extends ThreadLocal<Boolean> {

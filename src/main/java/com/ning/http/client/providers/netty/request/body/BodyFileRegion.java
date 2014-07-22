@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.request.body;
 
 import com.ning.http.client.RandomAccessBody;
 import org.jboss.netty.channel.FileRegion;
@@ -21,7 +21,7 @@ import java.nio.channels.WritableByteChannel;
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
-class BodyFileRegion
+public class BodyFileRegion
         implements FileRegion {
 
     private final RandomAccessBody body;

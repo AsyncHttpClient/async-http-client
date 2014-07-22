@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.timeout;
+package com.ning.http.client.providers.netty.request.timeout;
 
 import java.util.concurrent.TimeoutException;
 
@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 
 public abstract class TimeoutTimerTask implements TimerTask {
 

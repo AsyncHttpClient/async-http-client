@@ -13,12 +13,14 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.channel;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import org.jboss.netty.handler.ssl.SslHandler;
+
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 
 import java.net.InetSocketAddress;
 

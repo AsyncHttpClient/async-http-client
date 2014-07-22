@@ -14,7 +14,7 @@
  * under the License.
  *
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.request;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -25,7 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.netty.pool.ChannelManager;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.channel.ChannelManager;
+import com.ning.http.client.providers.netty.channel.Channels;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.future.StackTraceInspector;
 import com.ning.http.util.Base64;
 
 import javax.net.ssl.HostnameVerifier;
@@ -38,7 +42,7 @@ import java.nio.channels.ClosedChannelException;
 /**
  * Non Blocking connect.
  */
-final class NettyConnectListener<T> implements ChannelFutureListener {
+public final class NettyConnectListener<T> implements ChannelFutureListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;

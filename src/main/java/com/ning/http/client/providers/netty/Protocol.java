@@ -17,6 +17,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+
 public interface Protocol {
 
     void handle(Channel channel, MessageEvent e, NettyResponseFuture<?> future) throws Exception;

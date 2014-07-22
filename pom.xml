@@ -243,15 +243,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>${source.property}</source>
-                    <target>${target.property}</target>
                     <maxmem>1024m</maxmem>
-                    <excludes>
-                        <exclude>${compiler.exclude}</exclude>
-                    </excludes>
-                    <testExcludes>
-                        <testExclude>${test.compiler.exclude}</testExclude>
-                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -332,7 +324,7 @@
                                     <version>2.0.9</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>1.6</version>
+                                    <version>${maven.compiler.source}</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
@@ -389,13 +381,12 @@
                 <version>2.8.1</version>
                 <configuration>
                     <aggregate>true</aggregate>
-                    <source>1.6</source>
+                    <source>${maven.compiler.source}</source>
                     <encoding>UTF-8</encoding>
                     <maxmemory>1g</maxmemory>
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>
                     </links>
-                    <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
@@ -449,13 +440,12 @@
             <version>2.8.1</version>
             <configuration>
                 <aggregate>true</aggregate>
-                <source>1.6</source>
+                <source>${maven.compiler.source}</source>
                 <encoding>UTF-8</encoding>
                 <maxmemory>1g</maxmemory>
                 <links>
                     <link>http://java.sun.com/javase/6/docs/api/</link>
                 </links>
-                <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
                 <bootclasspath>${sun.boot.class.path}</bootclasspath>
                 <doclet>com.google.doclava.Doclava</doclet>
                 <useStandardDocletOptions>false</useStandardDocletOptions>
@@ -577,8 +567,8 @@
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
         <netty.version>3.9.2.Final</netty.version>
         <grizzly.version>2.3.16</grizzly.version>
-        <source.property>1.6</source.property>
-        <target.property>1.6</target.property>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
         <surefire.version>2.12</surefire.version>
     </properties>
 </project>

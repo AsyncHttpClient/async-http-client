@@ -26,6 +26,8 @@ import org.testng.annotations.Test;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.providers.netty.response.NettyResponse;
+import com.ning.http.client.providers.netty.response.ResponseStatus;
 
 /**
  * @author Benjamin Hanzelmann

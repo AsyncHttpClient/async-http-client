@@ -10,14 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.timeout;
+package com.ning.http.client.providers.netty.request.timeout;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.util.Timeout;
 
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 

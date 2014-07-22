@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.ws;
 
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
@@ -128,7 +128,7 @@ public class NettyWebSocket implements WebSocket {
         listeners.clear();
     }
 
-    protected void onBinaryFragment(byte[] message, boolean last) {
+    public void onBinaryFragment(byte[] message, boolean last) {
 
         if (!last) {
             try {
@@ -173,7 +173,7 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
-    protected void onTextFragment(String message, boolean last) {
+    public void onTextFragment(String message, boolean last) {
 
         if (!last) {
             textBuffer.append(message);
@@ -212,7 +212,7 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
-    protected void onError(Throwable t) {
+    public void onError(Throwable t) {
         for (WebSocketListener l : listeners) {
             try {
                 l.onError(t);
@@ -227,7 +227,7 @@ public class NettyWebSocket implements WebSocket {
         onClose(1000, "Normal closure; the connection successfully completed whatever purpose for which it was created.");
     }
 
-    protected void onClose(int code, String reason) {
+    public void onClose(int code, String reason) {
         for (WebSocketListener l : listeners) {
             try {
                 if (l instanceof WebSocketCloseCodeReasonListener) {

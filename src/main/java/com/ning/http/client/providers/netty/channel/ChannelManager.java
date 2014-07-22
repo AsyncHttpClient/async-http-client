@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.pool;
+package com.ning.http.client.providers.netty.channel;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -19,9 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.netty.Channels;
-import com.ning.http.client.providers.netty.CleanupChannelGroup;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
+import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.util.CleanupChannelGroup;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;

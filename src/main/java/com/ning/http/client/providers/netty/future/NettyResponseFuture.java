@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.providers.netty;
+package com.ning.http.client.providers.netty.future;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
@@ -40,7 +40,8 @@ import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
-import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
+import com.ning.http.client.providers.netty.channel.Channels;
+import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
 
 /**
@@ -52,7 +53,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
-    enum STATE {
+    public enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
 
@@ -271,11 +272,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**                 INTERNAL                **/
     /*********************************************/
     
-    protected UriComponents getURI() {
+    public UriComponents getURI() {
         return uri;
     }
 
-    protected void setURI(UriComponents uri) {
+    public void setURI(UriComponents uri) {
         this.uri = uri;
     }
 
@@ -287,7 +288,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return proxyServer;
     }
 
-    void setAsyncHandler(AsyncHandler<V> asyncHandler) {
+    public void setAsyncHandler(AsyncHandler<V> asyncHandler) {
         this.asyncHandler = asyncHandler;
     }
 
@@ -302,7 +303,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
     }
 
-    protected final Request getRequest() {
+    public final Request getRequest() {
         return request;
     }
 
@@ -310,47 +311,47 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return nettyRequest;
     }
 
-    protected final void setNettyRequest(HttpRequest nettyRequest) {
+    public final void setNettyRequest(HttpRequest nettyRequest) {
         this.nettyRequest = nettyRequest;
     }
 
-    protected final AsyncHandler<V> getAsyncHandler() {
+    public final AsyncHandler<V> getAsyncHandler() {
         return asyncHandler;
     }
 
-    protected final boolean isKeepAlive() {
+    public final boolean isKeepAlive() {
         return keepAlive;
     }
 
-    protected final void setKeepAlive(final boolean keepAlive) {
+    public final void setKeepAlive(final boolean keepAlive) {
         this.keepAlive = keepAlive;
     }
 
-    protected final HttpResponse getHttpResponse() {
+    public final HttpResponse getHttpResponse() {
         return httpResponse;
     }
 
-    protected final void setHttpResponse(final HttpResponse httpResponse) {
+    public final void setHttpResponse(final HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
 
-    protected int incrementAndGetCurrentRedirectCount() {
+    public int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
     }
 
-    protected boolean isInAuth() {
+    public boolean isInAuth() {
         return inAuth.get();
     }
 
-    protected boolean getAndSetAuth(boolean inDigestAuth) {
+    public boolean getAndSetAuth(boolean inDigestAuth) {
         return inAuth.getAndSet(inDigestAuth);
     }
 
-    protected STATE getState() {
+    public STATE getState() {
         return state.get();
     }
 
-    protected void setState(STATE state) {
+    public void setState(STATE state) {
         this.state.set(state);
     }
 
@@ -358,7 +359,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return statusReceived.getAndSet(sr);
     }
     
-    protected void attachChannel(Channel channel) {
+    public void attachChannel(Channel channel) {
         this.channel = channel;
     }
 
@@ -374,20 +375,20 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.allowConnect = allowConnect;
     }
 
-    protected void attachChannel(Channel channel, boolean reuseChannel) {
+    public void attachChannel(Channel channel, boolean reuseChannel) {
         this.channel = channel;
         this.reuseChannel = reuseChannel;
     }
 
-    protected Channel channel() {
+    public Channel channel() {
         return channel;
     }
 
-    protected boolean reuseChannel() {
+    public boolean reuseChannel() {
         return reuseChannel;
     }
 
-    protected boolean canRetry() {
+    public boolean canRetry() {
         if (currentRetry.incrementAndGet() > maxRetry) {
             return false;
         }

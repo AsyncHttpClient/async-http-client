@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.pool;
+package com.ning.http.client.providers.netty.channel.pool;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
@@ -31,11 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.netty.Channels;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
+import com.ning.http.client.providers.netty.channel.Channels;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 
 /**
- * A simple implementation of {@link com.ning.http.client.providers.netty.pool.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * A simple implementation of {@link com.ning.http.client.providers.netty.channel.pool.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
 public final class DefaultChannelPool implements ChannelPool {
 
