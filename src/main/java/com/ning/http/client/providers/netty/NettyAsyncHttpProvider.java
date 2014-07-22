@@ -36,7 +36,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -974,9 +973,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (attachment == DiscardEvent.INSTANCE) {
             // discard
 
-        } else if (attachment instanceof AsyncCallable) {
+        } else if (attachment instanceof Callback) {
             Object message = e.getMessage();
-            AsyncCallable ac = (AsyncCallable) attachment;
+            Callback ac = (Callback) attachment;
             if (message instanceof HttpChunk) {
                 // the AsyncCallable is to be processed on the last chunk
                 if (HttpChunk.class.cast(message).isLast())
@@ -1205,8 +1204,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Object attachment = Channels.getAttachment(channel);
         LOGGER.debug("Channel Closed: {} with attachment {}", channel, attachment);
 
-        if (attachment instanceof AsyncCallable) {
-            AsyncCallable ac = (AsyncCallable) attachment;
+        if (attachment instanceof Callback) {
+            Callback ac = (Callback) attachment;
             Channels.setAttachment(channel, ac.future());
             ac.call();
 
@@ -1367,8 +1366,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }
-            } else if (attachment instanceof AsyncCallable) {
-                future = ((AsyncCallable) attachment).future();
+            } else if (attachment instanceof Callback) {
+                future = ((Callback) attachment).future();
             }
         } catch (Throwable t) {
             cause = t;
@@ -1477,21 +1476,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
             }
-        }
-    }
-
-    private abstract class AsyncCallable implements Callable<Object> {
-
-        private final NettyResponseFuture<?> future;
-
-        public AsyncCallable(NettyResponseFuture<?> future) {
-            this.future = future;
-        }
-
-        abstract public Object call() throws Exception;
-
-        public NettyResponseFuture<?> future() {
-            return future;
         }
     }
 
@@ -1657,7 +1641,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         nBuilder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
                     }
 
-                    AsyncCallable ac = newDrainCallable(future, channel, initialConnectionKeepAlive, initialPoolKey);
+                    Callback ac = newDrainCallable(future, channel, initialConnectionKeepAlive, initialPoolKey);
 
                     if (response.isChunked()) {
                         // We must make sure there is no bytes left before executing the next request.
@@ -1675,13 +1659,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private final AsyncCallable newDrainCallable(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive,
+    private final Callback newDrainCallable(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive,
             final String poolKey) {
 
-        return new AsyncCallable(future) {
-            public Object call() throws Exception {
+        return new Callback(future) {
+            public void call() throws Exception {
                 channelManager.tryToOfferChannelToPool(channel, keepAlive, poolKey);
-                return null;
             }
         };
     }
@@ -1762,12 +1745,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 LOGGER.debug("Sending authentication to {}", request.getURI());
                 final Request nextRequest = requestBuilder.setHeaders(requestHeaders).setRealm(nr).build();
-                AsyncCallable ac = new AsyncCallable(future) {
-                    public Object call() throws Exception {
+                Callback ac = new Callback(future) {
+                    public void call() throws Exception {
                         // not waiting for the channel to be drained, so we might ended up pooling the initial channel and creating a new one
                         drainChannel(channel, future);
                         nextRequest(nextRequest, future);
-                        return null;
                     }
                 };
 
