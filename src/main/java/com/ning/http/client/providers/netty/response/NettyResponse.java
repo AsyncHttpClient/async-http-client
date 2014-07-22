@@ -15,61 +15,39 @@
  */
 package com.ning.http.client.providers.netty.response;
 
-import static com.ning.http.util.MiscUtils.isNonEmpty;
+
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ResponseBase;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
+import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
-
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.cookie.CookieDecoder;
-import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.StandardCharsets;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
-public class NettyResponse implements Response {
-    private final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
-
-    private final List<HttpResponseBodyPart> bodyParts;
-    private final HttpResponseHeaders headers;
-    private final HttpResponseStatus status;
-    private List<Cookie> cookies;
+public class NettyResponse extends ResponseBase {
 
     public NettyResponse(HttpResponseStatus status,
                          HttpResponseHeaders headers,
                          List<HttpResponseBodyPart> bodyParts) {
 
-        this.status = status;
-        this.headers = headers;
-        this.bodyParts = bodyParts;
-    }
-
-    @Override
-    public int getStatusCode() {
-        return status.getStatusCode();
-    }
-
-    @Override
-    public String getStatusText() {
-        return status.getStatusText();
+        super(status, headers, bodyParts);
     }
 
     @Override
@@ -132,81 +110,21 @@ public class NettyResponse implements Response {
             if (contentType != null)
                 charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
         }
-        return charset != null ? Charset.forName(charset) : DEFAULT_CHARSET;
+        return charset != null ? Charset.forName(charset) : Charset.forName(DEFAULT_CHARSET);
     }
 
     @Override
-    public UriComponents getUri() {
-        return status.getUri();
-    }
-
-    @Override
-    public String getContentType() {
-        return getHeader("Content-Type");
-    }
-
-    @Override
-    public String getHeader(String name) {
-        return headers != null ? headers.getHeaders().getFirstValue(name) : null;
-    }
-
-    @Override
-    public List<String> getHeaders(String name) {
-        return headers != null ? headers.getHeaders().get(name) : Collections.<String> emptyList();
-    }
-
-    @Override
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-        return headers != null ? headers.getHeaders() : new FluentCaseInsensitiveStringsMap();
-    }
-
-    @Override
-    public boolean isRedirected() {
-        switch (status.getStatusCode()) {
-        case 301:
-        case 302:
-        case 303:
-        case 307:
-        case 308:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    @Override
-    public List<Cookie> getCookies() {
-        if (headers == null) {
-            return Collections.emptyList();
-        }
-        if (cookies == null) {
-            List<Cookie> localCookies = new ArrayList<Cookie>();
-            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    List<String> v = header.getValue();
-                    for (String value : v) {
-                        localCookies.add(CookieDecoder.decode(value));
-                    }
+    protected List<Cookie> buildCookies() {
+        List<Cookie> cookies = new ArrayList<Cookie>();
+        for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
+            if (header.getKey().equalsIgnoreCase(HttpHeaders.Names.SET_COOKIE)) {
+                // TODO: ask for parsed header
+                List<String> v = header.getValue();
+                for (String value : v) {
+                    cookies.add(CookieDecoder.decode(value));
                 }
             }
-            cookies = Collections.unmodifiableList(localCookies);
         }
         return cookies;
-    }
-
-    @Override
-    public boolean hasResponseStatus() {
-        return status != null;
-    }
-
-    @Override
-    public boolean hasResponseHeaders() {
-        return headers != null;
-    }
-
-    @Override
-    public boolean hasResponseBody() {
-        return isNonEmpty(bodyParts);
     }
 }

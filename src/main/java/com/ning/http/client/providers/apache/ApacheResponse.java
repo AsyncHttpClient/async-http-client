@@ -12,55 +12,25 @@
  */
 package com.ning.http.client.providers.apache;
 
-import static com.ning.http.util.MiscUtils.isNonEmpty;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ResponseBase;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.cookie.CookieDecoder;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.StandardCharsets;
+public class ApacheResponse extends ResponseBase {
 
-public class ApacheResponse implements Response {
-    private final static String DEFAULT_CHARSET = StandardCharsets.ISO_8859_1.name();
-
-    private final UriComponents uri;
-    private final List<HttpResponseBodyPart> bodyParts;
-    private final HttpResponseHeaders headers;
-    private final HttpResponseStatus status;
-    private List<Cookie> cookies;
-
-    public ApacheResponse(HttpResponseStatus status,
-                          HttpResponseHeaders headers,
-                          List<HttpResponseBodyPart> bodyParts) {
-
-        this.bodyParts = bodyParts;
-        this.headers = headers;
-        this.status = status;
-
-        uri = this.status.getUri();
-    }
-
-    @Override
-    public int getStatusCode() {
-        return status.getStatusCode();
-    }
-
-    @Override
-    public String getStatusText() {
-        return status.getStatusText();
+    public ApacheResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        super(status, headers, bodyParts);
     }
 
     @Override
@@ -68,6 +38,7 @@ public class ApacheResponse implements Response {
         return AsyncHttpProviderUtils.contentToByte(bodyParts);
     }
 
+    @Override
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
         return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
@@ -77,13 +48,14 @@ public class ApacheResponse implements Response {
         return getResponseBody(DEFAULT_CHARSET);
     }
 
+    @Override
     public String getResponseBody(String charset) throws IOException {
         return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
     }
-    
+
     @Override
     public InputStream getResponseBodyAsStream() throws IOException {
-    	return AsyncHttpProviderUtils.contentToInputStream(bodyParts);
+        return AsyncHttpProviderUtils.contentToInputStream(bodyParts);
     }
 
     @Override
@@ -98,89 +70,29 @@ public class ApacheResponse implements Response {
         String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
-    
+
     private String computeCharset(String charset) {
         if (charset == null) {
-        	String contentType = getContentType();
-        	if (contentType != null)
-        		charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
+            String contentType = getContentType();
+            if (contentType != null)
+                charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
         }
-        return charset != null? charset: DEFAULT_CHARSET;
+        return charset != null ? charset : DEFAULT_CHARSET;
     }
 
     @Override
-    public UriComponents getUri() {
-        return uri;
-    }
-
-    @Override
-    public String getContentType() {
-        return getHeader("Content-Type");
-    }
-
-    @Override
-    public String getHeader(String name) {
-        return headers != null? headers.getHeaders().getFirstValue(name): null;
-    }
-
-    @Override
-    public List<String> getHeaders(String name) {
-        return headers != null? headers.getHeaders().get(name): Collections.<String> emptyList();
-    }
-
-    @Override
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-        return headers != null? headers.getHeaders(): new FluentCaseInsensitiveStringsMap();
-    }
-
-    @Override
-    public boolean isRedirected() {
-        switch (status.getStatusCode()) {
-        case 301:
-        case 302:
-        case 303:
-        case 307:
-        case 308:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    @Override
-    public List<Cookie> getCookies() {
-        if (headers == null) {
-            return Collections.emptyList();
-        }
-        if (cookies == null) {
-        	List<Cookie> localCookies = new ArrayList<Cookie>();
-            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    List<String> v = header.getValue();
-                    for (String value : v) {
-                        Cookie cookie = CookieDecoder.decode(value);
-                        localCookies.add(cookie);
-                    }
+    protected List<Cookie> buildCookies() {
+        List<Cookie> localCookies = new ArrayList<Cookie>();
+        for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
+            if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                // TODO: ask for parsed header
+                List<String> v = header.getValue();
+                for (String value : v) {
+                    Cookie cookie = CookieDecoder.decode(value);
+                    localCookies.add(cookie);
                 }
             }
-            cookies = Collections.unmodifiableList(localCookies);
         }
-        return cookies;
-    }
-
-    @Override
-    public boolean hasResponseStatus() {
-        return bodyParts != null;
-    }
-
-    @Override
-    public boolean hasResponseHeaders() {
-        return headers != null;
-    }
-
-    @Override
-    public boolean hasResponseBody() {
-        return isNonEmpty(bodyParts);
+        return localCookies;
     }
 }

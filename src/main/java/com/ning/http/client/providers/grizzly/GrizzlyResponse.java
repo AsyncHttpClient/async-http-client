@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,13 +31,11 @@ import org.glassfish.grizzly.memory.MemoryManager;
 import org.glassfish.grizzly.utils.BufferInputStream;
 import org.glassfish.grizzly.utils.Charsets;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
+import com.ning.http.client.ResponseBase;
 import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 /**
@@ -48,14 +45,9 @@ import com.ning.http.util.AsyncHttpProviderUtils;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyResponse implements Response {
+public class GrizzlyResponse extends ResponseBase {
 
-    private final HttpResponseStatus status;
-    private final HttpResponseHeaders headers;
-    private final Collection<HttpResponseBodyPart> bodyParts;
     private final Buffer responseBody;
-
-    private List<Cookie> cookies;
 
 
     // ------------------------------------------------------------ Constructors
@@ -65,9 +57,7 @@ public class GrizzlyResponse implements Response {
                            final HttpResponseHeaders headers,
                            final List<HttpResponseBodyPart> bodyParts) {
 
-        this.status = status;
-        this.headers = headers;
-        this.bodyParts = bodyParts;
+        super(status, headers, bodyParts);
 
         if (isNonEmpty(bodyParts)) {
             if (bodyParts.size() == 1) {
@@ -92,22 +82,6 @@ public class GrizzlyResponse implements Response {
 
 
     // --------------------------------------------------- Methods from Response
-
-
-    @Override
-    public int getStatusCode() {
-
-        return status.getStatusCode();
-
-    }
-
-
-    @Override
-    public String getStatusText() {
-
-        return status.getStatusText();
-
-    }
 
 
     @Override
@@ -167,115 +141,21 @@ public class GrizzlyResponse implements Response {
         return responseBody.toByteBuffer();
     }
 
-    /**
-     * @return the response body as a Grizzly {@link Buffer}.
-     *
-     * @since 1.7.11.
-     */
-    @SuppressWarnings("UnusedDeclaration")
-    private Buffer getResponseBodyAsBuffer() {
-        return responseBody;
-    }
-
-
     @Override
-    public UriComponents getUri() {
+    protected List<Cookie> buildCookies() {
+        List<String> values = headers.getHeaders().get("set-cookie");
+        if (isNonEmpty(values)) {
+            CookiesBuilder.ServerCookiesBuilder builder =
+                new CookiesBuilder.ServerCookiesBuilder(false, true);
+            for (String header : values) {
+                builder.parse(header);
+            }
+            return convertCookies(builder.build());
 
-        return status.getUri();
-
-    }
-
-
-    @Override
-    public String getContentType() {
-
-        return headers.getHeaders().getFirstValue("Content-Type");
-
-    }
-
-
-    @Override
-    public String getHeader(String name) {
-
-        return headers.getHeaders().getFirstValue(name);
-
-    }
-
-
-    @Override
-    public List<String> getHeaders(String name) {
-
-        return headers.getHeaders().get(name);
-
-    }
-
-
-    @Override
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-
-        return headers.getHeaders();
-
-    }
-
-
-    @Override
-    public boolean isRedirected() {
-        switch (status.getStatusCode()) {
-        case 301:
-        case 302:
-        case 303:
-        case 307:
-        case 308:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-
-    @Override
-    public List<Cookie> getCookies() {
-
-        if (headers == null) {
+        } else {
             return Collections.emptyList();
         }
-
-        if (cookies == null) {
-            List<String> values = headers.getHeaders().get("set-cookie");
-            if (isNonEmpty(values)) {
-                CookiesBuilder.ServerCookiesBuilder builder =
-                    new CookiesBuilder.ServerCookiesBuilder(false, true);
-                for (String header : values) {
-                    builder.parse(header);
-                }
-                cookies = convertCookies(builder.build());
-
-            } else {
-                cookies = Collections.emptyList();
-            }
-        }
-        return cookies;
-
     }
-
-
-    @Override
-    public boolean hasResponseStatus() {
-        return (status != null);
-    }
-
-
-    @Override
-    public boolean hasResponseHeaders() {
-        return headers != null && !headers.getHeaders().isEmpty();
-    }
-
-
-    @Override
-    public boolean hasResponseBody() {
-        return isNonEmpty(bodyParts);
-    }
-
 
     // --------------------------------------------------------- Private Methods
 
