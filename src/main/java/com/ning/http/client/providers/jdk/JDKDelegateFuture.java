@@ -15,7 +15,6 @@ package com.ning.http.client.providers.jdk;
 import static com.ning.http.util.DateUtils.millisTime;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ListenableFuture;
 
 import java.net.HttpURLConnection;
 import java.util.concurrent.ExecutionException;
@@ -24,9 +23,9 @@ import java.util.concurrent.TimeoutException;
 
 public class JDKDelegateFuture<V> extends JDKFuture<V> {
 
-    private final ListenableFuture<V> delegateFuture;
+    private final JDKFuture<V> delegateFuture;
 
-    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, ListenableFuture<V> delegateFuture, HttpURLConnection urlConnection) {
+    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, JDKFuture<V> delegateFuture, HttpURLConnection urlConnection) {
         super(asyncHandler, responseTimeoutInMs, urlConnection);
         this.delegateFuture = delegateFuture;
     }

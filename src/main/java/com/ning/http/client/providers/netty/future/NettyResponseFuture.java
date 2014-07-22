@@ -1,25 +1,22 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.ning.http.client.providers.netty.future;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +26,7 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import com.ning.http.client.providers.netty.channel.Channels;
+import com.ning.http.client.providers.netty.request.NettyRequest;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.UriComponents;
 
@@ -56,41 +54,49 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
-
+    
+    private volatile boolean requestTimeoutReached;
+    private volatile boolean idleConnectionTimeoutReached;
+    private final long start = millisTime();
+    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    private final ProxyServer proxyServer;
+    private final int maxRetry;
     private final CountDownLatch latch = new CountDownLatch(1);
+
+    // state mutated from outside the event loop
+    // TODO check if they are indeed mutated outside the event loop
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-    private AsyncHandler<V> asyncHandler;
-    private Request request;
-    private HttpRequest nettyRequest;
-    private final AtomicReference<V> content = new AtomicReference<V>();
-    private UriComponents uri;
-    private boolean keepAlive = true;
-    private HttpResponse httpResponse;
-    private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
-    private volatile TimeoutsHolder timeoutsHolder;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
-    private final long start = millisTime();
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
-    private Channel channel;
-    private boolean reuseChannel = false;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
-    private final int maxRetry;
-    private boolean writeHeaders;
-    private boolean writeBody;
     private final AtomicBoolean onThrowableCalled = new AtomicBoolean(false);
-    private boolean allowConnect = false;
-    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
-    private final ProxyServer proxyServer;
+    private final AtomicReference<V> content = new AtomicReference<V>();
+    private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
+    private volatile TimeoutsHolder timeoutsHolder;
+
+    // state mutated only inside the event loop
+    private Channel channel;
+    private UriComponents uri;
+    private boolean keepAlive = true;
+    private Request request;
+    private NettyRequest nettyRequest;
+    private HttpHeaders httpHeaders;
+    private AsyncHandler<V> asyncHandler;
+    private boolean streamWasAlreadyConsumed;
+    private boolean reuseChannel;
+    private boolean headersAlreadyWrittenOnContinue;
+    private boolean dontWriteBodyBecauseExpectContinue;
+    private boolean allowConnect;
 
     public NettyResponseFuture(UriComponents uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
-            HttpRequest nettyRequest,//
+            NettyRequest nettyRequest,//
             int maxRetry,//
             ConnectionPoolKeyStrategy connectionPoolKeyStrategy,//
             ProxyServer proxyServer) {
@@ -102,8 +108,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
-        writeHeaders = true;
-        writeBody = true;
     }
 
     /*********************************************/
@@ -122,7 +126,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     @Override
     public boolean cancel(boolean force) {
-
         cancelTimeouts();
 
         if (isCancelled.getAndSet(true))
@@ -131,18 +134,16 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         try {
             Channels.setDiscard(channel);
             channel.close();
-        } catch (Exception t) {
+        } catch (Throwable t) {
             // Ignore
         }
-
-        if (!onThrowableCalled.getAndSet(true))
+        if (!onThrowableCalled.getAndSet(true)) {
             try {
-                // FIXME should we set the future exception once and for all
                 asyncHandler.onThrowable(new CancellationException());
-            } catch (Exception t) {
-                // Ignore
+            } catch (Throwable t) {
+                LOGGER.warn("cancel", t);
             }
-
+        }
         latch.countDown();
         runListeners();
         return true;
@@ -161,7 +162,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return getContent();
     }
 
-    V getContent() throws ExecutionException {
+    private V getContent() throws ExecutionException {
 
         ExecutionException e = exEx.get();
         if (e != null)
@@ -193,9 +194,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /*********************************************/
-    /**   com.ning.http.clientListenableFuture  **/
+    /**   org.asynchttpclient.ListenableFuture  **/
     /*********************************************/
-    @Override
+
     public final void done() {
 
         cancelTimeouts();
@@ -219,7 +220,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         runListeners();
     }
 
-    @Override
     public final void abort(final Throwable t) {
 
         cancelTimeouts();
@@ -227,7 +227,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (isDone.get() || isCancelled.getAndSet(true))
             return;
 
-        isCancelled.set(true);
         exEx.compareAndSet(null, new ExecutionException(t));
         if (onThrowableCalled.compareAndSet(false, true)) {
             try {
@@ -241,37 +240,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     @Override
-    public void content(V v) {
-        content.set(v);
-    }
-
-    @Override
     public void touch() {
         touch.set(millisTime());
-    }
-
-    public long getLastTouch() {
-        return touch.get();
-    }
-
-    @Override
-    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
-        boolean b = this.writeHeaders;
-        this.writeHeaders = writeHeaders;
-        return b;
-    }
-
-    @Override
-    public boolean getAndSetWriteBody(boolean writeBody) {
-        boolean b = this.writeBody;
-        this.writeBody = writeBody;
-        return b;
     }
 
     /*********************************************/
     /**                 INTERNAL                **/
     /*********************************************/
-    
+
     public UriComponents getURI() {
         return uri;
     }
@@ -292,8 +268,29 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.asyncHandler = asyncHandler;
     }
 
-    public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
-        this.timeoutsHolder = timeoutsHolder;
+    /**
+     * Is the Future still valid
+     * 
+     * @return <code>true</code> if response has expired and should be terminated.
+     */
+    public boolean hasExpired() {
+        return requestTimeoutReached || idleConnectionTimeoutReached;
+    }
+
+    public void setRequestTimeoutReached() {
+        this.requestTimeoutReached = true;
+    }
+
+    public boolean isRequestTimeoutReached() {
+        return requestTimeoutReached;
+    }
+
+    public void setIdleConnectionTimeoutReached() {
+        this.idleConnectionTimeoutReached = true;
+    }
+
+    public boolean isIdleConnectionTimeoutReached() {
+        return idleConnectionTimeoutReached;
     }
 
     public void cancelTimeouts() {
@@ -307,11 +304,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return request;
     }
 
-    public final HttpRequest getNettyRequest() {
+    public final NettyRequest getNettyRequest() {
         return nettyRequest;
     }
 
-    public final void setNettyRequest(HttpRequest nettyRequest) {
+    public final void setNettyRequest(NettyRequest nettyRequest) {
         this.nettyRequest = nettyRequest;
     }
 
@@ -327,16 +324,20 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.keepAlive = keepAlive;
     }
 
-    public final HttpResponse getHttpResponse() {
-        return httpResponse;
+    public final HttpHeaders getHttpHeaders() {
+        return httpHeaders;
     }
 
-    public final void setHttpResponse(final HttpResponse httpResponse) {
-        this.httpResponse = httpResponse;
+    public final void setHttpHeaders(HttpHeaders httpHeaders) {
+        this.httpHeaders = httpHeaders;
     }
 
     public int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
+    }
+
+    public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
+        this.timeoutsHolder = timeoutsHolder;
     }
 
     public boolean isInAuth() {
@@ -358,7 +359,35 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public boolean getAndSetStatusReceived(boolean sr) {
         return statusReceived.getAndSet(sr);
     }
-    
+
+    public boolean isStreamWasAlreadyConsumed() {
+        return streamWasAlreadyConsumed;
+    }
+
+    public void setStreamWasAlreadyConsumed(boolean streamWasAlreadyConsumed) {
+        this.streamWasAlreadyConsumed = streamWasAlreadyConsumed;
+    }
+
+    public long getLastTouch() {
+        return touch.get();
+    }
+
+    public void setHeadersAlreadyWrittenOnContinue(boolean headersAlreadyWrittenOnContinue) {
+        this.headersAlreadyWrittenOnContinue = headersAlreadyWrittenOnContinue;
+    }
+
+    public boolean isHeadersAlreadyWrittenOnContinue() {
+        return headersAlreadyWrittenOnContinue;
+    }
+
+    public void setDontWriteBodyBecauseExpectContinue(boolean dontWriteBodyBecauseExpectContinue) {
+        this.dontWriteBodyBecauseExpectContinue = dontWriteBodyBecauseExpectContinue;
+    }
+
+    public boolean isDontWriteBodyBecauseExpectContinue() {
+        return dontWriteBodyBecauseExpectContinue;
+    }
+
     public void attachChannel(Channel channel) {
         this.channel = channel;
     }
@@ -404,13 +433,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an
+     * unexpected IOException, and in some situation we can recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
-    public boolean canBeReplay() {
-        return !isDone() && canRetry() && !(channel != null && channel.isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0)
-                && !isInAuth();
+    public boolean canBeReplayed() {
+        return !isDone() && canRetry()
+                && !(Channels.isChannelValid(channel) && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
     }
 
     public long getStart() {
@@ -428,7 +458,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\tcontent=" + content + //
                 ",\n\turi=" + uri + //
                 ",\n\tkeepAlive=" + keepAlive + //
-                ",\n\thttpResponse=" + httpResponse + //
+                ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
                 ",\n\ttimeoutsHolder=" + timeoutsHolder + //

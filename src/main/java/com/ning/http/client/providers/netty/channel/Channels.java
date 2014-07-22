@@ -33,4 +33,8 @@ public final class Channels {
     public static void setDiscard(Channel channel) {
         setAttachment(channel, DiscardEvent.INSTANCE);
     }
+
+    public static boolean isChannelValid(Channel channel) {
+        return channel != null && channel.isOpen() && channel.isConnected();
+    }
 }

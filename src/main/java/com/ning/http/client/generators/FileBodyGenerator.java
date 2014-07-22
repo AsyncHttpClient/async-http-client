@@ -53,6 +53,18 @@ public class FileBodyGenerator
             throws IOException {
         return new FileBody(file, regionSeek, regionLength);
     }
+    
+    public File getFile() {
+        return file;
+    }
+
+    public long getRegionSeek() {
+        return regionSeek;
+    }
+
+    public long getRegionLength() {
+        return regionLength;
+    }
 
     protected static class FileBody
             implements RandomAccessBody {

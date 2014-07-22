@@ -15,6 +15,40 @@ package com.ning.http.client.providers.jdk;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Body;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.ProgressAsyncHandler;
+import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.cookie.CookieEncoder;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
+import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.multipart.MultipartRequestEntity;
+import com.ning.http.client.uri.UriComponents;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.AuthenticatorUtils;
+import com.ning.http.util.ProxyUtils;
+import com.ning.http.util.SslUtils;
+
+import javax.naming.AuthenticationException;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,40 +75,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
-
-import javax.naming.AuthenticationException;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.ProgressAsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.cookie.CookieEncoder;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.multipart.MultipartRequestEntity;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.AuthenticatorUtils;
-import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.SslUtils;
 
 public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
@@ -118,7 +118,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         return execute(request, handler, null);
     }
 
-    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
+    private <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, JDKFuture<?> future) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
         }
@@ -203,14 +203,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         private HttpURLConnection urlConnection;
         private Request request;
         private final AsyncHandler<T> asyncHandler;
-        private final ListenableFuture<T> future;
+        private final JDKFuture<T> future;
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;
         private int cachedBytesLenght;
         private boolean terminate = true;
 
-        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, ListenableFuture<T> future) {
+        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, JDKFuture<T> future) {
             this.urlConnection = urlConnection;
             this.request = request;
             this.asyncHandler = asyncHandler;
@@ -473,7 +473,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
             boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
             if (!avoidProxy) {
-                urlConnection.setRequestProperty("Proxy-Connection", ka);
+                urlConnection.setRequestProperty("Connection", ka);
                 if (proxyServer.getPrincipal() != null) {
                     urlConnection.setRequestProperty("Proxy-Authorization", AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
@@ -523,7 +523,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             } else if (config.getUserAgent() != null) {
                 urlConnection.setRequestProperty("User-Agent", config.getUserAgent());
             } else {
-                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.class));
+                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.class, config));
             }
 
             if (isNonEmpty(request.getCookies())) {
@@ -582,7 +582,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                         lenght = MAX_BUFFERED_BYTES;
                     }
 
-                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
+                    MultipartRequestEntity mre = new MultipartRequestEntity(request.getParts(), request.getHeaders());
 
                     urlConnection.setRequestProperty("Content-Type", mre.getContentType());
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(mre.getContentLength()));

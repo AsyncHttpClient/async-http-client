@@ -1,22 +1,19 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.ning.http.client.providers.netty.response;
 
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
@@ -28,32 +25,30 @@ import java.util.Map;
  */
 public class ResponseHeaders extends HttpResponseHeaders {
 
-    private final HttpChunkTrailer trailingHeaders;
-    private final HttpResponse response;
+    private final HttpHeaders responseHeaders;
+    private final HttpHeaders trailingHeaders;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ResponseHeaders(HttpResponse response) {
-        super(false);
-        this.trailingHeaders = null;
-        this.response = response;
-        headers = computerHeaders();
+    // FIXME unused AsyncHttpProvider provider
+    public ResponseHeaders(HttpHeaders responseHeaders) {
+        this(responseHeaders, null);
     }
 
-    public ResponseHeaders(HttpResponse response, HttpChunkTrailer traillingHeaders) {
-        super(true);
+    public ResponseHeaders(HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
+        super(traillingHeaders != null);
+        this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;
-        this.response = response;
         headers = computerHeaders();
     }
 
     private FluentCaseInsensitiveStringsMap computerHeaders() {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, String> header : response.headers()) {
+        for (Map.Entry<String, String> header : responseHeaders) {
             h.add(header.getKey(), header.getValue());
         }
 
         if (trailingHeaders != null) {
-            for (Map.Entry<String, String> header : trailingHeaders.trailingHeaders()) {
+            for (Map.Entry<String, String> header : trailingHeaders) {
                 h.add(header.getKey(), header.getValue());
             }
         }
@@ -63,8 +58,8 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     /**
      * Return the HTTP header
-     *
-     * @return an {@link com.ning.http.client.FluentCaseInsensitiveStringsMap}
+     * 
+     * @return an {@link org.asynchttpclient.FluentCaseInsensitiveStringsMap}
      */
     @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {

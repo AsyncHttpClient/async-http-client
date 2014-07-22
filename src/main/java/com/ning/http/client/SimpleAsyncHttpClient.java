@@ -12,24 +12,25 @@
  */
 package com.ning.http.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
+import com.ning.http.client.resumable.ResumableIOExceptionFilter;
+import com.ning.http.client.simple.HeaderMap;
+import com.ning.http.client.simple.SimpleAHCTransferListener;
+import com.ning.http.client.uri.UriComponents;
+
+import javax.net.ssl.SSLContext;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import javax.net.ssl.SSLContext;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.client.resumable.ResumableIOExceptionFilter;
-import com.ning.http.client.simple.HeaderMap;
-import com.ning.http.client.simple.SimpleAHCTransferListener;
-import com.ning.http.client.uri.UriComponents;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link com.ning.http.client.AsyncHttpClientConfig},

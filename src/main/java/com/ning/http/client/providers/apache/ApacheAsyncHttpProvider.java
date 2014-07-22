@@ -12,41 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Param;
-import com.ning.http.client.Part;
-import com.ning.http.client.ProgressAsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
-import com.ning.http.client.cookie.CookieEncoder;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.StandardCharsets;
-import com.ning.http.util.UTF8UrlEncoder;
 
 import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
@@ -81,6 +48,40 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.util.IdleConnectionTimeoutThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Body;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Param;
+import com.ning.http.client.ProgressAsyncHandler;
+import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.cookie.CookieEncoder;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
+import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.multipart.ByteArrayPart;
+import com.ning.http.client.multipart.FilePart;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.multipart.StringPart;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
+import com.ning.http.client.uri.UriComponents;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.ProxyUtils;
+import com.ning.http.util.StandardCharsets;
+import com.ning.http.util.UTF8UrlEncoder;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -117,8 +118,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
-
-import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 
 /**
  * An {@link com.ning.http.client.AsyncHttpProvider} for Apache Http Client 3.1
@@ -390,7 +389,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         } else if (config.getUserAgent() != null) {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         } else {
-            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(ApacheAsyncHttpProvider.class));
+            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(ApacheAsyncHttpProvider.class, config));
         }
 
         if (config.isCompressionEnabled()) {
@@ -689,14 +688,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             } else if (part instanceof FilePart) {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),
-                        ((FilePart) part).getMimeType(),
+                        ((FilePart) part).getContentType(),
                         ((FilePart) part).getCharSet());
 
             } else if (part instanceof ByteArrayPart) {
-                PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getData());
+                PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getBytes());
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         source,
-                        ((ByteArrayPart) part).getMimeType(),
+                        ((ByteArrayPart) part).getContentType(),
                         ((ByteArrayPart) part).getCharSet());
 
             } else if (part == null) {

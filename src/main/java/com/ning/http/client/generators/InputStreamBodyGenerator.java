@@ -48,6 +48,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         }
     }
 
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
     @Override
     public Body createBody() throws IOException {
         return new ISBody();

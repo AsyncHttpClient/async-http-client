@@ -15,7 +15,6 @@ package com.ning.http.client.listener;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * A simple interface an application can implements in order to received byte transfer information.
@@ -35,16 +34,18 @@ public interface TransferListener {
     /**
      * Invoked every time response's chunk are received.
      *
-     * @param buffer a {@link ByteBuffer}
+     * @param b bytes
      */
-    void onBytesReceived(ByteBuffer buffer) throws IOException;
+    void onBytesReceived(byte[] b) throws IOException;
 
     /**
      * Invoked every time request's chunk are sent.
      *
-     * @param buffer a {@link ByteBuffer}
+     * @param amount
+     * @param current
+     * @param total
      */
-    void onBytesSent(ByteBuffer buffer);
+    void onBytesSent(long amount, long current, long total);
 
     /**
      * Invoked when the response bytes are been fully received.

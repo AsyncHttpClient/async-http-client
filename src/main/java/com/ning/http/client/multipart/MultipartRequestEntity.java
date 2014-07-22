@@ -13,14 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.multipart;
+package com.ning.http.client.multipart;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
+import static com.ning.http.util.StandardCharsets.US_ASCII;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -38,7 +40,7 @@ public class MultipartRequestEntity implements RequestEntity {
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
-    private static byte[] MULTIPART_CHARS = MultipartEncodingUtil.getAsciiBytes("-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
 
     /**
      * Generates a random multipart boundary string.
@@ -57,7 +59,7 @@ public class MultipartRequestEntity implements RequestEntity {
     /**
      * The MIME parts as set by the constructor
      */
-    protected final Part[] parts;
+    protected final List<Part> parts;
 
     private final byte[] multipartBoundary;
 
@@ -69,7 +71,7 @@ public class MultipartRequestEntity implements RequestEntity {
      * Creates a new multipart entity containing the given parts.
      * @param parts The parts to include.
      */
-    public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
+    public MultipartRequestEntity(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null)
             throw new NullPointerException("parts");
         this.parts = parts;
@@ -79,7 +81,7 @@ public class MultipartRequestEntity implements RequestEntity {
         	if (boundaryLocation != -1) {
         		// boundary defined in existing Content-Type
         		contentType = contentTypeHeader;
-        		multipartBoundary = MultipartEncodingUtil.getAsciiBytes((contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()));
+        		multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
         	} else {
         		// generate boundary and append it to existing Content-Type
         		multipartBoundary = generateMultipartBoundary();
@@ -90,14 +92,14 @@ public class MultipartRequestEntity implements RequestEntity {
             contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
         }
         
-        contentLength = Part.getLengthOfParts(parts, multipartBoundary);
+        contentLength = MultipartUtils.getLengthOfParts(parts, multipartBoundary);
     }
 
     private String computeContentType(String base) {
     	StringBuilder buffer = new StringBuilder(base);
 		if (!base.endsWith(";"))
 			buffer.append(";");
-        return buffer.append(" boundary=").append(MultipartEncodingUtil.getAsciiString(multipartBoundary)).toString();
+        return buffer.append(" boundary=").append(new String(multipartBoundary, US_ASCII)).toString();
     }
 
     /**
@@ -105,12 +107,14 @@ public class MultipartRequestEntity implements RequestEntity {
      * 
      * @return The boundary string of this entity in ASCII encoding.
      */
-    protected byte[] getMultipartBoundary() {
+    public byte[] getMultipartBoundary() {
         return multipartBoundary;
     }
 
     public void writeRequest(OutputStream out) throws IOException {
-        Part.sendParts(out, parts, multipartBoundary);
+        for (Part part : parts) {
+            part.write(out, multipartBoundary);
+        }
     }
 
     public long getContentLength() {

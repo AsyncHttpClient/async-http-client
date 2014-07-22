@@ -12,32 +12,33 @@
  */
 package com.ning.http.client.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
+
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.listener.TransferListener;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
     private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
@@ -79,7 +80,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<ByteBuffer> bb = new AtomicReference<ByteBuffer>();
+        final AtomicReference<byte[]> bb = new AtomicReference<byte[]>();
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         TransferCompletionHandler tl = new TransferCompletionHandler();
@@ -93,11 +94,11 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 hRead.set(headers);
             }
 
-            public void onBytesReceived(ByteBuffer buffer) {
-                bb.set(buffer);
+            public void onBytesReceived(byte[] b) {
+                bb.set(b);
             }
 
-            public void onBytesSent(ByteBuffer buffer) {
+            public void onBytesSent(long amount, long current, long total) {
             }
 
             public void onRequestResponseCompleted() {
@@ -132,8 +133,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-        final AtomicInteger bbSentLenght = new AtomicInteger(0);
+        final AtomicLong bbReceivedLenght = new AtomicLong(0);
+        final AtomicLong bbSentLenght = new AtomicLong(0);
 
         final AtomicBoolean completed = new AtomicBoolean(false);
 
@@ -152,12 +153,12 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 hRead.set(headers);
             }
 
-            public void onBytesReceived(ByteBuffer buffer) {
-                bbReceivedLenght.addAndGet(buffer.capacity());
+            public void onBytesReceived(byte[] b) {
+                bbReceivedLenght.addAndGet(b.length);
             }
 
-            public void onBytesSent(ByteBuffer buffer) {
-                bbSentLenght.addAndGet(buffer.capacity());
+            public void onBytesSent(long amount, long current, long total) {
+                bbSentLenght.addAndGet(amount);
             }
 
             public void onRequestResponseCompleted() {
@@ -192,8 +193,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-        final AtomicInteger bbSentLenght = new AtomicInteger(0);
+        final AtomicLong bbReceivedLenght = new AtomicLong(0);
+        final AtomicLong bbSentLenght = new AtomicLong(0);
 
         final AtomicBoolean completed = new AtomicBoolean(false);
 
@@ -212,12 +213,12 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 hRead.set(headers);
             }
 
-            public void onBytesReceived(ByteBuffer buffer) {
-                bbReceivedLenght.addAndGet(buffer.capacity());
+            public void onBytesReceived(byte[] b) {
+                bbReceivedLenght.addAndGet(b.length);
             }
 
-            public void onBytesSent(ByteBuffer buffer) {
-                bbSentLenght.addAndGet(buffer.capacity());
+            public void onBytesSent(long amount, long current, long total) {
+                bbSentLenght.addAndGet(amount);
             }
 
             public void onRequestResponseCompleted() {

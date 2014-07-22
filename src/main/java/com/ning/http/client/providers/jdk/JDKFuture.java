@@ -45,15 +45,11 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     protected final AtomicLong touch = new AtomicLong(millisTime());
     protected final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     protected final HttpURLConnection urlConnection;
-    private boolean writeHeaders;
-    private boolean writeBody;
 
     public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, HttpURLConnection urlConnection) {
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
         this.urlConnection = urlConnection;
-        writeHeaders = true;
-        writeBody = true;
     }
 
     protected void setInnerFuture(Future<V> innerFuture) {
@@ -157,19 +153,5 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     @Override
     public void touch() {
         touch.set(millisTime());
-    }
-
-    @Override
-    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
-        boolean b = this.writeHeaders;
-        this.writeHeaders = writeHeaders;
-        return b;
-    }
-
-    @Override
-    public boolean getAndSetWriteBody(boolean writeBody) {
-        boolean b = this.writeBody;
-        this.writeBody = writeBody;
-        return b;
     }
 }

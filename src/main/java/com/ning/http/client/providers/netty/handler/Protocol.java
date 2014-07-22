@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,133 +13,188 @@
  */
 package com.ning.http.client.providers.netty.handler;
 
-import static com.ning.http.util.MiscUtils.isNonEmpty;
+import static com.ning.http.client.providers.netty.util.HttpUtils.HTTP;
+import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
+import static com.ning.http.util.AsyncHttpProviderUtils.followRedirect;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.AsyncHandlerExtensions;
+import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.client.date.TimeConverter;
 import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.providers.netty.Callback;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
-import com.ning.http.client.providers.netty.util.HttpUtil;
 import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class Protocol {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Protocol.class);
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected final ChannelManager channelManager;
     protected final AsyncHttpClientConfig config;
-    protected final NettyRequestSender nettyRequestSender;
+    protected final NettyAsyncHttpProviderConfig nettyConfig;
+    protected final NettyRequestSender requestSender;
 
-    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender nettyRequestSender) {
+    private final boolean hasResponseFilters;
+    protected final boolean hasIOExceptionFilters;
+    private final TimeConverter timeConverter;
+
+    public static final Set<Integer> REDIRECT_STATUSES = new HashSet<Integer>();
+    static {
+        REDIRECT_STATUSES.add(MOVED_PERMANENTLY.getCode());
+        REDIRECT_STATUSES.add(FOUND.getCode());
+        REDIRECT_STATUSES.add(SEE_OTHER.getCode());
+        REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.getCode());
+    }
+
+    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
+            NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
-        this.nettyRequestSender = nettyRequestSender;
+        this.nettyConfig = nettyConfig;
+        this.requestSender = requestSender;
+
+        hasResponseFilters = !config.getResponseFilters().isEmpty();
+        hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
+        timeConverter = config.getTimeConverter();
     }
 
-    protected void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, Channel channel) throws IOException {
-        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+    public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
 
-        final Request newRequest = fc.getRequest();
-        future.setAsyncHandler(fc.getAsyncHandler());
-        future.setState(NettyResponseFuture.STATE.NEW);
-        future.touch();
+    public abstract void onError(Channel channel, Throwable e);
 
-        LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
-        nettyRequestSender.drainChannel(channel, future);
-        nettyRequestSender.nextRequest(newRequest, future);
-        return;
-    }
+    public abstract void onClose(Channel channel);
 
-    protected boolean exitAfterHandlingRedirect(Channel channel, NettyResponseFuture<?> future, Request request, HttpResponse response,
+    protected boolean exitAfterHandlingRedirect(//
+            Channel channel,//
+            NettyResponseFuture<?> future,//
+            HttpResponse response,//
+            Request request,//
             int statusCode) throws Exception {
 
-        if (AsyncHttpProviderUtils.followRedirect(config, request)
-                && (statusCode == 302 || statusCode == 301 || statusCode == 303 || statusCode == 307)) {
+        if (followRedirect(config, request) && REDIRECT_STATUSES.contains(statusCode)) {
+            if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
+                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
 
-            if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
-                // allow 401 handling again
+            } else {
+                // We must allow 401 handling again.
                 future.getAndSetAuth(false);
 
                 HttpHeaders responseHeaders = response.headers();
-
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 UriComponents uri = UriComponents.create(future.getURI(), location);
+
                 if (!uri.equals(future.getURI())) {
-                    final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
+                    final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
 
-                    if (config.isRemoveQueryParamOnRedirect())
-                        nBuilder.resetQuery();
-                    else
-                        nBuilder.addQueryParams(future.getRequest().getQueryParams());
+                    if (!config.isRemoveQueryParamOnRedirect())
+                        requestBuilder.addQueryParams(future.getRequest().getQueryParams());
 
-                    if (!(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && config.isStrict302Handling())) {
-                        nBuilder.setMethod("GET");
-                    }
+                    // if we are to strictly handle 302, we should keep the original method (which browsers don't)
+                    // 303 must force GET
+                    if ((statusCode == FOUND.getCode() && !config.isStrict302Handling()) || statusCode == SEE_OTHER.getCode())
+                        requestBuilder.setMethod("GET");
+
+                    // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final String initialPoolKey = channelManager.getPoolKey(future);
+
                     future.setURI(uri);
-                    UriComponents newURI = uri;
-                    String targetScheme = request.getURI().getScheme();
-                    if (targetScheme.equals(HttpUtil.WEBSOCKET)) {
-                        newURI = newURI.withNewScheme(HttpUtil.WEBSOCKET);
-                    }
-                    if (targetScheme.equals(HttpUtil.WEBSOCKET_SSL)) {
-                        newURI = newURI.withNewScheme(HttpUtil.WEBSOCKET_SSL);
+                    String newUrl = uri.toString();
+                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
+                        newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
 
-                    LOGGER.debug("Redirecting to {}", newURI);
-                    List<String> setCookieHeaders = responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE2);
-                    if (!isNonEmpty(setCookieHeaders)) {
-                        setCookieHeaders = responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE);
+                    logger.debug("Redirecting to {}", newUrl);
+
+                    for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
+                        Cookie c = CookieDecoder.decode(cookieStr, timeConverter);
+                        if (c != null)
+                            requestBuilder.addOrReplaceCookie(c);
                     }
 
-                    for (String cookieStr : setCookieHeaders) {
-                        nBuilder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
-                    }
+                    Callback callback = channelManager.newDrainCallback(future, channel, initialConnectionKeepAlive, initialPoolKey);
 
-                    Callback ac = nettyRequestSender.newDrainCallable(future, channel, initialConnectionKeepAlive, initialPoolKey);
-
-                    if (response.isChunked()) {
-                        // We must make sure there is no bytes left before executing the next request.
-                        Channels.setAttachment(channel, ac);
+                    if (HttpHeaders.isTransferEncodingChunked(response)) {
+                        // We must make sure there is no bytes left before
+                        // executing the next request.
+                        // FIXME investigate this
+                        Channels.setAttachment(channel, callback);
                     } else {
-                        ac.call();
+                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the
+                        // request has not been sent, right?
+                        callback.call();
                     }
-                    nettyRequestSender.nextRequest(nBuilder.setURI(newURI).build(), future);
+
+                    Request redirectRequest = requestBuilder.setUrl(newUrl).build();
+                    // FIXME why not reuse the channel is same host?
+                    requestSender.sendNextRequest(redirectRequest, future);
                     return true;
                 }
-            } else {
-                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
             }
         }
         return false;
     }
 
-    public abstract void handle(Channel channel, MessageEvent e, NettyResponseFuture<?> future) throws Exception;
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected boolean exitAfterProcessingFilters(//
+            Channel channel,//
+            NettyResponseFuture<?> future,//
+            AsyncHandler<?> handler, //
+            HttpResponseStatus status,//
+            HttpResponseHeaders responseHeaders) throws IOException {
 
-    public abstract void onError(Channel channel, ExceptionEvent e);
+        if (hasResponseFilters) {
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest())
+                    .responseStatus(status).responseHeaders(responseHeaders).build();
 
-    public abstract void onClose(Channel channel, ChannelStateEvent e);
+            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                try {
+                    fc = asyncFilter.filter(fc);
+                    // FIXME Is it worth protecting against this?
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                } catch (FilterException efe) {
+                    requestSender.abort(future, efe);
+                }
+            }
+
+            // The handler may have been wrapped.
+            future.setAsyncHandler(fc.getAsyncHandler());
+
+            // The request has changed
+            if (fc.replayRequest()) {
+                requestSender.replayRequest(future, fc, channel);
+                return true;
+            }
+        }
+        return false;
+    }
 }

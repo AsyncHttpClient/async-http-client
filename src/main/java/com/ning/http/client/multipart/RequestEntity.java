@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.multipart;
+package com.ning.http.client.multipart;
 
 import java.io.IOException;
 import java.io.OutputStream;

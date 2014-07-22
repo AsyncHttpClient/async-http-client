@@ -16,22 +16,13 @@ import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Param;
-import com.ning.http.client.Part;
 import com.ning.http.client.Request;
-import com.ning.http.client.StringPart;
 import com.ning.http.client.uri.UriComponents;
-import com.ning.http.multipart.ByteArrayPartSource;
-import com.ning.http.multipart.MultipartRequestEntity;
-import com.ning.http.multipart.PartSource;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -48,7 +39,7 @@ public class AsyncHttpProviderUtils {
     public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
-    
+
     public static final void validateSupportedScheme(UriComponents uri) {
         final String scheme = uri.getScheme();
         if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
@@ -63,7 +54,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String getAuthority(UriComponents uri) {
-        int port = uri.getPort() != -1? uri.getPort() : getDefaultPort(uri);
+        int port = uri.getPort() != -1 ? uri.getPort() : getDefaultPort(uri);
         return uri.getHost() + ":" + port;
     }
 
@@ -93,7 +84,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static InputStream contentToInputStream(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
-        return bodyParts.isEmpty()? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
+        return bodyParts.isEmpty() ? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
 
     public final static int getDefaultPort(UriComponents uri) {
@@ -110,47 +101,6 @@ public class AsyncHttpProviderUtils {
      */
     public final static String getNonEmptyPath(UriComponents uri) {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
-    }
-
-    /**
-     * This is quite ugly as our internal names are duplicated, but we build on top of HTTP Client implementation.
-     *
-     * @param params
-     * @param requestHeaders
-     * @return a MultipartRequestEntity.
-     * @throws java.io.FileNotFoundException
-     */
-    public final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentCaseInsensitiveStringsMap requestHeaders) throws FileNotFoundException {
-        com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
-        int i = 0;
-
-        for (Part part : params) {
-            if (part instanceof com.ning.http.multipart.Part) {
-                parts[i] = (com.ning.http.multipart.Part) part;
-
-            } else if (part instanceof StringPart) {
-                StringPart stringPart = (StringPart) part;
-                parts[i] = new com.ning.http.multipart.StringPart(part.getName(), stringPart.getValue(), stringPart.getCharset());
-
-            } else if (part instanceof FilePart) {
-                FilePart filePart = (FilePart) part;
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(), filePart.getFile(), filePart.getMimeType(), filePart.getCharSet());
-
-            } else if (part instanceof ByteArrayPart) {
-                ByteArrayPart byteArrayPart = (ByteArrayPart) part;
-                PartSource source = new ByteArrayPartSource(byteArrayPart.getFileName(), byteArrayPart.getData());
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(), source, byteArrayPart.getMimeType(), byteArrayPart.getCharSet());
-
-            } else if (part == null) {
-                throw new NullPointerException("Part cannot be null");
- 
-            } else {
-                throw new IllegalArgumentException(String.format("Unsupported part type for multipart parameter %s",
-                        part.getName()));
-            }
-            ++i;
-        }
-        return new MultipartRequestEntity(parts, requestHeaders);
     }
 
     public final static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {
@@ -180,21 +130,12 @@ public class AsyncHttpProviderUtils {
         return b2;
     }
 
-    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider) {
-        StringBuilder b = new StringBuilder("AsyncHttpClient/1.0")
-                .append(" ")
-                .append("(")
-                .append(httpProvider.getSimpleName())
-                .append(" - ")
-                .append(System.getProperty("os.name"))
-                .append(" - ")
-                .append(System.getProperty("os.version"))
-                .append(" - ")
-                .append(System.getProperty("java.version"))
-                .append(" - ")
-                .append(Runtime.getRuntime().availableProcessors())
-                .append(" core(s))");
-        return b.toString();
+    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {
+        return new StringBuilder("AHC (").append(httpProvider.getSimpleName())//
+                .append(" - ").append(System.getProperty("os.name"))//
+                .append(" - ").append(System.getProperty("os.version"))//
+                .append(" - ").append(System.getProperty("java.version"))//
+                .append(" - ").append(Runtime.getRuntime().availableProcessors()).append(" core(s))").toString();
     }
 
     public static String parseCharset(String contentType) {
@@ -219,15 +160,15 @@ public class AsyncHttpProviderUtils {
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
         return config.isAllowPoolingConnections() ? "keep-alive" : "close";
     }
-    
+
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
         return request.getRequestTimeout() != 0 ? request.getRequestTimeout() : config.getRequestTimeout();
     }
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
-        return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
+        return request.getFollowRedirect() != null ? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }
-    
+
     public static String formParams2UTF8String(List<Param> params) {
         StringBuilder sb = new StringBuilder(params.size() * 15);
         for (Param param : params) {

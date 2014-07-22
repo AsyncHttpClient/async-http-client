@@ -1,25 +1,21 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.request;
+package com.ning.http.client.providers.netty.request.body;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +25,8 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
+import com.ning.http.client.providers.netty.request.NettyRequest;
+import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.util.Base64;
 
 import javax.net.ssl.HostnameVerifier;
@@ -45,22 +43,22 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
-    private final HttpRequest nettyRequest;
-    private final NettyRequestSender nettyRequestSender;
+    private final NettyRequest nettyRequest;
+    private final NettyRequestSender requestSender;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
     private final String poolKey;
 
     public NettyConnectListener(AsyncHttpClientConfig config,//
             NettyResponseFuture<T> future,//
-            NettyRequestSender nettyRequestSender,//
+            NettyRequestSender requestSender,//
             ChannelManager channelManager,//
             boolean channelPreempted,//
             String poolKey) {
         this.config = config;
         this.future = future;
         this.nettyRequest = future.getNettyRequest();
-        this.nettyRequestSender = nettyRequestSender;
+        this.requestSender = requestSender;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
         this.poolKey = poolKey;
@@ -86,7 +84,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
         channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);
-        nettyRequestSender.writeRequest(channel, config, future);
+        requestSender.writeRequest(future, channel);
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
@@ -134,8 +132,8 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                     && cause != null
                     && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
 
-                LOGGER.debug("Retrying {} ", nettyRequest);
-                if (!nettyRequestSender.retry(channel, future))
+                LOGGER.debug("Retrying {} ", nettyRequest.getHttpRequest());
+                if (!requestSender.retry(future, channel))
                     return;
             }
 

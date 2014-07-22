@@ -10,18 +10,17 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.multipart;
+package com.ning.http.client.multipart;
 
-import com.ning.http.client.*;
-import com.ning.http.client.Part;
-import com.ning.http.util.AsyncHttpProviderUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.ning.http.client.Body;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.util.StandardCharsets;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -36,17 +35,10 @@ public class MultipartBodyTest {
 
         // add a file
         final File testFile = getTestfile();
-        try {
-            parts.add(new FilePart("filePart", testFile));
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + testFile);
-        }
+        parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        try {
-            parts.add(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8"));
-        } catch (UnsupportedEncodingException ignore) {
-        }
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName"));
 
         // add a string
         parts.add(new StringPart("stringPart", "testString", "utf-8"));
@@ -70,16 +62,11 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) {
         Assert.assertNotNull(parts);
         // get expected values
-        MultipartRequestEntity mre = null;
-        try {
-            mre = AsyncHttpProviderUtils.createMultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + parts);
-        }
+        MultipartRequestEntity mre = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
         final long expectedContentLength = mre.getContentLength();
 
         // get real bytes
-        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), expectedContentLength);
+        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), expectedContentLength, mre.getMultipartBoundary());
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;

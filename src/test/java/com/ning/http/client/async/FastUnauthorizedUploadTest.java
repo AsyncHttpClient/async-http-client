@@ -12,13 +12,6 @@
  */
 package com.ning.http.client.async;
 
-import java.io.File;
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
@@ -26,8 +19,16 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
-import com.ning.http.client.FilePart;
 import com.ning.http.client.Response;
+import com.ning.http.client.multipart.FilePart;
+import com.ning.http.util.StandardCharsets;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.File;
+import java.io.IOException;
 
 public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
 
@@ -48,7 +49,7 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testUnauthorizedWhileUploading() throws Exception {
-        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
+        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes(StandardCharsets.UTF_16);
         long repeats = (1024 * 1024 / bytes.length) + 1;
         File largeFile = FilePartLargeFileTest.createTempFile(bytes, (int) repeats);
 
@@ -56,7 +57,7 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
         try {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
-            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", "UTF-8"));
+            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", StandardCharsets.UTF_8.name()));
 
             Response response = rb.execute().get();
             Assert.assertEquals(401, response.getStatusCode());

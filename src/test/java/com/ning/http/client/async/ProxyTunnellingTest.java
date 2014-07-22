@@ -115,7 +115,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             });
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), "keep-alive");
 
         } finally {
             client.close();
@@ -147,7 +147,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             });
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), "keep-alive");
         } finally {
             client.close();
         }
@@ -168,7 +168,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = client.get().get();
 
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), "keep-alive");
         } finally {
             client.close();
         }

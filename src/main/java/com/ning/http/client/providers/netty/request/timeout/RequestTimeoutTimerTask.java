@@ -22,9 +22,13 @@ import com.ning.http.client.providers.netty.request.NettyRequestSender;
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long requestTimeout;
-    
-    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender nettyRequestSender, TimeoutsHolder timeoutsHolder, long requestTimeout) {
-        super(nettyResponseFuture, nettyRequestSender, timeoutsHolder);
+
+    public RequestTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            NettyRequestSender requestSender,//
+            TimeoutsHolder timeoutsHolder,//
+            long requestTimeout) {
+        super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.requestTimeout = requestTimeout;
     }
 
@@ -33,7 +37,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         // in any case, cancel possible idleConnectionTimeout
         timeoutsHolder.cancel();
 
-        if (nettyRequestSender.isClosed() || nettyResponseFuture.isDone())
+        if (requestSender.isClosed() || nettyResponseFuture.isDone())
             return;
 
         String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + requestTimeout + " ms";

@@ -24,16 +24,20 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
     private final long readTimeout;
     private final long requestTimeoutInstant;
 
-    public ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender nettyRequestSender, TimeoutsHolder timeoutsHolder,
-            long requestTimeout, long readTimeout) {
-        super(nettyResponseFuture, nettyRequestSender, timeoutsHolder);
+    public ReadTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            NettyRequestSender requestSender,//
+            TimeoutsHolder timeoutsHolder,//
+            long requestTimeout,//
+            long readTimeout) {
+        super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
     public void run(Timeout timeout) throws Exception {
 
-        if (nettyRequestSender.isClosed() || nettyResponseFuture.isDone()) {
+        if (requestSender.isClosed() || nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
             return;
         }
@@ -51,7 +55,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
             // reschedule
-            timeoutsHolder.readTimeout = nettyRequestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
+            timeoutsHolder.readTimeout = requestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
 
         } else {
             // otherwise, no need to reschedule: requestTimeout will happen sooner

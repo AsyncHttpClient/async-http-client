@@ -22,6 +22,26 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.AsyncHttpClientConfigBean;
+import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.multipart.StringPart;
+import com.ning.http.util.StandardCharsets;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -41,26 +61,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import com.ning.http.client.AsyncHttpClientConfigBean;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Part;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.util.StandardCharsets;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
@@ -677,7 +677,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar");
+            Part p = new StringPart("foo", "bar", StandardCharsets.UTF_8.name());
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -773,7 +773,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }).get();
 
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("X-Proxy-Connection"), "keep-alive");
+            assertEquals(response.getHeader("X-Connection"), "keep-alive");
         } finally {
             client.close();
         }

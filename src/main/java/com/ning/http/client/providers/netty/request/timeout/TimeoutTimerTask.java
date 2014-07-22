@@ -26,17 +26,17 @@ public abstract class TimeoutTimerTask implements TimerTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
     protected final NettyResponseFuture<?> nettyResponseFuture;
-    protected final NettyRequestSender nettyRequestSender;
+    protected final NettyRequestSender requestSender;
     protected final TimeoutsHolder timeoutsHolder;
 
-    public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender nettyRequestSender, TimeoutsHolder timeoutsHolder) {
+    public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
         this.nettyResponseFuture = nettyResponseFuture;
-        this.nettyRequestSender = nettyRequestSender;
+        this.requestSender = requestSender;
         this.timeoutsHolder = timeoutsHolder;
     }
 
     protected void expire(String message, long time) {
         LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
-        nettyRequestSender.abort(nettyResponseFuture, new TimeoutException(message));
+        requestSender.abort(nettyResponseFuture, new TimeoutException(message));
     }
 }

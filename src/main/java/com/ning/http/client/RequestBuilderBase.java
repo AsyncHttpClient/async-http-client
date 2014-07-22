@@ -17,6 +17,15 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.uri.UriComponents;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.QueryComputer;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -25,14 +34,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.QueryComputer;
 
 /**
  * Builder for {@link Request}

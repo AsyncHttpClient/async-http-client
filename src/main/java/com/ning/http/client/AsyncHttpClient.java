@@ -35,6 +35,7 @@ import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.multipart.Part;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 
@@ -124,7 +125,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
  * <p/>
  *      String bodyResponse = f.get();
  * </pre></blockquote
- * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
+ * From any content classes, you can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
  * <p/>
  * This class can also be used without the need of {@link AsyncHandler}</p>

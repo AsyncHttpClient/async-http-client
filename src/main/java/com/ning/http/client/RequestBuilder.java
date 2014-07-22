@@ -15,13 +15,14 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.util.QueryComputer;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.util.QueryComputer;
 
 /**
  * Builder for a {@link Request}.

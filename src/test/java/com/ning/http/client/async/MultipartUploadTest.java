@@ -12,15 +12,10 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.StandardCharsets;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -37,6 +32,16 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.multipart.ByteArrayPart;
+import com.ning.http.client.multipart.FilePart;
+import com.ning.http.client.multipart.StringPart;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -61,16 +66,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
 /**
  * @author dominict
  */
 public abstract class MultipartUploadTest extends AbstractBasicTest {
-    private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
     public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0 };
@@ -221,14 +220,14 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic"));
+            builder.addBodyPart(new StringPart("Name", "Dominic", "UTF-8"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
 
             builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
 
-            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8.name()));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8.name(), "bytearray.txt"));
 
             com.ning.http.client.Request r = builder.build();
 

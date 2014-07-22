@@ -1,17 +1,15 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.ning.http.client.providers.netty.handler;
 
@@ -27,9 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.providers.netty.Callback;
 import com.ning.http.client.providers.netty.DiscardEvent;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
@@ -54,13 +49,16 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
-    private final NettyRequestSender nettyRequestSender;
+    private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
-    public Processor(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender nettyRequestSender, Protocol protocol) {
+    public Processor(AsyncHttpClientConfig config,//
+            ChannelManager channelManager,//
+            NettyRequestSender requestSender,//
+            Protocol protocol) {
         this.config = config;
         this.channelManager = channelManager;
-        this.nettyRequestSender = nettyRequestSender;
+        this.requestSender = requestSender;
         this.protocol = protocol;
     }
 
@@ -76,10 +74,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
         if (attachment == null)
             LOGGER.debug("ChannelHandlerContext doesn't have any attachment");
 
-        if (attachment == DiscardEvent.INSTANCE) {
-            // discard
-
-        } else if (attachment instanceof Callback) {
+        if (attachment instanceof Callback) {
             Object message = e.getMessage();
             Callback ac = (Callback) attachment;
             if (message instanceof HttpChunk) {
@@ -88,14 +83,16 @@ public class Processor extends SimpleChannelUpstreamHandler {
                     // process the AsyncCallable before passing the message to the protocol
                     ac.call();
             } else {
+                LOGGER.info("Received unexpected message while expecting a chunk: " + message);
                 ac.call();
                 Channels.setDiscard(channel);
             }
 
         } else if (attachment instanceof NettyResponseFuture<?>) {
-            protocol.handle(channel, e, NettyResponseFuture.class.cast(attachment));
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+            protocol.handle(channel, future, e.getMessage());
 
-        } else {
+        } else if (attachment != DiscardEvent.INSTANCE) {
             // unhandled message
             try {
                 ctx.getChannel().close();
@@ -105,24 +102,10 @@ public class Processor extends SimpleChannelUpstreamHandler {
         }
     }
 
-    private FilterContext<?> handleIoException(FilterContext<?> fc, NettyResponseFuture<?> future) {
-        for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException efe) {
-                nettyRequestSender.abort(future, efe);
-            }
-        }
-        return fc;
-    }
-
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 
-        if (nettyRequestSender.isClosed())
+        if (requestSender.isClosed())
             return;
 
         Channel channel = ctx.getChannel();
@@ -138,32 +121,25 @@ public class Processor extends SimpleChannelUpstreamHandler {
         LOGGER.debug("Channel Closed: {} with attachment {}", channel, attachment);
 
         if (attachment instanceof Callback) {
-            Callback ac = (Callback) attachment;
-            Channels.setAttachment(channel, ac.future());
-            ac.call();
+            Callback callback = (Callback) attachment;
+            Channels.setAttachment(channel, callback.future());
+            callback.call();
 
         } else if (attachment instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
             future.touch();
 
-            if (!config.getIOExceptionFilters().isEmpty()) {
-                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                        .request(future.getRequest()).ioException(CHANNEL_CLOSED_EXCEPTION).build();
-                fc = handleIoException(fc, future);
+            if (!config.getIOExceptionFilters().isEmpty()
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+                return;
 
-                if (fc.replayRequest() && future.canBeReplay()) {
-                    nettyRequestSender.replayRequest(future, fc, channel);
-                    return;
-                }
-            }
-
-            protocol.onClose(channel, e);
+            protocol.onClose(channel);
 
             if (future == null || future.isDone())
                 channelManager.closeChannel(channel);
 
-            else if (!nettyRequestSender.retry(ctx.getChannel(), future))
-                nettyRequestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
+            else if (!requestSender.retry(future, ctx.getChannel()))
+                requestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
 
@@ -173,16 +149,12 @@ public class Processor extends SimpleChannelUpstreamHandler {
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
-        if (e.getCause() instanceof PrematureChannelClosureException)
+        if (e.getCause() instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
             return;
 
         LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
 
         try {
-            if (cause instanceof ClosedChannelException) {
-                return;
-            }
-
             Object attachment = Channels.getAttachment(channel);
             if (attachment instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attachment;
@@ -191,24 +163,19 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
                 if (cause instanceof IOException) {
 
-                    if (!config.getIOExceptionFilters().isEmpty()) {
-                        FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                                .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
-                        fc = handleIoException(fc, future);
-
-                        if (fc.replayRequest()) {
-                            nettyRequestSender.replayRequest(future, fc, channel);
+                    // FIXME why drop the original exception and throw a new one?
+                    if (!config.getIOExceptionFilters().isEmpty())
+                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+                            return;
+                        else {
+                            // Close the channel so the recovering can occurs.
+                            try {
+                                channel.close();
+                            } catch (Throwable t) {
+                                // Swallow.
+                            }
                             return;
                         }
-                    } else {
-                        // Close the channel so the recovering can occurs.
-                        try {
-                            channel.close();
-                        } catch (Throwable t) {
-                            // Swallow.
-                        }
-                        return;
-                    }
                 }
 
                 if (StackTraceInspector.abortOnReadOrWriteException(cause)) {
@@ -222,16 +189,15 @@ public class Processor extends SimpleChannelUpstreamHandler {
             cause = t;
         }
 
-        if (future != null) {
+        if (future != null)
             try {
                 LOGGER.debug("Was unable to recover Future: {}", future);
-                nettyRequestSender.abort(future, cause);
+                requestSender.abort(future, cause);
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
             }
-        }
 
-        protocol.onError(channel, e);
+        protocol.onError(channel, e.getCause());
 
         channelManager.closeChannel(channel);
         ctx.sendUpstream(e);

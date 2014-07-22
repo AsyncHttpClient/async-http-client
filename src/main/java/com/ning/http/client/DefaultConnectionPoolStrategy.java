@@ -22,7 +22,8 @@ public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 
 	INSTANCE;
 	
-	public String getKey(UriComponents uri) {
-		return AsyncHttpProviderUtils.getBaseUrl(uri);
+	public String getKey(UriComponents uri, ProxyServer proxyServer) {
+        String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
+        return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
 	}
 }

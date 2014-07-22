@@ -12,30 +12,31 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.ByteArrayPart;
+import static junit.framework.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.assertNotSame;
+
+import org.testng.annotations.Test;
+
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.consumers.OutputStreamBodyConsumer;
 import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
+import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
 import com.ning.http.client.uri.UriComponents;
-
-import org.testng.annotations.Test;
+import com.ning.http.util.StandardCharsets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
-
-import static junit.framework.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-import static org.testng.AssertJUnit.assertNotNull;
-import static org.testng.AssertJUnit.assertNotSame;
 
 public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
@@ -265,7 +266,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPut() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+            Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");
@@ -289,7 +290,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPost() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+            Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");

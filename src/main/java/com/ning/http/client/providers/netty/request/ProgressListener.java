@@ -30,17 +30,20 @@ import java.nio.channels.ClosedChannelException;
 public class ProgressListener implements ChannelFutureProgressListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProgressListener.class);
-    
+
     private final AsyncHttpClientConfig config;
     private final boolean notifyHeaders;
     private final AsyncHandler<?> asyncHandler;
     private final NettyResponseFuture<?> future;
 
-    public ProgressListener(AsyncHttpClientConfig config, boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
+    public ProgressListener(AsyncHttpClientConfig config,//
+            AsyncHandler<?> asyncHandler,//
+            NettyResponseFuture<?> future,//
+            boolean notifyHeaders) {
         this.config = config;
-        this.notifyHeaders = notifyHeaders;
         this.asyncHandler = asyncHandler;
         this.future = future;
+        this.notifyHeaders = notifyHeaders;
     }
 
     public void operationComplete(ChannelFuture cf) {

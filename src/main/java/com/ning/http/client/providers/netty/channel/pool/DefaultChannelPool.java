@@ -15,14 +15,6 @@ package com.ning.http.client.providers.netty.channel.pool;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
@@ -31,9 +23,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A simple implementation of {@link com.ning.http.client.providers.netty.channel.pool.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
@@ -124,10 +123,6 @@ public final class DefaultChannelPool implements ChannelPool {
         return creation == null || now - creation.creationTime >= maxConnectionTTL;
     }
 
-    private boolean isRemotelyClosed(Channel channel) {
-        return !channel.isConnected() || !channel.isOpen();
-    }
-
     private final class IdleChannelDetector implements TimerTask {
 
         private boolean isIdleTimeoutExpired(IdleChannel idleChannel, long now) {
@@ -139,7 +134,7 @@ public final class DefaultChannelPool implements ChannelPool {
             List<IdleChannel> idleTimeoutChannels = null;
             for (IdleChannel idleChannel : pool) {
                 if (isTTLExpired(idleChannel.channel, now) || isIdleTimeoutExpired(idleChannel, now)
-                        || isRemotelyClosed(idleChannel.channel)) {
+                        || !Channels.isChannelValid(idleChannel.channel)) {
                     LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
                     if (idleTimeoutChannels == null)
                         idleTimeoutChannels = new ArrayList<IdleChannel>();
@@ -263,7 +258,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 if (idleChannel == null)
                     // pool is empty
                     break;
-                else if (isRemotelyClosed(idleChannel.channel)) {
+                else if (!Channels.isChannelValid(idleChannel.channel)) {
                     idleChannel = null;
                     LOGGER.trace("Channel not connected or not opened, probably remotely closed!");
                 }

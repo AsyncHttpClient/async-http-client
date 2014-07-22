@@ -16,14 +16,15 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.uri.UriComponents;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
-
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
 
 /**
  * The Request class can be used to construct HTTP request:
