@@ -28,8 +28,6 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -128,6 +126,7 @@ import com.ning.http.client.providers.netty.request.NettyConnectListener;
 import com.ning.http.client.providers.netty.request.ProgressListener;
 import com.ning.http.client.providers.netty.request.body.BodyChunkedInput;
 import com.ning.http.client.providers.netty.request.body.BodyFileRegion;
+import com.ning.http.client.providers.netty.request.body.OptimizedFileRegion;
 import com.ning.http.client.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
@@ -1420,61 +1419,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         @Override
         protected Boolean initialValue() {
             return defaultValue ? Boolean.TRUE : Boolean.FALSE;
-        }
-    }
-
-    public static class OptimizedFileRegion implements FileRegion {
-
-        private final FileChannel file;
-        private final RandomAccessFile raf;
-        private final long position;
-        private final long count;
-        private long byteWritten;
-
-        public OptimizedFileRegion(RandomAccessFile raf, long position, long count) {
-            this.raf = raf;
-            this.file = raf.getChannel();
-            this.position = position;
-            this.count = count;
-        }
-
-        public long getPosition() {
-            return position;
-        }
-
-        public long getCount() {
-            return count;
-        }
-
-        public long transferTo(WritableByteChannel target, long position) throws IOException {
-            long count = this.count - position;
-            if (count < 0 || position < 0) {
-                throw new IllegalArgumentException("position out of range: " + position + " (expected: 0 - " + (this.count - 1) + ")");
-            }
-            if (count == 0) {
-                return 0L;
-            }
-
-            long bw = file.transferTo(this.position + position, count, target);
-            byteWritten += bw;
-            if (byteWritten == raf.length()) {
-                releaseExternalResources();
-            }
-            return bw;
-        }
-
-        public void releaseExternalResources() {
-            try {
-                file.close();
-            } catch (IOException e) {
-                LOGGER.warn("Failed to close a file.", e);
-            }
-
-            try {
-                raf.close();
-            } catch (IOException e) {
-                LOGGER.warn("Failed to close a file.", e);
-            }
         }
     }
 
