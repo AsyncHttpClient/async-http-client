@@ -520,17 +520,13 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
     }
 
-    private static void convertCookies(final Collection<Cookie> cookies, final org.glassfish.grizzly.http.Cookie[] gCookies) {
+    private static void convertCookies(final Collection<Cookie> cookies,
+            final org.glassfish.grizzly.http.Cookie[] gCookies) {
         int idx = 0;
         if (!cookies.isEmpty()) {
             for (final Cookie cookie : cookies) {
-                final org.glassfish.grizzly.http.Cookie gCookie = new org.glassfish.grizzly.http.Cookie(cookie.getName(), cookie.getValue());
-                gCookie.setDomain(cookie.getDomain());
-                gCookie.setPath(cookie.getPath());
-                gCookie.setMaxAge(cookie.getMaxAge());
-                gCookie.setSecure(cookie.isSecure());
-                gCookies[idx] = gCookie;
-                idx++;
+                gCookies[idx++] = new org.glassfish.grizzly.http.Cookie(
+                        cookie.getName(), cookie.getValue());
             }
         }
     }

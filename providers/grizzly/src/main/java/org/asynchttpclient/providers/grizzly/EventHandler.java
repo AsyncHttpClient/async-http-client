@@ -185,7 +185,7 @@ public final class EventHandler {
                         try {
                             context.result(handler.onCompleted());
                             context.done();
-                        } catch (Exception e) {
+                        } catch (Throwable e) {
                             context.abort(e);
                         }
                     }
@@ -289,7 +289,7 @@ public final class EventHandler {
                             "WebSocket protocol error: unexpected HTTP response status during handshake.");
                     context.result(null);
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 httpHeader.setSkipRemainder(true);
                 context.abort(e);
             }
@@ -341,7 +341,7 @@ public final class EventHandler {
         if (handler != null) {
             try {
                 context.result(handler.onCompleted());
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 context.abort(e);
             }
         } else {
