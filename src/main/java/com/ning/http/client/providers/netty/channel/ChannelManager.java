@@ -346,8 +346,7 @@ public class ChannelManager {
     }
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
-        // FIXME use SslContext.defaultContext
-        SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config, peerHost, peerPort);
+        SSLEngine sslEngine = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate()).createSSLEngine();
         return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis)
                 : new SslHandler(sslEngine);
     }
