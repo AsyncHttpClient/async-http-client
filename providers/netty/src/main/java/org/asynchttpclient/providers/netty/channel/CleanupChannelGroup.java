@@ -25,7 +25,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.asynchttpclient.providers.netty.util;
+package org.asynchttpclient.providers.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroupFuture;

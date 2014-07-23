@@ -1,25 +1,29 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.request;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.isNTLM;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.ws.WebSocketUtils.getKey;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.constructUserAgent;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -53,11 +57,8 @@ import org.asynchttpclient.providers.netty.request.body.NettyByteArrayBody;
 import org.asynchttpclient.providers.netty.request.body.NettyFileBody;
 import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
-import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.UriComponents;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
 public final class NettyRequestFactory {
@@ -74,7 +75,7 @@ public final class NettyRequestFactory {
 
     private String requestUri(UriComponents uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
-            return AsyncHttpProviderUtils.getAuthority(uri);
+            return getAuthority(uri);
 
         else if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
             return uri.toString();
@@ -101,12 +102,12 @@ public final class NettyRequestFactory {
 
             switch (realm.getAuthScheme()) {
             case BASIC:
-                authorizationHeader = AuthenticatorUtils.computeBasicAuthentication(realm);
+                authorizationHeader = computeBasicAuthentication(realm);
                 break;
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        authorizationHeader = AuthenticatorUtils.computeDigestAuthentication(realm);
+                        authorizationHeader = computeDigestAuthentication(realm);
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -177,7 +178,7 @@ public final class NettyRequestFactory {
                     }
                 }
             } else {
-                proxyAuthorization = AuthenticatorUtils.computeBasicAuthentication(proxyServer);
+                proxyAuthorization = computeBasicAuthentication(proxyServer);
             }
         }
 
@@ -228,8 +229,7 @@ public final class NettyRequestFactory {
 
             } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(),
-                        fileBodyGenerator.getRegionLength(), nettyConfig);
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), nettyConfig);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
@@ -295,13 +295,12 @@ public final class NettyRequestFactory {
         if (method != HttpMethod.CONNECT && webSocket) {
             httpRequest.headers().set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            httpRequest.headers().set(HttpHeaders.Names.ORIGIN,
-                    "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
-            httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
+            httpRequest.headers().set(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
+            httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, getKey());
             httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!httpRequest.headers().contains(HttpHeaders.Names.CONNECTION)) {
-            httpRequest.headers().set(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
+            httpRequest.headers().set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
         }
 
         String hostHeader = hostHeader(request, uri);
@@ -324,8 +323,7 @@ public final class NettyRequestFactory {
 
         // Add default user agent
         if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT)) {
-            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : AsyncHttpProviderUtils.constructUserAgent(
-                    NettyAsyncHttpProvider.class, config);
+            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : constructUserAgent(NettyAsyncHttpProvider.class, config);
             httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, userAgent);
         }
 

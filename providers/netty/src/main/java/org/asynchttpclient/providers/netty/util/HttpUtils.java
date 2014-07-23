@@ -18,14 +18,14 @@ import java.util.List;
 
 import org.asynchttpclient.uri.UriComponents;
 
-public final class HttpUtil {
+public final class HttpUtils {
 
     public static final String HTTPS = "https";
     public static final String HTTP = "http";
     public static final String WEBSOCKET = "ws";
     public static final String WEBSOCKET_SSL = "wss";
 
-    private HttpUtil() {
+    private HttpUtils() {
     }
 
     public static boolean isNTLM(List<String> auth) {

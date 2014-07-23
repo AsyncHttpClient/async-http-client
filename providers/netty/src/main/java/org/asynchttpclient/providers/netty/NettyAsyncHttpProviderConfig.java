@@ -1,18 +1,15 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty;
 
@@ -127,17 +124,17 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     /**
      * HttpClientCodec's maxInitialLineLength
      */
-    private int maxInitialLineLength = 4096;
+    private int httpClientCodecMaxInitialLineLength = 4096;
 
     /**
      * HttpClientCodec's maxHeaderSize
      */
-    private int maxHeaderSize = 8192;
+    private int httpClientCodecMaxHeaderSize = 8192;
 
     /**
      * HttpClientCodec's maxChunkSize
      */
-    private int maxChunkSize = 8192;
+    private int httpClientCodecMaxChunkSize = 8192;
 
     private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
 
@@ -191,28 +188,28 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         this.wssAdditionalChannelInitializer = wssAdditionalChannelInitializer;
     }
 
-    public int getMaxInitialLineLength() {
-        return maxInitialLineLength;
+    public int getHttpClientCodecMaxInitialLineLength() {
+        return httpClientCodecMaxInitialLineLength;
     }
 
-    public void setMaxInitialLineLength(int maxInitialLineLength) {
-        this.maxInitialLineLength = maxInitialLineLength;
+    public void setHttpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
+        this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
     }
 
-    public int getMaxHeaderSize() {
-        return maxHeaderSize;
+    public int getHttpClientCodecMaxHeaderSize() {
+        return httpClientCodecMaxHeaderSize;
     }
 
-    public void setMaxHeaderSize(int maxHeaderSize) {
-        this.maxHeaderSize = maxHeaderSize;
+    public void setHttpClientCodecMaxHeaderSize(int httpClientCodecMaxHeaderSize) {
+        this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
     }
 
-    public int getMaxChunkSize() {
-        return maxChunkSize;
+    public int getHttpClientCodecMaxChunkSize() {
+        return httpClientCodecMaxChunkSize;
     }
 
-    public void setMaxChunkSize(int maxChunkSize) {
-        this.maxChunkSize = maxChunkSize;
+    public void setHttpClientCodecMaxChunkSize(int httpClientCodecMaxChunkSize) {
+        this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
     }
 
     public ResponseBodyPartFactory getBodyPartFactory() {

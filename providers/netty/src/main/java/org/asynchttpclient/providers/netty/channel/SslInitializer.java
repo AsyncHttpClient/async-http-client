@@ -30,10 +30,10 @@ import java.net.SocketAddress;
  */
 public class SslInitializer extends ChannelOutboundHandlerAdapter {
 
-    private final Channels channels;
+    private final ChannelManager channelManager;
 
-    public SslInitializer(Channels channels) {
-        this.channels = channels;
+    public SslInitializer(ChannelManager channelManager) {
+        this.channelManager = channelManager;
     }
 
     @Override
@@ -44,9 +44,9 @@ public class SslInitializer extends ChannelOutboundHandlerAdapter {
         String peerHost = remoteInetSocketAddress.getHostName();
         int peerPort = remoteInetSocketAddress.getPort();
 
-        SslHandler sslHandler = channels.createSslHandler(peerHost, peerPort);
+        SslHandler sslHandler = channelManager.createSslHandler(peerHost, peerPort);
 
-        ctx.pipeline().replace(Channels.SSL_HANDLER, Channels.SSL_HANDLER, sslHandler);
+        ctx.pipeline().replace(ChannelManager.SSL_HANDLER, ChannelManager.SSL_HANDLER, sslHandler);
 
         ctx.connect(remoteAddress, localAddress, promise);
     }

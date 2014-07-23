@@ -1,35 +1,19 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.future;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
-
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.listenable.AbstractListenableFuture;
-import org.asynchttpclient.providers.netty.DiscardEvent;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.request.NettyRequest;
-import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
-import org.asynchttpclient.uri.UriComponents;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -45,6 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
+import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
+import org.asynchttpclient.uri.UriComponents;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.
@@ -137,7 +133,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return false;
 
         try {
-            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+            Channels.setDiscard(channel);
             channel.close();
         } catch (Throwable t) {
             // Ignore
@@ -452,8 +448,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplayed() {
-        return !isDone() && canRetry() && !isCancelled()
-                && !(channel != null && channel.isOpen() && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
+        return !isDone() && canRetry()
+                && !(Channels.isChannelValid(channel) && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
     }
 
     public long getStart() {
@@ -474,7 +470,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\timeoutsHolder=" + timeoutsHolder + //
+                ",\n\ttimeoutsHolder=" + timeoutsHolder + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //

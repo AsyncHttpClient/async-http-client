@@ -19,11 +19,11 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 
-public final class ByteBufUtil {
+public final class ByteBufUtils {
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private ByteBufUtil() {
+    private ByteBufUtils() {
     }
 
     public static byte[] byteBuf2Bytes(ByteBuf buf) {

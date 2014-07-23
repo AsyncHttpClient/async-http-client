@@ -1,24 +1,23 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.request;
 
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.StackTraceInspector;
@@ -34,6 +33,7 @@ import io.netty.handler.ssl.SslHandler;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
+
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 
@@ -47,27 +47,27 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
-    private final Channels channels;
+    private final ChannelManager channelManager;
     private final boolean channelPreempted;
     private final String poolKey;
 
     public NettyConnectListener(AsyncHttpClientConfig config,//
-            NettyRequestSender requestSender,//
             NettyResponseFuture<T> future,//
-            Channels channels,//
+            NettyRequestSender requestSender,//
+            ChannelManager channelManager,//
             boolean channelPreempted,//
             String poolKey) {
-        this.requestSender = requestSender;
         this.config = config;
         this.future = future;
-        this.channels = channels;
+        this.requestSender = requestSender;
+        this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
         this.poolKey = poolKey;
     }
 
     private void abortChannelPreemption(String poolKey) {
         if (channelPreempted)
-            channels.abortChannelPreemption(poolKey);
+            channelManager.abortChannelPreemption(poolKey);
     }
 
     private void writeRequest(Channel channel) {
@@ -79,7 +79,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             return;
         }
 
-        channels.registerOpenChannel(channel);
+        channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);
         requestSender.writeRequest(future, channel);
     }

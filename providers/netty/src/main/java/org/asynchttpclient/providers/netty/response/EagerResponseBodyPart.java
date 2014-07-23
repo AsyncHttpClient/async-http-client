@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
-import org.asynchttpclient.providers.netty.util.ByteBufUtil;
+import static org.asynchttpclient.providers.netty.util.ByteBufUtils.*;
 
 import io.netty.buffer.ByteBuf;
 
@@ -32,7 +32,7 @@ public class EagerResponseBodyPart extends NettyResponseBodyPart {
 
     public EagerResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
-        bytes = ByteBufUtil.byteBuf2Bytes(buf);
+        bytes = byteBuf2Bytes(buf);
     }
 
     /**
