@@ -1078,15 +1078,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     final org.glassfish.grizzly.http.Cookie[] gCookies) {
             int idx = 0;
             for (final Cookie cookie : cookies) {
-                final org.glassfish.grizzly.http.Cookie gCookie =
-                        new org.glassfish.grizzly.http.Cookie(cookie.getName(), cookie.getValue());
-                gCookie.setDomain(cookie.getDomain());
-                gCookie.setPath(cookie.getPath());
-                gCookie.setVersion(1);
-                gCookie.setMaxAge(cookie.getMaxAge());
-                gCookie.setSecure(cookie.isSecure());
-                gCookies[idx] = gCookie;
-                idx++;
+                gCookies[idx++] = new org.glassfish.grizzly.http.Cookie(
+                        cookie.getName(), cookie.getValue());
             }
 
         }
@@ -1477,7 +1470,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 if (handler != null) {
                     try {
                         context.result(handler.onCompleted());
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         context.abort(e);
                     }
                 } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,7 +18,6 @@ import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderCon
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
-import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -51,11 +50,5 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected String generatedAcceptEncodingHeader() {
         return "gzip";
-    }
-    
-    // FIXME server replies with a foo=bar cookie and yet Grizzly decodes it into foo=value; domain=/; path=/
-    // see https://github.com/AsyncHttpClient/async-http-client/issues/631
-    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
-    public void asyncDoGetCookieTest() throws Throwable {
     }
 }
