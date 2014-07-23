@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -56,10 +56,5 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncDoPostBasicGZIPTest() throws Throwable {
-    }
-    
-    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
-    public void asyncDoGetCookieTest() throws Throwable {
-        // FIXME server replies with a foo=bar cookie and yet Grizzly decodes it into foo=value; domain=/; path=/
     }
 }
