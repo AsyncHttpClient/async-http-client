@@ -15,41 +15,17 @@
  */
 package com.ning.http.util;
 
-import com.ning.http.client.AsyncHttpClientConfig;
-
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 public class SslUtils {
-
-    private static class SingletonHolder {
-        public static final SslUtils instance = new SslUtils();
-    }
-
-    public static SslUtils getInstance() {
-        return SingletonHolder.instance;
-    }
-
-    public SSLEngine createClientSSLEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) throws GeneralSecurityException, IOException {
-        SSLContext sslContext = config.getSSLContext();
-        if (sslContext == null) {
-            sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
-        }
-        SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
-        sslEngine.setUseClientMode(true);
-        return sslEngine;
-    }
-    
-    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
-        // SSLContext.getDefault() doesn't exist in JDK5
-        return acceptAnyCertificate ? looseTrustManagerSSLContext : SSLContext.getInstance("Default");
-    }
 
     static class LooseTrustManager implements X509TrustManager {
 
@@ -64,15 +40,29 @@ public class SslUtils {
         }
     }
 
-    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext();
-
+    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext(); 
+    
     private SSLContext looseTrustManagerSSLContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[] { new LooseTrustManager() }, new SecureRandom());
             return sslContext;
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
+           throw new ExceptionInInitializerError(e);
+        } catch (KeyManagementException e) {
             throw new ExceptionInInitializerError(e);
         }
+    }
+    
+    private static class SingletonHolder {
+        public static final SslUtils instance = new SslUtils();
+    }
+
+    public static SslUtils getInstance() {
+        return SingletonHolder.instance;
+    }
+
+    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
+        return acceptAnyCertificate? looseTrustManagerSSLContext: SSLContext.getDefault();
     }
 }
