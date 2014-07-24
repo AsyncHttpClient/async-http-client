@@ -328,47 +328,6 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void asyncStream302WithBody() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
-        final AtomicReference<FluentCaseInsensitiveStringsMap> headers = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        try {
-            Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
-
-                public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-                    statusCode.set(status.getStatusCode());
-                    return STATE.CONTINUE;
-                }
-
-                @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                    headers.set(content.getHeaders());
-                    return STATE.CONTINUE;
-                }
-
-                @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    return STATE.CONTINUE;
-                }
-
-                @Override
-                public String onCompleted() throws Exception {
-                    return null;
-                }
-            });
-
-            f.get(20, TimeUnit.SECONDS);
-            assertEquals(statusCode.get().intValue(), 302);
-            FluentCaseInsensitiveStringsMap h = headers.get();
-            assertNotNull(h);
-            assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET.toLowerCase(Locale.ENGLISH));
-            
-        } finally {
-            c.close();
-        }
-    }
-
-    @Test(groups = { "online", "default_provider" })
     public void asyncStream302RedirectWithBody() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
         final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
