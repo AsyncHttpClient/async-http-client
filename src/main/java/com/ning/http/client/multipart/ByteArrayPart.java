@@ -47,7 +47,7 @@ public class ByteArrayPart extends AbstractFilePart {
         this.bytes = bytes;
         setFileName(fileName);
     }
-    
+
     @Override
     protected void sendData(OutputStream out) throws IOException {
         out.write(bytes);
