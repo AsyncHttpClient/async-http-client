@@ -13,14 +13,6 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.request.ProgressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressiveFuture;
@@ -33,16 +25,22 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.ProgressListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class NettyFileBody implements NettyBody {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
 
-    public final static int MAX_BUFFERED_BYTES = 8192;
-
     private final File file;
     private final long offset;
     private final long length;
-    private final boolean disableZeroCopy;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
 
     public NettyFileBody(File file, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
         this(file, 0, file.length(), nettyConfig);
@@ -55,7 +53,7 @@ public class NettyFileBody implements NettyBody {
         this.file = file;
         this.offset = offset;
         this.length = length;
-        disableZeroCopy = nettyConfig.isDisableZeroCopy();
+        this.nettyConfig = nettyConfig;
     }
 
     public File getFile() {
@@ -82,8 +80,8 @@ public class NettyFileBody implements NettyBody {
 
         try {
             ChannelFuture writeFuture;
-            if (Channels.getSslHandler(channel) != null || disableZeroCopy) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, length, MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+            if (ChannelManager.isSslHandlerConfigured(channel.pipeline()) || nettyConfig.isDisableZeroCopy()) {
+                writeFuture = channel.write(new ChunkedFile(raf, offset, length, nettyConfig.getChunkedFileChunkSize()), channel.newProgressivePromise());
             } else {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
                 writeFuture = channel.write(region, channel.newProgressivePromise());

@@ -18,6 +18,7 @@ import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
 import org.asynchttpclient.RandomAccessBody;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
@@ -38,11 +39,11 @@ public class NettyBodyBody implements NettyBody {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyBodyBody.class);
 
     private final Body body;
-    private final boolean disableZeroCopy;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
 
     public NettyBodyBody(Body body, NettyAsyncHttpProviderConfig nettyConfig) {
         this.body = body;
-        disableZeroCopy = nettyConfig.isDisableZeroCopy();
+        this.nettyConfig = nettyConfig;
     }
 
     public Body getBody() {
@@ -61,9 +62,9 @@ public class NettyBodyBody implements NettyBody {
 
     @Override
     public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
-        Object msg;
 
-        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody && !disableZeroCopy) {
+        Object msg;
+        if (!ChannelManager.isSslHandlerConfigured(channel.pipeline()) && body instanceof RandomAccessBody && !nettyConfig.isDisableZeroCopy()) {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {

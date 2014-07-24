@@ -31,7 +31,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
+ * This class can be used to pass Netty's internal configuration options. See
+ * Netty documentation for more information.
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<ChannelOption<Object>, Object> {
 
@@ -41,8 +42,10 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
      * Add a property that will be used when the AsyncHttpClient initialize its
      * {@link org.asynchttpclient.AsyncHttpProvider}
      * 
-     * @param name the name of the property
-     * @param value the value of the property
+     * @param name
+     *            the name of the property
+     * @param value
+     *            the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(ChannelOption<Object> name, Object value) {
@@ -122,24 +125,19 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     private AdditionalChannelInitializer wssAdditionalChannelInitializer;
 
     /**
-     * HttpClientCodec's maxInitialLineLength
+     * Allow configuring Netty's HttpClientCodecs.
      */
     private int httpClientCodecMaxInitialLineLength = 4096;
-
-    /**
-     * HttpClientCodec's maxHeaderSize
-     */
     private int httpClientCodecMaxHeaderSize = 8192;
-
-    /**
-     * HttpClientCodec's maxChunkSize
-     */
     private int httpClientCodecMaxChunkSize = 8192;
 
     private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
 
     private ChannelPool channelPool;
 
+    /**
+     * Allow one to disable zero copy for bodies and use chunking instead
+     */
     private boolean disableZeroCopy;
 
     private Timer nettyTimer;
@@ -147,6 +145,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     private long handshakeTimeoutInMillis;
 
     private SSLEngineFactory sslEngineFactory;
+
+    /**
+     * chunkedFileChunkSize
+     */
+    private int chunkedFileChunkSize = 8192;
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -258,5 +261,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
         this.sslEngineFactory = sslEngineFactory;
+    }
+
+    public int getChunkedFileChunkSize() {
+        return chunkedFileChunkSize;
+    }
+
+    public void setChunkedFileChunkSize(int chunkedFileChunkSize) {
+        this.chunkedFileChunkSize = chunkedFileChunkSize;
     }
 }
