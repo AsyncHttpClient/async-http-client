@@ -17,7 +17,7 @@ package com.ning.http.client.async;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -116,7 +116,8 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         try {
             Response response = client.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 302);
+            // depends on user IP/Locale
+            assertTrue(response.getStatusCode() == 301 || response.getStatusCode() == 302);
         } finally {
             client.close();
         }
