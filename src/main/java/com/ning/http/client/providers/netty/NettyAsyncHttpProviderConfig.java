@@ -17,6 +17,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
 
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.concurrent.ExecutorService;
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
-    
+
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
     /**
@@ -104,14 +105,16 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private int httpClientCodecMaxInitialLineLength = 4096;
     private int httpClientCodecMaxHeaderSize = 8192;
     private int httpClientCodecMaxChunkSize = 8192;
-    
+
     /**
      * Allow configuring the Netty's socket channel factory.
      */
     private NioClientSocketChannelFactory socketChannelFactory;
 
+    private ChannelPool channelPool;
+
     /**
-     * Allow one to disable zero copy for bodies and use chunking instead;
+     * Allow one to disable zero copy for bodies and use chunking instead
      */
     private boolean disableZeroCopy;
 
@@ -119,7 +122,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private long handshakeTimeoutInMillis = 10000L;
 
-    private ChannelPool channelPool;
+    private SSLEngineFactory sslEngineFactory;
 
     /**
      * chunkedFileChunkSize
@@ -204,6 +207,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setChannelPool(ChannelPool channelPool) {
         this.channelPool = channelPool;
+    }
+
+    public SSLEngineFactory getSslEngineFactory() {
+        return sslEngineFactory;
+    }
+
+    public void setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
+        this.sslEngineFactory = sslEngineFactory;
     }
 
     public int getChunkedFileChunkSize() {

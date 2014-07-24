@@ -51,6 +51,7 @@ import com.ning.http.client.providers.netty.handler.WebSocketProtocol;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.util.SslUtils;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import java.io.IOException;
@@ -346,7 +347,19 @@ public class ChannelManager {
     }
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
-        SSLEngine sslEngine = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate()).createSSLEngine();
+        SSLEngine sslEngine = null;
+        if (nettyConfig.getSslEngineFactory() != null) {
+            sslEngine = nettyConfig.getSslEngineFactory().newSSLEngine();
+
+        } else {
+            SSLContext sslContext = config.getSSLContext();
+            if (sslContext == null)
+                sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
+
+            sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+            sslEngine.setUseClientMode(true);
+        }
+
         return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis)
                 : new SslHandler(sslEngine);
     }
