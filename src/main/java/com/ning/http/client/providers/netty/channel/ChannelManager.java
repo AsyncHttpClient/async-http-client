@@ -364,11 +364,11 @@ public class ChannelManager {
                 : new SslHandler(sslEngine);
     }
 
-    public SslHandler getSslHandler(ChannelPipeline pipeline) {
+    public static SslHandler getSslHandler(ChannelPipeline pipeline) {
         return (SslHandler) pipeline.get(SSL_HANDLER);
     }
 
-    private boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
+    public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
         return pipeline.get(SSL_HANDLER) != null;
     }
     

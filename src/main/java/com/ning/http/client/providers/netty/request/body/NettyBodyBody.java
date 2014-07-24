@@ -15,15 +15,19 @@ package com.ning.http.client.providers.netty.request.body;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.handler.ssl.SslHandler;
+import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Body;
+import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.RandomAccessBody;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
+import com.ning.http.client.providers.netty.request.FeedableBodyGenerator;
+import com.ning.http.client.providers.netty.request.FeedableBodyGenerator.FeedListener;
 import com.ning.http.client.providers.netty.request.ProgressListener;
 
 import java.io.IOException;
@@ -57,16 +61,25 @@ public class NettyBodyBody implements NettyBody {
     @Override
     public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
 
-        ChannelFuture writeFuture;
-        boolean ssl = channel.getPipeline().get(SslHandler.class) != null;
-        if (ssl || !(body instanceof RandomAccessBody) || nettyConfig.isDisableZeroCopy()) {
-            BodyChunkedInput bodyChunkedInput = new BodyChunkedInput(body);
-            writeFuture = channel.write(bodyChunkedInput);
+        Object msg;
+        if (!ChannelManager.isSslHandlerConfigured(channel.getPipeline()) && body instanceof RandomAccessBody && !nettyConfig.isDisableZeroCopy()) {
+            msg = new BodyFileRegion((RandomAccessBody) body);
+
         } else {
-            BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
-            writeFuture = channel.write(bodyFileRegion);
+            msg = new BodyChunkedInput(body);
+            
+            BodyGenerator bg = future.getRequest().getBodyGenerator();
+            if (bg instanceof FeedableBodyGenerator) {
+                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+                    @Override
+                    public void onContentAdded() {
+                        channel.getPipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                    }
+                });
+            }
         }
-        writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
+        
+        channel.write(msg).addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
             public void operationComplete(ChannelFuture cf) {
                 try {
                     body.close();

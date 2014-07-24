@@ -16,13 +16,13 @@ package com.ning.http.client.providers.netty.request.body;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.FileRegion;
-import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.ProgressListener;
 
@@ -77,10 +77,9 @@ public class NettyFileBody implements NettyBody {
     public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
         final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
-        boolean ssl = channel.getPipeline().get(SslHandler.class) != null;
         try {
             ChannelFuture writeFuture;
-            if (ssl || nettyConfig.isDisableZeroCopy()) {
+            if (ChannelManager.isSslHandlerConfigured(channel.getPipeline()) || nettyConfig.isDisableZeroCopy()) {
                 writeFuture = channel.write(new ChunkedFile(raf, 0, raf.length(), nettyConfig.getChunkedFileChunkSize()));
             } else {
                 final FileRegion region = new OptimizedFileRegion(raf, 0, raf.length());
