@@ -33,11 +33,11 @@ public final class HttpUtils {
     }
 
     public static boolean isWebSocket(String scheme) {
-        return WEBSOCKET.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
+        return WEBSOCKET.equals(scheme) || WEBSOCKET_SSL.equals(scheme);
     }
 
     public static boolean isSecure(String scheme) {
-        return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
+        return HTTPS.equals(scheme) || WEBSOCKET_SSL.equals(scheme);
     }
 
     public static boolean isSecure(UriComponents uri) {
