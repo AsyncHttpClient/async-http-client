@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.netty.channel;
 
 import io.netty.channel.Channel;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -24,21 +23,17 @@ public class Channels {
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
 
-    public static SslHandler getSslHandler(Channel channel) {
-        return channel.pipeline().get(SslHandler.class);
-    }
-
-    public static Object getDefaultAttribute(Channel channel) {
+    public static Object getAttribute(Channel channel) {
         Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
         return attr != null ? attr.get() : null;
     }
 
-    public static void setDefaultAttribute(Channel channel, Object o) {
+    public static void setAttribute(Channel channel, Object o) {
         channel.attr(DEFAULT_ATTRIBUTE).set(o);
     }
 
     public static void setDiscard(Channel channel) {
-        setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+        setAttribute(channel, DiscardEvent.INSTANCE);
     }
 
     public static boolean isChannelValid(Channel channel) {

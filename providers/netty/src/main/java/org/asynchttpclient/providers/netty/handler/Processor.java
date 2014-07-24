@@ -64,12 +64,12 @@ public class Processor extends ChannelInboundHandlerAdapter {
     public void channelRead(final ChannelHandlerContext ctx, Object msg) throws Exception {
 
         Channel channel = ctx.channel();
-        Object attribute = Channels.getDefaultAttribute(channel);
+        Object attribute = Channels.getAttribute(channel);
 
         if (attribute instanceof Callback && msg instanceof LastHttpContent) {
             Callback ac = (Callback) attribute;
             ac.call();
-            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+            Channels.setAttribute(channel, DiscardEvent.INSTANCE);
 
         } else if (attribute instanceof NettyResponseFuture) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
@@ -98,16 +98,16 @@ public class Processor extends ChannelInboundHandlerAdapter {
             LOGGER.trace("super.channelClosed", ex);
         }
 
-        Object attachment = Channels.getDefaultAttribute(channel);
-        LOGGER.debug("Channel Closed: {} with attachment {}", channel, attachment);
+        Object attribute = Channels.getAttribute(channel);
+        LOGGER.debug("Channel Closed: {} with attribute {}", channel, attribute);
 
-        if (attachment instanceof Callback) {
-            Callback callback = (Callback) attachment;
-            Channels.setDefaultAttribute(channel, callback.future());
+        if (attribute instanceof Callback) {
+            Callback callback = (Callback) attribute;
+            Channels.setAttribute(channel, callback.future());
             callback.call();
 
-        } else if (attachment instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attachment);
+        } else if (attribute instanceof NettyResponseFuture<?>) {
+            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attribute);
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
@@ -136,7 +136,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
         LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
 
         try {
-            Object attribute = Channels.getDefaultAttribute(channel);
+            Object attribute = Channels.getAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attribute;
                 future.attachChannel(null, false);

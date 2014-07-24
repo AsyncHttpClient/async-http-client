@@ -239,7 +239,7 @@ public final class HttpProtocol extends Protocol {
                 if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response))
                     // We must make sure there is no bytes left
                     // before executing the next request.
-                    Channels.setDefaultAttribute(channel, callback);
+                    Channels.setAttribute(channel, callback);
                 else
                     callback.call();
 

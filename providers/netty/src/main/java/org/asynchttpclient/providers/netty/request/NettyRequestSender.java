@@ -198,7 +198,7 @@ public final class NettyRequestSender {
         future.attachChannel(channel, false);
 
         LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
-        Channels.setDefaultAttribute(channel, future);
+        Channels.setAttribute(channel, future);
 
         try {
             writeRequest(future, channel);
@@ -409,9 +409,9 @@ public final class NettyRequestSender {
         channelManager.removeAll(channel);
 
         if (future == null) {
-            Object attachment = Channels.getDefaultAttribute(channel);
-            if (attachment instanceof NettyResponseFuture)
-                future = (NettyResponseFuture<?>) attachment;
+            Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof NettyResponseFuture)
+                future = (NettyResponseFuture<?>) attribute;
         }
 
         if (future != null && future.canBeReplayed()) {
