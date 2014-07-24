@@ -145,7 +145,7 @@ public abstract class Protocol {
                         // We must make sure there is no bytes left before
                         // executing the next request.
                         // FIXME investigate this
-                        Channels.setAttachment(channel, callback);
+                        Channels.setAttribute(channel, callback);
                     } else {
                         // FIXME don't understand: this offers the connection to the pool, or even closes it, while the
                         // request has not been sent, right?

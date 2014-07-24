@@ -90,8 +90,8 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     public final void operationComplete(ChannelFuture f) throws Exception {
         Channel channel = f.getChannel();
         if (f.isSuccess()) {
-            Channels.setAttachment(channel, future);
-            final SslHandler sslHandler = (SslHandler) channel.getPipeline().get(ChannelManager.SSL_HANDLER);
+            Channels.setAttribute(channel, future);
+            final SslHandler sslHandler = channelManager.getSslHandler(channel.getPipeline());
 
             final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
             if (hostnameVerifier != null && sslHandler != null) {

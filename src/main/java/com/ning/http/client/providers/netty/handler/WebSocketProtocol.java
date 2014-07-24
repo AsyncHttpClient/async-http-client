@@ -177,7 +177,7 @@ public final class WebSocketProtocol extends Protocol {
     @Override
     public void onError(Channel channel, Throwable e) {
         try {
-            Object attribute = Channels.getAttachment(channel);
+            Object attribute = Channels.getAttribute(channel);
             logger.warn("onError {}", e);
             if (!(attribute instanceof NettyResponseFuture)) {
                 return;
@@ -199,7 +199,7 @@ public final class WebSocketProtocol extends Protocol {
     @Override
     public void onClose(Channel channel) {
         logger.trace("onClose {}");
-        Object attribute = Channels.getAttachment(channel);
+        Object attribute = Channels.getAttribute(channel);
         if (!(attribute instanceof NettyResponseFuture))
             return;
 

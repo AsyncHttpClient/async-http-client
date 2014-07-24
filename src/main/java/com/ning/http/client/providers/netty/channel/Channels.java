@@ -22,16 +22,16 @@ public final class Channels {
     private Channels() {
     }
 
-    public static void setAttachment(Channel channel, Object attachment) {
-        channel.setAttachment(attachment);
+    public static void setAttribute(Channel channel, Object attribute) {
+        channel.setAttachment(attribute);
     }
 
-    public static Object getAttachment(Channel channel) {
+    public static Object getAttribute(Channel channel) {
         return channel.getAttachment();
     }
 
     public static void setDiscard(Channel channel) {
-        setAttachment(channel, DiscardEvent.INSTANCE);
+        setAttribute(channel, DiscardEvent.INSTANCE);
     }
 
     public static boolean isChannelValid(Channel channel) {

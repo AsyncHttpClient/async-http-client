@@ -69,14 +69,14 @@ public class Processor extends SimpleChannelUpstreamHandler {
         super.messageReceived(ctx, e);
 
         Channel channel = ctx.getChannel();
-        Object attachment = Channels.getAttachment(channel);
+        Object attribute = Channels.getAttribute(channel);
 
-        if (attachment == null)
-            LOGGER.debug("ChannelHandlerContext doesn't have any attachment");
+        if (attribute == null)
+            LOGGER.debug("ChannelHandlerContext doesn't have any attribute");
 
-        if (attachment instanceof Callback) {
+        if (attribute instanceof Callback) {
             Object message = e.getMessage();
-            Callback ac = (Callback) attachment;
+            Callback ac = (Callback) attribute;
             if (message instanceof HttpChunk) {
                 // the AsyncCallable is to be processed on the last chunk
                 if (HttpChunk.class.cast(message).isLast())
@@ -88,11 +88,11 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 Channels.setDiscard(channel);
             }
 
-        } else if (attachment instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+        } else if (attribute instanceof NettyResponseFuture<?>) {
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
             protocol.handle(channel, future, e.getMessage());
 
-        } else if (attachment != DiscardEvent.INSTANCE) {
+        } else if (attribute != DiscardEvent.INSTANCE) {
             // unhandled message
             try {
                 ctx.getChannel().close();
@@ -117,16 +117,16 @@ public class Processor extends SimpleChannelUpstreamHandler {
             LOGGER.trace("super.channelClosed", ex);
         }
 
-        Object attachment = Channels.getAttachment(channel);
-        LOGGER.debug("Channel Closed: {} with attachment {}", channel, attachment);
+        Object attribute = Channels.getAttribute(channel);
+        LOGGER.debug("Channel Closed: {} with attribute {}", channel, attribute);
 
-        if (attachment instanceof Callback) {
-            Callback callback = (Callback) attachment;
-            Channels.setAttachment(channel, callback.future());
+        if (attribute instanceof Callback) {
+            Callback callback = (Callback) attribute;
+            Channels.setAttribute(channel, callback.future());
             callback.call();
 
-        } else if (attachment instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+        } else if (attribute instanceof NettyResponseFuture<?>) {
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty()
@@ -155,9 +155,9 @@ public class Processor extends SimpleChannelUpstreamHandler {
         LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
 
         try {
-            Object attachment = Channels.getAttachment(channel);
-            if (attachment instanceof NettyResponseFuture<?>) {
-                future = (NettyResponseFuture<?>) attachment;
+            Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof NettyResponseFuture<?>) {
+                future = (NettyResponseFuture<?>) attribute;
                 future.attachChannel(null, false);
                 future.touch();
 
@@ -182,8 +182,8 @@ public class Processor extends SimpleChannelUpstreamHandler {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }
-            } else if (attachment instanceof Callback) {
-                future = ((Callback) attachment).future();
+            } else if (attribute instanceof Callback) {
+                future = ((Callback) attribute).future();
             }
         } catch (Throwable t) {
             cause = t;

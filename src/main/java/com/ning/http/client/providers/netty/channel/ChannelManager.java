@@ -293,9 +293,9 @@ public class ChannelManager {
         openChannels.close();
 
         for (Channel channel : openChannels) {
-            Object attachment = Channels.getAttachment(channel);
-            if (attachment instanceof NettyResponseFuture<?>) {
-                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+            Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof NettyResponseFuture<?>) {
+                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
                 future.cancelTimeouts();
             }
         }
@@ -351,19 +351,26 @@ public class ChannelManager {
                 : new SslHandler(sslEngine);
     }
 
+    public SslHandler getSslHandler(ChannelPipeline pipeline) {
+        return (SslHandler) pipeline.get(SSL_HANDLER);
+    }
+
+    private boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
+        return pipeline.get(SSL_HANDLER) != null;
+    }
+    
     public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws IOException,
             GeneralSecurityException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
         if (isSecure(scheme))
-            if (pipeline.get(SSL_HANDLER) == null) {
+            if (isSslHandlerConfigured(pipeline)){
+                pipeline.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
+            } else {
                 pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
                 pipeline.addFirst(SSL_HANDLER, createSslHandler(host, port));
-            } else {
-                pipeline.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             }
-
         else
             pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
 
@@ -377,13 +384,14 @@ public class ChannelManager {
 
     public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
 
-        boolean isSecure = isSecure(scheme);
-        if (pipeline.get(SSL_HANDLER) != null) {
-            if (!isSecure)
-                pipeline.remove(SSL_HANDLER);
+        boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 
-        } else if (isSecure)
-            pipeline.addFirst(SSL_HANDLER, new SslInitializer(this));
+        if (isSecure(scheme)) {
+            if (!sslHandlerConfigured)
+                pipeline.addFirst(SSL_HANDLER, new SslInitializer(this));
+
+        } else if (sslHandlerConfigured)
+            pipeline.remove(SSL_HANDLER);
     }
 
     public ClientBootstrap getBootstrap(String scheme, boolean useProxy, boolean useSSl) {
@@ -408,6 +416,6 @@ public class ChannelManager {
     }
 
     public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
-        Channels.setAttachment(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPoolKey(future)));
+        Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPoolKey(future)));
     }
 }
