@@ -31,36 +31,37 @@ public class FilePart extends AbstractFilePart {
     private final File file;
 
     public FilePart(String name, File file) {
-        this(name, file, null, null);
+        this(name, file, null);
     }
 
     public FilePart(String name, File file, String contentType) {
-        this(name, file, null, contentType, null);
+        this(name, file, contentType, null);
     }
 
     public FilePart(String name, File file, String contentType, String charset) {
-        this(name, file, null, contentType, charset, null);
+        this(name, file, contentType, charset, null);
     }
 
     public FilePart(String name, File file, String contentType, String charset, String fileName) {
-        this(name, file, null, contentType, charset, fileName);
+        this(name, file, contentType, charset, fileName, null);
     }
 
     public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId) {
-        super(name, contentType, charset, contentId);
-        this.file = file;
-        if (file == null) {
-            throw new NullPointerException("file");
-        }
-        if (!file.isFile()) {
-            throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
-        }
-        if (!file.canRead()) {
-            throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
-        }
-        setFileName(fileName != null ? fileName : file.getName());
+        this(name, file, contentType, charset, fileName, contentId, null);
     }
 
+    public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId, String transferEncoding) {
+        super(name, contentType, charset, contentId, transferEncoding);
+        if (file == null)
+            throw new NullPointerException("file");
+        if (!file.isFile())
+            throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
+        if (!file.canRead())
+            throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
+        this.file = file;
+        setFileName(fileName != null ? fileName : file.getName());
+    }
+    
     @Override
     protected void sendData(OutputStream out) throws IOException {
         if (getDataLength() == 0) {

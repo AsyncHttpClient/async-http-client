@@ -55,15 +55,15 @@ public abstract class PartBase implements Part {
      * @param name The name of the part, or <code>null</code>
      * @param contentType The content type, or <code>null</code>
      * @param charSet The character encoding, or <code>null</code>
-     * @param transferEncoding The transfer encoding, or <code>null</code>
      * @param contentId The content id, or <code>null</code>
+     * @param transferEncoding The transfer encoding, or <code>null</code>
      */
-    public PartBase(String name, String contentType, String charSet, String transferEncoding, String contentId) {
+    public PartBase(String name, String contentType, String charSet, String contentId, String transferEncoding) {
         this.name = name;
         this.contentType = contentType;
         this.charSet = charSet;
-        this.transferEncoding = transferEncoding;
         this.contentId = contentId;
+        this.transferEncoding = transferEncoding;
     }
 
     protected void visitStart(PartVisitor visitor, byte[] boundary) throws IOException {
