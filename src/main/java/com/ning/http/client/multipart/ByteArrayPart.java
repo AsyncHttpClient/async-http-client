@@ -37,14 +37,17 @@ public class ByteArrayPart extends AbstractFilePart {
     }
 
     public ByteArrayPart(String name, byte[] bytes, String contentType, String charset, String fileName, String contentId) {
-        super(name, contentType, charset, contentId);
-        if (bytes == null) {
+        this(name, bytes, contentType, charset, fileName, contentId, null);
+    }
+
+    public ByteArrayPart(String name, byte[] bytes, String contentType, String charset, String fileName, String contentId, String transferEncoding) {
+        super(name, contentType, charset, contentId, transferEncoding);
+        if (bytes == null)
             throw new NullPointerException("bytes");
-        }
         this.bytes = bytes;
         setFileName(fileName);
     }
-
+    
     @Override
     protected void sendData(OutputStream out) throws IOException {
         out.write(bytes);

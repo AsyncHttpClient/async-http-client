@@ -55,9 +55,12 @@ public abstract class AbstractFilePart extends PartBase {
      * @param charset
      *            the charset encoding for this part
      */
-    public AbstractFilePart(String name, String contentType, String charset, String contentId) {
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset,
-                DEFAULT_TRANSFER_ENCODING, contentId);
+    public AbstractFilePart(String name, String contentType, String charset, String contentId, String transferEncoding) {
+        super(name,//
+                contentType == null ? DEFAULT_CONTENT_TYPE : contentType,//
+                charset,//
+                contentId, //
+                transferEncoding == null ? DEFAULT_TRANSFER_ENCODING : transferEncoding);
     }
 
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
