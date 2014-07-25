@@ -17,15 +17,6 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.AsyncHttpClientConfigDefaults.*;
 
-import org.asynchttpclient.date.TimeConverter;
-import org.asynchttpclient.filter.IOExceptionFilter;
-import org.asynchttpclient.filter.RequestFilter;
-import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.util.ProxyUtils;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -34,6 +25,16 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
+import org.asynchttpclient.date.TimeConverter;
+import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.filter.RequestFilter;
+import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.util.DefaultHostnameVerifier;
+import org.asynchttpclient.util.ProxyUtils;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
@@ -538,7 +539,7 @@ public class AsyncHttpClientConfig {
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         private int connectionTTL = defaultConnectionTTL();
         private SSLContext sslContext;
-        private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
+        private HostnameVerifier hostnameVerifier;
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
@@ -1082,17 +1083,19 @@ public class AsyncHttpClientConfig {
          */
         public AsyncHttpClientConfig build() {
 
-            if (proxyServerSelector == null && useProxySelector) {
+            if (proxyServerSelector == null && useProxySelector)
                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
-            }
 
-            if (proxyServerSelector == null && useProxyProperties) {
+            if (proxyServerSelector == null && useProxyProperties)
                 proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
-            }
 
-            if (proxyServerSelector == null) {
+            if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
-            }
+
+            if (acceptAnyCertificate)
+                hostnameVerifier = null;
+            else if (hostnameVerifier == null)
+                hostnameVerifier = new DefaultHostnameVerifier();
 
             return new AsyncHttpClientConfig(connectionTimeout,//
                     maxConnections,//

@@ -65,7 +65,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
-        hostnameVerifier = defaultHostnameVerifier();
         acceptAnyCertificate = defaultAcceptAnyCertificate();
 
         if (defaultUseProxySelector()) {

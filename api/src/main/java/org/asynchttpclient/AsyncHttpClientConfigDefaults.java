@@ -113,10 +113,6 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
     }
 
-    public static HostnameVerifier defaultHostnameVerifier() {
-        return new DefaultHostnameVerifier();
-    }
-
     public static boolean defaultSpdyEnabled() {
         return Boolean.getBoolean(ASYNC_CLIENT + "spdyEnabled");
     }
