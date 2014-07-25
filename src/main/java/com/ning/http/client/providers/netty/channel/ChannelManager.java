@@ -86,7 +86,7 @@ public class ChannelManager {
     private final boolean maxConnectionsPerHostEnabled;
     private final ConcurrentHashMap<String, Semaphore> freeChannelsPerHost;
     private final ConcurrentHashMap<Integer, String> channelId2KeyPool;
-    private final long handshakeTimeoutInMillis;
+    private final long handshakeTimeout;
     private final Timer nettyTimer;
 
     private final ClientSocketChannelFactory socketChannelFactory;
@@ -148,7 +148,7 @@ public class ChannelManager {
             channelId2KeyPool = null;
         }
 
-        handshakeTimeoutInMillis = nettyConfig.getHandshakeTimeoutInMillis();
+        handshakeTimeout = nettyConfig.getHandshakeTimeout();
 
         if (nettyConfig.getSocketChannelFactory() != null) {
             socketChannelFactory = nettyConfig.getSocketChannelFactory();
@@ -360,7 +360,7 @@ public class ChannelManager {
             sslEngine.setUseClientMode(true);
         }
 
-        return handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeoutInMillis)
+        return handshakeTimeout > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeout)
                 : new SslHandler(sslEngine);
     }
 
