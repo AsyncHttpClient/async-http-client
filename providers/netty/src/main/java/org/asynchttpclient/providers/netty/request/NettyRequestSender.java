@@ -418,7 +418,7 @@ public final class NettyRequestSender {
             future.setState(NettyResponseFuture.STATE.RECONNECTED);
             future.getAndSetStatusReceived(false);
 
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
+            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
             if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
                 AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
             }
