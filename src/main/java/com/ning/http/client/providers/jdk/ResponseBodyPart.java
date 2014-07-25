@@ -14,9 +14,7 @@ package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.HttpResponseBodyPart;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -55,10 +53,5 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public int length() {
         return chunk != null? chunk.length: 0;
-    }
-
-    @Override
-    public InputStream readBodyPartBytes() {
-        return chunk != null ? new ByteArrayInputStream(chunk) : null;
     }
 }
