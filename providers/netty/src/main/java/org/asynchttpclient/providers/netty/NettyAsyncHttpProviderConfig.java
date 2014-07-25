@@ -247,7 +247,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         this.nettyTimer = nettyTimer;
     }
 
-    public long getHandshakeTimeoutInMillis() {
+    public long getHandshakeTimeout() {
         return handshakeTimeoutInMillis;
     }
 

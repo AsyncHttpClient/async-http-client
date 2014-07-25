@@ -83,7 +83,7 @@ public class ChannelManager {
     private final Bootstrap webSocketBootstrap;
     private final Bootstrap secureWebSocketBootstrap;
 
-    private final long handshakeTimeoutInMillis;
+    private final long handshakeTimeout;
 
     private final ChannelPool channelPool;
     private final boolean maxConnectionsEnabled;
@@ -144,7 +144,7 @@ public class ChannelManager {
             channel2KeyPool = null;
         }
 
-        handshakeTimeoutInMillis = nettyConfig.getHandshakeTimeoutInMillis();
+        handshakeTimeout = nettyConfig.getHandshakeTimeout();
 
         // check if external EventLoopGroup is defined
         allowReleaseEventLoopGroup = nettyConfig.getEventLoopGroup() == null;
@@ -356,8 +356,8 @@ public class ChannelManager {
         }
 
         SslHandler sslHandler = new SslHandler(sslEngine);
-        if (handshakeTimeoutInMillis > 0)
-            sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
+        if (handshakeTimeout > 0)
+            sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
 
         return sslHandler;
     }
