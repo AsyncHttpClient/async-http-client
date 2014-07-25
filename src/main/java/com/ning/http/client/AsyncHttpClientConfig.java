@@ -21,6 +21,7 @@ import com.ning.http.client.date.TimeConverter;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.util.DefaultHostnameVerifier;
 import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -231,7 +232,7 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Is the {@link ChannelPool} support enabled.
+     * Is pooling connections enabled.
      *
      * @return if polling connections is enabled
      */
@@ -463,7 +464,7 @@ public class AsyncHttpClientConfig {
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         private int connectionTTL = defaultConnectionTTL();
         private SSLContext sslContext;
-        private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
+        private HostnameVerifier hostnameVerifier;
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
@@ -961,17 +962,19 @@ public class AsyncHttpClientConfig {
                 });
             }
 
-            if (proxyServerSelector == null && useProxySelector) {
+            if (proxyServerSelector == null && useProxySelector)
                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
-            }
 
-            if (proxyServerSelector == null && useProxyProperties) {
+            if (proxyServerSelector == null && useProxyProperties)
                 proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
-            }
 
-            if (proxyServerSelector == null) {
+            if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
-            }
+
+            if (acceptAnyCertificate)
+                hostnameVerifier = null;
+            else if (hostnameVerifier == null)
+                hostnameVerifier = new DefaultHostnameVerifier();
 
             return new AsyncHttpClientConfig(connectionTimeout,//
                     maxConnections,//

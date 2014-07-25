@@ -14,10 +14,6 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtils.getBoolean;
 
-import com.ning.http.util.DefaultHostnameVerifier;
-
-import javax.net.ssl.HostnameVerifier;
-
 public final class AsyncHttpClientConfigDefaults {
 
     private AsyncHttpClientConfigDefaults() {
@@ -111,10 +107,6 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultRemoveQueryParamOnRedirect() {
         return getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
-    }
-
-    public static HostnameVerifier defaultHostnameVerifier() {
-        return new DefaultHostnameVerifier();
     }
     
     public static boolean defaultAcceptAnyCertificate() {
