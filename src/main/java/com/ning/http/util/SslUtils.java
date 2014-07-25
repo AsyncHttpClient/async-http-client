@@ -40,20 +40,20 @@ public class SslUtils {
         }
     }
 
-    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext(); 
-    
+    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext();
+
     private SSLContext looseTrustManagerSSLContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[] { new LooseTrustManager() }, new SecureRandom());
             return sslContext;
         } catch (NoSuchAlgorithmException e) {
-           throw new ExceptionInInitializerError(e);
+            throw new ExceptionInInitializerError(e);
         } catch (KeyManagementException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
-    
+
     private static class SingletonHolder {
         public static final SslUtils instance = new SslUtils();
     }
@@ -63,6 +63,6 @@ public class SslUtils {
     }
 
     public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
-        return acceptAnyCertificate? looseTrustManagerSSLContext: SSLContext.getDefault();
+        return acceptAnyCertificate ? looseTrustManagerSSLContext : SSLContext.getDefault();
     }
 }
