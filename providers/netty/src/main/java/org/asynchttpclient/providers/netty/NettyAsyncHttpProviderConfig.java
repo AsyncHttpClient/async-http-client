@@ -16,8 +16,8 @@ package org.asynchttpclient.providers.netty;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.SSLEngineFactory;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.EagerNettyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.LazyNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 
 import io.netty.buffer.ByteBuf;
@@ -102,7 +102,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
         @Override
         public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new EagerResponseBodyPart(buf, last);
+            return new EagerNettyResponseBodyPart(buf, last);
         }
     }
 
@@ -110,7 +110,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
         @Override
         public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new LazyResponseBodyPart(buf, last);
+            return new LazyNettyResponseBodyPart(buf, last);
         }
     }
 

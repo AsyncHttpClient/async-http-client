@@ -39,8 +39,8 @@ import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.ResponseHeaders;
-import org.asynchttpclient.providers.netty.response.ResponseStatus;
+import org.asynchttpclient.providers.netty.response.NettyResponseHeaders;
+import org.asynchttpclient.providers.netty.response.NettyResponseStatus;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
@@ -73,8 +73,8 @@ public final class WebSocketProtocol extends Protocol {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
-            HttpResponseStatus status = new ResponseStatus(future.getURI(), config, response);
-            HttpResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
+            HttpResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
+            HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
                 return;
@@ -93,7 +93,7 @@ public final class WebSocketProtocol extends Protocol {
 
             boolean validConnection = c != null && c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-            status = new ResponseStatus(future.getURI(), config, response);
+            status = new NettyResponseStatus(future.getURI(), config, response);
             final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
 
             if (!statusReceived) {

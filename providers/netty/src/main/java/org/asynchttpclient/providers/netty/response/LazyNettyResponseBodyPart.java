@@ -22,13 +22,13 @@ import java.nio.ByteBuffer;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class LazyResponseBodyPart extends NettyResponseBodyPart {
+public class LazyNettyResponseBodyPart extends NettyResponseBodyPart {
 
     private static final String ERROR_MESSAGE = "This implementation is intended for one to directly read from the underlying ByteBuf and release after usage. Not for the fainted heart!";
 
     private final ByteBuf buf;
 
-    public LazyResponseBodyPart(ByteBuf buf, boolean last) {
+    public LazyNettyResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
         this.buf = buf;
     }

@@ -23,18 +23,18 @@ import org.asynchttpclient.HttpResponseHeaders;
 /**
  * A class that represent the HTTP headers.
  */
-public class ResponseHeaders extends HttpResponseHeaders {
+public class NettyResponseHeaders extends HttpResponseHeaders {
 
     private final HttpHeaders responseHeaders;
     private final HttpHeaders trailingHeaders;
     private final FluentCaseInsensitiveStringsMap headers;
 
     // FIXME unused AsyncHttpProvider provider
-    public ResponseHeaders(HttpHeaders responseHeaders) {
+    public NettyResponseHeaders(HttpHeaders responseHeaders) {
         this(responseHeaders, null);
     }
 
-    public ResponseHeaders(HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
+    public NettyResponseHeaders(HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
         super(traillingHeaders != null);
         this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;

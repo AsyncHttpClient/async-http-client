@@ -50,8 +50,8 @@ import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.ResponseHeaders;
-import org.asynchttpclient.providers.netty.response.ResponseStatus;
+import org.asynchttpclient.providers.netty.response.NettyResponseHeaders;
+import org.asynchttpclient.providers.netty.response.NettyResponseStatus;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.UriComponents;
 
@@ -345,7 +345,7 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, ResponseStatus status)
+    private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status)
             throws IOException, Exception {
         if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != STATE.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
@@ -354,7 +354,7 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, ResponseHeaders responseHeaders)
+    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders)
             throws IOException, Exception {
         if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
@@ -375,11 +375,11 @@ public final class HttpProtocol extends Protocol {
 
         future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
 
-        ResponseStatus status = new ResponseStatus(future.getURI(), config, response);
+        NettyResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
         int statusCode = response.getStatus().code();
         Request request = future.getRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        ResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
+        NettyResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
         return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
                 || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
@@ -428,7 +428,7 @@ public final class HttpProtocol extends Protocol {
                     LastHttpContent lastChunk = (LastHttpContent) chunk;
                     HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
                     if (!trailingHeaders.isEmpty()) {
-                        ResponseHeaders responseHeaders = new ResponseHeaders(future.getHttpHeaders(), trailingHeaders);
+                        NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), trailingHeaders);
                         interrupt = handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE;
                     }
                 }

@@ -26,11 +26,11 @@ import java.nio.ByteBuffer;
  * A callback class used when an HTTP response body is received.
  * Bytes are eagerly fetched from the ByteBuf
  */
-public class EagerResponseBodyPart extends NettyResponseBodyPart {
+public class EagerNettyResponseBodyPart extends NettyResponseBodyPart {
 
     private final byte[] bytes;
 
-    public EagerResponseBodyPart(ByteBuf buf, boolean last) {
+    public EagerNettyResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
         bytes = byteBuf2Bytes(buf);
     }
