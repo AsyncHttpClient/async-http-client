@@ -414,7 +414,7 @@ public final class NettyRequestSender {
 
         // FIXME this was done in AHC2, is this a bug?
         // channelManager.removeAll(channel);
-        
+
         if (future == null) {
             Object attribute = Channels.getAttribute(channel);
             if (attribute instanceof NettyResponseFuture)
@@ -424,7 +424,7 @@ public final class NettyRequestSender {
         if (future != null && future.canBeReplayed()) {
             future.setState(NettyResponseFuture.STATE.RECONNECTED);
 
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
+            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
             if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
 

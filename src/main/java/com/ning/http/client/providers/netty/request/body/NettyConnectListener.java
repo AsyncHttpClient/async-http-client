@@ -25,7 +25,6 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
-import com.ning.http.client.providers.netty.request.NettyRequest;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.util.Base64;
 
@@ -43,7 +42,6 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
-    private final NettyRequest nettyRequest;
     private final NettyRequestSender requestSender;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
@@ -57,7 +55,6 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             String poolKey) {
         this.config = config;
         this.future = future;
-        this.nettyRequest = future.getNettyRequest();
         this.requestSender = requestSender;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
@@ -132,7 +129,6 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                     && cause != null
                     && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
 
-                LOGGER.debug("Retrying {} ", nettyRequest.getHttpRequest());
                 if (!requestSender.retry(future, channel))
                     return;
             }
