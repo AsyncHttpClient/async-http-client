@@ -72,7 +72,7 @@ public class NettyResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public ByteBuffer getBodyByteBuffer() {
-        return ByteBuffer.wrap(getBodyPartBytes());
+        return content.toByteBuffer();
     }
 
     @Override
