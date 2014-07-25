@@ -74,12 +74,12 @@ public class NettyResponse extends ResponseBase {
             b = ChannelBuffers.EMPTY_BUFFER;
             break;
         case 1:
-            b = ResponseBodyPart.class.cast(bodyParts.get(0)).getChannelBuffer();
+            b = NettyResponseBodyPart.class.cast(bodyParts.get(0)).getChannelBuffer();
             break;
         default:
             ChannelBuffer[] channelBuffers = new ChannelBuffer[bodyParts.size()];
             for (int i = 0; i < bodyParts.size(); i++) {
-                channelBuffers[i] = ResponseBodyPart.class.cast(bodyParts.get(i)).getChannelBuffer();
+                channelBuffers[i] = NettyResponseBodyPart.class.cast(bodyParts.get(i)).getChannelBuffer();
             }
             b = ChannelBuffers.wrappedBuffer(channelBuffers);
         }

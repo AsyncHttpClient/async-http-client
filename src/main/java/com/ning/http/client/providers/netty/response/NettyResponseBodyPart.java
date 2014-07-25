@@ -21,26 +21,24 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import com.ning.http.client.HttpResponseBodyPart;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class ResponseBodyPart extends HttpResponseBodyPart {
+public class NettyResponseBodyPart extends HttpResponseBodyPart {
 
     private final ChannelBuffer content;
     private volatile byte[] bytes;
     private final int length;
 
-    public ResponseBodyPart(HttpResponse response, boolean last) {
+    public NettyResponseBodyPart(HttpResponse response, boolean last) {
         this(response, null, last);
     }
 
-    public ResponseBodyPart(HttpResponse response, HttpChunk chunk, boolean last) {
+    public NettyResponseBodyPart(HttpResponse response, HttpChunk chunk, boolean last) {
         super(last);
         content = chunk != null ? chunk.getContent() : response.getContent();
         length = content.readableBytes();
@@ -80,10 +78,5 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public int length() {
         return length;
-    }
-
-    @Override
-    public InputStream readBodyPartBytes() {
-        return new ByteArrayInputStream(getBodyPartBytes());
     }
 }

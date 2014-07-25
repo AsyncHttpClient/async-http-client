@@ -27,11 +27,11 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
-public class ResponseStatus extends HttpResponseStatus {
+public class NettyResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public ResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpResponse response) {
+    public NettyResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpResponse response) {
         super(uri, config);
         this.response = response;
     }

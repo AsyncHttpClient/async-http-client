@@ -45,9 +45,9 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
-import com.ning.http.client.providers.netty.response.ResponseBodyPart;
-import com.ning.http.client.providers.netty.response.ResponseHeaders;
-import com.ning.http.client.providers.netty.response.ResponseStatus;
+import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
+import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
+import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.uri.UriComponents;
 
@@ -170,7 +170,7 @@ public final class HttpProtocol extends Protocol {
         markAsDone(future, channel);
     }
 
-    private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, ResponseBodyPart bodyPart)
+    private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart)
             throws Exception {
         boolean interrupt = handler.onBodyPartReceived(bodyPart) != STATE.CONTINUE;
         if (bodyPart.isUnderlyingConnectionToBeClosed())
@@ -353,7 +353,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
-            AsyncHandler<?> handler, ResponseStatus status) throws IOException, Exception {
+            AsyncHandler<?> handler, NettyResponseStatus status) throws IOException, Exception {
         if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != STATE.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
@@ -362,7 +362,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
-            AsyncHandler<?> handler, ResponseHeaders responseHeaders) throws IOException, Exception {
+            AsyncHandler<?> handler, NettyResponseHeaders responseHeaders) throws IOException, Exception {
         if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
@@ -377,7 +377,7 @@ public final class HttpProtocol extends Protocol {
             // no chunks expected, exiting
             if (response.getContent().readableBytes() > 0)
                 // FIXME no need to notify an empty bodypart?
-                updateBodyAndInterrupt(future, handler, new ResponseBodyPart(response, null, true));
+                updateBodyAndInterrupt(future, handler, new NettyResponseBodyPart(response, null, true));
             finishUpdate(future, channel, false);
             return true;
         }
@@ -399,11 +399,11 @@ public final class HttpProtocol extends Protocol {
 
         future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
 
-        ResponseStatus status = new ResponseStatus(future.getURI(), config, response);
+        NettyResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
         int statusCode = response.getStatus().getCode();
         Request request = future.getRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        ResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
+        NettyResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
         return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
                 || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
@@ -423,13 +423,13 @@ public final class HttpProtocol extends Protocol {
 
         boolean last = chunk.isLast();
         // we don't notify updateBodyAndInterrupt with the last chunk as it's empty
-        if (last || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(null, chunk, last))) {
+        if (last || updateBodyAndInterrupt(future, handler, new NettyResponseBodyPart(null, chunk, last))) {
 
             // only possible if last is true
             if (chunk instanceof HttpChunkTrailer) {
                 HttpChunkTrailer chunkTrailer = (HttpChunkTrailer) chunk;
                 if (!chunkTrailer.trailingHeaders().isEmpty()) {
-                    ResponseHeaders responseHeaders = new ResponseHeaders(future.getHttpHeaders(), chunkTrailer.trailingHeaders());
+                    NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), chunkTrailer.trailingHeaders());
                     handler.onHeadersReceived(responseHeaders);
                 }
             }

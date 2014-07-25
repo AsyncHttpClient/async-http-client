@@ -36,9 +36,9 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
-import com.ning.http.client.providers.netty.response.ResponseBodyPart;
-import com.ning.http.client.providers.netty.response.ResponseHeaders;
-import com.ning.http.client.providers.netty.response.ResponseStatus;
+import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
+import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
+import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.util.StandardCharsets;
@@ -74,8 +74,8 @@ public final class WebSocketProtocol extends Protocol {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
-            HttpResponseStatus status = new ResponseStatus(future.getURI(), config, response);
-            HttpResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
+            HttpResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
+            HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
                 return;
@@ -94,7 +94,7 @@ public final class WebSocketProtocol extends Protocol {
 
             boolean validConnection = c != null && c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-            status = new ResponseStatus(future.getURI(), config, response);
+            status = new NettyResponseStatus(future.getURI(), config, response);
             final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
 
             if (!statusReceived) {
@@ -156,7 +156,7 @@ public final class WebSocketProtocol extends Protocol {
                             }
                         };
 
-                        ResponseBodyPart rp = new ResponseBodyPart(null, webSocketChunk, true);
+                        NettyResponseBodyPart rp = new NettyResponseBodyPart(null, webSocketChunk, true);
                         handler.onBodyPartReceived(rp);
 
                         if (frame instanceof BinaryWebSocketFrame) {
