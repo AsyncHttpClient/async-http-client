@@ -149,7 +149,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
-        if (e.getCause() instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
+        if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
             return;
 
         LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
