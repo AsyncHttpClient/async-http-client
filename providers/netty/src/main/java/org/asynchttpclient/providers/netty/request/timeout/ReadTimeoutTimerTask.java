@@ -37,36 +37,31 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     @Override
     public void run(Timeout timeout) throws Exception {
-        if (requestSender.isClosed()) {
+
+        if (requestSender.isClosed() || nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
             return;
         }
 
-        if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
+        long now = millisTime();
 
-            long now = millisTime();
+        long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
+        long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
 
-            long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
-            long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
+        if (durationBeforeCurrentReadTimeout <= 0L) {
+            // idleConnectionTimeout reached
+            String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + readTimeout + " ms";
+            long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
+            expire(message, durationSinceLastTouch);
+            nettyResponseFuture.setIdleConnectionTimeoutReached();
 
-            if (durationBeforeCurrentReadTimeout <= 0L) {
-                // idleConnectionTimeout reached
-                String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + readTimeout + " ms";
-                long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-                expire(message, durationSinceLastTouch);
-                nettyResponseFuture.setIdleConnectionTimeoutReached();
-
-            } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
-                // reschedule
-                timeoutsHolder.readTimeout = requestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
-
-            } else {
-                // otherwise, no need to reschedule: requestTimeout will happen sooner
-                timeoutsHolder.readTimeout = null;
-            }
+        } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
+            // reschedule
+            timeoutsHolder.readTimeout = requestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
 
         } else {
-            timeoutsHolder.cancel();
+            // otherwise, no need to reschedule: requestTimeout will happen sooner
+            timeoutsHolder.readTimeout = null;
         }
     }
 }
