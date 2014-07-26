@@ -66,7 +66,7 @@ public class FileBodyGenerator
 
         private final long length;
 
-        private final long regionBase = 0L;
+        private long regionBase;
 
         public FileBody(File file)
                 throws IOException {
