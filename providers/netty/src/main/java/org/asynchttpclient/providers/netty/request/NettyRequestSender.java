@@ -141,6 +141,7 @@ public final class NettyRequestSender {
      * until we get a valid channel from the pool and it's still valid once the
      * request is built
      */
+    @SuppressWarnings("unused")
     private <T> ListenableFuture<T> sendRequestThroughSslProxy(//
             Request request,//
             AsyncHandler<T> asyncHandler,//
@@ -443,6 +444,7 @@ public final class NettyRequestSender {
 
         boolean replayed = false;
 
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(e).build();
         for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
             try {

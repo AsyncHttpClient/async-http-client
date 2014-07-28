@@ -33,6 +33,7 @@ public class ProxyHostnameChecker implements HostnameChecker {
     private Object getHostnameChecker() {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
+            @SuppressWarnings("unchecked")
             final Class<Object> hostnameCheckerClass = (Class<Object>) classLoader.loadClass("sun.security.util.HostnameChecker");
             final Method instanceMethod = hostnameCheckerClass.getMethod("getInstance", Byte.TYPE);
             return instanceMethod.invoke(null, TYPE_TLS);

@@ -19,7 +19,6 @@ import org.asynchttpclient.BodyGenerator;
 import org.asynchttpclient.RandomAccessBody;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
-import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
 import org.asynchttpclient.providers.netty.request.body.FeedableBodyGenerator.FeedListener;

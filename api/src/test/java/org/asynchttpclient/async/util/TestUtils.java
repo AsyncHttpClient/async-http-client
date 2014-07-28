@@ -3,7 +3,6 @@ package org.asynchttpclient.async.util;
 import static org.testng.Assert.assertEquals;
 
 import org.apache.commons.io.FileUtils;
-import org.asynchttpclient.async.HostnameVerifierTest;
 import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;

@@ -14,10 +14,6 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.getBoolean;
 
-import org.asynchttpclient.util.DefaultHostnameVerifier;
-
-import javax.net.ssl.HostnameVerifier;
-
 public final class AsyncHttpClientConfigDefaults {
 
     private AsyncHttpClientConfigDefaults() {
