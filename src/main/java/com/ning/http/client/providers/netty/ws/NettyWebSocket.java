@@ -188,22 +188,22 @@ public class NettyWebSocket implements WebSocket {
             }
         }
 
-        for (WebSocketListener l : listeners) {
-            if (l instanceof WebSocketTextListener) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketTextListener) {
+                WebSocketTextListener textlistener = (WebSocketTextListener) listener;
                 try {
                     if (!last) {
-                        WebSocketTextListener.class.cast(l).onFragment(message, last);
+                        textlistener.onFragment(message, last);
                     } else {
                         if (textBuffer.length() > 0) {
-                            WebSocketTextListener.class.cast(l).onFragment(message, last);
-
-                            WebSocketTextListener.class.cast(l).onMessage(textBuffer.append(message).toString());
+                            textlistener.onFragment(message, last);
+                            textlistener.onMessage(textBuffer.append(message).toString());
                         } else {
-                            WebSocketTextListener.class.cast(l).onMessage(message);
+                            textlistener.onMessage(message);
                         }
                     }
                 } catch (Exception ex) {
-                    l.onError(ex);
+                    listener.onError(ex);
                 }
             }
         }

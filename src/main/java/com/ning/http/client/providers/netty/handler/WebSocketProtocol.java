@@ -23,6 +23,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import com.ning.http.client.AsyncHandler.STATE;
@@ -134,36 +135,34 @@ public final class WebSocketProtocol extends Protocol {
                     Channels.setDiscard(channel);
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.getStatusCode(), closeFrame.getReasonText());
-                } else {
 
-                    if (frame.getBinaryData() != null) {
-                        HttpChunk webSocketChunk = new HttpChunk() {
-                            private ChannelBuffer content = frame.getBinaryData();
+                } else if (frame.getBinaryData() != null) {
+                    HttpChunk webSocketChunk = new HttpChunk() {
+                        private ChannelBuffer content = frame.getBinaryData();
 
-                            @Override
-                            public boolean isLast() {
-                                return false;
-                            }
-
-                            @Override
-                            public ChannelBuffer getContent() {
-                                return content;
-                            }
-
-                            @Override
-                            public void setContent(ChannelBuffer content) {
-                                throw new UnsupportedOperationException();
-                            }
-                        };
-
-                        NettyResponseBodyPart rp = new NettyResponseBodyPart(null, webSocketChunk, true);
-                        handler.onBodyPartReceived(rp);
-
-                        if (frame instanceof BinaryWebSocketFrame) {
-                            webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
-                        } else {
-                            webSocket.onTextFragment(frame.getBinaryData().toString(StandardCharsets.UTF_8), frame.isFinalFragment());
+                        @Override
+                        public boolean isLast() {
+                            return frame.isFinalFragment();
                         }
+
+                        @Override
+                        public ChannelBuffer getContent() {
+                            return content;
+                        }
+
+                        @Override
+                        public void setContent(ChannelBuffer content) {
+                            throw new UnsupportedOperationException();
+                        }
+                    };
+
+                    NettyResponseBodyPart rp = new NettyResponseBodyPart(null, webSocketChunk, frame.isFinalFragment());
+                    handler.onBodyPartReceived(rp);
+
+                    if (frame instanceof BinaryWebSocketFrame) {
+                        webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
+                    } else {
+                        webSocket.onTextFragment(frame.getBinaryData().toString(StandardCharsets.UTF_8), frame.isFinalFragment());
                     }
                 }
             } else {
