@@ -15,6 +15,7 @@ package com.ning.http.client.multipart;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 public class ByteArrayPart extends AbstractFilePart {
 
@@ -28,19 +29,19 @@ public class ByteArrayPart extends AbstractFilePart {
         this(name, bytes, contentType, null);
     }
 
-    public ByteArrayPart(String name, byte[] bytes, String contentType, String charset) {
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset) {
         this(name, bytes, contentType, charset, null);
     }
 
-    public ByteArrayPart(String name, byte[] bytes, String contentType, String charset, String fileName) {
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName) {
         this(name, bytes, contentType, charset, fileName, null);
     }
 
-    public ByteArrayPart(String name, byte[] bytes, String contentType, String charset, String fileName, String contentId) {
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId) {
         this(name, bytes, contentType, charset, fileName, contentId, null);
     }
 
-    public ByteArrayPart(String name, byte[] bytes, String contentType, String charset, String fileName, String contentId, String transferEncoding) {
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
         if (bytes == null)
             throw new NullPointerException("bytes");

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.StandardCharsets.UTF_8;
+
 import static junit.framework.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
@@ -30,7 +32,6 @@ import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
 import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -266,7 +267,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPut() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName")).get();
+            Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");
@@ -290,7 +291,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPost() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName")).get();
+            Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.multipart;
 
+import static com.ning.http.util.StandardCharsets.UTF_8;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -38,10 +40,10 @@ public class MultipartBodyTest {
         parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName"));
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", StandardCharsets.UTF_8, "fileName"));
 
         // add a string
-        parts.add(new StringPart("stringPart", "testString", "utf-8"));
+        parts.add(new StringPart("stringPart", "testString", UTF_8));
 
         compareContentLength(parts);
     }

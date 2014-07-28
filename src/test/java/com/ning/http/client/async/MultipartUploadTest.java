@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.StandardCharsets.*;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -41,7 +43,6 @@ import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.multipart.FilePart;
 import com.ning.http.client.multipart.StringPart;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -218,16 +219,16 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", "UTF-8"));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new StringPart("Name", "Dominic", UTF_8));
+            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
 
-            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
-            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
+            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8.name(), "bytearray.txt"));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"));
 
             com.ning.http.client.Request r = builder.build();
 

@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 public class FilePart extends AbstractFilePart {
 
@@ -38,19 +39,19 @@ public class FilePart extends AbstractFilePart {
         this(name, file, contentType, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset) {
+    public FilePart(String name, File file, String contentType, Charset charset) {
         this(name, file, contentType, charset, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset, String fileName) {
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName) {
         this(name, file, contentType, charset, fileName, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId) {
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId) {
         this(name, file, contentType, charset, fileName, contentId, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId, String transferEncoding) {
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
         if (file == null)
             throw new NullPointerException("file");

@@ -57,7 +57,7 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
         try {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
-            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", StandardCharsets.UTF_8.name()));
+            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", StandardCharsets.UTF_8));
 
             Response response = rb.execute().get();
             Assert.assertEquals(401, response.getStatusCode());

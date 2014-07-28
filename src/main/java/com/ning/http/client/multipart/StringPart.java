@@ -43,12 +43,12 @@ public class StringPart extends PartBase {
     private final byte[] content;
     private final String value;
 
-    public StringPart(String name, String value, String charset) {
+    public StringPart(String name, String value, Charset charset) {
         this(name, value, charset, null);
     }
 
-    private static Charset charsetOrDefault(String charset) {
-        return charset == null ? DEFAULT_CHARSET : Charset.forName(charset);
+    private static Charset charsetOrDefault(Charset charset) {
+        return charset == null ? DEFAULT_CHARSET : charset;
     }
 
     /**
@@ -63,8 +63,8 @@ public class StringPart extends PartBase {
      * @param contentId
      *            the content id
      */
-    public StringPart(String name, String value, String charset, String contentId) {
-        super(name, DEFAULT_CONTENT_TYPE, charsetOrDefault(charset).name(), contentId, DEFAULT_TRANSFER_ENCODING);
+    public StringPart(String name, String value, Charset charset, String contentId) {
+        super(name, DEFAULT_CONTENT_TYPE, charsetOrDefault(charset), contentId, DEFAULT_TRANSFER_ENCODING);
         if (value == null)
             throw new NullPointerException("value");
 

@@ -689,14 +689,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),
                         ((FilePart) part).getContentType(),
-                        ((FilePart) part).getCharSet());
+                        ((FilePart) part).getCharset().name());
 
             } else if (part instanceof ByteArrayPart) {
                 PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getBytes());
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         source,
                         ((ByteArrayPart) part).getContentType(),
-                        ((ByteArrayPart) part).getCharSet());
+                        ((ByteArrayPart) part).getCharset().name());
 
             } else if (part == null) {
                 throw new NullPointerException("Part cannot be null");
