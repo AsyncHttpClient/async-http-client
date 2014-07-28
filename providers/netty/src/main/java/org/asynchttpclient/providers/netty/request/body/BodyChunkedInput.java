@@ -51,6 +51,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         if (endOfInput) {
             return null;
         } else {
+            // FIXME pass a visitor so we can directly pass a pooled ByteBuf
             ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
             long r = body.read(buffer);
             if (r < 0L) {
