@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.multipart;
 
+import com.ning.http.util.StandardCharsets;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,7 +30,7 @@ public class StringPart extends PartBase {
     /**
      * Default charset of string parameters
      */
-    public static final String DEFAULT_CHARSET = "US-ASCII";
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
 
     /**
      * Default transfer encoding of string parameters
@@ -45,6 +47,10 @@ public class StringPart extends PartBase {
         this(name, value, charset, null);
     }
 
+    private static Charset charsetOrDefault(String charset) {
+        return charset == null ? DEFAULT_CHARSET : Charset.forName(charset);
+    }
+
     /**
      * Constructor.
      * 
@@ -58,15 +64,15 @@ public class StringPart extends PartBase {
      *            the content id
      */
     public StringPart(String name, String value, String charset, String contentId) {
-        super(name, DEFAULT_CONTENT_TYPE, charset == null ? DEFAULT_CHARSET : charset, contentId, DEFAULT_TRANSFER_ENCODING);
-        if (value == null) {
+        super(name, DEFAULT_CONTENT_TYPE, charsetOrDefault(charset).name(), contentId, DEFAULT_TRANSFER_ENCODING);
+        if (value == null)
             throw new NullPointerException("value");
-        }
-        if (value.indexOf(0) != -1) {
+
+        if (value.indexOf(0) != -1)
             // See RFC 2048, 2.8. "8bit Data"
             throw new IllegalArgumentException("NULs may not be present in string parts");
-        }
-        content = value.getBytes(Charset.forName(charset));
+
+        content = value.getBytes(charsetOrDefault(charset));
         this.value = value;
     }
 
