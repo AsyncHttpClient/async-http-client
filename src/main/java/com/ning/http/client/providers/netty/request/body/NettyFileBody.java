@@ -34,8 +34,6 @@ public class NettyFileBody implements NettyBody {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
 
-    public final static int MAX_BUFFERED_BYTES = 8192;
-
     private final File file;
     private final long offset;
     private final long length;
@@ -80,9 +78,9 @@ public class NettyFileBody implements NettyBody {
         try {
             ChannelFuture writeFuture;
             if (ChannelManager.isSslHandlerConfigured(channel.getPipeline()) || nettyConfig.isDisableZeroCopy()) {
-                writeFuture = channel.write(new ChunkedFile(raf, 0, raf.length(), nettyConfig.getChunkedFileChunkSize()));
+                writeFuture = channel.write(new ChunkedFile(raf, offset, raf.length(), nettyConfig.getChunkedFileChunkSize()));
             } else {
-                final FileRegion region = new OptimizedFileRegion(raf, 0, raf.length());
+                final FileRegion region = new OptimizedFileRegion(raf, offset, raf.length());
                 writeFuture = channel.write(region);
             }
             writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
