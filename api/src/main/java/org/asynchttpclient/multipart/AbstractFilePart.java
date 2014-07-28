@@ -16,6 +16,7 @@ import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -55,7 +56,7 @@ public abstract class AbstractFilePart extends PartBase {
      * @param charset
      *            the charset encoding for this part
      */
-    public AbstractFilePart(String name, String contentType, String charset, String contentId, String transfertEncoding) {
+    public AbstractFilePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
         super(name,//
                 contentType == null ? DEFAULT_CONTENT_TYPE : contentType,//
                 charset,//

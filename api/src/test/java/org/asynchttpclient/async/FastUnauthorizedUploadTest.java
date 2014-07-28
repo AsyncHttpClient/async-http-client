@@ -53,7 +53,7 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", StandardCharsets.UTF_8.name())).execute()
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", StandardCharsets.UTF_8)).execute()
                     .get();
             assertEquals(response.getStatusCode(), 401);
         } finally {

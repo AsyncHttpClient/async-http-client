@@ -16,6 +16,7 @@ import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 public abstract class PartBase implements Part {
 
@@ -32,7 +33,7 @@ public abstract class PartBase implements Part {
     /**
      * The charset (part of Content-Type header)
      */
-    private final String charSet;
+    private final Charset charset;
 
     /**
      * The Content-Transfer-Encoding header value.
@@ -54,14 +55,14 @@ public abstract class PartBase implements Part {
      * 
      * @param name The name of the part, or <code>null</code>
      * @param contentType The content type, or <code>null</code>
-     * @param charSet The character encoding, or <code>null</code>
+     * @param charset The character encoding, or <code>null</code>
      * @param contentId The content id, or <code>null</code>
      * @param transferEncoding The transfer encoding, or <code>null</code>
      */
-    public PartBase(String name, String contentType, String charSet, String contentId, String transferEncoding) {
+    public PartBase(String name, String contentType, Charset charset, String contentId, String transferEncoding) {
         this.name = name;
         this.contentType = contentType;
-        this.charSet = charSet;
+        this.charset = charset;
         this.contentId = contentId;
         this.transferEncoding = transferEncoding;
     }
@@ -89,10 +90,10 @@ public abstract class PartBase implements Part {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_TYPE_BYTES);
             visitor.withBytes(contentType.getBytes(US_ASCII));
-            String charSet = getCharSet();
+            Charset charSet = getCharset();
             if (charSet != null) {
                 visitor.withBytes(CHARSET_BYTES);
-                visitor.withBytes(charSet.getBytes(US_ASCII));
+                visitor.withBytes(charset.name().getBytes(US_ASCII));
             }
         }
     }
@@ -186,7 +187,7 @@ public abstract class PartBase implements Part {
                 .append(getClass().getSimpleName())//
                 .append(" name=").append(getName())//
                 .append(" contentType=").append(getContentType())//
-                .append(" charset=").append(getCharSet())//
+                .append(" charset=").append(getCharset())//
                 .append(" tranferEncoding=").append(getTransferEncoding())//
                 .append(" contentId=").append(getContentId())//
                 .append(" dispositionType=").append(getDispositionType())//
@@ -204,8 +205,8 @@ public abstract class PartBase implements Part {
     }
 
     @Override
-    public String getCharSet() {
-        return this.charSet;
+    public Charset getCharset() {
+        return this.charset;
     }
 
     @Override

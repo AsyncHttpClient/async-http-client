@@ -12,9 +12,10 @@
  */
 package org.asynchttpclient.multipart;
 
+import static org.asynchttpclient.util.StandardCharsets.UTF_8;
+
 import org.asynchttpclient.Body;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.util.StandardCharsets;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -37,10 +38,10 @@ public class MultipartBodyTest {
         parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName"));
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
 
         // add a string
-        parts.add(new StringPart("stringPart", "testString", StandardCharsets.UTF_8.name()));
+        parts.add(new StringPart("stringPart", "testString", UTF_8));
 
         compareContentLength(parts);
     }

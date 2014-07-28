@@ -17,6 +17,7 @@ import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 public interface Part {
 
@@ -89,7 +90,7 @@ public interface Part {
      * 
      * @return the character encoding, or <code>null</code> to exclude the character encoding header
      */
-    String getCharSet();
+    Charset getCharset();
 
     /**
      * Return the transfer encoding of this part.
