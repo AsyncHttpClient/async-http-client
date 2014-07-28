@@ -14,9 +14,6 @@ package com.ning.http.client.extra;
 
 import com.ning.http.client.resumable.ResumableListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -26,7 +23,6 @@ import java.nio.ByteBuffer;
  */
 public class ResumableRandomAccessFileListener implements ResumableListener {
     private final RandomAccessFile file;
-    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
 
     public ResumableRandomAccessFileListener(RandomAccessFile file) {
         this.file = file;

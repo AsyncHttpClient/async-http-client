@@ -28,6 +28,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     private WebSocket webSocket;
     private final ConcurrentLinkedQueue<WebSocketListener> l;
+    // FIXME use?
     private final String protocol;
     private final long maxByteSize;
     private final long maxTextSize;

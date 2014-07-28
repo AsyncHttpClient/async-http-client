@@ -482,6 +482,7 @@ public class AsyncHttpClient implements Closeable {
      * @return a {@link Future} of type T
      * @throws IOException
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
@@ -497,6 +498,7 @@ public class AsyncHttpClient implements Closeable {
      * @return a {@link Future} of type Response
      * @throws IOException
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
         fc = preProcessRequest(fc);
@@ -509,6 +511,7 @@ public class AsyncHttpClient implements Closeable {
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
      */
+    @SuppressWarnings("rawtypes")
     private FilterContext preProcessRequest(FilterContext fc) throws IOException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {

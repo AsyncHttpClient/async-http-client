@@ -22,6 +22,7 @@ import com.ning.http.client.filter.IOExceptionFilter;
  * a {@link ResumableAsyncHandler}
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
+    @SuppressWarnings("rawtypes")
     public FilterContext filter(FilterContext ctx) throws FilterException {
         if (ctx.getIOException() != null && ctx.getAsyncHandler() instanceof ResumableAsyncHandler) {
 

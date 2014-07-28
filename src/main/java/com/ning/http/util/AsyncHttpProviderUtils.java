@@ -83,6 +83,7 @@ public class AsyncHttpProviderUtils {
         }
     }
 
+    @SuppressWarnings("resource")
     public final static InputStream contentToInputStream(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
         return bodyParts.isEmpty() ? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }

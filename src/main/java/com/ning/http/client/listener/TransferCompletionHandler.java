@@ -22,7 +22,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Response;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}

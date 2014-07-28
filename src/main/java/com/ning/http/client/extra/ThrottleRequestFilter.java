@@ -46,6 +46,7 @@ public class ThrottleRequestFilter implements RequestFilter {
     }
 
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public FilterContext filter(FilterContext ctx) throws FilterException {
 
         try {

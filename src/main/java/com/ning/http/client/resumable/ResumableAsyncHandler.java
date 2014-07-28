@@ -147,6 +147,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         return state;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T onCompleted() throws Exception {
         resumableProcessor.remove(url);
@@ -207,6 +208,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
      * @param resumableListener a {@link ResumableListener}
      * @return this
      */
+    @SuppressWarnings("rawtypes")
     public ResumableAsyncHandler setResumableListener(ResumableListener resumableListener) {
         this.resumableListener = resumableListener;
         return this;
