@@ -52,7 +52,7 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
-        long written = body.transferTo(position, Long.MAX_VALUE, target);
+        long written = body.transferTo(position, target);
         if (written > 0) {
             transfered += written;
         }
