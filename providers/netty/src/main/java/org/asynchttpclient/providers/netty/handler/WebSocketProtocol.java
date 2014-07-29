@@ -86,12 +86,10 @@ public final class WebSocketProtocol extends Protocol {
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
             boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
-            String c = response.headers().get(HttpHeaders.Names.CONNECTION);
-            if (c == null) {
-                c = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
-            }
-
-            boolean validConnection = c != null && c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
+            String connection = response.headers().get(HttpHeaders.Names.CONNECTION);
+            if (connection == null)
+                connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
+            boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
 
             status = new NettyResponseStatus(future.getURI(), config, response);
             final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
