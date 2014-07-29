@@ -12,14 +12,15 @@
  */
 package org.asynchttpclient.websocket;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.UpgradeHandler;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade. Use the Builder for configuring WebSocket options.
@@ -27,12 +28,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
 
     private WebSocket webSocket;
-    private final ConcurrentLinkedQueue<WebSocketListener> listeners;
+    private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
     private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
     private int status;
 
-    public WebSocketUpgradeHandler(ConcurrentLinkedQueue<WebSocketListener> listeners) {
+    public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
     }
 
@@ -144,7 +145,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     public final static class Builder {
 
-        private ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
+        private List<WebSocketListener> listeners = new ArrayList<WebSocketListener>();
 
         /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}
