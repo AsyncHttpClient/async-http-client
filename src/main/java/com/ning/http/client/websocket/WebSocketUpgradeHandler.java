@@ -18,7 +18,8 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.UpgradeHandler;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -27,12 +28,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
 
     private WebSocket webSocket;
-    private final ConcurrentLinkedQueue<WebSocketListener> listeners;
+    private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
     private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
     private int status;
 
-    protected WebSocketUpgradeHandler(ConcurrentLinkedQueue<WebSocketListener> listeners) {
+    protected WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
     }
 
@@ -126,7 +127,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     public final static class Builder {
 
-        private ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
+        private List<WebSocketListener> listeners = new ArrayList<WebSocketListener>(1);
 
         /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}
