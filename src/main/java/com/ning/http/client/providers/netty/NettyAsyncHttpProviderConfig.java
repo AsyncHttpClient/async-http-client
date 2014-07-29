@@ -13,12 +13,15 @@
  */
 package com.ning.http.client.providers.netty;
 
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
+import com.ning.http.client.providers.netty.ws.DefaultNettyWebSocket;
+import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 
 import java.util.Map;
 import java.util.Set;
@@ -120,7 +123,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private Timer nettyTimer;
 
-    private long handshakeTimeoutInMillis = 10000L;
+    private long handshakeTimeout = 10000L;
 
     private SSLEngineFactory sslEngineFactory;
 
@@ -128,6 +131,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * chunkedFileChunkSize
      */
     private int chunkedFileChunkSize = 8192;
+
+    private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
 
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
@@ -194,11 +199,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     }
 
     public long getHandshakeTimeout() {
-        return handshakeTimeoutInMillis;
+        return handshakeTimeout;
     }
 
-    public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
-        this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
+    public void setHandshakeTimeout(long handshakeTimeout) {
+        this.handshakeTimeout = handshakeTimeout;
     }
 
     public ChannelPool getChannelPool() {
@@ -223,5 +228,25 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setChunkedFileChunkSize(int chunkedFileChunkSize) {
         this.chunkedFileChunkSize = chunkedFileChunkSize;
+    }
+
+    public NettyWebSocketFactory getNettyWebSocketFactory() {
+        return nettyWebSocketFactory;
+    }
+
+    public void setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
+        this.nettyWebSocketFactory = nettyWebSocketFactory;
+    }
+
+    public static interface NettyWebSocketFactory {
+        NettyWebSocket newNettyWebSocket(Channel channel);
+    }
+
+    public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+
+        @Override
+        public NettyWebSocket newNettyWebSocket(Channel channel) {
+            return new DefaultNettyWebSocket(channel);
+        }
     }
 }

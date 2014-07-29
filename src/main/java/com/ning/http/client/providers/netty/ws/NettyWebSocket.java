@@ -13,11 +13,8 @@
  */
 package com.ning.http.client.providers.netty.ws;
 
-import com.ning.http.client.websocket.WebSocket;
-import com.ning.http.client.websocket.WebSocketByteListener;
-import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
-import com.ning.http.client.websocket.WebSocketListener;
-import com.ning.http.client.websocket.WebSocketTextListener;
+import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -28,25 +25,24 @@ import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.websocket.WebSocket;
+import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
+import com.ning.http.client.websocket.WebSocketListener;
 
-import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
+import java.util.Collection;
 
-public class NettyWebSocket implements WebSocket {
+public abstract class NettyWebSocket implements WebSocket {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyWebSocket.class);
 
-    private final Channel channel;
-    private final ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
+    protected final Channel channel;
+    protected final Collection<WebSocketListener> listeners;
+    protected int maxBufferSize = 128000000;
 
-    private final StringBuilder textBuffer = new StringBuilder();
-    private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-
-    private int maxBufferSize = 128000000;
-
-    public NettyWebSocket(Channel channel) {
+    public NettyWebSocket(Channel channel, Collection<WebSocketListener> listeners) {
         this.channel = channel;
+        this.listeners = listeners;
     }
 
     @Override
@@ -127,87 +123,6 @@ public class NettyWebSocket implements WebSocket {
         listeners.clear();
     }
 
-    public void onBinaryFragment(byte[] message, boolean last) {
-
-        if (!last) {
-            try {
-                byteBuffer.write(message);
-            } catch (Exception ex) {
-                byteBuffer.reset();
-                onError(ex);
-                return;
-            }
-
-            if (byteBuffer.size() > maxBufferSize) {
-                byteBuffer.reset();
-                Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + maxBufferSize);
-                onError(e);
-                close();
-                return;
-            }
-        }
-
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketByteListener) {
-                WebSocketByteListener byteListener = (WebSocketByteListener) listener;
-                try {
-                    if (!last) {
-                        byteListener.onFragment(message, last);
-                    } else if (byteBuffer.size() > 0) {
-                        byteBuffer.write(message);
-                        byteListener.onFragment(message, last);
-                        byteListener.onMessage(byteBuffer.toByteArray());
-                    } else {
-                        byteListener.onMessage(message);
-                    }
-                } catch (Exception ex) {
-                    listener.onError(ex);
-                }
-            }
-        }
-
-        if (last) {
-            byteBuffer.reset();
-        }
-    }
-
-    public void onTextFragment(String message, boolean last) {
-
-        if (!last) {
-            textBuffer.append(message);
-
-            if (textBuffer.length() > maxBufferSize) {
-                textBuffer.setLength(0);
-                Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + maxBufferSize);
-                onError(e);
-                close();
-                return;
-            }
-        }
-
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketTextListener) {
-                WebSocketTextListener textlistener = (WebSocketTextListener) listener;
-                try {
-                    if (!last) {
-                        textlistener.onFragment(message, last);
-                    } else if (textBuffer.length() > 0) {
-                        textlistener.onFragment(message, last);
-                        textlistener.onMessage(textBuffer.append(message).toString());
-                    } else {
-                        textlistener.onMessage(message);
-                    }
-                } catch (Exception ex) {
-                    listener.onError(ex);
-                }
-            }
-        }
-
-        if (last) {
-            textBuffer.setLength(0);
-        }
-    }
-
     public void onError(Throwable t) {
         for (WebSocketListener listener : listeners) {
             try {
@@ -239,4 +154,8 @@ public class NettyWebSocket implements WebSocket {
     public String toString() {
         return "NettyWebSocket{channel=" + channel + '}';
     }
+    
+    public abstract void onBinaryFragment(HttpResponseBodyPart part);
+    
+    public abstract void onTextFragment(HttpResponseBodyPart part);
 }

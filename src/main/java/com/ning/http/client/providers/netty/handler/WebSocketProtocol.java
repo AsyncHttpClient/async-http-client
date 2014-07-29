@@ -41,7 +41,6 @@ import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
 import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -60,7 +59,7 @@ public final class WebSocketProtocol extends Protocol {
     private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
         if (!h.touchSuccess()) {
             try {
-                h.onSuccess(new NettyWebSocket(channel));
+                h.onSuccess(nettyConfig.getNettyWebSocketFactory().newNettyWebSocket(channel));
             } catch (Exception ex) {
                 logger.warn("onSuccess unexpected exception", ex);
             }
@@ -157,9 +156,9 @@ public final class WebSocketProtocol extends Protocol {
                     handler.onBodyPartReceived(rp);
 
                     if (frame instanceof BinaryWebSocketFrame) {
-                        webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
+                        webSocket.onBinaryFragment(rp);
                     } else {
-                        webSocket.onTextFragment(frame.getBinaryData().toString(StandardCharsets.UTF_8), frame.isFinalFragment());
+                        webSocket.onTextFragment(rp);
                     }
                 }
             } else {
