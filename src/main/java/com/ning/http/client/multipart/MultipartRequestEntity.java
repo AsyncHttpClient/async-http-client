@@ -30,6 +30,7 @@ import java.util.Random;
  * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
+@Deprecated
 public class MultipartRequestEntity implements RequestEntity {
 
     /**
