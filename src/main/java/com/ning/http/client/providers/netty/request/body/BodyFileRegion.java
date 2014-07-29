@@ -43,7 +43,7 @@ public class BodyFileRegion
 
     public long transferTo(WritableByteChannel target, long position)
             throws IOException {
-        return body.transferTo(position, Long.MAX_VALUE, target);
+        return body.transferTo(position, target);
     }
 
     public void releaseExternalResources() {
