@@ -281,7 +281,7 @@ public final class NettyRequestFactory {
         }
 
         if (body != null) {
-            if (body.getContentLength() >= 0)
+            if (body.getContentLength() > 0)
                 httpRequest.headers().set(HttpHeaders.Names.CONTENT_LENGTH, body.getContentLength());
             else
                 httpRequest.headers().set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
