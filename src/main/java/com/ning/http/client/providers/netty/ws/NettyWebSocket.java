@@ -104,11 +104,8 @@ public class NettyWebSocket implements WebSocket {
     	return maxBufferSize;
     }
     
-    public void setMaxBufferSize(int bufferSize) {
-    	maxBufferSize = bufferSize;
-    	
-    	if(maxBufferSize < 8192)
-    		maxBufferSize = 8192;
+    public void setMaxBufferSize(int maxBufferSize) {
+        this.maxBufferSize = Math.max(maxBufferSize, 8192);
     }
     
     @Override
