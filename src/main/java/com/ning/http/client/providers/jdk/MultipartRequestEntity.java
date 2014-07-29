@@ -13,12 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.multipart;
+package com.ning.http.client.providers.jdk;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 import static com.ning.http.util.StandardCharsets.US_ASCII;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.multipart.MultipartUtils;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.multipart.RequestEntity;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -30,7 +33,6 @@ import java.util.Random;
  * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
-@Deprecated
 public class MultipartRequestEntity implements RequestEntity {
 
     /**

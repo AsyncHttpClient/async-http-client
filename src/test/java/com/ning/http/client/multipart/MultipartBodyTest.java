@@ -19,6 +19,10 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.multipart.ByteArrayPart;
+import com.ning.http.client.multipart.FilePart;
+import com.ning.http.client.multipart.Part;
+import com.ning.http.client.multipart.StringPart;
 import com.ning.http.util.StandardCharsets;
 
 import java.io.File;
@@ -64,11 +68,8 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) {
         Assert.assertNotNull(parts);
         // get expected values
-        MultipartRequestEntity mre = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
-        final long expectedContentLength = mre.getContentLength();
-
-        // get real bytes
-        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), expectedContentLength, mre.getMultipartBoundary());
+        final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
+        final long expectedContentLength = multipartBody.getContentLength();
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;
