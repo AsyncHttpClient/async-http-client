@@ -110,50 +110,48 @@ public class MultipartUtils {
 
         int written = 0;
         int maxSpin = 0;
-        synchronized (bytes) {
-            ByteBuffer message = ByteBuffer.wrap(bytes);
+        ByteBuffer message = ByteBuffer.wrap(bytes);
 
-            if (target instanceof SocketChannel) {
-                final Selector selector = Selector.open();
-                try {
-                    final SocketChannel channel = (SocketChannel) target;
-                    channel.register(selector, SelectionKey.OP_WRITE);
+        if (target instanceof SocketChannel) {
+            final Selector selector = Selector.open();
+            try {
+                final SocketChannel channel = (SocketChannel) target;
+                channel.register(selector, SelectionKey.OP_WRITE);
 
-                    while (written < bytes.length) {
-                        selector.select(1000);
-                        maxSpin++;
-                        final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                while (written < bytes.length) {
+                    selector.select(1000);
+                    maxSpin++;
+                    final Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
-                        for (SelectionKey key : selectedKeys) {
-                            if (key.isWritable()) {
-                                written += target.write(message);
-                                maxSpin = 0;
-                            }
-                        }
-                        if (maxSpin >= 10) {
-                            throw new IOException("Unable to write on channel " + target);
+                    for (SelectionKey key : selectedKeys) {
+                        if (key.isWritable()) {
+                            written += target.write(message);
+                            maxSpin = 0;
                         }
                     }
-                } finally {
-                    selector.close();
+                    if (maxSpin >= 10) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
                 }
-            } else {
-                while ((target.isOpen()) && (written < bytes.length)) {
-                    long nWrite = target.write(message);
-                    written += nWrite;
-                    if (nWrite == 0 && maxSpin++ < 10) {
-                        LOGGER.info("Waiting for writing...");
-                        try {
-                            bytes.wait(1000);
-                        } catch (InterruptedException e) {
-                            LOGGER.trace(e.getMessage(), e);
-                        }
-                    } else {
-                        if (maxSpin >= 10) {
-                            throw new IOException("Unable to write on channel " + target);
-                        }
-                        maxSpin = 0;
+            } finally {
+                selector.close();
+            }
+        } else {
+            while ((target.isOpen()) && (written < bytes.length)) {
+                long nWrite = target.write(message);
+                written += nWrite;
+                if (nWrite == 0 && maxSpin++ < 10) {
+                    LOGGER.info("Waiting for writing...");
+                    try {
+                        bytes.wait(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.trace(e.getMessage(), e);
                     }
+                } else {
+                    if (maxSpin >= 10) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
+                    maxSpin = 0;
                 }
             }
         }
