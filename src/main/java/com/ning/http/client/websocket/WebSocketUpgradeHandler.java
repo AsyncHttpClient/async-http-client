@@ -30,7 +30,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private WebSocket webSocket;
     private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
-    private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
+    private boolean onSuccessCalled;
     private int status;
 
     protected WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
@@ -43,11 +43,9 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     }
 
     public boolean touchSuccess() {
-        return onSuccessCalled.getAndSet(true);
-    }
-
-    public void resetSuccess() {
-        onSuccessCalled.set(false);
+        boolean prev = onSuccessCalled;
+        onSuccessCalled = true;
+        return prev;
     }
 
     @Override
@@ -58,11 +56,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
-        if (responseStatus.getStatusCode() == 101) {
-            return STATE.UPGRADE;
-        } else {
-            return STATE.ABORT;
-        }
+        return status == 101 ? STATE.UPGRADE : STATE.ABORT;
     }
 
     @Override
