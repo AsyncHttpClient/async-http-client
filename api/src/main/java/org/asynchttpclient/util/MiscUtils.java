@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.util;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -46,6 +48,13 @@ public class MiscUtils {
     }
 
     public static <T> T withDefault(T value, T defaults) {
-        return value != null? value : value;
+        return value != null ? value : value;
+    }
+
+    public static void closeSilently(Closeable closeable) {
+        try {
+            closeable.close();
+        } catch (IOException e) {
+        }
     }
 }

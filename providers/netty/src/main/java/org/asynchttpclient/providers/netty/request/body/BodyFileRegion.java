@@ -13,6 +13,9 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
+
 import org.asynchttpclient.RandomAccessBody;
 
 import io.netty.channel.FileRegion;
@@ -20,7 +23,6 @@ import io.netty.util.AbstractReferenceCounted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
@@ -61,10 +63,6 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     protected void deallocate() {
-        try {
-            body.close();
-        } catch (IOException e) {
-            // we tried
-        }
+        closeSilently(body);
     }
 }

@@ -12,17 +12,18 @@
  */
 package org.asynchttpclient.resumable;
 
-import org.asynchttpclient.util.StandardCharsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.asynchttpclient.util.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link org.asynchttpclient.resumable.ResumableAsyncHandler.ResumableProcessor} which use a properties file
@@ -81,12 +82,8 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         } catch (Throwable e) {
             log.warn(e.getMessage(), e);
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException ignored) {
-                }
-            }
+            if (os != null)
+                closeSilently(os);
         }
     }
 

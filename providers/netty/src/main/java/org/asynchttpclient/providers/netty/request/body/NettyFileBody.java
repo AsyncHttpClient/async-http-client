@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressiveFuture;
@@ -30,12 +31,8 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyFileBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
 
     private final File file;
     private final long offset;
@@ -88,23 +85,13 @@ public class NettyFileBody implements NettyBody {
             }
             writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
                 public void operationComplete(ChannelProgressiveFuture cf) {
-                    try {
-                        // FIXME probably useless in Netty 4
-                        raf.close();
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                    }
+                    closeSilently(raf);
                     super.operationComplete(cf);
                 }
             });
             channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException ex) {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                }
-            }
+            closeSilently(raf);
             throw ex;
         }
     }

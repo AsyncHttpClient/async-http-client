@@ -38,11 +38,4 @@ public interface Body extends Closeable {
      */
     // FIXME introduce a visitor pattern so that Netty can pass a pooled buffer
     long read(ByteBuffer buffer) throws IOException;
-
-    /**
-     * Releases any resources associated with this body.
-     *
-     * @throws IOException
-     */
-    void close() throws IOException;
 }

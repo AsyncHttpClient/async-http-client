@@ -12,17 +12,7 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
-import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
-import org.asynchttpclient.simple.HeaderMap;
-import org.asynchttpclient.simple.SimpleAHCTransferListener;
-import org.asynchttpclient.uri.UriComponents;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLContext;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,6 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import javax.net.ssl.SSLContext;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.resumable.ResumableAsyncHandler;
+import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
+import org.asynchttpclient.simple.HeaderMap;
+import org.asynchttpclient.simple.SimpleAHCTransferListener;
+import org.asynchttpclient.uri.UriComponents;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
@@ -64,7 +64,6 @@ import java.util.concurrent.Future;
  */
 public class SimpleAsyncHttpClient implements Closeable {
 
-    private final static Logger logger = LoggerFactory.getLogger(SimpleAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
@@ -778,13 +777,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         private void closeConsumer() {
-            try {
-                if (bodyConsumer != null) {
-                    bodyConsumer.close();
-                }
-            } catch (IOException ex) {
-                logger.warn("Unable to close a BodyConsumer {}", bodyConsumer);
-            }
+            if (bodyConsumer != null)
+                closeSilently(bodyConsumer);
         }
 
         @Override

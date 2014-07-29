@@ -62,8 +62,6 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) {
         Assert.assertNotNull(parts);
         // get expected values
-
-        // get real bytes
         final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
         final long expectedContentLength = multipartBody.getContentLength();
         try {

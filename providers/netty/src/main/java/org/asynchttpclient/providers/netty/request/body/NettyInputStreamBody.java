@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
@@ -69,11 +71,7 @@ public class NettyInputStreamBody implements NettyBody {
         channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
                 new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
                     public void operationComplete(ChannelProgressiveFuture cf) {
-                        try {
-                            is.close();
-                        } catch (IOException e) {
-                            LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                        }
+                        closeSilently(is);
                         super.operationComplete(cf);
                     }
                 });

@@ -13,6 +13,15 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.stream.ChunkedWriteHandler;
+
+import java.io.IOException;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
@@ -22,20 +31,8 @@ import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
 import org.asynchttpclient.providers.netty.request.body.FeedableBodyGenerator.FeedListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelProgressiveFuture;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.stream.ChunkedWriteHandler;
-
-import java.io.IOException;
 
 public class NettyBodyBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyBodyBody.class);
 
     private final Body body;
     private final NettyAsyncHttpProviderConfig nettyConfig;
@@ -63,7 +60,7 @@ public class NettyBodyBody implements NettyBody {
     public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
 
         Object msg;
-        if (!ChannelManager.isSslHandlerConfigured(channel.pipeline()) && body instanceof RandomAccessBody && !nettyConfig.isDisableZeroCopy()) {
+        if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !nettyConfig.isDisableZeroCopy()) {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {
@@ -83,11 +80,7 @@ public class NettyBodyBody implements NettyBody {
 
         writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
             public void operationComplete(ChannelProgressiveFuture cf) {
-                try {
-                    body.close();
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                }
+                closeSilently(body);
                 super.operationComplete(cf);
             }
         });
