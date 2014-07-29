@@ -110,8 +110,7 @@ public class FileBodyGenerator implements BodyGenerator {
         }
 
         @Override
-        public void close()
-                throws IOException {
+        public void close() throws IOException {
             file.close();
         }
     }

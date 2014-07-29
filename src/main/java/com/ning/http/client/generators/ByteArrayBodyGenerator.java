@@ -58,7 +58,7 @@ public class ByteArrayBodyGenerator implements BodyGenerator {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             lastPosition = 0;
             eof = false;
         }
