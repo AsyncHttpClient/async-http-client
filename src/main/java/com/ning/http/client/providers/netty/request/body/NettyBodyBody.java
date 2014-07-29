@@ -13,11 +13,11 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Body;
@@ -33,8 +33,6 @@ import com.ning.http.client.providers.netty.request.ProgressListener;
 import java.io.IOException;
 
 public class NettyBodyBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyBodyBody.class);
 
     private final Body body;
     private final NettyAsyncHttpProviderConfig nettyConfig;
@@ -62,7 +60,7 @@ public class NettyBodyBody implements NettyBody {
     public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
 
         Object msg;
-        if (!ChannelManager.isSslHandlerConfigured(channel.getPipeline()) && body instanceof RandomAccessBody && !nettyConfig.isDisableZeroCopy()) {
+        if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.getPipeline()) && !nettyConfig.isDisableZeroCopy()) {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {
@@ -81,11 +79,7 @@ public class NettyBodyBody implements NettyBody {
         
         channel.write(msg).addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
             public void operationComplete(ChannelFuture cf) {
-                try {
-                    body.close();
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                }
+                closeSilently(body);
                 super.operationComplete(cf);
             }
         });

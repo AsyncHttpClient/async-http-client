@@ -13,6 +13,7 @@
 package com.ning.http.client.providers.jdk;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static com.ning.http.util.MiscUtils.closeSilently;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import org.slf4j.Logger;
@@ -629,11 +630,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                             os.write(buffer.array(), buffer.arrayOffset(), buffer.position());
                         }
                     } finally {
-                        try {
-                            body.close();
-                        } catch (IOException e) {
-                            logger.warn("Failed to close request body: {}", e.getMessage(), e);
-                        }
+                        closeSilently(body);
                     }
                 }
             }

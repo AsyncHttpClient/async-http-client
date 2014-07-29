@@ -12,8 +12,7 @@
  */
 package com.ning.http.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.ning.http.util.MiscUtils.closeSilently;
 
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
@@ -64,7 +63,6 @@ import java.util.concurrent.Future;
  */
 public class SimpleAsyncHttpClient {
 
-    private final static Logger logger = LoggerFactory.getLogger(SimpleAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
@@ -764,13 +762,7 @@ public class SimpleAsyncHttpClient {
         }
 
         private void closeConsumer() {
-            try {
-                if (bodyConsumer != null) {
-                    bodyConsumer.close();
-                }
-            } catch (IOException ex) {
-                logger.warn("Unable to close a BodyConsumer {}", bodyConsumer);
-            }
+            closeSilently(bodyConsumer);
         }
 
         @Override

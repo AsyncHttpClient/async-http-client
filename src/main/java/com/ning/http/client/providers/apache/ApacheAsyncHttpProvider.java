@@ -13,6 +13,7 @@
 package com.ning.http.client.providers.apache;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static com.ning.http.util.MiscUtils.closeSilently;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import org.apache.commons.httpclient.CircularRedirectException;
@@ -329,11 +330,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                         post.setRequestEntity(new ByteArrayRequestEntity(bytes));
                     }
                 } finally {
-                    try {
-                        body.close();
-                    } catch (IOException e) {
-                        logger.warn("Failed to close request body: {}", e.getMessage(), e);
-                    }
+                    closeSilently(body);
                 }
             }
 

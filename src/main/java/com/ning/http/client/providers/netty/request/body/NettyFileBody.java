@@ -13,12 +13,12 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.handler.stream.ChunkedFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class NettyFileBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
 
     private final File file;
     private final long offset;
@@ -85,21 +83,12 @@ public class NettyFileBody implements NettyBody {
             }
             writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
                 public void operationComplete(ChannelFuture cf) {
-                    try {
-                        raf.close();
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                    }
+                    closeSilently(raf);
                     super.operationComplete(cf);
                 }
             });
         } catch (IOException ex) {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                }
-            }
+            closeSilently(raf);
             throw ex;
         }
     }

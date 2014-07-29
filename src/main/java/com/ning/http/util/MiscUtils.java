@@ -13,6 +13,8 @@
  */
 package com.ning.http.util;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -44,5 +46,12 @@ public final class MiscUtils {
     public static boolean getBoolean(String systemPropName, boolean defaultValue) {
         String systemPropValue = System.getProperty(systemPropName);
         return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
+    }
+
+    public static void closeSilently(Closeable closeable) {
+        try {
+            closeable.close();
+        } catch (IOException e) {
+        }
     }
 }

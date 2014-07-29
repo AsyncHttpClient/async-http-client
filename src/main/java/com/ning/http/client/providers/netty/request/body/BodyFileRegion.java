@@ -13,6 +13,8 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import com.ning.http.client.RandomAccessBody;
 import org.jboss.netty.channel.FileRegion;
 
@@ -22,8 +24,7 @@ import java.nio.channels.WritableByteChannel;
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
-public class BodyFileRegion
-        implements FileRegion {
+public class BodyFileRegion implements FileRegion {
 
     private final RandomAccessBody body;
 
@@ -47,11 +48,6 @@ public class BodyFileRegion
     }
 
     public void releaseExternalResources() {
-        try {
-            body.close();
-        } catch (IOException e) {
-            // we tried
-        }
+        closeSilently(body);
     }
-
 }

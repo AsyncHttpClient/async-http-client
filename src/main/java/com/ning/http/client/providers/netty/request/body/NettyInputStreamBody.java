@@ -13,6 +13,8 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.slf4j.Logger;
@@ -72,11 +74,7 @@ public class NettyInputStreamBody implements NettyBody {
         final Body body = generator.createBody();
         channel.write(new BodyChunkedInput(body)).addListener(new ProgressListener(config, future.getAsyncHandler(), future, false) {
             public void operationComplete(ChannelFuture cf) {
-                try {
-                    body.close();
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                }
+                closeSilently(body);
                 super.operationComplete(cf);
             }
         });

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.resumable;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,12 +75,8 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         } catch (Throwable e) {
             log.warn(e.getMessage(), e);
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException ignored) {
-                }
-            }
+            if (os != null)
+                closeSilently(os);
         }
     }
 

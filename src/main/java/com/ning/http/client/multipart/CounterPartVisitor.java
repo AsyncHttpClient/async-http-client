@@ -12,19 +12,17 @@
  */
 package com.ning.http.client.multipart;
 
-import java.io.IOException;
-
 public class CounterPartVisitor implements PartVisitor {
 
     private long count = 0L;
 
     @Override
-    public void withBytes(byte[] bytes) throws IOException {
+    public void withBytes(byte[] bytes) {
         count += bytes.length;
     }
 
     @Override
-    public void withByte(byte b) throws IOException {
+    public void withByte(byte b) {
         count++;
     }
 

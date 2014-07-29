@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.extra;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import com.ning.http.client.resumable.ResumableListener;
 
 import java.io.IOException;
@@ -43,20 +45,13 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
 
     @Override
     public void onAllBytesReceived() {
-        if (file != null) {
-            try {
-                file.close();
-            } catch (IOException e) {
-                ;
-            }
-        }
+        closeSilently(file);
     }
 
     public long length() {
         try {
             return file.length();
         } catch (IOException e) {
-            ;
         }
         return 0;
     }

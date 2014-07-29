@@ -13,9 +13,9 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static com.ning.http.util.MiscUtils.closeSilently;
+
 import org.jboss.netty.channel.FileRegion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -23,8 +23,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
 public class OptimizedFileRegion implements FileRegion {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OptimizedFileRegion.class);
 
     private final FileChannel file;
     private final RandomAccessFile raf;
@@ -65,16 +63,7 @@ public class OptimizedFileRegion implements FileRegion {
     }
 
     public void releaseExternalResources() {
-        try {
-            file.close();
-        } catch (IOException e) {
-            LOGGER.warn("Failed to close a file.", e);
-        }
-
-        try {
-            raf.close();
-        } catch (IOException e) {
-            LOGGER.warn("Failed to close a file.", e);
-        }
+        closeSilently(file);
+        closeSilently(raf);
     }
 }
