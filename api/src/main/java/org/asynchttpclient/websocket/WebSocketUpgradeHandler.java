@@ -30,7 +30,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private WebSocket webSocket;
     private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
-    private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
+    private boolean onSuccessCalled;
     private int status;
 
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
@@ -46,7 +46,9 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     }
 
     public boolean touchSuccess() {
-        return onSuccessCalled.getAndSet(true);
+        boolean prev = onSuccessCalled;
+        onSuccessCalled = true;
+        return prev;
     }
 
     /**

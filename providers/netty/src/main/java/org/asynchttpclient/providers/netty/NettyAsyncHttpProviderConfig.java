@@ -13,13 +13,6 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.SSLEngineFactory;
-import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty.response.EagerNettyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.LazyNettyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -29,6 +22,15 @@ import io.netty.util.Timer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.SSLEngineFactory;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.providers.netty.response.EagerNettyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.LazyNettyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
+import org.asynchttpclient.providers.netty.ws.DefaultNettyWebSocket;
+import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See
@@ -114,6 +116,18 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         }
     }
 
+    public static interface NettyWebSocketFactory {
+        NettyWebSocket newNettyWebSocket(Channel channel);
+    }
+
+    public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+
+        @Override
+        public NettyWebSocket newNettyWebSocket(Channel channel) {
+            return new DefaultNettyWebSocket(channel);
+        }
+    }
+    
     /**
      * Allow configuring the Netty's event loop.
      */
@@ -142,7 +156,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     private Timer nettyTimer;
 
-    private long handshakeTimeoutInMillis;
+    private long handshakeTimeout;
 
     private SSLEngineFactory sslEngineFactory;
 
@@ -150,6 +164,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
      * chunkedFileChunkSize
      */
     private int chunkedFileChunkSize = 8192;
+
+    private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -248,11 +264,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     }
 
     public long getHandshakeTimeout() {
-        return handshakeTimeoutInMillis;
+        return handshakeTimeout;
     }
 
-    public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
-        this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
+    public void setHandshakeTimeout(long handshakeTimeout) {
+        this.handshakeTimeout = handshakeTimeout;
     }
 
     public SSLEngineFactory getSslEngineFactory() {
@@ -269,5 +285,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setChunkedFileChunkSize(int chunkedFileChunkSize) {
         this.chunkedFileChunkSize = chunkedFileChunkSize;
+    }
+
+    public NettyWebSocketFactory getNettyWebSocketFactory() {
+        return nettyWebSocketFactory;
+    }
+
+    public void setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
+        this.nettyWebSocketFactory = nettyWebSocketFactory;
     }
 }
