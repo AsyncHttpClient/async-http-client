@@ -36,6 +36,7 @@ public interface Body extends Closeable {
      * @return The non-negative number of bytes actually read or {@code -1} if the body has been read completely.
      * @throws IOException If the chunk could not be read.
      */
+    // FIXME introduce a visitor pattern so that Netty can pass a pooled buffer
     long read(ByteBuffer buffer) throws IOException;
 
     /**

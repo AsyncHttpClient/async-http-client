@@ -25,6 +25,7 @@ import java.nio.channels.WritableByteChannel;
 /**
  * Creates a request body from the contents of a file.
  */
+//Not used by Netty
 public class FileBodyGenerator implements BodyGenerator {
 
     private final File file;
@@ -89,11 +90,8 @@ public class FileBodyGenerator implements BodyGenerator {
             return channel.read(buffer);
         }
 
-        public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
-            if (count > length) {
-                count = length;
-            }
-            return channel.transferTo(position, count, target);
+        public long transferTo(long position, WritableByteChannel target) throws IOException {
+            return channel.transferTo(position, length, target);
         }
 
         public void close() throws IOException {

@@ -69,7 +69,7 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     // RandomAccessBody API, suited for HTTP but not for HTTPS
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+    public long transferTo(long position, WritableByteChannel target) throws IOException {
 
         long overallLength = 0;
 
