@@ -72,7 +72,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private void writeRequest(Channel channel) {
 
-        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", future.getNettyRequest(), channel);
+        LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
 
         if (future.isDone()) {
             abortChannelPreemption(poolKey);
