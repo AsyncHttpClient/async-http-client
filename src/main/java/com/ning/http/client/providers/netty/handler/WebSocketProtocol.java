@@ -23,6 +23,9 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import com.ning.http.client.AsyncHandler.STATE;
@@ -131,7 +134,7 @@ public final class WebSocketProtocol extends Protocol {
                     Channels.setDiscard(channel);
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.getStatusCode(), closeFrame.getReasonText());
-
+                    
                 } else if (frame.getBinaryData() != null) {
                     HttpChunk webSocketChunk = new HttpChunk() {
                         private ChannelBuffer content = frame.getBinaryData();
@@ -152,13 +155,17 @@ public final class WebSocketProtocol extends Protocol {
                         }
                     };
 
-                    NettyResponseBodyPart rp = new NettyResponseBodyPart(null, webSocketChunk, frame.isFinalFragment());
-                    handler.onBodyPartReceived(rp);
+                    NettyResponseBodyPart part = new NettyResponseBodyPart(null, webSocketChunk, frame.isFinalFragment());
+                    handler.onBodyPartReceived(part);
 
                     if (frame instanceof BinaryWebSocketFrame) {
-                        webSocket.onBinaryFragment(rp);
-                    } else {
-                        webSocket.onTextFragment(rp);
+                        webSocket.onBinaryFragment(part);
+                    } else if (frame instanceof TextWebSocketFrame) {
+                        webSocket.onTextFragment(part);
+                    } else if (frame instanceof PingWebSocketFrame) {
+                        webSocket.onPing(part);
+                    } else if (frame instanceof PongWebSocketFrame) {
+                        webSocket.onPong(part);
                     }
                 }
             } else {

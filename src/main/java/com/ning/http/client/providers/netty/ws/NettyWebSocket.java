@@ -35,6 +35,8 @@ import com.ning.http.client.websocket.WebSocketByteFragmentListener;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
+import com.ning.http.client.websocket.WebSocketPingListener;
+import com.ning.http.client.websocket.WebSocketPongListener;
 import com.ning.http.client.websocket.WebSocketTextFragmentListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 
@@ -295,6 +297,22 @@ public class NettyWebSocket implements WebSocket {
 
             } else
                 bufferFragment(fragment);
+        }
+    }
+
+    public void onPing(HttpResponseBodyPart part) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPingListener)
+                // bytes are cached in the part
+                WebSocketPingListener.class.cast(listener).onPing(part.getBodyPartBytes());
+        }
+    }
+
+    public void onPong(HttpResponseBodyPart part) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPongListener)
+                // bytes are cached in the part
+                WebSocketPongListener.class.cast(listener).onPong(part.getBodyPartBytes());
         }
     }
 }
