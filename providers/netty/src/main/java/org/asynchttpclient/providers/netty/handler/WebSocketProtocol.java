@@ -22,6 +22,9 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
@@ -74,7 +77,7 @@ public final class WebSocketProtocol extends Protocol {
             HttpResponse response = (HttpResponse) e;
             // we buffer the response until we get the LastHttpContent
             future.setPendingResponse(response);
-            
+
         } else if (e instanceof LastHttpContent) {
             HttpResponse response = future.getPendingResponse();
             future.setPendingResponse(null);
@@ -115,8 +118,7 @@ public final class WebSocketProtocol extends Protocol {
             }
 
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-            String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers()
-                    .get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
+            String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
                 requestSender.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
@@ -141,13 +143,17 @@ public final class WebSocketProtocol extends Protocol {
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
                         try {
-                            NettyResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                            handler.onBodyPartReceived(rp);
+                            NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                            handler.onBodyPartReceived(part);
 
                             if (frame instanceof BinaryWebSocketFrame) {
-                                webSocket.onBinaryFragment(rp);
-                            } else {
-                                webSocket.onTextFragment(rp);
+                                webSocket.onBinaryFragment(part);
+                            } else if (frame instanceof TextWebSocketFrame) {
+                                webSocket.onTextFragment(part);
+                            } else if (frame instanceof PingWebSocketFrame) {
+                                webSocket.onPing(part);
+                            } else if (frame instanceof PongWebSocketFrame) {
+                                webSocket.onPong(part);
                             }
                         } finally {
                             buf.release();
@@ -196,7 +202,8 @@ public final class WebSocketProtocol extends Protocol {
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
-            // FIXME How could this test not succeed, we just checked above that attribute is a NettyResponseFuture????
+            // FIXME How could this test not succeed, we just checked above that
+            // attribute is a NettyResponseFuture????
             logger.trace("Connection was closed abnormally (that is, with no close frame being sent).");
             if (attribute != DiscardEvent.INSTANCE && webSocket != null)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");

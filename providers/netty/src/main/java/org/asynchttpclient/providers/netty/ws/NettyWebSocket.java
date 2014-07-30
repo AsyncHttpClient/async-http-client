@@ -37,6 +37,8 @@ import org.asynchttpclient.websocket.WebSocketByteFragmentListener;
 import org.asynchttpclient.websocket.WebSocketByteListener;
 import org.asynchttpclient.websocket.WebSocketCloseCodeReasonListener;
 import org.asynchttpclient.websocket.WebSocketListener;
+import org.asynchttpclient.websocket.WebSocketPingListener;
+import org.asynchttpclient.websocket.WebSocketPongListener;
 import org.asynchttpclient.websocket.WebSocketTextFragmentListener;
 import org.asynchttpclient.websocket.WebSocketTextListener;
 import org.slf4j.Logger;
@@ -298,6 +300,22 @@ public class NettyWebSocket implements WebSocket {
 
             } else
                 bufferFragment(fragment);
+        }
+    }
+
+    public void onPing(HttpResponseBodyPart part) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPingListener)
+                // bytes are cached in the part
+                WebSocketPingListener.class.cast(listener).onPing(part.getBodyPartBytes());
+        }
+    }
+
+    public void onPong(HttpResponseBodyPart part) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPongListener)
+                // bytes are cached in the part
+                WebSocketPongListener.class.cast(listener).onPong(part.getBodyPartBytes());
         }
     }
 }
