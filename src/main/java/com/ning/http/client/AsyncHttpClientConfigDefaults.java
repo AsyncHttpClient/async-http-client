@@ -13,11 +13,16 @@
 package com.ning.http.client;
 
 import com.ning.http.util.AllowAllHostnameVerifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.ning.http.util.MiscUtil.getBoolean;
 
 import javax.net.ssl.HostnameVerifier;
 
 public final class AsyncHttpClientConfigDefaults {
+
+    private final static Logger log = LoggerFactory.getLogger(AsyncHttpClientConfigDefaults.class);
 
     private AsyncHttpClientConfigDefaults() {
     }
@@ -92,8 +97,23 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowPoolingConnection", true);
     }
 
+    /**
+     * @deprecated Use defaultUseRelativeURIsWithConnectProxies instead.
+     */
+    @Deprecated
     public static boolean defaultUseRelativeURIsWithSSLProxies() {
-        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
+        String systemPropValue = System.getProperty(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
+        if (systemPropValue != null) {
+            log.warn(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies is deprecated, use " + ASYNC_CLIENT +
+                    "defaultUseRelativeURIsWithConnectProxies instead");
+            return systemPropValue.equalsIgnoreCase("true");
+        } else {
+            return true;
+        }
+    }
+
+    public static boolean defaultUseRelativeURIsWithConnectProxies() {
+        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithConnectProxies", defaultUseRelativeURIsWithSSLProxies());
     }
 
     // unused/broken, left there for compatibility, fixed in Netty 4

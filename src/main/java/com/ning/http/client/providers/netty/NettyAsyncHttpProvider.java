@@ -649,10 +649,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throws IOException {
 
         String method = request.getMethod();
-        if (allowConnect && proxyServer != null && isSecure(uri)) {
+        if (allowConnect && proxyServer != null && useProxyConnect(uri)) {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, buffer, proxyServer);
+    }
+
+    protected final static boolean useProxyConnect(URI uri) {
+        return isSecure(uri) || isWebSocket(uri.getScheme());
     }
 
     private static SpnegoEngine getSpnegoEngine() {
@@ -676,7 +680,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             String path = null;
-            if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
+            if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
                 path = uri.toString();
             else if (uri.getRawQuery() != null)
                 path = uri.getRawPath() + "?" + uri.getRawQuery();

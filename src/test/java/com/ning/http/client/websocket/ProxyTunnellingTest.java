@@ -27,6 +27,7 @@ import org.eclipse.jetty.server.handler.ConnectHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -43,39 +44,46 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     int port2;
     private Server server2;
 
-    @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        server2 = new Server();
+    }
+
+    private void setUpServers(Connector server2Connector) throws Exception {
 
         port1 = findFreePort();
         port2 = findFreePort();
-
         Connector listener = new SelectChannelConnector();
-
         listener.setHost("127.0.0.1");
         listener.setPort(port1);
-
         addConnector(listener);
+        setHandler(new ConnectHandler());
+        start();
 
+        server2 = new Server();
+
+        server2Connector.setHost("127.0.0.1");
+        server2Connector.setPort(port2);
+
+        server2.addConnector(server2Connector);
+
+        server2.setHandler(getWebSocketHandler());
+        server2.start();
+        log.info("Local HTTP server started successfully");
+
+    }
+
+    private void setUpServer() throws Exception {
+        setUpServers(new SelectChannelConnector());
+    }
+
+    private void setUpSSlServer2() throws Exception {
         SslSelectChannelConnector connector = new SslSelectChannelConnector();
-        connector.setHost("127.0.0.1");
-        connector.setPort(port2);
-
         ClassLoader cl = getClass().getClassLoader();
         URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
         String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
         connector.setKeystore(keyStoreFile);
         connector.setKeyPassword("changeit");
         connector.setKeystoreType("JKS");
-
-        server2.addConnector(connector);
-
-        setHandler(new ConnectHandler());
-        start();
-
-        server2.setHandler(getWebSocketHandler());
-        server2.start();
-        log.info("Local HTTP server started successfully");
+        setUpServers(connector);
     }
 
     @Override
@@ -88,27 +96,38 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         };
     }
     
-    @AfterClass(alwaysRun = true)
+    @AfterMethod(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
         stop();
-        server2.stop();
-    }
-
-    protected String getTargetUrl() {
-        return String.format("wss://127.0.0.1:%d/", port2);
+        if (server2 != null) {
+            server2.stop();
+        }
+        server2 = null;
     }
 
     @Test(timeOut = 60000)
-    public void echoText() throws Exception {
+    public void echoWSText() throws Exception {
+        setUpServer();
+        runTest("ws");
+    }
 
-        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
+    @Test(timeOut = 60000)
+    public void echoWSSText() throws Exception {
+        setUpSSlServer2();
+        runTest("wss");
+    }
+
+    private void runTest(String protocol) throws Exception {
+        String targetUrl = String.format("%s://127.0.0.1:%d/", protocol, port2);
+
+        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTP, "127.0.0.1", port1);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = asyncHttpClient.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = asyncHttpClient.prepareGet(targetUrl).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
@@ -143,5 +162,6 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         } finally {
             asyncHttpClient.close();
         }
+
     }
 }
