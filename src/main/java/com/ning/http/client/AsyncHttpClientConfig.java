@@ -83,7 +83,7 @@ public class AsyncHttpClientConfig {
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
     protected boolean strict302Handling;
-    protected boolean useRelativeURIsWithSSLProxies;
+    protected boolean useRelativeURIsWithConnectProxies;
     protected int maxConnectionLifeTimeInMs;
     protected TimeConverter timeConverter;
 
@@ -120,7 +120,7 @@ public class AsyncHttpClientConfig {
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
-                                  boolean useRelativeURIsWithSSLProxies,
+                                  boolean useRelativeURIsWithConnectProxies,
                                   TimeConverter timeConverter) {
 
         this.maxTotalConnections = maxTotalConnections;
@@ -151,7 +151,7 @@ public class AsyncHttpClientConfig {
         this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
-        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+        this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -494,15 +494,27 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy,
-     *  otherwise <code>false</code>.
+     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy
+     * or WebSocket proxy, otherwise <code>false</code>.
      *  
      *  @since 1.7.12
+     *  @deprecated Use isUseRelativeURIsWithConnectProxies instead.
      */
+    @Deprecated
     public boolean isUseRelativeURIsWithSSLProxies() {
-        return useRelativeURIsWithSSLProxies;
+        return useRelativeURIsWithConnectProxies;
     }
-    
+
+    /**
+     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a proxy
+     * using the CONNECT method, for example when using SSL or WebSockets.
+     *
+     *  @since 1.8.13
+     */
+    public boolean isUseRelativeURIsWithConnectProxies() {
+        return useRelativeURIsWithConnectProxies;
+    }
+
     /**
      * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
      *
@@ -538,7 +550,7 @@ public class AsyncHttpClientConfig {
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean allowPoolingConnection = defaultAllowPoolingConnection();
-        private boolean useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
+        private boolean useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
         private int requestCompressionLevel = defaultRequestCompressionLevel();
         private int maxRequestRetry = defaultMaxRequestRetry();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
@@ -1005,15 +1017,31 @@ public class AsyncHttpClientConfig {
         }
       
         /**
-         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy.
+         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy or
+         * WebSocket proxy.
          *
          * @param useRelativeURIsWithSSLProxies
          * @return this
          *
          * @since 1.7.2
+         * @deprecated Use setUseRelativeURIsWithConnectProxies instead.
          */
         public Builder setUseRelativeURIsWithSSLProxies(boolean useRelativeURIsWithSSLProxies) {
-            this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+            this.useRelativeURIsWithConnectProxies = useRelativeURIsWithSSLProxies;
+            return this;
+        }
+
+        /**
+         * Configures this AHC instance to use relative URIs instead of absolute ones when making requests through
+         * proxies using the CONNECT method, such as when making SSL requests or WebSocket requests.
+         *
+         * @param useRelativeURIsWithConnectProxies
+         * @return this
+         *
+         * @since 1.8.13
+         */
+        public Builder setUseRelativeURIsWithConnectProxies(boolean useRelativeURIsWithConnectProxies) {
+            this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
             return this;
         }
 
@@ -1139,7 +1167,7 @@ public class AsyncHttpClientConfig {
                     hostnameVerifier,
                     ioThreadMultiplier,
                     strict302Handling,
-                    useRelativeURIsWithSSLProxies,
+                    useRelativeURIsWithConnectProxies,
                     timeConverter);
         }
     }

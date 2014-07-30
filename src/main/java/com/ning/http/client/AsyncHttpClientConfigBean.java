@@ -58,7 +58,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         compressionEnabled = defaultCompressionEnabled();
         userAgent = defaultUserAgent();
         allowPoolingConnection = defaultAllowPoolingConnection();
-        useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
+        useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
         requestCompressionLevel = defaultRequestCompressionLevel();
         maxRequestRetry = defaultMaxRequestRetry();
         ioThreadMultiplier = defaultIoThreadMultiplier();
