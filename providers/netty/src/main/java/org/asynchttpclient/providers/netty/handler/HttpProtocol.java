@@ -47,7 +47,6 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseHeaders;
@@ -402,12 +401,10 @@ public final class HttpProtocol extends Protocol {
             return;
         }
 
-        NettyRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
         try {
             if (e instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e;
-                logger.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest.getHttpRequest(), response);
                 // FIXME why do we buffer the response? I don't remember...
                 future.setPendingResponse(response);
                 return;
