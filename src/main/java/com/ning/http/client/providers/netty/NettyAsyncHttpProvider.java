@@ -649,7 +649,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throws IOException {
 
         String method = request.getMethod();
-        if (allowConnect && proxyServer != null && isSecure(uri)) {
+        if (allowConnect && proxyServer != null && (isSecure(uri) || isWebSocket(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, buffer, proxyServer);
