@@ -133,6 +133,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
 
+    private int webSocketMaxBufferSize = 128000000;
+
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
     }
@@ -237,15 +239,23 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.nettyWebSocketFactory = nettyWebSocketFactory;
     }
 
+    public int getWebSocketMaxBufferSize() {
+        return webSocketMaxBufferSize;
+    }
+
+    public void setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
+        this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+    }
+
     public static interface NettyWebSocketFactory {
-        NettyWebSocket newNettyWebSocket(Channel channel);
+        NettyWebSocket newNettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig);
     }
 
     public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
 
         @Override
-        public NettyWebSocket newNettyWebSocket(Channel channel) {
-            return new NettyWebSocket(channel);
+        public NettyWebSocket newNettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig) {
+            return new NettyWebSocket(channel, nettyConfig);
         }
     }
 }

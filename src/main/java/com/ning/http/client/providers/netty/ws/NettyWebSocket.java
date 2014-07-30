@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteFragmentListener;
@@ -51,19 +52,20 @@ public class NettyWebSocket implements WebSocket {
 
     protected final Channel channel;
     protected final Collection<WebSocketListener> listeners;
-    protected int maxBufferSize = 128000000;
+    protected final int maxBufferSize;
     private int bufferSize;
     private List<ChannelBuffer> _fragments;
     private volatile boolean interestedInByteMessages;
     private volatile boolean interestedInTextMessages;
 
-    public NettyWebSocket(Channel channel) {
-        this(channel, new ConcurrentLinkedQueue<WebSocketListener>());
+    public NettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig) {
+        this(channel, nettyConfig, new ConcurrentLinkedQueue<WebSocketListener>());
     }
 
-    public NettyWebSocket(Channel channel, Collection<WebSocketListener> listeners) {
+    public NettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig, Collection<WebSocketListener> listeners) {
         this.channel = channel;
         this.listeners = listeners;
+        maxBufferSize = nettyConfig.getWebSocketMaxBufferSize();
     }
 
     @Override
@@ -112,14 +114,6 @@ public class NettyWebSocket implements WebSocket {
     public WebSocket sendPong(byte[] payload) {
         channel.write(new PongWebSocketFrame(wrappedBuffer(payload)));
         return this;
-    }
-
-    public int getMaxBufferSize() {
-        return maxBufferSize;
-    }
-
-    public void setMaxBufferSize(int maxBufferSize) {
-        this.maxBufferSize = Math.max(maxBufferSize, 8192);
     }
 
     @Override
