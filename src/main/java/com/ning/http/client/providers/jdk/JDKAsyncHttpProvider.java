@@ -522,8 +522,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 urlConnection.setRequestProperty("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
             } else if (config.getUserAgent() != null) {
                 urlConnection.setRequestProperty("User-Agent", config.getUserAgent());
-            } else {
-                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.class, config));
             }
 
             if (isNonEmpty(request.getCookies())) {

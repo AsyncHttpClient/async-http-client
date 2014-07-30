@@ -13,6 +13,19 @@
  */
 package com.ning.http.client.providers.netty.request;
 
+import static com.ning.http.client.providers.netty.util.HttpUtils.isNTLM;
+import static com.ning.http.client.providers.netty.util.HttpUtils.isSecure;
+import static com.ning.http.client.providers.netty.util.HttpUtils.isWebSocket;
+import static com.ning.http.client.providers.netty.util.HttpUtils.useProxyConnect;
+import static com.ning.http.client.providers.netty.ws.WebSocketUtils.getKey;
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static com.ning.http.util.AsyncHttpProviderUtils.getAuthority;
+import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import static com.ning.http.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
+import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
+import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
+
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -30,7 +43,6 @@ import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.request.body.NettyBody;
 import com.ning.http.client.providers.netty.request.body.NettyBodyBody;
@@ -39,12 +51,7 @@ import com.ning.http.client.providers.netty.request.body.NettyFileBody;
 import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
 import com.ning.http.client.providers.netty.request.body.NettyMultipartBody;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import static com.ning.http.client.providers.netty.util.HttpUtils.*;
-import static com.ning.http.client.providers.netty.ws.WebSocketUtils.*;
 import com.ning.http.client.uri.UriComponents;
-import static com.ning.http.util.AsyncHttpProviderUtils.*;
-import static com.ning.http.util.AuthenticatorUtils.*;
-import static com.ning.http.util.MiscUtils.*;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.IOException;
@@ -313,11 +320,8 @@ public final class NettyRequestFactory {
             httpRequest.headers().set(HttpHeaders.Names.ACCEPT, "*/*");
 
         // Add default user agent
-        if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT)) {
-            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : constructUserAgent(NettyAsyncHttpProvider.class,
-                    config);
-            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, userAgent);
-        }
+        if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT) && config.getUserAgent() != null)
+            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
 
         return nettyRequest;
     }

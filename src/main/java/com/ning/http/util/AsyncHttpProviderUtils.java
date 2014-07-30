@@ -15,7 +15,6 @@ package com.ning.http.util;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Param;
@@ -129,14 +128,6 @@ public class AsyncHttpProviderUtils {
         byte[] b2 = new byte[len + len];
         System.arraycopy(b, 0, b2, 0, len);
         return b2;
-    }
-
-    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {
-        return new StringBuilder("AHC (").append(httpProvider.getSimpleName())//
-                .append(" - ").append(System.getProperty("os.name"))//
-                .append(" - ").append(System.getProperty("os.version"))//
-                .append(" - ").append(System.getProperty("java.version"))//
-                .append(" - ").append(Runtime.getRuntime().availableProcessors()).append(" core(s))").toString();
     }
 
     public static String parseCharset(String contentType) {
