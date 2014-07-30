@@ -2859,10 +2859,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             }
                         }
                     }
-                } else {
-                    if (ahcListener instanceof WebSocketTextListener) {
-                        WebSocketTextListener.class.cast(ahcListener).onFragment(s, last);
-                    }
                 }
             } catch (Throwable e) {
                 ahcListener.onError(e);
@@ -2882,10 +2878,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 WebSocketByteListener.class.cast(ahcListener).onMessage(bytesLocal);
                             }
                         }
-                    }
-                } else {
-                    if (ahcListener instanceof WebSocketByteListener) {
-                        WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, last);
                     }
                 }
             } catch (Throwable e) {

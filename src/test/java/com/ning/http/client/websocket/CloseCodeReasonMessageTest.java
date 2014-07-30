@@ -108,10 +108,6 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                 }
 
@@ -145,10 +141,6 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
                 @Override
                 public void onMessage(String message) {
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override

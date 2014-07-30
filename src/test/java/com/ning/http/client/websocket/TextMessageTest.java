@@ -75,7 +75,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
@@ -217,10 +217,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                 }
 
@@ -261,10 +257,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                 }
 
@@ -284,10 +276,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(text.get() + message);
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override
@@ -331,12 +319,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                boolean t = false;
-
-                @Override
                 public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                     websocket.sendTextMessage("ECHO").sendTextMessage("ECHO");
                 }
@@ -372,10 +354,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(message);
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override
@@ -418,10 +396,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(text.get() + message);
                     textLatch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override

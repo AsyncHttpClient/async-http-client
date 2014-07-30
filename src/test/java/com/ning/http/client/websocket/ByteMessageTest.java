@@ -12,15 +12,17 @@
  */
 package com.ning.http.client.websocket;
 
-import com.ning.http.client.AsyncHttpClient;
+import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.Test;
 
+import com.ning.http.client.AsyncHttpClient;
+
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
 
 public abstract class ByteMessageTest extends AbstractBasicTest {
 
@@ -92,10 +94,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                     text.set(message);
                     latch.countDown();
                 }
-
-                @Override
-                public void onFragment(byte[] fragment, boolean last) {
-                }
             }).build()).get();
 
             websocket.sendMessage("ECHO".getBytes());
@@ -142,10 +140,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                         text.set(n);
                     }
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(byte[] fragment, boolean last) {
                 }
             }).build()).get();
 
@@ -195,10 +189,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                     }
                     latch.countDown();
                 }
-
-                @Override
-                public void onFragment(byte[] fragment, boolean last) {
-                }
             }).build()).get();
 
             latch.await();
@@ -242,10 +232,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                         text.set(n);
                     }
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(byte[] fragment, boolean last) {
                 }
             }).build()).get();
             websocket.stream("ECHO".getBytes(), false);

@@ -20,7 +20,6 @@ import org.jboss.netty.util.Timer;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
-import com.ning.http.client.providers.netty.ws.DefaultNettyWebSocket;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 
 import java.util.Map;
@@ -246,7 +245,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
         @Override
         public NettyWebSocket newNettyWebSocket(Channel channel) {
-            return new DefaultNettyWebSocket(channel);
+            return new NettyWebSocket(channel);
         }
     }
 }
