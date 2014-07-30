@@ -18,7 +18,6 @@ import static com.ning.http.util.StandardCharsets.UTF_8;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -255,7 +254,7 @@ public class NettyWebSocket implements WebSocket {
 
                 } else {
                     bufferFragment(fragment);
-                    notifyByteListeners(ChannelBuffers.wrappedBuffer(fragments().toArray(new ChannelBuffer[fragments().size()])));
+                    notifyByteListeners(wrappedBuffer(fragments().toArray(new ChannelBuffer[fragments().size()])));
                 }
 
                 reset();
@@ -280,7 +279,7 @@ public class NettyWebSocket implements WebSocket {
 
                 } else {
                     bufferFragment(fragment);
-                    notifyTextListeners(ChannelBuffers.wrappedBuffer(fragments().toArray(new ChannelBuffer[fragments().size()])));
+                    notifyTextListeners(wrappedBuffer(fragments().toArray(new ChannelBuffer[fragments().size()])));
                 }
 
                 reset();
