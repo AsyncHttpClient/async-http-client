@@ -43,10 +43,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
      * Add a property that will be used when the AsyncHttpClient initialize its
      * {@link org.asynchttpclient.AsyncHttpProvider}
      * 
-     * @param name
-     *            the name of the property
-     * @param value
-     *            the value of the property
+     * @param name the name of the property
+     * @param value the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(ChannelOption<Object> name, Object value) {
@@ -116,17 +114,17 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     }
 
     public static interface NettyWebSocketFactory {
-        NettyWebSocket newNettyWebSocket(Channel channel);
+        NettyWebSocket newNettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig);
     }
 
     public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
 
         @Override
-        public NettyWebSocket newNettyWebSocket(Channel channel) {
-            return new NettyWebSocket(channel);
+        public NettyWebSocket newNettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig) {
+            return new NettyWebSocket(channel, nettyConfig);
         }
     }
-    
+
     /**
      * Allow configuring the Netty's event loop.
      */
@@ -165,6 +163,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     private int chunkedFileChunkSize = 8192;
 
     private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
+
+    private int webSocketMaxBufferSize = 128000000;
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -292,5 +292,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
         this.nettyWebSocketFactory = nettyWebSocketFactory;
+    }
+
+    public int getWebSocketMaxBufferSize() {
+        return webSocketMaxBufferSize;
+    }
+
+    public void setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
+        this.webSocketMaxBufferSize = webSocketMaxBufferSize;
     }
 }

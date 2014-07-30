@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.websocket.WebSocket;
 import org.asynchttpclient.websocket.WebSocketByteFragmentListener;
@@ -50,19 +51,20 @@ public class NettyWebSocket implements WebSocket {
 
     protected final Channel channel;
     protected final Collection<WebSocketListener> listeners;
-    protected int maxBufferSize = 128000000;
+    protected final int maxBufferSize;
     private int bufferSize;
     private List<byte[]> _fragments;
     private volatile boolean interestedInByteMessages;
     private volatile boolean interestedInTextMessages;
 
-    public NettyWebSocket(Channel channel) {
-        this(channel, new ConcurrentLinkedQueue<WebSocketListener>());
+    public NettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig) {
+        this(channel, nettyConfig, new ConcurrentLinkedQueue<WebSocketListener>());
     }
 
-    public NettyWebSocket(Channel channel, Collection<WebSocketListener> listeners) {
+    public NettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig, Collection<WebSocketListener> listeners) {
         this.channel = channel;
         this.listeners = listeners;
+        maxBufferSize = nettyConfig.getWebSocketMaxBufferSize();
     }
 
     @Override
@@ -105,14 +107,6 @@ public class NettyWebSocket implements WebSocket {
     public WebSocket sendPong(byte[] payload) {
         channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)));
         return this;
-    }
-
-    public int getMaxBufferSize() {
-        return maxBufferSize;
-    }
-
-    public void setMaxBufferSize(int maxBufferSize) {
-        this.maxBufferSize = Math.max(maxBufferSize, 8192);
     }
 
     @Override

@@ -61,7 +61,7 @@ public final class WebSocketProtocol extends Protocol {
     private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
         if (!h.touchSuccess()) {
             try {
-                h.onSuccess(nettyConfig.getNettyWebSocketFactory().newNettyWebSocket(channel));
+                h.onSuccess(nettyConfig.getNettyWebSocketFactory().newNettyWebSocket(channel, nettyConfig));
             } catch (Exception ex) {
                 logger.warn("onSuccess unexpected exception", ex);
             }
