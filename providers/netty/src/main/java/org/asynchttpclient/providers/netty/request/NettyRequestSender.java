@@ -15,6 +15,7 @@ package org.asynchttpclient.providers.netty.request;
 
 import static org.asynchttpclient.providers.netty.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
@@ -100,7 +101,7 @@ public final class NettyRequestSender {
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && isSecure(uri))
+        if (useProxy && useProxyConnect(uri))
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced

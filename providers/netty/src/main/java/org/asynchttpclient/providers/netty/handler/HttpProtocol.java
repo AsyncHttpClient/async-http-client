@@ -405,7 +405,7 @@ public final class HttpProtocol extends Protocol {
         try {
             if (e instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e;
-                // FIXME why do we buffer the response? I don't remember...
+                // we buffer the response until we get the LastHttpContent
                 future.setPendingResponse(response);
                 return;
 

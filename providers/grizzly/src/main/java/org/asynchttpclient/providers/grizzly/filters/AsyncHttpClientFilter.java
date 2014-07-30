@@ -210,6 +210,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         final Request request = httpTxContext.getRequest();
         final UriComponents uri = request.getURI();
         boolean secure = Utils.isSecure(uri);
+        boolean isWebSocket = isWSRequest(httpTxContext.getRequestUri());
 
         // If the request is secure, check to see if an error occurred during
         // the handshake. We have to do this here, as the error would occur
@@ -219,7 +220,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             return true;
         }
 
-        if (isUpgradeRequest(httpTxContext.getHandler()) && isWSRequest(httpTxContext.getRequestUri())) {
+        
+        if (isUpgradeRequest(httpTxContext.getHandler()) && isWebSocket) {
             httpTxContext.setWSRequest(true);
             convertToUpgradeRequest(httpTxContext);
         }
@@ -238,8 +240,10 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (method == Method.CONNECT) {
             final int port = uri.getPort();
             requestPacket.setRequestURI(uri.getHost() + ':' + (port == -1 ? 443 : port));
-        } else {
+        } else if ((secure || isWebSocket) && config.isUseRelativeURIsWithConnectProxies()) {
             requestPacket.setRequestURI(getNonEmptyPath(uri));
+        } else {
+            requestPacket.setRequestURI(uri.toUrl());
         }
 
         final BodyHandler bodyHandler = isPayloadAllowed(method) ?

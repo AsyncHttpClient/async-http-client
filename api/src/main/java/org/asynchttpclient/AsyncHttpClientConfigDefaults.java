@@ -66,7 +66,7 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static String defaultUserAgent() {
-        return System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
+        return System.getProperty(ASYNC_CLIENT + "userAgent", "AHC/2.0");
     }
 
     public static int defaultIoThreadMultiplier() {
@@ -89,8 +89,8 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowPoolingConnections", true);
     }
 
-    public static boolean defaultUseRelativeURIsWithSSLProxies() {
-        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
+    public static boolean defaultUseRelativeURIsWithConnectProxies() {
+        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithConnectProxies", true);
     }
 
     public static int defaultMaxRequestRetry() {

@@ -14,16 +14,15 @@ package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.uri.UriComponents;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.List;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.uri.UriComponents;
 
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
@@ -111,12 +110,6 @@ public class AsyncHttpProviderUtils {
      */
     public final static String getNonEmptyPath(UriComponents uri) {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
-    }
-
-    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {
-        return new StringBuilder("AHC (").append(httpProvider.getSimpleName()).append(" - ").append(System.getProperty("os.name"))
-                .append(" - ").append(System.getProperty("os.version")).append(" - ").append(System.getProperty("java.version"))
-                .append(" - ").append(Runtime.getRuntime().availableProcessors()).append(" core(s))").toString();
     }
 
     public static String parseCharset(String contentType) {

@@ -72,6 +72,12 @@ public final class WebSocketProtocol extends Protocol {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
+            // we buffer the response until we get the LastHttpContent
+            future.setPendingResponse(response);
+            
+        } else if (e instanceof LastHttpContent) {
+            HttpResponse response = future.getPendingResponse();
+            future.setPendingResponse(null);
             HttpResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
@@ -151,8 +157,6 @@ public final class WebSocketProtocol extends Protocol {
             } else {
                 logger.debug("UpgradeHandler returned a null NettyWebSocket ");
             }
-        } else if (e instanceof LastHttpContent) {
-            // FIXME what to do with this kind of messages?
         } else {
             logger.error("Invalid message {}", e);
         }

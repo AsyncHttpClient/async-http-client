@@ -91,7 +91,7 @@ public class AsyncHttpClientConfig {
     protected boolean strict302Handling;
 
     protected ProxyServerSelector proxyServerSelector;
-    protected boolean useRelativeURIsWithSSLProxies;
+    protected boolean useRelativeURIsWithConnectProxies;
 
     protected boolean compressionEnabled;
     protected String userAgent;
@@ -133,7 +133,7 @@ public class AsyncHttpClientConfig {
             boolean strict302Handling, //
             ExecutorService applicationThreadPool,//
             ProxyServerSelector proxyServerSelector, //
-            boolean useRelativeURIsWithSSLProxies, //
+            boolean useRelativeURIsWithConnectProxies, //
             boolean compressionEnabled, //
             String userAgent,//
             Realm realm,//
@@ -167,7 +167,7 @@ public class AsyncHttpClientConfig {
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
         this.strict302Handling = strict302Handling;
         this.proxyServerSelector = proxyServerSelector;
-        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+        this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
         this.applicationThreadPool = applicationThreadPool == null ? Executors.newCachedThreadPool() : applicationThreadPool;
@@ -493,13 +493,13 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy,
-     *  otherwise <code>false</code>.
+     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy
+     * or WebSocket proxy, otherwise <code>false</code>.
      *  
-     *  @since 1.7.12
+     *  @since 1.8.13
      */
-    public boolean isUseRelativeURIsWithSSLProxies() {
-        return useRelativeURIsWithSSLProxies;
+    public boolean isUseRelativeURIsWithConnectProxies() {
+        return useRelativeURIsWithConnectProxies;
     }
 
     /**
@@ -548,7 +548,7 @@ public class AsyncHttpClientConfig {
         private ProxyServerSelector proxyServerSelector = null;
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
-        private boolean useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
+        private boolean useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
         private boolean compressionEnabled = defaultCompressionEnabled();
         private String userAgent = defaultUserAgent();
         private ExecutorService applicationThreadPool;
@@ -962,15 +962,15 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy.
+         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL or WebSocket proxy.
          *
-         * @param useRelativeURIsWithSSLProxies
+         * @param useRelativeURIsWithConnectProxies
          * @return this
          *
          * @since 1.7.2
          */
-        public Builder setUseRelativeURIsWithSSLProxies(boolean useRelativeURIsWithSSLProxies) {
-            this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+        public Builder setUseRelativeURIsWithConnectProxies(boolean useRelativeURIsWithConnectProxies) {
+            this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
             return this;
         }
 
@@ -1116,7 +1116,7 @@ public class AsyncHttpClientConfig {
                     strict302Handling, //
                     applicationThreadPool, //
                     proxyServerSelector, //
-                    useRelativeURIsWithSSLProxies, //
+                    useRelativeURIsWithConnectProxies, //
                     compressionEnabled, //
                     userAgent,//
                     realm,//

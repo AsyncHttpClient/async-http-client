@@ -16,9 +16,9 @@ package org.asynchttpclient.providers.netty.request;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isNTLM;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.providers.netty.ws.WebSocketUtils.getKey;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.constructUserAgent;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
@@ -49,7 +49,6 @@ import org.asynchttpclient.generators.FileBodyGenerator;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.request.body.NettyBody;
 import org.asynchttpclient.providers.netty.request.body.NettyBodyBody;
@@ -77,7 +76,7 @@ public final class NettyRequestFactory {
         if (method == HttpMethod.CONNECT)
             return getAuthority(uri);
 
-        else if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
+        else if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
             return uri.toString();
 
         else {
@@ -322,10 +321,8 @@ public final class NettyRequestFactory {
             httpRequest.headers().set(HttpHeaders.Names.ACCEPT, "*/*");
 
         // Add default user agent
-        if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT)) {
-            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : constructUserAgent(NettyAsyncHttpProvider.class, config);
-            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, userAgent);
-        }
+        if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT) && config.getUserAgent() != null)
+            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
 
         return nettyRequest;
     }

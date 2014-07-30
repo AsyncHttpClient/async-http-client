@@ -17,6 +17,9 @@ import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpsServer;
 import static org.testng.Assert.assertEquals;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
@@ -24,12 +27,8 @@ import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Proxy usage tests.
@@ -38,8 +37,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    public void setUpServers(boolean targetHttps) throws Exception {
         port1 = findFreePort();
         server = newJettyHttpServer(port1);
         server.setHandler(new ConnectHandler());
@@ -47,7 +45,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         port2 = findFreePort();
 
-        server2 = newJettyHttpsServer(port2);
+        server2 = targetHttps ? newJettyHttpsServer(port2) : newJettyHttpServer(port2);
         server2.setHandler(getWebSocketHandler());
         server2.start();
 
@@ -64,27 +62,37 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         };
     }
 
-    @AfterClass(alwaysRun = true)
+    @AfterMethod(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }
 
-    protected String getTargetUrl() {
-        return String.format("wss://127.0.0.1:%d/", port2);
+    @Test(timeOut = 60000)
+    public void echoWSText() throws Exception {
+        runTest(false);
     }
 
     @Test(timeOut = 60000)
-    public void echoText() throws Exception {
+    public void echoWSSText() throws Exception {
+        runTest(true);
+    }
 
-        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
+    private void runTest(boolean secure) throws Exception {
+
+        setUpServers(secure);
+
+        String targetUrl = String.format("%s://127.0.0.1:%d/", secure ? "wss" : "ws", port2);
+
+        // CONNECT happens over HTTP, not HTTPS
+        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTP, "127.0.0.1", port1);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = asyncHttpClient.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = asyncHttpClient.prepareGet(targetUrl).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
