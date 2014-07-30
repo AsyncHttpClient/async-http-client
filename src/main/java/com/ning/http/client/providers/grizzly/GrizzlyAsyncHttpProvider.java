@@ -871,7 +871,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     httpCtx.establishingTunnel = true;
                     builder.method(Method.CONNECT);
                     builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
-                } else if (secure && config.isUseRelativeURIsWithSSLProxies()){
+                } else if ((secure || httpCtx.isWSRequest) && config.isUseRelativeURIsWithConnectProxies()){
                     builder.uri(getNonEmptyPath(uri));
                 } else {
                     builder.uri(uri.toUrl());

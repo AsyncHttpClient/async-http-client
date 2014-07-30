@@ -89,8 +89,8 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowPoolingConnections", true);
     }
 
-    public static boolean defaultUseRelativeURIsWithSSLProxies() {
-        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
+    public static boolean defaultUseRelativeURIsWithConnectProxies() {
+        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithConnectProxies", true);
     }
 
     public static int defaultMaxRequestRetry() {

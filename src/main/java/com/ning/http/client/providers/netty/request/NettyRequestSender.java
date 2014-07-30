@@ -14,6 +14,7 @@ package com.ning.http.client.providers.netty.request;
 
 import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
 import static com.ning.http.client.providers.netty.util.HttpUtils.isSecure;
+import static com.ning.http.client.providers.netty.util.HttpUtils.useProxyConnect;
 import static com.ning.http.util.AsyncHttpProviderUtils.getDefaultPort;
 import static com.ning.http.util.AsyncHttpProviderUtils.requestTimeout;
 import static com.ning.http.util.ProxyUtils.avoidProxy;
@@ -103,7 +104,7 @@ public final class NettyRequestSender {
                 && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && isSecure(uri))
+        if (useProxy && useProxyConnect(uri))
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced

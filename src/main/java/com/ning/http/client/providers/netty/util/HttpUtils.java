@@ -58,4 +58,8 @@ public final class HttpUtils {
     public static boolean isSecure(UriComponents uri) {
         return isSecure(uri.getScheme());
     }
+
+    public static boolean useProxyConnect(UriComponents uri) {
+        return isSecure(uri) || isWebSocket(uri.getScheme());
+    }
 }
