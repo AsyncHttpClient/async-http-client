@@ -128,10 +128,6 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
                         }
                     }
                 }
-            } else {
-                if (ahcListener instanceof WebSocketTextListener) {
-                    WebSocketTextListener.class.cast(ahcListener).onFragment(s, last);
-                }
             }
         } catch (Throwable e) {
             ahcListener.onError(e);
@@ -151,10 +147,6 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
                             WebSocketByteListener.class.cast(ahcListener).onMessage(bytesLocal);
                         }
                     }
-                }
-            } else {
-                if (ahcListener instanceof WebSocketByteListener) {
-                    WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, last);
                 }
             }
         } catch (Throwable e) {

@@ -116,10 +116,6 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
@@ -153,10 +149,6 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
                 @Override
                 public void onMessage(String message) {
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override

@@ -185,10 +185,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
@@ -229,10 +225,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
@@ -252,10 +244,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(text.get() + message);
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override
@@ -299,10 +287,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
                 public void onOpen(WebSocket websocket) {
                     websocket.sendTextMessage("ECHO").sendTextMessage("ECHO");
                 }
@@ -338,10 +322,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(message);
                     latch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override
@@ -384,10 +364,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 public void onMessage(String message) {
                     text.set(text.get() + message);
                     textLatch.countDown();
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
                 }
 
                 @Override

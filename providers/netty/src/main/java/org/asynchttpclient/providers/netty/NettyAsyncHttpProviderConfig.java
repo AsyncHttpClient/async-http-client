@@ -29,7 +29,6 @@ import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.providers.netty.response.EagerNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
-import org.asynchttpclient.providers.netty.ws.DefaultNettyWebSocket;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
 
 /**
@@ -124,7 +123,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
         @Override
         public NettyWebSocket newNettyWebSocket(Channel channel) {
-            return new DefaultNettyWebSocket(channel);
+            return new NettyWebSocket(channel);
         }
     }
     

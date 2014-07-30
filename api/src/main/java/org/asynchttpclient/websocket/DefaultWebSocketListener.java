@@ -33,13 +33,6 @@ public class DefaultWebSocketListener implements WebSocketByteListener, WebSocke
     public void onMessage(byte[] message) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onFragment(byte[] fragment, boolean last) {
-    }
-
     // -------------------------------------- Methods from WebSocketPingListener
 
     /**
@@ -65,13 +58,6 @@ public class DefaultWebSocketListener implements WebSocketByteListener, WebSocke
      */
     @Override
     public void onMessage(String message) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onFragment(String fragment, boolean last) {
     }
 
     // ------------------------------------------ Methods from WebSocketListener
