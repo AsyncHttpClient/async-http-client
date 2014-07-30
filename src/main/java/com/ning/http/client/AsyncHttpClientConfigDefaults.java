@@ -66,7 +66,7 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static String defaultUserAgent() {
-        return System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
+        return System.getProperty(ASYNC_CLIENT + "userAgent", "AHC/1.0");
     }
 
     public static int defaultIoThreadMultiplier() {
