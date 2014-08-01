@@ -420,15 +420,18 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return newFilterChainContext;
     }
 
-    private static void addHostHeader(final Request request, final UriComponents uri, final HttpRequestPacket requestPacket) {
-        String host = request.getVirtualHost();
-        if (host != null) {
-            requestPacket.addHeader(Header.Host, host);
-        } else {
-            if (uri.getPort() == -1) {
-                requestPacket.addHeader(Header.Host, uri.getHost());
+    private static void addHostHeader(final Request request,
+            final UriComponents uri, final HttpRequestPacket requestPacket) {
+        if (!request.getHeaders().containsKey(Header.Host.toString())) {
+            String host = request.getVirtualHost();
+            if (host != null) {
+                requestPacket.addHeader(Header.Host, host);
             } else {
-                requestPacket.addHeader(Header.Host, uri.getHost() + ':' + uri.getPort());
+                if (uri.getPort() == -1) {
+                    requestPacket.addHeader(Header.Host, uri.getHost());
+                } else {
+                    requestPacket.addHeader(Header.Host, uri.getHost() + ':' + uri.getPort());
+                }
             }
         }
     }
