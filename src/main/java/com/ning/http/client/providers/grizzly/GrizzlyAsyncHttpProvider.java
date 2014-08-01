@@ -853,14 +853,17 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             boolean secure = "https".equals(uri.getScheme());
             builder.method(method);
             builder.protocol(Protocol.HTTP_1_1);
-            String host = request.getVirtualHost();
-            if (host != null) {
-                builder.header(Header.Host, host);
-            } else {
-                if (uri.getPort() == -1) {
-                    builder.header(Header.Host, uri.getHost());
+            
+            if (!request.getHeaders().containsKey(Header.Host.toString())) {
+                String host = request.getVirtualHost();
+                if (host != null) {
+                    builder.header(Header.Host, host);
                 } else {
-                    builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
+                    if (uri.getPort() == -1) {
+                        builder.header(Header.Host, uri.getHost());
+                    } else {
+                        builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
+                    }
                 }
             }
             final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
