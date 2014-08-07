@@ -186,10 +186,8 @@ public class NettyWebSocket implements WebSocket {
     @Override
     public WebSocket addWebSocketListener(WebSocketListener l) {
         listeners.add(l);
-        if (l instanceof WebSocketByteListener)
-            interestedInByteMessages = true;
-        else if (l instanceof WebSocketTextListener)
-            interestedInTextMessages = true;
+        interestedInByteMessages = interestedInByteMessages || l instanceof WebSocketByteListener;
+        interestedInTextMessages = interestedInTextMessages || l instanceof WebSocketTextListener;
         return this;
     }
 
@@ -199,7 +197,7 @@ public class NettyWebSocket implements WebSocket {
 
         if (l instanceof WebSocketByteListener)
             interestedInByteMessages = hasWebSocketByteListener();
-        else if (l instanceof WebSocketTextListener)
+        if (l instanceof WebSocketTextListener)
             interestedInTextMessages = hasWebSocketTextListener();
 
         return this;
