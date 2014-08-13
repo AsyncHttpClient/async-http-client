@@ -1,10 +1,10 @@
 package org.asynchttpclient.websocket;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class EchoSocket extends WebSocketAdapter {
 

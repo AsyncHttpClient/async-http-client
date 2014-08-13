@@ -1,20 +1,19 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressiveFuture;
@@ -29,22 +28,16 @@ import java.io.RandomAccessFile;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyFileBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
-
-    public final static int MAX_BUFFERED_BYTES = 8192;
 
     private final File file;
     private final long offset;
     private final long length;
-    private final boolean disableZeroCopy;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
 
     public NettyFileBody(File file, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
         this(file, 0, file.length(), nettyConfig);
@@ -57,7 +50,7 @@ public class NettyFileBody implements NettyBody {
         this.file = file;
         this.offset = offset;
         this.length = length;
-        disableZeroCopy = nettyConfig.isDisableZeroCopy();
+        this.nettyConfig = nettyConfig;
     }
 
     public File getFile() {
@@ -84,31 +77,21 @@ public class NettyFileBody implements NettyBody {
 
         try {
             ChannelFuture writeFuture;
-            if (Channels.getSslHandler(channel) != null || disableZeroCopy) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, length, MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+            if (ChannelManager.isSslHandlerConfigured(channel.pipeline()) || nettyConfig.isDisableZeroCopy()) {
+                writeFuture = channel.write(new ChunkedFile(raf, offset, length, nettyConfig.getChunkedFileChunkSize()), channel.newProgressivePromise());
             } else {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
                 writeFuture = channel.write(region, channel.newProgressivePromise());
             }
             writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
                 public void operationComplete(ChannelProgressiveFuture cf) {
-                    try {
-                        // FIXME probably useless in Netty 4
-                        raf.close();
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                    }
+                    closeSilently(raf);
                     super.operationComplete(cf);
                 }
             });
             channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException ex) {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                }
-            }
+            closeSilently(raf);
             throw ex;
         }
     }

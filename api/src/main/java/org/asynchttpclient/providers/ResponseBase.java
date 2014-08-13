@@ -1,10 +1,6 @@
 package org.asynchttpclient.providers;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -12,7 +8,11 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+
+import java.util.Collections;
+import java.util.List;
 
 public abstract class ResponseBase implements Response {
     protected final static String DEFAULT_CHARSET = "ISO-8859-1";
@@ -51,7 +51,7 @@ public abstract class ResponseBase implements Response {
     }
 
     @Override
-    public final URI getUri() {
+    public final UriComponents getUri() {
         return status.getUri();
     }
 

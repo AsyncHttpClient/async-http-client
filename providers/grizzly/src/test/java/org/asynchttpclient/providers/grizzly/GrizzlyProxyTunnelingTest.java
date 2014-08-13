@@ -26,6 +26,6 @@ public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
 
     @Override
     public String getProviderClass() {
-    	return GrizzlyAsyncHttpProvider.class.getName();
+        return GrizzlyAsyncHttpProvider.class.getName();
     }
 }

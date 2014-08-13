@@ -16,6 +16,9 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.StandardCharsets;
@@ -31,9 +34,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 /**
  * Tests to reproduce issues with handling of error responses

@@ -26,7 +26,7 @@ public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads 
     }
 
     @Override
-    @Test(enabled=false)
+    @Test(enabled = false)
     public void testMaxConnectionsWithinThreads() {
         super.testMaxConnectionsWithinThreads();
     }

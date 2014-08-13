@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,7 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
+import org.asynchttpclient.util.Base64;
+import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
@@ -25,11 +33,9 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLHandshakeException;
-import java.io.IOException;
-
+import org.glassfish.grizzly.ssl.SSLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SSL Filter that may be present within the FilterChain and may be
@@ -40,24 +46,20 @@ import java.io.IOException;
  */
 public final class SwitchingSSLFilter extends SSLFilter {
 
-    private static final Attribute<Boolean> CONNECTION_IS_SECURE =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
-    private static final Attribute<Throwable> HANDSHAKE_ERROR =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKE-ERROR");
+    private static final Attribute<Boolean> CONNECTION_IS_SECURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(SwitchingSSLFilter.class.getName());
+    private static final Attribute<Throwable> HANDSHAKE_ERROR = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class
+            .getName() + "-HANDSHAKE-ERROR");
 
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(SwitchingSSLFilter.class);
+    
     // ------------------------------------------------------------ Constructors
 
-
     public SwitchingSSLFilter(final SSLEngineConfigurator clientConfig) {
-
         super(null, clientConfig);
-
     }
 
-
     // -------------------------------------------------- Methods from SSLFilter
-
 
     @Override
     protected void notifyHandshakeFailed(Connection connection, Throwable t) {
@@ -72,35 +74,33 @@ public final class SwitchingSSLFilter extends SSLFilter {
         // to determine if a connection is SPDY or HTTP as early as possible.
         ctx.suspend();
         final Connection c = ctx.getConnection();
-        handshake(ctx.getConnection(),
-                  new EmptyCompletionHandler<SSLEngine>() {
-                      @Override
-                      public void completed(SSLEngine result) {
-                          // Handshake was successful.  Resume the handleConnect
-                          // processing.  We pass in Invoke Action so the filter
-                          // chain will call handleConnect on the next filter.
-                          ctx.resume(ctx.getInvokeAction());
-                      }
+        handshake(ctx.getConnection(), new EmptyCompletionHandler<SSLEngine>() {
+            @Override
+            public void completed(SSLEngine result) {
+                // Handshake was successful.  Resume the handleConnect
+                // processing.  We pass in Invoke Action so the filter
+                // chain will call handleConnect on the next filter.
+                ctx.resume(ctx.getInvokeAction());
+            }
 
-                      @Override
-                      public void cancelled() {
-                          // Handshake was cancelled.  Stop the handleConnect
-                          // processing.  The exception will be checked and
-                          // passed to the user later.
-                          setError(c, new SSLHandshakeException(
-                                  "Handshake canceled."));
-                          ctx.resume(ctx.getStopAction());
-                      }
+            @Override
+            public void cancelled() {
+                // Handshake was cancelled.  Stop the handleConnect
+                // processing.  The exception will be checked and
+                // passed to the user later.
+                setError(c, new SSLHandshakeException("Handshake canceled."));
+                ctx.resume(ctx.getStopAction());
+            }
 
-                      @Override
-                      public void failed(Throwable throwable) {
-                          // Handshake failed.  Stop the handleConnect
-                          // processing.  The exception will be checked and
-                          // passed to the user later.
-                          setError(c, throwable);
-                          ctx.resume(ctx.getStopAction());
-                      }
-                  });
+            @Override
+            public void failed(Throwable throwable) {
+                // Handshake failed.  Stop the handleConnect
+                // processing.  The exception will be checked and
+                // passed to the user later.
+                setError(c, throwable);
+                ctx.resume(ctx.getStopAction());
+            }
+        });
 
         // This typically isn't advised, however, we need to be able to
         // read the response from the proxy and OP_READ isn't typically
@@ -114,8 +114,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     }
 
     @Override
-    public NextAction handleEvent(final FilterChainContext ctx,
-                                  final FilterChainEvent event) throws IOException {
+    public NextAction handleEvent(final FilterChainContext ctx, final FilterChainEvent event) throws IOException {
 
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
@@ -123,7 +122,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return ctx.getStopAction();
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -133,7 +131,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return super.handleRead(ctx);
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -143,7 +140,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return super.handleWrite(ctx);
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -151,14 +147,11 @@ public final class SwitchingSSLFilter extends SSLFilter {
         // no-op
     }
 
-
     public static Throwable getHandshakeError(final Connection c) {
         return HANDSHAKE_ERROR.remove(c);
     }
 
-
     // --------------------------------------------------------- Private Methods
-
 
     private static boolean isSecure(final Connection c) {
         Boolean secStatus = CONNECTION_IS_SECURE.get(c);
@@ -176,5 +169,57 @@ public final class SwitchingSSLFilter extends SSLFilter {
     private static void enableRead(final Connection c) throws IOException {
         c.enableIOEvent(IOEvent.READ);
     }
+    
+    // ================= HostnameVerifier section ========================
+    
+    public static CompletionHandler<Connection> wrapWithHostnameVerifierHandler(
+            final CompletionHandler<Connection> delegateCompletionHandler,
+            final HostnameVerifier verifier, final String host) {
 
+        return new CompletionHandler<Connection>() {
+
+            public void cancelled() {
+                if (delegateCompletionHandler != null) {
+                    delegateCompletionHandler.cancelled();
+                }
+            }
+
+            public void failed(final Throwable throwable) {
+                if (delegateCompletionHandler != null) {
+                    delegateCompletionHandler.failed(throwable);
+                }
+            }
+
+            public void completed(final Connection connection) {
+                if (getHandshakeError(connection) == null) {
+                    final SSLSession session = SSLUtils.getSSLEngine(connection).getSession();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("SSL Handshake onComplete: session = {}, id = {}, isValid = {}, host = {}",
+                                session.toString(), Base64.encode(session.getId()), session.isValid(), host);
+                    }
+
+                    if (!verifier.verify(host, session)) {
+                        connection.terminateSilently();
+
+                        if (delegateCompletionHandler != null) {
+                            IOException e = new ConnectException("Host name verification failed for host " + host);
+                            delegateCompletionHandler.failed(e);
+                        }
+
+                        return;
+                    }
+                }
+                
+                if (delegateCompletionHandler != null) {
+                    delegateCompletionHandler.completed(connection);
+                }
+            }
+
+            public void updated(final Connection connection) {
+                if (delegateCompletionHandler != null) {
+                    delegateCompletionHandler.updated(connection);
+                }
+            }
+        };
+    }
 }

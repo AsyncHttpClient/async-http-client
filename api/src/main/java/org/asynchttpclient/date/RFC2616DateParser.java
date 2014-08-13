@@ -83,7 +83,7 @@ public class RFC2616DateParser {
         }
 
         // finish lastToken
-        if (inToken = true)
+        if (inToken == true)
             ends[tokenCount++] = end;
 
         return new Tokens(starts, ends, tokenCount);

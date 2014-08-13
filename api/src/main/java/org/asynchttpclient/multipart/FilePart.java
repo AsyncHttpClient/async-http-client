@@ -1,17 +1,14 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.multipart;
 
@@ -23,6 +20,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,44 +30,39 @@ public class FilePart extends AbstractFilePart {
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePart.class);
 
     private final File file;
-    private final String fileName;
 
     public FilePart(String name, File file) {
-        this(name, file, null, null);
+        this(name, file, null);
     }
 
     public FilePart(String name, File file, String contentType) {
-        this(name, file, null, contentType, null);
+        this(name, file, contentType, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset) {
-        this(name, file, null, contentType, charset, null);
+    public FilePart(String name, File file, String contentType, Charset charset) {
+        this(name, file, contentType, charset, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset, String fileName) {
-        this(name, file, null, contentType, charset, fileName);
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName) {
+        this(name, file, contentType, charset, fileName, null);
     }
 
-    public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId) {
-        super(name, contentType, charset, contentId);
-        this.file = file;
-        if (file == null) {
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId) {
+        this(name, file, contentType, charset, fileName, contentId, null);
+    }
+
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+        super(name, contentType, charset, contentId, transferEncoding);
+        if (file == null)
             throw new NullPointerException("file");
-        }
-        if (!file.isFile()) {
+        if (!file.isFile())
             throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
-        }
-        if (!file.canRead()) {
+        if (!file.canRead())
             throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
-        }
-        this.fileName = fileName != null ? fileName : file.getName();
+        this.file = file;
+        setFileName(fileName != null ? fileName : file.getName());
     }
-
-    @Override
-    public String getFileName() {
-        return fileName;
-    }
-
+    
     @Override
     protected void sendData(OutputStream out) throws IOException {
         if (getDataLength() == 0) {

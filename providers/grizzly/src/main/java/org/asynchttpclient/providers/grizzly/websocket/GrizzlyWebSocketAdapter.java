@@ -13,11 +13,11 @@
 
 package org.asynchttpclient.providers.grizzly.websocket;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
 import org.asynchttpclient.websocket.WebSocket;
 import org.asynchttpclient.websocket.WebSocketListener;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class GrizzlyWebSocketAdapter implements WebSocket {
 
@@ -26,16 +26,12 @@ public final class GrizzlyWebSocketAdapter implements WebSocket {
 
     // -------------------------------------------------------- Constructors
 
-
-    public GrizzlyWebSocketAdapter(final SimpleWebSocket gWebSocket,
-                                   final boolean bufferFragments) {
+    public GrizzlyWebSocketAdapter(final SimpleWebSocket gWebSocket, final boolean bufferFragments) {
         this.gWebSocket = gWebSocket;
         this.bufferFragments = bufferFragments;
     }
 
-
     // ---------------------------------------------- Methods from AHC WebSocket
-
 
     @Override
     public WebSocket sendMessage(byte[] message) {
@@ -105,9 +101,7 @@ public final class GrizzlyWebSocketAdapter implements WebSocket {
         gWebSocket.close();
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public SimpleWebSocket getGrizzlyWebSocket() {
         return gWebSocket;

@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,14 +13,16 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
+
+import org.asynchttpclient.RandomAccessBody;
+
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-
-import org.asynchttpclient.RandomAccessBody;
-
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
@@ -29,9 +32,8 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
     private long transfered;
 
     public BodyFileRegion(RandomAccessBody body) {
-        if (body == null) {
-            throw new IllegalArgumentException("no body specified");
-        }
+        if (body == null)
+            throw new NullPointerException("body");
         this.body = body;
     }
 
@@ -52,7 +54,7 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
-        long written = body.transferTo(position, Long.MAX_VALUE, target);
+        long written = body.transferTo(position, target);
         if (written > 0) {
             transfered += written;
         }
@@ -61,10 +63,6 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     protected void deallocate() {
-        try {
-            body.close();
-        } catch (IOException e) {
-            // we tried
-        }
+        closeSilently(body);
     }
 }

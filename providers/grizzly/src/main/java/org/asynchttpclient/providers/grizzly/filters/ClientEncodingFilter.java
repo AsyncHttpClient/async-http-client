@@ -27,25 +27,17 @@ import org.glassfish.grizzly.http.util.Header;
  */
 public final class ClientEncodingFilter implements EncodingFilter {
 
-
     // --------------------------------------------- Methods from EncodingFilter
 
-
     public boolean applyEncoding(HttpHeader httpPacket) {
-
-       httpPacket.addHeader(Header.AcceptEncoding, "gzip");
-       return false;
-
+        httpPacket.addHeader(Header.AcceptEncoding, "gzip");
+        return false;
     }
-
 
     public boolean applyDecoding(HttpHeader httpPacket) {
 
         final HttpResponsePacket httpResponse = (HttpResponsePacket) httpPacket;
         final DataChunk bc = httpResponse.getHeaders().getValue(Header.ContentEncoding);
         return bc != null && bc.indexOf("gzip", 0) != -1;
-
     }
-
-
 }

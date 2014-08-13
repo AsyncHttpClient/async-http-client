@@ -1,17 +1,14 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.multipart;
 
@@ -20,6 +17,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+
+import org.asynchttpclient.util.StandardCharsets;
 
 public class StringPart extends PartBase {
 
@@ -31,7 +30,7 @@ public class StringPart extends PartBase {
     /**
      * Default charset of string parameters
      */
-    public static final String DEFAULT_CHARSET = "US-ASCII";
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
 
     /**
      * Default transfer encoding of string parameters
@@ -43,7 +42,11 @@ public class StringPart extends PartBase {
      */
     private final byte[] content;
 
-    public StringPart(String name, String value, String charset) {
+    private static Charset charsetOrDefault(Charset charset) {
+        return charset == null ? DEFAULT_CHARSET : charset;
+    }
+
+    public StringPart(String name, String value, Charset charset) {
         this(name, value, charset, null);
     }
 
@@ -59,17 +62,15 @@ public class StringPart extends PartBase {
      * @param contentId
      *            the content id
      */
-    public StringPart(String name, String value, String charset, String contentId) {
+    public StringPart(String name, String value, Charset charset, String contentId) {
 
-        super(name, DEFAULT_CONTENT_TYPE, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
-        if (value == null) {
-            throw new IllegalArgumentException("Value may not be null");
-        }
-        if (value.indexOf(0) != -1) {
+        super(name, DEFAULT_CONTENT_TYPE, charsetOrDefault(charset), DEFAULT_TRANSFER_ENCODING, contentId);
+        if (value == null)
+            throw new NullPointerException("value");
+        if (value.indexOf(0) != -1)
             // See RFC 2048, 2.8. "8bit Data"
             throw new IllegalArgumentException("NULs may not be present in string parts");
-        }
-        content = value.getBytes(Charset.forName(charset));
+        content = value.getBytes(charsetOrDefault(charset));
     }
 
     /**
@@ -92,7 +93,7 @@ public class StringPart extends PartBase {
     protected long getDataLength() {
         return content.length;
     }
-    
+
     public byte[] getBytes(byte[] boundary) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         write(outputStream, boundary);

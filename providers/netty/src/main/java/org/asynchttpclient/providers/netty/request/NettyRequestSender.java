@@ -1,22 +1,25 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.request;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.useProxyConnect;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
+import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
+import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -24,12 +27,14 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
@@ -45,118 +50,157 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.request.timeout.IdleConnectionTimeoutTimerTask;
+import org.asynchttpclient.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.ProxyUtils;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NettyRequestSender {
+public final class NettyRequestSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
 
-    private final AtomicBoolean closed;
     private final AsyncHttpClientConfig config;
-    private final Channels channels;
+    private final ChannelManager channelManager;
+    private final Timer nettyTimer;
+    private final AtomicBoolean closed;
     private final NettyRequestFactory requestFactory;
 
-    public NettyRequestSender(AtomicBoolean closed, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Channels channels) {
-        this.closed = closed;
+    public NettyRequestSender(AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            ChannelManager channelManager,//
+            Timer nettyTimer,//
+            AtomicBoolean closed) {
         this.config = config;
-        this.channels = channels;
+        this.channelManager = channelManager;
+        this.nettyTimer = nettyTimer;
+        this.closed = closed;
         requestFactory = new NettyRequestFactory(config, nettyConfig);
     }
 
-    public boolean retry(NettyResponseFuture<?> future, Channel channel) {
+    public <T> ListenableFuture<T> sendRequest(final Request request,//
+            final AsyncHandler<T> asyncHandler,//
+            NettyResponseFuture<T> future,//
+            boolean reclaimCache) throws IOException {
 
-        boolean success = false;
+        if (closed.get())
+            throw new IOException("Closed");
 
-        if (!closed.get()) {
-            channels.removeAll(channel);
+        UriComponents uri = request.getURI();
 
-            if (future == null) {
-                Object attachment = Channels.getDefaultAttribute(channel);
-                if (attachment instanceof NettyResponseFuture)
-                    future = (NettyResponseFuture<?>) attachment;
-            }
+        // FIXME really useful? Why not do this check when building the request?
+        if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler))
+            throw new IOException("WebSocket method must be a GET");
 
-            if (future != null && future.canBeReplayed()) {
-                future.setState(NettyResponseFuture.STATE.RECONNECTED);
-                future.getAndSetStatusReceived(false);
+        ProxyServer proxyServer = getProxyServer(config, request);
+        boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
+        boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-                LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
-                if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
-                }
+        if (useProxy && useProxyConnect(uri))
+            // SSL proxy, have to handle CONNECT
+            if (future != null && future.isConnectAllowed())
+                // CONNECT forced
+                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, true, true);
+            else
+                return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, uri, proxyServer);
+        else
+            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, useProxy, false);
+    }
 
-                try {
-                    sendNextRequest(future.getRequest(), future);
-                    success = true;
-                } catch (IOException iox) {
-                    future.setState(NettyResponseFuture.STATE.CLOSED);
-                    future.abort(iox);
-                    LOGGER.error("Remotely Closed, unable to recover", iox);
-                }
-            } else {
-                LOGGER.debug("Unable to recover future {}\n", future);
-            }
+    /**
+     * We know for sure if we have to force to connect or not, so we can build
+     * the HttpRequest right away This reduces the probability of having a
+     * pooled channel closed by the server by the time we build the request
+     */
+    private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(//
+            Request request,//
+            AsyncHandler<T> asyncHandler,//
+            NettyResponseFuture<T> future,//
+            boolean reclaimCache,//
+            UriComponents uri,//
+            ProxyServer proxyServer,//
+            boolean useProxy,//
+            boolean forceConnect) throws IOException {
+
+        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
+
+        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
+
+        if (Channels.isChannelValid(channel))
+            return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
+        else
+            return sendRequestWithNewChannel(request, uri, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
+    }
+
+    /**
+     * Using CONNECT depends on wither we can fetch a valid channel or not Loop
+     * until we get a valid channel from the pool and it's still valid once the
+     * request is built
+     */
+    @SuppressWarnings("unused")
+    private <T> ListenableFuture<T> sendRequestThroughSslProxy(//
+            Request request,//
+            AsyncHandler<T> asyncHandler,//
+            NettyResponseFuture<T> future,//
+            boolean reclaimCache,//
+            UriComponents uri,//
+            ProxyServer proxyServer) throws IOException {
+
+        NettyResponseFuture<T> newFuture = null;
+        for (int i = 0; i < 3; i++) {
+            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
+            if (Channels.isChannelValid(channel))
+                if (newFuture == null)
+                    newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
+
+            if (Channels.isChannelValid(channel))
+                // if the channel is still active, we can use it, otherwise try
+                // gain
+                return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
+            else
+                // pool is empty
+                break;
         }
-        return success;
+
+        newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, true);
+        return sendRequestWithNewChannel(request, uri, proxyServer, true, newFuture, asyncHandler, reclaimCache);
     }
 
-    public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e, Channel channel) throws IOException {
+    private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture,
+            UriComponents uri, ProxyServer proxy, boolean forceConnect) throws IOException {
 
-        boolean replayed = false;
+        NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
 
-        FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(e).build();
-        for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException efe) {
-                channels.abort(future, efe);
-            }
+        if (originalFuture == null) {
+            return newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, proxy);
+        } else {
+            originalFuture.setNettyRequest(nettyRequest);
+            originalFuture.setRequest(request);
+            return originalFuture;
         }
-
-        if (fc.replayRequest()) {
-            replayRequest(future, fc, channel);
-            replayed = true;
-        }
-        return replayed;
     }
 
-    public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        sendRequest(request, f.getAsyncHandler(), f, true);
-    }
+    private Channel getCachedChannel(NettyResponseFuture<?> future, UriComponents uri, ConnectionPoolKeyStrategy poolKeyGen, ProxyServer proxyServer) {
 
-    // FIXME is this useful? Can't we do that when building the request?
-    private final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        return request.getMethod().equals(HttpMethod.GET.name()) && asyncHandler instanceof WebSocketUpgradeHandler;
-    }
-
-    private Channel getCachedChannel(NettyResponseFuture<?> future, URI uri, ConnectionPoolKeyStrategy poolKeyGen, ProxyServer proxyServer) {
-
-        if (future != null && future.reuseChannel() && isChannelValid(future.channel()))
+        if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return channels.pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen);
+            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
-            Channel channel) throws IOException {
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, UriComponents uri, ProxyServer proxy, NettyResponseFuture<T> future,
+            AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
 
         LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
-        Channels.setDefaultAttribute(channel, future);
+        Channels.setAttribute(channel, future);
 
         try {
             writeRequest(future, channel);
@@ -179,218 +223,88 @@ public class NettyRequestSender {
         return future;
     }
 
-    private InetSocketAddress remoteAddress(Request request, URI uri, ProxyServer proxy, boolean useProxy) {
-        if (request.getInetAddress() != null)
-            return new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
-
-        else if (!useProxy || ProxyUtils.avoidProxy(proxy, uri.getHost()))
-            return new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
-
-        else
-            return new InetSocketAddress(proxy.getHost(), proxy.getPort());
-    }
-
-    private ChannelFuture connect(Request request, URI uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
-        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
-
-        if (request.getLocalAddress() != null)
-            return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
-        else
-            return bootstrap.connect(remoteAddress);
-    }
-
-    private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, URI uri, ProxyServer proxy, boolean useProxy, NettyResponseFuture<T> future,
-            AsyncHandler<T> asyncHandler, boolean reclaimCache) throws IOException {
+    private <T> ListenableFuture<T> sendRequestWithNewChannel(//
+            Request request,//
+            UriComponents uri,//
+            ProxyServer proxy,//
+            boolean useProxy,//
+            NettyResponseFuture<T> future,//
+            AsyncHandler<T> asyncHandler,//
+            boolean reclaimCache) throws IOException {
 
         boolean useSSl = isSecure(uri) && !useProxy;
 
-        // Do not throw an exception when we need an extra connection for a redirect
+        // Do not throw an exception when we need an extra connection for a
+        // redirect
         // FIXME why? This violate the max connection per host handling, right?
-        boolean acquiredConnection = !reclaimCache && channels.acquireConnection(asyncHandler);
-        Bootstrap bootstrap = channels.getBootstrap(request.getUrl(), useSSl, useProxy);
+        Bootstrap bootstrap = channelManager.getBootstrap(request.getURI(), useProxy, useSSl);
 
-        NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, this, future);
+        boolean channelPreempted = false;
+        String poolKey = null;
 
-        ChannelFuture channelFuture;
+        // Do not throw an exception when we need an extra connection for a
+        // redirect.
+        if (!reclaimCache) {
+
+            // only compute when maxConnectionPerHost is enabled
+            // FIXME clean up
+            if (config.getMaxConnectionsPerHost() > 0)
+                poolKey = channelManager.getPoolKey(future);
+
+            channelPreempted = preemptChannel(asyncHandler, poolKey);
+        }
+
         try {
-            channelFuture = connect(request, uri, proxy, useProxy, bootstrap);
+            ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap);
+            channelFuture.addListener(new NettyConnectListener<T>(config, future, this, channelManager, channelPreempted, poolKey));
 
         } catch (Throwable t) {
-            if (acquiredConnection) {
-                channels.releaseFreeConnections();
-            }
-            channels.abort(connectListener.future(), t.getCause() == null ? t : t.getCause());
-            return connectListener.future();
+            if (channelPreempted)
+                channelManager.abortChannelPreemption(poolKey);
+
+            abort(future, t.getCause() == null ? t : t.getCause());
         }
 
-        channelFuture.addListener(connectListener);
-
-        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", connectListener.future().getNettyRequest().getHttpRequest(), channelFuture.channel());
-
-        if (!connectListener.future().isCancelled() || !connectListener.future().isDone()) {
-            channels.registerChannel(channelFuture.channel());
-            connectListener.future().attachChannel(channelFuture.channel(), false);
-        }
-        return connectListener.future();
+        return future;
     }
 
-    private <T> NettyResponseFuture<T> newNettyResponseFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
+    private <T> NettyResponseFuture<T> newNettyResponseFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
 
-        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
-        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//
+        NettyResponseFuture<T> future = new NettyResponseFuture<T>(//
+                uri,//
                 request,//
                 asyncHandler,//
                 nettyRequest,//
-                requestTimeout,//
-                config,//
+                config.getMaxRequestRetry(),//
                 request.getConnectionPoolKeyStrategy(),//
                 proxyServer);
 
         String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
-        if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
-            f.setDontWriteBodyBecauseExpectContinue(true);
-        }
-        return f;
+        if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE))
+            future.setDontWriteBodyBecauseExpectContinue(true);
+        return future;
     }
 
-    private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture, URI uri,
-            ProxyServer proxy, boolean forceConnect) throws IOException {
-
-        NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
-
-        if (originalFuture == null) {
-            return newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, proxy);
-        } else {
-            originalFuture.setNettyRequest(nettyRequest);
-            originalFuture.setRequest(request);
-            return originalFuture;
-        }
-    }
-
-    private boolean isChannelValid(Channel channel) {
-        return channel != null && channel.isOpen() && channel.isActive();
-    }
-
-    private <T> ListenableFuture<T> sendRequestThroughSslProxy(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache, URI uri,
-            ProxyServer proxyServer) throws IOException {
-
-        // Using CONNECT depends on wither we can fetch a valid channel or not
-
-        // Loop until we get a valid channel from the pool and it's still valid once the request is built
-        NettyResponseFuture<T> newFuture = null;
-        for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
-            if (isChannelValid(channel)) {
-                if (newFuture == null)
-                    newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
-
-                if (isChannelValid(channel))
-                    // if the channel is still active, we can use it, otherwise try gain
-                    return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
-            } else
-                // pool is empty
-                break;
-        }
-
-        newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, true);
-        return sendRequestWithNewChannel(request, uri, proxyServer, true, newFuture, asyncHandler, reclaimCache);
-    }
-
-    private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache, URI uri,
-            ProxyServer proxyServer, boolean useProxy, boolean forceConnect) throws IOException {
-        // We know for sure if we have to force to connect or not, so we can build the HttpRequest right away
-        // This reduces the probability of having a pooled channel closed by the server by the time we build the request
-        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
-
-        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
-
-        if (isChannelValid(channel))
-            return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
-        else
-            return sendRequestWithNewChannel(request, uri, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
-    }
-
-    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache) throws IOException {
-
-        if (closed.get()) {
-            throw new IOException("Closed");
-        }
-
-        // FIXME really useful? Why not do this check when building the request?
-        if (request.getUrl().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
-            throw new IOException("WebSocket method must be a GET");
-        }
-
-        URI uri = config.isUseRawUrl() ? request.getRawURI() : request.getURI();
-        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-        boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
-        boolean useProxy = proxyServer != null && !resultOfAConnect;
-
-        if (useProxy && isSecure(uri)) {
-            // SSL proxy, have to handle CONNECT
-            if (future != null && future.isConnectAllowed())
-                // CONNECT forced
-                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, true, true);
-            else
-                return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, uri, proxyServer);
-        } else
-            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, useProxy, false);
-    }
-
-    private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
-        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, String> entries : httpRequest.headers()) {
-            h.add(entries.getKey(), entries.getValue());
-        }
-
-        TransferCompletionHandler.class.cast(handler).headers(h);
-    }
-
-    private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
-
+    public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
         try {
-            nettyResponseFuture.touch();
-            int requestTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, nettyResponseFuture.getRequest());
-            TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
-            if (requestTimeoutInMs != -1) {
-                Timeout requestTimeout = channels.newTimeoutInMs(new RequestTimeoutTimerTask(nettyResponseFuture, channels, timeoutsHolder, closed), requestTimeoutInMs);
-                timeoutsHolder.requestTimeout = requestTimeout;
-            }
-
-            int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
-            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs < requestTimeoutInMs) {
-                // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
-                Timeout idleConnectionTimeout = channels.newTimeoutInMs(new IdleConnectionTimeoutTimerTask(nettyResponseFuture, channels, timeoutsHolder, closed,
-                        requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
-                timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
-            }
-            nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
-        } catch (RejectedExecutionException ex) {
-            channels.abort(nettyResponseFuture, ex);
-        }
-    }
-
-    public final <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
-        try {
-            // if the channel is dead because it was pooled and the remote server decided to close it,
+            // if the channel is dead because it was pooled and the remote
+            // server decided to close it,
             // we just let it go and the channelInactive do its work
-            if (!channel.isOpen() || !channel.isActive()) {
+            if (!Channels.isChannelValid(channel))
                 return;
-            }
 
             NettyRequest nettyRequest = future.getNettyRequest();
             HttpRequest httpRequest = nettyRequest.getHttpRequest();
             AsyncHandler<T> handler = future.getAsyncHandler();
 
-            if (handler instanceof TransferCompletionHandler) {
+            if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
-            }
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
-                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
                         AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
-                    }
+
                     channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
@@ -418,17 +332,197 @@ public class NettyRequestSender {
         scheduleTimeouts(future);
     }
 
+    private InetSocketAddress remoteAddress(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy) {
+        if (request.getInetAddress() != null)
+            return new InetSocketAddress(request.getInetAddress(), getDefaultPort(uri));
+
+        else if (!useProxy || avoidProxy(proxy, uri.getHost()))
+            return new InetSocketAddress(uri.getHost(), getDefaultPort(uri));
+
+        else
+            return new InetSocketAddress(proxy.getHost(), proxy.getPort());
+    }
+
+    private ChannelFuture connect(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
+        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
+
+        if (request.getLocalAddress() != null)
+            return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
+        else
+            return bootstrap.connect(remoteAddress);
+    }
+
+    private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+        for (Map.Entry<String, String> entries : httpRequest.headers()) {
+            h.add(entries.getKey(), entries.getValue());
+        }
+
+        TransferCompletionHandler.class.cast(handler).headers(h);
+    }
+
+    private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
+
+        try {
+            nettyResponseFuture.touch();
+            int requestTimeoutInMs = requestTimeout(config, nettyResponseFuture.getRequest());
+            TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
+            if (requestTimeoutInMs != -1) {
+                Timeout requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
+                timeoutsHolder.requestTimeout = requestTimeout;
+            }
+
+            int readTimeout = config.getReadTimeout();
+            if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
+                // no need for a idleConnectionTimeout that's less than the
+                // requestTimeoutInMs
+                Timeout idleConnectionTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeout), readTimeout);
+                timeoutsHolder.readTimeout = idleConnectionTimeout;
+            }
+            nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
+        } catch (RejectedExecutionException ex) {
+            abort(nettyResponseFuture, ex);
+        }
+    }
+
+    public Timeout newTimeout(TimerTask task, long delay) {
+        return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public void abort(NettyResponseFuture<?> future, Throwable t) {
+
+        Channel channel = future.channel();
+        if (channel != null)
+            channelManager.closeChannel(channel);
+
+        if (!future.isDone()) {
+            LOGGER.debug("Aborting Future {}\n", future);
+            LOGGER.debug(t.getMessage(), t);
+        }
+
+        future.abort(t);
+    }
+
+    public boolean retry(NettyResponseFuture<?> future, Channel channel) {
+
+        if (isClosed())
+            return false;
+
+        channelManager.removeAll(channel);
+
+        if (future == null) {
+            Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof NettyResponseFuture)
+                future = (NettyResponseFuture<?>) attribute;
+        }
+
+        if (future != null && future.canBeReplayed()) {
+            future.setState(NettyResponseFuture.STATE.RECONNECTED);
+            future.getAndSetStatusReceived(false);
+
+            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
+            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+            }
+
+            try {
+                sendNextRequest(future.getRequest(), future);
+                return true;
+
+            } catch (IOException iox) {
+                future.setState(NettyResponseFuture.STATE.CLOSED);
+                future.abort(iox);
+                LOGGER.error("Remotely Closed, unable to recover", iox);
+                return false;
+            }
+        } else {
+            LOGGER.debug("Unable to recover future {}\n", future);
+            return false;
+        }
+    }
+
+    public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e, Channel channel) throws IOException {
+
+        boolean replayed = false;
+
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(e).build();
+        for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            } catch (FilterException efe) {
+                abort(future, efe);
+            }
+        }
+
+        if (fc.replayRequest()  && future.canBeReplayed()) {
+            replayRequest(future, fc, channel);
+            replayed = true;
+        }
+        return replayed;
+    }
+
+    public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) throws IOException {
+        sendRequest(request, future.getAsyncHandler(), future, true);
+    }
+
+    // FIXME is this useful? Can't we do that when building the request?
+    private boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
+        return request.getMethod().equals(HttpMethod.GET.name()) && asyncHandler instanceof WebSocketUpgradeHandler;
+    }
+
+    private Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+        final Channel channel = channelManager.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
+
+        if (channel != null) {
+            LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
+
+            try {
+                channelManager.verifyChannelPipeline(channel.pipeline(), uri.getScheme());
+            } catch (Exception ex) {
+                LOGGER.debug(ex.getMessage(), ex);
+            }
+        }
+        return channel;
+    }
+
+    private boolean preemptChannel(AsyncHandler<?> asyncHandler, String poolKey) throws IOException {
+
+        boolean channelPreempted = false;
+        if (channelManager.preemptChannel(poolKey)) {
+            channelPreempted = true;
+        } else {
+            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
+            try {
+                asyncHandler.onThrowable(ex);
+            } catch (Exception e) {
+                LOGGER.warn("asyncHandler.onThrowable crashed", e);
+            }
+            throw ex;
+        }
+        return channelPreempted;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, Channel channel) throws IOException {
+
         Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
         future.touch();
 
         LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
-        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
-        }
-        channels.drainChannel(channel, future);
+
+        channelManager.drainChannel(channel, future);
         sendNextRequest(newRequest, future);
+    }
+
+    public boolean isClosed() {
+        return closed.get();
     }
 }

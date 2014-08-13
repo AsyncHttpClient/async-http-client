@@ -20,6 +20,7 @@ public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
 
     /**
      * Not Used with {@link org.asynchttpclient.SimpleAsyncHttpClient}
+     * 
      * @param config
      * @return
      */

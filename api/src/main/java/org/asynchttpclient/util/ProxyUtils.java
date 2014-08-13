@@ -12,30 +12,31 @@
  */
 package org.asynchttpclient.util;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.ProxyServer.Protocol;
 import org.asynchttpclient.ProxyServerSelector;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.uri.UriComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Utilities for Proxy handling.
  *
  * @author cstamas
  */
-public class ProxyUtils {
+public final class ProxyUtils {
 
     private final static Logger log = LoggerFactory.getLogger(ProxyUtils.class);
 
@@ -71,6 +72,9 @@ public class ProxyUtils {
      */
     public static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
 
+    private ProxyUtils() {
+    }
+    
     /**
      * @param config the global config
      * @param request the request
@@ -81,10 +85,30 @@ public class ProxyUtils {
         if (proxyServer == null) {
             ProxyServerSelector selector = config.getProxyServerSelector();
             if (selector != null) {
-                proxyServer = selector.select(request.getOriginalURI());
+                proxyServer = selector.select(request.getURI());
             }
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
+    }
+    
+    /**
+     * @see #avoidProxy(ProxyServer, String)
+     */
+    public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
+        return avoidProxy(proxyServer, request.getURI().getHost());
+    }
+
+    private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
+
+        if (nonProxyHost.length() > 1) {
+            if (nonProxyHost.charAt(0) == '*')
+                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
+                        nonProxyHost.length() - 1);
+            else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
+                return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
+        }
+
+        return nonProxyHost.equalsIgnoreCase(targetHost);
     }
     
     /**
@@ -94,41 +118,20 @@ public class ProxyUtils {
      * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      *
      * @param proxyServer
-     * @param request
+     * @param hostname      the hostname
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
-    public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(request.getOriginalURI()));
-    }
-
-    /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
-     * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
-     * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
-     *
-     * @param proxyServer
-     * @param target      the hostname
-     * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
-     */
-    public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
+    public static boolean avoidProxy(final ProxyServer proxyServer, final String hostname) {
         if (proxyServer != null) {
-            final String targetHost = target.toLowerCase(Locale.ENGLISH);
+            if (hostname == null)
+                throw new NullPointerException("hostname");
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
             if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
-                    // FIXME use regionMatches instead
-                    if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase(Locale.ENGLISH))) {
+                    if (matchNonProxyHost(hostname, nonProxyHost))
                         return true;
-                    } else if (nonProxyHost.endsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.startsWith(nonProxyHost.substring(0, nonProxyHost.length() - 1).toLowerCase(Locale.ENGLISH))) {
-                        return true;
-                    } else if (nonProxyHost.equalsIgnoreCase(targetHost)) {
-                        return true;
-                    }
                 }
             }
 
@@ -197,16 +200,19 @@ public class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
         return new ProxyServerSelector() {
-            @Override
-            public ProxyServer select(URI uri) {
-                List<Proxy> proxies = proxySelector.select(uri);
-                if (proxies != null) {
-                    // Loop through them until we find one that we know how to use
-                    for (Proxy proxy : proxies) {
-                        switch (proxy.type()) {
+            public ProxyServer select(UriComponents uri) {
+                try {
+                    URI javaUri = uri.toURI();
+
+                    List<Proxy> proxies = proxySelector.select(javaUri);
+                    if (proxies != null) {
+                        // Loop through them until we find one that we know how to use
+                        for (Proxy proxy : proxies) {
+                            switch (proxy.type()) {
                             case HTTP:
                                 if (!(proxy.address() instanceof InetSocketAddress)) {
                                     log.warn("Don't know how to connect to address " + proxy.address());
+                                    return null;
                                 } else {
                                     InetSocketAddress address = (InetSocketAddress) proxy.address();
                                     return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());
@@ -216,10 +222,14 @@ public class ProxyUtils {
                             default:
                                 log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
                                 break;
+                            }
                         }
                     }
+                    return null;
+                } catch (URISyntaxException e) {
+                    log.warn(uri + " couldn't be turned into a java.net.URI", e);
+                    return null;
                 }
-                return null;
             }
         };
     }
@@ -232,8 +242,7 @@ public class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
         return new ProxyServerSelector() {
-            @Override
-            public ProxyServer select(URI uri) {
+            public ProxyServer select(UriComponents uri) {
                 return proxyServer;
             }
         };

@@ -105,7 +105,8 @@ public class SpnegoEngine {
             try {
                 GSSManager manager = GSSManager.getInstance();
                 GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
-                gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null, GSSContext.DEFAULT_LIFETIME);
+                gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null,
+                        GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
                 gssContext.requestCredDeleg(true);
             } catch (GSSException ex) {
@@ -126,7 +127,8 @@ public class SpnegoEngine {
                 negotiationOid = new Oid(KERBEROS_OID);
                 GSSManager manager = GSSManager.getInstance();
                 GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
-                gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null, GSSContext.DEFAULT_LIFETIME);
+                gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null,
+                        GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
                 gssContext.requestCredDeleg(true);
             }
@@ -160,7 +162,8 @@ public class SpnegoEngine {
                 throw new Exception(gsse.getMessage(), gsse);
             if (gsse.getMajor() == GSSException.NO_CRED)
                 throw new Exception(gsse.getMessage(), gsse);
-            if (gsse.getMajor() == GSSException.DEFECTIVE_TOKEN || gsse.getMajor() == GSSException.DUPLICATE_TOKEN || gsse.getMajor() == GSSException.OLD_TOKEN)
+            if (gsse.getMajor() == GSSException.DEFECTIVE_TOKEN || gsse.getMajor() == GSSException.DUPLICATE_TOKEN
+                    || gsse.getMajor() == GSSException.OLD_TOKEN)
                 throw new Exception(gsse.getMessage(), gsse);
             // other error
             throw new Exception(gsse.getMessage());

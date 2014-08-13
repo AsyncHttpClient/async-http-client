@@ -1,15 +1,15 @@
 package org.asynchttpclient.async.util;
 
-import java.io.IOException;
-import java.util.Enumeration;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import java.io.IOException;
+import java.util.Enumeration;
 
 public class EchoHandler extends AbstractHandler {
 

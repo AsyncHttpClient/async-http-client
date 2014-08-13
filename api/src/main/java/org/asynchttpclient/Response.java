@@ -16,15 +16,14 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.uri.UriComponents;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.asynchttpclient.cookie.Cookie;
 
 /**
  * Represents the asynchronous HTTP response callback for an {@link AsyncCompletionHandler}
@@ -111,12 +110,11 @@ public interface Response {
     String getResponseBody() throws IOException;
 
     /**
-     * Return the request {@link URI}. Note that if the request got redirected, the value of the {@link URI} will be the last valid redirect url.
+     * Return the request {@link UriComponents}. Note that if the request got redirected, the value of the {@link URI} will be the last valid redirect url.
      * 
-     * @return the request {@link URI}.
-     * @throws MalformedURLException
+     * @return the request {@link UriComponents}.
      */
-    URI getUri() throws MalformedURLException;
+    UriComponents getUri();
 
     /**
      * Return the content-type header value.

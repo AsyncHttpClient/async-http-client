@@ -33,9 +33,7 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
 
     // -------------------------------------------------------- Constructors
 
-
-    public AHCWebSocketListenerAdapter(final WebSocketListener ahcListener,
-                                       final GrizzlyWebSocketAdapter webSocket) {
+    public AHCWebSocketListenerAdapter(final WebSocketListener ahcListener, final GrizzlyWebSocketAdapter webSocket) {
         this.ahcListener = ahcListener;
         this.webSocket = webSocket;
         if (webSocket.bufferFragments) {
@@ -47,9 +45,7 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
         }
     }
 
-
     // ------------------------------ Methods from Grizzly WebSocketListener
-
 
     @Override
     public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
@@ -132,10 +128,6 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
                         }
                     }
                 }
-            } else {
-                if (ahcListener instanceof WebSocketTextListener) {
-                    WebSocketTextListener.class.cast(ahcListener).onFragment(s, last);
-                }
             }
         } catch (Throwable e) {
             ahcListener.onError(e);
@@ -156,10 +148,6 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
                         }
                     }
                 }
-            } else {
-                if (ahcListener instanceof WebSocketByteListener) {
-                    WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, last);
-                }
             }
         } catch (Throwable e) {
             ahcListener.onError(e);
@@ -168,8 +156,10 @@ final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websock
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         AHCWebSocketListenerAdapter that = (AHCWebSocketListenerAdapter) o;
 

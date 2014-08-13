@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.HttpResponseBodyPart;
-
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
@@ -37,23 +36,16 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpContent content;
     private final Connection<?> connection;
-    private final AtomicReference<byte[]> contentBytes =
-            new AtomicReference<byte[]>();
-
+    private final AtomicReference<byte[]> contentBytes = new AtomicReference<byte[]>();
 
     // ------------------------------------------------------------ Constructors
 
-
-    public GrizzlyResponseBodyPart(final HttpContent content,
-                                   final Connection<?> connection) {
+    public GrizzlyResponseBodyPart(final HttpContent content, final Connection<?> connection) {
         this.content = content;
         this.connection = connection;
-
     }
 
-
     // --------------------------------------- Methods from HttpResponseBodyPart
-
 
     /**
      * {@inheritDoc}
@@ -71,7 +63,6 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
         b.position(origPos);
         contentBytes.compareAndSet(null, bytes);
         return bytes;
-
     }
 
     @Override
@@ -83,7 +74,7 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     public int length() {
         return content.getContent().remaining();
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -93,18 +84,14 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
         final byte[] bytes = getBodyPartBytes();
         outputStream.write(bytes);
         return bytes.length;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public ByteBuffer getBodyByteBuffer() {
-
         return content.getContent().toByteBuffer();
-
     }
 
     /**
@@ -131,14 +118,9 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
         return !ConnectionManager.isConnectionCacheable(connection);
     }
 
-
     // ----------------------------------------------- Package Protected Methods
 
-
     Buffer getBodyBuffer() {
-
         return content.getContent();
-
     }
-
 }

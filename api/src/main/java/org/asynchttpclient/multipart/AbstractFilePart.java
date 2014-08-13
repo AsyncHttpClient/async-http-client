@@ -1,24 +1,22 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.multipart;
 
+import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
-import org.asynchttpclient.util.StandardCharsets;
+import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -33,11 +31,6 @@ public abstract class AbstractFilePart extends PartBase {
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     /**
-     * Default charset of file attachments.
-     */
-    public static final String DEFAULT_CHARSET = StandardCharsets.ISO_8859_1.name();
-
-    /**
      * Default transfer encoding of file attachments.
      */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
@@ -45,9 +38,11 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * Attachment's file name as a byte array
      */
-    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(US_ASCII);
 
     private long stalledTime = -1L;
+
+    private String fileName;
 
     /**
      * FilePart Constructor.
@@ -59,32 +54,24 @@ public abstract class AbstractFilePart extends PartBase {
      * @param contentType
      *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
      * @param charset
-     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId
+     *            the charset encoding for this part
      */
-    public AbstractFilePart(String name, String contentType, String charset, String contentId) {
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
+    public AbstractFilePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
+        super(name,//
+                contentType == null ? DEFAULT_CONTENT_TYPE : contentType,//
+                charset,//
+                contentId,//
+                transfertEncoding == null ? DEFAULT_TRANSFER_ENCODING : transfertEncoding);
     }
-
-    public abstract String getFileName();
 
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
         super.visitDispositionHeader(visitor);
-        String filename = getFileName();
-        if (filename != null) {
+        if (fileName != null) {
             visitor.withBytes(FILE_NAME_BYTES);
-            visitor.withBytes(QUOTE_BYTES);
-            visitor.withBytes(filename.getBytes(StandardCharsets.US_ASCII));
-            visitor.withBytes(QUOTE_BYTES);
+            visitor.withByte(QUOTE_BYTE);
+            visitor.withBytes(fileName.getBytes(US_ASCII));
+            visitor.withByte(QUOTE_BYTE);
         }
-    }
-
-    public void setStalledTime(long ms) {
-        stalledTime = ms;
-    }
-
-    public long getStalledTime() {
-        return stalledTime;
     }
 
     protected byte[] generateFileStart(byte[] boundary) throws IOException {
@@ -105,5 +92,29 @@ public abstract class AbstractFilePart extends PartBase {
         OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
         visitEnd(visitor);
         return out.toByteArray();
+    }
+
+    public void setStalledTime(long ms) {
+        stalledTime = ms;
+    }
+
+    public long getStalledTime() {
+        return stalledTime;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()//
+                .append(super.toString())//
+                .append(" filename=").append(fileName)//
+                .toString();
     }
 }

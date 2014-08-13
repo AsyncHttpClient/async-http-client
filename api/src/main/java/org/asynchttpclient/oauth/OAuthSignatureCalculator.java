@@ -16,19 +16,21 @@
  */
 package org.asynchttpclient.oauth;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import org.asynchttpclient.FluentStringsMap;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
@@ -40,8 +42,7 @@ import org.asynchttpclient.util.UTF8UrlEncoder;
  *
  * @author tatu (tatu.saloranta@iki.fi)
  */
-public class OAuthSignatureCalculator
-        implements SignatureCalculator {
+public class OAuthSignatureCalculator implements SignatureCalculator {
     public final static String HEADER_AUTHORIZATION = "Authorization";
 
     private static final String KEY_OAUTH_CONSUMER_KEY = "oauth_consumer_key";
@@ -82,11 +83,10 @@ public class OAuthSignatureCalculator
 
     //@Override // silly 1.5; doesn't allow this for interfaces
 
-    public void calculateAndAddSignature(String baseURL, Request request, RequestBuilderBase<?> requestBuilder) {
-        String method = request.getMethod(); // POST etc
+    public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
-        String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
+        String signature = calculateSignature(request.getMethod(), request.getURI(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
@@ -94,8 +94,8 @@ public class OAuthSignatureCalculator
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
-    public String calculateSignature(String method, String baseURL, long oauthTimestamp, String nonce,
-                                     FluentStringsMap formParams, FluentStringsMap queryParams) {
+    public String calculateSignature(String method, UriComponents uri, long oauthTimestamp, String nonce,
+                                     List<Param> formParams, List<Param> queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
@@ -103,18 +103,23 @@ public class OAuthSignatureCalculator
         /* 07-Oct-2010, tatu: URL may contain default port number; if so, need to extract
          *   from base URL.
          */
-        if (baseURL.startsWith("http:")) {
-            int i = baseURL.indexOf(":80/", 4);
-            if (i > 0) {
-                baseURL = baseURL.substring(0, i) + baseURL.substring(i + 3);
-            }
-        } else if (baseURL.startsWith("https:")) {
-            int i = baseURL.indexOf(":443/", 5);
-            if (i > 0) {
-                baseURL = baseURL.substring(0, i) + baseURL.substring(i + 4);
-            }
-        }
-        signedText.append(UTF8UrlEncoder.encode(baseURL));
+        String scheme = uri.getScheme();
+        int port = uri.getPort();
+        if (scheme.equals("http"))
+            if (port == 80)
+                port = -1;
+        else if (scheme.equals("https"))
+            if (port == 443)
+                port = -1;
+        
+        StringBuilder sb = new StringBuilder().append(scheme).append("://").append(uri.getHost());
+        if (port != -1)
+            sb.append(':').append(port);
+        if (isNonEmpty(uri.getPath()))
+            sb.append(uri.getPath());
+        
+        String baseURL = sb.toString();
+        UTF8UrlEncoder.appendEncoded(signedText, baseURL);
 
         /**
          * List of all query and form parameters added to this request; needed
@@ -127,23 +132,19 @@ public class OAuthSignatureCalculator
         allParameters.add(KEY_OAUTH_NONCE, nonce);
         allParameters.add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD);
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
-        allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
+        if (userAuth.getKey() != null) {
+            allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
+        }
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
-            for (Map.Entry<String, List<String>> entry : formParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : formParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         if (queryParams != null) {
-            for (Map.Entry<String, List<String>> entry : queryParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : queryParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         String encodedParams = allParameters.sortAndConcat();
@@ -165,7 +166,9 @@ public class OAuthSignatureCalculator
         StringBuilder sb = new StringBuilder(200);
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
-        sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getKey()).append("\", ");
+        if (userAuth.getKey() != null) {
+            sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getKey()).append("\", ");
+        }
         sb.append(KEY_OAUTH_SIGNATURE_METHOD).append("=\"").append(OAUTH_SIGNATURE_METHOD).append("\", ");
 
         // careful: base64 has chars that need URL encoding:

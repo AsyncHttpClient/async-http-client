@@ -65,8 +65,10 @@ public class RequestToken {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
-        if (o == null || o.getClass() != getClass()) return false;
+        if (o == this)
+            return true;
+        if (o == null || o.getClass() != getClass())
+            return false;
         RequestToken other = (RequestToken) o;
         return key.equals(other.key) && secret.equals(other.secret);
     }

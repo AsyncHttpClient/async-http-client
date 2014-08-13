@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -35,9 +36,8 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
-        if (body == null) {
-            throw new IllegalArgumentException("no body specified");
-        }
+        if (body == null)
+            throw new NullPointerException("body");
         this.body = body;
         contentLength = (int) body.getContentLength();
         if (contentLength <= 0)
@@ -51,6 +51,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         if (endOfInput) {
             return null;
         } else {
+            // FIXME pass a visitor so we can directly pass a pooled ByteBuf
             ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
             long r = body.read(buffer);
             if (r < 0L) {

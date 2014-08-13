@@ -15,8 +15,6 @@ package org.asynchttpclient.cookie;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.cookie.CookieDecoder;
 import org.testng.annotations.Test;
 
 public class CookieDecoderTest {

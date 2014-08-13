@@ -15,19 +15,19 @@ package org.asynchttpclient.async;
 import static org.asynchttpclient.async.util.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 
-import java.io.File;
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Benjamin Hanzelmann
@@ -41,7 +41,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(timeout).build());
         try {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);

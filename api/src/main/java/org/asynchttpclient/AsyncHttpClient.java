@@ -18,23 +18,7 @@ package org.asynchttpclient;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.RequestFilter;
-import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
@@ -142,302 +126,43 @@ import org.slf4j.LoggerFactory;
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.
  */
-public class AsyncHttpClient implements Closeable {
-
-    /**
-     * Providers that will be searched for, on the classpath, in order when no
-     * provider is explicitly specified by the developer.
-     */
-    private static final String[] DEFAULT_PROVIDERS = {
-        "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",
-        "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"
-    };
-
-    private final AsyncHttpProvider httpProvider;
-    private final AsyncHttpClientConfig config;
-    private final static Logger logger = LoggerFactory.getLogger(AsyncHttpClient.class);
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
-
-    /**
-     * Default signature calculator to use for all requests constructed by this client instance.
-     *
-     * @since 1.1
-     */
-    protected SignatureCalculator signatureCalculator;
-
-    /**
-     * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
-     * default {@link AsyncHttpProvider} that will be used will be based on the classpath configuration.
-     *
-     * The default providers will be searched for in this order:
-     * <ul>
-     *     <li>netty</li>
-     *     <li>grizzly</li>
-     *     <li>JDK</li>
-     * </ul>
-     *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
-     */
-    public AsyncHttpClient() {
-        this(new AsyncHttpClientConfig.Builder().build());
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using an implementation of {@link AsyncHttpProvider} and
-     * the default {@link AsyncHttpClientConfig} configuration.
-     *
-     * @param provider a {@link AsyncHttpProvider}
-     */
-    public AsyncHttpClient(AsyncHttpProvider provider) {
-        this(provider, new AsyncHttpClientConfig.Builder().build());
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using the specified {@link AsyncHttpClientConfig} configuration.
-     * This configuration will be passed to the default {@link AsyncHttpProvider} that will be selected based on
-     * the classpath configuration.
-     *
-     * The default providers will be searched for in this order:
-     * <ul>
-     *     <li>netty</li>
-     *     <li>grizzly</li>
-     * </ul>
-     *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
-     *
-     * @param config a {@link AsyncHttpClientConfig}
-     */
-    public AsyncHttpClient(AsyncHttpClientConfig config) {
-        this(loadDefaultProvider(DEFAULT_PROVIDERS, config), config);
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a AsyncHttpProvider class' name.
-     *
-     * @param config        a {@link AsyncHttpClientConfig}
-     * @param providerClass a {@link AsyncHttpProvider}
-     */
-    public AsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
-        this(loadProvider(providerClass, config), new AsyncHttpClientConfig.Builder().build());
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a {@link AsyncHttpProvider}.
-     *
-     * @param config       a {@link AsyncHttpClientConfig}
-     * @param httpProvider a {@link AsyncHttpProvider}
-     */
-    public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
-        this.config = config;
-        this.httpProvider = httpProvider;
-    }
-
-    public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
-        /**
-         * Calculator used for calculating request signature for the request being
-         * built, if any.
-         */
-        protected SignatureCalculator signatureCalculator;
-
-        /**
-         * URL used as the base, not including possibly query parameters. Needed for
-         * signature calculation
-         */
-        protected String baseURL;
-
-        private BoundRequestBuilder(String reqType, boolean useRawUrl) {
-            super(BoundRequestBuilder.class, reqType, useRawUrl);
-        }
-
-        private BoundRequestBuilder(Request prototype) {
-            super(BoundRequestBuilder.class, prototype);
-        }
-
-        public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), handler);
-        }
-
-        public ListenableFuture<Response> execute() throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
-        }
-
-        // Note: For now we keep the delegates in place even though they are not needed
-        //       since otherwise Clojure (and maybe other languages) won't be able to
-        //       access these methods - see Clojure tickets 126 and 259
-
-        @Override
-        public BoundRequestBuilder addBodyPart(Part part) {
-            return super.addBodyPart(part);
-        }
-
-        @Override
-        public BoundRequestBuilder addCookie(Cookie cookie) {
-            return super.addCookie(cookie);
-        }
-
-        @Override
-        public BoundRequestBuilder addHeader(String name, String value) {
-            return super.addHeader(name, value);
-        }
-
-        @Override
-        public BoundRequestBuilder addParameter(String key, String value) {
-            return super.addParameter(key, value);
-        }
-
-        @Override
-        public BoundRequestBuilder addQueryParameter(String name, String value) {
-            return super.addQueryParameter(name, value);
-        }
-
-        @Override
-        public Request build() {
-            /* Let's first calculate and inject signature, before finalizing actual build
-             * (order does not matter with current implementation but may in future)
-             */
-            if (signatureCalculator != null) {
-                String url = baseURL;
-                // Should not include query parameters, ensure:
-                int i = url.indexOf('?');
-                if (i >= 0) {
-                    url = url.substring(0, i);
-                }
-                signatureCalculator.calculateAndAddSignature(url, request, this);
-            }
-            return super.build();
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(byte[] data) {
-            return super.setBody(data);
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(InputStream stream) {
-            return super.setBody(stream);
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(String data) {
-            return super.setBody(data);
-        }
-
-        @Override
-        public BoundRequestBuilder setHeader(String name, String value) {
-            return super.setHeader(name, value);
-        }
-
-        @Override
-        public BoundRequestBuilder setHeaders(FluentCaseInsensitiveStringsMap headers) {
-            return super.setHeaders(headers);
-        }
-
-        @Override
-        public BoundRequestBuilder setHeaders(Map<String, Collection<String>> headers) {
-            return super.setHeaders(headers);
-        }
-
-        @Override
-        public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) {
-            return super.setParameters(parameters);
-        }
-
-        @Override
-        public BoundRequestBuilder setParameters(FluentStringsMap parameters) {
-            return super.setParameters(parameters);
-        }
-
-        @Override
-        public BoundRequestBuilder setUrl(String url) {
-            baseURL = url;
-            return super.setUrl(url);
-        }
-
-        @Override
-        public BoundRequestBuilder setVirtualHost(String virtualHost) {
-            return super.setVirtualHost(virtualHost);
-        }
-
-        public BoundRequestBuilder setSignatureCalculator(SignatureCalculator signatureCalculator) {
-            this.signatureCalculator = signatureCalculator;
-            return this;
-        }
-    }
-
+public interface AsyncHttpClient extends Closeable {
 
     /**
      * Return the asynchronous {@link AsyncHttpProvider}
      *
      * @return an {@link AsyncHttpProvider}
      */
-    public AsyncHttpProvider getProvider() {
-        return httpProvider;
-    }
+    AsyncHttpProvider getProvider();
 
     /**
      * Close the underlying connections.
      */
-    public void close() {
-        if (isClosed.compareAndSet(false, true))
-            httpProvider.close();
-    }
+    void close();
 
     /**
      * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
      */
-    public void closeAsynchronously() {
-        final ExecutorService e = Executors.newSingleThreadExecutor();
-        e.submit(new Runnable() {
-            public void run() {
-                try {
-                    close();
-                } catch (Throwable t) {
-                    logger.warn("", t);
-                } finally {
-                    e.shutdown();
-                }
-            }
-        });
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (!isClosed.get()) {
-                logger.error("AsyncHttpClient.close() hasn't been invoked, which may produce file descriptor leaks");
-            }
-        } finally {
-            super.finalize();
-        }
-    }
+    void closeAsynchronously();
 
     /**
      * Return true if closed
      *
      * @return true if closed
      */
-    public boolean isClosed() {
-        return isClosed.get();
-    }
+    boolean isClosed();
 
     /**
      * Return the {@link AsyncHttpClientConfig}
      *
      * @return {@link AsyncHttpClientConfig}
      */
-    public AsyncHttpClientConfig getConfig() {
-        return config;
-    }
+    AsyncHttpClientConfig getConfig();
 
     /**
      * Set default signature calculator to use for requests build by this client instance
      */
-    public AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator) {
-        this.signatureCalculator = signatureCalculator;
-        return this;
-    }
+    AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator);
 
     /**
      * Prepare an HTTP client GET request.
@@ -445,9 +170,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareGet(String url) {
-        return requestBuilder("GET", url);
-    }
+    BoundRequestBuilder prepareGet(String url);
 
     /**
      * Prepare an HTTP client CONNECT request.
@@ -455,9 +178,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareConnect(String url) {
-        return requestBuilder("CONNECT", url);
-    }
+    BoundRequestBuilder prepareConnect(String url);
 
     /**
      * Prepare an HTTP client OPTIONS request.
@@ -465,9 +186,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareOptions(String url) {
-        return requestBuilder("OPTIONS", url);
-    }
+    BoundRequestBuilder prepareOptions(String url);
 
     /**
      * Prepare an HTTP client HEAD request.
@@ -475,9 +194,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareHead(String url) {
-        return requestBuilder("HEAD", url);
-    }
+    BoundRequestBuilder prepareHead(String url);
 
     /**
      * Prepare an HTTP client POST request.
@@ -485,9 +202,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder preparePost(String url) {
-        return requestBuilder("POST", url);
-    }
+    BoundRequestBuilder preparePost(String url);
 
     /**
      * Prepare an HTTP client PUT request.
@@ -495,9 +210,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder preparePut(String url) {
-        return requestBuilder("PUT", url);
-    }
+    BoundRequestBuilder preparePut(String url);
 
     /**
      * Prepare an HTTP client DELETE request.
@@ -505,9 +218,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareDelete(String url) {
-        return requestBuilder("DELETE", url);
-    }
+    BoundRequestBuilder prepareDelete(String url);
 
     /**
      * Prepare an HTTP client PATCH request.
@@ -515,9 +226,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder preparePatch(String url) {
-        return requestBuilder("PATCH", url);
-    }
+    BoundRequestBuilder preparePatch(String url);
 
     /**
      * Prepare an HTTP client TRACE request.
@@ -525,9 +234,7 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareTrace(String url) {
-        return requestBuilder("TRACE", url);
-    }
+    BoundRequestBuilder prepareTrace(String url);
 
     /**
      * Construct a {@link RequestBuilder} using a {@link Request}
@@ -535,9 +242,7 @@ public class AsyncHttpClient implements Closeable {
      * @param request a {@link Request}
      * @return {@link RequestBuilder}
      */
-    public BoundRequestBuilder prepareRequest(Request request) {
-        return requestBuilder(request);
-    }
+    BoundRequestBuilder prepareRequest(Request request);
 
     /**
      * Execute an HTTP request.
@@ -548,13 +253,7 @@ public class AsyncHttpClient implements Closeable {
      * @return a {@link Future} of type T
      * @throws IOException
      */
-    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
-
-        FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
-        fc = preProcessRequest(fc);
-
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
-    }
+    <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException;
 
     /**
      * Execute an HTTP request.
@@ -563,92 +262,5 @@ public class AsyncHttpClient implements Closeable {
      * @return a {@link Future} of type Response
      * @throws IOException
      */
-    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
-        fc = preProcessRequest(fc);
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
-    }
-
-    /**
-     * Configure and execute the associated {@link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
-     *
-     * @param fc {@link FilterContext}
-     * @return {@link FilterContext}
-     */
-    private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
-        for (RequestFilter asyncFilter: config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
-            }
-        }
-
-        Request request = fc.getRequest();
-        if (fc.getAsyncHandler() instanceof ResumableAsyncHandler) {
-            request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
-        }
-
-        if (request.getRangeOffset() != 0) {
-            RequestBuilder builder = new RequestBuilder(request);
-            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
-            request = builder.build();
-        }
-        fc = new FilterContext.FilterContextBuilder<T>(fc).request(request).build();
-        return fc;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static AsyncHttpProvider loadProvider(final String className,
-                                                  final AsyncHttpClientConfig config) {
-        try {
-            Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread()
-                    .getContextClassLoader().loadClass(className);
-            return providerClass.getDeclaredConstructor(
-                    new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
-        }  catch (Throwable t) {
-            if (t instanceof InvocationTargetException) {
-                final InvocationTargetException ite = (InvocationTargetException) t;
-                if (logger.isErrorEnabled()) {
-                    logger.error("Unable to instantiate provider {}.  Trying other providers.",
-                                 className);
-                    logger.error(ite.getCause().toString(), ite.getCause());
-                }
-            }
-            // Let's try with another classloader
-            try {
-                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>)
-                        AsyncHttpClient.class.getClassLoader().loadClass(className);
-                return providerClass.getDeclaredConstructor(
-                        new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
-            } catch (Throwable ignored) {
-            }
-        }
-        return null;
-    }
-
-    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames,
-                                                               AsyncHttpClientConfig config) {
-        AsyncHttpProvider provider;
-        for (final String className : providerClassNames) {
-            provider = loadProvider(className, config);
-            if (provider != null) {
-                return provider;
-            }
-        }
-        throw new IllegalStateException("No providers found on the classpath");
-    }
-
-    protected BoundRequestBuilder requestBuilder(String reqType, String url) {
-        return new BoundRequestBuilder(reqType, config.isUseRawUrl()).setUrl(url).setSignatureCalculator(signatureCalculator);
-    }
-
-    protected BoundRequestBuilder requestBuilder(Request prototype) {
-        return new BoundRequestBuilder(prototype).setSignatureCalculator(signatureCalculator);
-    }
+    ListenableFuture<Response> executeRequest(Request request) throws IOException;
 }

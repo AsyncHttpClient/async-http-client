@@ -31,7 +31,7 @@ public abstract class HttpResponseBodyPart {
      * @since 2.0.0
      */
     public abstract int length();
-    
+
     /**
      * Return the response body's part bytes received.
      *
@@ -45,7 +45,7 @@ public abstract class HttpResponseBodyPart {
      * @since 2.0.0
      */
     public abstract InputStream readBodyPartBytes();
-    
+
     /**
      * Write the available bytes to the {@link java.io.OutputStream}
      *

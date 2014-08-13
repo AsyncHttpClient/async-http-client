@@ -15,6 +15,10 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.StandardCharsets;
@@ -34,10 +38,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 /**
  * Testing query parameters support.
@@ -74,7 +74,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParameter("a", "1").addQueryParameter("b", "2").execute();
+            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -103,20 +103,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_Netty() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
-            String query = "test:colon:";
-            Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-            assertEquals(response.getHeader("q"), URLEncoder.encode(query, StandardCharsets.UTF_8.name()));
-        } finally {
-            c.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_JDK() throws Exception {
+    public void urlWithColonTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             String query = "test:colon:";

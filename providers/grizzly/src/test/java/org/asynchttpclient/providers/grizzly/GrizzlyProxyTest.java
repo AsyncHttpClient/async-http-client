@@ -23,5 +23,4 @@ public class GrizzlyProxyTest extends ProxyTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

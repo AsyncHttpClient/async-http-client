@@ -2,35 +2,7 @@ package org.asynchttpclient.async.util;
 
 import static org.testng.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
 import org.apache.commons.io.FileUtils;
-import org.asynchttpclient.async.HostnameVerifierTest;
 import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -48,6 +20,28 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+
+import javax.net.ssl.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestUtils {
 
@@ -149,7 +143,6 @@ public class TestUtils {
 
         ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpsConfig));
         connector.setPort(port);
-        server.addConnector(connector);
 
         server.addConnector(connector);
     }
@@ -191,21 +184,38 @@ public class TestUtils {
         server.setHandler(security);
     }
 
+    private static KeyManager[] createKeyManagers() throws GeneralSecurityException, IOException {
+        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-cacerts.jks");
+        char[] keyStorePassword = "changeit".toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(keyStoreStream, keyStorePassword);
+        assert(ks.size() > 0);
+
+        // Set up key manager factory to use our key store
+        char[] certificatePassword = "changeit".toCharArray();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, certificatePassword);
+
+        // Initialize the SSLContext to work with our key managers.
+        return kmf.getKeyManagers();
+    }
+
+    private static TrustManager[] createTrustManagers() throws GeneralSecurityException, IOException {
+        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-keystore.jks");
+        char[] keyStorePassword = "changeit".toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(keyStoreStream, keyStorePassword);
+        assert(ks.size() > 0);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+        return tmf.getTrustManagers();
+    }
+
     public static SSLContext createSSLContext(AtomicBoolean trust) {
         try {
-            InputStream keyStoreStream = HostnameVerifierTest.class.getResourceAsStream("ssltest-cacerts.jks");
-            char[] keyStorePassword = "changeit".toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(keyStoreStream, keyStorePassword);
-
-            // Set up key manager factory to use our key store
-            char[] certificatePassword = "changeit".toCharArray();
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, certificatePassword);
-
-            // Initialize the SSLContext to work with our key managers.
-            KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust) };
+            KeyManager[] keyManagers = createKeyManagers();
+            TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0]) };
             SecureRandom secureRandom = new SecureRandom();
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -217,21 +227,40 @@ public class TestUtils {
         }
     }
 
-    private static final TrustManager dummyTrustManager(final AtomicBoolean trust) {
-        return new X509TrustManager() {
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
+    public static class DummyTrustManager implements X509TrustManager {
 
-            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            }
+        private final X509TrustManager tm;
+        private final AtomicBoolean trust;
 
-            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                if (!trust.get()) {
-                    throw new CertificateException("Server certificate not trusted.");
-                }
+        public DummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
+            this.trust = trust;
+            this.tm = tm;
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
+                throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
+                throws CertificateException {
+            if (!trust.get()) {
+                throw new CertificateException("Server certificate not trusted.");
             }
-        };
+            tm.checkServerTrusted(chain, authType);
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return tm.getAcceptedIssuers();
+        }
+    }
+
+    private static TrustManager dummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
+        return new DummyTrustManager(trust, tm);
+
     }
 
     public static File getClasspathFile(String file) throws FileNotFoundException {

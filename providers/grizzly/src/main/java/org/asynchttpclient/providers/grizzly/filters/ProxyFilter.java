@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
@@ -25,10 +29,7 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.util.Header;
 
 import java.io.IOException;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
+import org.glassfish.grizzly.http.HttpPacket;
 
 /**
  * This Filter will be placed in the FilterChain when a request is being
@@ -44,43 +45,39 @@ public final class ProxyFilter extends BaseFilter {
     private final AsyncHttpClientConfig config;
     private final Boolean secure;
 
-
     // ------------------------------------------------------------ Constructors
 
-
-    public ProxyFilter(final ProxyServer proxyServer,
-                       final AsyncHttpClientConfig config,
-                       boolean secure) {
+    public ProxyFilter(final ProxyServer proxyServer, final AsyncHttpClientConfig config, boolean secure) {
         this.proxyServer = proxyServer;
         this.config = config;
         this.secure = secure;
     }
 
-
     // ----------------------------------------------------- Methods from Filter
 
-
     @Override
-    public NextAction handleWrite(FilterChainContext ctx)
-    throws IOException {
-        org.glassfish.grizzly.http.HttpContent content = ctx.getMessage();
-        HttpRequestPacket request = (HttpRequestPacket) content.getHttpHeader();
-        HttpTxContext context = HttpTxContext.get(ctx);
-        assert(context != null);
-        Request req = context.getRequest();
-        if (!secure) {
-            request.setRequestURI(req.getURI().toString());
+    public NextAction handleWrite(FilterChainContext ctx) throws IOException {
+        final Object msg = ctx.getMessage();
+        if (HttpPacket.isHttp(msg)) {
+            HttpPacket httpPacket = (HttpPacket) msg;
+            final HttpRequestPacket request = (HttpRequestPacket) httpPacket.getHttpHeader();
+            if (!request.isCommitted()) {
+                HttpTxContext context = HttpTxContext.get(ctx);
+                assert (context != null);
+                Request req = context.getRequest();
+                if (!secure) {
+                    request.setRequestURI(req.getURI().toUrl());
+                }
+                addProxyHeaders(getRealm(req), request);
+            }
         }
-        addProxyHeaders(getRealm(req), request);
+        
         return ctx.getInvokeAction();
     }
 
-
     // --------------------------------------------------------- Private Methods
 
-
-    private void addProxyHeaders(final Realm realm,
-                                 final HttpRequestPacket request) {
+    private void addProxyHeaders(final Realm realm, final HttpRequestPacket request) {
         if (realm != null && realm.getUsePreemptiveAuth()) {
             final String authHeaderValue = generateAuthHeader(realm);
             if (authHeaderValue != null) {
@@ -100,18 +97,17 @@ public final class ProxyFilter extends BaseFilter {
     private String generateAuthHeader(final Realm realm) {
         try {
             switch (realm.getAuthScheme()) {
-                case BASIC:
-                    return computeBasicAuthentication(realm);
-                case DIGEST:
-                    return computeDigestAuthentication(proxyServer);
-                case NTLM:
-                     return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
-                default:
-                    return null;
+            case BASIC:
+                return computeBasicAuthentication(realm);
+            case DIGEST:
+                return computeDigestAuthentication(realm);
+            case NTLM:
+                return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+            default:
+                return null;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 }

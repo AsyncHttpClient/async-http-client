@@ -23,5 +23,4 @@ public class GrizzlyRetryRequestTest extends RetryRequestTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

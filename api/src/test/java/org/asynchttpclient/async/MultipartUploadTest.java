@@ -12,28 +12,13 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.testng.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.zip.GZIPInputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.asynchttpclient.async.util.TestUtils.getClasspathFile;
+import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -58,6 +43,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.zip.GZIPInputStream;
 
 /**
  * @author dominict
@@ -161,24 +166,24 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
-        bc.setFollowRedirects(true);
+        bc.setFollowRedirect(true);
 
-        AsyncHttpClient c = new AsyncHttpClient(bc.build());
+        AsyncHttpClient c = getAsyncHttpClient(bc.build());
 
         try {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", StandardCharsets.UTF_8.name()));
+            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", StandardCharsets.UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", StandardCharsets.UTF_8.name()));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", StandardCharsets.UTF_8.name()));
+            builder.addBodyPart(new StringPart("Name", "Dominic", StandardCharsets.UTF_8));
+            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", StandardCharsets.UTF_8));
 
-            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
-            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
+            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8.name(), "bytearray.txt"));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8, "bytearray.txt"));
 
             Request r = builder.build();
 

@@ -37,5 +37,4 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     protected String acceptEncodingHeader() {
         return "gzip";
     }
-
 }

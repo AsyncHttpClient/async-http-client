@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -19,14 +19,25 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 
 import java.io.IOException;
 
-public interface BodyHandler {
+public abstract class BodyHandler {
 
-    static int MAX_CHUNK_SIZE = 8192;
+    public static int MAX_CHUNK_SIZE = 8192;
 
-    boolean handlesBodyType(final Request request);
+    public abstract boolean handlesBodyType(final Request request);
 
-    boolean doHandle(final FilterChainContext ctx,
-                     final Request request,
-                     final HttpRequestPacket requestPacket) throws IOException;
-
+    public abstract boolean doHandle(final FilterChainContext ctx,
+            final Request request, final HttpRequestPacket requestPacket)
+            throws IOException;
+    
+    /**
+     * Tries to predict request content-length based on the {@link Request}.
+     * Not all the <tt>BodyHandler</tt>s can predict the content-length in advance.
+     * 
+     * @param request
+     * @return the content-length, or <tt>-1</tt> if the content-length can't be
+     * predicted
+     */
+    protected long getContentLength(final Request request) {
+        return request.getContentLength();
+    }
 }

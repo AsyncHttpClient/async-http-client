@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.grizzly.filters.events;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
-
 /**
  * {@link FilterChainEvent} to dynamically enable/disable the SSLFilter on
  * a per-connection basis.
@@ -31,25 +30,19 @@ public final class SSLSwitchingEvent implements FilterChainEvent {
 
     // ------------------------------------------------------------ Constructors
 
-
     public SSLSwitchingEvent(final boolean secure, final Connection c) {
-
         this.secure = secure;
         connection = c;
-
     }
 
     // ------------------------------------------- Methods from FilterChainEvent
-
 
     @Override
     public Object type() {
         return SSLSwitchingEvent.class;
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public boolean isSecure() {
         return secure;
@@ -58,5 +51,4 @@ public final class SSLSwitchingEvent implements FilterChainEvent {
     public Connection getConnection() {
         return connection;
     }
-
 }

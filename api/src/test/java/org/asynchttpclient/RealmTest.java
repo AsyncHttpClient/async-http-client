@@ -14,13 +14,14 @@ package org.asynchttpclient;
 
 import static org.testng.Assert.assertEquals;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
 
 public class RealmTest {
     @Test(groups = "fast")
@@ -60,7 +61,7 @@ public class RealmTest {
         String realm = "realm";
         String nonce = "nonce";
         String method = "GET";
-        String uri = "/foo";
+        UriComponents uri = UriComponents.create("http://ahc.io/foo");
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal(user).setPassword(pass);
         builder.setNonce(nonce);
@@ -85,7 +86,7 @@ public class RealmTest {
         String realm = "realm";
         String nonce = "nonce";
         String method = "GET";
-        String uri = "/foo";
+        UriComponents uri = UriComponents.create("http://ahc.io/foo");
         String qop = "auth";
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal(user).setPassword(pass);

@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,20 +13,19 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.asynchttpclient.Body;
-import org.asynchttpclient.BodyGenerator;
-import org.asynchttpclient.util.StandardCharsets;
-
 /**
- * {@link BodyGenerator} which may return just part of the payload at the time
- * handler is requesting it. If it happens - PartialBodyGenerator becomes responsible
- * for finishing payload transferring asynchronously.
+ * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
+ * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
  */
 public class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
@@ -48,7 +48,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
     }
 
     public static interface FeedListener {
-        public void onContentAdded();
+        void onContentAdded();
     }
 
     public void setListener(FeedListener listener) {
@@ -89,8 +89,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
             int size = Math.min(nextPart.buffer.remaining(), capacity);
             buffer.put(Integer.toHexString(size).getBytes(StandardCharsets.US_ASCII));
             buffer.put(END_PADDING);
-            for (int i=0; i < size; i++) {
-              buffer.put(nextPart.buffer.get());
+            for (int i = 0; i < size; i++) {
+                buffer.put(nextPart.buffer.get());
             }
             buffer.put(END_PADDING);
             if (!nextPart.buffer.hasRemaining()) {

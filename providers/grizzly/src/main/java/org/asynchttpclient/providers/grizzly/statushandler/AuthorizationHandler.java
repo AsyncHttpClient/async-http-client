@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.statushandler;
 
+import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
+
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
@@ -27,24 +29,19 @@ import org.glassfish.grizzly.http.util.HttpStatus;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
-
 public final class AuthorizationHandler implements StatusHandler {
 
-    public static final AuthorizationHandler INSTANCE =
-            new AuthorizationHandler();
+    public static final AuthorizationHandler INSTANCE = new AuthorizationHandler();
 
     // ---------------------------------------------- Methods from StatusHandler
-
 
     public boolean handlesStatus(int statusCode) {
         return (HttpStatus.UNAUTHORIZED_401.statusMatches(statusCode));
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean handleStatus(final HttpResponsePacket responsePacket,
-                                final HttpTxContext httpTransactionContext,
-                                final FilterChainContext ctx) {
+    @SuppressWarnings({ "unchecked" })
+    public boolean handleStatus(final HttpResponsePacket responsePacket, final HttpTxContext httpTransactionContext,
+            final FilterChainContext ctx) {
 
         final String auth = responsePacket.getHeader(Header.WWWAuthenticate);
         if (auth == null) {
@@ -59,8 +56,7 @@ public final class AuthorizationHandler implements StatusHandler {
             httpTransactionContext.setInvocationStatus(STOP);
             if (httpTransactionContext.getHandler() != null) {
                 try {
-                    httpTransactionContext.getHandler().onStatusReceived(
-                            httpTransactionContext.getResponseStatus());
+                    httpTransactionContext.getHandler().onStatusReceived(httpTransactionContext.getResponseStatus());
                 } catch (Exception e) {
                     httpTransactionContext.abort(e);
                 }
@@ -71,24 +67,16 @@ public final class AuthorizationHandler implements StatusHandler {
         responsePacket.setSkipRemainder(true); // ignore the remainder of the response
 
         final Request req = httpTransactionContext.getRequest();
-        realm = new Realm.RealmBuilder().clone(realm)
-                        .setScheme(realm.getAuthScheme())
-                        .setUri(req.getURI().getPath())
-                        .setMethodName(req.getMethod())
-                        .setUsePreemptiveAuth(true)
-                        .parseWWWAuthenticateHeader(auth)
-                        .build();
+        realm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(req.getURI())
+                .setMethodName(req.getMethod()).setUsePreemptiveAuth(true).parseWWWAuthenticateHeader(auth).build();
         String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
         if (lowerCaseAuth.startsWith("basic")) {
             req.getHeaders().remove(Header.Authorization.toString());
-                req.getHeaders().add(Header.Authorization.toString(),
-                                     AuthenticatorUtils.computeBasicAuthentication(
-                                             realm));
+            req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeBasicAuthentication(realm));
         } else if (lowerCaseAuth.startsWith("digest")) {
             req.getHeaders().remove(Header.Authorization.toString());
             try {
-                req.getHeaders().add(Header.Authorization.toString(),
-                                     AuthenticatorUtils.computeDigestAuthentication(realm));
+                req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeDigestAuthentication(realm));
             } catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException("Digest authentication not supported", e);
             }
@@ -96,22 +84,14 @@ public final class AuthorizationHandler implements StatusHandler {
             throw new IllegalStateException("Unsupported authorization method: " + auth);
         }
 
-
         try {
-            final Connection c = getConnectionForNextRequest(ctx,
-                                                             req,
-                                                             responsePacket,
-                                                             httpTransactionContext);
-            final HttpTxContext newContext =
-                    httpTransactionContext.copy();
+            final Connection c = getConnectionForNextRequest(ctx, req, responsePacket, httpTransactionContext);
+            final HttpTxContext newContext = httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
             HttpTxContext.set(ctx, newContext);
             newContext.setInvocationStatus(STOP);
-            httpTransactionContext.getProvider().execute(c,
-                                                         req,
-                                                         httpTransactionContext.getHandler(),
-                                                         httpTransactionContext.getFuture(),
-                                                         newContext);
+            httpTransactionContext.getProvider().execute(c, req, httpTransactionContext.getHandler(), httpTransactionContext.getFuture(),
+                    newContext);
             return false;
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -120,21 +100,16 @@ public final class AuthorizationHandler implements StatusHandler {
         return false;
     }
 
-
     // --------------------------------------------------------- Private Methods
 
-
-    private Connection getConnectionForNextRequest(final FilterChainContext ctx,
-                                                   final Request request,
-                                                   final HttpResponsePacket response,
-                                                   final HttpTxContext httpCtx)
-    throws Exception {
+    private Connection getConnectionForNextRequest(final FilterChainContext ctx, final Request request, final HttpResponsePacket response,
+            final HttpTxContext httpCtx) throws Exception {
         /*
         if (response.getProcessingState().isKeepAlive()) {
             return ctx.getConnection();
         } else { */
-            final ConnectionManager m = httpCtx.getProvider().getConnectionManager();
-            return m.obtainConnection(request, httpCtx.getFuture());
+        final ConnectionManager m = httpCtx.getProvider().getConnectionManager();
+        return m.obtainConnection(request, httpCtx.getFuture());
         /* } */
     }
 

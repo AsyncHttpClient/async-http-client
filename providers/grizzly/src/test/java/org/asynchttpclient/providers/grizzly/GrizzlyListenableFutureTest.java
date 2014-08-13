@@ -23,5 +23,4 @@ public class GrizzlyListenableFutureTest extends ListenableFutureTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

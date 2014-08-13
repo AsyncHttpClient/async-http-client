@@ -31,32 +31,33 @@ import java.net.SocketAddress;
  * @since 2.0
  * @author The Grizzly Team
  */
-public class ConnectionPool extends MultiEndpointPool<SocketAddress>{
+public class ConnectionPool extends MultiEndpointPool<SocketAddress> {
 
     private final Object lock = new Object();
 
     // ------------------------------------------------------------ Constructors
 
-
-    public ConnectionPool(final int maxConnectionsPerEndpoint,
-                          final int maxConnectionsTotal,
-                          final DelayedExecutor delayedExecutor,
-                          final long connectTimeoutMillis,
-                          final long keepAliveTimeoutMillis,
-                          final long keepAliveCheckIntervalMillis) {
-        super(null, maxConnectionsPerEndpoint,
-              maxConnectionsTotal, delayedExecutor, connectTimeoutMillis,
-              keepAliveTimeoutMillis, keepAliveCheckIntervalMillis, -1, -1);
+    public ConnectionPool(final int maxConnectionsPerEndpoint,//
+            final int maxConnectionsTotal,//
+            final DelayedExecutor delayedExecutor,//
+            final long connectTimeoutMillis,//
+            final long keepAliveTimeoutMillis,//
+            final long keepAliveCheckIntervalMillis) {
+        super(null,//
+                maxConnectionsPerEndpoint,//
+                maxConnectionsTotal,//
+                delayedExecutor,//
+                connectTimeoutMillis,//
+                keepAliveTimeoutMillis,//
+                keepAliveCheckIntervalMillis,//
+                -1,//
+                -1);
     }
-
 
     // ------------------------------------------ Methods from MultiEndpointPool
 
-
-    protected SingleEndpointPool<SocketAddress> obtainSingleEndpointPool(
-            final EndpointKey<SocketAddress> endpointKey) throws IOException {
-        SingleEndpointPool<SocketAddress> sePool =
-                endpointToPoolMap.get(endpointKey);
+    protected SingleEndpointPool<SocketAddress> obtainSingleEndpointPool(final EndpointKey<SocketAddress> endpointKey) throws IOException {
+        SingleEndpointPool<SocketAddress> sePool = endpointToPoolMap.get(endpointKey);
         if (sePool == null) {
             synchronized (poolSync) {
                 checkNotClosed();
@@ -92,8 +93,7 @@ public class ConnectionPool extends MultiEndpointPool<SocketAddress>{
     }
 
     @Override
-    public void take(final EndpointKey<SocketAddress> endpointKey,
-                     final CompletionHandler<Connection> completionHandler) {
+    public void take(final EndpointKey<SocketAddress> endpointKey, final CompletionHandler<Connection> completionHandler) {
         synchronized (lock) {
             if (completionHandler == null) {
                 throw new IllegalStateException("CompletionHandler argument cannot be null.");
@@ -133,13 +133,10 @@ public class ConnectionPool extends MultiEndpointPool<SocketAddress>{
 
     // ---------------------------------------------------------- Nested Classes
 
-
     public static final class MaxCapacityException extends IOException {
 
         public MaxCapacityException() {
             super("Maximum pool capacity has been reached");
         }
-
     }
-
 }

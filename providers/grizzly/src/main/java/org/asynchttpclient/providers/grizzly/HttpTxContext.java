@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -17,6 +17,8 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
+import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.websocket.WebSocket;
 import org.glassfish.grizzly.CloseListener;
@@ -33,12 +35,15 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
+import org.asynchttpclient.providers.grizzly.filters.events.GracefulCloseEvent;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.filterchain.FilterChain;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 public final class HttpTxContext {
 
-    private static final Attribute<HttpTxContext> REQUEST_STATE_ATTR =
-                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTxContext.class.getName());
+    private static final Attribute<HttpTxContext> REQUEST_STATE_ATTR = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(HttpTxContext.class.getName());
 
     private final AtomicInteger redirectCount = new AtomicInteger(0);
 
@@ -47,7 +52,7 @@ public final class HttpTxContext {
     private final GrizzlyAsyncHttpProvider provider;
 
     private Request request;
-    private String requestUrl;
+    private UriComponents requestUri;
     private final AsyncHandler handler;
     private BodyHandler bodyHandler;
     private StatusHandler statusHandler;
@@ -58,69 +63,73 @@ public final class HttpTxContext {
     private final AtomicLong totalBodyWritten = new AtomicLong();
     private AsyncHandler.STATE currentState;
 
-    private String wsRequestURI;
+    private UriComponents wsRequestURI;
     private boolean isWSRequest;
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
     private WebSocket webSocket;
-    private CloseListener listener = new CloseListener< Closeable,CloseType>() {
+    private final CloseListener listener = new CloseListener<Closeable, CloseType>() {
         @Override
-        public void onClosed(Closeable closeable, CloseType type)
-        throws IOException {
-            if (CloseType.REMOTELY.equals(type)) {
+        public void onClosed(Closeable closeable, CloseType type) throws IOException {
+            if (responseStatus != null && // responseStatus==null if request wasn't even sent
+                    isGracefullyFinishResponseOnClose()) {
+                // Connection was closed.
+                // This event is fired only for responses, which don't have
+                // associated transfer-encoding or content-length.
+                // We have to complete such a request-response processing gracefully.
+                final Connection c = responseStatus.getResponse()
+                        .getRequest().getConnection();
+                final FilterChain fc = (FilterChain) c.getProcessor();
+                
+                fc.fireEventUpstream(c,
+                        new GracefulCloseEvent(HttpTxContext.this), null);
+            } else if (CloseType.REMOTELY.equals(type)) {
                 abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
             }
         }
     };
 
-
     // -------------------------------------------------------- Constructors
 
-
-    private HttpTxContext(final GrizzlyAsyncHttpProvider provider,
-                          final GrizzlyResponseFuture future,
-                          final Request request,
-                          final AsyncHandler handler) {
+    private HttpTxContext(final GrizzlyAsyncHttpProvider provider, final GrizzlyResponseFuture future, final Request request,
+            final AsyncHandler handler) {
         this.provider = provider;
         this.future = future;
         this.request = request;
         this.handler = handler;
-        redirectsAllowed = this.provider.getClientConfig().isRedirectEnabled();
+        redirectsAllowed = this.provider.getClientConfig().isFollowRedirect();
         maxRedirectCount = this.provider.getClientConfig().getMaxRedirects();
-        this.requestUrl = request.getUrl();
-
+        this.requestUri = request.getURI();
     }
-
 
     // ---------------------------------------------------------- Public Methods
 
-
-    public static void set(final FilterChainContext ctx,
-                           final HttpTxContext httpTxContext) {
+    public static void set(final FilterChainContext ctx, final HttpTxContext httpTxContext) {
         HttpContext httpContext = HttpContext.get(ctx);
         httpContext.getCloseable().addCloseListener(httpTxContext.listener);
         REQUEST_STATE_ATTR.set(httpContext, httpTxContext);
     }
 
-    public static void remove(final FilterChainContext ctx,
-                              final HttpTxContext httpTxContext) {
-        HttpContext httpContext = HttpContext.get(ctx);
-        httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
-        REQUEST_STATE_ATTR.remove(ctx);
+    public static HttpTxContext remove(final FilterChainContext ctx) {
+        final HttpContext httpContext = HttpContext.get(ctx);
+        final HttpTxContext httpTxContext = REQUEST_STATE_ATTR.remove(httpContext);
+        if (httpTxContext != null) {
+            httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
+        }
+        
+        return httpTxContext;
     }
 
     public static HttpTxContext get(FilterChainContext ctx) {
         HttpContext httpContext = HttpContext.get(ctx);
-        return ((httpContext != null)
-                    ? REQUEST_STATE_ATTR.get(httpContext)
-                    : null);
+        return ((httpContext != null) ? REQUEST_STATE_ATTR.get(httpContext) : null);
     }
 
     public static HttpTxContext create(final RequestInfoHolder requestInfoHolder) {
-        return new HttpTxContext(requestInfoHolder.getProvider(),
-                                  requestInfoHolder.getFuture(),
-                                  requestInfoHolder.getRequest(),
-                                  requestInfoHolder.getHandler());
+        return new HttpTxContext(requestInfoHolder.getProvider(),//
+                requestInfoHolder.getFuture(),//
+                requestInfoHolder.getRequest(),//
+                requestInfoHolder.getHandler());
     }
 
     public void abort(final Throwable t) {
@@ -153,12 +162,12 @@ public final class HttpTxContext {
         this.request = request;
     }
 
-    public String getRequestUrl() {
-        return requestUrl;
+    public UriComponents getRequestUri() {
+        return requestUri;
     }
 
-    public void setRequestUrl(String requestUrl) {
-        this.requestUrl = requestUrl;
+    public void setRequestUri(UriComponents requestUri) {
+        this.requestUri = requestUri;
     }
 
     public AsyncHandler getHandler() {
@@ -225,11 +234,11 @@ public final class HttpTxContext {
         this.currentState = currentState;
     }
 
-    public String getWsRequestURI() {
+    public UriComponents getWsRequestURI() {
         return wsRequestURI;
     }
 
-    public void setWsRequestURI(String wsRequestURI) {
+    public void setWsRequestURI(UriComponents wsRequestURI) {
         this.wsRequestURI = wsRequestURI;
     }
 
@@ -265,15 +274,16 @@ public final class HttpTxContext {
         this.webSocket = webSocket;
     }
 
+    private boolean isGracefullyFinishResponseOnClose() {
+        final HttpResponsePacket response = responseStatus.getResponse();
+        return !response.getProcessingState().isKeepAlive() &&
+                !response.isChunked() && response.getContentLength() == -1;
+    }
+    
     // ------------------------------------------------- Package Private Methods
 
-
     public HttpTxContext copy() {
-        final HttpTxContext newContext =
-                new HttpTxContext(provider,
-                                           future,
-                                           request,
-                                           handler);
+        final HttpTxContext newContext = new HttpTxContext(provider, future, request, handler);
         newContext.invocationStatus = invocationStatus;
         newContext.bodyHandler = bodyHandler;
         newContext.currentState = currentState;
@@ -281,7 +291,6 @@ public final class HttpTxContext {
         newContext.lastRedirectURI = lastRedirectURI;
         newContext.redirectCount.set(redirectCount.get());
         return newContext;
-
     }
 
     void done() {
@@ -290,12 +299,11 @@ public final class HttpTxContext {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     void result(Object result) {
         if (future != null) {
             future.delegate.result(result);
             future.done();
         }
     }
-
 }

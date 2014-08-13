@@ -17,11 +17,11 @@ package org.asynchttpclient.async;
 
 import static org.testng.Assert.assertEquals;
 
-import java.util.concurrent.TimeUnit;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.TimeUnit;
 
 public abstract class ComplexClientTest extends AbstractBasicTest {
 

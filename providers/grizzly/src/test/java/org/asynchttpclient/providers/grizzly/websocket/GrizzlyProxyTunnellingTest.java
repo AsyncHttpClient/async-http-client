@@ -25,9 +25,4 @@ public class GrizzlyProxyTunnellingTest extends ProxyTunnellingTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
-    @Test(timeOut = 60000, enabled = false)
-    public void echoText() throws Exception {
-        // FIXME
-    }
 }

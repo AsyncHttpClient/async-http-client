@@ -13,19 +13,10 @@
 package org.asynchttpclient.async;
 
 import static org.asynchttpclient.async.util.TestUtils.createTempFile;
-import static org.testng.Assert.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -36,6 +27,18 @@ import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.listener.TransferListener;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
 
@@ -144,7 +147,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 100 * 10);
 
         int timeout = (int) (file.length() / 1000);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(timeout).build());
 
         try {
             TransferCompletionHandler tl = new TransferCompletionHandler();

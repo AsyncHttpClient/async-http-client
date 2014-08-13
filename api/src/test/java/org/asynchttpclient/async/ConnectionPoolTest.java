@@ -15,15 +15,10 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.*;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
@@ -34,12 +29,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnections() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = getTargetUrl();
             int i;
@@ -61,7 +64,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = getTargetUrl();
             int i;
@@ -129,7 +132,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Exception {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectionTimeout(5000).setMaxConnections(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
@@ -157,7 +160,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectionTimeout(5000).setMaxConnections(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";

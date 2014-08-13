@@ -44,5 +44,4 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      * @return a {@link AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onContentWriteProgress(long amount, long current, long total);
-
 }

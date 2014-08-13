@@ -15,21 +15,29 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.testng.Assert.*;
-
-import java.net.ConnectException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.SSLHandshakeException;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE;
+import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE_STRING;
+import static org.asynchttpclient.async.util.TestUtils.createSSLContext;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
+import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
@@ -73,7 +81,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
+        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build());
         try {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
@@ -96,17 +104,19 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
+            Throwable cause = null;
             try {
                 c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (final ExecutionException e) {
-                Throwable cause = e.getCause();
+                cause = e.getCause();
                 if (cause instanceof ConnectException) {
-                    assertNotNull(cause.getCause());
+                    //assertNotNull(cause.getCause());
                     assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
                 } else {
-                    assertTrue(cause instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
+                   assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
                 }
             }
+            assertNotNull(cause);
 
             trusted.set(true);
 
@@ -116,6 +126,35 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             assertEquals(response.getResponseBody(), body);
         } finally {
             c.close();
+        }
+    }
+
+    @Test(timeOut = 5000)
+    public void failInstantlyIfHostNamesDiffer() throws Exception {
+        AsyncHttpClient client = null;
+
+        try {
+            final Builder builder = new Builder().setHostnameVerifier(new HostnameVerifier() {
+
+                public boolean verify(String arg0, SSLSession arg1) {
+                    return false;
+                }
+            }).setRequestTimeout(20000);
+
+            client = getAsyncHttpClient(builder.build());
+
+            try {
+            client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            
+            Assert.assertTrue(false, "Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                Assert.assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
+            } catch (Exception e) {
+                Assert.assertTrue(false, "Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
+            
+        } finally {
+            client.close();
         }
     }
 }

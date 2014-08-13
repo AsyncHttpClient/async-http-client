@@ -15,8 +15,14 @@
  */
 package org.asynchttpclient.multipart;
 
-import static org.asynchttpclient.multipart.Part.*;
-import static org.asynchttpclient.util.MiscUtil.*;
+import static org.asynchttpclient.multipart.Part.CRLF_BYTES;
+import static org.asynchttpclient.multipart.Part.EXTRA_BYTES;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.util.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,11 +34,6 @@ import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.util.StandardCharsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MultipartUtils {
 
@@ -46,7 +47,8 @@ public class MultipartUtils {
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
-    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            .getBytes(StandardCharsets.US_ASCII);
 
     private MultipartUtils() {
     }
@@ -59,7 +61,7 @@ public class MultipartUtils {
      */
     public static MultipartBody newMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
-            throw new IllegalArgumentException("parts cannot be null");
+            throw new NullPointerException("parts");
         }
 
         byte[] multipartBoundary;
@@ -71,7 +73,8 @@ public class MultipartUtils {
             if (boundaryLocation != -1) {
                 // boundary defined in existing Content-Type
                 contentType = contentTypeHeader;
-                multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(StandardCharsets.US_ASCII);
+                multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim())
+                        .getBytes(StandardCharsets.US_ASCII);
             } else {
                 // generate boundary and append it to existing Content-Type
                 multipartBoundary = generateMultipartBoundary();
@@ -107,50 +110,48 @@ public class MultipartUtils {
 
         int written = 0;
         int maxSpin = 0;
-        synchronized (bytes) {
-            ByteBuffer message = ByteBuffer.wrap(bytes);
+        ByteBuffer message = ByteBuffer.wrap(bytes);
 
-            if (target instanceof SocketChannel) {
-                final Selector selector = Selector.open();
-                try {
-                    final SocketChannel channel = (SocketChannel) target;
-                    channel.register(selector, SelectionKey.OP_WRITE);
+        if (target instanceof SocketChannel) {
+            final Selector selector = Selector.open();
+            try {
+                final SocketChannel channel = (SocketChannel) target;
+                channel.register(selector, SelectionKey.OP_WRITE);
 
-                    while (written < bytes.length) {
-                        selector.select(1000);
-                        maxSpin++;
-                        final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                while (written < bytes.length) {
+                    selector.select(1000);
+                    maxSpin++;
+                    final Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
-                        for (SelectionKey key : selectedKeys) {
-                            if (key.isWritable()) {
-                                written += target.write(message);
-                                maxSpin = 0;
-                            }
-                        }
-                        if (maxSpin >= 10) {
-                            throw new IOException("Unable to write on channel " + target);
+                    for (SelectionKey key : selectedKeys) {
+                        if (key.isWritable()) {
+                            written += target.write(message);
+                            maxSpin = 0;
                         }
                     }
-                } finally {
-                    selector.close();
+                    if (maxSpin >= 10) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
                 }
-            } else {
-                while ((target.isOpen()) && (written < bytes.length)) {
-                    long nWrite = target.write(message);
-                    written += nWrite;
-                    if (nWrite == 0 && maxSpin++ < 10) {
-                        LOGGER.info("Waiting for writing...");
-                        try {
-                            bytes.wait(1000);
-                        } catch (InterruptedException e) {
-                            LOGGER.trace(e.getMessage(), e);
-                        }
-                    } else {
-                        if (maxSpin >= 10) {
-                            throw new IOException("Unable to write on channel " + target);
-                        }
-                        maxSpin = 0;
+            } finally {
+                selector.close();
+            }
+        } else {
+            while ((target.isOpen()) && (written < bytes.length)) {
+                long nWrite = target.write(message);
+                written += nWrite;
+                if (nWrite == 0 && maxSpin++ < 10) {
+                    LOGGER.info("Waiting for writing...");
+                    try {
+                        bytes.wait(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.trace(e.getMessage(), e);
                     }
+                } else {
+                    if (maxSpin >= 10) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
+                    maxSpin = 0;
                 }
             }
         }
@@ -159,9 +160,8 @@ public class MultipartUtils {
 
     public static byte[] getMessageEnd(byte[] partBoundary) throws IOException {
 
-        if (partBoundary == null || partBoundary.length == 0) {
+        if (!isNonEmpty(partBoundary))
             throw new IllegalArgumentException("partBoundary may not be empty");
-        }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
@@ -177,7 +177,7 @@ public class MultipartUtils {
 
         try {
             if (parts == null) {
-                throw new IllegalArgumentException("Parts may not be null");
+                throw new NullPointerException("parts");
             }
             long total = 0;
             for (Part part : parts) {

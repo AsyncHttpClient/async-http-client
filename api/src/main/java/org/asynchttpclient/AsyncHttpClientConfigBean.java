@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.AsyncHttpClientConfigDefaults.*;
+
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -19,14 +21,14 @@ import org.asynchttpclient.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
+
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Simple JavaBean version of  {@link AsyncHttpClientConfig}
+ * Simple JavaBean version of {@link AsyncHttpClientConfig}
  */
 public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
@@ -43,38 +45,37 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureDefaults() {
-        maxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
-        maxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
-        connectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
-        idleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
-        idleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
-        requestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
-        redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
-        maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
-        compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
-        userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "AsyncHttpClient/" + AHC_VERSION);
-        ioThreadMultiplier = Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
-        
-        boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
-        boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
-        if (useProxySelector) {
+        maxConnections = defaultMaxConnections();
+        maxConnectionsPerHost = defaultMaxConnectionsPerHost();
+        connectionTimeout = defaultConnectionTimeout();
+        webSocketTimeout = defaultWebSocketTimeout();
+        pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
+        readTimeout = defaultReadTimeout();
+        requestTimeout = defaultRequestTimeout();
+        connectionTTL = defaultConnectionTTL();
+        followRedirect = defaultFollowRedirect();
+        maxRedirects = defaultMaxRedirects();
+        compressionEnabled = defaultCompressionEnabled();
+        userAgent = defaultUserAgent();
+        allowPoolingConnections = defaultAllowPoolingConnections();
+        useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
+        maxRequestRetry = defaultMaxRequestRetry();
+        ioThreadMultiplier = defaultIoThreadMultiplier();
+        allowPoolingSslConnections = defaultAllowPoolingSslConnections();
+        disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
+        removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
+        strict302Handling = defaultStrict302Handling();
+        acceptAnyCertificate = defaultAcceptAnyCertificate();
+
+        if (defaultUseProxySelector()) {
             proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
-        } else if (useProxyProperties) {
+        } else if (defaultUseProxyProperties()) {
             proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
         }
-
-        allowPoolingConnection = true;
-        requestCompressionLevel = -1;
-        maxRequestRetry = 5;
-        allowSslConnectionPool = true;
-        useRawUrl = false;
-        removeQueryParamOnRedirect = true;
-        hostnameVerifier = new HostnameVerifier() {
-
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        // AHC 2
+        spdyEnabled = defaultSpdyEnabled();
+        spdyInitialWindowSize = defaultSpdyInitialWindowSize();
+        spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
     }
 
     void configureExecutors() {
@@ -87,43 +88,53 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         });
     }
 
-    public AsyncHttpClientConfigBean setMaxTotalConnections(int maxTotalConnections) {
-        this.maxTotalConnections = maxTotalConnections;
+    public AsyncHttpClientConfigBean setMaxTotalConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setMaxConnectionPerHost(int maxConnectionPerHost) {
-        this.maxConnectionPerHost = maxConnectionPerHost;
+    public AsyncHttpClientConfigBean setMaxConnectionsPerHost(int maxConnectionsPerHost) {
+        this.maxConnectionsPerHost = maxConnectionsPerHost;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setConnectionTimeOutInMs(int connectionTimeOutInMs) {
-        this.connectionTimeOutInMs = connectionTimeOutInMs;
+    public AsyncHttpClientConfigBean setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setIdleConnectionInPoolTimeoutInMs(int idleConnectionInPoolTimeoutInMs) {
-        this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
+    public AsyncHttpClientConfigBean setConnectionTTL(int connectionTTL) {
+        this.connectionTTL = connectionTTL;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
-        this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+    public AsyncHttpClientConfigBean setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+        this.pooledConnectionIdleTimeout = pooledConnectionIdleTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRequestTimeoutInMs(int requestTimeoutInMs) {
-        this.requestTimeoutInMs = requestTimeoutInMs;
+    public AsyncHttpClientConfigBean setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRedirectEnabled(boolean redirectEnabled) {
-        this.redirectEnabled = redirectEnabled;
+    public AsyncHttpClientConfigBean setRequestTimeout(int requestTimeout) {
+        this.requestTimeout = requestTimeout;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setMaxDefaultRedirects(int maxDefaultRedirects) {
-        this.maxDefaultRedirects = maxDefaultRedirects;
+    public AsyncHttpClientConfigBean setFollowRedirect(boolean followRedirect) {
+        this.followRedirect = followRedirect;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setMaxRedirects(int maxRedirects) {
+        this.maxRedirects = maxRedirects;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setStrict302Handling(boolean strict302Handling) {
+        this.strict302Handling = strict302Handling;
         return this;
     }
 
@@ -137,8 +148,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setAllowPoolingConnection(boolean allowPoolingConnection) {
-        this.allowPoolingConnection = allowPoolingConnection;
+    public AsyncHttpClientConfigBean setAllowPoolingConnections(boolean allowPoolingConnections) {
+        this.allowPoolingConnections = allowPoolingConnections;
         return this;
     }
 
@@ -162,11 +173,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setSslContext(SSLContext sslContext) {
         this.sslContext = sslContext;
-        return this;
-    }
-
-    public AsyncHttpClientConfigBean setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
-        this.sslEngineFactory = sslEngineFactory;
         return this;
     }
 
@@ -195,23 +201,18 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRequestCompressionLevel(int requestCompressionLevel) {
-        this.requestCompressionLevel = requestCompressionLevel;
-        return this;
-    }
-
     public AsyncHttpClientConfigBean setMaxRequestRetry(int maxRequestRetry) {
         this.maxRequestRetry = maxRequestRetry;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setAllowSslConnectionPool(boolean allowSslConnectionPool) {
-        this.allowSslConnectionPool = allowSslConnectionPool;
+    public AsyncHttpClientConfigBean setAllowPoolingSslConnections(boolean allowPoolingSslConnections) {
+        this.allowPoolingSslConnections = allowPoolingSslConnections;
         return this;
     }
 
-    public AsyncHttpClientConfigBean setUseRawUrl(boolean useRawUrl) {
-        this.useRawUrl = useRawUrl;
+    public AsyncHttpClientConfigBean setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
+        this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         return this;
     }
 
@@ -227,6 +228,11 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setIoThreadMultiplier(int ioThreadMultiplier) {
         this.ioThreadMultiplier = ioThreadMultiplier;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+        this.acceptAnyCertificate = acceptAnyCertificate;
         return this;
     }
 }

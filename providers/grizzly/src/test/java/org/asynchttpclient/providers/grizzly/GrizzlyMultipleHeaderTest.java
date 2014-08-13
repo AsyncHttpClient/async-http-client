@@ -23,5 +23,4 @@ public class GrizzlyMultipleHeaderTest extends MultipleHeaderTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }
