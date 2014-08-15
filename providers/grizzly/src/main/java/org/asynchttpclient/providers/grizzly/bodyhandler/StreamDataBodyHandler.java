@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
+
 import org.asynchttpclient.Request;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -23,23 +25,16 @@ import org.glassfish.grizzly.memory.MemoryManager;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
-
-public final class StreamDataBodyHandler implements BodyHandler {
-
+public final class StreamDataBodyHandler extends BodyHandler {
 
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(final Request request) {
         return (request.getStreamData() != null);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final MemoryManager mm = ctx.getMemoryManager();
         Buffer buffer = mm.allocate(512);
@@ -70,8 +65,6 @@ public final class StreamDataBodyHandler implements BodyHandler {
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         }
-
         return true;
     }
-
 } // END StreamDataBodyHandler

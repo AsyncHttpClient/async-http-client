@@ -31,7 +31,7 @@ import java.util.Set;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<GrizzlyAsyncHttpProviderConfig.Property,Object> {
+public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<GrizzlyAsyncHttpProviderConfig.Property, Object> {
 
     /**
      * Grizzly-specific customization properties.  Each property describes
@@ -74,34 +74,47 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          */
         NPN_ENABLED(Boolean.class, true),
 
-
         /**
          * Grizzly specific connection pool.
          */
         CONNECTION_POOL(ConnectionPool.class, null);
-        
-        
+
         final Object defaultValue;
         final Class<?> type;
-        
+
         private Property(final Class<?> type, final Object defaultValue) {
             this.type = type;
             this.defaultValue = defaultValue;
         }
-        
+
         private Property(final Class<?> type) {
             this(type, null);
         }
-        
+
         boolean hasDefaultValue() {
             return (defaultValue != null);
         }
-        
-        
+
     } // END PROPERTY
-    
-    private final Map<Property,Object> attributes = new HashMap<Property,Object>();
-    
+
+    private final Map<Property, Object> attributes = new HashMap<Property, Object>();
+
+    /**
+     * @return <code>true</code> if the underlying provider should make new connections asynchronously or not.  By default
+     *  new connections are made synchronously.
+     *
+     * @since 2.0.0
+     */
+    private boolean asyncConnectMode;
+
+    public boolean isAsyncConnectMode() {
+        return asyncConnectMode;
+    }
+
+    public void setAsyncConnectMode(boolean asyncConnectMode) {
+        this.asyncConnectMode = asyncConnectMode;
+    }
+
     // ------------------------------------ Methods from AsyncHttpProviderConfig
 
     /**
@@ -124,12 +137,9 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
             }
         } else {
             if (!name.type.isAssignableFrom(value.getClass())) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "The value of property [%s] must be of type [%s].  Type of value provided: [%s].",
-                                name.name(),
-                                name.type.getName(),
-                                value.getClass().getName()));
+                throw new IllegalArgumentException(String.format(
+                        "The value of property [%s] must be of type [%s].  Type of value provided: [%s].", name.name(),
+                        name.type.getName(), value.getClass().getName()));
             }
         }
         attributes.put(name, value);
@@ -165,8 +175,7 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
       * {@inheritDoc}
       */
     @Override
-    public Set<Map.Entry<Property,Object>> propertiesSet() {
+    public Set<Map.Entry<Property, Object>> propertiesSet() {
         return attributes.entrySet();
     }
-
 }

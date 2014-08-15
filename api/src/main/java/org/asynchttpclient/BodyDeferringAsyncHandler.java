@@ -72,14 +72,13 @@ import java.util.concurrent.Semaphore;
  * </pre>
  */
 public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
-    private final Response.ResponseBuilder
-            responseBuilder = new Response.ResponseBuilder();
+    private final Response.ResponseBuilder responseBuilder = new Response.ResponseBuilder();
 
     private final CountDownLatch headersArrived = new CountDownLatch(1);
 
     private final OutputStream output;
 
-    private volatile boolean responseSet;
+    private boolean responseSet;
 
     private volatile Response response;
 
@@ -115,21 +114,18 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
-    public STATE onStatusReceived(HttpResponseStatus responseStatus)
-            throws Exception {
+    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         responseBuilder.reset();
         responseBuilder.accumulate(responseStatus);
         return STATE.CONTINUE;
     }
 
-    public STATE onHeadersReceived(HttpResponseHeaders headers)
-            throws Exception {
+    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         return STATE.CONTINUE;
     }
 
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
-            throws Exception {
+    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         // body arrived, flush headers
         if (!responseSet) {
             response = responseBuilder.build();
@@ -150,6 +146,12 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     public Response onCompleted() throws IOException {
+
+        if (!responseSet) {
+            response = responseBuilder.build();
+            responseSet = true;
+        }
+
         // Counting down to handle error cases too.
         // In "normal" cases, latch is already at 0 here
         // But in other cases, for example when because of some error
@@ -224,8 +226,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
         private final BodyDeferringAsyncHandler bdah;
 
-        public BodyDeferringInputStream(final Future<Response> future,
-                                        final BodyDeferringAsyncHandler bdah, final InputStream in) {
+        public BodyDeferringInputStream(final Future<Response> future, final BodyDeferringAsyncHandler bdah, final InputStream in) {
             super(in);
             this.future = future;
             this.bdah = bdah;
@@ -257,8 +258,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @return a {@link Response}
          * @throws InterruptedException
          */
-        public Response getAsapResponse() throws InterruptedException,
-                IOException {
+        public Response getAsapResponse() throws InterruptedException, IOException {
             return bdah.getResponse();
         }
 
@@ -270,8 +270,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @throws InterruptedException
          * @throws ExecutionException
          */
-        public Response getLastResponse() throws InterruptedException,
-                ExecutionException {
+        public Response getLastResponse() throws InterruptedException, ExecutionException {
             return future.get();
         }
     }

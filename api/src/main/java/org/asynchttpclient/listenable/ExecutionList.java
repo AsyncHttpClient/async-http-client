@@ -48,8 +48,7 @@ import java.util.logging.Logger;
 public final class ExecutionList implements Runnable {
 
     // Logger to log exceptions caught when running runnables.
-    private static final Logger log =
-            Logger.getLogger(ExecutionList.class.getName());
+    private static final Logger log = Logger.getLogger(ExecutionList.class.getName());
 
     // The runnable,executor pairs to execute.
     private final Queue<RunnableExecutorPair> runnables = new LinkedBlockingQueue<RunnableExecutorPair>();
@@ -130,8 +129,7 @@ public final class ExecutionList implements Runnable {
                 // Log it and keep going, bad runnable and/or executor.  Don't
                 // punish the other runnables if we're given a bad one.  We only
                 // catch RuntimeException because we want Errors to propagate up.
-                log.log(Level.SEVERE, "RuntimeException while executing runnable "
-                        + runnable + " with executor " + executor, e);
+                log.log(Level.SEVERE, "RuntimeException while executing runnable " + runnable + " with executor " + executor, e);
             }
         }
     }

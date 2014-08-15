@@ -12,22 +12,25 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
-import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
-import org.asynchttpclient.simple.HeaderMap;
-import org.asynchttpclient.simple.SimpleAHCTransferListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLContext;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
+
+import javax.net.ssl.SSLContext;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.resumable.ResumableAsyncHandler;
+import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
+import org.asynchttpclient.simple.HeaderMap;
+import org.asynchttpclient.simple.SimpleAHCTransferListener;
+import org.asynchttpclient.uri.UriComponents;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
@@ -38,9 +41,9 @@ import java.util.concurrent.ScheduledExecutorService;
  * {@link AsyncHandler} are required. As simple as:
  * <blockquote><pre>
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
- * .setIdleConnectionInPoolTimeoutInMs(100)
+ * .setIdleConnectionInPoolTimeout(100)
  * .setMaximumConnectionsTotal(50)
- * .setRequestTimeoutInMs(5 * 60 * 1000)
+ * .setRequestTimeout(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
  * <p/>
@@ -61,7 +64,6 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class SimpleAsyncHttpClient implements Closeable {
 
-    private final static Logger logger = LoggerFactory.getLogger(SimpleAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
@@ -72,7 +74,9 @@ public class SimpleAsyncHttpClient implements Closeable {
     private final boolean derived;
     private final String providerClass;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener, String providerClass) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler,
+            ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener,
+            String providerClass) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -128,7 +132,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         return execute(r, bodyConsumer, null);
     }
 
-    public Future<Response> post(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+    public Future<Response> post(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler)
+            throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
         r.setBody(bodyGenerator);
@@ -164,7 +169,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         return execute(r, bodyConsumer, null);
     }
 
-    public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+    public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler)
+            throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
         r.setBody(bodyGenerator);
@@ -275,10 +281,10 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         Request request = rb.build();
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener);
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
+                request.getURI(), listener);
 
-        if (resumeEnabled && request.getMethod().equals("GET") &&
-                bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
+        if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
             long length = fileBodyConsumer.getTransferredBytes();
             fileBodyConsumer.resume();
@@ -292,9 +298,9 @@ public class SimpleAsyncHttpClient implements Closeable {
         synchronized (config) {
             if (asyncHttpClient == null) {
                 if (providerClass == null)
-                    asyncHttpClient = new AsyncHttpClient(config);
+                    asyncHttpClient = new DefaultAsyncHttpClient(config);
                 else
-                    asyncHttpClient = new AsyncHttpClient(providerClass, config);
+                    asyncHttpClient = new DefaultAsyncHttpClient(providerClass, config);
             }
         }
         return asyncHttpClient;
@@ -359,17 +365,22 @@ public class SimpleAsyncHttpClient implements Closeable {
      *
      * @see SimpleAsyncHttpClient#derive()
      */
+    /**
+     * This interface contains possible configuration changes for a derived SimpleAsyncHttpClient.
+     *
+     * @see SimpleAsyncHttpClient#derive()
+     */
     public interface DerivedBuilder {
 
-        DerivedBuilder setFollowRedirects(boolean followRedirects);
+        DerivedBuilder setFollowRedirect(boolean followRedirect);
 
         DerivedBuilder setVirtualHost(String virtualHost);
 
         DerivedBuilder setUrl(String url);
 
-        DerivedBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
+        DerivedBuilder setFormParams(List<Param> params);
 
-        DerivedBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
+        DerivedBuilder setFormParams(Map<String, List<String>> params);
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
@@ -377,15 +388,15 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setHeader(String name, String value);
 
-        DerivedBuilder addQueryParameter(String name, String value);
+        DerivedBuilder addQueryParam(String name, String value);
 
-        DerivedBuilder addParameter(String key, String value) throws IllegalArgumentException;
+        DerivedBuilder addFormParam(String key, String value);
 
         DerivedBuilder addHeader(String name, String value);
 
         DerivedBuilder addCookie(Cookie cookie);
 
-        DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
+        DerivedBuilder addBodyPart(Part part);
 
         DerivedBuilder setResumableDownload(boolean resume);
 
@@ -422,7 +433,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             this.listener = client.listener;
         }
 
-        public Builder addBodyPart(Part part) throws IllegalArgumentException {
+        public Builder addBodyPart(Part part) {
             requestBuilder.addBodyPart(part);
             return this;
         }
@@ -437,13 +448,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder addParameter(String key, String value) throws IllegalArgumentException {
-            requestBuilder.addParameter(key, value);
+        public Builder addFormParam(String key, String value) {
+            requestBuilder.addFormParam(key, value);
             return this;
         }
 
-        public Builder addQueryParameter(String name, String value) {
-            requestBuilder.addQueryParameter(name, value);
+        public Builder addQueryParam(String name, String value) {
+            requestBuilder.addQueryParam(name, value);
             return this;
         }
 
@@ -462,13 +473,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(Map<String, List<String>> parameters) {
+            requestBuilder.setFormParams(parameters);
             return this;
         }
 
-        public Builder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(List<Param> params) {
+            requestBuilder.setFormParams(params);
             return this;
         }
 
@@ -482,38 +493,38 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setFollowRedirects(boolean followRedirects) {
-            requestBuilder.setFollowRedirects(followRedirects);
+        public Builder setFollowRedirect(boolean followRedirect) {
+            requestBuilder.setFollowRedirect(followRedirect);
             return this;
         }
 
-        public Builder setMaximumConnectionsTotal(int defaultMaxTotalConnections) {
-            configBuilder.setMaximumConnectionsTotal(defaultMaxTotalConnections);
+        public Builder setMaxConnections(int defaultMaxConnections) {
+            configBuilder.setMaxConnections(defaultMaxConnections);
             return this;
         }
 
-        public Builder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
-            configBuilder.setMaximumConnectionsPerHost(defaultMaxConnectionPerHost);
+        public Builder setMaxConnectionsPerHost(int defaultMaxConnectionsPerHost) {
+            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionsPerHost);
             return this;
         }
 
-        public Builder setConnectionTimeoutInMs(int connectionTimeuot) {
-            configBuilder.setConnectionTimeoutInMs(connectionTimeuot);
+        public Builder setConnectionTimeout(int connectionTimeuot) {
+            configBuilder.setConnectionTimeout(connectionTimeuot);
             return this;
         }
 
-        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPoolTimeoutInMs) {
-            configBuilder.setIdleConnectionInPoolTimeoutInMs(defaultIdleConnectionInPoolTimeoutInMs);
+        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+            configBuilder.setPooledConnectionIdleTimeout(pooledConnectionIdleTimeout);
             return this;
         }
 
-        public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
-            configBuilder.setRequestTimeoutInMs(defaultRequestTimeoutInMs);
+        public Builder setRequestTimeout(int defaultRequestTimeout) {
+            configBuilder.setRequestTimeout(defaultRequestTimeout);
             return this;
         }
 
-        public Builder setMaximumNumberOfRedirects(int maxDefaultRedirects) {
-            configBuilder.setMaximumNumberOfRedirects(maxDefaultRedirects);
+        public Builder setMaxRedirects(int maxRedirects) {
+            configBuilder.setMaxRedirects(maxRedirects);
             return this;
         }
 
@@ -527,13 +538,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
-            configBuilder.setAllowPoolingConnection(allowPoolingConnection);
-            return this;
-        }
-
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            configBuilder.setScheduledExecutorService(reaper);
+        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
+            configBuilder.setAllowPoolingConnections(allowPoolingConnections);
             return this;
         }
 
@@ -542,18 +548,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-            configBuilder.setSSLEngineFactory(sslEngineFactory);
-            return this;
-        }
-
         public Builder setSSLContext(final SSLContext sslContext) {
             configBuilder.setSSLContext(sslContext);
-            return this;
-        }
-
-        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
-            configBuilder.setRequestCompressionLevel(requestCompressionLevel);
             return this;
         }
 
@@ -588,7 +584,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setRealmEnconding(String enc) {
-            realm().setEnconding(enc);
+            realm().setEncoding(enc);
             return this;
         }
 
@@ -672,6 +668,11 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            configBuilder.setAcceptAnyCertificate(acceptAnyCertificate);
+            return this;
+        }
+
         public SimpleAsyncHttpClient build() {
 
             if (realmBuilder != null) {
@@ -684,15 +685,14 @@ public class SimpleAsyncHttpClient implements Closeable {
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener, providerClass);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler,
+                    errorDocumentBehaviour, enableResumableDownload, ahc, listener, providerClass);
 
             return sc;
         }
     }
 
-    private final static class ResumableBodyConsumerAsyncHandler
-            extends ResumableAsyncHandler
-            implements ProgressAsyncHandler<Response> {
+    private final static class ResumableBodyConsumerAsyncHandler extends ResumableAsyncHandler implements ProgressAsyncHandler<Response> {
 
         private final ProgressAsyncHandler<Response> delegate;
 
@@ -719,7 +719,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
-        private final String url;
+        private final UriComponents uri;
         private final SimpleAHCTransferListener listener;
 
         private boolean accumulateBody = false;
@@ -727,11 +727,12 @@ public class SimpleAsyncHttpClient implements Closeable {
         private int amount = 0;
         private long total = -1;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, String url, SimpleAHCTransferListener listener) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
+                ErrorDocumentBehaviour errorDocumentBehaviour, UriComponents uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
-            this.url = url;
+            this.uri = uri;
             this.listener = listener;
         }
 
@@ -765,7 +766,6 @@ public class SimpleAsyncHttpClient implements Closeable {
             return STATE.CONTINUE;
         }
 
-
         /**
          * {@inheritDoc}
          */
@@ -777,30 +777,24 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         private void closeConsumer() {
-            try {
-                if (bodyConsumer != null) {
-                    bodyConsumer.close();
-                }
-            } catch (IOException ex) {
-                logger.warn("Unable to close a BodyConsumer {}", bodyConsumer);
-            }
+            if (bodyConsumer != null)
+                closeSilently(bodyConsumer);
         }
 
         @Override
-        public STATE onStatusReceived(HttpResponseStatus status)
-                throws Exception {
+        public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
             fireStatus(status);
 
             if (isErrorStatus(status)) {
                 switch (errorDocumentBehaviour) {
-                    case ACCUMULATE:
-                        accumulateBody = true;
-                        break;
-                    case OMIT:
-                        omitBody = true;
-                        break;
-                    default:
-                        break;
+                case ACCUMULATE:
+                    accumulateBody = true;
+                    break;
+                case OMIT:
+                    omitBody = true;
+                    break;
+                default:
+                    break;
                 }
             }
             return super.onStatusReceived(status);
@@ -811,8 +805,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onHeadersReceived(HttpResponseHeaders headers)
-                throws Exception {
+        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             calculateTotal(headers);
 
             fireHeaders(headers);
@@ -832,13 +825,13 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         @Override
         public STATE onContentWriteProgress(long amount, long current, long total) {
-            fireSent(url, amount, current, total);
+            fireSent(uri, amount, current, total);
             return super.onContentWriteProgress(amount, current, total);
         }
 
         private void fireStatus(HttpResponseStatus status) {
             if (listener != null) {
-                listener.onStatus(url, status.getStatusCode(), status.getStatusText());
+                listener.onStatus(uri, status.getStatusCode(), status.getStatusText());
             }
         }
 
@@ -848,27 +841,26 @@ public class SimpleAsyncHttpClient implements Closeable {
             amount += remaining;
 
             if (listener != null) {
-                listener.onBytesReceived(url, amount, remaining, total);
+                listener.onBytesReceived(uri, amount, remaining, total);
             }
         }
 
         private void fireHeaders(HttpResponseHeaders headers) {
             if (listener != null) {
-                listener.onHeaders(url, new HeaderMap(headers.getHeaders()));
+                listener.onHeaders(uri, new HeaderMap(headers.getHeaders()));
             }
         }
 
-        private void fireSent(String url, long amount, long current, long total) {
+        private void fireSent(UriComponents uri, long amount, long current, long total) {
             if (listener != null) {
-                listener.onBytesSent(url, amount, current, total);
+                listener.onBytesSent(uri, amount, current, total);
             }
         }
 
         private void fireCompleted(Response response) {
             if (listener != null) {
-                listener.onCompleted(url, response.getStatusCode(), response.getStatusText());
+                listener.onCompleted(uri, response.getStatusCode(), response.getStatusText());
             }
         }
     }
-
 }

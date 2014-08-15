@@ -34,9 +34,7 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
      */
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
-        outputStream.write(byteBuffer.array(),
-                           byteBuffer.arrayOffset() + byteBuffer.position(),
-                           byteBuffer.remaining());
+        outputStream.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
     }
 
     /**

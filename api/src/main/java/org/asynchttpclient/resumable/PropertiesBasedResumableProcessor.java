@@ -12,16 +12,18 @@
  */
 package org.asynchttpclient.resumable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.asynchttpclient.util.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link org.asynchttpclient.resumable.ResumableAsyncHandler.ResumableProcessor} which use a properties file
@@ -74,18 +76,14 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             os = new FileOutputStream(f);
 
             for (Map.Entry<String, Long> e : properties.entrySet()) {
-                os.write((append(e)).getBytes("UTF-8"));
+                os.write(append(e).getBytes(StandardCharsets.UTF_8));
             }
             os.flush();
         } catch (Throwable e) {
             log.warn(e.getMessage(), e);
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException ignored) {
-                }
-            }
+            if (os != null)
+                closeSilently(os);
         }
     }
 
@@ -100,7 +98,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         Scanner scan = null;
         try {
-            scan = new Scanner(new File(TMP, storeName), "UTF-8");
+            scan = new Scanner(new File(TMP, storeName), StandardCharsets.UTF_8.name());
             scan.useDelimiter("[=\n]");
 
             String key;

@@ -25,7 +25,7 @@ public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled=false)
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicByteBufferTest() throws Exception {
     }
 }

@@ -10,7 +10,7 @@ Async Http Client library purpose is to allow Java applications to easily execut
 <dependency>
   <groupId>com.ning</groupId>
   <artifactId>async-http-client</artifactId>
-  <version>1.7.22</version>
+  <version>1.8.13</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@ You can also download the artifact
 
 [Maven Search](http://search.maven.org)
 
-Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-http-client/apidocs/index.html))
+Then in your code you can simply do [Javadoc](http://asynchttpclient.github.io/async-http-client/apidocs/reference/packages.html)
 
 ```java
 import com.ning.http.client.*;
@@ -133,6 +133,8 @@ Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler
 String bodyResponse = f.get();
 ```
 
+## Configuration
+
 Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfig object:
 
 ```java
@@ -140,6 +142,8 @@ AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
     S.setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
 AsyncHttpClient c = new AsyncHttpClient(cf);
 ```
+
+## WebSocket
 
 Async Http Client also support WebSocket by simply doing:
 
@@ -175,6 +179,8 @@ AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
 AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
 ```
 
+## User Group
+
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
 [Google Group](http://groups.google.com/group/asynchttpclient)
@@ -182,3 +188,20 @@ Keep up to date on the library development by joining the Asynchronous HTTP Clie
 or follow us on [Twitter](http://twitter.com/jfarcand)
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/6433679063b2351599c6ca44a08246a2 "githalytics.com")](http://githalytics.com/AsyncHttpClient/async-http-client)
+
+## Contributing
+
+Of course, Pull Requests are welcome.
+
+Here a the few rules we'd like you to respect if you do so:
+
+* Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
+* Respect the formatting rules:
+  * Ident with 4 spaces
+  * Use a 140 chars line max length
+  * Don't use * imports
+  * Stick to the org, com, javax, java imports order
+* Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash them into a single one
+* Regarding licensing:
+  * You must be the original author of the code you suggest.
+  * If not, you have to prove that the original code was published under Apache License 2 and properly mention original copyrights.

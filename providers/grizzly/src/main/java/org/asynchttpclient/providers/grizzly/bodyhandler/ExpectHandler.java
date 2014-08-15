@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -19,7 +19,7 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 
 import java.io.IOException;
 
-public final class ExpectHandler implements BodyHandler {
+public final class ExpectHandler extends BodyHandler {
 
     private final BodyHandler delegate;
     private Request request;
@@ -27,25 +27,27 @@ public final class ExpectHandler implements BodyHandler {
 
     // -------------------------------------------------------- Constructors
 
-
     public ExpectHandler(final BodyHandler delegate) {
-
         this.delegate = delegate;
-
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(Request request) {
         return delegate.handlesBodyType(request);
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     public boolean doHandle(FilterChainContext ctx, Request request, HttpRequestPacket requestPacket) throws IOException {
         this.request = request;
         this.requestPacket = requestPacket;
+        
+        // Set content-length if possible
+        final long contentLength = delegate.getContentLength(request);
+        if (contentLength != -1) {
+            requestPacket.setContentLengthLong(contentLength);
+        }
+        
         ctx.write(requestPacket, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         return true;
     }

@@ -37,5 +37,4 @@ public interface WebSocketListener {
      * @param t a {@link Throwable}
      */
     void onError(Throwable t);
-
 }

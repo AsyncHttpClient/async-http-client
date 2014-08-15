@@ -1,137 +1,151 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.request;
+
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
+import org.asynchttpclient.util.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslHandler;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.URI;
-import java.nio.channels.ClosedChannelException;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
-import org.asynchttpclient.util.ProxyUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.ConnectException;
+import java.nio.channels.ClosedChannelException;
 
 /**
  * Non Blocking connect.
  */
-// FIXME Netty 3: NettyConnectListener don't need to be passed the request as
-// the future has it too
 final class NettyConnectListener<T> implements ChannelFutureListener {
-    private final static Logger logger = LoggerFactory.getLogger(NettyConnectListener.class);
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
+
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
+    private final ChannelManager channelManager;
+    private final boolean channelPreempted;
+    private final String poolKey;
 
-    private NettyConnectListener(AsyncHttpClientConfig config, NettyRequestSender requestSender, NettyResponseFuture<T> future) {
-        this.requestSender = requestSender;
+    public NettyConnectListener(AsyncHttpClientConfig config,//
+            NettyResponseFuture<T> future,//
+            NettyRequestSender requestSender,//
+            ChannelManager channelManager,//
+            boolean channelPreempted,//
+            String poolKey) {
         this.config = config;
         this.future = future;
+        this.requestSender = requestSender;
+        this.channelManager = channelManager;
+        this.channelPreempted = channelPreempted;
+        this.poolKey = poolKey;
     }
 
-    public NettyResponseFuture<T> future() {
-        return future;
+    private void abortChannelPreemption(String poolKey) {
+        if (channelPreempted)
+            channelManager.abortChannelPreemption(poolKey);
+    }
+
+    private void writeRequest(Channel channel) {
+
+        LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
+
+        if (future.isDone()) {
+            abortChannelPreemption(poolKey);
+            return;
+        }
+
+        channelManager.registerOpenChannel(channel);
+        future.attachChannel(channel, false);
+        requestSender.writeRequest(future, channel);
     }
 
     public void onFutureSuccess(final Channel channel) throws ConnectException {
-        Channels.setDefaultAttribute(channel, future);
-        SslHandler sslHandler = Channels.getSslHandler(channel);
+        Channels.setAttribute(channel, future);
+        final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
+        final SslHandler sslHandler = ChannelManager.getSslHandler(channel.pipeline());
+        if (hostnameVerifier != null && sslHandler != null) {
+            final String host = future.getURI().getHost();
+            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<? super Channel>>() {
+                @Override
+                public void operationComplete(Future<? super Channel> handshakeFuture) throws Exception {
+                    if (handshakeFuture.isSuccess()) {
+                        Channel channel = (Channel) handshakeFuture.getNow();
+                        SSLEngine engine = sslHandler.engine();
+                        SSLSession session = engine.getSession();
 
-        if (sslHandler != null && !config.getHostnameVerifier().verify(future.getURI().getHost(), sslHandler.engine().getSession())) {
-            ConnectException exception = new ConnectException("HostnameVerifier exception");
-            future.abort(exception);
-            throw exception;
+                        LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
+                                Base64.encode(session.getId()), session.isValid(), host);
+                        if (hostnameVerifier.verify(host, session)) {
+                            writeRequest(channel);
+                        } else {
+                            abortChannelPreemption(poolKey);
+                            ConnectException exception = new ConnectException("HostnameVerifier exception");
+                            future.abort(exception);
+                            throw exception;
+                        }
+                    }
+                }
+            });
+        } else {
+            writeRequest(channel);
         }
-
-        requestSender.writeRequest(channel, config, future);
     }
 
     public void onFutureFailure(Channel channel, Throwable cause) {
 
-        boolean canRetry = future.canRetry();
-        logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);
-        if (canRetry && cause != null
-                && (NettyResponseFutures.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
+        abortChannelPreemption(poolKey);
 
-            logger.debug("Retrying {} ", future.getNettyRequest());
-            // FIXME Netty 3 use the wrong statement
-            if (requestSender.retry(channel, future)) {
+        boolean canRetry = future.canRetry();
+        LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);
+        if (canRetry//
+                && cause != null//
+                && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
+
+            if (requestSender.retry(future, channel)) {
                 return;
             }
         }
 
-        logger.debug("Failed to recover from exception: {} with channel {}", cause, channel);
+        LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, channel);
 
         boolean printCause = cause != null && cause.getMessage() != null;
-        ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getURI().toString() : future.getURI().toString());
-        if (cause != null) {
+        String url = future.getURI().toUrl();
+        String printedCause = printCause ? cause.getMessage() + " to " + url : url;
+        ConnectException e = new ConnectException(printedCause);
+        if (cause != null)
             e.initCause(cause);
-        }
         future.abort(e);
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
-        if (f.isSuccess()) {
+        if (f.isSuccess())
             onFutureSuccess(f.channel());
-        } else {
+        else
             onFutureFailure(f.channel(), f.cause());
-        }
-    }
-
-    public static class Builder<T> {
-        private final AsyncHttpClientConfig config;
-
-        private final NettyRequestSender requestSender;
-        private final Request request;
-        private final AsyncHandler<T> asyncHandler;
-        private NettyResponseFuture<T> future;
-
-        // FIXME Netty3 useless constructor
-        public Builder(AsyncHttpClientConfig config, NettyRequestSender requestSender, Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
-
-            this.config = config;
-            this.requestSender = requestSender;
-            this.request = request;
-            this.asyncHandler = asyncHandler;
-            this.future = future;
-        }
-
-        public NettyConnectListener<T> build(final URI uri) throws IOException {
-            ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-            HttpRequest nettyRequest = NettyRequests.newNettyRequest(config, request, uri, true, proxyServer);
-            if (future == null) {
-                future = NettyResponseFutures.newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, config, proxyServer);
-            } else {
-                future.setNettyRequest(nettyRequest);
-                future.setRequest(request);
-            }
-            return new NettyConnectListener<T>(config, requestSender, future);
-        }
     }
 }

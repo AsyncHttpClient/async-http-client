@@ -23,5 +23,4 @@ public class GrizzlyPostWithQSTest extends PostWithQSTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

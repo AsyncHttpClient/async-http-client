@@ -16,20 +16,9 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.testng.Assert.*;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -39,6 +28,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
@@ -50,8 +51,8 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000)
-                .setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).setMaximumConnectionsPerHost(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000).setRequestTimeout(5000)
+                .setAllowPoolingConnections(true).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
 
         try {
             final Boolean[] caughtError = new Boolean[] { Boolean.FALSE };
@@ -66,10 +67,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                             // assert that 2nd request fails, because maxTotalConnections=1
                             // logger.debug(i);
                             caughtError[0] = true;
-                            System.err.println("============");
-                            e.printStackTrace();
-                            System.err.println("============");
-
+                            logger.error("Exception ", e);
                         }
                     }
                 };
@@ -81,8 +79,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 try {
                     t.join();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    logger.error("Exception ", e);
                 }
             }
 

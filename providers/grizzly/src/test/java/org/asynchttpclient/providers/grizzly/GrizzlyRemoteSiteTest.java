@@ -23,5 +23,4 @@ public class GrizzlyRemoteSiteTest extends RemoteSiteTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

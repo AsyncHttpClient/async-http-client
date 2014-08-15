@@ -108,3 +108,4 @@ public interface WebSocket extends Closeable {
      */
     void close();
 }
+

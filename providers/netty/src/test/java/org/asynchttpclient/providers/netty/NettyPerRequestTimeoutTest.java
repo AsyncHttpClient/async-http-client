@@ -12,20 +12,21 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.PerRequestTimeoutTest;
 
 public class NettyPerRequestTimeoutTest extends PerRequestTimeoutTest {
-    
+
     @Override
     protected void checkTimeoutMessage(String message) {
-        assertTrue(message
-                .startsWith("Request reached time out of 100 ms after "));
+        assertTrue(message.startsWith("Request timed out"), "error message indicates reason of error");
+        assertTrue(message.contains("127.0.0.1"), "error message contains remote ip address");
+        assertTrue(message.contains("of 100 ms"), "error message contains timeout configuration value");
     }
-    
+
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);

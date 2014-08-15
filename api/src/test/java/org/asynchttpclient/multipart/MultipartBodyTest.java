@@ -12,16 +12,15 @@
  */
 package org.asynchttpclient.multipart;
 
-import org.asynchttpclient.*;
-import org.asynchttpclient.Part;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import static org.asynchttpclient.util.StandardCharsets.UTF_8;
+
+import org.asynchttpclient.Body;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -36,20 +35,13 @@ public class MultipartBodyTest {
 
         // add a file
         final File testFile = getTestfile();
-        try {
-            parts.add(new FilePart("filePart", testFile));
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + testFile);
-        }
+        parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        try {
-            parts.add(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8"));
-        } catch (UnsupportedEncodingException ignore) {
-        }
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
 
         // add a string
-        parts.add(new StringPart("stringPart", "testString", "utf-8"));
+        parts.add(new StringPart("stringPart", "testString", UTF_8));
 
         compareContentLength(parts);
     }
@@ -70,16 +62,8 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) {
         Assert.assertNotNull(parts);
         // get expected values
-        MultipartRequestEntity mre = null;
-        try {
-            mre = AsyncHttpProviderUtils.createMultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + parts);
-        }
-        final long expectedContentLength = mre.getContentLength();
-
-        // get real bytes
-        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), expectedContentLength);
+        final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
+        final long expectedContentLength = multipartBody.getContentLength();
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;

@@ -17,7 +17,11 @@ package org.asynchttpclient.oauth;
 
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.FluentStringsMap;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.asynchttpclient.Param;
+import org.asynchttpclient.uri.UriComponents;
 import org.testng.annotations.Test;
 
 public class TestSignatureCalculator {
@@ -40,11 +44,11 @@ public class TestSignatureCalculator {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
         OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
-        FluentStringsMap queryParams = new FluentStringsMap();
-        queryParams.add("file", "vacation.jpg");
-        queryParams.add("size", "original");
+        List<Param> queryParams = new ArrayList<Param>();
+        queryParams.add(new Param("file", "vacation.jpg"));
+        queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
-        String sig = calc.calculateSignature("GET", url, TIMESTAMP, NONCE, null, queryParams);
+        String sig = calc.calculateSignature("GET", UriComponents.create(url), TIMESTAMP, NONCE, null, queryParams);
 
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
     }

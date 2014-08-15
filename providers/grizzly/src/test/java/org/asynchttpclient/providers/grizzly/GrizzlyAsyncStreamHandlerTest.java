@@ -23,5 +23,4 @@ public class GrizzlyAsyncStreamHandlerTest extends AsyncStreamHandlerTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

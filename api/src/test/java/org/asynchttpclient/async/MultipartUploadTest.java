@@ -12,8 +12,42 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.testng.Assert.*;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.asynchttpclient.async.util.TestUtils.getClasspathFile;
+import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.multipart.ByteArrayPart;
+import org.asynchttpclient.multipart.FilePart;
+import org.asynchttpclient.multipart.StringPart;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.StandardCharsets;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,34 +63,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ByteArrayPart;
-import org.asynchttpclient.FilePart;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.StringPart;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 /**
  * @author dominict
@@ -135,7 +141,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             tmpFile = File.createTempFile("textbytearray", ".txt");
             os = new FileOutputStream(tmpFile);
-            IOUtils.write(expectedContents.getBytes("UTF-8"), os);
+            IOUtils.write(expectedContents.getBytes(StandardCharsets.UTF_8), os);
             tmpFileCreated = true;
 
             testFiles.add(tmpFile);
@@ -160,24 +166,24 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
-        bc.setFollowRedirects(true);
+        bc.setFollowRedirect(true);
 
-        AsyncHttpClient c = new AsyncHttpClient(bc.build());
+        AsyncHttpClient c = getAsyncHttpClient(bc.build());
 
         try {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", StandardCharsets.UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic"));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new StringPart("Name", "Dominic", StandardCharsets.UTF_8));
+            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", StandardCharsets.UTF_8));
 
             builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes("UTF-8"), "text/plain", "UTF-8"));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8, "bytearray.txt"));
 
             Request r = builder.build();
 

@@ -23,5 +23,4 @@ public class GrizzlyErrorResponseTest extends ErrorResponseTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

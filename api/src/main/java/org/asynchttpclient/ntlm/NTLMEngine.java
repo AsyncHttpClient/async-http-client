@@ -1,16 +1,4 @@
 /*
- * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
- *
- * This program is licensed to you under the Apache License Version 2.0,
- * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
- */
-/*
  * ====================================================================
  *
  *  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,9 +27,11 @@
 package org.asynchttpclient.ntlm;
 
 import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StandardCharsets;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
@@ -91,6 +81,9 @@ public class NTLMEngine {
      */
     private String credentialCharset = DEFAULT_CHARSET;
 
+    private static final byte[] NTLMSSP_BYTES = "NTLMSSP".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] MAGIC_CONSTANT = "KGS!@#$%".getBytes(StandardCharsets.US_ASCII);
+
     /**
      * The signature string as bytes in the default encoding
      */
@@ -98,11 +91,7 @@ public class NTLMEngine {
 
     static {
         byte[] bytesWithoutNull = new byte[0];
-        try {
-            bytesWithoutNull = "NTLMSSP".getBytes("ASCII");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        bytesWithoutNull = NTLMSSP_BYTES;
         SIGNATURE = new byte[bytesWithoutNull.length + 1];
         System.arraycopy(bytesWithoutNull, 0, SIGNATURE, 0, bytesWithoutNull.length);
         SIGNATURE[bytesWithoutNull.length] = (byte) 0x00;
@@ -121,16 +110,15 @@ public class NTLMEngine {
      * @return The response.
      * @throws NTLMEngineException If the messages cannot be retrieved.
      */
-    final String getResponseFor(String message, String username, String password,
-                                String host, String domain) throws NTLMEngineException {
+    final String getResponseFor(String message, String username, String password, String host, String domain) throws NTLMEngineException {
 
         final String response;
         if (message == null || message.trim().length() == 0) {
             response = getType1Message(host, domain);
         } else {
             Type2Message t2m = new Type2Message(message);
-            response = getType3Message(username, password, host, domain, t2m.getChallenge(), t2m
-                    .getFlags(), t2m.getTarget(), t2m.getTargetInfo());
+            response = getType3Message(username, password, host, domain, t2m.getChallenge(), t2m.getFlags(), t2m.getTarget(),
+                    t2m.getTargetInfo());
         }
         return response;
     }
@@ -166,12 +154,10 @@ public class NTLMEngine {
      * @return The type 3 message.
      * @throws NTLMEngineException If {@encrypt(byte[],byte[])} fails.
      */
-    String getType3Message(String user, String password, String host, String domain,
-                           byte[] nonce, int type2Flags, String target, byte[] targetInformation)
-            throws NTLMEngineException {
+    String getType3Message(String user, String password, String host, String domain, byte[] nonce, int type2Flags, String target,
+            byte[] targetInformation) throws NTLMEngineException {
         try {
-            return new Type3Message(domain, host, user, password, nonce, type2Flags, target,
-                    targetInformation).getResponse();
+            return new Type3Message(domain, host, user, password, nonce, type2Flags, target, targetInformation).getResponse();
         } catch (UnsupportedEncodingException e) {
             throw new NTLMEngineException("Unsupported encoding", e);
         }
@@ -218,8 +204,7 @@ public class NTLMEngine {
     private static int readULong(byte[] src, int index) throws NTLMEngineException {
         if (src.length < index + 4)
             throw new NTLMEngineException("NTLM authentication - buffer too small for DWORD");
-        return (src[index] & 0xff) | ((src[index + 1] & 0xff) << 8)
-                | ((src[index + 2] & 0xff) << 16) | ((src[index + 3] & 0xff) << 24);
+        return (src[index] & 0xff) | ((src[index + 1] & 0xff) << 8) | ((src[index + 2] & 0xff) << 16) | ((src[index + 3] & 0xff) << 24);
     }
 
     private static int readUShort(byte[] src, int index) throws NTLMEngineException {
@@ -232,8 +217,7 @@ public class NTLMEngine {
         int length = readUShort(src, index);
         int offset = readULong(src, index + 4);
         if (src.length < offset + length)
-            throw new NTLMEngineException(
-                    "NTLM authentication - buffer too small for data item");
+            throw new NTLMEngineException("NTLM authentication - buffer too small for data item");
         byte[] buffer = new byte[length];
         System.arraycopy(src, offset, buffer, 0, length);
         return buffer;
@@ -277,8 +261,7 @@ public class NTLMEngine {
      * @param challenge The Type 2 challenge from the server.
      * @return The LM Response.
      */
-    static byte[] getLMResponse(String password, byte[] challenge)
-            throws NTLMEngineException {
+    static byte[] getLMResponse(String password, byte[] challenge) throws NTLMEngineException {
         byte[] lmHash = lmHash(password);
         return lmResponse(lmHash, challenge);
     }
@@ -291,8 +274,7 @@ public class NTLMEngine {
      * @param challenge The Type 2 challenge from the server.
      * @return The NTLM Response.
      */
-    static byte[] getNTLMResponse(String password, byte[] challenge)
-            throws NTLMEngineException {
+    static byte[] getNTLMResponse(String password, byte[] challenge) throws NTLMEngineException {
         byte[] ntlmHash = ntlmHash(password);
         return lmResponse(ntlmHash, challenge);
     }
@@ -310,9 +292,8 @@ public class NTLMEngine {
      * @param clientChallenge   The random 8-byte client challenge.
      * @return The NTLMv2 Response.
      */
-    static byte[] getNTLMv2Response(String target, String user, String password,
-                                    byte[] challenge, byte[] clientChallenge, byte[] targetInformation)
-            throws NTLMEngineException {
+    static byte[] getNTLMv2Response(String target, String user, String password, byte[] challenge, byte[] clientChallenge,
+            byte[] targetInformation) throws NTLMEngineException {
         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
         byte[] blob = createBlob(clientChallenge, targetInformation);
         return lmv2Response(ntlmv2Hash, challenge, blob);
@@ -329,8 +310,8 @@ public class NTLMEngine {
      * @param clientChallenge The random 8-byte client challenge.
      * @return The LMv2 Response.
      */
-    static byte[] getLMv2Response(String target, String user, String password,
-                                  byte[] challenge, byte[] clientChallenge) throws NTLMEngineException {
+    static byte[] getLMv2Response(String target, String user, String password, byte[] challenge, byte[] clientChallenge)
+            throws NTLMEngineException {
         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
         return lmv2Response(ntlmv2Hash, challenge, clientChallenge);
     }
@@ -346,8 +327,7 @@ public class NTLMEngine {
      *         field of the Type 3 message; the LM response field contains the
      *         client challenge, null-padded to 24 bytes.
      */
-    static byte[] getNTLM2SessionResponse(String password, byte[] challenge,
-                                          byte[] clientChallenge) throws NTLMEngineException {
+    static byte[] getNTLM2SessionResponse(String password, byte[] challenge, byte[] clientChallenge) throws NTLMEngineException {
         try {
             byte[] ntlmHash = ntlmHash(password);
 
@@ -388,18 +368,17 @@ public class NTLMEngine {
      */
     private static byte[] lmHash(String password) throws NTLMEngineException {
         try {
-            byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes("US-ASCII");
+            byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.US_ASCII);
             int length = Math.min(oemPassword.length, 14);
             byte[] keyBytes = new byte[14];
             System.arraycopy(oemPassword, 0, keyBytes, 0, length);
             Key lowKey = createDESKey(keyBytes, 0);
             Key highKey = createDESKey(keyBytes, 7);
-            byte[] magicConstant = "KGS!@#$%".getBytes("US-ASCII");
             Cipher des = Cipher.getInstance("DES/ECB/NoPadding");
             des.init(Cipher.ENCRYPT_MODE, lowKey);
-            byte[] lowHash = des.doFinal(magicConstant);
+            byte[] lowHash = des.doFinal(MAGIC_CONSTANT);
             des.init(Cipher.ENCRYPT_MODE, highKey);
-            byte[] highHash = des.doFinal(magicConstant);
+            byte[] highHash = des.doFinal(MAGIC_CONSTANT);
             byte[] lmHash = new byte[16];
             System.arraycopy(lowHash, 0, lmHash, 0, 8);
             System.arraycopy(highHash, 0, lmHash, 8, 8);
@@ -417,14 +396,10 @@ public class NTLMEngine {
      *         the NTLM Response and the NTLMv2 and LMv2 Hashes.
      */
     private static byte[] ntlmHash(String password) throws NTLMEngineException {
-        try {
-            byte[] unicodePassword = password.getBytes("UnicodeLittleUnmarked");
-            MD4 md4 = new MD4();
-            md4.update(unicodePassword);
-            return md4.getOutput();
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new NTLMEngineException("Unicode not supported: " + e.getMessage(), e);
-        }
+        byte[] unicodePassword = password.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+        MD4 md4 = new MD4();
+        md4.update(unicodePassword);
+        return md4.getOutput();
     }
 
     /**
@@ -436,18 +411,13 @@ public class NTLMEngine {
      * @return The NTLMv2 Hash, used in the calculation of the NTLMv2 and LMv2
      *         Responses.
      */
-    private static byte[] ntlmv2Hash(String target, String user, String password)
-            throws NTLMEngineException {
-        try {
-            byte[] ntlmHash = ntlmHash(password);
-            HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
-            // Upper case username, mixed case target!!
-            hmacMD5.update(user.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked"));
-            hmacMD5.update(target.getBytes("UnicodeLittleUnmarked"));
-            return hmacMD5.getOutput();
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new NTLMEngineException("Unicode not supported! " + e.getMessage(), e);
-        }
+    private static byte[] ntlmv2Hash(String target, String user, String password) throws NTLMEngineException {
+        byte[] ntlmHash = ntlmHash(password);
+        HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
+        // Upper case username, mixed case target!!
+        hmacMD5.update(user.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED));
+        hmacMD5.update(target.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED));
+        return hmacMD5.getOutput();
     }
 
     /**
@@ -491,8 +461,7 @@ public class NTLMEngine {
      * @return The response (either NTLMv2 or LMv2, depending on the client
      *         data).
      */
-    private static byte[] lmv2Response(byte[] hash, byte[] challenge, byte[] clientData)
-            throws NTLMEngineException {
+    private static byte[] lmv2Response(byte[] hash, byte[] challenge, byte[] clientData) throws NTLMEngineException {
         HMACMD5 hmacMD5 = new HMACMD5(hash);
         hmacMD5.update(challenge);
         hmacMD5.update(clientData);
@@ -512,9 +481,9 @@ public class NTLMEngine {
      * @return The blob, used in the calculation of the NTLMv2 Response.
      */
     private static byte[] createBlob(byte[] clientChallenge, byte[] targetInformation) {
-        byte[] blobSignature = new byte[]{(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
-        byte[] reserved = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        byte[] unknown1 = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        byte[] blobSignature = new byte[] { (byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00 };
+        byte[] reserved = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
+        byte[] unknown1 = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
         long time = System.currentTimeMillis();
         time += 11644473600000l; // milliseconds from January 1, 1601 -> epoch.
         time *= 10000; // tenths of a microsecond.
@@ -524,8 +493,7 @@ public class NTLMEngine {
             timestamp[i] = (byte) time;
             time >>>= 8;
         }
-        byte[] blob = new byte[blobSignature.length + reserved.length + timestamp.length + 8
-                + unknown1.length + targetInformation.length];
+        byte[] blob = new byte[blobSignature.length + reserved.length + timestamp.length + 8 + unknown1.length + targetInformation.length];
         int offset = 0;
         System.arraycopy(blobSignature, 0, blob, offset, blobSignature.length);
         offset += blobSignature.length;
@@ -574,8 +542,7 @@ public class NTLMEngine {
     private static void oddParity(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
             byte b = bytes[i];
-            boolean needsParity = (((b >>> 7) ^ (b >>> 6) ^ (b >>> 5) ^ (b >>> 4) ^ (b >>> 3)
-                    ^ (b >>> 2) ^ (b >>> 1)) & 0x01) == 0;
+            boolean needsParity = (((b >>> 7) ^ (b >>> 6) ^ (b >>> 5) ^ (b >>> 4) ^ (b >>> 3) ^ (b >>> 2) ^ (b >>> 1)) & 0x01) == 0;
             if (needsParity) {
                 bytes[i] |= (byte) 0x01;
             } else {
@@ -616,16 +583,15 @@ public class NTLMEngine {
             int i = 0;
             while (i < SIGNATURE.length) {
                 if (messageContents[i] != SIGNATURE[i])
-                    throw new NTLMEngineException(
-                            "NTLM message expected - instead got unrecognized bytes");
+                    throw new NTLMEngineException("NTLM message expected - instead got unrecognized bytes");
                 i++;
             }
 
             // Check to be sure there's a type 2 message indicator next
             int type = readULong(SIGNATURE.length);
             if (type != expectedType)
-                throw new NTLMEngineException("NTLM type " + Integer.toString(expectedType)
-                        + " message expected - instead got type " + Integer.toString(type));
+                throw new NTLMEngineException("NTLM type " + Integer.toString(expectedType) + " message expected - instead got type "
+                        + Integer.toString(type));
 
             currentOutputPosition = messageContents.length;
         }
@@ -772,17 +738,13 @@ public class NTLMEngine {
          */
         Type1Message(String domain, String host) throws NTLMEngineException {
             super();
-            try {
-                // Strip off domain name from the host!
-                host = convertHost(host);
-                // Use only the base domain name!
-                domain = convertDomain(domain);
+            // Strip off domain name from the host!
+            host = convertHost(host);
+            // Use only the base domain name!
+            domain = convertDomain(domain);
 
-                hostBytes = host.getBytes("UnicodeLittleUnmarked");
-                domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked");
-            } catch (java.io.UnsupportedEncodingException e) {
-                throw new NTLMEngineException("Unicode unsupported: " + e.getMessage(), e);
-            }
+            hostBytes = host.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+            domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
         }
 
         /**
@@ -800,12 +762,11 @@ public class NTLMEngine {
             prepareResponse(finalLength, 1);
 
             // Flags. These are the complete set of flags we support.
-            addULong(FLAG_NEGOTIATE_NTLM | FLAG_NEGOTIATE_NTLM2 | FLAG_NEGOTIATE_SIGN
-                    | FLAG_NEGOTIATE_SEAL |
-                    /*
-                     * FLAG_NEGOTIATE_ALWAYS_SIGN | FLAG_NEGOTIATE_KEY_EXCH |
-                     */
-                    FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED | FLAG_NEGOTIATE_128);
+            addULong(FLAG_NEGOTIATE_NTLM | FLAG_NEGOTIATE_NTLM2 | FLAG_NEGOTIATE_SIGN | FLAG_NEGOTIATE_SEAL |
+            /*
+             * FLAG_NEGOTIATE_ALWAYS_SIGN | FLAG_NEGOTIATE_KEY_EXCH |
+             */
+            FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED | FLAG_NEGOTIATE_128);
 
             // Domain length (two times).
             addUShort(domainBytes.length);
@@ -851,9 +812,7 @@ public class NTLMEngine {
 
             flags = readULong(20);
             if ((flags & FLAG_UNICODE_ENCODING) == 0)
-                throw new NTLMEngineException(
-                        "NTLM type 2 message has flags that make no sense: "
-                                + Integer.toString(flags));
+                throw new NTLMEngineException("NTLM type 2 message has flags that make no sense: " + Integer.toString(flags));
             // Do the target!
             target = null;
             // The TARGET_DESIRED flag is said to not have understood semantics
@@ -862,11 +821,7 @@ public class NTLMEngine {
             if (getMessageLength() >= 12 + 8) {
                 byte[] bytes = readSecurityBuffer(12);
                 if (bytes.length != 0) {
-                    try {
-                        target = new String(bytes, "UnicodeLittleUnmarked");
-                    } catch (java.io.UnsupportedEncodingException e) {
-                        throw new NTLMEngineException(e.getMessage(), e);
-                    }
+                    target = new String(bytes, StandardCharsets.UNICODE_LITTLE_UNMARKED);
                 }
             }
 
@@ -928,9 +883,8 @@ public class NTLMEngine {
         /**
          * Constructor. Pass the arguments we will need
          */
-        Type3Message(String domain, String host, String user, String password, byte[] nonce,
-                     int type2Flags, String target, byte[] targetInformation)
-                throws NTLMEngineException {
+        Type3Message(String domain, String host, String user, String password, byte[] nonce, int type2Flags, String target,
+                byte[] targetInformation) throws NTLMEngineException {
             // Save the flags
             this.type2Flags = type2Flags;
 
@@ -944,8 +898,7 @@ public class NTLMEngine {
             try {
                 if (targetInformation != null && target != null) {
                     byte[] clientChallenge = makeRandomChallenge();
-                    ntResp = getNTLMv2Response(target, user, password, nonce, clientChallenge,
-                            targetInformation);
+                    ntResp = getNTLMv2Response(target, user, password, nonce, clientChallenge, targetInformation);
                     lmResp = getLMv2Response(target, user, password, nonce, clientChallenge);
                 } else {
                     if ((type2Flags & FLAG_NEGOTIATE_NTLM2) != 0) {
@@ -971,13 +924,9 @@ public class NTLMEngine {
                 lmResp = getLMResponse(password, nonce);
             }
 
-            try {
-                domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked");
-                hostBytes = host.getBytes("UnicodeLittleUnmarked");
-                userBytes = user.getBytes("UnicodeLittleUnmarked");
-            } catch (java.io.UnsupportedEncodingException e) {
-                throw new NTLMEngineException("Unicode not supported: " + e.getMessage(), e);
-            }
+            domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+            hostBytes = host.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+            userBytes = user.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
         }
 
         /**
@@ -1046,11 +995,9 @@ public class NTLMEngine {
 
             // Flags. Currently: NEGOTIATE_NTLM + UNICODE_ENCODING +
             // TARGET_DESIRED + NEGOTIATE_128
-            addULong(FLAG_NEGOTIATE_NTLM | FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED
-                    | FLAG_NEGOTIATE_128 | (type2Flags & FLAG_NEGOTIATE_NTLM2)
-                    | (type2Flags & FLAG_NEGOTIATE_SIGN) | (type2Flags & FLAG_NEGOTIATE_SEAL)
-                    | (type2Flags & FLAG_NEGOTIATE_KEY_EXCH)
-                    | (type2Flags & FLAG_NEGOTIATE_ALWAYS_SIGN));
+            addULong(FLAG_NEGOTIATE_NTLM | FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED | FLAG_NEGOTIATE_128
+                    | (type2Flags & FLAG_NEGOTIATE_NTLM2) | (type2Flags & FLAG_NEGOTIATE_SIGN) | (type2Flags & FLAG_NEGOTIATE_SEAL)
+                    | (type2Flags & FLAG_NEGOTIATE_KEY_EXCH) | (type2Flags & FLAG_NEGOTIATE_ALWAYS_SIGN));
 
             // Add the actual data
             addBytes(lmResp);
@@ -1162,8 +1109,7 @@ public class NTLMEngine {
             int[] d = new int[16];
 
             for (int i = 0; i < 16; i++) {
-                d[i] = (dataBuffer[i * 4] & 0xff) + ((dataBuffer[i * 4 + 1] & 0xff) << 8)
-                        + ((dataBuffer[i * 4 + 2] & 0xff) << 16)
+                d[i] = (dataBuffer[i * 4] & 0xff) + ((dataBuffer[i * 4 + 1] & 0xff) << 8) + ((dataBuffer[i * 4 + 2] & 0xff) << 16)
                         + ((dataBuffer[i * 4 + 3] & 0xff) << 24);
             }
 
@@ -1267,8 +1213,7 @@ public class NTLMEngine {
             } catch (Exception ex) {
                 // Umm, the algorithm doesn't exist - throw an
                 // NTLMEngineException!
-                throw new NTLMEngineException(
-                        "Error getting md5 message digest implementation: " + ex.getMessage(), ex);
+                throw new NTLMEngineException("Error getting md5 message digest implementation: " + ex.getMessage(), ex);
             }
 
             // Initialize the pad buffers with the key
@@ -1325,27 +1270,14 @@ public class NTLMEngine {
 
     }
 
-    public String generateType1Msg(
-            final String domain,
-            final String workstation) throws NTLMEngineException {
+    public String generateType1Msg(final String domain, final String workstation) throws NTLMEngineException {
         return getType1Message(workstation, domain);
     }
 
-    public String generateType3Msg(
-            final String username,
-            final String password,
-            final String domain,
-            final String workstation,
+    public String generateType3Msg(final String username, final String password, final String domain, final String workstation,
             final String challenge) throws NTLMEngineException {
         Type2Message t2m = new Type2Message(challenge);
-        return getType3Message(
-                username,
-                password,
-                workstation,
-                domain,
-                t2m.getChallenge(),
-                t2m.getFlags(),
-                t2m.getTarget(),
+        return getType3Message(username, password, workstation, domain, t2m.getChallenge(), t2m.getFlags(), t2m.getTarget(),
                 t2m.getTargetInfo());
     }
 

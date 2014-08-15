@@ -15,8 +15,13 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.LoggerFactory;
@@ -25,6 +30,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -32,10 +38,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 /**
  * Testing query parameters support.
@@ -72,7 +74,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParameter("a", "1").addQueryParameter("b", "2").execute();
+            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -90,10 +92,10 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
+            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, StandardCharsets.UTF_8.name());
             LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
-            String s = URLDecoder.decode(response.getHeader("q"), "UTF-8");
+            String s = URLDecoder.decode(response.getHeader("q"), StandardCharsets.UTF_8.name());
             assertEquals(s, REQUEST_PARAM);
         } finally {
             client.close();
@@ -101,26 +103,13 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_Netty() throws Exception {
+    public void urlWithColonTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-            assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
-        } finally {
-            c.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_JDK() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
-            String query = "test:colon:";
-            Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-            assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
+            assertEquals(response.getHeader("q"), URLEncoder.encode(query, StandardCharsets.UTF_8.name()));
         } finally {
             c.close();
         }

@@ -12,15 +12,17 @@
  */
 package org.asynchttpclient.websocket;
 
-import static org.testng.Assert.*;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
@@ -97,6 +99,78 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
         public void onError(Throwable t) {
             t.printStackTrace();
             latch.countDown();
+        }
+    }
+
+    @Test(timeOut = 60000)
+    public void wrongStatusCode() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+
+            c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+
+                @Override
+                public void onMessage(String message) {
+                }
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    throwable.set(t);
+                    latch.countDown();
+                }
+            }).build()).get();
+
+            latch.await();
+            assertNotNull(throwable.get());
+            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+        } finally {
+            c.close();
+        }
+    }
+
+    @Test(timeOut = 60000)
+    public void wrongProtocolCode() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+
+            c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+
+                @Override
+                public void onMessage(String message) {
+                }
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    throwable.set(t);
+                    latch.countDown();
+                }
+            }).build()).get();
+
+            latch.await();
+            assertNotNull(throwable.get());
+            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+        } finally {
+            c.close();
         }
     }
 }

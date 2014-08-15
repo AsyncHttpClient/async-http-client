@@ -29,5 +29,5 @@ public interface ResponseFilter {
      * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
      * @throws FilterException to interrupt the filter processing.
      */
-    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
+    <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
 }

@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,12 +60,31 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         }
     }
 
+    public FluentCaseInsensitiveStringsMap add(String key, String value) {
+        if (key != null) {
+            String lcKey = key.toLowerCase(Locale.ENGLISH);
+            String realKey = keyLookup.get(lcKey);
+            
+            List<String> curValues = null;
+            if (realKey == null) {
+                keyLookup.put(lcKey, key);
+                curValues = new ArrayList<String>();
+                values.put(key, curValues);
+            } else {
+                curValues = values.get(realKey);
+            }
+
+            String nonNullValue = value != null? value : "";
+            curValues.add(nonNullValue);
+        }
+        return this;
+    }
+
     /**
      * Adds the specified values and returns this object.
      *
      * @param key    The key
-     * @param values The value(s); if null then this method has no effect. Use the empty string to
-     *               generate an empty value
+     * @param values The value(s); if the array is null then this method has no effect. Individual null values are turned into empty strings
      * @return This object
      */
     public FluentCaseInsensitiveStringsMap add(String key, String... values) {

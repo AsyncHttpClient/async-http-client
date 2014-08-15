@@ -16,8 +16,8 @@
  */
 package org.asynchttpclient.oauth;
 
+import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
-import org.asynchttpclient.util.UTF8Codec;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -37,7 +37,8 @@ public class ThreadSafeHMAC {
     private final Mac mac;
 
     public ThreadSafeHMAC(ConsumerKey consumerAuth, RequestToken userAuth) {
-        byte[] keyBytes = UTF8Codec.toUTF8(UTF8UrlEncoder.encode(consumerAuth.getSecret()) + "&" + UTF8UrlEncoder.encode(userAuth.getSecret()));
+        byte[] keyBytes = (UTF8UrlEncoder.encode(consumerAuth.getSecret()) + "&" + UTF8UrlEncoder.encode(userAuth.getSecret()))
+                .getBytes(StandardCharsets.UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key

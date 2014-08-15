@@ -1,171 +1,71 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.multipart;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
-public class FilePart extends PartBase {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    /**
-     * Default content encoding of file attachments.
-     */
-    public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+public class FilePart extends AbstractFilePart {
 
-    /**
-     * Default charset of file attachments.
-     */
-    public static final String DEFAULT_CHARSET = "ISO-8859-1";
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilePart.class);
 
-    /**
-     * Default transfer encoding of file attachments.
-     */
-    public static final String DEFAULT_TRANSFER_ENCODING = "binary";
+    private final File file;
 
-    /**
-     * Attachment's file name
-     */
-    protected static final String FILE_NAME = "; filename=";
+    public FilePart(String name, File file) {
+        this(name, file, null);
+    }
 
-    /**
-     * Attachment's file name as a byte array
-     */
-    private static final byte[] FILE_NAME_BYTES = MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
+    public FilePart(String name, File file, String contentType) {
+        this(name, file, contentType, null);
+    }
 
-    /**
-     * Source of the file part.
-     */
-    private final PartSource source;
+    public FilePart(String name, File file, String contentType, Charset charset) {
+        this(name, file, contentType, charset, null);
+    }
 
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name for this part
-     * @param partSource the source for this part
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId
-     */
-    public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName) {
+        this(name, file, contentType, charset, fileName, null);
+    }
 
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? "ISO-8859-1" : charset, DEFAULT_TRANSFER_ENCODING, contentId);
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId) {
+        this(name, file, contentType, charset, fileName, contentId, null);
+    }
 
-        if (partSource == null) {
-            throw new IllegalArgumentException("Source may not be null");
-        }
-        this.source = partSource;
+    public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+        super(name, contentType, charset, contentId, transferEncoding);
+        if (file == null)
+            throw new NullPointerException("file");
+        if (!file.isFile())
+            throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
+        if (!file.canRead())
+            throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
+        this.file = file;
+        setFileName(fileName != null ? fileName : file.getName());
     }
     
-    public FilePart(String name, PartSource partSource, String contentType, String charset) {
-        this(name, partSource, contentType, charset, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name for this part
-     * @param partSource the source for this part
-     */
-    public FilePart(String name, PartSource partSource) {
-        this(name, partSource, null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name of the file part
-     * @param file the file to post
-     * @throws java.io.FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, File file) throws FileNotFoundException {
-        this(name, new FilePartSource(file), null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name of the file part
-     * @param file the file to post
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, File file, String contentType, String charset) throws FileNotFoundException {
-        this(name, new FilePartSource(file), contentType, charset);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name of the file part
-     * @param fileName the file name
-     * @param file the file to post
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, String fileName, File file) throws FileNotFoundException {
-        this(name, new FilePartSource(fileName, file), null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name the name of the file part
-     * @param fileName the file name
-     * @param file the file to post
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, String fileName, File file, String contentType, String charset) throws FileNotFoundException {
-        this(name, new FilePartSource(fileName, file), contentType, charset);
-    }
-
-    /**
-     * Write the disposition header to the output stream
-     * 
-     * @param out The output stream
-     * @throws java.io.IOException If an IO problem occurs
-     */
-    protected void sendDispositionHeader(OutputStream out) throws IOException {
-        super.sendDispositionHeader(out);
-        String filename = this.source.getFileName();
-        if (filename != null) {
-            out.write(FILE_NAME_BYTES);
-            out.write(QUOTE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(filename));
-            out.write(QUOTE_BYTES);
-        }
-    }
-
-    /**
-     * Write the data in "source" to the specified stream.
-     * 
-     * @param out The output stream.
-     * @throws IOException if an IO problem occurs.
-     */
+    @Override
     protected void sendData(OutputStream out) throws IOException {
-        if (lengthOfData() == 0) {
+        if (getDataLength() == 0) {
 
             // this file contains no data, so there is nothing to send.
             // we don't want to create a zero length buffer as this will
@@ -174,7 +74,7 @@ public class FilePart extends PartBase {
         }
 
         byte[] tmp = new byte[4096];
-        InputStream instream = source.createInputStream();
+        InputStream instream = new FileInputStream(file);
         try {
             int len;
             while ((len = instream.read(tmp)) >= 0) {
@@ -186,33 +86,78 @@ public class FilePart extends PartBase {
         }
     }
 
-    public void setStalledTime(long ms) {
-        _stalledTime = ms;
+    @Override
+    protected long getDataLength() {
+        return file.length();
     }
 
-    public long getStalledTime() {
-        return _stalledTime;
+    public File getFile() {
+        return file;
     }
 
-    /**
-     * Returns the source of the file part.
-     * 
-     * @return The source.
-     */
-    protected PartSource getSource() {
-        return this.source;
+    @Override
+    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
+        FilePartStallHandler handler = new FilePartStallHandler(getStalledTime(), this);
+
+        handler.start();
+
+        int length = 0;
+
+        length += MultipartUtils.writeBytesToChannel(target, generateFileStart(boundary));
+
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        FileChannel fc = raf.getChannel();
+
+        long l = file.length();
+        int fileLength = 0;
+        long nWrite = 0;
+        // FIXME why sync?
+        try {
+            synchronized (fc) {
+                while (fileLength != l) {
+                    if (handler.isFailed()) {
+                        LOGGER.debug("Stalled error");
+                        throw new FileUploadStalledException();
+                    }
+                    try {
+                        nWrite = fc.transferTo(fileLength, l, target);
+
+                        if (nWrite == 0) {
+                            LOGGER.info("Waiting for writing...");
+                            try {
+                                fc.wait(50);
+                            } catch (InterruptedException e) {
+                                LOGGER.trace(e.getMessage(), e);
+                            }
+                        } else {
+                            handler.writeHappened();
+                        }
+                    } catch (IOException ex) {
+                        String message = ex.getMessage();
+
+                        // http://bugs.sun.com/view_bug.do?bug_id=5103988
+                        if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
+                            try {
+                                fc.wait(1000);
+                            } catch (InterruptedException e) {
+                                LOGGER.trace(e.getMessage(), e);
+                            }
+                            LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
+                            continue;
+                        } else {
+                            throw ex;
+                        }
+                    }
+                    fileLength += nWrite;
+                }
+            }
+        } finally {
+            handler.completed();
+            raf.close();
+        }
+
+        length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
+
+        return length;
     }
-
-    /**
-     * Return the length of the data.
-     * 
-     * @return The length.
-     * @throws IOException if an IO problem occurs
-     */
-    protected long lengthOfData() throws IOException {
-        return source.getLength();
-    }
-
-    private long _stalledTime = -1;
-
 }

@@ -15,6 +15,12 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -28,6 +34,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
@@ -35,13 +42,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertNotNull;
-
-import static org.testng.Assert.fail;
 
 /**
  * Tests case where response doesn't have body.
@@ -82,13 +82,14 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
                 }
 
                 public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
-                    String s = new String(e.getBodyPartBytes());
-                    logger.info("got part: {}", s);
-                    if (s.equals("")) {
-                        // noinspection ThrowableInstanceNeverThrown
+                    byte[] bytes = e.getBodyPartBytes();
+
+                    if (bytes.length != 0) {
+                        String s = new String(bytes);
+                        logger.info("got part: {}", s);
                         logger.warn("Sampling stacktrace.", new Throwable("trace that, we should not get called for empty body."));
+                        queue.put(s);
                     }
-                    queue.put(s);
                     return STATE.CONTINUE;
                 }
 

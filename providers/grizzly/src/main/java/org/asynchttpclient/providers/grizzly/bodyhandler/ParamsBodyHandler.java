@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,7 +13,9 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
-import org.asynchttpclient.FluentStringsMap;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.glassfish.grizzly.Buffer;
@@ -27,11 +29,8 @@ import org.glassfish.grizzly.utils.Charsets;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
-import java.util.Map;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-
-public final class ParamsBodyHandler implements BodyHandler {
+public final class ParamsBodyHandler extends BodyHandler {
 
     private final boolean compressionEnabled;
 
@@ -39,20 +38,15 @@ public final class ParamsBodyHandler implements BodyHandler {
         compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
 
-
     public boolean handlesBodyType(final Request request) {
-        final FluentStringsMap params = request.getParams();
+        final List<Param> params = request.getFormParams();
         return isNonEmpty(params);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         if (requestPacket.getContentType() == null) {
             requestPacket.setContentType("application/x-www-form-urlencoded");
@@ -62,25 +56,16 @@ public final class ParamsBodyHandler implements BodyHandler {
         if (charset == null) {
             charset = Charsets.ASCII_CHARSET.name();
         }
-        final FluentStringsMap params = request.getParams();
+        final List<Param> params = request.getFormParams();
         if (!params.isEmpty()) {
-            for (Map.Entry<String, List<String>> entry : params.entrySet()) {
-                String name = entry.getKey();
-                List<String> values = entry.getValue();
-                if (isNonEmpty(values)) {
-                    if (sb == null) {
-                        sb = new StringBuilder(128);
-                    }
-                    for (int i = 0, len = values.size(); i < len; i++) {
-                        final String value = values.get(i);
-                        if (sb.length() > 0) {
-                            sb.append('&');
-                        }
-                        sb.append(URLEncoder.encode(name, charset))
-                                .append('=').append(URLEncoder.encode(value, charset));
-                    }
-                }
+            if (sb == null) {
+                sb = new StringBuilder(128);
             }
+            for (Param param : params) {
+                sb.append(URLEncoder.encode(param.getName(), charset)).append('=').append(URLEncoder.encode(param.getValue(), charset));
+                sb.append('&');
+            }
+            sb.setLength(sb.length() - 1);
         }
         if (sb != null) {
             final byte[] data = sb.toString().getBytes(charset);
@@ -97,5 +82,4 @@ public final class ParamsBodyHandler implements BodyHandler {
         }
         return true;
     }
-
 } // END ParamsBodyHandler

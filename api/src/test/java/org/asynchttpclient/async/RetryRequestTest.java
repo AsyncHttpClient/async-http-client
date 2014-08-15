@@ -12,6 +12,10 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
@@ -25,8 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
-import static org.testng.Assert.*;
 
 public abstract class RetryRequestTest extends AbstractBasicTest {
     public static class SlowAndBigHandler extends AbstractHandler {

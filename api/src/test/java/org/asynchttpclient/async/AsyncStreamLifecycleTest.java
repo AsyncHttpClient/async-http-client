@@ -15,21 +15,10 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.*;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
@@ -42,6 +31,20 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tests default asynchronous life cycle.
@@ -115,9 +118,11 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 }
 
                 public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
-                    String s = new String(e.getBodyPartBytes());
-                    logger.info("got part: {}", s);
-                    queue.put(s);
+                    if (e.length() != 0) {
+                        String s = new String(e.getBodyPartBytes());
+                        logger.info("got part: {}", s);
+                        queue.put(s);
+                    }
                     return STATE.CONTINUE;
                 }
 

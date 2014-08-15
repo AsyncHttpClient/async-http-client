@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,15 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import java.net.URI;
-import java.util.List;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+
+import java.util.List;
 
 /**
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client
@@ -38,15 +38,11 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     private final int majorVersion;
     private final int minorVersion;
     private final String protocolText;
-
-
-
+    private final HttpResponsePacket response;
+    
     // ------------------------------------------------------------ Constructors
 
-
-    public GrizzlyResponseStatus(final HttpResponsePacket response,
-                                 final URI uri,
-                                 AsyncHttpClientConfig config) {
+    public GrizzlyResponseStatus(final HttpResponsePacket response, final UriComponents uri, AsyncHttpClientConfig config) {
 
         super(uri, config);
         statusCode = response.getStatus();
@@ -54,83 +50,69 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
         majorVersion = response.getProtocol().getMajorVersion();
         minorVersion = response.getProtocol().getMinorVersion();
         protocolText = response.getProtocolString();
-
+        
+        this.response = response;
     }
-
 
     // ----------------------------------------- Methods from HttpResponseStatus
 
     @Override
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new GrizzlyResponse(this,
-                headers,
-                bodyParts,
-                config.isRfc6265CookieEncoding());
+        return new GrizzlyResponse(this, headers, bodyParts);
     }
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
     public int getStatusCode() {
-
         return statusCode;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getStatusText() {
-
         return statusText;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getProtocolName() {
-
         return PROTOCOL_NAME;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public int getProtocolMajorVersion() {
-
         return majorVersion;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public int getProtocolMinorVersion() {
-
         return minorVersion;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getProtocolText() {
-
         return protocolText;
-
     }
 
+    /**
+     * @return internal Grizzly {@link HttpResponsePacket}
+     */
+    public HttpResponsePacket getResponse() {
+        return response;
+    }
 }

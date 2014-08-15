@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.extra;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
 import org.asynchttpclient.resumable.ResumableListener;
 
 import java.io.IOException;
@@ -52,13 +54,7 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
      * {@inheritDoc}
      */
     public void onAllBytesReceived() {
-        if (file != null) {
-            try {
-                file.close();
-            } catch (IOException e) {
-                ;
-            }
-        }
+        closeSilently(file);
     }
 
     /**
@@ -68,9 +64,7 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
         try {
             return file.length();
         } catch (IOException e) {
-            ;
+            return 0;
         }
-        return 0;
     }
-
 }

@@ -15,6 +15,10 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.testng.annotations.Test;
 
@@ -24,10 +28,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
 
 public class FluentCaseInsensitiveStringsMapTest {
 

@@ -70,6 +70,7 @@ public interface AsyncHandler<T> {
 
     /**
      * Invoked as soon as some response body part are received. Could be invoked many times.
+     * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
      *
      * @param bodyPart response's body part.
      * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.

@@ -16,16 +16,18 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertNotNull;
+
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
-import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -54,8 +56,8 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient create() throws GeneralSecurityException {
-        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirects(true).setSSLContext(getSSLContext()).setAllowPoolingConnection(true).setConnectionTimeoutInMs(10000)
-                .setIdleConnectionInPoolTimeoutInMs(60000).setRequestTimeoutInMs(10000).setMaximumConnectionsPerHost(-1).setMaximumConnectionsTotal(-1);
+        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirect(true).setSSLContext(getSSLContext()).setAllowPoolingConnections(true).setConnectionTimeout(10000)
+                .setPooledConnectionIdleTimeout(60000).setRequestTimeout(10000).setMaxConnectionsPerHost(-1).setMaxConnections(-1);
         return getAsyncHttpClient(configBuilder.build());
     }
 

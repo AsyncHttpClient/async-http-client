@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -31,18 +31,13 @@ import java.util.concurrent.ExecutorService;
  * @since 2.0
  * @author The Grizzly Team
  */
-public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
-        implements GrizzlyAsyncHttpProvider.Cleanup {
-
+public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter implements GrizzlyAsyncHttpProvider.Cleanup {
 
     private final EventHandler eventHandler;
 
     // -------------------------------------------------------- Constructors
 
-
-    public AsyncSpdyClientEventFilter(final EventHandler eventHandler,
-                                      SpdyMode mode,
-                                      ExecutorService threadPool) {
+    public AsyncSpdyClientEventFilter(final EventHandler eventHandler, SpdyMode mode, ExecutorService threadPool) {
         super(mode, threadPool);
         this.eventHandler = eventHandler;
     }
@@ -78,6 +73,12 @@ public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
     }
 
     @Override
+    protected void onHttpContentError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
+        eventHandler.onHttpContentError(httpHeader, ctx, t);
+    }
+
+
+    @Override
     protected void onHttpHeadersParsed(HttpHeader httpHeader, FilterChainContext ctx) {
         eventHandler.onHttpHeadersParsed(httpHeader, ctx);
     }
@@ -91,5 +92,4 @@ public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
     public void cleanup(FilterChainContext ctx) {
 
     }
-
 }

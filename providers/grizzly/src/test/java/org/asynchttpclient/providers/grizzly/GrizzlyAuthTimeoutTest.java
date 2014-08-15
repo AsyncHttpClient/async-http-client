@@ -19,10 +19,8 @@ import org.asynchttpclient.async.AuthTimeoutTest;
 
 public class GrizzlyAuthTimeoutTest extends AuthTimeoutTest {
 
-
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

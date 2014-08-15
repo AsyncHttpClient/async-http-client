@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
@@ -25,8 +27,6 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
 
-import static org.testng.Assert.assertEquals;
-
 public abstract class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
@@ -35,9 +35,9 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig.Builder confbuilder = new AsyncHttpClientConfig.Builder();
-        confbuilder = confbuilder.setConnectionTimeoutInMs(100);
-        confbuilder = confbuilder.setMaximumConnectionsTotal(50);
-        confbuilder = confbuilder.setRequestTimeoutInMs(5 * 60 * 1000); // 5 minutes
+        confbuilder = confbuilder.setConnectionTimeout(100);
+        confbuilder = confbuilder.setMaxConnections(50);
+        confbuilder = confbuilder.setRequestTimeout(5 * 60 * 1000); // 5 minutes
 
         // Create client
         AsyncHttpClient client = getAsyncHttpClient(confbuilder.build());

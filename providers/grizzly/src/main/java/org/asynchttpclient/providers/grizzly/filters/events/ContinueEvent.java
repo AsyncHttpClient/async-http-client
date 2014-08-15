@@ -26,31 +26,22 @@ public final class ContinueEvent implements FilterChainEvent {
 
     private final HttpTxContext context;
 
-
     // -------------------------------------------------------- Constructors
 
-
     public ContinueEvent(final HttpTxContext context) {
-
         this.context = context;
-
     }
 
-
     // --------------------------------------- Methods from FilterChainEvent
-
 
     @Override
     public Object type() {
         return ContinueEvent.class;
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public HttpTxContext getContext() {
         return context;
     }
-
 }

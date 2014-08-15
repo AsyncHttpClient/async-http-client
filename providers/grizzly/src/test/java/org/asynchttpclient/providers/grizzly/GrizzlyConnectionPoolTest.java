@@ -13,17 +13,17 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ConnectionsPool;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
-import org.glassfish.grizzly.Connection;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.*;
 
 public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 
@@ -33,119 +33,15 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     }
 
     @Override
-    @Test(enabled=false)
+    @Test(enabled = false)
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
-        try {
-            String url = getTargetUrl();
-            int i;
-            Exception exception = null;
-            for (i = 0; i < 20; i++) {
-                try {
-                    log.info("{} requesting url [{}]...", i, url);
-
-                    if (i < 5) {
-                        client.prepareGet(url).execute().get();
-                    } else {
-                        client.prepareGet(url).execute();
-                    }
-                } catch (Exception ex) {
-                    exception = ex;
-                    break;
-                }
-            }
-            assertNotNull(exception);
-            assertNotNull(exception.getMessage());
-        } finally {
-            client.close();
-        }
-    }
-
-    @Override
-    public void testValidConnectionsPool() {
-        ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {
-
-            public boolean offer(String key, Connection connection) {
-                return true;
-            }
-
-            public Connection poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Connection connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return true;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNull(exception);
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" }, enabled=false)
-    public void testInvalidConnectionsPool() {
-
-        ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {
-
-            public boolean offer(String key, Connection connection) {
-                return false;
-            }
-
-            public Connection poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Connection connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return false;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNotNull(exception);
-        } finally {
-            client.close();
-        }
     }
 
     @Override
     @Test
     public void multipleMaxConnectionOpenTest() throws Exception {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectionTimeout(5000)
+                .setMaxConnections(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";

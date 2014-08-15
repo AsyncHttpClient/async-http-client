@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.grizzly;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.BasicAuthTest;
-import org.testng.annotations.Test;
 
 public class GrizzlyBasicAuthTest extends BasicAuthTest {
 
@@ -29,5 +28,4 @@ public class GrizzlyBasicAuthTest extends BasicAuthTest {
     public String getProviderClass() {
         return GrizzlyAsyncHttpProvider.class.getName();
     }
-
 }

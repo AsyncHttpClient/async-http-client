@@ -1,458 +1,136 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.multipart;
 
-import java.io.ByteArrayOutputStream;
+import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
-public abstract class Part implements org.asynchttpclient.Part {
-
-    /**
-     * The boundary
-     */
-    protected static final String BOUNDARY = "----------------314159265358979323846";
-
-    /**
-     * The default boundary to be used if etBoundaryBytes(byte[]) has not been called.
-     */
-    private static final byte[] DEFAULT_BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
-
-    /**
-     * Carriage return/linefeed
-     */
-    protected static final String CRLF = "\r\n";
+public interface Part {
 
     /**
      * Carriage return/linefeed as a byte array
      */
-    static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
+    byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
 
     /**
-     * Content dispostion characters
+     * Content dispostion as a byte
      */
-    protected static final String QUOTE = "\"";
-
-    /**
-     * Content dispostion as a byte array
-     */
-    static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
-
-    /**
-     * Extra characters
-     */
-    protected static final String EXTRA = "--";
+    byte QUOTE_BYTE = '\"';
 
     /**
      * Extra characters as a byte array
      */
-    static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
-
-    /**
-     * Content dispostion characters
-     */
-    protected static final String CONTENT_DISPOSITION = "Content-Disposition: form-data; name=";
+    byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
 
     /**
      * Content dispostion as a byte array
      */
-    static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+    byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: ".getBytes(US_ASCII);
 
     /**
-     * Content type header
+     * form-data as a byte array
      */
-    protected static final String CONTENT_TYPE = "Content-Type: ";
+    byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = "form-data".getBytes(US_ASCII);
+
+    /**
+     * name as a byte array
+     */
+    byte[] NAME_BYTES = "; name=".getBytes(US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
-
-    /**
-     * Content charset
-     */
-    protected static final String CHARSET = "; charset=";
+    byte[] CONTENT_TYPE_BYTES = "Content-Type: ".getBytes(US_ASCII);
 
     /**
      * Content charset as a byte array
      */
-    static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
-
-    /**
-     * Content type header
-     */
-    protected static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
+    byte[] CHARSET_BYTES = "; charset=".getBytes(US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
-
-    /**
-     * Content type header
-     */
-    protected static final String CONTENT_ID = "Content-ID: ";
+    byte[] CONTENT_TRANSFER_ENCODING_BYTES = "Content-Transfer-Encoding: ".getBytes(US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
-
-    /**
-     * The ASCII bytes to use as the multipart boundary.
-     */
-    private byte[] boundaryBytes;
+    byte[] CONTENT_ID_BYTES = "Content-ID: ".getBytes(US_ASCII);
 
     /**
      * Return the name of this part.
      * 
      * @return The name.
      */
-    public abstract String getName();
+    String getName();
 
     /**
      * Returns the content type of this part.
      * 
      * @return the content type, or <code>null</code> to exclude the content type header
      */
-    public abstract String getContentType();
+    String getContentType();
 
     /**
      * Return the character encoding of this part.
      * 
      * @return the character encoding, or <code>null</code> to exclude the character encoding header
      */
-    public abstract String getCharSet();
+    Charset getCharset();
 
     /**
      * Return the transfer encoding of this part.
      * 
      * @return the transfer encoding, or <code>null</code> to exclude the transfer encoding header
      */
-    public abstract String getTransferEncoding();
-
-    public abstract String getContentId();
+    String getTransferEncoding();
 
     /**
-     * Gets the part boundary to be used.
+     * Return the content ID of this part.
      * 
-     * @return the part boundary as an array of bytes.
+     * @return the content ID, or <code>null</code> to exclude the content ID header
      */
-    protected byte[] getPartBoundary() {
-        if (boundaryBytes == null) {
-            // custom boundary bytes have not been set, use the default.
-            return DEFAULT_BOUNDARY_BYTES;
-        } else {
-            return boundaryBytes;
-        }
-    }
+    String getContentId();
 
     /**
-     * Sets the part boundary. Only meant to be used by {@link Part#sendParts(java.io.OutputStream, Part[], byte[])} and {@link Part#getLengthOfParts(Part[], byte[])}
+     * Gets the disposition-type to be used in Content-Disposition header
      * 
-     * @param boundaryBytes An array of ASCII bytes.
-     * @since 3.0
+     * @return the disposition-type
      */
-    void setPartBoundary(byte[] boundaryBytes) {
-        this.boundaryBytes = boundaryBytes;
-    }
-
-    /**
-     * Tests if this part can be sent more than once.
-     * 
-     * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
-     * @since 3.0
-     */
-    public boolean isRepeatable() {
-        return true;
-    }
-
-    /**
-     * Write the start to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws java.io.IOException If an IO problem occurs.
-     */
-    protected void sendStart(OutputStream out) throws IOException {
-        out.write(EXTRA_BYTES);
-        out.write(getPartBoundary());
-    }
-
-    /**
-     * Write the content disposition header to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendDispositionHeader(OutputStream out) throws IOException {
-        if (getName() != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_DISPOSITION_BYTES);
-            out.write(QUOTE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
-            out.write(QUOTE_BYTES);
-        }
-    }
-
-    /**
-     * Write the content type header to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendContentTypeHeader(OutputStream out) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_TYPE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(contentType));
-            String charSet = getCharSet();
-            if (charSet != null) {
-                out.write(CHARSET_BYTES);
-                out.write(MultipartEncodingUtil.getAsciiBytes(charSet));
-            }
-        }
-    }
-
-    /**
-     * Write the content transfer encoding header to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendTransferEncodingHeader(OutputStream out) throws IOException {
-        String transferEncoding = getTransferEncoding();
-        if (transferEncoding != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_TRANSFER_ENCODING_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(transferEncoding));
-        }
-    }
-
-    /**
-     * Write the content ID header to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendContentIdHeader(OutputStream out) throws IOException {
-        String contentId = getContentId();
-        if (contentId != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_ID_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(contentId));
-        }
-    }
-
-    /**
-     * Write the end of the header to the output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendEndOfHeader(OutputStream out) throws IOException {
-        out.write(CRLF_BYTES);
-        out.write(CRLF_BYTES);
-    }
-
-    /**
-     * Write the data to the specified output stream
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected abstract void sendData(OutputStream out) throws IOException;
-
-    /**
-     * Return the length of the main content
-     * 
-     * @return long The length.
-     * @throws IOException If an IO problem occurs
-     */
-    protected abstract long lengthOfData() throws IOException;
-
-    /**
-     * Write the end data to the output stream.
-     * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
-     */
-    protected void sendEnd(OutputStream out) throws IOException {
-        out.write(CRLF_BYTES);
-    }
+    String getDispositionType();
 
     /**
      * Write all the data to the output stream. If you override this method make sure to override #length() as well
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @param boundary
+     *            the boundary
+     * @throws IOException
+     *             If an IO problem occurs.
      */
-    public void send(OutputStream out) throws IOException {
-        sendStart(out);
-        sendDispositionHeader(out);
-        sendContentTypeHeader(out);
-        sendTransferEncodingHeader(out);
-        sendEndOfHeader(out);
-        sendData(out);
-        sendEnd(out);
-    }
+    void write(OutputStream out, byte[] boundary) throws IOException;
 
     /**
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
      * 
      * @return long The length.
-     * @throws IOException If an IO problem occurs
      */
-    public long length() throws IOException {
-        if (lengthOfData() < 0) {
-            return -1;
-        }
-        ByteArrayOutputStream overhead = new ByteArrayOutputStream();
-        sendStart(overhead);
-        sendDispositionHeader(overhead);
-        sendContentTypeHeader(overhead);
-        sendTransferEncodingHeader(overhead);
-        sendContentIdHeader(overhead);
-        sendEndOfHeader(overhead);
-        sendEnd(overhead);
-        return overhead.size() + lengthOfData();
-    }
+    long length(byte[] boundary);
 
-    /**
-     * Return a string representation of this object.
-     * 
-     * @return A string representation of this object.
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
-        return this.getName();
-    }
-
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out The stream to write to.
-     * @param parts The parts to write.
-     * @throws IOException If an I/O error occurs while writing the parts.
-     */
-    public static void sendParts(OutputStream out, final Part[] parts) throws IOException {
-        sendParts(out, parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out The stream to write to.
-     * @param parts The parts to write.
-     * @param partBoundary The ASCII bytes to use as the part boundary.
-     * @throws IOException If an I/O error occurs while writing the parts.
-     * @since 3.0
-     */
-    public static void sendParts(OutputStream out, Part[] parts, byte[] partBoundary) throws IOException {
-
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        if (partBoundary == null || partBoundary.length == 0) {
-            throw new IllegalArgumentException("partBoundary may not be empty");
-        }
-        for (Part part : parts) {
-            // set the part boundary before the part is sent
-            part.setPartBoundary(partBoundary);
-            part.send(out);
-        }
-        out.write(EXTRA_BYTES);
-        out.write(partBoundary);
-        out.write(EXTRA_BYTES);
-        out.write(CRLF_BYTES);
-    }
-
-    public static void sendMessageEnd(OutputStream out, byte[] partBoundary) throws IOException {
-
-        if (partBoundary == null || partBoundary.length == 0) {
-            throw new IllegalArgumentException("partBoundary may not be empty");
-        }
-
-        out.write(EXTRA_BYTES);
-        out.write(partBoundary);
-        out.write(EXTRA_BYTES);
-        out.write(CRLF_BYTES);
-    }
-
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out The stream to write to.
-     * @param part The part to write.
-     * @throws IOException If an I/O error occurs while writing the parts.
-     * @since N/A
-     */
-    public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
-
-        if (part == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-
-        part.setPartBoundary(partBoundary);
-        part.send(out);
-    }
-
-    /**
-     * Return the total sum of all parts and that of the last boundary
-     * 
-     * @param parts The parts.
-     * @return The total length
-     * @throws IOException If an I/O error occurs while writing the parts.
-     */
-    public static long getLengthOfParts(Part[] parts) throws IOException {
-        return getLengthOfParts(parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
-     * Gets the length of the multipart message including the given parts.
-     * 
-     * @param parts The parts.
-     * @param partBoundary The ASCII bytes to use as the part boundary.
-     * @return The total length
-     * @throws IOException If an I/O error occurs while writing the parts.
-     * @since 3.0
-     */
-    public static long getLengthOfParts(Part[] parts, byte[] partBoundary) throws IOException {
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        long total = 0;
-        for (Part part : parts) {
-            // set the part boundary before we calculate the part's length
-            part.setPartBoundary(partBoundary);
-            long l = part.length();
-            if (l < 0) {
-                return -1;
-            }
-            total += l;
-        }
-        total += EXTRA_BYTES.length;
-        total += partBoundary.length;
-        total += EXTRA_BYTES.length;
-        total += CRLF_BYTES.length;
-        return total;
-    }
+    long write(WritableByteChannel target, byte[] boundary) throws IOException;
 }

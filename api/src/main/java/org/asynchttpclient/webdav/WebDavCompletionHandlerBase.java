@@ -13,14 +13,25 @@
 
 package org.asynchttpclient.webdav;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.uri.UriComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -28,18 +39,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
@@ -49,8 +48,7 @@ import java.util.List;
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
-    private final List<HttpResponseBodyPart> bodies =
-            Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
+    private final List<HttpResponseBodyPart> bodies = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
 
@@ -114,7 +112,6 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      */
     abstract public T onCompleted(WebDavResponse response) throws Exception;
 
-
     private class HttpStatusWrapper extends HttpResponseStatus {
 
         private final HttpResponseStatus wrapped;
@@ -129,11 +126,11 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
             this.statusText = statusText;
             this.statusCode = statusCode;
         }
-        
+
         @Override
         public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
             final Response wrappedResponse = wrapped.prepareResponse(headers, bodyParts);
-            
+
             return new Response() {
 
                 @Override
@@ -182,7 +179,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public URI getUri() throws MalformedURLException {
+                public UriComponents getUri() {
                     return wrappedResponse.getUri();
                 }
 

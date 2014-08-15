@@ -23,5 +23,4 @@ public class GrizzlyChunkingTest extends ChunkingTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

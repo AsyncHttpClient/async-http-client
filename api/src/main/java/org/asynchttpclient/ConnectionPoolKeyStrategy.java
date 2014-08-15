@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient;
 
-import java.net.URI;
+import org.asynchttpclient.uri.UriComponents;
 
 public interface ConnectionPoolKeyStrategy {
 
-	String getKey(URI uri);
+    String getKey(UriComponents uri, ProxyServer proxy);
 }

@@ -12,15 +12,8 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.Future;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SimpleAsyncHttpClient;
@@ -28,6 +21,14 @@ import org.asynchttpclient.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
 import org.asynchttpclient.consumers.OutputStreamBodyConsumer;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.concurrent.Future;
 
 /**
  * @author Benjamin Hanzelmann

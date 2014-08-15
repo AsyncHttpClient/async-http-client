@@ -13,20 +13,20 @@
 
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.providers.netty.response.NettyResponse;
+import org.asynchttpclient.providers.netty.response.NettyResponseStatus;
+import org.testng.annotations.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import org.asynchttpclient.Cookie;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.providers.netty.response.NettyResponse;
-import org.asynchttpclient.providers.netty.response.ResponseStatus;
-import org.testng.annotations.Test;
 
 /**
  * @author Benjamin Hanzelmann
@@ -39,33 +39,33 @@ public class NettyAsyncResponseTest {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        Date date = new Date(System.currentTimeMillis() + 60000); // sdf.parse( dateString );
+        Date date = new Date(System.currentTimeMillis() + 60000);
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
-        NettyResponse
-                response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders() {
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), new HttpResponseHeaders() {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null);
+        }, null, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertTrue(cookie.getMaxAge() > 55 && cookie.getMaxAge() < 61, "");
+        long originalDateWith1SecPrecision = date.getTime() / 1000 * 1000;
+        assertEquals(cookie.getExpires(), originalDateWith1SecPrecision);
     }
 
     @Test(groups = "standalone")
     public void testCookieParseMaxAge() {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
-        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders() {
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), new HttpResponseHeaders() {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null);
+        }, null, null);
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
 
@@ -76,18 +76,18 @@ public class NettyAsyncResponseTest {
     @Test(groups = "standalone")
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
-        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders() {
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), new HttpResponseHeaders() {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null);
+        }, null, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getMaxAge(), 60);
+        assertEquals(cookie.getMaxAge(), -1);
     }
 
 }

@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final AtomicLong byteTransferred;
-    private Integer contentLength;
     private String url;
     private final ResumableProcessor resumableProcessor;
     private final AsyncHandler<Response> decoratedAsyncHandler;
@@ -52,10 +51,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final boolean accumulateBody;
     private ResumableListener resumableListener = new NULLResumableListener();
 
-    private ResumableAsyncHandler(long byteTransferred,
-                                  ResumableProcessor resumableProcessor,
-                                  AsyncHandler<Response> decoratedAsyncHandler,
-                                  boolean accumulateBody) {
+    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor,
+            AsyncHandler<Response> decoratedAsyncHandler, boolean accumulateBody) {
 
         this.byteTransferred = new AtomicLong(byteTransferred);
 
@@ -106,7 +103,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
-            url = status.getUri().toURL().toString();
+            url = status.getUri().toUrl();
         } else {
             return AsyncHandler.STATE.ABORT;
         }
@@ -180,8 +177,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         responseBuilder.accumulate(headers);
         String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
         if (contentLengthHeader != null) {
-            contentLength = Integer.valueOf(contentLengthHeader);
-            if (contentLength == null || contentLength == -1) {
+            if (Long.parseLong(contentLengthHeader) == -1L) {
                 return AsyncHandler.STATE.ABORT;
             }
         }
@@ -201,8 +197,9 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      */
     public Request adjustRequestRange(Request request) {
 
-        if (resumableIndex.get(request.getUrl()) != null) {
-            byteTransferred.set(resumableIndex.get(request.getUrl()));
+        Long ri = resumableIndex.get(request.getURI().toUrl());
+        if (ri != null) {
+            byteTransferred.set(ri);
         }
 
         // The Resumbale
@@ -253,19 +250,19 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     public static interface ResumableProcessor {
 
         /**
-         * Associate a key with the number of bytes sucessfully transferred.
+         * Associate a key with the number of bytes successfully transferred.
          *
          * @param key              a key. The recommended way is to use an url.
-         * @param transferredBytes The number of bytes sucessfully transferred.
+         * @param transferredBytes The number of bytes successfully transferred.
          */
-        public void put(String key, long transferredBytes);
+        void put(String key, long transferredBytes);
 
         /**
          * Remove the key associate value.
          *
-         * @param key key from which the value will be discarted
+         * @param key key from which the value will be discarded
          */
-        public void remove(String key);
+        void remove(String key);
 
         /**
          * Save the current {@link Map} instance which contains information about the current transfer state.
@@ -273,14 +270,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
          *
          * @param map
          */
-        public void save(Map<String, Long> map);
+        void save(Map<String, Long> map);
 
         /**
          * Load the {@link Map} in memory, contains information about the transferred bytes.
          *
          * @return {@link Map}
          */
-        public Map<String, Long> load();
+        Map<String, Long> load();
 
     }
 

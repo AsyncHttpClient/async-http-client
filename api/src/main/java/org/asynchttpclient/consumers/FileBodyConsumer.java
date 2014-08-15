@@ -35,9 +35,7 @@ public class FileBodyConsumer implements ResumableBodyConsumer {
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         // TODO: Channel.transferFrom may be a good idea to investigate.
-        file.write(byteBuffer.array(),
-                   byteBuffer.arrayOffset() + byteBuffer.position(),
-                   byteBuffer.remaining());
+        file.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
     }
 
     /**

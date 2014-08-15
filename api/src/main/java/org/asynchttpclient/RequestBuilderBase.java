@@ -15,26 +15,24 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.UTF8UrlEncoder;
+import org.asynchttpclient.util.QueryComputer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Builder for {@link Request}
@@ -44,44 +42,40 @@ import java.util.Map.Entry;
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
 
-    private static final URI DEFAULT_REQUEST_URL = URI.create("http://localhost");
+    private static final UriComponents DEFAULT_REQUEST_URL = UriComponents.create("http://localhost");
 
     private static final class RequestImpl implements Request {
         private String method;
-        private URI originalUri;
-        private URI uri;
-        private URI rawUri;
+        private UriComponents uri;
         private InetAddress address;
         private InetAddress localAddress;
-        private FluentCaseInsensitiveStringsMap headers;
-        private Collection<Cookie> cookies;
+        private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+        private ArrayList<Cookie> cookies;
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
         private BodyGenerator bodyGenerator;
-        private FluentStringsMap params;
+        private List<Param> formParams;
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
-        public FluentStringsMap queryParams;
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
-        private Boolean followRedirects;
+        private Boolean followRedirect;
         private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
-        private boolean useRawUrl;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
+        private List<Param> queryParams;
 
-        public RequestImpl(boolean useRawUrl) {
-            this.useRawUrl = useRawUrl;
+        public RequestImpl() {
         }
 
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.method = prototype.getMethod();
-                this.originalUri = prototype.getOriginalURI();
+                this.uri = prototype.getURI();
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
@@ -90,19 +84,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.bodyGenerator = prototype.getBodyGenerator();
-                this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
-                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
-                this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
+                this.formParams = prototype.getFormParams() == null ? null : new ArrayList<Param>(prototype.getFormParams());
+                this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getContentLength();
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
-                this.followRedirects = prototype.isRedirectOverrideSet() ? prototype.isRedirectEnabled() : null;
+                this.followRedirect = prototype.getFollowRedirect();
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
-                this.useRawUrl = prototype.isUseRawUrl();
                 this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
             }
         }
@@ -122,112 +114,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return localAddress;
         }
 
-        private String removeTrailingSlash(URI uri) {
-            String uriString = uri.toString();
-            if (uriString.endsWith("/")) {
-                return uriString.substring(0, uriString.length() - 1);
-            } else {
-                return uriString;
-            }
-        }
-
         @Override
-        public String getUrl() {
-            return removeTrailingSlash(getURI());
-        }
-
-        @Override
-        public String getRawUrl() {
-            return removeTrailingSlash(getRawURI());
-        }
-
-        public URI getOriginalURI() {
-            return originalUri;
-        }
-
-        public URI getURI() {
-            if (uri == null)
-                uri = toURI(true);
+        public UriComponents getURI() {
             return uri;
-        }
-
-        public URI getRawURI() {
-            if (rawUri == null)
-                rawUri = toURI(false);
-            return rawUri;
-        }
-
-        private URI toURI(boolean encode) {
-
-            if (originalUri == null) {
-                logger.debug("setUrl hasn't been invoked. Using http://localhost");
-                originalUri = DEFAULT_REQUEST_URL;
-            }
-
-            AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
-
-            StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
-            if (isNonEmpty(originalUri.getRawPath())) {
-                builder.append(originalUri.getRawPath());
-            } else {
-                builder.append("/");
-            }
-
-            if (isNonEmpty(queryParams)) {
-
-                builder.append("?");
-
-                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
-                    Map.Entry<String, List<String>> param = i.next();
-                    String name = param.getKey();
-                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
-                        String value = j.next();
-                        if (encode) {
-                            UTF8UrlEncoder.appendEncoded(builder, name);
-                        } else {
-                            builder.append(name);
-                        }
-                        if (value != null) {
-                            builder.append('=');
-                            if (encode) {
-                                UTF8UrlEncoder.appendEncoded(builder, value);
-                            } else {
-                                builder.append(value);
-                            }
-                        }
-                        if (j.hasNext()) {
-                            builder.append('&');
-                        }
-                    }
-                    if (i.hasNext()) {
-                        builder.append('&');
-                    }
-                }
-            }
-
-            return URI.create(builder.toString());
         }
 
         @Override
         public FluentCaseInsensitiveStringsMap getHeaders() {
-            if (headers == null) {
-                headers = new FluentCaseInsensitiveStringsMap();
-            }
             return headers;
         }
 
         @Override
-        public boolean hasHeaders() {
-            return headers != null && !headers.isEmpty();
-        }
-
-        @Override
         public Collection<Cookie> getCookies() {
-            if (cookies == null) {
-                cookies = Collections.unmodifiableCollection(Collections.<Cookie> emptyList());
-            }
-            return cookies;
+            return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
         }
 
         @Override
@@ -256,23 +155,18 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public FluentStringsMap getParams() {
-            return params;
+        public List<Param> getFormParams() {
+            return formParams != null ? formParams : Collections.<Param> emptyList();
         }
 
         @Override
         public List<Part> getParts() {
-            return parts;
+            return parts != null ? parts : Collections.<Part> emptyList();
         }
 
         @Override
         public String getVirtualHost() {
             return virtualHost;
-        }
-
-        @Override
-        public FluentStringsMap getQueryParams() {
-            return queryParams;
         }
 
         @Override
@@ -291,13 +185,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public boolean isRedirectEnabled() {
-            return followRedirects != null && followRedirects;
-        }
-
-        @Override
-        public boolean isRedirectOverrideSet() {
-            return followRedirects != null;
+        public Boolean getFollowRedirect() {
+            return followRedirect;
         }
 
         @Override
@@ -305,80 +194,101 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return requestTimeoutInMs;
         }
 
+        @Override
         public long getRangeOffset() {
             return rangeOffset;
         }
 
+        @Override
         public String getBodyEncoding() {
             return charset;
         }
 
+        @Override
         public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
             return connectionPoolKeyStrategy;
         }
 
         @Override
+        public List<Param> getQueryParams() {
+            if (queryParams == null)
+                // lazy load
+                if (isNonEmpty(uri.getQuery())) {
+                    queryParams = new ArrayList<Param>(1);
+                    for (String queryStringParam : uri.getQuery().split("&")) {
+                        int pos = queryStringParam.indexOf('=');
+                        if (pos <= 0)
+                            queryParams.add(new Param(queryStringParam, null));
+                        else
+                            queryParams.add(new Param(queryStringParam.substring(0, pos), queryStringParam.substring(pos + 1)));
+                    }
+                } else
+                    queryParams = Collections.emptyList();
+            return queryParams;
+        }
+
+        @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(getURI().toString());
+            StringBuilder sb = new StringBuilder(getURI().toUrl());
 
             sb.append("\t");
             sb.append(method);
             sb.append("\theaders:");
-            final FluentCaseInsensitiveStringsMap headersLocal = getHeaders();
-            if (headersLocal != null) {
-                for (String name : headersLocal.keySet()) {
+            if (isNonEmpty(headers)) {
+                for (String name : headers.keySet()) {
                     sb.append("\t");
                     sb.append(name);
                     sb.append(":");
-                    sb.append(headersLocal.getJoinedValue(name, ", "));
+                    sb.append(headers.getJoinedValue(name, ", "));
                 }
             }
-            sb.append("\tparams:");
-            if (params != null) {
-                for (String name : params.keySet()) {
+            if (isNonEmpty(formParams)) {
+                sb.append("\tformParams:");
+                for (Param param : formParams) {
                     sb.append("\t");
-                    sb.append(name);
+                    sb.append(param.getName());
                     sb.append(":");
-                    sb.append(params.getJoinedValue(name, ", "));
+                    sb.append(param.getValue());
                 }
             }
 
             return sb.toString();
         }
-
-        public boolean isUseRawUrl() {
-            return useRawUrl;
-        }
     }
 
     private final Class<T> derived;
     protected final RequestImpl request;
-    protected boolean useRawUrl = false;
+    protected QueryComputer queryComputer;
+    protected List<Param> queryParams;
+    protected SignatureCalculator signatureCalculator;
 
-    protected RequestBuilderBase(Class<T> derived, String method, boolean rawUrls) {
+    protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
+        this(derived, method, QueryComputer.queryComputer(disableUrlEncoding));
+    }
+
+    protected RequestBuilderBase(Class<T> derived, String method, QueryComputer queryComputer) {
         this.derived = derived;
-        request = new RequestImpl(rawUrls);
+        request = new RequestImpl();
         request.method = method;
-        this.useRawUrl = rawUrls;
+        this.queryComputer = queryComputer;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
+        this(derived, prototype, QueryComputer.URL_ENCODING_ENABLED_QUERY_COMPUTER);
+    }
+
+    protected RequestBuilderBase(Class<T> derived, Request prototype, QueryComputer queryComputer) {
         this.derived = derived;
         request = new RequestImpl(prototype);
-        this.useRawUrl = prototype.isUseRawUrl();
+        this.queryComputer = queryComputer;
     }
-
+    
     public T setUrl(String url) {
-        return setURI(URI.create(url));
+        return setURI(UriComponents.create(url));
     }
 
-    public T setURI(URI uri) {
-        if (uri.getPath() == null)
-            throw new IllegalArgumentException("Unsupported uri format: " + uri);
-        request.originalUri = uri;
-        addQueryParameters(request.originalUri);
-        request.uri = null;
-        request.rawUri = null;
+    public T setURI(UriComponents uri) {
+        request.uri = uri;
         return derived.cast(this);
     }
 
@@ -392,36 +302,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private void addQueryParameters(URI uri) {
-        if (isNonEmpty(uri.getRawQuery())) {
-            String[] queries = uri.getRawQuery().split("&");
-            int pos;
-            for (String query : queries) {
-                pos = query.indexOf('=');
-                if (pos <= 0) {
-                    addQueryParameter(query, null);
-                } else {
-                    try {
-                        if (useRawUrl) {
-                            addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
-                        } else {
-                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
-                        }
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-    }
-
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
         return derived.cast(this);
     }
 
     public T setHeader(String name, String value) {
-        request.getHeaders().replace(name, value);
+        request.headers.replace(name, value);
         return derived.cast(this);
     }
 
@@ -431,21 +318,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             value = "";
         }
 
-        request.getHeaders().add(name, value);
+        request.headers.add(name, value);
         return derived.cast(this);
     }
 
     public T setHeaders(FluentCaseInsensitiveStringsMap headers) {
-        if (headers != null) {
-            request.headers = new FluentCaseInsensitiveStringsMap(headers);
-        }
+        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
         return derived.cast(this);
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        if (headers != null) {
-            request.headers = new FluentCaseInsensitiveStringsMap(headers);
-        }
+        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
         return derived.cast(this);
     }
 
@@ -454,62 +337,90 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    private void lazyInitCookies() {
+        if (request.cookies == null)
+            request.cookies = new ArrayList<Cookie>(3);
+    }
+
+    public T setCookies(Collection<Cookie> cookies) {
+        request.cookies = new ArrayList<Cookie>(cookies);
+        return derived.cast(this);
+    }
+
     public T addCookie(Cookie cookie) {
-        if (request.cookies == null) {
-            request.cookies = new ArrayList<Cookie>();
-        }
+        lazyInitCookies();
         request.cookies.add(cookie);
         return derived.cast(this);
     }
 
-    private void resetParameters() {
-        request.params = null;
+    public T addOrReplaceCookie(Cookie cookie) {
+        String cookieKey = cookie.getName();
+        boolean replace = false;
+        int index = 0;
+        lazyInitCookies();
+        for (Cookie c : request.cookies) {
+            if (c.getName().equals(cookieKey)) {
+                replace = true;
+                break;
+            }
+
+            index++;
+        }
+        if (replace)
+            request.cookies.set(index, cookie);
+        else
+            request.cookies.add(cookie);
+        return derived.cast(this);
+    }
+    
+    public void resetCookies() {
+        if (request.cookies != null)
+            request.cookies.clear();
+    }
+    
+    public void resetQuery() {
+        queryParams = null;
+        request.uri = request.uri.withNewQuery(null);
+    }
+    
+    public void resetFormParams() {
+        request.formParams = null;
     }
 
-    private void resetNonMultipartData() {
+    public void resetNonMultipartData() {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
         request.length = -1;
     }
 
-    private void resetMultipartData() {
+    public void resetMultipartData() {
         request.parts = null;
     }
 
-    private void checkIfBodyAllowed() {
-        if ("HEAD".equals(request.method)) {
-            throw new IllegalArgumentException("Can NOT set Body on HTTP Request Method HEAD.");
-        }
-    }
-
     public T setBody(File file) {
-        checkIfBodyAllowed();
         request.file = file;
         return derived.cast(this);
     }
 
-    public T setBody(byte[] data) throws IllegalArgumentException {
-        checkIfBodyAllowed();
-        resetParameters();
+    public T setBody(byte[] data) {
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.byteData = data;
         return derived.cast(this);
     }
 
-    public T setBody(String data) throws IllegalArgumentException {
-        checkIfBodyAllowed();
-        resetParameters();
+    public T setBody(String data) {
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.stringData = data;
         return derived.cast(this);
     }
 
-    public T setBody(InputStream stream) throws IllegalArgumentException {
-        checkIfBodyAllowed();
-        resetParameters();
+    public T setBody(InputStream stream) {
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.streamData = stream;
@@ -517,58 +428,70 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(BodyGenerator bodyGenerator) {
-        checkIfBodyAllowed();
         request.bodyGenerator = bodyGenerator;
         return derived.cast(this);
     }
 
-    public T addQueryParameter(String name, String value) {
-        if (request.queryParams == null) {
-            request.queryParams = new FluentStringsMap();
+    public T addQueryParam(String name, String value) {
+        if (queryParams == null) {
+            queryParams = new ArrayList<Param>(1);
         }
-        request.queryParams.add(name, value);
+        queryParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
-    public T setQueryParameters(FluentStringsMap parameters) {
-        if (parameters == null) {
-            request.queryParams = null;
-        } else {
-            request.queryParams = new FluentStringsMap(parameters);
-        }
+    public T addQueryParams(List<Param> queryParams) {
+        for (Param queryParam: queryParams)
+            addQueryParam(queryParam.getName(), queryParam.getValue());
         return derived.cast(this);
     }
 
-    public T addParameter(String key, String value) throws IllegalArgumentException {
+    private List<Param> map2ParamList(Map<String, List<String>> map) {
+        if (map == null)
+            return null;
+
+        List<Param> params = new ArrayList<Param>(map.size());
+        for (Map.Entry<String, List<String>> entries : map.entrySet()) {
+            String name = entries.getKey();
+            for (String value : entries.getValue())
+                params.add(new Param(name, value));
+        }
+        return params;
+    }
+    
+    public T setQueryParams(Map<String, List<String>> map) {
+        return setQueryParams(map2ParamList(map));
+    }
+
+    public T setQueryParams(List<Param> params) {
+        queryParams = params;
+        return derived.cast(this);
+    }
+    
+    public T addFormParam(String name, String value) {
         resetNonMultipartData();
         resetMultipartData();
-        if (request.params == null) {
-            request.params = new FluentStringsMap();
-        }
-        request.params.add(key, value);
+        if (request.formParams == null)
+            request.formParams = new ArrayList<Param>(1);
+        request.formParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
-    public T setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
+    public T setFormParams(Map<String, List<String>> map) {
+        return setFormParams(map2ParamList(map));
+    }
+    public T setFormParams(List<Param> params) {
         resetNonMultipartData();
         resetMultipartData();
-        request.params = new FluentStringsMap(parameters);
+        request.formParams = params;
         return derived.cast(this);
     }
 
-    public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+    public T addBodyPart(Part part) {
+        resetFormParams();
         resetNonMultipartData();
-        resetMultipartData();
-        request.params = new FluentStringsMap(parameters);
-        return derived.cast(this);
-    }
-
-    public T addBodyPart(Part part) throws IllegalArgumentException {
-        resetParameters();
-        resetNonMultipartData();
-        if (request.parts == null) {
+        if (request.parts == null)
             request.parts = new ArrayList<Part>();
-        }
         request.parts.add(part);
         return derived.cast(this);
     }
@@ -583,8 +506,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setFollowRedirects(boolean followRedirects) {
-        request.followRedirects = followRedirects;
+    public T setFollowRedirect(boolean followRedirect) {
+        request.followRedirect = followRedirect;
         return derived.cast(this);
     }
 
@@ -613,13 +536,42 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public Request build() {
+    public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
+        this.signatureCalculator = signatureCalculator;
+        return derived.cast(this);
+    }
+
+    private void executeSignatureCalculator() {
+        /* Let's first calculate and inject signature, before finalizing actual build
+         * (order does not matter with current implementation but may in future)
+         */
+        if (signatureCalculator != null) {
+            signatureCalculator.calculateAndAddSignature(request, this);
+        }
+    }
+    
+    private void computeRequestCharset() {
+        if (request.charset == null) {
+            try {
+                final String contentType = request.headers.getFirstValue("Content-Type");
+                if (contentType != null) {
+                    final String charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                    if (charset != null) {
+                        // ensure that if charset is provided with the Content-Type header,
+                        // we propagate that down to the charset of the Request object
+                        request.charset = charset;
+                    }
+                }
+            } catch (Throwable e) {
+                // NoOp -- we can't fix the Content-Type or charset from here
+            }
+        }
+    }
+    
+    private void computeRequestLength() {
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
-            String contentLength = null;
-            if (request.headers != null && request.headers.isEmpty()) {
-                contentLength = request.headers.getFirstValue("Content-Length");
-            }
+            final String contentLength = request.headers.getFirstValue("Content-Length");
 
             if (contentLength != null) {
                 try {
@@ -629,34 +581,28 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
         }
-        if (request.cookies != null) {
-            request.cookies = Collections.unmodifiableCollection(request.cookies);
+    }
+
+    private void computeFinalUri() {
+
+        if (request.uri == null) {
+            logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
+            request.uri = DEFAULT_REQUEST_URL;
         }
+
+        AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
+
+        String newQuery = queryComputer.computeFullQueryString(request.uri.getQuery(), queryParams);
+
+        request.uri = request.uri.withNewQuery(newQuery);
+    }
+
+    public Request build() {
+        computeFinalUri();
+        executeSignatureCalculator();
+        computeRequestCharset();
+        computeRequestLength();
         return request;
     }
-
-    public T addOrReplaceCookie(Cookie cookie) {
-        String cookieKey = cookie.getName();
-        boolean replace = false;
-        int index = 0;
-        if (request.cookies == null) {
-            request.cookies = new ArrayList<Cookie>();
-            request.cookies.add(cookie);
-            return derived.cast(this);
-        }
-        for (Cookie c : request.cookies) {
-            if (c.getName().equals(cookieKey)) {
-                replace = true;
-                break;
-            }
-
-            index++;
-        }
-        if (replace) {
-            ((ArrayList<Cookie>) request.cookies).set(index, cookie);
-        } else {
-            request.cookies.add(cookie);
-        }
-        return derived.cast(this);
-    }
 }
+

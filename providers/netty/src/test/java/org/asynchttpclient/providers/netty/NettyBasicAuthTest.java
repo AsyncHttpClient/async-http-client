@@ -25,6 +25,6 @@ public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override
     public String getProviderClass() {
-    	return NettyAsyncHttpProvider.class.getName();
+        return NettyAsyncHttpProvider.class.getName();
     }
 }

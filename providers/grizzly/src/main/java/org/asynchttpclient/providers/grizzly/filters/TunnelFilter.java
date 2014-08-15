@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,17 +13,17 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import java.io.IOException;
+
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.IOEvent;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
-
-import java.io.IOException;
-import java.net.URI;
 
 /**
  * This <code>Filter</code> is responsible for HTTP CONNECT
@@ -36,24 +36,19 @@ import java.net.URI;
 public final class TunnelFilter extends BaseFilter {
 
     private final ProxyServer proxyServer;
-    private final URI uri;
-
+    private final UriComponents uri;
 
     // ------------------------------------------------------------ Constructors
 
-
-    public TunnelFilter(final ProxyServer proxyServer, final URI uri) {
+    public TunnelFilter(final ProxyServer proxyServer, final UriComponents uri) {
         this.proxyServer = proxyServer;
         this.uri = uri;
     }
 
-
     // ----------------------------------------------------- Methods from Filter
 
-
     @Override
-    public NextAction handleConnect(FilterChainContext ctx)
-    throws IOException {
+    public NextAction handleConnect(FilterChainContext ctx) throws IOException {
         // We suspend the FilterChainContext here to prevent
         // notification of other filters of the connection event.
         // This allows us to control when the connection is returned
@@ -69,8 +64,7 @@ public final class TunnelFilter extends BaseFilter {
         // When tunnel is complete, the AsyncHttpClientFilter will
         // send this event back to this filter in order to notify
         // it that the request processing is complete.
-        final TunnelRequestEvent tunnelRequestEvent =
-                new TunnelRequestEvent(ctx, proxyServer, uri);
+        final TunnelRequestEvent tunnelRequestEvent = new TunnelRequestEvent(ctx, proxyServer, uri);
         ctx.notifyUpstream(tunnelRequestEvent);
 
         // This typically isn't advised, however, we need to be able to
@@ -85,8 +79,7 @@ public final class TunnelFilter extends BaseFilter {
     }
 
     @Override
-    public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event)
-    throws IOException {
+    public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event) throws IOException {
         if (event.type() == TunnelRequestEvent.class) {
             TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
 
@@ -97,14 +90,12 @@ public final class TunnelFilter extends BaseFilter {
             // Obtain the context that was previously suspended and resume.
             // We pass in Invoke Action so the filter chain will call
             // handleConnect on the next filter.
-            FilterChainContext suspendedContext =
-                    tunnelRequestEvent.getSuspendedContext();
+            FilterChainContext suspendedContext = tunnelRequestEvent.getSuspendedContext();
             suspendedContext.resume(ctx.getInvokeAction());
 
             // Stop further event processing.
-            ctx.getStopAction();
+            return ctx.getStopAction();
         }
         return ctx.getInvokeAction();
     }
-
 }

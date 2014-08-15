@@ -14,7 +14,25 @@ package org.asynchttpclient.async;
 
 import static org.apache.commons.io.IOUtils.copy;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.BodyDeferringAsyncHandler;
+import org.asynchttpclient.BodyDeferringAsyncHandler.BodyDeferringInputStream;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,19 +41,6 @@ import java.io.PipedOutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.BodyDeferringAsyncHandler;
-import org.asynchttpclient.BodyDeferringAsyncHandler.BodyDeferringInputStream;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 
 public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
@@ -104,14 +109,14 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     public AsyncHttpClientConfig getAsyncHttpClientConfig() {
         // for this test brevity's sake, we are limiting to 1 retries
-        return new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).setRequestTimeoutInMs(10000).build();
+        return new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).setRequestTimeout(10000).build();
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimple");
+            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimple");
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
@@ -138,7 +143,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     public void deferredSimpleWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER",
+            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER",
                     Boolean.TRUE.toString());
 
             CountingOutputStream cos = new CountingOutputStream();
@@ -171,7 +176,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrick");
+            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrick");
 
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
@@ -208,7 +213,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
 
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER",
+            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER",
                     Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
@@ -245,7 +250,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         int newPortWithoutAnyoneListening = findFreePort();
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
+            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);

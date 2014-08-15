@@ -30,5 +30,4 @@ public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

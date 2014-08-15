@@ -12,12 +12,11 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.testng.Assert.*;
+import static org.asynchttpclient.async.util.TestUtils.LARGE_IMAGE_BYTES;
+import static org.asynchttpclient.async.util.TestUtils.LARGE_IMAGE_FILE;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.FileAssert.fail;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -26,6 +25,9 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 
 /**
  * Test that the url fetcher is able to communicate via a proxy
@@ -43,12 +45,12 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     public void testCustomChunking() throws Exception {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
-        bc.setAllowPoolingConnection(true);
-        bc.setMaximumConnectionsPerHost(1);
-        bc.setMaximumConnectionsTotal(1);
-        bc.setConnectionTimeoutInMs(1000);
-        bc.setRequestTimeoutInMs(1000);
-        bc.setFollowRedirects(true);
+        bc.setAllowPoolingConnections(true);
+        bc.setMaxConnectionsPerHost(1);
+        bc.setMaxConnections(1);
+        bc.setConnectionTimeout(1000);
+        bc.setRequestTimeout(1000);
+        bc.setFollowRedirect(true);
 
         AsyncHttpClient c = getAsyncHttpClient(bc.build());
         try {

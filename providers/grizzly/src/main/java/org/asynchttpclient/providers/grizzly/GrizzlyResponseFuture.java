@@ -17,7 +17,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.listenable.AbstractListenableFuture;
-
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.impl.FutureImpl;
 
@@ -46,14 +45,10 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     FutureImpl<V> delegate;
 
-
     // ------------------------------------------------------------ Constructors
 
-
-    public GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider,
-                          final Request request,
-                          final AsyncHandler handler,
-                          final ProxyServer proxyServer) {
+    public GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider, final Request request, final AsyncHandler handler,
+            final ProxyServer proxyServer) {
 
         this.provider = provider;
         this.request = request;
@@ -61,9 +56,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.proxyServer = proxyServer;
     }
 
-
     // ----------------------------------- Methods from AbstractListenableFuture
-
 
     public void done() {
 
@@ -71,9 +64,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
             return;
         }
         runListeners();
-
     }
-
 
     public void abort(Throwable t) {
 
@@ -89,36 +80,27 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
         closeConnection();
         runListeners();
-
     }
 
     public void touch() {
-
         provider.touchConnection(connection, request);
-
     }
-
 
     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
 
         // TODO This doesn't currently do anything - and may not make sense
         // with our implementation.  Needs further analysis.
         return writeHeaders;
-
     }
-
 
     public boolean getAndSetWriteBody(boolean writeBody) {
 
         // TODO This doesn't currently do anything - and may not make sense
         // with our implementation.  Needs further analysis.
         return writeBody;
-
     }
 
-
     // ----------------------------------------------------- Methods from Future
-
 
     public boolean cancel(boolean mayInterruptIfRunning) {
 
@@ -133,30 +115,19 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
         runListeners();
         return delegate.cancel(mayInterruptIfRunning);
-
     }
-
 
     public boolean isCancelled() {
-
         return delegate.isCancelled();
-
     }
-
 
     public boolean isDone() {
-
         return delegate.isDone();
-
     }
-
 
     public V get() throws InterruptedException, ExecutionException {
-
         return delegate.get();
-
     }
-
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 
@@ -165,36 +136,25 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
         } else {
             return null;
         }
-
     }
-
 
     // ------------------------------------------------- Package Private Methods
 
-
     void setConnection(final Connection connection) {
-
         this.connection = connection;
-
     }
-
 
     public void setDelegate(final FutureImpl<V> delegate) {
-
         this.delegate = delegate;
-
     }
 
-
     // --------------------------------------------------------- Private Methods
-
 
     private void closeConnection() {
 
         if (connection != null && connection.isOpen()) {
             connection.close().recycle(true);
         }
-
     }
 
     public ProxyServer getProxyServer() {

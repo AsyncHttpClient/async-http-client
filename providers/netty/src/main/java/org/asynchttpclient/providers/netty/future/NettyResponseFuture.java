@@ -1,26 +1,24 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.future;
 
-import static org.asynchttpclient.util.DateUtil.millisTime;
+import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 
-import java.net.URI;
+import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -33,13 +31,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.listenable.AbstractListenableFuture;
-import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
+import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
+import org.asynchttpclient.uri.UriComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,15 +49,14 @@ import org.slf4j.LoggerFactory;
  */
 public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
-    private final static Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
-    public final static String MAX_RETRY = "org.asynchttpclient.providers.netty.maxRetry";
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
     public enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
 
-    private final int requestTimeoutInMs;
-    private final AsyncHttpClientConfig config;
+    private volatile boolean requestTimeoutReached;
+    private volatile boolean idleConnectionTimeoutReached;
     private final long start = millisTime();
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
     private final ProxyServer proxyServer;
@@ -76,72 +74,50 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private final AtomicInteger currentRetry = new AtomicInteger(0);
-    private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
+    private final AtomicBoolean onThrowableCalled = new AtomicBoolean(false);
     private final AtomicReference<V> content = new AtomicReference<V>();
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
-    private volatile FutureReaper reaperFuture;
+    private volatile TimeoutsHolder timeoutsHolder;
 
     // state mutated only inside the event loop
     private Channel channel;
-    private URI uri;
+    private UriComponents uri;
     private boolean keepAlive = true;
     private Request request;
-    private HttpRequest nettyRequest;
-    private HttpResponse httpResponse;
+    private NettyRequest nettyRequest;
+    private HttpHeaders httpHeaders;
     private AsyncHandler<V> asyncHandler;
     private HttpResponse pendingResponse;
     private boolean streamWasAlreadyConsumed;
     private boolean reuseChannel;
-    private boolean writeHeaders;
-    private boolean writeBody;
+    private boolean headersAlreadyWrittenOnContinue;
+    private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
-    public NettyResponseFuture(URI uri,//
+    public NettyResponseFuture(UriComponents uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
-            HttpRequest nettyRequest,//
-            int requestTimeoutInMs,//
-            AsyncHttpClientConfig config,//
+            NettyRequest nettyRequest,//
+            int maxRetry,//
             ConnectionPoolKeyStrategy connectionPoolKeyStrategy,//
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
-        this.requestTimeoutInMs = requestTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.config = config;
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
-
-        if (System.getProperty(MAX_RETRY) != null) {
-            maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
-        } else {
-            maxRetry = config.getMaxRequestRetry();
-        }
-        writeHeaders = true;
-        writeBody = true;
+        this.maxRetry = maxRetry;
     }
 
-    public URI getURI() {
-        return uri;
-    }
-
-    public void setURI(URI uri) {
-        this.uri = uri;
-    }
-
-    public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
-        return connectionPoolKeyStrategy;
-    }
-
-    public ProxyServer getProxyServer() {
-        return proxyServer;
-    }
+    /*********************************************/
+    /**       java.util.concurrent.Future       **/
+    /*********************************************/
 
     @Override
     public boolean isDone() {
-        return isDone.get();
+        return isDone.get() || isCancelled.get();
     }
 
     @Override
@@ -149,135 +125,67 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return isCancelled.get();
     }
 
-    public void setAsyncHandler(AsyncHandler<V> asyncHandler) {
-        this.asyncHandler = asyncHandler;
-    }
-
     @Override
     public boolean cancel(boolean force) {
-        cancelReaper();
+        cancelTimeouts();
 
-        if (isCancelled.get())
+        if (isCancelled.getAndSet(true))
             return false;
 
         try {
-            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+            Channels.setDiscard(channel);
             channel.close();
         } catch (Throwable t) {
             // Ignore
         }
-        if (!throwableCalled.getAndSet(true)) {
+        if (!onThrowableCalled.getAndSet(true)) {
             try {
                 asyncHandler.onThrowable(new CancellationException());
             } catch (Throwable t) {
-                logger.warn("cancel", t);
+                LOGGER.warn("cancel", t);
             }
         }
         latch.countDown();
-        isCancelled.set(true);
         runListeners();
         return true;
     }
 
-    /**
-     * Is the Future still valid
-     * 
-     * @return <code>true</code> if response has expired and should be terminated.
-     */
-    public boolean hasExpired() {
-        long now = millisTime();
-        return hasConnectionIdleTimedOut(now) || hasRequestTimedOut(now);
-    }
-
-    public boolean hasConnectionIdleTimedOut(long now) {
-        return config.getIdleConnectionTimeoutInMs() != -1 && (now - touch.get()) >= config.getIdleConnectionTimeoutInMs();
-    }
-
-    public boolean hasRequestTimedOut(long now) {
-        return requestTimeoutInMs != -1 && (now - start) >= requestTimeoutInMs;
-    }
-
     @Override
     public V get() throws InterruptedException, ExecutionException {
-        try {
-            return get(requestTimeoutInMs, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            cancelReaper();
-            throw new ExecutionException(e);
-        }
-    }
-
-    public void cancelReaper() {
-        if (reaperFuture != null) {
-            reaperFuture.cancel(false);
-        }
+        latch.await();
+        return getContent();
     }
 
     @Override
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
-        if (!isDone() && !isCancelled()) {
-            boolean expired = false;
-            if (l == -1) {
-                latch.await();
-            } else {
-                expired = !latch.await(l, tu);
-            }
-
-            if (expired) {
-                isCancelled.set(true);
-                try {
-                    Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
-                    channel.close();
-                } catch (Throwable t) {
-                    // Ignore
-                }
-                TimeoutException te = new TimeoutException(String.format("No response received after %s %s", l, tu.name().toLowerCase()));
-                if (!throwableCalled.getAndSet(true)) {
-                    try {
-                        try {
-                            asyncHandler.onThrowable(te);
-                        } catch (Throwable t) {
-                            logger.debug("asyncHandler.onThrowable", t);
-                        }
-                        throw new ExecutionException(te);
-                    } finally {
-                        cancelReaper();
-                    }
-                }
-            }
-            isDone.set(true);
-
-            ExecutionException e = exEx.getAndSet(null);
-            if (e != null) {
-                throw e;
-            }
-        }
+        if (!latch.await(l, tu))
+            throw new TimeoutException();
         return getContent();
     }
 
     private V getContent() throws ExecutionException {
-        ExecutionException e = exEx.getAndSet(null);
-        if (e != null) {
+
+        ExecutionException e = exEx.get();
+        if (e != null)
             throw e;
-        }
 
         V update = content.get();
         // No more retry
         currentRetry.set(maxRetry);
-        if (exEx.get() == null && !contentProcessed.getAndSet(true)) {
+        if (!contentProcessed.getAndSet(true)) {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
-                if (!throwableCalled.getAndSet(true)) {
+                if (!onThrowableCalled.getAndSet(true)) {
                     try {
                         try {
                             asyncHandler.onThrowable(ex);
                         } catch (Throwable t) {
-                            logger.debug("asyncHandler.onThrowable", t);
+                            LOGGER.debug("asyncHandler.onThrowable", t);
                         }
                         throw new RuntimeException(ex);
                     } finally {
-                        cancelReaper();
+                        cancelTimeouts();
                     }
                 }
             }
@@ -286,16 +194,20 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return update;
     }
 
+    /*********************************************/
+    /**   org.asynchttpclient.ListenableFuture  **/
+    /*********************************************/
+
     public final void done() {
 
-        try {
-            cancelReaper();
+        cancelTimeouts();
 
-            if (exEx.get() != null) {
-                return;
-            }
+        if (isDone.getAndSet(true) || isCancelled.get())
+            return;
+
+        try {
             getContent();
-            isDone.set(true);
+
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
@@ -310,34 +222,94 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void abort(final Throwable t) {
-        cancelReaper();
 
-        if (isDone.get() || isCancelled.get())
+        cancelTimeouts();
+
+        if (isDone.get() || isCancelled.getAndSet(true))
             return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
-        if (!throwableCalled.getAndSet(true)) {
+        if (onThrowableCalled.compareAndSet(false, true)) {
             try {
                 asyncHandler.onThrowable(t);
             } catch (Throwable te) {
-                logger.debug("asyncHandler.onThrowable", te);
-            } finally {
-                isCancelled.set(true);
+                LOGGER.debug("asyncHandler.onThrowable", te);
             }
         }
         latch.countDown();
         runListeners();
     }
 
+    @Override
+    public void touch() {
+        touch.set(millisTime());
+    }
+
+    /*********************************************/
+    /**                 INTERNAL                **/
+    /*********************************************/
+
+    public UriComponents getURI() {
+        return uri;
+    }
+
+    public void setURI(UriComponents uri) {
+        this.uri = uri;
+    }
+
+    public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
+        return connectionPoolKeyStrategy;
+    }
+
+    public ProxyServer getProxyServer() {
+        return proxyServer;
+    }
+
+    public void setAsyncHandler(AsyncHandler<V> asyncHandler) {
+        this.asyncHandler = asyncHandler;
+    }
+
+    /**
+     * Is the Future still valid
+     * 
+     * @return <code>true</code> if response has expired and should be terminated.
+     */
+    public boolean hasExpired() {
+        return requestTimeoutReached || idleConnectionTimeoutReached;
+    }
+
+    public void setRequestTimeoutReached() {
+        this.requestTimeoutReached = true;
+    }
+
+    public boolean isRequestTimeoutReached() {
+        return requestTimeoutReached;
+    }
+
+    public void setIdleConnectionTimeoutReached() {
+        this.idleConnectionTimeoutReached = true;
+    }
+
+    public boolean isIdleConnectionTimeoutReached() {
+        return idleConnectionTimeoutReached;
+    }
+
+    public void cancelTimeouts() {
+        if (timeoutsHolder != null) {
+            timeoutsHolder.cancel();
+            timeoutsHolder = null;
+        }
+    }
+
     public final Request getRequest() {
         return request;
     }
 
-    public final HttpRequest getNettyRequest() {
+    public final NettyRequest getNettyRequest() {
         return nettyRequest;
     }
 
-    public final void setNettyRequest(HttpRequest nettyRequest) {
+    public final void setNettyRequest(NettyRequest nettyRequest) {
         this.nettyRequest = nettyRequest;
     }
 
@@ -353,21 +325,20 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.keepAlive = keepAlive;
     }
 
-    public final HttpResponse getHttpResponse() {
-        return httpResponse;
+    public final HttpHeaders getHttpHeaders() {
+        return httpHeaders;
     }
 
-    public final void setHttpResponse(final HttpResponse httpResponse) {
-        this.httpResponse = httpResponse;
+    public final void setHttpHeaders(HttpHeaders httpHeaders) {
+        this.httpHeaders = httpHeaders;
     }
 
     public int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
     }
 
-    public void setReaperFuture(FutureReaper reaperFuture) {
-        cancelReaper();
-        this.reaperFuture = reaperFuture;
+    public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
+        this.timeoutsHolder = timeoutsHolder;
     }
 
     public boolean isInAuth() {
@@ -406,23 +377,24 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.streamWasAlreadyConsumed = streamWasAlreadyConsumed;
     }
 
-    @Override
-    public void touch() {
-        touch.set(millisTime());
+    public long getLastTouch() {
+        return touch.get();
     }
 
-    @Override
-    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
-        boolean b = this.writeHeaders;
-        this.writeHeaders = writeHeaders;
-        return b;
+    public void setHeadersAlreadyWrittenOnContinue(boolean headersAlreadyWrittenOnContinue) {
+        this.headersAlreadyWrittenOnContinue = headersAlreadyWrittenOnContinue;
     }
 
-    @Override
-    public boolean getAndSetWriteBody(boolean writeBody) {
-        boolean b = this.writeBody;
-        this.writeBody = writeBody;
-        return b;
+    public boolean isHeadersAlreadyWrittenOnContinue() {
+        return headersAlreadyWrittenOnContinue;
+    }
+
+    public void setDontWriteBodyBecauseExpectContinue(boolean dontWriteBodyBecauseExpectContinue) {
+        this.dontWriteBodyBecauseExpectContinue = dontWriteBodyBecauseExpectContinue;
+    }
+
+    public boolean isDontWriteBodyBecauseExpectContinue() {
+        return dontWriteBodyBecauseExpectContinue;
     }
 
     public void attachChannel(Channel channel) {
@@ -461,26 +433,27 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return true;
     }
 
+    public SocketAddress getChannelRemoteAddress() {
+        return channel() != null ? channel().remoteAddress() : null;
+    }
+
     public void setRequest(Request request) {
         this.request = request;
     }
 
     /**
-     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
-     * recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an
+     * unexpected IOException, and in some situation we can recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplayed() {
-        return !isDone() && canRetry() && !isCancelled() && !(channel != null && channel.isOpen() && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
+        return !isDone() && canRetry()
+                && !(Channels.isChannelValid(channel) && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
     }
 
     public long getStart() {
         return start;
-    }
-
-    public long getRequestTimeoutInMs() {
-        return requestTimeoutInMs;
     }
 
     @Override
@@ -490,15 +463,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\tisDone=" + isDone + //
                 ",\n\tisCancelled=" + isCancelled + //
                 ",\n\tasyncHandler=" + asyncHandler + //
-                ",\n\trequestTimeoutInMs=" + requestTimeoutInMs + //
                 ",\n\tnettyRequest=" + nettyRequest + //
                 ",\n\tcontent=" + content + //
                 ",\n\turi=" + uri + //
                 ",\n\tkeepAlive=" + keepAlive + //
-                ",\n\thttpResponse=" + httpResponse + //
+                ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\treaperFuture=" + reaperFuture + //
+                ",\n\ttimeoutsHolder=" + timeoutsHolder + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //

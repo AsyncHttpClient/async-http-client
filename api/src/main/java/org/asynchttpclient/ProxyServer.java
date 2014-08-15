@@ -16,12 +16,12 @@
  */
 package org.asynchttpclient;
 
-import java.net.URI;
+import org.asynchttpclient.util.StandardCharsets;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 /**
  * Represents a proxy server.
@@ -53,17 +53,18 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private final int port;
-    private final URI uri;
-    private String encoding = "UTF-8";
+    private final String url;
+    private String encoding = StandardCharsets.UTF_8.name();
+    private Charset charset = StandardCharsets.UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
-	public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
+    public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
         this.principal = principal;
         this.password = password;
-        this.uri = AsyncHttpProviderUtils.createUri(toString());
+        url = protocol + "://" + host + ":" + port;
     }
 
     public ProxyServer(final String host, final int port, String principal, String password) {
@@ -104,6 +105,7 @@ public class ProxyServer {
 
     public ProxyServer setEncoding(String encoding) {
         this.encoding = encoding;
+        this.charset = Charset.forName(encoding);
         return this;
     }
 
@@ -111,8 +113,12 @@ public class ProxyServer {
         return encoding;
     }
 
-    public URI getURI() {
-        return uri;
+    public Charset getCharset() {
+        return charset;
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     public ProxyServer addNonProxyHost(String uri) {
@@ -140,7 +146,6 @@ public class ProxyServer {
 
     @Override
     public String toString() {
-        return protocol + "://" + host + ":" + port;
+        return url;
     }
 }
-

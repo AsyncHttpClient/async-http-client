@@ -1,188 +1,178 @@
 /*
- * Copyright 2010-2013 Ning, Inc.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
+import static org.asynchttpclient.providers.netty.ws.WebSocketUtils.getAcceptKey;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.ResponseHeaders;
-import org.asynchttpclient.providers.netty.response.ResponseStatus;
+import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.NettyResponseHeaders;
+import org.asynchttpclient.providers.netty.response.NettyResponseStatus;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
-import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 
-final class WebSocketProtocol extends Protocol {
+public final class WebSocketProtocol extends Protocol {
 
-    private static final byte OPCODE_TEXT = 0x1;
-    private static final byte OPCODE_BINARY = 0x2;
-    private static final byte OPCODE_UNKNOWN = -1;
-    protected byte pendingOpcode = OPCODE_UNKNOWN;
-
-    public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
-        super(channels, config, nettyConfig, requestSender);
+    public WebSocketProtocol(ChannelManager channelManager,//
+            AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            NettyRequestSender requestSender) {
+        super(channelManager, config, nettyConfig, requestSender);
     }
 
     // We don't need to synchronize as replacing the "ws-decoder" will
     // process using the same thread.
-    private void invokeOnSucces(ChannelHandlerContext ctx, WebSocketUpgradeHandler h) {
+    private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
         if (!h.touchSuccess()) {
             try {
-                h.onSuccess(new NettyWebSocket(ctx.channel()));
+                h.onSuccess(nettyConfig.getNettyWebSocketFactory().newNettyWebSocket(channel, nettyConfig));
             } catch (Exception ex) {
-                NettyChannelHandler.LOGGER.warn("onSuccess unexpected exception", ex);
+                logger.warn("onSuccess unexpected exception", ex);
             }
         }
     }
 
     @Override
-    public void handle(ChannelHandlerContext ctx, NettyResponseFuture future, Object e) throws Exception {
-        WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+    public void handle(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
+        WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
         Request request = future.getRequest();
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
+            // we buffer the response until we get the LastHttpContent
+            future.setPendingResponse(response);
 
-            HttpResponseStatus s = new ResponseStatus(future.getURI(), response, config);
-            HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
+        } else if (e instanceof LastHttpContent) {
+            HttpResponse response = future.getPendingResponse();
+            future.setPendingResponse(null);
+            HttpResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
+            HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
-            // FIXME there's a method for that IIRC
-            FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
-            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-                try {
-                    fc = asyncFilter.filter(fc);
-                    if (fc == null) {
-                        throw new NullPointerException("FilterContext is null");
-                    }
-                } catch (FilterException efe) {
-                    channels.abort(future, efe);
-                }
-            }
-
-            // The handler may have been wrapped.
-            future.setAsyncHandler(fc.getAsyncHandler());
-
-            // The request has changed
-            if (fc.replayRequest()) {
-                requestSender.replayRequest(future, fc, ctx);
+            if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
                 return;
             }
 
-            future.setHttpResponse(response);
-            if (redirect(request, future, response, ctx))
+            future.setHttpHeaders(response.headers());
+            if (exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().code()))
                 return;
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
             boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
-            String c = response.headers().get(HttpHeaders.Names.CONNECTION);
-            if (c == null) {
-                c = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase());
+            String connection = response.headers().get(HttpHeaders.Names.CONNECTION);
+            if (connection == null)
+                connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
+            boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
+
+            status = new NettyResponseStatus(future.getURI(), config, response);
+            final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
+
+            if (!statusReceived) {
+                try {
+                    handler.onCompleted();
+                } finally {
+                    future.done();
+                }
+                return;
             }
 
-            boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
-
-            s = new ResponseStatus(future.getURI(), response, config);
-            final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
-
-            final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
-            if (!headerOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
-                channels.abort(future, new IOException("Invalid handshake response"));
+            final boolean headerOK = handler.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
+            if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
+                requestSender.abort(future, new IOException("Invalid handshake response"));
                 return;
             }
 
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-            String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
+            String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
-                throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
+                requestSender.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
 
-            Channels.upgradePipelineForWebSockets(ctx);
+            channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
-            invokeOnSucces(ctx, h);
+            invokeOnSucces(channel, handler);
             future.done();
 
         } else if (e instanceof WebSocketFrame) {
 
             final WebSocketFrame frame = (WebSocketFrame) e;
-            NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-            invokeOnSucces(ctx, h);
+            NettyWebSocket webSocket = NettyWebSocket.class.cast(handler.onCompleted());
+            invokeOnSucces(channel, handler);
 
             if (webSocket != null) {
                 if (frame instanceof CloseWebSocketFrame) {
-                    Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
+                    Channels.setDiscard(channel);
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
                 } else {
-                    if (frame instanceof TextWebSocketFrame) {
-                        pendingOpcode = OPCODE_TEXT;
-                    } else if (frame instanceof BinaryWebSocketFrame) {
-                        pendingOpcode = OPCODE_BINARY;
-                    }
-
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
-                        ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                        h.onBodyPartReceived(rp);
+                        try {
+                            NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                            handler.onBodyPartReceived(part);
 
-                        if (pendingOpcode == OPCODE_BINARY) {
-                            webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
-                        } else {
-                            webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
+                            if (frame instanceof BinaryWebSocketFrame) {
+                                webSocket.onBinaryFragment(part);
+                            } else if (frame instanceof TextWebSocketFrame) {
+                                webSocket.onTextFragment(part);
+                            } else if (frame instanceof PingWebSocketFrame) {
+                                webSocket.onPing(part);
+                            } else if (frame instanceof PongWebSocketFrame) {
+                                webSocket.onPong(part);
+                            }
+                        } finally {
+                            buf.release();
                         }
                     }
                 }
             } else {
-                NettyChannelHandler.LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
+                logger.debug("UpgradeHandler returned a null NettyWebSocket ");
             }
-        } else if (e instanceof LastHttpContent) {
-            // FIXME what to do with this kind of messages?
         } else {
-            NettyChannelHandler.LOGGER.error("Invalid message {}", e);
+            logger.error("Invalid message {}", e);
         }
     }
 
     @Override
-    public void onError(ChannelHandlerContext ctx, Throwable e) {
+    public void onError(Channel channel, Throwable e) {
         try {
-            Object attribute = Channels.getDefaultAttribute(ctx);
-            NettyChannelHandler.LOGGER.warn("onError {}", e);
+            Object attribute = Channels.getAttribute(channel);
+            logger.warn("onError {}", e);
             if (!(attribute instanceof NettyResponseFuture)) {
                 return;
             }
@@ -196,29 +186,29 @@ final class WebSocketProtocol extends Protocol {
                 webSocket.close();
             }
         } catch (Throwable t) {
-            NettyChannelHandler.LOGGER.error("onError", t);
+            logger.error("onError", t);
         }
     }
 
     @Override
-    public void onClose(ChannelHandlerContext ctx) {
-        NettyChannelHandler.LOGGER.trace("onClose {}");
-        Object attribute = Channels.getDefaultAttribute(ctx);
-        if (!(attribute instanceof NettyResponseFuture)) {
+    public void onClose(Channel channel) {
+        logger.trace("onClose {}");
+        Object attribute = Channels.getAttribute(channel);
+        if (!(attribute instanceof NettyResponseFuture))
             return;
-        }
 
         try {
             NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(attribute);
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
-            // FIXME How could this test not succeed, attachment is a
-            // NettyResponseFuture????
-            if (attribute != DiscardEvent.INSTANCE)
+            // FIXME How could this test not succeed, we just checked above that
+            // attribute is a NettyResponseFuture????
+            logger.trace("Connection was closed abnormally (that is, with no close frame being sent).");
+            if (attribute != DiscardEvent.INSTANCE && webSocket != null)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
         } catch (Throwable t) {
-            NettyChannelHandler.LOGGER.error("onError", t);
+            logger.error("onError", t);
         }
     }
 }

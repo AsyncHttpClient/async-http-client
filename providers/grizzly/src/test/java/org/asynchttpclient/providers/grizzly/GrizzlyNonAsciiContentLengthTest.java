@@ -23,5 +23,4 @@ public class GrizzlyNonAsciiContentLengthTest extends NonAsciiContentLengthTest 
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }
