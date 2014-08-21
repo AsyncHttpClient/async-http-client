@@ -287,7 +287,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setHeader(String name, String value) {
-        request.headers.replace(name, value);
+        request.headers.replaceWith(name, value);
         return derived.cast(this);
     }
 
