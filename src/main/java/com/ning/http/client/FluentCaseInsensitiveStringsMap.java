@@ -226,7 +226,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     public FluentCaseInsensitiveStringsMap replaceAll(FluentCaseInsensitiveStringsMap src) {
         if (src != null) {
             for (Map.Entry<String, List<String>> header : src) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -256,7 +256,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
 
         List<String> oldValue = get(key);
 
-        replace(key, value);
+        replaceWith(key, value);
         return oldValue;
     }
 
