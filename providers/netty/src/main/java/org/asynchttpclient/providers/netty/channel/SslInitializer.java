@@ -41,7 +41,7 @@ public class SslInitializer extends ChannelOutboundHandlerAdapter {
             throws Exception {
 
         InetSocketAddress remoteInetSocketAddress = (InetSocketAddress) remoteAddress;
-        String peerHost = remoteInetSocketAddress.getHostName();
+        String peerHost = remoteInetSocketAddress.getHostString();
         int peerPort = remoteInetSocketAddress.getPort();
 
         SslHandler sslHandler = channelManager.createSslHandler(peerHost, peerPort);
