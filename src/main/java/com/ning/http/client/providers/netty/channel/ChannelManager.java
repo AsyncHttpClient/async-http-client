@@ -387,8 +387,10 @@ public class ChannelManager {
         else
             pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
 
-        if (isWebSocket(scheme))
-            pipeline.replace(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
+        if (isWebSocket(scheme)) {
+            pipeline.addAfter(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
+            pipeline.remove(HTTP_PROCESSOR);
+        }
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
@@ -413,7 +415,8 @@ public class ChannelManager {
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
-        pipeline.replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        pipeline.remove(HTTP_HANDLER);
         pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
     }
 
