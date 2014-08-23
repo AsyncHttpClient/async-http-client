@@ -166,6 +166,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     private int webSocketMaxBufferSize = 128000000;
 
+    private int webSocketMaxFrameSize = 10 * 1024;
+
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
     }
@@ -300,5 +302,12 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+    }
+
+    public int getWebSocketMaxFrameSize() {
+        return webSocketMaxFrameSize;
+    }
+    public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
+        this.webSocketMaxFrameSize = webSocketMaxFrameSize;
     }
 }
