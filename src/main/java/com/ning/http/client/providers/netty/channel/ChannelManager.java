@@ -419,8 +419,8 @@ public class ChannelManager {
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
         pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
         pipeline.remove(HTTP_HANDLER);
-        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
-        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(10 * 1024));
+        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, nettyConfig.getWebSocketMaxFrameSize()));
+        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(nettyConfig.getWebSocketMaxBufferSize()));
     }
 
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive,
