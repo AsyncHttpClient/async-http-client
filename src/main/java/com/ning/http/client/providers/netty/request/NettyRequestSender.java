@@ -132,7 +132,7 @@ public final class NettyRequestSender {
             boolean forceConnect) throws IOException {
         NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
 
-        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
+        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
 
         if (Channels.isChannelValid(channel))
             return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
@@ -156,7 +156,7 @@ public final class NettyRequestSender {
 
         NettyResponseFuture<T> newFuture = null;
         for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
+            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
             if (Channels.isChannelValid(channel))
                 if (newFuture == null)
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
@@ -188,12 +188,12 @@ public final class NettyRequestSender {
     }
 
     private Channel getCachedChannel(NettyResponseFuture<?> future, UriComponents uri, ConnectionPoolKeyStrategy poolKeyGen,
-            ProxyServer proxyServer) {
+            ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, future.getAsyncHandler());
+            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, asyncHandler);
     }
 
     private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, UriComponents uri, ProxyServer proxy,
