@@ -38,7 +38,7 @@ public class SslInitializer extends SimpleChannelDownstreamHandler {
     public void connectRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 
         InetSocketAddress remoteInetSocketAddress = (InetSocketAddress) e.getValue();
-        String peerHost = remoteInetSocketAddress.getHostName();
+        String peerHost = remoteInetSocketAddress.getHostString();
         int peerPort = remoteInetSocketAddress.getPort();
 
         SslHandler sslHandler = channelManager.createSslHandler(peerHost, peerPort);
