@@ -266,63 +266,65 @@ public final class NettyRequestFactory {
             nettyRequest = new NettyRequest(httpRequest, body);
         }
 
+        HttpHeaders headers = httpRequest.headers();
+
         if (method != HttpMethod.CONNECT) {
             // assign headers as configured on request
             for (Entry<String, List<String>> header : request.getHeaders()) {
-                httpRequest.headers().set(header.getKey(), header.getValue());
+                headers.set(header.getKey(), header.getValue());
             }
 
             if (isNonEmpty(request.getCookies()))
-                httpRequest.headers().set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
+                headers.set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
 
             if (config.isCompressionEnabled())
-                httpRequest.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
+                headers.set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
         }
 
         if (body != null) {
             if (body.getContentLength() < 0)
-                httpRequest.headers().set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                headers.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
             else
-                httpRequest.headers().set(HttpHeaders.Names.CONTENT_LENGTH, body.getContentLength());
+                headers.set(HttpHeaders.Names.CONTENT_LENGTH, body.getContentLength());
 
             if (body.getContentType() != null)
-                httpRequest.headers().set(HttpHeaders.Names.CONTENT_TYPE, body.getContentType());
+                headers.set(HttpHeaders.Names.CONTENT_TYPE, body.getContentType());
         }
 
         // connection header and friends
         boolean webSocket = isWebSocket(uri.getScheme());
         if (method != HttpMethod.CONNECT && webSocket) {
-            httpRequest.headers().set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
-            httpRequest.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            httpRequest.headers().set(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
-            httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, getKey());
-            httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
+            headers.set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET)//
+            .set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE)//
+            .set(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()))//
+            .set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, getKey())//
+            .set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
-        } else if (!httpRequest.headers().contains(HttpHeaders.Names.CONNECTION)) {
-            httpRequest.headers().set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
+        } else if (!headers.contains(HttpHeaders.Names.CONNECTION)) {
+            headers.set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
         }
 
         String hostHeader = hostHeader(request, uri);
         if (hostHeader != null)
-            httpRequest.headers().set(HttpHeaders.Names.HOST, hostHeader);
+            headers.set(HttpHeaders.Names.HOST, hostHeader);
 
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         String authorizationHeader = authorizationHeader(request, uri, proxyServer, realm);
         if (authorizationHeader != null)
             // don't override authorization but append
-            httpRequest.headers().add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
+            headers.add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
 
         String proxyAuthorizationHeader = proxyAuthorizationHeader(request, proxyServer, method);
         if (proxyAuthorizationHeader != null)
-            httpRequest.headers().set(HttpHeaders.Names.PROXY_AUTHORIZATION, proxyAuthorizationHeader);
+            headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, proxyAuthorizationHeader);
 
         // Add default accept headers
-        if (!httpRequest.headers().contains(HttpHeaders.Names.ACCEPT))
-            httpRequest.headers().set(HttpHeaders.Names.ACCEPT, "*/*");
+        if (!headers.contains(HttpHeaders.Names.ACCEPT))
+            headers.set(HttpHeaders.Names.ACCEPT, "*/*");
 
         // Add default user agent
-        if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT) && config.getUserAgent() != null)
-            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
+        if (!headers.contains(HttpHeaders.Names.USER_AGENT) && config.getUserAgent() != null)
+            headers.set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
 
         return nettyRequest;
     }
