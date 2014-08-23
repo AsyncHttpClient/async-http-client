@@ -19,7 +19,6 @@ package org.asynchttpclient;
  * 
  * More additional hooks might come, such as:
  * <ul>
- *   <li>onConnected()</li>
  *   <li>onConnectionClosed()</li>
  *   <li>onBytesSent(long numberOfBytes)</li>
  *   <li>onBytesReceived(long numberOfBytes)</li>
@@ -28,12 +27,31 @@ package org.asynchttpclient;
 public interface AsyncHandlerExtensions {
 
     /**
+     * Notify the callback when trying to open a new connection.
+     */
+    void onOpenConnection();
+
+    /**
+     * Notify the callback when a new connection was successfully opened.
+     */
+    void onConnectionOpen();
+
+    /**
+     * Notify the callback when trying to fetch a connection from the pool.
+     */
+    void onPoolConnection();
+
+    /**
+     * Notify the callback when a new connection was successfully fetched from the pool.
+     */
+    void onConnectionPooled();
+
+    /**
      * Notify the callback when a request is being written on the wire.
      * If the original request causes multiple requests to be sent, for example, because of authorization or retry,
      * it will be notified multiple times.
-     * Currently only supported by the Netty provider.
      */
-    void onRequestSent();
+    void onSendRequest();
 
     /**
      * Notify the callback every time a request is being retried.

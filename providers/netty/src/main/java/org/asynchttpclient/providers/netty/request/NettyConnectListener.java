@@ -13,9 +13,21 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
+import java.net.ConnectException;
+import java.nio.channels.ClosedChannelException;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
+
+import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
@@ -24,18 +36,6 @@ import org.asynchttpclient.providers.netty.future.StackTraceInspector;
 import org.asynchttpclient.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.ssl.SslHandler;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
-
-import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 
 /**
  * Non Blocking connect.
@@ -78,6 +78,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             abortChannelPreemption(poolKey);
             return;
         }
+
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpen();
 
         channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);
