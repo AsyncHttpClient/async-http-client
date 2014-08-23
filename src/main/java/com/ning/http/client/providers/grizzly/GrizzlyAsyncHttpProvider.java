@@ -1174,7 +1174,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
             }
             if (handler instanceof AsyncHandlerExtensions) {
-                ((AsyncHandlerExtensions) handler).onRequestSent();
+                ((AsyncHandlerExtensions) handler).onSendRequest();
             }
         }
 

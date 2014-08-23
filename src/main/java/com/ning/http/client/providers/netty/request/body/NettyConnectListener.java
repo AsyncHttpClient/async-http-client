@@ -20,6 +20,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
@@ -78,6 +79,9 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             abortChannelPreemption(poolKey);
             return;
         }
+
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpen();
 
         channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);

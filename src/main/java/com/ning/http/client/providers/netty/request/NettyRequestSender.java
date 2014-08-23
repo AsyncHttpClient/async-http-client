@@ -162,8 +162,7 @@ public final class NettyRequestSender {
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
 
             if (Channels.isChannelValid(channel))
-                // if the channel is still active, we can use it, otherwise try
-                // gain
+                // if the channel is still active, we can use it, otherwise try gain
                 return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
             else
                 // pool is empty
@@ -194,11 +193,14 @@ public final class NettyRequestSender {
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen);
+            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, future.getAsyncHandler());
     }
 
     private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, UriComponents uri, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
+
+        if (asyncHandler instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled();
 
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
@@ -258,6 +260,9 @@ public final class NettyRequestSender {
         }
 
         try {
+            if (asyncHandler instanceof AsyncHandlerExtensions)
+                AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
+
             ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap);
             channelFuture.addListener(new NettyConnectListener<T>(config, future, this, channelManager, channelPreempted, poolKey));
 
@@ -306,9 +311,8 @@ public final class NettyRequestSender {
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
-                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
-                    }
+                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest();
                     channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
@@ -481,7 +485,11 @@ public final class NettyRequestSender {
         return request.getMethod().equals(HttpMethod.GET.getName()) && asyncHandler instanceof WebSocketUpgradeHandler;
     }
 
-    public Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+    public Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy, AsyncHandler<?> asyncHandler) {
+ 
+        if (asyncHandler instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(asyncHandler).onPoolConnection();
+
         final Channel channel = channelManager.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
 
         if (channel != null) {
