@@ -34,7 +34,6 @@ import java.util.List;
  *                      .setPassword(admin)
  *                      .setRealmName("MyRealm")
  *                      .setScheme(Realm.AuthScheme.DIGEST).build());
- *   r.execute();
  * </pre></blockquote>
  */
 public interface Request {
