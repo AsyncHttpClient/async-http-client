@@ -189,9 +189,9 @@ public final class NettyRequestFactory {
         StringBuilder sb = new StringBuilder();
         for (Param param : params) {
             UTF8UrlEncoder.appendEncoded(sb, param.getName());
-            sb.append("=");
+            sb.append('=');
             UTF8UrlEncoder.appendEncoded(sb, param.getValue());
-            sb.append("&");
+            sb.append('&');
         }
         sb.setLength(sb.length() - 1);
         return sb.toString().getBytes(bodyCharset);
