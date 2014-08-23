@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
+import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
@@ -70,6 +71,7 @@ public class ChannelManager {
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunkedWriter";
     public static final String WS_DECODER_HANDLER = "ws-decoder";
+    public static final String WS_FRAME_AGGREGATOR = "ws-aggregator";
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
     private final AsyncHttpClientConfig config;
@@ -421,6 +423,7 @@ public class ChannelManager {
         pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
         pipeline.remove(HTTP_HANDLER);
         pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
+        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(10 * 1024));
     }
 
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final String poolKey) {
