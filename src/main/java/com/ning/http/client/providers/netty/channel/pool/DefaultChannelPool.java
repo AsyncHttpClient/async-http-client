@@ -29,7 +29,6 @@ import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -195,10 +194,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 int closedCount = 0;
                 int totalCount = 0;
 
-                for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> entry : poolsPerKey.entrySet()) {
-
-                    String poolKey = entry.getKey();
-                    ConcurrentLinkedQueue<IdleChannel> pool = entry.getValue();
+                for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
 
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
                     if (LOGGER.isDebugEnabled())
@@ -206,10 +202,13 @@ public final class DefaultChannelPool implements ChannelPool {
 
                     List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
 
-                    pool.removeAll(closedChannels);
-                    closedCount += closedChannels.size();
-                    if (pool.isEmpty())
-                        poolsPerKey.remove(poolKey);
+                    if (!closedChannels.isEmpty()) {
+                        for (IdleChannel closedChannel : closedChannels)
+                            channelId2Creation.remove(closedChannel.channel.getId());
+
+                        pool.removeAll(closedChannels);
+                        closedCount += closedChannels.size();
+                    }
                 }
 
                 long duration = millisTime() - start;
