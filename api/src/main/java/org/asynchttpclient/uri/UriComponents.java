@@ -15,8 +15,10 @@ package org.asynchttpclient.uri;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class UriComponents {
+import org.asynchttpclient.util.MiscUtils;
 
+public class UriComponents {
+    
     public static UriComponents create(String originalUrl) {
         return create(null, originalUrl);
     }
@@ -98,6 +100,18 @@ public class UriComponents {
             sb.append(':').append(port);
         if (path != null)
             sb.append(path);
+        if (query != null)
+            sb.append('?').append(query);
+
+        return sb.toString();
+    }
+
+    public String toRelativeUrl() {
+        StringBuilder sb = new StringBuilder();
+        if (MiscUtils.isNonEmpty(path))
+            sb.append(path);
+        else
+            sb.append('/');
         if (query != null)
             sb.append('?').append(query);
 
