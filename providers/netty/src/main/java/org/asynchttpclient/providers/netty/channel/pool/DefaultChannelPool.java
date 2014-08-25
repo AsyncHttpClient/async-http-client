@@ -198,19 +198,21 @@ public final class DefaultChannelPool implements ChannelPool {
                 int closedCount = 0;
                 int totalCount = 0;
 
-                for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> entry : poolsPerKey.entrySet()) {
+                for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
 
-                    String poolKey = entry.getKey();
-                    ConcurrentLinkedQueue<IdleChannel> pool = entry.getValue();
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
                     if (LOGGER.isDebugEnabled())
                         totalCount += pool.size();
 
                     List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
-                    pool.removeAll(closedChannels);
-                    closedCount += closedChannels.size();
-                    if (pool.isEmpty())
-                        poolsPerKey.remove(poolKey);
+
+                    if (!closedChannels.isEmpty()) {
+                        for (IdleChannel closedChannel : closedChannels)
+                            channel2Creation.remove(closedChannel.channel);
+
+                        pool.removeAll(closedChannels);
+                        closedCount += closedChannels.size();
+                    }
                 }
 
                 long duration = millisTime() - start;
