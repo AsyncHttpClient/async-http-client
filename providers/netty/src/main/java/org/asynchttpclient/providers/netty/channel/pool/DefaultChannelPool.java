@@ -14,13 +14,6 @@
 package org.asynchttpclient.providers.netty.channel.pool;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
@@ -29,10 +22,17 @@ import io.netty.util.TimerTask;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A simple implementation of {@link com.ning.http.client.providers.netty.pool.ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
@@ -198,15 +198,19 @@ public final class DefaultChannelPool implements ChannelPool {
                 int closedCount = 0;
                 int totalCount = 0;
 
-                for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
+                for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> entry : poolsPerKey.entrySet()) {
+
+                    String poolKey = entry.getKey();
+                    ConcurrentLinkedQueue<IdleChannel> pool = entry.getValue();
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
                     if (LOGGER.isDebugEnabled())
                         totalCount += pool.size();
 
                     List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
                     pool.removeAll(closedChannels);
-                    int poolClosedCount = closedChannels.size();
-                    closedCount += poolClosedCount;
+                    closedCount += closedChannels.size();
+                    if (pool.isEmpty())
+                        poolsPerKey.remove(poolKey);
                 }
 
                 long duration = millisTime() - start;
