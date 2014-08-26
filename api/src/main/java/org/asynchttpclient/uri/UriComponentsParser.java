@@ -200,7 +200,7 @@ final class UriComponentsParser {
 
     // /./
     private void removeEmbeddedDot() {
-        path = path.replace("/./", "");
+        path = path.replace("/./", "/");
     }
 
     // /../
