@@ -408,12 +408,11 @@ public final class NettyRequestSender {
         if (!future.isDone()) {
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
+            future.abort(t);
         }
-
-        future.abort(t);
     }
 
-    public boolean retry(NettyResponseFuture<?> future, Channel channel) {
+    public boolean retry(NettyResponseFuture<?> future) {
 
         if (isClosed())
             return false;
@@ -421,13 +420,7 @@ public final class NettyRequestSender {
         // FIXME this was done in AHC2, is this a bug?
         // channelManager.removeAll(channel);
 
-        if (future == null) {
-            Object attribute = Channels.getAttribute(channel);
-            if (attribute instanceof NettyResponseFuture)
-                future = (NettyResponseFuture<?>) attribute;
-        }
-
-        if (future != null && future.canBeReplayed()) {
+        if (future.canBeReplayed()) {
             future.setState(NettyResponseFuture.STATE.RECONNECTED);
 
             LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());

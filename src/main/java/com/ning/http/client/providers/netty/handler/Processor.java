@@ -138,7 +138,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
             if (future.isDone())
                 channelManager.closeChannel(channel);
 
-            else if (!requestSender.retry(future, ctx.getChannel()))
+            else if (!requestSender.retry(future))
                 requestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
