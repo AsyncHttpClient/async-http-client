@@ -178,6 +178,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                         }
                 }
 
+                // FIXME how does recovery occur?!
                 if (StackTraceInspector.abortOnReadOrWriteException(cause)) {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
