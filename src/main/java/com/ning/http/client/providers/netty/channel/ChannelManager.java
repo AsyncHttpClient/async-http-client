@@ -317,17 +317,15 @@ public class ChannelManager {
     public void closeChannel(Channel channel) {
 
         // The channel may have already been removed from the future if a timeout occurred, and this method may be called just after.
-        if (channel != null) {
-            LOGGER.debug("Closing Channel {} ", channel);
-            try {
-                removeAll(channel);
-                Channels.setDiscard(channel);
-                channel.close();
-            } catch (Throwable t) {
-                LOGGER.debug("Error closing a connection", t);
-            }
-            openChannels.remove(channel);
+        LOGGER.debug("Closing Channel {} ", channel);
+        try {
+            removeAll(channel);
+            Channels.setDiscard(channel);
+            channel.close();
+        } catch (Throwable t) {
+            LOGGER.debug("Error closing a connection", t);
         }
+        openChannels.remove(channel);
     }
 
     public void abortChannelPreemption(String poolKey) {
