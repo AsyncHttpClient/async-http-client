@@ -442,8 +442,9 @@ public final class HttpProtocol extends Protocol {
 
         future.touch();
 
-        // The connect timeout occurred.
+        // future is already done because of an exception or a timeout
         if (future.isDone()) {
+            // FIXME isn't the channel already properly closed?
             channelManager.closeChannel(channel);
             return;
         }
