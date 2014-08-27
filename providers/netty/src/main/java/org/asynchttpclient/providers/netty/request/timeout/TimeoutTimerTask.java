@@ -26,7 +26,7 @@ public abstract class TimeoutTimerTask implements TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
-    protected final NettyResponseFuture<?> nettyResponseFuture;
+    protected volatile NettyResponseFuture<?> nettyResponseFuture;
     protected final NettyRequestSender requestSender;
     protected final TimeoutsHolder timeoutsHolder;
 
@@ -42,5 +42,13 @@ public abstract class TimeoutTimerTask implements TimerTask {
     protected void expire(String message, long ms) {
         LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, ms);
         requestSender.abort(nettyResponseFuture, new TimeoutException(message));
+    }
+
+    /**
+     * When the timeout is cancelled, it could still be referenced for quite some time in the Timer.
+     * Holding a reference to the future might mean holding a reference to the channel, and heavy objects such as SslEngines
+     */
+    public void clean() {
+        nettyResponseFuture = null;
     }
 }

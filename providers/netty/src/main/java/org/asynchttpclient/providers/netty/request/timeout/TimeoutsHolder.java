@@ -27,10 +27,12 @@ public class TimeoutsHolder {
         if (cancelled.compareAndSet(false, true)) {
             if (requestTimeout != null) {
                 requestTimeout.cancel();
+                RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
                 requestTimeout = null;
             }
             if (readTimeout != null) {
                 readTimeout.cancel();
+                ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
                 readTimeout = null;
             }
         }
