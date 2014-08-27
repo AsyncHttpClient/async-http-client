@@ -113,7 +113,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
             if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
-            protocol.onClose(channel);
+            protocol.onClose(future);
 
             if (future == null || future.isDone())
                 channelManager.closeChannel(channel);
@@ -174,11 +174,10 @@ public class Processor extends ChannelInboundHandlerAdapter {
             try {
                 LOGGER.debug("Was unable to recover Future: {}", future);
                 requestSender.abort(future, cause);
+                protocol.onError(future, e);
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
             }
-
-        protocol.onError(channel, e);
 
         channelManager.closeChannel(channel);
         // FIXME not really sure

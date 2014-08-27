@@ -463,10 +463,10 @@ public final class HttpProtocol extends Protocol {
     }
 
     @Override
-    public void onError(Channel channel, Throwable error) {
+    public void onError(NettyResponseFuture<?> future, Throwable error) {
     }
 
     @Override
-    public void onClose(Channel channel) {
+    public void onClose(NettyResponseFuture<?> future) {
     }
 }
