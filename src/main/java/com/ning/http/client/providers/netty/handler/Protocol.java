@@ -87,9 +87,9 @@ public abstract class Protocol {
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
 
-    public abstract void onError(Channel channel, Throwable e);
+    public abstract void onError(NettyResponseFuture<?> future, Throwable e);
 
-    public abstract void onClose(Channel channel);
+    public abstract void onClose(NettyResponseFuture<?> future);
 
     protected boolean exitAfterHandlingRedirect(//
             Channel channel,//

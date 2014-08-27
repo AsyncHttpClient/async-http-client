@@ -474,9 +474,9 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    public void onError(Channel channel, Throwable e) {
+    public void onError(NettyResponseFuture<?> future, Throwable e) {
     }
 
-    public void onClose(Channel channel) {
+    public void onClose(NettyResponseFuture<?> future) {
     }
 }

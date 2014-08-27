@@ -33,7 +33,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
-import com.ning.http.client.providers.netty.DiscardEvent;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
@@ -177,16 +176,11 @@ public final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onError(Channel channel, Throwable e) {
-        try {
-            Object attribute = Channels.getAttribute(channel);
-            logger.warn("onError {}", e);
-            if (!(attribute instanceof NettyResponseFuture)) {
-                return;
-            }
+    public void onError(NettyResponseFuture<?> future, Throwable e) {
+        logger.warn("onError {}", e);
 
-            NettyResponseFuture<?> nettyResponse = (NettyResponseFuture<?>) attribute;
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
+        try {
+            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
 
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
             if (webSocket != null) {
@@ -199,20 +193,15 @@ public final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onClose(Channel channel) {
+    public void onClose(NettyResponseFuture<?> future) {
         logger.trace("onClose {}");
-        Object attribute = Channels.getAttribute(channel);
-        if (!(attribute instanceof NettyResponseFuture))
-            return;
 
         try {
-            NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(attribute);
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
+            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
-            // FIXME How could this test not succeed, we just checked above that attribute is a NettyResponseFuture????
             logger.trace("Connection was closed abnormally (that is, with no close frame being sent).");
-            if (attribute != DiscardEvent.INSTANCE && webSocket != null)
+            if (webSocket != null)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
         } catch (Throwable t) {
             logger.error("onError", t);

@@ -133,7 +133,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
-            protocol.onClose(channel);
+            protocol.onClose(future);
 
             if (future == null || future.isDone())
                 channelManager.closeChannel(channel);
@@ -193,11 +193,10 @@ public class Processor extends SimpleChannelUpstreamHandler {
             try {
                 LOGGER.debug("Was unable to recover Future: {}", future);
                 requestSender.abort(future, cause);
+                protocol.onError(future, e.getCause());
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
             }
-
-        protocol.onError(channel, e.getCause());
 
         channelManager.closeChannel(channel);
         ctx.sendUpstream(e);
