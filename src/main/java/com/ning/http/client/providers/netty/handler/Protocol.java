@@ -182,7 +182,7 @@ public abstract class Protocol {
                         throw new NullPointerException("FilterContext is null");
                     }
                 } catch (FilterException efe) {
-                    requestSender.abort(future, efe);
+                    requestSender.abort(channel, future, efe);
                 }
             }
 

@@ -65,8 +65,14 @@ public final class HttpProtocol extends Protocol {
         return realm != null ? new Realm.RealmBuilder().clone(realm) : new Realm.RealmBuilder();
     }
 
-    private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer,
-            FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future, boolean proxyInd)
+    private Realm kerberosChallenge(Channel channel,//
+            List<String> proxyAuth,//
+            Request request,//
+            ProxyServer proxyServer,//
+            FluentCaseInsensitiveStringsMap headers,//
+            Realm realm,//
+            NettyResponseFuture<?> future,//
+            boolean proxyInd)
             throws NTLMEngineException {
 
         UriComponents uri = request.getURI();
@@ -87,7 +93,7 @@ public final class HttpProtocol extends Protocol {
             if (isNTLM(proxyAuth)) {
                 return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future, proxyInd);
             }
-            requestSender.abort(future, throwable);
+            requestSender.abort(channel, future, throwable);
             return null;
         }
     }
@@ -217,7 +223,7 @@ public final class HttpProtocol extends Protocol {
                     newRealm = ntlmChallenge(wwwAuthHeaders, request, proxyServer, requestHeaders, realm, future, false);
                 } else if (negociate) {
                     // SPNEGO KERBEROS
-                    newRealm = kerberosChallenge(wwwAuthHeaders, request, proxyServer, requestHeaders, realm, future, false);
+                    newRealm = kerberosChallenge(channel, wwwAuthHeaders, request, proxyServer, requestHeaders, realm, future, false);
                     if (newRealm == null)
                         return true;
 
@@ -270,6 +276,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandling407(//
+            Channel channel,//
             NettyResponseFuture<?> future,//
             HttpResponse response,//
             Request request,//
@@ -293,7 +300,7 @@ public final class HttpProtocol extends Protocol {
                     newRealm = ntlmProxyChallenge(proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
                     // SPNEGO KERBEROS
                 } else if (negociate) {
-                    newRealm = kerberosChallenge(proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
+                    newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
                     if (newRealm == null)
                         return true;
                 } else {
@@ -340,7 +347,7 @@ public final class HttpProtocol extends Protocol {
                 channelManager.upgradeProtocol(channel.getPipeline(), scheme, host, port);
 
             } catch (Throwable ex) {
-                requestSender.abort(future, ex);
+                requestSender.abort(channel, future, ex);
             }
 
             future.setReuseChannel(true);
@@ -407,7 +414,7 @@ public final class HttpProtocol extends Protocol {
 
         return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
                 || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
-                exitAfterHandling407(future, response, request, statusCode, realm, proxyServer) || //
+                exitAfterHandling407(channel, future, response, request, statusCode, realm, proxyServer) || //
                 exitAfterHandling100(channel, future, statusCode) || //
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode) || //
                 exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
@@ -465,7 +472,7 @@ public final class HttpProtocol extends Protocol {
             }
 
             try {
-                requestSender.abort(future, t);
+                requestSender.abort(channel, future, t);
             } catch (Exception abortException) {
                 logger.debug("Abort failed", abortException);
             } finally {

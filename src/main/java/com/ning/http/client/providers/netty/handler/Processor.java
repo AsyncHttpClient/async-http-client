@@ -139,7 +139,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 channelManager.closeChannel(channel);
 
             else if (!requestSender.retry(future))
-                requestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
+                requestSender.abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
 
@@ -192,7 +192,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
         if (future != null)
             try {
                 LOGGER.debug("Was unable to recover Future: {}", future);
-                requestSender.abort(future, cause);
+                requestSender.abort(channel, future, cause);
                 protocol.onError(future, e.getCause());
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
