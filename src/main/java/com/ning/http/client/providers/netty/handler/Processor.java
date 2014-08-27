@@ -164,18 +164,17 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 if (cause instanceof IOException) {
 
                     // FIXME why drop the original exception and throw a new one?
-                    if (!config.getIOExceptionFilters().isEmpty())
-                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
-                            return;
-                        else {
+                    if (!config.getIOExceptionFilters().isEmpty()) {
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel)) {
                             // Close the channel so the recovering can occurs.
                             try {
                                 channel.close();
                             } catch (Throwable t) {
                                 // Swallow.
                             }
-                            return;
                         }
+                        return;
+                    }
                 }
 
                 // FIXME how does recovery occur?!
