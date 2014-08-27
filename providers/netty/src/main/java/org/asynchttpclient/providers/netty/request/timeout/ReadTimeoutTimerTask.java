@@ -63,5 +63,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             // otherwise, no need to reschedule: requestTimeout will happen sooner
             timeoutsHolder.readTimeout = null;
         }
+
+        clean();
     }
 }
