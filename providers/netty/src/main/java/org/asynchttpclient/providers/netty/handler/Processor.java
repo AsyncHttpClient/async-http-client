@@ -118,7 +118,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
             if (future.isDone())
                 channelManager.closeChannel(channel);
 
-            else if (!requestSender.retry(future, channel))
+            else if (!requestSender.retry(future))
                 requestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
         }
     }

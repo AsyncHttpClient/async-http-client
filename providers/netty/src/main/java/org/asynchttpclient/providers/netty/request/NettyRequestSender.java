@@ -403,25 +403,19 @@ public final class NettyRequestSender {
         if (!future.isDone()) {
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
+            future.abort(t);
         }
-
-        future.abort(t);
     }
 
-    public boolean retry(NettyResponseFuture<?> future, Channel channel) {
+    public boolean retry(NettyResponseFuture<?> future) {
 
         if (isClosed())
             return false;
 
-        channelManager.removeAll(channel);
+        // FIXME what is this for???
+        //channelManager.removeAll(channel);
 
-        if (future == null) {
-            Object attribute = Channels.getAttribute(channel);
-            if (attribute instanceof NettyResponseFuture)
-                future = (NettyResponseFuture<?>) attribute;
-        }
-
-        if (future != null && future.canBeReplayed()) {
+        if (future.canBeReplayed()) {
             future.setState(NettyResponseFuture.STATE.RECONNECTED);
             future.getAndSetStatusReceived(false);
 

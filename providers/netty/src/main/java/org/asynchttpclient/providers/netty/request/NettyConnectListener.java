@@ -129,7 +129,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 && cause != null//
                 && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
 
-            if (requestSender.retry(future, channel)) {
+            if (requestSender.retry(future)) {
                 return;
             }
         }
