@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.netty.request.timeout;
 import io.netty.util.TimerTask;
 
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
@@ -26,22 +27,23 @@ public abstract class TimeoutTimerTask implements TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
+    protected final AtomicBoolean done = new AtomicBoolean();
     protected volatile NettyResponseFuture<?> nettyResponseFuture;
     protected final NettyRequestSender requestSender;
     protected final TimeoutsHolder timeoutsHolder;
+    protected final String remoteAddress;
 
-    public TimeoutTimerTask(//
-            NettyResponseFuture<?> nettyResponseFuture,//
-            NettyRequestSender requestSender,//
-            TimeoutsHolder timeoutsHolder) {
+    public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
         this.timeoutsHolder = timeoutsHolder;
+        // saving remote address as the channel might be removed from the future when an exception occurs
+        remoteAddress = nettyResponseFuture.getChannelRemoteAddress().toString();
     }
 
-    protected void expire(String message, long ms) {
-        LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, ms);
-        requestSender.abort(nettyResponseFuture, new TimeoutException(message));
+    protected void expire(String message, long time) {
+        LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
+        requestSender.abort(nettyResponseFuture.channel(), nettyResponseFuture, new TimeoutException(message));
     }
 
     /**
@@ -49,6 +51,7 @@ public abstract class TimeoutTimerTask implements TimerTask {
      * Holding a reference to the future might mean holding a reference to the channel, and heavy objects such as SslEngines
      */
     public void clean() {
-        nettyResponseFuture = null;
+        if (done.compareAndSet(false, true))
+            nettyResponseFuture = null;
     }
 }

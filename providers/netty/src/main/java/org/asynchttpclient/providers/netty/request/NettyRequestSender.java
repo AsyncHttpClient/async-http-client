@@ -33,7 +33,6 @@ import io.netty.util.TimerTask;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -267,7 +266,7 @@ public final class NettyRequestSender {
             if (channelPreempted)
                 channelManager.abortChannelPreemption(poolKey);
 
-            abort(future, t.getCause() == null ? t : t.getCause());
+            abort(null, future, t.getCause() == null ? t : t.getCause());
         }
 
         return future;
@@ -368,35 +367,30 @@ public final class NettyRequestSender {
 
     private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
 
-        try {
-            nettyResponseFuture.touch();
-            int requestTimeoutInMs = requestTimeout(config, nettyResponseFuture.getRequest());
-            TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
-            if (requestTimeoutInMs != -1) {
-                Timeout requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
-                timeoutsHolder.requestTimeout = requestTimeout;
-            }
-
-            int readTimeout = config.getReadTimeout();
-            if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
-                // no need for a idleConnectionTimeout that's less than the
-                // requestTimeoutInMs
-                Timeout idleConnectionTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeout), readTimeout);
-                timeoutsHolder.readTimeout = idleConnectionTimeout;
-            }
-            nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
-        } catch (RejectedExecutionException ex) {
-            abort(nettyResponseFuture, ex);
+        nettyResponseFuture.touch();
+        int requestTimeoutInMs = requestTimeout(config, nettyResponseFuture.getRequest());
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
+        if (requestTimeoutInMs != -1) {
+            Timeout requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
+            timeoutsHolder.requestTimeout = requestTimeout;
         }
+
+        int readTimeout = config.getReadTimeout();
+        if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
+            // no need for a idleConnectionTimeout that's less than the
+            // requestTimeoutInMs
+            Timeout idleConnectionTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeout), readTimeout);
+            timeoutsHolder.readTimeout = idleConnectionTimeout;
+        }
+        nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
     }
 
     public Timeout newTimeout(TimerTask task, long delay) {
         return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     }
 
-    public void abort(NettyResponseFuture<?> future, Throwable t) {
+    public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
 
-        Channel channel = future.channel();
         if (channel != null)
             channelManager.closeChannel(channel);
 
@@ -453,7 +447,7 @@ public final class NettyRequestSender {
                     throw new NullPointerException("FilterContext is null");
                 }
             } catch (FilterException efe) {
-                abort(future, efe);
+                abort(channel, future, efe);
             }
         }
 

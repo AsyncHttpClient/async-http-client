@@ -35,10 +35,12 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
-    @Override
     public void run(Timeout timeout) throws Exception {
 
-        if (requestSender.isClosed() || nettyResponseFuture.isDone()) {
+        if (done.getAndSet(true) || requestSender.isClosed())
+            return;
+        
+        if (nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
             return;
         }
@@ -50,13 +52,15 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectionTimeout reached
-            String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + readTimeout + " ms";
+            String message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
-            nettyResponseFuture.setIdleConnectionTimeoutReached();
+            // cancel request timeout sibling
+            timeoutsHolder.cancel();
 
         } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
             // reschedule
+            done.set(false);
             timeoutsHolder.readTimeout = requestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
 
         } else {
@@ -64,6 +68,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             timeoutsHolder.readTimeout = null;
         }
 
-        clean();
+        // this task should be evacuated from the timer but who knows
+        nettyResponseFuture = null;
     }
 }

@@ -112,14 +112,14 @@ public final class WebSocketProtocol extends Protocol {
 
             final boolean headerOK = handler.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
             if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
-                requestSender.abort(future, new IOException("Invalid handshake response"));
+                requestSender.abort(channel, future, new IOException("Invalid handshake response"));
                 return;
             }
 
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
             String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
-                requestSender.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
+                requestSender.abort(channel, future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
 
             channelManager.upgradePipelineForWebSockets(channel.pipeline());
