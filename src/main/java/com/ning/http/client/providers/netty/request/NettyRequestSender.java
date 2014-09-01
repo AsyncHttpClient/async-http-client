@@ -63,7 +63,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class NettyRequestSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
-    public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
