@@ -42,6 +42,7 @@ public class UriComponents {
     private final int port;
     private final String query;
     private final String path;
+    private String url;
 
     public UriComponents(String scheme,//
             String userInfo,//
@@ -92,19 +93,22 @@ public class UriComponents {
     }
 
     public String toUrl() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(scheme).append("://");
-        if (userInfo != null)
-            sb.append(userInfo).append('@');
-        sb.append(host);
-        if (port != -1)
-            sb.append(':').append(port);
-        if (path != null)
-            sb.append(path);
-        if (query != null)
-            sb.append('?').append(query);
+        if (url == null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(scheme).append("://");
+            if (userInfo != null)
+                sb.append(userInfo).append('@');
+            sb.append(host);
+            if (port != -1)
+                sb.append(':').append(port);
+            if (path != null)
+                sb.append(path);
+            if (query != null)
+                sb.append('?').append(query);
+            url = sb.toString();
+        }
 
-        return sb.toString();
+        return url;
     }
 
     public String toRelativeUrl() {

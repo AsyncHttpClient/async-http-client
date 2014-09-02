@@ -77,7 +77,7 @@ public final class NettyRequestFactory {
             return getAuthority(uri);
 
         else if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
-            return uri.toString();
+            return uri.toUrl();
 
         else {
             String path = getNonEmptyPath(uri);
