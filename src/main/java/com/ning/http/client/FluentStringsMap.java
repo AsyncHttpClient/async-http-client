@@ -170,7 +170,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     public FluentStringsMap replaceAll(FluentStringsMap src) {
         if (src != null) {
             for (Map.Entry<String, List<String>> header : src) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -200,7 +200,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
 
         List<String> oldValue = get(key);
 
-        replace(key, value);
+        replaceWith(key, value);
         return oldValue;
     }
 
