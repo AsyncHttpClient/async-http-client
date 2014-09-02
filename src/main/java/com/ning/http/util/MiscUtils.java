@@ -49,9 +49,12 @@ public final class MiscUtils {
     }
 
     public static void closeSilently(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException e) {
+        if(closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ioe) {
+                // Ignored
+            }
         }
     }
 }

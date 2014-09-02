@@ -133,13 +133,13 @@ public class Processor extends SimpleChannelUpstreamHandler {
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
-            protocol.onClose(channel);
+            protocol.onClose(future);
 
-            if (future == null || future.isDone())
+            if (future.isDone())
                 channelManager.closeChannel(channel);
 
-            else if (!requestSender.retry(future, ctx.getChannel()))
-                requestSender.abort(future, REMOTELY_CLOSED_EXCEPTION);
+            else if (!requestSender.retry(future))
+                requestSender.abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
         }
     }
 
@@ -164,20 +164,20 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 if (cause instanceof IOException) {
 
                     // FIXME why drop the original exception and throw a new one?
-                    if (!config.getIOExceptionFilters().isEmpty())
-                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
-                            return;
-                        else {
+                    if (!config.getIOExceptionFilters().isEmpty()) {
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel)) {
                             // Close the channel so the recovering can occurs.
                             try {
                                 channel.close();
                             } catch (Throwable t) {
                                 // Swallow.
                             }
-                            return;
                         }
+                        return;
+                    }
                 }
 
+                // FIXME how does recovery occur?!
                 if (StackTraceInspector.abortOnReadOrWriteException(cause)) {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
@@ -192,12 +192,11 @@ public class Processor extends SimpleChannelUpstreamHandler {
         if (future != null)
             try {
                 LOGGER.debug("Was unable to recover Future: {}", future);
-                requestSender.abort(future, cause);
+                requestSender.abort(channel, future, cause);
+                protocol.onError(future, e.getCause());
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
             }
-
-        protocol.onError(channel, e.getCause());
 
         channelManager.closeChannel(channel);
         ctx.sendUpstream(e);

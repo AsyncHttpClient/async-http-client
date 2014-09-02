@@ -262,13 +262,13 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
+                        <artifactId>java17</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>check-java-1.6-compat</id>
+                        <id>check-java-1.7-compat</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>check</goal>
@@ -565,10 +565,10 @@
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
-        <netty.version>3.9.2.Final</netty.version>
+        <netty.version>3.9.3.Final</netty.version>
         <grizzly.version>2.3.16</grizzly.version>
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
         <surefire.version>2.12</surefire.version>
     </properties>
 </project>

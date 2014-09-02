@@ -388,10 +388,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return dontWriteBodyBecauseExpectContinue;
     }
 
-    public void attachChannel(Channel channel) {
-        this.channel = channel;
-    }
-
     public void setReuseChannel(boolean reuseChannel) {
         this.reuseChannel = reuseChannel;
     }

@@ -26,8 +26,7 @@ import com.ning.http.client.RandomAccessBody;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
-import com.ning.http.client.providers.netty.request.FeedableBodyGenerator;
-import com.ning.http.client.providers.netty.request.FeedableBodyGenerator.FeedListener;
+import com.ning.http.client.providers.netty.request.body.FeedableBodyGenerator.FeedListener;
 import com.ning.http.client.providers.netty.request.ProgressListener;
 
 import java.io.IOException;

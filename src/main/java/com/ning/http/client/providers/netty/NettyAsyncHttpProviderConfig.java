@@ -135,6 +135,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private int webSocketMaxBufferSize = 128000000;
 
+    private int webSocketMaxFrameSize = 10 * 1024;
+
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
     }
@@ -245,6 +247,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+    }
+    
+    public int getWebSocketMaxFrameSize() {
+        return webSocketMaxFrameSize;
+    }
+
+    public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
+        this.webSocketMaxFrameSize = webSocketMaxFrameSize;
     }
 
     public static interface NettyWebSocketFactory {

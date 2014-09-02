@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.providers.netty.request.body;
+package com.ning.http.client.providers.netty.request;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -20,12 +20,12 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
-import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.util.Base64;
 
 import javax.net.ssl.HostnameVerifier;
@@ -79,6 +79,9 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             return;
         }
 
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpen();
+
         channelManager.registerOpenChannel(channel);
         future.attachChannel(channel, false);
         requestSender.writeRequest(future, channel);
@@ -129,7 +132,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                     && cause != null
                     && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
 
-                if (!requestSender.retry(future, channel))
+                if (!requestSender.retry(future))
                     return;
             }
 

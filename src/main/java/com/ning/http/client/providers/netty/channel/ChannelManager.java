@@ -31,6 +31,7 @@ import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.util.Timer;
@@ -75,6 +76,7 @@ public class ChannelManager {
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunkedWriter";
     public static final String WS_DECODER_HANDLER = "ws-decoder";
+    public static final String WS_FRAME_AGGREGATOR = "ws-aggregator";
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
     private final AsyncHttpClientConfig config;
@@ -313,19 +315,17 @@ public class ChannelManager {
     }
 
     public void closeChannel(Channel channel) {
-        removeAll(channel);
-        Channels.setDiscard(channel);
 
-        // The channel may have already been removed if a timeout occurred, and this method may be called just after.
-        if (channel != null) {
-            LOGGER.debug("Closing Channel {} ", channel);
-            try {
-                channel.close();
-            } catch (Throwable t) {
-                LOGGER.debug("Error closing a connection", t);
-            }
-            openChannels.remove(channel);
+        // The channel may have already been removed from the future if a timeout occurred, and this method may be called just after.
+        LOGGER.debug("Closing Channel {} ", channel);
+        try {
+            removeAll(channel);
+            Channels.setDiscard(channel);
+            channel.close();
+        } catch (Throwable t) {
+            LOGGER.debug("Error closing a connection", t);
         }
+        openChannels.remove(channel);
     }
 
     public void abortChannelPreemption(String poolKey) {
@@ -387,8 +387,10 @@ public class ChannelManager {
         else
             pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
 
-        if (isWebSocket(scheme))
-            pipeline.replace(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
+        if (isWebSocket(scheme)) {
+            pipeline.addAfter(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
+            pipeline.remove(HTTP_PROCESSOR);
+        }
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
@@ -413,8 +415,10 @@ public class ChannelManager {
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
-        pipeline.replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
+        pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        pipeline.remove(HTTP_HANDLER);
+        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, nettyConfig.getWebSocketMaxFrameSize()));
+        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(nettyConfig.getWebSocketMaxBufferSize()));
     }
 
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive,

@@ -195,14 +195,20 @@ public final class DefaultChannelPool implements ChannelPool {
                 int totalCount = 0;
 
                 for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
+
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
                     if (LOGGER.isDebugEnabled())
                         totalCount += pool.size();
 
                     List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
-                    pool.removeAll(closedChannels);
-                    int poolClosedCount = closedChannels.size();
-                    closedCount += poolClosedCount;
+
+                    if (!closedChannels.isEmpty()) {
+                        for (IdleChannel closedChannel : closedChannels)
+                            channelId2Creation.remove(closedChannel.channel.getId());
+
+                        pool.removeAll(closedChannels);
+                        closedCount += closedChannels.size();
+                    }
                 }
 
                 long duration = millisTime() - start;
