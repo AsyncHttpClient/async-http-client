@@ -321,7 +321,7 @@ public class ChannelManager {
         try {
             removeAll(channel);
             Channels.setDiscard(channel);
-            channel.close();
+            Channels.silentlyCloseChannel(channel);
         } catch (Throwable t) {
             LOGGER.debug("Error closing a connection", t);
         }

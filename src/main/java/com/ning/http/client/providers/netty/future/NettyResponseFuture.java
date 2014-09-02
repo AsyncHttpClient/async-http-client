@@ -131,12 +131,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (isCancelled.getAndSet(true))
             return false;
 
-        try {
-            Channels.setDiscard(channel);
-            channel.close();
-        } catch (Throwable t) {
-            // Ignore
-        }
+        Channels.setDiscard(channel);
+        Channels.silentlyCloseChannel(channel);
+
         if (!onThrowableCalled.getAndSet(true)) {
             try {
                 asyncHandler.onThrowable(new CancellationException());

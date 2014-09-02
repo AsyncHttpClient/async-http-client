@@ -314,11 +314,7 @@ public final class NettyRequestSender {
                 } catch (Throwable cause) {
                     // FIXME why not notify?
                     LOGGER.debug(cause.getMessage(), cause);
-                    try {
-                        channel.close();
-                    } catch (RuntimeException ex) {
-                        LOGGER.debug(ex.getMessage(), ex);
-                    }
+                    Channels.silentlyCloseChannel(channel);
                     return;
                 }
             }
@@ -328,11 +324,7 @@ public final class NettyRequestSender {
                 nettyRequest.getBody().write(channel, future, config);
 
         } catch (Throwable ioe) {
-            try {
-                channel.close();
-            } catch (RuntimeException ex) {
-                LOGGER.debug(ex.getMessage(), ex);
-            }
+            Channels.silentlyCloseChannel(channel);
         }
 
         scheduleTimeouts(future);

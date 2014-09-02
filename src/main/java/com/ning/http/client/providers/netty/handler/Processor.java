@@ -94,11 +94,8 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             // unhandled message
-            try {
-                ctx.getChannel().close();
-            } catch (Throwable t) {
-                LOGGER.trace("Closing an orphan channel {}", ctx.getChannel());
-            }
+            LOGGER.trace("Closing an orphan channel {}", channel);
+            Channels.silentlyCloseChannel(channel);
         }
     }
 
@@ -165,14 +162,9 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
                     // FIXME why drop the original exception and throw a new one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel)) {
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.
-                            try {
-                                channel.close();
-                            } catch (Throwable t) {
-                                // Swallow.
-                            }
-                        }
+                            Channels.silentlyCloseChannel(channel);
                         return;
                     }
                 }

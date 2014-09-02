@@ -299,13 +299,9 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void close(Channel channel) {
-        try {
-            // FIXME pity to have to do this here
-            Channels.setDiscard(channel);
-            channelId2Creation.remove(channel.getId());
-            channel.close();
-        } catch (Throwable t) {
-            // noop
-        }
+        // FIXME pity to have to do this here
+        Channels.setDiscard(channel);
+        channelId2Creation.remove(channel.getId());
+        Channels.silentlyCloseChannel(channel);
     }
 }
