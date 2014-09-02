@@ -13,20 +13,21 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProgressAsyncHandler;
-import org.asynchttpclient.Realm;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.StackTraceInspector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
 
 import java.nio.channels.ClosedChannelException;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ProgressAsyncHandler;
+import org.asynchttpclient.Realm;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProgressListener implements ChannelProgressiveFutureListener {
 
@@ -54,28 +55,17 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     private boolean abortOnThrowable(Throwable cause, Channel channel) {
 
         if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
-
             if (cause instanceof IllegalStateException) {
                 LOGGER.debug(cause.getMessage(), cause);
-                try {
-                    channel.close();
-                } catch (RuntimeException ex) {
-                    LOGGER.debug(ex.getMessage(), ex);
-                }
+                Channels.silentlyCloseChannel(channel);
+
             } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
-
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug(cause.getMessage(), cause);
-
-                try {
-                    channel.close();
-                } catch (RuntimeException ex) {
-                    LOGGER.debug(ex.getMessage(), ex);
-                }
+                LOGGER.debug(cause.getMessage(), cause);
+                Channels.silentlyCloseChannel(channel);
+                
             } else {
                 future.abort(cause);
             }
-
             return true;
         }
 
@@ -84,10 +74,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
 
     @Override
     public void operationComplete(ChannelProgressiveFuture cf) {
-        // The write operation failed. If the channel was cached, it means it
-        // got asynchronously closed.
+        // The write operation failed. If the channel was cached, it means it got asynchronously closed.
         // Let's retry a second time.
-
         if (!abortOnThrowable(cf.cause(), cf.channel())) {
 
             future.touch();

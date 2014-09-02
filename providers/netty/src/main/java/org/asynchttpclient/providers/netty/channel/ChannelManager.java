@@ -309,13 +309,9 @@ public class ChannelManager {
     public void closeChannel(Channel channel) {
 
         LOGGER.debug("Closing Channel {} ", channel);
-        try {
-            removeAll(channel);
-            Channels.setDiscard(channel);
-            channel.close();
-        } catch (Throwable t) {
-            LOGGER.debug("Error closing a connection", t);
-        }
+        removeAll(channel);
+        Channels.setDiscard(channel);
+        Channels.silentlyCloseChannel(channel);
         openChannels.remove(channel);
     }
 

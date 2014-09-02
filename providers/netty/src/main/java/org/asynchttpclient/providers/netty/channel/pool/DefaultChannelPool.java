@@ -22,7 +22,6 @@ import io.netty.util.TimerTask;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -315,13 +314,9 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void close(Channel channel) {
-        try {
-            // FIXME pity to have to do this here
-            Channels.setDiscard(channel);
-            channel2Creation.remove(channel);
-            channel.close();
-        } catch (Throwable t) {
-            // noop
-        }
+        // FIXME pity to have to do this here
+        Channels.setDiscard(channel);
+        channel2Creation.remove(channel);
+        Channels.silentlyCloseChannel(channel);
     }
 }

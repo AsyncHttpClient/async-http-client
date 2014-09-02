@@ -18,8 +18,12 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
 import org.asynchttpclient.providers.netty.DiscardEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Channels {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
 
@@ -37,6 +41,15 @@ public class Channels {
     }
 
     public static boolean isChannelValid(Channel channel) {
-        return channel != null && channel.isOpen() && channel.isActive();
+        return channel != null && channel.isActive();
+    }
+
+    public static void silentlyCloseChannel(Channel channel) {
+        try {
+            if (channel != null && channel.isActive())
+                channel.close();
+        } catch (Throwable t) {
+            LOGGER.debug("Failed to close channel", t);
+        }
     }
 }

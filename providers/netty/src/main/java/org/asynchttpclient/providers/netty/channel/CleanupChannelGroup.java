@@ -89,7 +89,7 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
         try {
             if (this.closed.get()) {
                 // Immediately close channel, as close() was already called.
-                channel.close();
+                Channels.silentlyCloseChannel(channel);
                 return false;
             }
 

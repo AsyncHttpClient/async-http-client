@@ -76,11 +76,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
             protocol.handle(channel, future, msg);
 
         } else if (attribute != DiscardEvent.INSTANCE) {
-            try {
-                LOGGER.trace("Closing an orphan channel {}", channel);
-                channel.close();
-            } catch (Throwable t) {
-            }
+            LOGGER.trace("Closing an orphan channel {}", channel);
+            Channels.silentlyCloseChannel(channel);
         }
     }
 
@@ -146,14 +143,9 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                     // FIXME why drop the original exception and throw a new one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel)) {
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.
-                            try {
-                                channel.close();
-                            } catch (Throwable t) {
-                                // Swallow.
-                            }
-                        }
+                            Channels.silentlyCloseChannel(channel);
                         return;
                     }
                 }
@@ -181,6 +173,6 @@ public class Processor extends ChannelInboundHandlerAdapter {
         channelManager.closeChannel(channel);
         // FIXME not really sure
         // ctx.fireChannelRead(e);
-        ctx.close();
+        Channels.silentlyCloseChannel(channel);
     }
 }
