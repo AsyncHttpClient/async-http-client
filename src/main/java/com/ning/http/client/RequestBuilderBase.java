@@ -116,6 +116,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return uri;
         }
 
+        public String getUrl() {
+            return uri.toUrl();
+        }
+
         public FluentCaseInsensitiveStringsMap getHeaders() {
             return headers;
         }
@@ -208,7 +212,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(getURI().toUrl());
+            StringBuilder sb = new StringBuilder(getUrl());
 
             sb.append("\t");
             sb.append(method);

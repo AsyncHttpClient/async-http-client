@@ -47,6 +47,8 @@ public interface Request {
 
     UriComponents getURI();
 
+    String getUrl();
+
     /**
      * Return the InetAddress to override
      *
