@@ -138,8 +138,8 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * @param values The new values
      * @return This object
      */
-    public FluentStringsMap replace(final String key, final String... values) {
-        return replace(key, Arrays.asList(values));
+    public FluentStringsMap replaceWith(final String key, final String... values) {
+        return replaceWith(key, Arrays.asList(values));
     }
 
     /**
@@ -149,7 +149,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * @param values The new values
      * @return This object
      */
-    public FluentStringsMap replace(final String key, final Collection<String> values) {
+    public FluentStringsMap replaceWith(final String key, final Collection<String> values) {
         if (key != null) {
             if (values == null) {
                 this.values.remove(key);
@@ -170,7 +170,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     public FluentStringsMap replaceAll(FluentStringsMap src) {
         if (src != null) {
             for (Map.Entry<String, List<String>> header : src) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -186,7 +186,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     public FluentStringsMap replaceAll(Map<? extends String, ? extends Collection<String>> src) {
         if (src != null) {
             for (Map.Entry<? extends String, ? extends Collection<String>> header : src.entrySet()) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -203,7 +203,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
 
         List<String> oldValue = get(key);
 
-        replace(key, value);
+        replaceWith(key, value);
         return oldValue;
     }
 

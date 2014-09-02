@@ -467,7 +467,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("foo", "blub", "bla");
+        map.replaceWith("foo", "blub", "bla");
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "blub");
@@ -493,7 +493,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("foo", Arrays.asList("blub", "bla"));
+        map.replaceWith("foo", Arrays.asList("blub", "bla"));
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "blub");
@@ -519,7 +519,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("Foo", Arrays.asList("blub", "bla"));
+        map.replaceWith("Foo", Arrays.asList("blub", "bla"));
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "Foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -548,7 +548,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("bar", Arrays.asList("blub"));
+        map.replaceWith("bar", Arrays.asList("blub"));
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -577,7 +577,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace(null, Arrays.asList("blub"));
+        map.replaceWith(null, Arrays.asList("blub"));
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -603,7 +603,7 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("baz", (Collection<String>) null);
+        map.replaceWith("baz", (Collection<String>) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");

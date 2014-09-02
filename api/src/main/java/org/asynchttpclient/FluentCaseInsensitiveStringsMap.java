@@ -183,8 +183,8 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * @param values The new values
      * @return This object
      */
-    public FluentCaseInsensitiveStringsMap replace(final String key, final String... values) {
-        return replace(key, Arrays.asList(values));
+    public FluentCaseInsensitiveStringsMap replaceWith(final String key, final String... values) {
+        return replaceWith(key, Arrays.asList(values));
     }
 
     /**
@@ -194,7 +194,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * @param values The new values
      * @return This object
      */
-    public FluentCaseInsensitiveStringsMap replace(final String key, final Collection<String> values) {
+    public FluentCaseInsensitiveStringsMap replaceWith(final String key, final Collection<String> values) {
         if (key != null) {
             List<String> nonNullValues = fetchValues(values);
             String lcKkey = key.toLowerCase(Locale.ENGLISH);
@@ -226,7 +226,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     public FluentCaseInsensitiveStringsMap replaceAll(FluentCaseInsensitiveStringsMap src) {
         if (src != null) {
             for (Map.Entry<String, List<String>> header : src) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -242,7 +242,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     public FluentCaseInsensitiveStringsMap replaceAll(Map<? extends String, ? extends Collection<String>> src) {
         if (src != null) {
             for (Map.Entry<? extends String, ? extends Collection<String>> header : src.entrySet()) {
-                replace(header.getKey(), header.getValue());
+                replaceWith(header.getKey(), header.getValue());
             }
         }
         return this;
@@ -259,7 +259,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
 
         List<String> oldValue = get(key);
 
-        replace(key, value);
+        replaceWith(key, value);
         return oldValue;
     }
 
