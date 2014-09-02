@@ -137,7 +137,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, channel);
 
         boolean printCause = cause != null && cause.getMessage() != null;
-        String url = future.getURI().toUrl();
+        String url = future.getUrl();
         String printedCause = printCause ? cause.getMessage() + " to " + url : url;
         ConnectException e = new ConnectException(printedCause);
         if (cause != null)

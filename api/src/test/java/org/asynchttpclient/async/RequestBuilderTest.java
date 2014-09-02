@@ -70,7 +70,7 @@ public class RequestBuilderTest {
             }
             String expValue = sb.toString();
             Request request = builder.build();
-            assertEquals(request.getURI().toUrl(), "http://example.com/?name=" + expValue);
+            assertEquals(request.getUrl(), "http://example.com/?name=" + expValue);
         }
     }
 
@@ -93,7 +93,7 @@ public class RequestBuilderTest {
                 .addQueryParam("param2", "value2")
                 .build();
 
-        assertEquals(request.getURI().toUrl(), "http://foo.com/?param1=value1&param2=value2");
+        assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
         List<Param> params = request.getQueryParams();
         assertEquals(params.size(), 2);
         assertEquals(params.get(0), new Param("param1", "value1"));
@@ -104,14 +104,14 @@ public class RequestBuilderTest {
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");
-        assertEquals(req.getURI().toUrl(), "http://foo.com");
+        assertEquals(req.getUrl(), "http://foo.com");
     }
 
     @Test(groups = {"standalone", "default_provider"})
     public void testPercentageEncodedUserInfo() {
         final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com").build();
         assertEquals(req.getMethod(), "GET");
-        assertEquals(req.getURI().toUrl(), "http://hello:wor%20ld@foo.com");
+        assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
     }
 
     @Test(groups = {"standalone", "default_provider"})

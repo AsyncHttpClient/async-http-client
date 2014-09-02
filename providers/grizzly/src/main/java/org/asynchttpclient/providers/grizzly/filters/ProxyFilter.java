@@ -66,7 +66,7 @@ public final class ProxyFilter extends BaseFilter {
                 assert (context != null);
                 Request req = context.getRequest();
                 if (!secure) {
-                    request.setRequestURI(req.getURI().toUrl());
+                    request.setRequestURI(req.getUrl());
                 }
                 addProxyHeaders(getRealm(req), request);
             }
