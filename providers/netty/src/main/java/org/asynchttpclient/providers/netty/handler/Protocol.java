@@ -125,7 +125,7 @@ public abstract class Protocol {
                     final String initialPoolKey = channelManager.getPoolKey(future);
 
                     future.setURI(uri);
-                    String newUrl = uri.toString();
+                    String newUrl = uri.toUrl();
                     if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
