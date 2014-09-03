@@ -394,7 +394,7 @@ public class ChannelManager {
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
-        return future.getConnectionPoolKeyStrategy().getKey(future.getURI(), future.getProxyServer());
+        return future.getConnectionPoolKeyStrategy().getKey(future.getUri(), future.getProxyServer());
     }
 
     public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {

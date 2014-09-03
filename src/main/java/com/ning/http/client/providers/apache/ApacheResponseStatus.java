@@ -19,7 +19,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class ApacheResponseStatus extends HttpResponseStatus {
 
     private final HttpMethodBase method;
 
-    public ApacheResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpMethodBase method) {
+    public ApacheResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpMethodBase method) {
         super(uri, config);
         this.method = method;
     }

@@ -18,7 +18,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public NettyResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpResponse response) {
+    public NettyResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpResponse response) {
         super(uri, config);
         this.response = response;
     }

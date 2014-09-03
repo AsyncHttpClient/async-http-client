@@ -28,7 +28,7 @@ import com.ning.http.client.listenable.AbstractListenableFuture;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.request.NettyRequest;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
@@ -81,7 +81,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     // state mutated only inside the event loop
     private Channel channel;
-    private UriComponents uri;
+    private Uri uri;
     private boolean keepAlive = true;
     private Request request;
     private NettyRequest nettyRequest;
@@ -93,7 +93,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
-    public NettyResponseFuture(UriComponents uri,//
+    public NettyResponseFuture(Uri uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
@@ -245,11 +245,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**                 INTERNAL                **/
     /*********************************************/
 
-    public UriComponents getURI() {
+    public Uri getUri() {
         return uri;
     }
 
-    public void setURI(UriComponents uri) {
+    public void setUri(Uri uri) {
         this.uri = uri;
     }
 

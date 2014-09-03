@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.QueryComputer;
 
@@ -43,11 +43,11 @@ import java.util.Map;
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
 
-    private static final UriComponents DEFAULT_REQUEST_URL = UriComponents.create("http://localhost");
+    private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
 
     private static final class RequestImpl implements Request {
         private String method;
-        private UriComponents uri;
+        private Uri uri;
         private InetAddress address;
         private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
@@ -76,7 +76,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.method = prototype.getMethod();
-                this.uri = prototype.getURI();
+                this.uri = prototype.getUri();
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
@@ -112,7 +112,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return localAddress;
         }
 
-        public UriComponents getURI() {
+        public Uri getUri() {
             return uri;
         }
 
@@ -267,10 +267,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
     
     public T setUrl(String url) {
-        return setURI(UriComponents.create(url));
+        return setUri(Uri.create(url));
     }
 
-    public T setURI(UriComponents uri) {
+    public T setUri(Uri uri) {
         request.uri = uri;
         return derived.cast(this);
     }

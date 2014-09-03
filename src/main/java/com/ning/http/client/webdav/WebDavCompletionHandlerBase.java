@@ -29,7 +29,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -167,7 +167,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public UriComponents getUri() {
+                public Uri getUri() {
                     return wrappedResponse.getUri();
                 }
 

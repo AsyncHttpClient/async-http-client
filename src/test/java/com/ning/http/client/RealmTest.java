@@ -14,7 +14,7 @@ package com.ning.http.client;
 
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Realm.RealmBuilder;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.StandardCharsets;
 
 import org.testng.Assert;
@@ -62,7 +62,7 @@ public class RealmTest {
         String realm = "realm";
         String nonce = "nonce";
         String method = "GET";
-        UriComponents uri = UriComponents.create("http://ahc.io/foo");
+        Uri uri = Uri.create("http://ahc.io/foo");
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal(user).setPassword(pass);
         builder.setNonce(nonce);
@@ -87,7 +87,7 @@ public class RealmTest {
         String realm = "realm";
         String nonce = "nonce";
         String method = "GET";
-        UriComponents uri = UriComponents.create("http://ahc.io/foo");
+        Uri uri = Uri.create("http://ahc.io/foo");
         String qop = "auth";
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal(user).setPassword(pass);

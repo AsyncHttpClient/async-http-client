@@ -16,11 +16,11 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
-public class UriComponentsTest {
+public class UriTest {
 
     @Test
     public void testSimpleParsing() {
-        UriComponents url = UriComponents.create("https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+        Uri url = Uri.create("https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         assertEquals(url.getScheme(), "https");
         assertEquals(url.getHost(), "graph.facebook.com");
         assertEquals(url.getPort(), -1);
@@ -31,9 +31,9 @@ public class UriComponentsTest {
     @Test
     public void testRootRelativeURIWithRootContext() {
 
-        UriComponents context = UriComponents.create("https://graph.facebook.com");
+        Uri context = Uri.create("https://graph.facebook.com");
         
-        UriComponents url = UriComponents.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+        Uri url = Uri.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         
         assertEquals(url.getScheme(), "https");
         assertEquals(url.getHost(), "graph.facebook.com");
@@ -45,9 +45,9 @@ public class UriComponentsTest {
     @Test
     public void testRootRelativeURIWithNonRootContext() {
 
-        UriComponents context = UriComponents.create("https://graph.facebook.com/foo/bar");
+        Uri context = Uri.create("https://graph.facebook.com/foo/bar");
         
-        UriComponents url = UriComponents.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+        Uri url = Uri.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         
         assertEquals(url.getScheme(), "https");
         assertEquals(url.getHost(), "graph.facebook.com");
@@ -59,9 +59,9 @@ public class UriComponentsTest {
     @Test
     public void testNonRootRelativeURIWithNonRootContext() {
 
-        UriComponents context = UriComponents.create("https://graph.facebook.com/foo/bar");
+        Uri context = Uri.create("https://graph.facebook.com/foo/bar");
         
-        UriComponents url = UriComponents.create(context, "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+        Uri url = Uri.create(context, "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         
         assertEquals(url.getScheme(), "https");
         assertEquals(url.getHost(), "graph.facebook.com");
@@ -73,9 +73,9 @@ public class UriComponentsTest {
     @Test
     public void testAbsoluteURIWithContext() {
 
-        UriComponents context = UriComponents.create("https://hello.com/foo/bar");
+        Uri context = Uri.create("https://hello.com/foo/bar");
         
-        UriComponents url = UriComponents.create(context, "https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+        Uri url = Uri.create(context, "https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         
         assertEquals(url.getScheme(), "https");
         assertEquals(url.getHost(), "graph.facebook.com");

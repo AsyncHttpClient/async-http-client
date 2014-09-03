@@ -15,9 +15,9 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 public interface ConnectionPoolKeyStrategy {
 
-	String getKey(UriComponents uri, ProxyServer proxyServer);
+	String getKey(Uri uri, ProxyServer proxyServer);
 }

@@ -85,7 +85,7 @@ public class RequestBuilderTest {
 
         Request request2 = new RequestBuilder(request).build();
 
-        assertEquals(request2.getURI(), request.getURI());
+        assertEquals(request2.getUri(), request.getUri());
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -139,6 +139,6 @@ public class RequestBuilderTest {
         RequestBuilder rb = new RequestBuilder("GET", true).setUrl(preEncodedUrl);
         Request request = rb.build();
         assertEquals(request.getUrl(), preEncodedUrl);
-        assertEquals(request.getURI().toURI().toString(), preEncodedUrl);
+        assertEquals(request.getUri().toJavaNetURI().toString(), preEncodedUrl);
     }
 }

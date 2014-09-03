@@ -15,14 +15,14 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 
 	INSTANCE;
 	
-	public String getKey(UriComponents uri, ProxyServer proxyServer) {
+	public String getKey(Uri uri, ProxyServer proxyServer) {
         String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
         return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
 	}

@@ -16,7 +16,7 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.List;
 
@@ -25,20 +25,20 @@ import java.util.List;
  */
 public abstract class HttpResponseStatus {
 
-    private final UriComponents uri;
+    private final Uri uri;
     protected final AsyncHttpClientConfig config;
 
-    public HttpResponseStatus(UriComponents uri, AsyncHttpClientConfig config) {
+    public HttpResponseStatus(Uri uri, AsyncHttpClientConfig config) {
         this.uri = uri;
         this.config = config;
     }
 
     /**
-     * Return the request {@link UriComponents}
+     * Return the request {@link Uri}
      * 
-     * @return the request {@link UriComponents}
+     * @return the request {@link Uri}
      */
-    public final UriComponents getUri() {
+    public final Uri getUri() {
         return uri;
     }
 

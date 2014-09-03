@@ -31,7 +31,7 @@ import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -173,29 +173,29 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 
-            public void onStatus(UriComponents uri, int statusCode, String statusText) {
+            public void onStatus(Uri uri, int statusCode, String statusText) {
                 assertEquals(statusCode, 200);
                 assertEquals(uri.toUrl(), getTargetUrl());
             }
 
-            public void onHeaders(UriComponents uri, HeaderMap headers) {
+            public void onHeaders(Uri uri, HeaderMap headers) {
                 assertEquals(uri.toUrl(), getTargetUrl());
                 assertNotNull(headers);
                 assertTrue(!headers.isEmpty());
                 assertEquals(headers.getFirstValue("X-Custom"), "custom");
             }
 
-            public void onCompleted(UriComponents uri, int statusCode, String statusText) {
+            public void onCompleted(Uri uri, int statusCode, String statusText) {
                 assertEquals(statusCode, 200);
                 assertEquals(uri.toUrl(), getTargetUrl());
             }
 
-            public void onBytesSent(UriComponents uri, long amount, long current, long total) {
+            public void onBytesSent(Uri uri, long amount, long current, long total) {
                 assertEquals(uri.toUrl(), getTargetUrl());
                 assertEquals(total, MY_MESSAGE.getBytes().length);
             }
 
-            public void onBytesReceived(UriComponents uri, long amount, long current, long total) {
+            public void onBytesReceived(Uri uri, long amount, long current, long total) {
                 assertEquals(uri.toUrl(), getTargetUrl());
                 assertEquals(total, -1);
             }

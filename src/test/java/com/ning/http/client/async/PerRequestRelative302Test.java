@@ -18,7 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
@@ -124,7 +124,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    private String getBaseUrl(UriComponents uri) {
+    private String getBaseUrl(Uri uri) {
         String url = uri.toString();
         int port = uri.getPort();
         if (port == -1) {
@@ -134,7 +134,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
     }
 
-    private static int getPort(UriComponents uri) {
+    private static int getPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
             port = uri.getScheme().equals("http") ? 80 : 443;

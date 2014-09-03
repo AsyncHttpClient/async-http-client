@@ -19,7 +19,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.ning.http.client.Param;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +48,7 @@ public class TestSignatureCalculator {
         queryParams.add(new Param("file", "vacation.jpg"));
         queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
-        String sig = calc.calculateSignature("GET", UriComponents.create(url), TIMESTAMP, NONCE, null, queryParams);
+        String sig = calc.calculateSignature("GET", Uri.create(url), TIMESTAMP, NONCE, null, queryParams);
 
         Assert.assertEquals("tR3+Ty81lMeYAr/Fid0kMTYa/WM=", sig);
     }

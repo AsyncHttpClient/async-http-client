@@ -95,7 +95,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
             final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
             if (hostnameVerifier != null && sslHandler != null) {
-                final String host = future.getURI().getHost();
+                final String host = future.getUri().getHost();
                 sslHandler.handshake().addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
@@ -139,8 +139,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
 
             boolean printCause = f.getCause() != null && cause.getMessage() != null;
-            ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getURI().toString() : future
-                    .getURI().toString());
+            ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getUri() : future.getUri());
             if (cause != null) {
                 e.initCause(cause);
             }

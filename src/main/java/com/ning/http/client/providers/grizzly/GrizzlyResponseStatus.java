@@ -18,7 +18,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     public GrizzlyResponseStatus(final HttpResponsePacket response,
-                                 final UriComponents uri,
+                                 final Uri uri,
                                  final AsyncHttpClientConfig config) {
 
         super(uri, config);

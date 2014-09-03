@@ -78,7 +78,7 @@ import com.ning.http.client.multipart.FilePart;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.multipart.StringPart;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.StandardCharsets;
@@ -452,7 +452,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             terminate = true;
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                UriComponents uri = request.getURI();
+                Uri uri = request.getUri();
 
                 int delay = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
                 if (delay != -1) {
@@ -500,14 +500,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = method.getResponseHeader("Location").getValue();
-                        UriComponents rediUri = UriComponents.create(uri, location);
+                        Uri rediUri = Uri.create(uri, location);
 
                         if (!rediUri.equals(uri)) {
                             RequestBuilder builder = new RequestBuilder(request);
 
                             logger.debug("Redirecting to {}", rediUri);
 
-                            request = builder.setURI(rediUri).build();
+                            request = builder.setUri(rediUri).build();
                             method = createMethod(httpClient, request);
                             terminate = false;
                             return call();

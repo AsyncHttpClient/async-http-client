@@ -49,7 +49,7 @@ import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
 import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
 import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;
 import java.util.List;
@@ -75,7 +75,7 @@ public final class HttpProtocol extends Protocol {
             boolean proxyInd)
             throws NTLMEngineException {
 
-        UriComponents uri = request.getURI();
+        Uri uri = request.getUri();
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
@@ -115,7 +115,7 @@ public final class HttpProtocol extends Protocol {
         String ntlmHost = useRealm ? realm.getNtlmHost() : proxyServer.getHost();
         String principal = useRealm ? realm.getPrincipal() : proxyServer.getPrincipal();
         String password = useRealm ? realm.getPassword() : proxyServer.getPassword();
-        UriComponents uri = request.getURI();
+        Uri uri = request.getUri();
 
         if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
@@ -151,7 +151,7 @@ public final class HttpProtocol extends Protocol {
 
         return newRealmBuilder(realm)//
                 // .setScheme(realm.getAuthScheme())
-                .setUri(request.getURI())//
+                .setUri(request.getUri())//
                 .setMethodName(request.getMethod()).build();
     }
 
@@ -231,7 +231,7 @@ public final class HttpProtocol extends Protocol {
                     newRealm = new Realm.RealmBuilder()//
                             .clone(realm)//
                             .setScheme(realm.getAuthScheme())//
-                            .setUri(request.getURI())//
+                            .setUri(request.getUri())//
                             .setMethodName(request.getMethod())//
                             .setUsePreemptiveAuth(true)//
                             .parseWWWAuthenticateHeader(wwwAuthHeaders.get(0))//
@@ -241,7 +241,7 @@ public final class HttpProtocol extends Protocol {
                 Realm nr = newRealm;
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(requestHeaders).setRealm(nr).build();
 
-                logger.debug("Sending authentication to {}", request.getURI());
+                logger.debug("Sending authentication to {}", request.getUri());
                 Callback callback = new Callback(future) {
                     public void call() throws Exception {
                         channelManager.drainChannel(channel, future);
@@ -289,7 +289,7 @@ public final class HttpProtocol extends Protocol {
             List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
             if (!proxyAuthHeaders.isEmpty()) {
-                logger.debug("Sending proxy authentication to {}", request.getURI());
+                logger.debug("Sending proxy authentication to {}", request.getUri());
 
                 future.setState(NettyResponseFuture.STATE.NEW);
                 Realm newRealm = null;
@@ -306,7 +306,7 @@ public final class HttpProtocol extends Protocol {
                 } else {
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
-                            .setUri(request.getURI())//
+                            .setUri(request.getUri())//
                             .setOmitQuery(true)//
                             .setMethodName(HttpMethod.CONNECT.getName())//
                             .setUsePreemptiveAuth(true)//
@@ -338,10 +338,10 @@ public final class HttpProtocol extends Protocol {
                 future.attachChannel(channel, true);
 
             try {
-                UriComponents requestURI = request.getURI();
-                String scheme = requestURI.getScheme();
-                String host = requestURI.getHost();
-                int port = getDefaultPort(requestURI);
+                Uri requestUri = request.getUri();
+                String scheme = requestUri.getScheme();
+                String host = requestUri.getHost();
+                int port = getDefaultPort(requestUri);
 
                 logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 channelManager.upgradeProtocol(channel.getPipeline(), scheme, host, port);
@@ -406,7 +406,7 @@ public final class HttpProtocol extends Protocol {
 
         future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
 
-        NettyResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
+        NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
         int statusCode = response.getStatus().getCode();
         Request request = future.getRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();

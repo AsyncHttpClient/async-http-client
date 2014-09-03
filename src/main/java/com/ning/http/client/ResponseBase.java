@@ -16,7 +16,7 @@ package com.ning.http.client;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.nio.charset.Charset;
@@ -59,7 +59,7 @@ public abstract class ResponseBase implements Response {
     }
 
     @Override
-    public final UriComponents getUri() {
+    public final Uri getUri() {
         return status.getUri();
     }
 

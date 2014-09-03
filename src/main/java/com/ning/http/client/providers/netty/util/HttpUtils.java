@@ -17,7 +17,7 @@ import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,11 +55,11 @@ public final class HttpUtils {
         return HTTPS.equals(scheme) || WEBSOCKET_SSL.equals(scheme);
     }
 
-    public static boolean isSecure(UriComponents uri) {
+    public static boolean isSecure(Uri uri) {
         return isSecure(uri.getScheme());
     }
 
-    public static boolean useProxyConnect(UriComponents uri) {
+    public static boolean useProxyConnect(Uri uri) {
         return isSecure(uri) || isWebSocket(uri.getScheme());
     }
 }

@@ -13,7 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 public class Utils {
     // ------------------------------------------------------------ Constructors
@@ -27,7 +27,7 @@ public class Utils {
         return (uri.startsWith("https") || uri.startsWith("wss"));
     }
     
-    public static boolean isSecure(final UriComponents uri) {
+    public static boolean isSecure(final Uri uri) {
         final String scheme = uri.getScheme();
         return ("https".equals(scheme) || "wss".equals(scheme));
     }

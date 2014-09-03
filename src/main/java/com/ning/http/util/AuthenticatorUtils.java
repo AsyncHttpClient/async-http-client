@@ -17,7 +17,7 @@ import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -35,7 +35,7 @@ public final class AuthenticatorUtils {
     }
     
     private static String computeRealmURI(Realm realm) {
-        UriComponents uri = realm.getUri();
+        Uri uri = realm.getUri();
         if (realm.isTargetProxy()) {
             return "/";
         } else {

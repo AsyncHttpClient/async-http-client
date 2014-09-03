@@ -18,7 +18,7 @@ package com.ning.http.client;
 
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.File;
 import java.io.InputStream;
@@ -45,7 +45,7 @@ public interface Request {
      */
     String getMethod();
 
-    UriComponents getURI();
+    Uri getUri();
 
     String getUrl();
 
