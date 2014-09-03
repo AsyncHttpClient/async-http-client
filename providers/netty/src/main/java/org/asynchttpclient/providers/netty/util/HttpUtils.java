@@ -16,7 +16,7 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.util.List;
 
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 public final class HttpUtils {
 
@@ -40,11 +40,11 @@ public final class HttpUtils {
         return HTTPS.equals(scheme) || WEBSOCKET_SSL.equals(scheme);
     }
 
-    public static boolean isSecure(UriComponents uri) {
+    public static boolean isSecure(Uri uri) {
         return isSecure(uri.getScheme());
     }
 
-    public static boolean useProxyConnect(UriComponents uri) {
+    public static boolean useProxyConnect(Uri uri) {
         return isSecure(uri) || isWebSocket(uri.getScheme());
     }
 }

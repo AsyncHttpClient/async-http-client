@@ -19,7 +19,7 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.ProxyServer.Protocol;
 import org.asynchttpclient.ProxyServerSelector;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +85,7 @@ public final class ProxyUtils {
         if (proxyServer == null) {
             ProxyServerSelector selector = config.getProxyServerSelector();
             if (selector != null) {
-                proxyServer = selector.select(request.getURI());
+                proxyServer = selector.select(request.getUri());
             }
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
@@ -95,7 +95,7 @@ public final class ProxyUtils {
      * @see #avoidProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, request.getURI().getHost());
+        return avoidProxy(proxyServer, request.getUri().getHost());
     }
 
     private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
@@ -200,9 +200,9 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
         return new ProxyServerSelector() {
-            public ProxyServer select(UriComponents uri) {
+            public ProxyServer select(Uri uri) {
                 try {
-                    URI javaUri = uri.toURI();
+                    URI javaUri = uri.toJavaNetURI();
 
                     List<Proxy> proxies = proxySelector.select(javaUri);
                     if (proxies != null) {
@@ -242,7 +242,7 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
         return new ProxyServerSelector() {
-            public ProxyServer select(UriComponents uri) {
+            public ProxyServer select(Uri uri) {
                 return proxyServer;
             }
         };

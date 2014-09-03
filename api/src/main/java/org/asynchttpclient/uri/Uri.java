@@ -17,17 +17,17 @@ import java.net.URISyntaxException;
 
 import org.asynchttpclient.util.MiscUtils;
 
-public class UriComponents {
+public class Uri {
     
-    public static UriComponents create(String originalUrl) {
+    public static Uri create(String originalUrl) {
         return create(null, originalUrl);
     }
 
-    public static UriComponents create(UriComponents context, final String originalUrl) {
-        UriComponentsParser parser = new UriComponentsParser();
+    public static Uri create(Uri context, final String originalUrl) {
+        UriParser parser = new UriParser();
         parser.parse(context, originalUrl);
 
-        return new UriComponents(parser.scheme,//
+        return new Uri(parser.scheme,//
                 parser.userInfo,//
                 parser.host,//
                 parser.port,//
@@ -43,7 +43,7 @@ public class UriComponents {
     private final String path;
     private String url;
 
-    public UriComponents(String scheme,//
+    public Uri(String scheme,//
             String userInfo,//
             String host,//
             int port,//
@@ -87,7 +87,7 @@ public class UriComponents {
         return host;
     }
 
-    public URI toURI() throws URISyntaxException {
+    public URI toJavaNetURI() throws URISyntaxException {
         return new URI(toUrl());
     }
 
@@ -128,8 +128,8 @@ public class UriComponents {
         return toUrl();
     }
 
-    public UriComponents withNewScheme(String newScheme) {
-        return new UriComponents(newScheme,//
+    public Uri withNewScheme(String newScheme) {
+        return new Uri(newScheme,//
                 userInfo,//
                 host,//
                 port,//
@@ -137,8 +137,8 @@ public class UriComponents {
                 query);
     }
 
-    public UriComponents withNewQuery(String newQuery) {
-        return new UriComponents(scheme,//
+    public Uri withNewQuery(String newQuery) {
+        return new Uri(scheme,//
                 userInfo,//
                 host,//
                 port,//
@@ -167,7 +167,7 @@ public class UriComponents {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        UriComponents other = (UriComponents) obj;
+        Uri other = (Uri) obj;
         if (host == null) {
             if (other.host != null)
                 return false;

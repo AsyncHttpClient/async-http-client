@@ -27,7 +27,7 @@ import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
@@ -177,7 +177,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 
-            public void onStatus(UriComponents uri, int statusCode, String statusText) {
+            public void onStatus(Uri uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
                     assertEquals(uri.toUrl(), getTargetUrl());
@@ -187,7 +187,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onHeaders(UriComponents uri, HeaderMap headers) {
+            public void onHeaders(Uri uri, HeaderMap headers) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
                     assertNotNull(headers);
@@ -199,7 +199,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onCompleted(UriComponents uri, int statusCode, String statusText) {
+            public void onCompleted(Uri uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
                     assertEquals(uri.toUrl(), getTargetUrl());
@@ -209,7 +209,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onBytesSent(UriComponents uri, long amount, long current, long total) {
+            public void onBytesSent(Uri uri, long amount, long current, long total) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
                     // FIXME Netty bug, see https://github.com/netty/netty/issues/1855
@@ -220,7 +220,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onBytesReceived(UriComponents uri, long amount, long current, long total) {
+            public void onBytesReceived(Uri uri, long amount, long current, long total) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
                     assertEquals(total, -1);

@@ -57,7 +57,7 @@ import org.asynchttpclient.providers.netty.request.body.NettyFileBody;
 import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.spnego.SpnegoEngine;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
 public final class NettyRequestFactory {
@@ -72,7 +72,7 @@ public final class NettyRequestFactory {
         this.nettyConfig = nettyConfig;
     }
 
-    private String requestUri(UriComponents uri, ProxyServer proxyServer, HttpMethod method) {
+    private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
             return getAuthority(uri);
 
@@ -88,12 +88,12 @@ public final class NettyRequestFactory {
         }
     }
 
-    private String hostHeader(Request request, UriComponents uri) {
+    private String hostHeader(Request request, Uri uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
         return request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
     }
 
-    private String authorizationHeader(Request request, UriComponents uri, ProxyServer proxyServer, Realm realm) throws IOException {
+    private String authorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
 
         String authorizationHeader = null;
 
@@ -241,7 +241,7 @@ public final class NettyRequestFactory {
         return nettyBody;
     }
 
-    public NettyRequest newNettyRequest(Request request, UriComponents uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, Uri uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;

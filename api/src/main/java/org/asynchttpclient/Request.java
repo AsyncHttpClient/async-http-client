@@ -18,7 +18,7 @@ package org.asynchttpclient;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 import java.io.File;
 import java.io.InputStream;
@@ -45,7 +45,7 @@ public interface Request {
      */
     String getMethod();
 
-    UriComponents getURI();
+    Uri getUri();
 
     String getUrl();
 

@@ -14,7 +14,7 @@ package org.asynchttpclient.simple;
  */
 
 import org.asynchttpclient.SimpleAsyncHttpClient;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * A simple transfer listener for use with the {@link SimpleAsyncHttpClient}.
@@ -34,7 +34,7 @@ public interface SimpleAHCTransferListener {
      * @param statusCode the received status code.
      * @param statusText the received status text.
      */
-    void onStatus(UriComponents uri, int statusCode, String statusText);
+    void onStatus(Uri uri, int statusCode, String statusText);
 
     /**
      * This method is called after the response headers are received.
@@ -42,7 +42,7 @@ public interface SimpleAHCTransferListener {
      * @param uri     the uri
      * @param headers the received headers, never {@code null}.
      */
-    void onHeaders(UriComponents uri, HeaderMap headers);
+    void onHeaders(Uri uri, HeaderMap headers);
 
     /**
      * This method is called when bytes of the responses body are received.
@@ -54,7 +54,7 @@ public interface SimpleAHCTransferListener {
      * @param total   the total number of bytes to be transferred. This is taken
      *                from the Content-Length-header and may be unspecified (-1).
      */
-    void onBytesReceived(UriComponents uri, long amount, long current, long total);
+    void onBytesReceived(Uri uri, long amount, long current, long total);
 
     /**
      * This method is called when bytes are sent.
@@ -66,7 +66,7 @@ public interface SimpleAHCTransferListener {
      * @param total   the total number of bytes to be transferred. This is taken
      *                from the Content-Length-header and may be unspecified (-1).
      */
-    void onBytesSent(UriComponents uri, long amount, long current, long total);
+    void onBytesSent(Uri uri, long amount, long current, long total);
 
     /**
      * This method is called when the request is completed.
@@ -75,6 +75,6 @@ public interface SimpleAHCTransferListener {
      * @param statusCode the received status code.
      * @param statusText the received status text.
      */
-    void onCompleted(UriComponents uri, int statusCode, String statusText);
+    void onCompleted(Uri uri, int statusCode, String statusText);
 }
 

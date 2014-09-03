@@ -18,7 +18,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.websocket.WebSocket;
 import org.glassfish.grizzly.CloseListener;
@@ -52,7 +52,7 @@ public final class HttpTxContext {
     private final GrizzlyAsyncHttpProvider provider;
 
     private Request request;
-    private UriComponents requestUri;
+    private Uri requestUri;
     private final AsyncHandler handler;
     private BodyHandler bodyHandler;
     private StatusHandler statusHandler;
@@ -63,7 +63,7 @@ public final class HttpTxContext {
     private final AtomicLong totalBodyWritten = new AtomicLong();
     private AsyncHandler.STATE currentState;
 
-    private UriComponents wsRequestURI;
+    private Uri wsRequestURI;
     private boolean isWSRequest;
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
@@ -99,7 +99,7 @@ public final class HttpTxContext {
         this.handler = handler;
         redirectsAllowed = this.provider.getClientConfig().isFollowRedirect();
         maxRedirectCount = this.provider.getClientConfig().getMaxRedirects();
-        this.requestUri = request.getURI();
+        this.requestUri = request.getUri();
     }
 
     // ---------------------------------------------------------- Public Methods
@@ -162,11 +162,11 @@ public final class HttpTxContext {
         this.request = request;
     }
 
-    public UriComponents getRequestUri() {
+    public Uri getRequestUri() {
         return requestUri;
     }
 
-    public void setRequestUri(UriComponents requestUri) {
+    public void setRequestUri(Uri requestUri) {
         this.requestUri = requestUri;
     }
 
@@ -234,11 +234,11 @@ public final class HttpTxContext {
         this.currentState = currentState;
     }
 
-    public UriComponents getWsRequestURI() {
+    public Uri getWsRequestURI() {
         return wsRequestURI;
     }
 
-    public void setWsRequestURI(UriComponents wsRequestURI) {
+    public void setWsRequestURI(Uri wsRequestURI) {
         this.wsRequestURI = wsRequestURI;
     }
 

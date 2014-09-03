@@ -18,7 +18,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 import io.netty.handler.codec.http.HttpResponse;
 
@@ -31,7 +31,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public NettyResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpResponse response) {
+    public NettyResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpResponse response) {
         super(uri, config);
         this.response = response;
     }

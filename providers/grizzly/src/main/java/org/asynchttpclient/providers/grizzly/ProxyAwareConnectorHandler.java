@@ -17,7 +17,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.grizzly.filters.ProxyFilter;
 import org.asynchttpclient.providers.grizzly.filters.TunnelFilter;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.Processor;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
@@ -30,7 +30,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
     private FilterChainBuilder nonSecureTemplate;
     private FilterChainBuilder secureTemplate;
     private AsyncHttpClientConfig clientConfig;
-    private UriComponents uri;
+    private Uri uri;
     private ProxyServer proxyServer;
 
     // ------------------------------------------------------------ Constructors
@@ -112,7 +112,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
             return this;
         }
 
-        public Builder uri(final UriComponents uri) {
+        public Builder uri(final Uri uri) {
             connectorHandler.uri = uri;
             return this;
         }

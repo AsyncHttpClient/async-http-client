@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.asynchttpclient.Param;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
 public class TestSignatureCalculator {
@@ -48,7 +48,7 @@ public class TestSignatureCalculator {
         queryParams.add(new Param("file", "vacation.jpg"));
         queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
-        String sig = calc.calculateSignature("GET", UriComponents.create(url), TIMESTAMP, NONCE, null, queryParams);
+        String sig = calc.calculateSignature("GET", Uri.create(url), TIMESTAMP, NONCE, null, queryParams);
 
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
     }

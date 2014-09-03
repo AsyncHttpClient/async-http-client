@@ -17,7 +17,7 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 import java.security.NoSuchAlgorithmException;
 
@@ -37,7 +37,7 @@ public final class AuthenticatorUtils {
         if (realm.isTargetProxy()) {
             return "/";
         } else {
-            UriComponents uri = realm.getUri();
+            Uri uri = realm.getUri();
             if (realm.isUseAbsoluteURI()) {
                 return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
             } else {

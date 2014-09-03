@@ -47,7 +47,7 @@ import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,9 +107,9 @@ public abstract class Protocol {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
-                UriComponents uri = UriComponents.create(future.getURI(), location);
+                Uri uri = Uri.create(future.getUri(), location);
 
-                if (!uri.equals(future.getURI())) {
+                if (!uri.equals(future.getUri())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
 
                     if (!config.isRemoveQueryParamOnRedirect())
@@ -124,9 +124,9 @@ public abstract class Protocol {
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final String initialPoolKey = channelManager.getPoolKey(future);
 
-                    future.setURI(uri);
+                    future.setUri(uri);
                     String newUrl = uri.toUrl();
-                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
+                    if (request.getUri().getScheme().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
 

@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
@@ -123,7 +123,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    private String getBaseUrl(UriComponents uri) {
+    private String getBaseUrl(Uri uri) {
         String url = uri.toString();
         int port = uri.getPort();
         if (port == -1) {
@@ -133,7 +133,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
     }
 
-    private static int getPort(UriComponents uri) {
+    private static int getPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
             port = uri.getScheme().equals("http") ? 80 : 443;

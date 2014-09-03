@@ -83,7 +83,7 @@ public class RequestBuilderTest {
 
         Request request2 = new RequestBuilder(request).build();
 
-        assertEquals(request2.getURI(), request.getURI());
+        assertEquals(request2.getUri(), request.getUri());
     }
 
     @Test(groups = {"standalone", "default_provider"})

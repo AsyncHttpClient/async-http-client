@@ -18,27 +18,27 @@ package org.asynchttpclient;
 
 import java.util.List;
 
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
 public abstract class HttpResponseStatus {
 
-    private final UriComponents uri;
+    private final Uri uri;
     protected final AsyncHttpClientConfig config;
 
-    public HttpResponseStatus(UriComponents uri, AsyncHttpClientConfig config) {
+    public HttpResponseStatus(Uri uri, AsyncHttpClientConfig config) {
         this.uri = uri;
         this.config = config;
     }
 
     /**
-     * Return the request {@link UriComponents}
+     * Return the request {@link Uri}
      * 
-     * @return the request {@link UriComponents}
+     * @return the request {@link Uri}
      */
-    public final UriComponents getUri() {
+    public final Uri getUri() {
         return uri;
     }
 

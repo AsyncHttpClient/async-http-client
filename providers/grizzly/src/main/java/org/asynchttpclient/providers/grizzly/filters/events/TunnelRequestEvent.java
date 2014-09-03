@@ -13,7 +13,7 @@
 package org.asynchttpclient.providers.grizzly.filters.events;
 
 import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
@@ -27,11 +27,11 @@ public final class TunnelRequestEvent implements FilterChainEvent {
 
     private final FilterChainContext suspendedContext;
     private final ProxyServer proxyServer;
-    private final UriComponents uri;
+    private final Uri uri;
 
     // ------------------------------------------------------------ Constructors
 
-    public TunnelRequestEvent(final FilterChainContext suspendedContext, final ProxyServer proxyServer, final UriComponents uri) {
+    public TunnelRequestEvent(final FilterChainContext suspendedContext, final ProxyServer proxyServer, final Uri uri) {
         this.suspendedContext = suspendedContext;
         this.proxyServer = proxyServer;
         this.uri = uri;
@@ -54,7 +54,7 @@ public final class TunnelRequestEvent implements FilterChainEvent {
         return proxyServer;
     }
 
-    public UriComponents getUri() {
+    public Uri getUri() {
         return uri;
     }
 }

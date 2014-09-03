@@ -31,7 +31,7 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -179,7 +179,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public UriComponents getUri() {
+                public Uri getUri() {
                     return wrappedResponse.getUri();
                 }
 

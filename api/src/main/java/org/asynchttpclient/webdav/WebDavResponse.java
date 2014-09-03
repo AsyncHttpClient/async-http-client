@@ -20,7 +20,7 @@ import java.util.List;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.w3c.dom.Document;
 
 /**
@@ -73,7 +73,7 @@ public class WebDavResponse implements Response {
         return response.getResponseBody(charset);
     }
 
-    public UriComponents getUri() {
+    public Uri getUri() {
         return response.getUri();
     }
 

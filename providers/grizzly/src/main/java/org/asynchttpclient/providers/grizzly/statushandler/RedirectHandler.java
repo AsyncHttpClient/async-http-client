@@ -19,7 +19,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
 import org.asynchttpclient.providers.grizzly.EventHandler;
 import org.asynchttpclient.providers.grizzly.HttpTxContext;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpResponsePacket;
@@ -44,16 +44,16 @@ public final class RedirectHandler implements StatusHandler {
             throw new IllegalStateException("redirect received, but no location header was present");
         }
 
-        UriComponents orig;
+        Uri orig;
         if (httpTransactionContext.getLastRedirectURI() == null) {
-            orig = httpTransactionContext.getRequest().getURI();
+            orig = httpTransactionContext.getRequest().getUri();
         } else {
-            orig = UriComponents.create(httpTransactionContext.getRequest().getURI(),
+            orig = Uri.create(httpTransactionContext.getRequest().getUri(),
                     httpTransactionContext.getLastRedirectURI());
         }
         httpTransactionContext.setLastRedirectURI(redirectURL);
         Request requestToSend;
-        UriComponents uri = UriComponents.create(orig, redirectURL);
+        Uri uri = Uri.create(orig, redirectURL);
         if (!uri.toUrl().equalsIgnoreCase(orig.toUrl())) {
             requestToSend = EventHandler.newRequest(uri, responsePacket, httpTransactionContext,
                     sendAsGet(responsePacket, httpTransactionContext));
@@ -75,7 +75,7 @@ public final class RedirectHandler implements StatusHandler {
             httpTransactionContext.setFuture(null);
             newContext.setInvocationStatus(CONTINUE);
             newContext.setRequest(requestToSend);
-            newContext.setRequestUri(requestToSend.getURI());
+            newContext.setRequestUri(requestToSend.getUri());
             HttpTxContext.set(ctx, newContext);
             httpTransactionContext.getProvider().execute(c, requestToSend, newContext.getHandler(), newContext.getFuture(), newContext);
             return false;

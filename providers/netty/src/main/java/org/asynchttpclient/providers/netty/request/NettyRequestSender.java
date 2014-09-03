@@ -55,7 +55,7 @@ import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +90,7 @@ public final class NettyRequestSender {
         if (closed.get())
             throw new IOException("Closed");
 
-        UriComponents uri = request.getURI();
+        Uri uri = request.getUri();
 
         // FIXME really useful? Why not do this check when building the request?
         if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler))
@@ -121,7 +121,7 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxyServer,//
             boolean useProxy,//
             boolean forceConnect) throws IOException {
@@ -147,7 +147,7 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxyServer) throws IOException {
 
         NettyResponseFuture<T> newFuture = null;
@@ -170,7 +170,7 @@ public final class NettyRequestSender {
     }
 
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture,
-            UriComponents uri, ProxyServer proxy, boolean forceConnect) throws IOException {
+            Uri uri, ProxyServer proxy, boolean forceConnect) throws IOException {
 
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
 
@@ -183,7 +183,7 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, UriComponents uri, ConnectionPoolKeyStrategy poolKeyGen, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
+    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolKeyStrategy poolKeyGen, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
@@ -191,7 +191,7 @@ public final class NettyRequestSender {
             return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, asyncHandler);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, UriComponents uri, ProxyServer proxy, NettyResponseFuture<T> future,
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, Uri uri, ProxyServer proxy, NettyResponseFuture<T> future,
             AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
@@ -226,7 +226,7 @@ public final class NettyRequestSender {
 
     private <T> ListenableFuture<T> sendRequestWithNewChannel(//
             Request request,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxy,//
             boolean useProxy,//
             NettyResponseFuture<T> future,//
@@ -238,7 +238,7 @@ public final class NettyRequestSender {
         // Do not throw an exception when we need an extra connection for a
         // redirect
         // FIXME why? This violate the max connection per host handling, right?
-        Bootstrap bootstrap = channelManager.getBootstrap(request.getURI(), useProxy, useSSl);
+        Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), useProxy, useSSl);
 
         boolean channelPreempted = false;
         String poolKey = null;
@@ -272,7 +272,7 @@ public final class NettyRequestSender {
         return future;
     }
 
-    private <T> NettyResponseFuture<T> newNettyResponseFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
+    private <T> NettyResponseFuture<T> newNettyResponseFuture(Uri uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
 
         NettyResponseFuture<T> future = new NettyResponseFuture<T>(//
                 uri,//
@@ -328,7 +328,7 @@ public final class NettyRequestSender {
         scheduleTimeouts(future);
     }
 
-    private InetSocketAddress remoteAddress(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy) {
+    private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) {
         if (request.getInetAddress() != null)
             return new InetSocketAddress(request.getInetAddress(), getDefaultPort(uri));
 
@@ -339,7 +339,7 @@ public final class NettyRequestSender {
             return new InetSocketAddress(proxy.getHost(), proxy.getPort());
     }
 
-    private ChannelFuture connect(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
+    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
 
         if (request.getLocalAddress() != null)
@@ -459,7 +459,7 @@ public final class NettyRequestSender {
         return request.getMethod().equals(HttpMethod.GET.name()) && asyncHandler instanceof WebSocketUpgradeHandler;
     }
 
-    private Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy, AsyncHandler<?> asyncHandler) {
+    private Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy, AsyncHandler<?> asyncHandler) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onPoolConnection();

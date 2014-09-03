@@ -20,7 +20,7 @@ import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
@@ -98,7 +98,7 @@ public class ConnectionManager {
         final EndpointKey<SocketAddress> key = getEndPointKey(request, requestFuture.getProxyServer());
         
         final HostnameVerifier verifier = getVerifier();
-        final UriComponents uri = request.getURI();
+        final Uri uri = request.getUri();
         
         if (Utils.isSecure(uri) && verifier != null) {
             completionHandler =
@@ -176,7 +176,7 @@ public class ConnectionManager {
                     
                     ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler.builder(provider.clientTransport)
                             .nonSecureFilterChainTemplate(nonSecureBuilder).secureFilterChainTemplate(secureBuilder)
-                            .asyncHttpClientConfig(provider.getClientConfig()).uri(request.getURI()).proxyServer(proxyServer).build();
+                            .asyncHttpClientConfig(provider.getClientConfig()).uri(request.getUri()).proxyServer(proxyServer).build();
                     EndpointKey<SocketAddress> localKey = new EndpointKey<SocketAddress>(stringKey, address, localSocketAddress, handler);
                     endpointKeyMap.put(stringKey, localKey);
                     key = localKey;
@@ -187,13 +187,13 @@ public class ConnectionManager {
     }
 
     private SocketAddress getRemoteAddress(final Request request, final ProxyServer proxyServer) {
-        final UriComponents requestUri = request.getURI();
+        final Uri requestUri = request.getUri();
         final String host = ((proxyServer != null) ? proxyServer.getHost() : requestUri.getHost());
         final int port = ((proxyServer != null) ? proxyServer.getPort() : requestUri.getPort());
-        return new InetSocketAddress(host, getPort(request.getURI(), port));
+        return new InetSocketAddress(host, getPort(request.getUri(), port));
     }
 
-    private static int getPort(final UriComponents uri, final int p) {
+    private static int getPort(final Uri uri, final int p) {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
@@ -222,7 +222,7 @@ public class ConnectionManager {
                 .nonSecureFilterChainTemplate(nonSecureBuilder)//
                 .secureFilterChainTemplate(secureBuilder)//
                 .asyncHttpClientConfig(provider.getClientConfig())//
-                .uri(request.getURI())//
+                .uri(request.getUri())//
                 .proxyServer(proxyServer)//
                 .build();
         if (cTimeout > 0) {
@@ -291,6 +291,6 @@ public class ConnectionManager {
 
     private static String getPoolKey(final Request request, ProxyServer proxyServer) {
         final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-        return keyStrategy.getKey(request.getURI(), proxyServer);
+        return keyStrategy.getKey(request.getUri(), proxyServer);
     }
 }

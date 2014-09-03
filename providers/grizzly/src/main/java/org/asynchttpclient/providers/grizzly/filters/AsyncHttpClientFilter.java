@@ -44,7 +44,7 @@ import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
@@ -155,7 +155,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             ctx.suspend();
             TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
             final ProxyServer proxyServer = tunnelRequestEvent.getProxyServer();
-            final UriComponents requestUri = tunnelRequestEvent.getUri();
+            final Uri requestUri = tunnelRequestEvent.getUri();
 
             RequestBuilder builder = new RequestBuilder();
             builder.setMethod(Method.CONNECT.getMethodString());
@@ -208,7 +208,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
 
         final Request request = httpTxContext.getRequest();
-        final UriComponents uri = request.getURI();
+        final Uri uri = request.getUri();
         boolean secure = Utils.isSecure(uri);
         boolean isWebSocket = isWSRequest(httpTxContext.getRequestUri());
 
@@ -262,7 +262,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         if (httpTxContext.isWSRequest()) {
             try {
-                final URI wsURI = httpTxContext.getWsRequestURI().toURI();
+                final URI wsURI = httpTxContext.getWsRequestURI().toJavaNetURI();
                 httpTxContext.setProtocolHandler(Version.RFC6455.createHandler(true));
                 httpTxContext.setHandshake(httpTxContext.getProtocolHandler().createHandShake(wsURI));
                 requestPacket = (HttpRequestPacket) httpTxContext.getHandshake().composeHeaders().getHttpHeader();
@@ -421,7 +421,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     private static void addHostHeader(final Request request,
-            final UriComponents uri, final HttpRequestPacket requestPacket) {
+            final Uri uri, final HttpRequestPacket requestPacket) {
         if (!request.getHeaders().containsKey(Header.Host.toString())) {
             String host = request.getVirtualHost();
             if (host != null) {
@@ -470,13 +470,13 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return (handler instanceof UpgradeHandler);
     }
 
-    private static boolean isWSRequest(final UriComponents requestUri) {
+    private static boolean isWSRequest(final Uri requestUri) {
         return requestUri.getScheme().startsWith("ws");
     }
 
     private static void convertToUpgradeRequest(final HttpTxContext ctx) {
         
-        final UriComponents requestUri = ctx.getRequestUri();
+        final Uri requestUri = ctx.getRequestUri();
 
         ctx.setWsRequestURI(requestUri);
         ctx.setRequestUri(requestUri.withNewScheme(
@@ -540,7 +540,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private static void addQueryString(final Request request, final HttpRequestPacket requestPacket) {
 
-        String query = request.getURI().getQuery();
+        String query = request.getUri().getQuery();
         if (isNonEmpty(query)) {
             requestPacket.setQueryString(query);
         }

@@ -55,7 +55,7 @@ import org.asynchttpclient.providers.netty.handler.HttpProtocol;
 import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -386,7 +386,7 @@ public class ChannelManager {
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
-        return future.getConnectionPoolKeyStrategy().getKey(future.getURI(), future.getProxyServer());
+        return future.getConnectionPoolKeyStrategy().getKey(future.getUri(), future.getProxyServer());
     }
 
     /**
@@ -406,7 +406,7 @@ public class ChannelManager {
             pipeline.remove(SSL_HANDLER);
     }
 
-    public Bootstrap getBootstrap(UriComponents uri, boolean useProxy, boolean useSSl) {
+    public Bootstrap getBootstrap(Uri uri, boolean useProxy, boolean useSSl) {
         return uri.getScheme().startsWith(WEBSOCKET) && !useProxy ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : //
                 (useSSl ? secureBootstrap : plainBootstrap);
     }

@@ -22,7 +22,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
@@ -86,7 +86,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
-        String signature = calculateSignature(request.getMethod(), request.getURI(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
+        String signature = calculateSignature(request.getMethod(), request.getUri(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
@@ -94,7 +94,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
-    public String calculateSignature(String method, UriComponents uri, long oauthTimestamp, String nonce,
+    public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)

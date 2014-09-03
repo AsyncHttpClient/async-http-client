@@ -30,7 +30,7 @@ import org.asynchttpclient.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
 import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
@@ -282,7 +282,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         Request request = rb.build();
         ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
-                request.getURI(), listener);
+                request.getUri(), listener);
 
         if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
@@ -719,7 +719,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
-        private final UriComponents uri;
+        private final Uri uri;
         private final SimpleAHCTransferListener listener;
 
         private boolean accumulateBody = false;
@@ -728,7 +728,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private long total = -1;
 
         public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
-                ErrorDocumentBehaviour errorDocumentBehaviour, UriComponents uri, SimpleAHCTransferListener listener) {
+                ErrorDocumentBehaviour errorDocumentBehaviour, Uri uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
@@ -851,7 +851,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             }
         }
 
-        private void fireSent(UriComponents uri, long amount, long current, long total) {
+        private void fireSent(Uri uri, long amount, long current, long total) {
             if (listener != null) {
                 listener.onBytesSent(uri, amount, current, total);
             }

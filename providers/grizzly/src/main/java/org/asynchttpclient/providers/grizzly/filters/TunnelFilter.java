@@ -18,7 +18,7 @@ import java.io.IOException;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.glassfish.grizzly.IOEvent;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -36,11 +36,11 @@ import org.glassfish.grizzly.filterchain.NextAction;
 public final class TunnelFilter extends BaseFilter {
 
     private final ProxyServer proxyServer;
-    private final UriComponents uri;
+    private final Uri uri;
 
     // ------------------------------------------------------------ Constructors
 
-    public TunnelFilter(final ProxyServer proxyServer, final UriComponents uri) {
+    public TunnelFilter(final ProxyServer proxyServer, final Uri uri) {
         this.proxyServer = proxyServer;
         this.uri = uri;
     }

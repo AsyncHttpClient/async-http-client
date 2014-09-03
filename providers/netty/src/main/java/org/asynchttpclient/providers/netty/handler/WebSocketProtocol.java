@@ -80,7 +80,7 @@ public final class WebSocketProtocol extends Protocol {
         } else if (e instanceof LastHttpContent) {
             HttpResponse response = future.getPendingResponse();
             future.setPendingResponse(null);
-            HttpResponseStatus status = new NettyResponseStatus(future.getURI(), config, response);
+            HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
@@ -98,7 +98,7 @@ public final class WebSocketProtocol extends Protocol {
                 connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
             boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
 
-            status = new NettyResponseStatus(future.getURI(), config, response);
+            status = new NettyResponseStatus(future.getUri(), config, response);
             final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
 
             if (!statusReceived) {

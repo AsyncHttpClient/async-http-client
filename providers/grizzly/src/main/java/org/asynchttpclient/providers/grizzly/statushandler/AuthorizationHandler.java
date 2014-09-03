@@ -67,7 +67,7 @@ public final class AuthorizationHandler implements StatusHandler {
         responsePacket.setSkipRemainder(true); // ignore the remainder of the response
 
         final Request req = httpTransactionContext.getRequest();
-        realm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(req.getURI())
+        realm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(req.getUri())
                 .setMethodName(req.getMethod()).setUsePreemptiveAuth(true).parseWWWAuthenticateHeader(auth).build();
         String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
         if (lowerCaseAuth.startsWith("basic")) {

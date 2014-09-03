@@ -17,7 +17,7 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -110,11 +110,11 @@ public interface Response {
     String getResponseBody() throws IOException;
 
     /**
-     * Return the request {@link UriComponents}. Note that if the request got redirected, the value of the {@link URI} will be the last valid redirect url.
+     * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link Uri} will be the last valid redirect url.
      * 
-     * @return the request {@link UriComponents}.
+     * @return the request {@link Uri}.
      */
-    UriComponents getUri();
+    Uri getUri();
 
     /**
      * Return the content-type header value.

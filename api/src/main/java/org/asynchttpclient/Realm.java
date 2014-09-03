@@ -18,7 +18,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import org.asynchttpclient.uri.UriComponents;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StandardCharsets;
 
 import java.nio.charset.Charset;
@@ -43,7 +43,7 @@ public class Realm {
     private final String qop;
     private final String nc;
     private final String cnonce;
-    private final UriComponents uri;
+    private final Uri uri;
     private final String methodName;
     private final boolean usePreemptiveAuth;
     private final String enc;
@@ -60,7 +60,7 @@ public class Realm {
     }
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
-            String qop, String nc, String cnonce, UriComponents uri, String method, boolean usePreemptiveAuth, String ntlmDomain, String enc,
+            String qop, String nc, String cnonce, Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, String enc,
             String host, boolean messageType2Received, String opaque, boolean useAbsoluteURI, boolean omitQuery, boolean targetProxy) {
 
         this.principal = principal;
@@ -136,7 +136,7 @@ public class Realm {
         return cnonce;
     }
 
-    public UriComponents getUri() {
+    public Uri getUri() {
         return uri;
     }
 
@@ -275,7 +275,7 @@ public class Realm {
         private String qop = "auth";
         private String nc = "00000001";
         private String cnonce = "";
-        private UriComponents uri;
+        private Uri uri;
         private String methodName = "GET";
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
@@ -394,11 +394,11 @@ public class Realm {
             return this;
         }
 
-        public UriComponents getUri() {
+        public Uri getUri() {
             return uri;
         }
 
-        public RealmBuilder setUri(UriComponents uri) {
+        public RealmBuilder setUri(Uri uri) {
             this.uri = uri;
             return this;
         }
