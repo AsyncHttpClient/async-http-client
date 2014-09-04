@@ -17,6 +17,7 @@ import org.asynchttpclient.extras.registry.AsyncHttpClientFactory;
 import org.asynchttpclient.extras.registry.AsyncHttpClientImplException;
 import org.asynchttpclient.extras.registry.AsyncHttpClientRegistryImpl;
 import org.asynchttpclient.extras.registry.AsyncImplHelper;
+import org.asynchttpclient.util.AsyncPropertiesHelper;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -32,6 +33,7 @@ public class AsyncHttpClientRegistryTest {
     @BeforeMethod
     public void setUp() {
         System.clearProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY);
+        AsyncPropertiesHelper.reloadProperties();
         AsyncHttpClientRegistryImpl.getInstance().clearAllInstances();
         PA.setValue(AsyncHttpClientRegistryImpl.class, "_instance", null);
     }
@@ -95,12 +97,14 @@ public class AsyncHttpClientRegistryTest {
     @Test(groups = "fast")
     public void testCustomAsyncHttpClientRegistry() {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, TestAsyncHttpClientRegistry.class.getName());
+        AsyncPropertiesHelper.reloadProperties();
         Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance() instanceof TestAsyncHttpClientRegistry);
     }
 
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testNonExistentAsyncHttpClientRegistry() {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.NON_EXISTENT_CLIENT_CLASS_NAME);
+        AsyncPropertiesHelper.reloadProperties();
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }
@@ -108,6 +112,7 @@ public class AsyncHttpClientRegistryTest {
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testBadAsyncHttpClientRegistry() {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.BAD_CLIENT_CLASS_NAME);
+        AsyncPropertiesHelper.reloadProperties();
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }
