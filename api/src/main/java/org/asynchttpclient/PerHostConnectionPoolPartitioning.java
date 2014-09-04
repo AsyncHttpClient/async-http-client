@@ -18,7 +18,7 @@ package org.asynchttpclient;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
-public enum PerHostConnectionPoolPartioning implements ConnectionPoolPartitioning {
+public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
     INSTANCE;
 
