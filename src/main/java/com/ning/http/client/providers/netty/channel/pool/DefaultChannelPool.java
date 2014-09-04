@@ -30,6 +30,7 @@ import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -302,5 +303,28 @@ public final class DefaultChannelPool implements ChannelPool {
         Channels.setDiscard(channel);
         channelId2Creation.remove(channel.getId());
         Channels.silentlyCloseChannel(channel);
+    }
+
+    private void flushPartition(String partitionId, ConcurrentLinkedQueue<IdleChannel> partition) {
+        if (partition != null) {
+            partitions.remove(partitionId);
+            for (IdleChannel idleChannel : partition)
+                close(idleChannel.channel);
+        }
+    }
+    
+    @Override
+    public void flushPartition(String partitionId) {
+        flushPartition(partitionId, partitions.get(partitionId));
+    }
+    
+    @Override
+    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+
+        for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> partitionsEntry : partitions.entrySet()) {
+            String partitionId = partitionsEntry.getKey();
+            if (selector.select(partitionId))
+                flushPartition(partitionId, partitionsEntry.getValue());
+        }
     }
 }

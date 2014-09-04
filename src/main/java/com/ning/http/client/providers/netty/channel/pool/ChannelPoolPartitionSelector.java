@@ -13,39 +13,7 @@
  */
 package com.ning.http.client.providers.netty.channel.pool;
 
-import org.jboss.netty.channel.Channel;
+public interface ChannelPoolPartitionSelector {
 
-public class NoopChannelPool implements ChannelPool {
-
-    @Override
-    public boolean offer(Channel connection, String poolKey) {
-        return false;
-    }
-
-    @Override
-    public Channel poll(String uri) {
-        return null;
-    }
-
-    @Override
-    public boolean removeAll(Channel connection) {
-        return false;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return true;
-    }
-
-    @Override
-    public void destroy() {
-    }
-
-    @Override
-    public void flushPartition(String partitionId) {
-    }
-
-    @Override
-    public void flushPartitions(ChannelPoolPartitionSelector selector) {
-    }
+   boolean select(String partitionId); 
 }

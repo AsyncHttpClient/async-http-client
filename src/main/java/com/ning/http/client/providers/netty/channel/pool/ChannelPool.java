@@ -57,4 +57,18 @@ public interface ChannelPool {
      * Destroy all connections that has been cached by this instance.
      */
     void destroy();
+
+    /**
+     * Flush a partition
+     * 
+     * @param partitionId
+     */
+    void flushPartition(String partitionId);
+
+    /**
+     * Flush partitions based on a selector
+     * 
+     * @param selector
+     */
+    void flushPartitions(ChannelPoolPartitionSelector selector);
 }

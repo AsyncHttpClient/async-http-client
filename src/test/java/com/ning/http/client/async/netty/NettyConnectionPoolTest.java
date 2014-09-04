@@ -28,6 +28,7 @@ import com.ning.http.client.async.ConnectionPoolTest;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
+import com.ning.http.client.providers.netty.channel.pool.NoopChannelPool;
 
 import java.net.ConnectException;
 import java.util.concurrent.TimeUnit;
@@ -42,26 +43,16 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testInvalidConnectionsPool() {
 
-        ChannelPool cp = new ChannelPool() {
+        ChannelPool cp = new NoopChannelPool() {
 
+            @Override
             public boolean offer(Channel connection, String poolKey) {
                 return false;
             }
 
-            public Channel poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Channel connection) {
-                return false;
-            }
-
+            @Override
             public boolean isOpen() {
                 return false;
-            }
-
-            public void destroy() {
-
             }
         };
 
@@ -86,26 +77,11 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testValidConnectionsPool() {
 
-        ChannelPool cp = new ChannelPool() {
+        ChannelPool cp = new NoopChannelPool() {
 
+            @Override
             public boolean offer(Channel connection, String poolKey) {
                 return true;
-            }
-
-            public Channel poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Channel connection) {
-                return false;
-            }
-
-            public boolean isOpen() {
-                return true;
-            }
-
-            public void destroy() {
-
             }
         };
 

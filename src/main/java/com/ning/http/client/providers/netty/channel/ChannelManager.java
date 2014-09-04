@@ -44,6 +44,7 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.providers.netty.Callback;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
+import com.ning.http.client.providers.netty.channel.pool.ChannelPoolPartitionSelector;
 import com.ning.http.client.providers.netty.channel.pool.DefaultChannelPool;
 import com.ning.http.client.providers.netty.channel.pool.NoopChannelPool;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
@@ -434,5 +435,13 @@ public class ChannelManager {
 
     public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
         Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPartitionId(future)));
+    }
+
+    public void flushPartition(String partitionId) {
+        channelPool.flushPartition(partitionId);
+    } 
+
+    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+        channelPool.flushPartitions(selector);
     }
 }
