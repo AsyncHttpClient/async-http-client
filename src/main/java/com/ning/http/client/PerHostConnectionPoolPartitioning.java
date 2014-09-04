@@ -18,7 +18,7 @@ package com.ning.http.client;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
-public enum PerHostConnectionPoolPartioning implements ConnectionPoolPartitioning {
+public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
 	INSTANCE;
 	
