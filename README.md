@@ -158,7 +158,7 @@ WebSocket websocket = c.prepareGet(getTargetUrl())
 
           @Override
           public void onOpen(WebSocket websocket) {
-              websocket.sendTextMessage("...").sendBinaryMessage("...");
+              websocket.sendTextMessage("...").sendMessage("...");
           }
 
           @Override
