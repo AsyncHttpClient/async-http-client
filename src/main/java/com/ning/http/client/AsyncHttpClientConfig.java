@@ -600,7 +600,7 @@ public class AsyncHttpClientConfig {
          * @param compressionEnforced true if compression is enforced
          * @return a {@link Builder}
          */
-        public Builder setCompressionEnabled(boolean compressionEnforced) {
+        public Builder setCompressionEnforced(boolean compressionEnforced) {
             this.compressionEnforced = compressionEnforced;
             return this;
         }
