@@ -15,6 +15,7 @@ package org.asynchttpclient.providers.netty.channel.pool;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
@@ -242,7 +243,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean offer(Channel channel, String poolKey) {
-        if (isClosed.get() || (!sslConnectionPoolEnabled && poolKey.startsWith("https")))
+        if (isClosed.get() || (!sslConnectionPoolEnabled && channel.pipeline().get(SslHandler.class) != null))
             return false;
 
         long now = millisTime();
