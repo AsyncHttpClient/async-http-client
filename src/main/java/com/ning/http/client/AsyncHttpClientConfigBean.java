@@ -55,7 +55,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         connectionTTL = defaultConnectionTTL();
         followRedirect = defaultFollowRedirect();
         maxRedirects = defaultMaxRedirects();
-        compressionEnabled = defaultCompressionEnabled();
+        compressionEnforced = defaultCompressionEnforced();
         userAgent = defaultUserAgent();
         allowPoolingConnections = defaultAllowPoolingConnections();
         useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
@@ -134,8 +134,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setCompressionEnabled(boolean compressionEnabled) {
-        this.compressionEnabled = compressionEnabled;
+    public AsyncHttpClientConfigBean setCompressionEnforced(boolean compressionEnforced) {
+        this.compressionEnforced = compressionEnforced;
         return this;
     }
 
