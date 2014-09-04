@@ -16,6 +16,7 @@ package com.ning.http.client.providers.netty.channel.pool;
 import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
@@ -236,7 +237,7 @@ public final class DefaultChannelPool implements ChannelPool {
     }
     
     public boolean offer(Channel channel, String poolKey) {
-        if (isClosed.get() || (!sslConnectionPoolEnabled && poolKey.startsWith("https")))
+        if (isClosed.get() || (!sslConnectionPoolEnabled && channel.getPipeline().get(SslHandler.class) != null))
             return false;
 
         long now = millisTime();
