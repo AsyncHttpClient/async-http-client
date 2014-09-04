@@ -20,19 +20,19 @@ public interface ChannelPool {
     /**
      * Add a channel to the pool
      * 
-     * @param poolKey a key used to retrieve the cached channel
+     * @param partitionId a key used to retrieve the cached channel
      * @param channel an I/O channel
      * @return true if added.
      */
-    boolean offer(Channel channel, String poolKey);
+    boolean offer(Channel channel, String partitionId);
 
     /**
      * Remove the channel associated with the uri.
      * 
-     * @param uri the uri used when invoking addConnection
+     * @param partitionId the partition used when invoking offer
      * @return the channel associated with the uri
      */
-    Channel poll(String uri);
+    Channel poll(String partitionId);
 
     /**
      * Remove all channels from the cache. A channel might have been associated with several uri.

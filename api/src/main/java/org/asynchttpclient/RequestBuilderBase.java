@@ -66,7 +66,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
-        private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
+        private ConnectionPoolPartitioning connectionPoolPartitioning = PerHostConnectionPoolPartioning.INSTANCE;
         private List<Param> queryParams;
 
         public RequestImpl() {
@@ -95,7 +95,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
-                this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
+                this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
             }
         }
 
@@ -210,8 +210,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
-            return connectionPoolKeyStrategy;
+        public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
+            return connectionPoolPartitioning;
         }
 
         @Override
@@ -536,8 +536,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setConnectionPoolKeyStrategy(ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        request.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+    public T setConnectionPoolPartitioning(ConnectionPoolPartitioning connectionPoolPartitioning) {
+        request.connectionPoolPartitioning = connectionPoolPartitioning;
         return derived.cast(this);
     }
 

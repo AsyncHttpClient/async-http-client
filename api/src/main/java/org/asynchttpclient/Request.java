@@ -184,5 +184,5 @@ public interface Request {
      */
     String getBodyEncoding();
 
-    ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
+    ConnectionPoolPartitioning getConnectionPoolPartitioning();
 }

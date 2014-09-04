@@ -16,8 +16,15 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
-public interface ConnectionPoolKeyStrategy {
+public enum PerHostConnectionPoolPartioning implements ConnectionPoolPartitioning {
 
-    String getKey(Uri uri, ProxyServer proxy);
+    INSTANCE;
+
+    @Override
+    public String getPartitionId(Uri uri, ProxyServer proxyServer) {
+        String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
+        return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
+    }
 }

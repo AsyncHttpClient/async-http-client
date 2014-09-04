@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ConnectionPoolPartitioning;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.listenable.AbstractListenableFuture;
@@ -58,7 +58,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private volatile boolean requestTimeoutReached;
     private volatile boolean idleConnectionTimeoutReached;
     private final long start = millisTime();
-    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    private final ConnectionPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
     private final int maxRetry;
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -99,14 +99,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
             int maxRetry,//
-            ConnectionPoolKeyStrategy connectionPoolKeyStrategy,//
+            ConnectionPoolPartitioning connectionPoolPartitioning,//
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+        this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
     }
@@ -254,8 +254,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.uri = uri;
     }
 
-    public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
-        return connectionPoolKeyStrategy;
+    public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
+        return connectionPoolPartitioning;
     }
 
     public ProxyServer getProxyServer() {

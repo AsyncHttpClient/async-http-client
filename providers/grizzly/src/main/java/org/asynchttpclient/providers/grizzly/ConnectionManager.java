@@ -17,7 +17,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
@@ -161,7 +160,7 @@ public class ConnectionManager {
     }
 
     private EndpointKey<SocketAddress> getEndPointKey(final Request request, final ProxyServer proxyServer) throws IOException {
-        final String stringKey = getPoolKey(request, proxyServer);
+        final String stringKey = getPartitionId(request, proxyServer);
         EndpointKey<SocketAddress> key = endpointKeyMap.get(stringKey);
         if (key == null) {
             synchronized (endpointKeyMap) {
@@ -289,8 +288,7 @@ public class ConnectionManager {
         };
     }
 
-    private static String getPoolKey(final Request request, ProxyServer proxyServer) {
-        final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-        return keyStrategy.getKey(request.getUri(), proxyServer);
+    private static String getPartitionId(final Request request, ProxyServer proxyServer) {
+        return request.getConnectionPoolPartitioning().getPartitionId(request.getUri(), proxyServer);
     }
 }
