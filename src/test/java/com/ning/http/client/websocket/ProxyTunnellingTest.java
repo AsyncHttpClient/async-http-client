@@ -149,7 +149,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.sendTextMessage("ECHO");
+            websocket.sendMessage("ECHO");
 
             latch.await();
             assertEquals(text.get(), "ECHO");
