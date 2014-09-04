@@ -50,6 +50,7 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.providers.netty.channel.pool.NoopChannelPool;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
@@ -425,5 +426,13 @@ public class ChannelManager {
 
     public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
         Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPartitionId(future)));
+    }
+
+    public void flushPartition(String partitionId) {
+        channelPool.flushPartition(partitionId);
+    } 
+
+    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+        channelPool.flushPartitions(selector);
     }
 }

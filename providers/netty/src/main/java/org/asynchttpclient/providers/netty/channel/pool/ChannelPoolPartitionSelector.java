@@ -13,39 +13,7 @@
  */
 package org.asynchttpclient.providers.netty.channel.pool;
 
-import io.netty.channel.Channel;
+public interface ChannelPoolPartitionSelector {
 
-public class NoopChannelPool implements ChannelPool {
-
-    @Override
-    public boolean offer(Channel channel, String poolKey) {
-        return false;
-    }
-
-    @Override
-    public Channel poll(String poolKey) {
-        return null;
-    }
-
-    @Override
-    public boolean removeAll(Channel channel) {
-        return false;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return true;
-    }
-
-    @Override
-    public void destroy() {
-    }
-
-    @Override
-    public void flushPartition(String partitionId) {
-    }
-
-    @Override
-    public void flushPartitions(ChannelPoolPartitionSelector selector) {
-    }
+   boolean select(String partitionId); 
 }

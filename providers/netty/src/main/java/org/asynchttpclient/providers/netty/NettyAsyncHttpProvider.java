@@ -25,6 +25,7 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
+import org.asynchttpclient.providers.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,5 +79,13 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         return requestSender.sendRequest(request, asyncHandler, null, false);
+    }
+
+    public void flushChannelPoolPartition(String partitionId) {
+        channelManager.flushPartition(partitionId);
+    }
+
+    public void flushChannelPoolPartitions(ChannelPoolPartitionSelector selector) {
+        channelManager.flushPartitions(selector);
     }
 }

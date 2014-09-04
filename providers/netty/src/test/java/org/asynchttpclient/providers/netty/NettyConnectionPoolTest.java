@@ -14,18 +14,18 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import io.netty.channel.Channel;
+
+import java.net.ConnectException;
+import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.providers.netty.channel.pool.NoopChannelPool;
 import org.testng.annotations.Test;
-
-import io.netty.channel.Channel;
-
-import java.net.ConnectException;
-import java.util.concurrent.TimeUnit;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
@@ -36,26 +36,16 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testInvalidConnectionsPool() {
-        ChannelPool cp = new ChannelPool() {
+        ChannelPool cp = new NoopChannelPool() {
 
-            public boolean offer(Channel channel, String poolKey) {
+            @Override
+            public boolean offer(Channel connection, String poolKey) {
                 return false;
             }
 
-            public Channel poll(String poolKey) {
-                return null;
-            }
-
-            public boolean removeAll(Channel channel) {
-                return false;
-            }
-
+            @Override
             public boolean isOpen() {
                 return false;
-            }
-
-            public void destroy() {
-
             }
         };
 
@@ -80,26 +70,11 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testValidConnectionsPool() {
-        ChannelPool cp = new ChannelPool() {
+        ChannelPool cp = new NoopChannelPool() {
 
-            public boolean offer(Channel channel, String poolKey) {
+            @Override
+            public boolean offer(Channel connection, String poolKey) {
                 return true;
-            }
-
-            public Channel poll(String poolKey) {
-                return null;
-            }
-
-            public boolean removeAll(Channel channel) {
-                return false;
-            }
-
-            public boolean isOpen() {
-                return true;
-            }
-
-            public void destroy() {
-
             }
         };
 
