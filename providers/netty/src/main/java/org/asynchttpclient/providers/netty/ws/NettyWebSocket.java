@@ -86,13 +86,13 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
-    public WebSocket sendTextMessage(String message) {
+    public WebSocket sendMessage(String message) {
         channel.writeAndFlush(new TextWebSocketFrame(message));
         return this;
     }
 
     @Override
-    public WebSocket streamText(String fragment, boolean last) {
+    public WebSocket stream(String fragment, boolean last) {
         channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment));
         return this;
     }
