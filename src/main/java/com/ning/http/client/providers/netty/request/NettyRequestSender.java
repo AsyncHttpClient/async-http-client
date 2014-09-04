@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
+import com.ning.http.client.ConnectionPoolPartitioning;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.ProxyServer;
@@ -129,7 +129,7 @@ public final class NettyRequestSender {
             boolean forceConnect) throws IOException {
         NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
 
-        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
+        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
 
         if (Channels.isChannelValid(channel))
             return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
@@ -153,7 +153,7 @@ public final class NettyRequestSender {
 
         NettyResponseFuture<T> newFuture = null;
         for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
+            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
             if (Channels.isChannelValid(channel))
                 if (newFuture == null)
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
@@ -184,7 +184,7 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolKeyStrategy poolKeyGen,
+    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolPartitioning poolKeyGen,
             ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
@@ -251,7 +251,7 @@ public final class NettyRequestSender {
             // only compute when maxConnectionPerHost is enabled
             // FIXME clean up
             if (config.getMaxConnectionsPerHost() > 0)
-                poolKey = channelManager.getPoolKey(future);
+                poolKey = channelManager.getPartitionId(future);
 
             channelPreempted = preemptChannel(asyncHandler, poolKey);
         }
@@ -282,7 +282,7 @@ public final class NettyRequestSender {
                 asyncHandler,//
                 nettyRequest,//
                 config.getMaxRequestRetry(),//
-                request.getConnectionPoolKeyStrategy(),//
+                request.getConnectionPoolPartitioning(),//
                 proxyServer);
 
         String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
@@ -462,12 +462,12 @@ public final class NettyRequestSender {
         return request.getMethod().equals(HttpMethod.GET.getName()) && asyncHandler instanceof WebSocketUpgradeHandler;
     }
 
-    public Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy, AsyncHandler<?> asyncHandler) {
+    public Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
  
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onPoolConnection();
 
-        final Channel channel = channelManager.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
+        final Channel channel = channelManager.poll(uri, proxy, connectionPoolPartitioning);
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);

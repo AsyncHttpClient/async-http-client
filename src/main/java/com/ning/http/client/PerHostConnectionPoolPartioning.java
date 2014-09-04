@@ -18,11 +18,11 @@ package com.ning.http.client;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
-public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
+public enum PerHostConnectionPoolPartioning implements ConnectionPoolPartitioning {
 
 	INSTANCE;
 	
-	public String getKey(Uri uri, ProxyServer proxyServer) {
+	public String getPartitionId(Uri uri, ProxyServer proxyServer) {
         String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
         return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
 	}

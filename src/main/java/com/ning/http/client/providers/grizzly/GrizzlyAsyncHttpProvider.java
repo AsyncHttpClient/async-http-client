@@ -2374,7 +2374,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                       final GrizzlyResponseFuture requestFuture,
                                       final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
-            Connection c = pool.poll(getPoolKey(request, requestFuture.getProxy()));
+            Connection c = pool.poll(getPartitionId(request, requestFuture.getProxy()));
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
@@ -2459,7 +2459,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         boolean returnConnection(final Request request, final Connection c) {
             ProxyServer proxyServer = ProxyUtils.getProxyServer(provider.clientConfig, request);
             final boolean result = (DO_NOT_CACHE.get(c) == null
-                                       && pool.offer(getPoolKey(request, proxyServer), c));
+                                       && pool.offer(getPartitionId(request, proxyServer), c));
             if (result) {
                 if (provider.resolver != null) {
                     provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
@@ -2519,8 +2519,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             };
         }
 
-        private static String getPoolKey(Request request, ProxyServer proxyServer) {
-            return request.getConnectionPoolKeyStrategy().getKey(request.getUri(), proxyServer);
+        private static String getPartitionId(Request request, ProxyServer proxyServer) {
+            return request.getConnectionPoolPartitioning().getPartitionId(request.getUri(), proxyServer);
         }
 
         // ------------------------------------------------------ Nested Classes

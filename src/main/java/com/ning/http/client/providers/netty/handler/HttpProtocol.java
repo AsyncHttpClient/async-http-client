@@ -172,7 +172,7 @@ public final class HttpProtocol extends Protocol {
         if (expectOtherChunks && keepAlive)
             channelManager.drainChannel(channel, future);
         else
-            channelManager.tryToOfferChannelToPool(channel, keepAlive, channelManager.getPoolKey(future));
+            channelManager.tryToOfferChannelToPool(channel, keepAlive, channelManager.getPartitionId(future));
         markAsDone(future, channel);
     }
 

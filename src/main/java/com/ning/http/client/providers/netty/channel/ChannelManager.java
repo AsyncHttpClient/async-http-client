@@ -39,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ConnectionPoolPartitioning;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.providers.netty.Callback;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
@@ -50,6 +52,7 @@ import com.ning.http.client.providers.netty.handler.Processor;
 import com.ning.http.client.providers.netty.handler.Protocol;
 import com.ning.http.client.providers.netty.handler.WebSocketProtocol;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.SslUtils;
 
 import javax.net.ssl.SSLContext;
@@ -242,12 +245,12 @@ public class ChannelManager {
         });
     }
 
-    public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String poolKey) {
+    public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String partition) {
         if (keepAlive && channel.isReadable()) {
-            LOGGER.debug("Adding key: {} for channel {}", poolKey, channel);
-            channelPool.offer(channel, poolKey);
+            LOGGER.debug("Adding key: {} for channel {}", partition, channel);
+            channelPool.offer(channel, partition);
             if (maxConnectionsPerHostEnabled)
-                channelId2KeyPool.putIfAbsent(channel.getId(), poolKey);
+                channelId2KeyPool.putIfAbsent(channel.getId(), partition);
             Channels.setDiscard(channel);
         } else {
             // not offered
@@ -255,8 +258,9 @@ public class ChannelManager {
         }
     }
 
-    public Channel poll(String uri) {
-        return channelPool.poll(uri);
+    public Channel poll(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning) {
+        String partitionId = connectionPoolPartitioning.getPartitionId(uri, proxy);
+        return channelPool.poll(partitionId);
     }
 
     public boolean removeAll(Channel connection) {
@@ -389,8 +393,8 @@ public class ChannelManager {
         }
     }
 
-    public String getPoolKey(NettyResponseFuture<?> future) {
-        return future.getConnectionPoolKeyStrategy().getKey(future.getUri(), future.getProxyServer());
+    public String getPartitionId(NettyResponseFuture<?> future) {
+        return future.getConnectionPoolPartitioning().getPartitionId(future.getUri(), future.getProxyServer());
     }
 
     public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
@@ -429,6 +433,6 @@ public class ChannelManager {
     }
 
     public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
-        Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPoolKey(future)));
+        Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPartitionId(future)));
     }
 }

@@ -17,7 +17,7 @@ package com.ning.http.client;
 
 import com.ning.http.client.uri.Uri;
 
-public interface ConnectionPoolKeyStrategy {
+public interface ConnectionPoolPartitioning {
 
-	String getKey(Uri uri, ProxyServer proxyServer);
+	String getPartitionId(Uri uri, ProxyServer proxyServer);
 }

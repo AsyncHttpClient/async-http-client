@@ -123,7 +123,7 @@ public abstract class Protocol {
 
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
-                    final String initialPoolKey = channelManager.getPoolKey(future);
+                    final String initialPoolKey = channelManager.getPartitionId(future);
 
                     future.setUri(uri);
                     String newUrl = uri.toUrl();
