@@ -518,8 +518,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setCompressionEnabled(boolean compressionEnabled) {
-            configBuilder.setCompressionEnabled(compressionEnabled);
+        public Builder setCompressionEnforced(boolean compressionEnabled) {
+            configBuilder.setCompressionEnforced(compressionEnabled);
             return this;
         }
 
