@@ -387,21 +387,19 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         }
 
-        if (config.isCompressionEnabled()) {
-            Header acceptableEncodingHeader = method.getRequestHeader("Accept-Encoding");
-            if (acceptableEncodingHeader != null) {
-                String acceptableEncodings = acceptableEncodingHeader.getValue();
-                if (acceptableEncodings.indexOf("gzip") == -1) {
-                    StringBuilder buf = new StringBuilder(acceptableEncodings);
-                    if (buf.length() > 1) {
-                        buf.append(",");
-                    }
-                    buf.append("gzip");
-                    method.setRequestHeader("Accept-Encoding", buf.toString());
+        Header acceptableEncodingHeader = method.getRequestHeader("Accept-Encoding");
+        if (acceptableEncodingHeader != null) {
+            String acceptableEncodings = acceptableEncodingHeader.getValue();
+            if (acceptableEncodings.indexOf("gzip") == -1) {
+                StringBuilder buf = new StringBuilder(acceptableEncodings);
+                if (buf.length() > 1) {
+                    buf.append(",");
                 }
-            } else {
-                method.setRequestHeader("Accept-Encoding", "gzip");
+                buf.append("gzip");
+                method.setRequestHeader("Accept-Encoding", buf.toString());
             }
+        } else if (config.isCompressionEnforced()) {
+            method.setRequestHeader("Accept-Encoding", "gzip");
         }
 
         if (request.getVirtualHost() != null) {

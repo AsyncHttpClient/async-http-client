@@ -448,7 +448,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
 
 
-            if (config.isCompressionEnabled()) {
+            if (config.isCompressionEnforced()) {
                 urlConnection.setRequestProperty("Accept-Encoding", "gzip");
             }
 

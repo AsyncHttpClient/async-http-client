@@ -195,15 +195,12 @@ public class ChannelManager {
         Protocol wsProtocol = new WebSocketProtocol(this, config, nettyConfig, requestSender);
         wsProcessor = new Processor(config, this, requestSender, wsProtocol);
 
-        final boolean compressionEnabled = config.isCompressionEnabled();
-
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                if (compressionEnabled)
-                    pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
+                pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
                 return pipeline;
@@ -226,8 +223,7 @@ public class ChannelManager {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this));
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                if (compressionEnabled)
-                    pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
+                pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
                 return pipeline;
