@@ -528,8 +528,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setCompressionEnabled(boolean compressionEnabled) {
-            configBuilder.setCompressionEnabled(compressionEnabled);
+        public Builder setCompressionEnforced(boolean compressionEnforced) {
+            configBuilder.setCompressionEnforced(compressionEnforced);
             return this;
         }
 

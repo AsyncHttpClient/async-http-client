@@ -93,7 +93,7 @@ public class AsyncHttpClientConfig {
     protected ProxyServerSelector proxyServerSelector;
     protected boolean useRelativeURIsWithConnectProxies;
 
-    protected boolean compressionEnabled;
+    protected boolean compressionEnforced;
     protected String userAgent;
     protected ExecutorService applicationThreadPool;
     protected Realm realm;
@@ -134,7 +134,7 @@ public class AsyncHttpClientConfig {
             ExecutorService applicationThreadPool,//
             ProxyServerSelector proxyServerSelector, //
             boolean useRelativeURIsWithConnectProxies, //
-            boolean compressionEnabled, //
+            boolean compressionEnforced, //
             String userAgent,//
             Realm realm,//
             List<RequestFilter> requestFilters,//
@@ -168,7 +168,7 @@ public class AsyncHttpClientConfig {
         this.strict302Handling = strict302Handling;
         this.proxyServerSelector = proxyServerSelector;
         this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
-        this.compressionEnabled = compressionEnabled;
+        this.compressionEnforced = compressionEnforced;
         this.userAgent = userAgent;
         this.applicationThreadPool = applicationThreadPool == null ? Executors.newCachedThreadPool() : applicationThreadPool;
         this.realm = realm;
@@ -287,12 +287,12 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Is HTTP compression enabled.
+     * Is HTTP compression enforced.
      *
-     * @return true if compression is enabled
+     * @return true if compression is enforced
      */
-    public boolean isCompressionEnabled() {
-        return compressionEnabled;
+    public boolean isCompressionEnforced() {
+        return compressionEnforced;
     }
 
     /**
@@ -549,7 +549,7 @@ public class AsyncHttpClientConfig {
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
-        private boolean compressionEnabled = defaultCompressionEnabled();
+        private boolean compressionEnforced = defaultCompressionEnforced();
         private String userAgent = defaultUserAgent();
         private ExecutorService applicationThreadPool;
         private Realm realm;
@@ -675,13 +675,13 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Enable HTTP compression.
+         * Enforce HTTP compression.
          *
-         * @param compressionEnabled true if compression is enabled
+         * @param compressionEnabled true if compression is enforced
          * @return a {@link Builder}
          */
-        public Builder setCompressionEnabled(boolean compressionEnabled) {
-            this.compressionEnabled = compressionEnabled;
+        public Builder setCompressionEnforced(boolean compressionEnforced) {
+            this.compressionEnforced = compressionEnforced;
             return this;
         }
 
@@ -1050,7 +1050,7 @@ public class AsyncHttpClientConfig {
             sslContext = prototype.getSSLContext();
             userAgent = prototype.getUserAgent();
             followRedirect = prototype.isFollowRedirect();
-            compressionEnabled = prototype.isCompressionEnabled();
+            compressionEnforced = prototype.isCompressionEnforced();
             applicationThreadPool = prototype.executorService();
 
             requestFilters.clear();
@@ -1117,7 +1117,7 @@ public class AsyncHttpClientConfig {
                     applicationThreadPool, //
                     proxyServerSelector, //
                     useRelativeURIsWithConnectProxies, //
-                    compressionEnabled, //
+                    compressionEnforced, //
                     userAgent,//
                     realm,//
                     requestFilters, //

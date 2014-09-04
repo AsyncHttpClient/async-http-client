@@ -44,7 +44,7 @@ public final class FileBodyHandler extends BodyHandler {
 
     public FileBodyHandler(
             final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
+        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
     }
     
     // ------------------------------------------------ Methods from BodyHandler

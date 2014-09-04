@@ -687,7 +687,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         try {
             final CountDownLatch l = new CountDownLatch(1);
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();

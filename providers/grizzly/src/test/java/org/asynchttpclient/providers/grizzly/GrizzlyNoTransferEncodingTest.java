@@ -85,7 +85,6 @@ public class GrizzlyNoTransferEncodingTest {
         String url = "http://localhost:" + port + "/test";
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-            .setCompressionEnabled(true)
             .setFollowRedirect(false)
             .setConnectionTimeout(15000)
             .setRequestTimeout(15000)

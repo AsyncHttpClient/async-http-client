@@ -298,7 +298,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 eventFilter.removeContentEncoding(encoding);
             }
         }
-        if (clientConfig.isCompressionEnabled()) {
+        if (clientConfig.isCompressionEnforced()) {
             eventFilter.addContentEncoding(new GZipContentEncoding(512, 512, new ClientEncodingFilter()));
         }
         secure.add(eventFilter);

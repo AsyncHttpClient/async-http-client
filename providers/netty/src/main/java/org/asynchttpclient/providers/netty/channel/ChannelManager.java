@@ -182,17 +182,14 @@ public class ChannelManager {
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ChannelPipeline pipeline = ch.pipeline().addLast(HTTP_HANDLER, newHttpClientCodec());
-
-                if (config.isCompressionEnabled()) {
-                    pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
-                }
-                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
+                ch.pipeline()//
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(INFLATER_HANDLER, new HttpContentDecompressor())//
+                        .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
-                if (nettyConfig.getHttpAdditionalChannelInitializer() != null) {
+                if (nettyConfig.getHttpAdditionalChannelInitializer() != null)
                     nettyConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
-                }
             }
         });
 
@@ -213,19 +210,15 @@ public class ChannelManager {
 
             @Override
             protected void initChannel(Channel ch) throws Exception {
-
-                ChannelPipeline pipeline = ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this)).addLast(HTTP_HANDLER, newHttpClientCodec());
-
-                if (config.isCompressionEnabled()) {
-                    pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
-                }
-                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
+                ch.pipeline()//
+                        .addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this))//
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(INFLATER_HANDLER, new HttpContentDecompressor())//
+                        .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
-                if (nettyConfig.getHttpsAdditionalChannelInitializer() != null) {
+                if (nettyConfig.getHttpsAdditionalChannelInitializer() != null)
                     nettyConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
-                }
             }
         });
 

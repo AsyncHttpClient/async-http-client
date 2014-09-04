@@ -30,7 +30,7 @@ public final class ByteArrayBodyHandler extends BodyHandler {
 
     public ByteArrayBodyHandler(
             final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
+        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
     }
 
     // -------------------------------------------- Methods from BodyHandler

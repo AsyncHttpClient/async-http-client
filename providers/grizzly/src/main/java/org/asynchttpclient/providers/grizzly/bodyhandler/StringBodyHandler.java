@@ -49,7 +49,7 @@ public final class StringBodyHandler extends BodyHandler {
         final MemoryManager mm = ctx.getMemoryManager();
         final Buffer gBuffer = Buffers.wrap(mm, data);
         if (requestPacket.getContentLength() == -1) {
-            if (!grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled()) {
+            if (!grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced()) {
                 requestPacket.setContentLengthLong(data.length);
             }
         }

@@ -50,7 +50,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
                 ch.pipeline().addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         });
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true)
+        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
                 .setAsyncHttpClientProviderConfig(nettyConfig).build());
 
         try {

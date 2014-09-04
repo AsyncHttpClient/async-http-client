@@ -35,7 +35,7 @@ public final class ParamsBodyHandler extends BodyHandler {
     private final boolean compressionEnabled;
 
     public ParamsBodyHandler(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
+        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
     }
 
     // -------------------------------------------- Methods from BodyHandler
