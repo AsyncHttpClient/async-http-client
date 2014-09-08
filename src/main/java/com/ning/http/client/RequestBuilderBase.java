@@ -416,16 +416,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addQueryParam(String name, String value) {
-        if (queryParams == null) {
+        if (queryParams == null)
             queryParams = new ArrayList<Param>(1);
-        }
         queryParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
-    public T addQueryParams(List<Param> queryParams) {
-        for (Param queryParam: queryParams)
-            addQueryParam(queryParam.getName(), queryParam.getValue());
+    public T addQueryParams(List<Param> params) {
+        if (queryParams == null)
+            queryParams = params;
+        else
+            queryParams.addAll(params);
         return derived.cast(this);
     }
 
@@ -447,6 +448,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setQueryParams(List<Param> params) {
+        // reset existing query
+        if (isNonEmpty(request.uri.getQuery()))
+            request.uri = request.uri.withNewQuery(null);
         queryParams = params;
         return derived.cast(this);
     }
