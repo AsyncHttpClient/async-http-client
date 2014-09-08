@@ -12,7 +12,10 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtils.getBoolean;
+import org.asynchttpclient.util.AsyncPropertiesHelper;
+import org.asynchttpclient.util.DefaultHostnameVerifier;
+
+import javax.net.ssl.HostnameVerifier;
 
 public final class AsyncHttpClientConfigDefaults {
 
@@ -22,106 +25,106 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String ASYNC_CLIENT = AsyncHttpClientConfig.class.getName() + ".";
 
     public static int defaultMaxConnections() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxConnections", -1);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "maxConnections");
     }
 
     public static int defaultMaxConnectionsPerHost() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxConnectionsPerHost", -1);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "maxConnectionsPerHost");
     }
 
     public static int defaultConnectionTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "connectionTimeout", 60 * 1000);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "connectionTimeout");
     }
 
     public static int defaultPooledConnectionIdleTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "pooledConnectionIdleTimeout", 60 * 1000);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "pooledConnectionIdleTimeout");
     }
 
     public static int defaultReadTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "readTimeout", 60 * 1000);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "readTimeout");
     }
 
     public static int defaultRequestTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "requestTimeout", 60 * 1000);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "requestTimeout");
     }
 
     public static int defaultWebSocketTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "webSocketTimeout", 15 * 60 * 1000);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "webSocketTimeout");
     }
 
     public static int defaultConnectionTTL() {
-        return Integer.getInteger(ASYNC_CLIENT + "connectionTTL", -1);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "connectionTTL");
     }
 
     public static boolean defaultFollowRedirect() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "followRedirect");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "followRedirect");
     }
 
     public static int defaultMaxRedirects() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxRedirects", 5);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "maxRedirects");
     }
 
     public static boolean defaultCompressionEnforced() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "compressionEnforced");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "compressionEnforced");
     }
 
     public static String defaultUserAgent() {
-        return System.getProperty(ASYNC_CLIENT + "userAgent", "AHC/2.0");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT + "userAgent");
     }
 
     public static int defaultIoThreadMultiplier() {
-        return Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "ioThreadMultiplier");
     }
 
     public static boolean defaultUseProxySelector() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "useProxySelector");
     }
 
     public static boolean defaultUseProxyProperties() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "useProxyProperties");
     }
 
     public static boolean defaultStrict302Handling() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "strict302Handling");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "strict302Handling");
     }
 
     public static boolean defaultAllowPoolingConnections() {
-        return getBoolean(ASYNC_CLIENT + "allowPoolingConnections", true);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "allowPoolingConnections");
     }
 
     public static boolean defaultUseRelativeURIsWithConnectProxies() {
-        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithConnectProxies", true);
-    }
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "useRelativeURIsWithConnectProxies");
+    } 
 
     public static int defaultMaxRequestRetry() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxRequestRetry", 5);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "maxRequestRetry");
     }
 
     public static boolean defaultAllowPoolingSslConnections() {
-        return getBoolean(ASYNC_CLIENT + "allowPoolingSslConnections", true);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "allowPoolingSslConnections");
     }
 
     public static boolean defaultDisableUrlEncodingForBoundRequests() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
     }
 
     public static boolean defaultRemoveQueryParamOnRedirect() {
-        return getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect");
     }
 
     public static boolean defaultSpdyEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "spdyEnabled");
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "spdyEnabled");
     }
 
     public static int defaultSpdyInitialWindowSize() {
-        return Integer.getInteger(ASYNC_CLIENT + "spdyInitialWindowSize", 10 * 1024 * 1024);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "spdyInitialWindowSize");
     }
 
     public static int defaultSpdyMaxConcurrentStreams() {
-        return Integer.getInteger(ASYNC_CLIENT + "spdyMaxConcurrentStreams", 100);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "spdyMaxConcurrentStreams");
     }
     
     public static boolean defaultAcceptAnyCertificate() {
-        return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "acceptAnyCertificate");
     }
 }
