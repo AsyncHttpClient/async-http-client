@@ -427,7 +427,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public SocketAddress getChannelRemoteAddress() {
-        return channel() != null ? channel().remoteAddress() : null;
+        return channel != null ? channel.remoteAddress() : null;
     }
 
     public void setRequest(Request request) {

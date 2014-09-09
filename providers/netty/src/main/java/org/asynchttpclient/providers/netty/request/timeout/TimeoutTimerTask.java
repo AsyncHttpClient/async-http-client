@@ -15,6 +15,7 @@ package org.asynchttpclient.providers.netty.request.timeout;
 
 import io.netty.util.TimerTask;
 
+import java.net.SocketAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,7 +39,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
         this.requestSender = requestSender;
         this.timeoutsHolder = timeoutsHolder;
         // saving remote address as the channel might be removed from the future when an exception occurs
-        remoteAddress = nettyResponseFuture.getChannelRemoteAddress().toString();
+        SocketAddress sa = nettyResponseFuture.getChannelRemoteAddress();
+        remoteAddress = sa != null ? sa.toString() : "not-connected";
     }
 
     protected void expire(String message, long time) {
