@@ -292,17 +292,18 @@ public final class NettyRequestSender {
     }
 
     public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
+        
+        NettyRequest nettyRequest = future.getNettyRequest();
+        HttpRequest httpRequest = nettyRequest.getHttpRequest();
+        AsyncHandler<T> handler = future.getAsyncHandler();
+        
+        // if the channel is dead because it was pooled and the remote
+        // server decided to close it,
+        // we just let it go and the channelInactive do its work
+        if (!Channels.isChannelValid(channel))
+            return;
+        
         try {
-            // if the channel is dead because it was pooled and the remote
-            // server decided to close it,
-            // we just let it go and the channelInactive do its work
-            if (!Channels.isChannelValid(channel))
-                return;
-
-            NettyRequest nettyRequest = future.getNettyRequest();
-            HttpRequest httpRequest = nettyRequest.getHttpRequest();
-            AsyncHandler<T> handler = future.getAsyncHandler();
-
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
@@ -323,11 +324,13 @@ public final class NettyRequestSender {
                     && nettyRequest.getBody() != null)
                 nettyRequest.getBody().write(channel, future, config);
 
+            // don't bother scheduling timeouts if channel became invalid
+            if (Channels.isChannelValid(channel))
+                scheduleTimeouts(future);
+
         } catch (Throwable ioe) {
             Channels.silentlyCloseChannel(channel);
         }
-
-        scheduleTimeouts(future);
     }
 
     private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) {
