@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -137,8 +139,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
 
         boolean printCause = cause != null && cause.getMessage() != null;
-        String url = future.getUri().toUrl();
-        String printedCause = printCause ? cause.getMessage() + " to " + url : url;
+        String printedCause = printCause ? cause.getMessage() : getBaseUrl(future.getUri());
         ConnectException e = new ConnectException(printedCause);
         if (cause != null)
             e.initCause(cause);
