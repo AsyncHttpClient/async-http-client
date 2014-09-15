@@ -363,6 +363,10 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
+    private boolean isConnectionKeepAlive(HttpHeaders headers) {
+        return !HttpHeaders.Values.CLOSE.equalsIgnoreCase(headers.get(HttpHeaders.Names.CONNECTION));
+    }
+
     private boolean handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
@@ -373,7 +377,7 @@ public final class HttpProtocol extends Protocol {
         // the handler in case of trailing headers
         future.setHttpHeaders(response.headers());
 
-        future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
+        future.setKeepAlive(isConnectionKeepAlive(httpRequest.headers()) && isConnectionKeepAlive(response.headers()));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
         int statusCode = response.getStatus().code();
