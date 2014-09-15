@@ -87,63 +87,68 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         requestSender.writeRequest(future, channel);
     }
 
-    public final void operationComplete(ChannelFuture f) throws Exception {
-        Channel channel = f.getChannel();
-        if (f.isSuccess()) {
-            Channels.setAttribute(channel, future);
-            final SslHandler sslHandler = ChannelManager.getSslHandler(channel.getPipeline());
+    private void onFutureSuccess(final Channel channel) throws ConnectException {
+        Channels.setAttribute(channel, future);
+        final SslHandler sslHandler = ChannelManager.getSslHandler(channel.getPipeline());
 
-            final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
-            if (hostnameVerifier != null && sslHandler != null) {
-                final String host = future.getUri().getHost();
-                sslHandler.handshake().addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
-                        if (handshakeFuture.isSuccess()) {
-                            Channel channel = (Channel) handshakeFuture.getChannel();
-                            SSLEngine engine = sslHandler.getEngine();
-                            SSLSession session = engine.getSession();
+        final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
+        if (hostnameVerifier != null && sslHandler != null) {
+            final String host = future.getUri().getHost();
+            sslHandler.handshake().addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
+                    if (handshakeFuture.isSuccess()) {
+                        Channel channel = (Channel) handshakeFuture.getChannel();
+                        SSLEngine engine = sslHandler.getEngine();
+                        SSLSession session = engine.getSession();
 
-                            if (LOGGER.isDebugEnabled())
-                                LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
-                                        Base64.encode(session.getId()), session.isValid(), host);
-                            if (hostnameVerifier.verify(host, session)) {
-                                writeRequest(channel, poolKey);
-                            } else {
-                                abortChannelPreemption(poolKey);
-                                ConnectException exception = new ConnectException("HostnameVerifier exception");
-                                future.abort(exception);
-                                throw exception;
-                            }
+                        if (LOGGER.isDebugEnabled())
+                            LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
+                                    Base64.encode(session.getId()), session.isValid(), host);
+                        if (hostnameVerifier.verify(host, session)) {
+                            writeRequest(channel, poolKey);
+                        } else {
+                            abortChannelPreemption(poolKey);
+                            ConnectException exception = new ConnectException("HostnameVerifier exception");
+                            future.abort(exception);
+                            throw exception;
                         }
                     }
-                });
-            } else {
-                writeRequest(f.getChannel(), poolKey);
-            }
-
+                }
+            });
         } else {
-            abortChannelPreemption(poolKey);
-            Throwable cause = f.getCause();
-
-            boolean canRetry = future.canRetry();
-            LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", f.getChannel(), canRetry);
-            if (canRetry
-                    && cause != null
-                    && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
-
-                if (!requestSender.retry(future))
-                    return;
-            }
-
-            LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, f.getChannel());
-
-            boolean printCause = f.getCause() != null && cause.getMessage() != null;
-            ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getUri().toUrl() : future.getUri().toUrl());
-            if (cause != null) {
-                e.initCause(cause);
-            }
-            future.abort(e);
+            writeRequest(channel, poolKey);
         }
+    }
+
+    private void onFutureFailure(Channel channel, Throwable cause) {
+        abortChannelPreemption(poolKey);
+
+        boolean canRetry = future.canRetry();
+        LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
+        if (canRetry
+                && cause != null
+                && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
+
+            if (!requestSender.retry(future))
+                return;
+        }
+
+        LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
+
+        boolean printCause = cause != null && cause.getMessage() != null;
+        ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getUri().toUrl() : future.getUri().toUrl());
+        if (cause != null) {
+            e.initCause(cause);
+        }
+        future.abort(e);
+    }
+
+    public final void operationComplete(ChannelFuture f) throws Exception {
+        Channel channel = f.getChannel();
+        if (f.isSuccess())
+            onFutureSuccess(channel);
+        else
+            onFutureFailure(channel, f.getCause());
     }
 }
