@@ -87,7 +87,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         requestSender.writeRequest(future, channel);
     }
 
-    public void onFutureSuccess(final Channel channel) throws ConnectException {
+    private void onFutureSuccess(final Channel channel) throws ConnectException {
         Channels.setAttribute(channel, future);
         final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
         final SslHandler sslHandler = ChannelManager.getSslHandler(channel.pipeline());
@@ -119,7 +119,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         }
     }
 
-    public void onFutureFailure(Channel channel, Throwable cause) {
+    private void onFutureFailure(Channel channel, Throwable cause) {
 
         abortChannelPreemption(poolKey);
 
