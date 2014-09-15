@@ -127,7 +127,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             Throwable cause = f.getCause();
 
             boolean canRetry = future.canRetry();
-            LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), canRetry);
+            LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", f.getChannel(), canRetry);
             if (canRetry
                     && cause != null
                     && (cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.abortOnDisconnectException(cause))) {
@@ -136,7 +136,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                     return;
             }
 
-            LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
+            LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, f.getChannel());
 
             boolean printCause = f.getCause() != null && cause.getMessage() != null;
             ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getUri().toUrl() : future.getUri().toUrl());
