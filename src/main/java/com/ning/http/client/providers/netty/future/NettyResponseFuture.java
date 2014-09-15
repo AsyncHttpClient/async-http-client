@@ -411,7 +411,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public boolean canRetry() {
-        return maxRetry >= 0 && currentRetry.incrementAndGet() <= maxRetry;
+        return maxRetry > 0 && currentRetry.incrementAndGet() <= maxRetry;
     }
 
     public SocketAddress getChannelRemoteAddress() {
