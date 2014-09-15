@@ -13,6 +13,8 @@
  */
 package com.ning.http.client.providers.netty.request;
 
+import static com.ning.http.util.AsyncHttpProviderUtils.getBaseUrl;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -137,7 +139,8 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
 
         boolean printCause = cause != null && cause.getMessage() != null;
-        ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getUri().toUrl() : future.getUri().toUrl());
+        String printedCause = printCause ? cause.getMessage() : getBaseUrl(future.getUri());
+        ConnectException e = new ConnectException(printedCause);
         if (cause != null) {
             e.initCause(cause);
         }
