@@ -320,6 +320,7 @@ public final class NettyRequestSender {
                 }
             }
 
+            // FIXME what happens to this second write if the first one failed? Should it be done in the ProgressListener?
             if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT)
                     && nettyRequest.getBody() != null)
                 nettyRequest.getBody().write(channel, future, config);
@@ -421,7 +422,7 @@ public final class NettyRequestSender {
             } catch (IOException iox) {
                 future.setState(NettyResponseFuture.STATE.CLOSED);
                 future.abort(iox);
-                LOGGER.error("Remotely Closed, unable to recover", iox);
+                LOGGER.error("Remotely closed, unable to recover", iox);
                 return false;
             }
 

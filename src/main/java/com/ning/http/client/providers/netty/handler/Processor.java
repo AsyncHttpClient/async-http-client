@@ -40,8 +40,8 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel Closed");
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
+    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
     static {
         REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
         CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
@@ -146,6 +146,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
+        // FIXME we can't get a PrematureChannelClosureException as we create the HttpClientCodec without setting failOnMissingResponse to true
         if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
             return;
 

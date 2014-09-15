@@ -50,6 +50,8 @@ public class ProgressListener implements ChannelFutureProgressListener {
 
     private boolean abortOnThrowable(Throwable cause, Channel channel) {
         if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
+            // The write operation failed. If the channel was cached, it means it got asynchronously closed.
+            // Let's retry a second time.
             if (cause instanceof IllegalStateException) {
                 LOGGER.debug(cause.getMessage(), cause);
                 Channels.silentlyCloseChannel(channel);
@@ -67,10 +69,8 @@ public class ProgressListener implements ChannelFutureProgressListener {
     }
     
     public void operationComplete(ChannelFuture cf) {
-        // The write operation failed. If the channel was cached, it means it got asynchronously closed.
-        // Let's retry a second time.
-        if (!abortOnThrowable(cf.getCause(), cf.getChannel())) {
 
+        if (!abortOnThrowable(cf.getCause(), cf.getChannel())) {
             future.touch();
 
             /**
