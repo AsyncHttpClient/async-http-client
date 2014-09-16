@@ -71,9 +71,6 @@ public class Processor extends SimpleChannelUpstreamHandler {
         Channel channel = ctx.getChannel();
         Object attribute = Channels.getAttribute(channel);
 
-        if (attribute == null)
-            LOGGER.debug("ChannelHandlerContext doesn't have any attribute");
-
         if (attribute instanceof Callback) {
             Object message = e.getMessage();
             Callback ac = (Callback) attribute;
@@ -95,8 +92,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             // unhandled message
-            // FIXME improve log
-            LOGGER.trace("Closing an orphan channel {}", channel);
+            LOGGER.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, e.getMessage());
             Channels.silentlyCloseChannel(channel);
         }
     }
