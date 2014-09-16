@@ -70,7 +70,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
-            String requestUrl = request.getURI().toUrl();
+            String requestUrl = request.getUrl();
             Assert.assertEquals(requestUrl, getTargetUrl() + "?q=%20%20x");
             Future<String> responseFuture = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -707,7 +707,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Throwable {
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build();
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().build();
         AsyncHttpClient client = getAsyncHttpClient(cf);
         try {
             final CountDownLatch l = new CountDownLatch(1);

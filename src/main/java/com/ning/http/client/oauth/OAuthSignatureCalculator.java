@@ -22,7 +22,7 @@ import com.ning.http.client.Param;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.SignatureCalculator;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.Base64;
 import com.ning.http.util.StandardCharsets;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -85,7 +85,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
-        String signature = calculateSignature(request.getMethod(), request.getURI(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
+        String signature = calculateSignature(request.getMethod(), request.getUri(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
@@ -93,7 +93,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
-    public String calculateSignature(String method, UriComponents uri, long oauthTimestamp, String nonce,
+    public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)

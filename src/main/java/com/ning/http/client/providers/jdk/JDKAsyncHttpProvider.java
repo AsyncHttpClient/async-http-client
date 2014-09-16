@@ -38,7 +38,7 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
@@ -174,9 +174,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         HttpURLConnection urlConnection = (HttpURLConnection)
-            request.getURI().toURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
+            request.getUri().toJavaNetURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
 
-        if (request.getURI().getScheme().equals("https")) {
+        if (request.getUri().getScheme().equals("https")) {
             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
             SSLContext sslContext = config.getSSLContext();
             if (sslContext == null) {
@@ -221,7 +221,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         public T call() throws Exception {
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                UriComponents uri = request.getURI();
+                Uri uri = request.getUri();
 
                 configure(uri, urlConnection, request);
                 urlConnection.connect();
@@ -255,14 +255,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = urlConnection.getHeaderField("Location");
-                        UriComponents redirUri = UriComponents.create(uri, location);
+                        Uri redirUri = Uri.create(uri, location);
 
                         if (!redirUri.equals(uri)) {
                             RequestBuilder builder = new RequestBuilder(request);
 
                             logger.debug("Redirecting to {}", redirUri);
 
-                            request = builder.setURI(redirUri).build();
+                            request = builder.setUri(redirUri).build();
                             urlConnection = createUrlConnection(request);
                             terminate = false;
                             return call();
@@ -276,11 +276,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
-                    logger.debug("Sending authentication to {}", request.getURI());
+                    logger.debug("Sending authentication to {}", request.getUri());
 
                     Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
-                            .setUri(request.getURI())
+                            .setUri(request.getUri())
                             .setMethodName(request.getMethod())
                             .setUsePreemptiveAuth(true)
                             .build();
@@ -424,7 +424,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             return t;
         }
 
-        private void configure(UriComponents uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
+        private void configure(Uri uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
 
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
@@ -448,7 +448,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
 
 
-            if (config.isCompressionEnabled()) {
+            if (config.isCompressionEnforced()) {
                 urlConnection.setRequestProperty("Accept-Encoding", "gzip");
             }
 

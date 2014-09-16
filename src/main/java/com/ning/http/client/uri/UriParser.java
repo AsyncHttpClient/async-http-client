@@ -13,7 +13,7 @@
  */
 package com.ning.http.client.uri;
 
-final class UriComponentsParser {
+final class UriParser {
 
     public String scheme;
     public String host;
@@ -75,7 +75,7 @@ final class UriComponentsParser {
         }
     }
 
-    private boolean overrideWithContext(UriComponents context, String originalUrl) {
+    private boolean overrideWithContext(Uri context, String originalUrl) {
 
         boolean isRelative = false;
 
@@ -106,7 +106,7 @@ final class UriComponentsParser {
         }
     }
 
-    private void inheritContextQuery(UriComponents context, boolean isRelative) {
+    private void inheritContextQuery(Uri context, boolean isRelative) {
         // see RFC2396 5.2.2: query and fragment inheritance
         if (isRelative && start == end) {
             query = context.getQuery();
@@ -315,7 +315,7 @@ final class UriComponentsParser {
             path = "";
     }
 
-    public void parse(UriComponents context, final String originalUrl) {
+    public void parse(Uri context, final String originalUrl) {
 
         if (originalUrl == null)
             throw new NullPointerException("originalUrl");

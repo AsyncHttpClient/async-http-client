@@ -23,19 +23,19 @@ public interface ChannelPool {
     /**
      * Add a connection to the pool
      *
-     * @param poolKey        a key used to retrieve the cached connection
+     * @param partitionId        a key used to retrieve the cached connection
      * @param connection an I/O connection
      * @return true if added.
      */
-    boolean offer(Channel connection, String poolKey);
+    boolean offer(Channel connection, String partitionId);
 
     /**
-     * Remove the connection associated with the uri.
+     * Get a connection from a partition
      *
-     * @param uri the uri used when invoking addConnection
-     * @return the connection associated with the uri
+     * @param partitionId the id of the partition used when invoking offer
+     * @return the connection associated with the partitionId
      */
-    Channel poll(String uri);
+    Channel poll(String partitionId);
 
     /**
      * Remove all connections from the cache. A connection might have been associated with several uri.
@@ -57,4 +57,18 @@ public interface ChannelPool {
      * Destroy all connections that has been cached by this instance.
      */
     void destroy();
+
+    /**
+     * Flush a partition
+     * 
+     * @param partitionId
+     */
+    void flushPartition(String partitionId);
+
+    /**
+     * Flush partitions based on a selector
+     * 
+     * @param selector
+     */
+    void flushPartitions(ChannelPoolPartitionSelector selector);
 }

@@ -20,7 +20,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.resumable.ResumableIOExceptionFilter;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import javax.net.ssl.SSLContext;
 
@@ -276,7 +276,7 @@ public class SimpleAsyncHttpClient {
         }
 
         Request request = rb.build();
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getURI(), listener);
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUri(), listener);
 
         if (resumeEnabled && request.getMethod().equals("GET") &&
                 bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
@@ -518,8 +518,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setCompressionEnabled(boolean compressionEnabled) {
-            configBuilder.setCompressionEnabled(compressionEnabled);
+        public Builder setCompressionEnforced(boolean compressionEnabled) {
+            configBuilder.setCompressionEnforced(compressionEnabled);
             return this;
         }
 
@@ -710,7 +710,7 @@ public class SimpleAsyncHttpClient {
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
-        private final UriComponents uri;
+        private final Uri uri;
         private final SimpleAHCTransferListener listener;
 
         private boolean accumulateBody = false;
@@ -718,7 +718,7 @@ public class SimpleAsyncHttpClient {
         private int amount = 0;
         private long total = -1;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, UriComponents uri, SimpleAHCTransferListener listener) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, Uri uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
@@ -837,7 +837,7 @@ public class SimpleAsyncHttpClient {
             }
         }
 
-        private void fireSent(UriComponents uri, long amount, long current, long total) {
+        private void fireSent(Uri uri, long amount, long current, long total) {
             if (listener != null) {
                 listener.onBytesSent(uri, amount, current, total);
             }

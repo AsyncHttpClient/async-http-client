@@ -13,6 +13,7 @@
  */
 package com.ning.http.client.providers.netty.request;
 
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.Realm;
+import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
 
@@ -46,53 +48,44 @@ public class ProgressListener implements ChannelFutureProgressListener {
         this.notifyHeaders = notifyHeaders;
     }
 
-    public void operationComplete(ChannelFuture cf) {
-        // The write operation failed. If the channel was cached, it means it got asynchronously closed.
-        // Let's retry a second time.
-        Throwable cause = cf.getCause();
+    private boolean abortOnThrowable(Throwable cause, Channel channel) {
         if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
-
+            // The write operation failed. If the channel was cached, it means it got asynchronously closed.
+            // Let's retry a second time.
             if (cause instanceof IllegalStateException) {
                 LOGGER.debug(cause.getMessage(), cause);
-                try {
-                    cf.getChannel().close();
-                } catch (RuntimeException ex) {
-                    LOGGER.debug(ex.getMessage(), ex);
-                }
-                return;
-            }
+                Channels.silentlyCloseChannel(channel);
 
-            if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
+            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
+                LOGGER.debug(cause == null ? "" : cause.getMessage(), cause);
+                Channels.silentlyCloseChannel(channel);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
-                }
-
-                try {
-                    cf.getChannel().close();
-                } catch (RuntimeException ex) {
-                    LOGGER.debug(ex.getMessage(), ex);
-                }
-                return;
             } else {
                 future.abort(cause);
             }
-            return;
+            return true;
         }
-        future.touch();
+        return false;
+    }
+    
+    public void operationComplete(ChannelFuture cf) {
 
-        /**
-         * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
-         * causing unpredictable behavior.
-         */
-        Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : config.getRealm();
-        boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
+        if (!abortOnThrowable(cf.getCause(), cf.getChannel())) {
+            future.touch();
 
-        if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
-            if (notifyHeaders) {
-                ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
-            } else {
-                ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
+            /**
+             * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+             * causing unpredictable behavior.
+             */
+            Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : config.getRealm();
+            boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
+
+            if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
+                if (notifyHeaders) {
+                    ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
+                } else {
+                    ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
+                }
             }
         }
     }

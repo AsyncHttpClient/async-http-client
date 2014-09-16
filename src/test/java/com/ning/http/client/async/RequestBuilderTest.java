@@ -72,7 +72,7 @@ public class RequestBuilderTest {
             }
             String expValue = sb.toString();
             Request request = builder.build();
-            assertEquals(request.getURI().toUrl(), "http://example.com/?name=" + expValue);
+            assertEquals(request.getUrl(), "http://example.com/?name=" + expValue);
         }
     }
 
@@ -85,7 +85,7 @@ public class RequestBuilderTest {
 
         Request request2 = new RequestBuilder(request).build();
 
-        assertEquals(request2.getURI(), request.getURI());
+        assertEquals(request2.getUri(), request.getUri());
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -95,7 +95,7 @@ public class RequestBuilderTest {
                 .addQueryParam("param2", "value2")
                 .build();
 
-        assertEquals(request.getURI().toUrl(), "http://foo.com/?param1=value1&param2=value2");
+        assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
         List<Param> params = request.getQueryParams();
         assertEquals(params.size(), 2);
         assertEquals(params.get(0), new Param("param1", "value1"));
@@ -106,14 +106,14 @@ public class RequestBuilderTest {
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");
-        assertEquals(req.getURI().toUrl(), "http://foo.com");
+        assertEquals(req.getUrl(), "http://foo.com");
     }
 
     @Test(groups = {"standalone", "default_provider"})
     public void testPercentageEncodedUserInfo() {
         final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com").build();
         assertEquals(req.getMethod(), "GET");
-        assertEquals(req.getURI().toUrl(), "http://hello:wor%20ld@foo.com");
+        assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -130,15 +130,15 @@ public class RequestBuilderTest {
                 .addQueryParam("a", "1?&")
                 .addQueryParam("b", "+ =");
         Request request = rb.build();
-        assertEquals(request.getURI().toUrl(), "http://example.com/path?a=1%3F%26&b=%2B%20%3D");
+        assertEquals(request.getUrl(), "http://example.com/path?a=1%3F%26&b=%2B%20%3D");
     }
-    
+
     @Test(groups = {"standalone", "default_provider"})
     public void testRawUrlQuery() throws UnsupportedEncodingException, URISyntaxException {
         String preEncodedUrl = "http://example.com/space%20mirror.php?%3Bteile";
         RequestBuilder rb = new RequestBuilder("GET", true).setUrl(preEncodedUrl);
         Request request = rb.build();
-        assertEquals(request.getURI().toUrl(), preEncodedUrl);
-        assertEquals(request.getURI().toURI().toString(), preEncodedUrl);
+        assertEquals(request.getUrl(), preEncodedUrl);
+        assertEquals(request.getUri().toJavaNetURI().toString(), preEncodedUrl);
     }
 }

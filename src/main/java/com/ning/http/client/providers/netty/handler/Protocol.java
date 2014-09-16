@@ -46,7 +46,7 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -108,9 +108,9 @@ public abstract class Protocol {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
-                UriComponents uri = UriComponents.create(future.getURI(), location);
+                Uri uri = Uri.create(future.getUri(), location);
 
-                if (!uri.equals(future.getURI())) {
+                if (!uri.equals(future.getUri())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
 
                     if (!config.isRemoveQueryParamOnRedirect())
@@ -123,11 +123,11 @@ public abstract class Protocol {
 
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
-                    final String initialPoolKey = channelManager.getPoolKey(future);
+                    final String initialPoolKey = channelManager.getPartitionId(future);
 
-                    future.setURI(uri);
-                    String newUrl = uri.toString();
-                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
+                    future.setUri(uri);
+                    String newUrl = uri.toUrl();
+                    if (request.getUri().getScheme().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
 

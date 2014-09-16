@@ -78,7 +78,7 @@ import com.ning.http.client.multipart.FilePart;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.multipart.StringPart;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.StandardCharsets;
@@ -250,7 +250,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         String methodName = request.getMethod();
         HttpMethodBase method = null;
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
-            EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getURI().toUrl()) : new PutMethod(request.getURI().toUrl());
+            EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());
 
             String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET.name() : request.getBodyEncoding();
 
@@ -340,13 +340,13 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             }
             method = post;
         } else if (methodName.equalsIgnoreCase("DELETE")) {
-            method = new DeleteMethod(request.getURI().toUrl());
+            method = new DeleteMethod(request.getUrl());
         } else if (methodName.equalsIgnoreCase("HEAD")) {
-            method = new HeadMethod(request.getURI().toUrl());
+            method = new HeadMethod(request.getUrl());
         } else if (methodName.equalsIgnoreCase("GET")) {
-            method = new GetMethod(request.getURI().toUrl());
+            method = new GetMethod(request.getUrl());
         } else if (methodName.equalsIgnoreCase("OPTIONS")) {
-            method = new OptionsMethod(request.getURI().toUrl());
+            method = new OptionsMethod(request.getUrl());
         } else {
             throw new IllegalStateException(String.format("Invalid Method", methodName));
         }
@@ -387,21 +387,19 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         }
 
-        if (config.isCompressionEnabled()) {
-            Header acceptableEncodingHeader = method.getRequestHeader("Accept-Encoding");
-            if (acceptableEncodingHeader != null) {
-                String acceptableEncodings = acceptableEncodingHeader.getValue();
-                if (acceptableEncodings.indexOf("gzip") == -1) {
-                    StringBuilder buf = new StringBuilder(acceptableEncodings);
-                    if (buf.length() > 1) {
-                        buf.append(",");
-                    }
-                    buf.append("gzip");
-                    method.setRequestHeader("Accept-Encoding", buf.toString());
+        Header acceptableEncodingHeader = method.getRequestHeader("Accept-Encoding");
+        if (acceptableEncodingHeader != null) {
+            String acceptableEncodings = acceptableEncodingHeader.getValue();
+            if (acceptableEncodings.indexOf("gzip") == -1) {
+                StringBuilder buf = new StringBuilder(acceptableEncodings);
+                if (buf.length() > 1) {
+                    buf.append(",");
                 }
-            } else {
-                method.setRequestHeader("Accept-Encoding", "gzip");
+                buf.append("gzip");
+                method.setRequestHeader("Accept-Encoding", buf.toString());
             }
+        } else if (config.isCompressionEnforced()) {
+            method.setRequestHeader("Accept-Encoding", "gzip");
         }
 
         if (request.getVirtualHost() != null) {
@@ -452,7 +450,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             terminate = true;
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                UriComponents uri = request.getURI();
+                Uri uri = request.getUri();
 
                 int delay = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
                 if (delay != -1) {
@@ -500,14 +498,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = method.getResponseHeader("Location").getValue();
-                        UriComponents rediUri = UriComponents.create(uri, location);
+                        Uri rediUri = Uri.create(uri, location);
 
                         if (!rediUri.equals(uri)) {
                             RequestBuilder builder = new RequestBuilder(request);
 
                             logger.debug("Redirecting to {}", rediUri);
 
-                            request = builder.setURI(rediUri).build();
+                            request = builder.setUri(rediUri).build();
                             method = createMethod(httpClient, request);
                             terminate = false;
                             return call();

@@ -51,7 +51,7 @@ import com.ning.http.client.providers.netty.request.body.NettyFileBody;
 import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
 import com.ning.http.client.providers.netty.request.body.NettyMultipartBody;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.IOException;
@@ -72,12 +72,12 @@ public final class NettyRequestFactory {
         this.nettyConfig = nettyConfig;
     }
 
-    private String requestUri(UriComponents uri, ProxyServer proxyServer, HttpMethod method) {
+    private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
             return getAuthority(uri);
 
         else if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
-            return uri.toString();
+            return uri.toUrl();
 
         else {
             String path = getNonEmptyPath(uri);
@@ -88,12 +88,12 @@ public final class NettyRequestFactory {
         }
     }
 
-    private String hostHeader(Request request, UriComponents uri) {
+    private String hostHeader(Request request, Uri uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
         return request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
     }
 
-    private String authorizationHeader(Request request, UriComponents uri, ProxyServer proxyServer, Realm realm) throws IOException {
+    private String authorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
 
         String authorizationHeader = null;
 
@@ -241,7 +241,7 @@ public final class NettyRequestFactory {
         return nettyBody;
     }
 
-    public NettyRequest newNettyRequest(Request request, UriComponents uri, boolean forceConnect, ProxyServer proxyServer)
+    public NettyRequest newNettyRequest(Request request, Uri uri, boolean forceConnect, ProxyServer proxyServer)
             throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
@@ -275,12 +275,8 @@ public final class NettyRequestFactory {
             if (isNonEmpty(request.getCookies()))
                 headers.set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
 
-            if (config.isCompressionEnabled()) {
-                if (!headers.contains(HttpHeaders.Names.ACCEPT_ENCODING))
-                    headers.set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
-            } else {
-                headers.remove(HttpHeaders.Names.ACCEPT_ENCODING);
-            }
+            if (config.isCompressionEnforced() && !headers.contains(HttpHeaders.Names.ACCEPT_ENCODING))
+                headers.set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
         }
 
         if (body != null) {

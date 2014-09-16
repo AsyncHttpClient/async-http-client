@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
+import com.ning.http.client.ConnectionPoolPartitioning;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.ProxyServer;
@@ -51,7 +51,7 @@ import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.timeout.ReadTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 
 import java.io.IOException;
@@ -90,7 +90,7 @@ public final class NettyRequestSender {
         if (closed.get())
             throw new IOException("Closed");
 
-        UriComponents uri = request.getURI();
+        Uri uri = request.getUri();
 
         // FIXME really useful? Why not do this check when building the request?
         if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler))
@@ -123,13 +123,13 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxyServer,//
             boolean useProxy,//
             boolean forceConnect) throws IOException {
         NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
 
-        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
+        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
 
         if (Channels.isChannelValid(channel))
             return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
@@ -148,12 +148,12 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxyServer) throws IOException {
 
         NettyResponseFuture<T> newFuture = null;
         for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer, asyncHandler);
+            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
             if (Channels.isChannelValid(channel))
                 if (newFuture == null)
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
@@ -171,7 +171,7 @@ public final class NettyRequestSender {
     }
 
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler,
-            NettyResponseFuture<T> originalFuture, UriComponents uri, ProxyServer proxy, boolean forceConnect) throws IOException {
+            NettyResponseFuture<T> originalFuture, Uri uri, ProxyServer proxy, boolean forceConnect) throws IOException {
 
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
 
@@ -184,7 +184,7 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, UriComponents uri, ConnectionPoolKeyStrategy poolKeyGen,
+    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolPartitioning poolKeyGen,
             ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
@@ -193,7 +193,7 @@ public final class NettyRequestSender {
             return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, asyncHandler);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, UriComponents uri, ProxyServer proxy,
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, Uri uri, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
@@ -228,7 +228,7 @@ public final class NettyRequestSender {
 
     private <T> ListenableFuture<T> sendRequestWithNewChannel(//
             Request request,//
-            UriComponents uri,//
+            Uri uri,//
             ProxyServer proxy,//
             boolean useProxy,//
             NettyResponseFuture<T> future,//
@@ -240,7 +240,7 @@ public final class NettyRequestSender {
         // Do not throw an exception when we need an extra connection for a
         // redirect
         // FIXME why? This violate the max connection per host handling, right?
-        ClientBootstrap bootstrap = channelManager.getBootstrap(request.getURI().getScheme(), useProxy, useSSl);
+        ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy, useSSl);
 
         boolean channelPreempted = false;
         String poolKey = null;
@@ -251,7 +251,7 @@ public final class NettyRequestSender {
             // only compute when maxConnectionPerHost is enabled
             // FIXME clean up
             if (config.getMaxConnectionsPerHost() > 0)
-                poolKey = channelManager.getPoolKey(future);
+                poolKey = channelManager.getPartitionId(future);
 
             channelPreempted = preemptChannel(asyncHandler, poolKey);
         }
@@ -273,7 +273,7 @@ public final class NettyRequestSender {
         return future;
     }
 
-    private <T> NettyResponseFuture<T> newNettyResponseFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler,
+    private <T> NettyResponseFuture<T> newNettyResponseFuture(Uri uri, Request request, AsyncHandler<T> asyncHandler,
             NettyRequest nettyRequest, ProxyServer proxyServer) {
 
         NettyResponseFuture<T> future = new NettyResponseFuture<T>(//
@@ -282,7 +282,7 @@ public final class NettyRequestSender {
                 asyncHandler,//
                 nettyRequest,//
                 config.getMaxRequestRetry(),//
-                request.getConnectionPoolKeyStrategy(),//
+                request.getConnectionPoolPartitioning(),//
                 proxyServer);
 
         String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
@@ -292,17 +292,18 @@ public final class NettyRequestSender {
     }
 
     public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
+        
+        NettyRequest nettyRequest = future.getNettyRequest();
+        HttpRequest httpRequest = nettyRequest.getHttpRequest();
+        AsyncHandler<T> handler = future.getAsyncHandler();
+        
+        // if the channel is dead because it was pooled and the remote
+        // server decided to close it,
+        // we just let it go and the channelInactive do its work
+        if (!Channels.isChannelValid(channel))
+            return;
+        
         try {
-            // if the channel is dead because it was pooled and the remote
-            // server decided to close it,
-            // we just let it go and the channelInactive do its work
-            if (!Channels.isChannelValid(channel))
-                return;
-
-            NettyRequest nettyRequest = future.getNettyRequest();
-            HttpRequest httpRequest = nettyRequest.getHttpRequest();
-            AsyncHandler<T> handler = future.getAsyncHandler();
-
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
@@ -314,31 +315,27 @@ public final class NettyRequestSender {
                 } catch (Throwable cause) {
                     // FIXME why not notify?
                     LOGGER.debug(cause.getMessage(), cause);
-                    try {
-                        channel.close();
-                    } catch (RuntimeException ex) {
-                        LOGGER.debug(ex.getMessage(), ex);
-                    }
+                    // FIXME what about the attribute? how could this fail?
+                    Channels.silentlyCloseChannel(channel);
                     return;
                 }
             }
 
+            // FIXME what happens to this second write if the first one failed? Should it be done in the ProgressListener?
             if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT)
                     && nettyRequest.getBody() != null)
                 nettyRequest.getBody().write(channel, future, config);
 
-        } catch (Throwable ioe) {
-            try {
-                channel.close();
-            } catch (RuntimeException ex) {
-                LOGGER.debug(ex.getMessage(), ex);
-            }
-        }
+            // don't bother scheduling timeouts if channel became invalid
+            if (Channels.isChannelValid(channel))
+                scheduleTimeouts(future);
 
-        scheduleTimeouts(future);
+        } catch (Throwable ioe) {
+            Channels.silentlyCloseChannel(channel);
+        }
     }
 
-    private InetSocketAddress remoteAddress(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy) {
+    private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) {
         if (request.getInetAddress() != null)
             return new InetSocketAddress(request.getInetAddress(), getDefaultPort(uri));
 
@@ -349,7 +346,7 @@ public final class NettyRequestSender {
             return new InetSocketAddress(proxy.getHost(), proxy.getPort());
     }
 
-    private ChannelFuture connect(Request request, UriComponents uri, ProxyServer proxy, boolean useProxy, ClientBootstrap bootstrap) {
+    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, ClientBootstrap bootstrap) {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
 
         if (request.getLocalAddress() != null)
@@ -394,6 +391,7 @@ public final class NettyRequestSender {
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
+
         if (channel != null)
             channelManager.closeChannel(channel);
 
@@ -426,7 +424,7 @@ public final class NettyRequestSender {
             } catch (IOException iox) {
                 future.setState(NettyResponseFuture.STATE.CLOSED);
                 future.abort(iox);
-                LOGGER.error("Remotely Closed, unable to recover", iox);
+                LOGGER.error("Remotely closed, unable to recover", iox);
                 return false;
             }
 
@@ -470,12 +468,12 @@ public final class NettyRequestSender {
         return request.getMethod().equals(HttpMethod.GET.getName()) && asyncHandler instanceof WebSocketUpgradeHandler;
     }
 
-    public Channel pollAndVerifyCachedChannel(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy, AsyncHandler<?> asyncHandler) {
+    public Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
  
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onPoolConnection();
 
-        final Channel channel = channelManager.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
+        final Channel channel = channelManager.poll(uri, proxy, connectionPoolPartitioning);
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);

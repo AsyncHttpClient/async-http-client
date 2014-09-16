@@ -16,7 +16,7 @@ package com.ning.http.util;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.client.ProxyServerSelector;
 import com.ning.http.client.Request;
 
@@ -85,7 +85,7 @@ public final class ProxyUtils {
         if (proxyServer == null) {
             ProxyServerSelector selector = config.getProxyServerSelector();
             if (selector != null) {
-                proxyServer = selector.select(request.getURI());
+                proxyServer = selector.select(request.getUri());
             }
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
@@ -95,7 +95,7 @@ public final class ProxyUtils {
      * @see #avoidProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, request.getURI().getHost());
+        return avoidProxy(proxyServer, request.getUri().getHost());
     }
 
     private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
@@ -143,7 +143,6 @@ public final class ProxyUtils {
 
     /**
      * Creates a proxy server instance from the given properties.
-     * <p/>
      * Currently the default http.* proxy properties are supported as well as properties specific for AHC.
      *
      * @param properties the properties to evaluate. Must not be null.
@@ -200,9 +199,9 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
         return new ProxyServerSelector() {
-            public ProxyServer select(UriComponents uri) {
+            public ProxyServer select(Uri uri) {
                 try {
-                    URI javaUri = uri.toURI();
+                    URI javaUri = uri.toJavaNetURI();
 
                     List<Proxy> proxies = proxySelector.select(javaUri);
                     if (proxies != null) {
@@ -242,7 +241,7 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
         return new ProxyServerSelector() {
-            public ProxyServer select(UriComponents uri) {
+            public ProxyServer select(Uri uri) {
                 return proxyServer;
             }
         };

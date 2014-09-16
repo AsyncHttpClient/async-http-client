@@ -22,7 +22,7 @@ import org.w3c.dom.Document;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 /**
  * Customized {@link Response} which add support for getting the response's body as an XML document (@link WebDavResponse#getBodyAsXML}
@@ -74,7 +74,7 @@ public class WebDavResponse implements Response {
         return response.getResponseBody(charset);
     }
 
-    public UriComponents getUri() {
+    public Uri getUri() {
         return response.getUri();
     }
 

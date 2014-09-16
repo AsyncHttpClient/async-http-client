@@ -19,6 +19,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.UpgradeHandler;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +33,10 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private final AtomicBoolean ok = new AtomicBoolean(false);
     private boolean onSuccessCalled;
     private int status;
+
+    protected WebSocketUpgradeHandler() {
+        this.listeners = new LinkedList<>();
+    }
 
     protected WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;

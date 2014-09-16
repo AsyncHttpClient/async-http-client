@@ -17,7 +17,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -30,7 +30,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpURLConnection urlConnection;
 
-    public ResponseStatus(UriComponents uri, AsyncHttpClientConfig config, HttpURLConnection urlConnection) {
+    public ResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpURLConnection urlConnection) {
         super(uri, config);
         this.urlConnection = urlConnection;
     }

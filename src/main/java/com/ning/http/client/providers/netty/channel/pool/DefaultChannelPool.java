@@ -16,6 +16,7 @@ package com.ning.http.client.providers.netty.channel.pool;
 import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
@@ -29,6 +30,7 @@ import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +43,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> poolsPerKey = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<Integer, ChannelCreation>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
@@ -129,10 +131,10 @@ public final class DefaultChannelPool implements ChannelPool {
             return !maxIdleTimeDisabled && now - idleChannel.start >= maxIdleTime;
         }
 
-        private List<IdleChannel> expiredChannels(ConcurrentLinkedQueue<IdleChannel> pool, long now) {
+        private List<IdleChannel> expiredChannels(ConcurrentLinkedQueue<IdleChannel> partition, long now) {
             // lazy create
             List<IdleChannel> idleTimeoutChannels = null;
-            for (IdleChannel idleChannel : pool) {
+            for (IdleChannel idleChannel : partition) {
                 if (isTTLExpired(idleChannel.channel, now) || isIdleTimeoutExpired(idleChannel, now)
                         || !Channels.isChannelValid(idleChannel.channel)) {
                     LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
@@ -186,27 +188,27 @@ public final class DefaultChannelPool implements ChannelPool {
 
             try {
                 if (LOGGER.isDebugEnabled())
-                    for (String key : poolsPerKey.keySet()) {
-                        LOGGER.debug("Entry count for : {} : {}", key, poolsPerKey.get(key).size());
+                    for (String key : partitions.keySet()) {
+                        LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
                     }
 
                 long start = millisTime();
                 int closedCount = 0;
                 int totalCount = 0;
 
-                for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
+                for (ConcurrentLinkedQueue<IdleChannel> partition : partitions.values()) {
 
                     // store in intermediate unsynchronized lists to minimize the impact on the ConcurrentLinkedQueue
                     if (LOGGER.isDebugEnabled())
-                        totalCount += pool.size();
+                        totalCount += partition.size();
 
-                    List<IdleChannel> closedChannels = closeChannels(expiredChannels(pool, start));
+                    List<IdleChannel> closedChannels = closeChannels(expiredChannels(partition, start));
 
                     if (!closedChannels.isEmpty()) {
                         for (IdleChannel closedChannel : closedChannels)
                             channelId2Creation.remove(closedChannel.channel.getId());
 
-                        pool.removeAll(closedChannels);
+                        partition.removeAll(closedChannels);
                         closedCount += closedChannels.size();
                     }
                 }
@@ -223,20 +225,20 @@ public final class DefaultChannelPool implements ChannelPool {
         }
     }
 
-    private ConcurrentLinkedQueue<IdleChannel> getPoolForKey(String key) {
-        ConcurrentLinkedQueue<IdleChannel> pool = poolsPerKey.get(key);
-        if (pool == null) {
-            // lazy init pool
-            ConcurrentLinkedQueue<IdleChannel> newPool = new ConcurrentLinkedQueue<IdleChannel>();
-            pool = poolsPerKey.putIfAbsent(key, newPool);
-            if (pool == null)
-                pool = newPool;
+    private ConcurrentLinkedQueue<IdleChannel> getPartition(String partitionId) {
+        ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionId);
+        if (partition == null) {
+            // lazy init partition
+            ConcurrentLinkedQueue<IdleChannel> newPartition = new ConcurrentLinkedQueue<IdleChannel>();
+            partition = partitions.putIfAbsent(partitionId, newPartition);
+            if (partition == null)
+                partition = newPartition;
         }
-        return pool;
+        return partition;
     }
     
-    public boolean offer(Channel channel, String poolKey) {
-        if (isClosed.get() || (!sslConnectionPoolEnabled && poolKey.startsWith("https")))
+    public boolean offer(Channel channel, String partition) {
+        if (isClosed.get() || (!sslConnectionPoolEnabled && channel.getPipeline().get(SslHandler.class) != null))
             return false;
 
         long now = millisTime();
@@ -244,22 +246,20 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isTTLExpired(channel, now))
             return false;
 
-        boolean added = getPoolForKey(poolKey).add(new IdleChannel(channel, now));
+        boolean added = getPartition(partition).add(new IdleChannel(channel, now));
         if (added)
-            channelId2Creation.putIfAbsent(channel.getId(), new ChannelCreation(now, poolKey));
+            channelId2Creation.putIfAbsent(channel.getId(), new ChannelCreation(now, partition));
 
         return added;
     }
 
-    public Channel poll(String poolKey) {
-        if (!sslConnectionPoolEnabled && poolKey.startsWith("https"))
-            return null;
+    public Channel poll(String partitionId) {
 
         IdleChannel idleChannel = null;
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = poolsPerKey.get(poolKey);
-        if (pooledConnectionForKey != null) {
+        ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionId);
+        if (partition != null) {
             while (idleChannel == null) {
-                idleChannel = pooledConnectionForKey.poll();
+                idleChannel = partition.poll();
 
                 if (idleChannel == null)
                     // pool is empty
@@ -276,7 +276,7 @@ public final class DefaultChannelPool implements ChannelPool {
     @Override
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = channelId2Creation.remove(channel.getId());
-        return !isClosed.get() && creation != null && poolsPerKey.get(creation.poolKey).remove(channel);
+        return !isClosed.get() && creation != null && partitions.get(creation.poolKey).remove(channel);
     }
 
     @Override
@@ -289,23 +289,42 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isClosed.getAndSet(true))
             return;
 
-        for (ConcurrentLinkedQueue<IdleChannel> pool : poolsPerKey.values()) {
-            for (IdleChannel idleChannel : pool)
+        for (ConcurrentLinkedQueue<IdleChannel> partition : partitions.values()) {
+            for (IdleChannel idleChannel : partition)
                 close(idleChannel.channel);
         }
 
-        poolsPerKey.clear();
+        partitions.clear();
         channelId2Creation.clear();
     }
 
     private void close(Channel channel) {
-        try {
-            // FIXME pity to have to do this here
-            Channels.setDiscard(channel);
-            channelId2Creation.remove(channel.getId());
-            channel.close();
-        } catch (Throwable t) {
-            // noop
+        // FIXME pity to have to do this here
+        Channels.setDiscard(channel);
+        channelId2Creation.remove(channel.getId());
+        Channels.silentlyCloseChannel(channel);
+    }
+
+    private void flushPartition(String partitionId, ConcurrentLinkedQueue<IdleChannel> partition) {
+        if (partition != null) {
+            partitions.remove(partitionId);
+            for (IdleChannel idleChannel : partition)
+                close(idleChannel.channel);
+        }
+    }
+    
+    @Override
+    public void flushPartition(String partitionId) {
+        flushPartition(partitionId, partitions.get(partitionId));
+    }
+    
+    @Override
+    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+
+        for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> partitionsEntry : partitions.entrySet()) {
+            String partitionId = partitionsEntry.getKey();
+            if (selector.select(partitionId))
+                flushPartition(partitionId, partitionsEntry.getValue());
         }
     }
 }

@@ -14,10 +14,14 @@
 package com.ning.http.client.providers.netty.channel;
 
 import org.jboss.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.providers.netty.DiscardEvent;
 
 public final class Channels {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private Channels() {
     }
@@ -35,6 +39,15 @@ public final class Channels {
     }
 
     public static boolean isChannelValid(Channel channel) {
-        return channel != null && channel.isOpen() && channel.isConnected();
+        return channel != null && channel.isConnected();
+    }
+
+    public static void silentlyCloseChannel(Channel channel) {
+        try {
+            if (channel != null && channel.isOpen())
+                channel.close();
+        } catch (Throwable t) {
+            LOGGER.debug("Failed to close channel", t);
+        }
     }
 }

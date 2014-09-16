@@ -18,7 +18,7 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 import com.ning.http.util.StandardCharsets;
 
 import java.io.UnsupportedEncodingException;
@@ -43,7 +43,7 @@ public class Realm {
     private final String qop;
     private final String nc;
     private final String cnonce;
-    private final UriComponents uri;
+    private final Uri uri;
     private final String methodName;
     private final boolean usePreemptiveAuth;
     private final String enc;
@@ -74,7 +74,7 @@ public class Realm {
                   String qop,
                   String nc,
                   String cnonce,
-                  UriComponents uri,
+                  Uri uri,
                   String method,
                   boolean usePreemptiveAuth,
                   String ntlmDomain,
@@ -158,7 +158,7 @@ public class Realm {
         return cnonce;
     }
 
-    public UriComponents getUri() {
+    public Uri getUri() {
         return uri;
     }
 
@@ -294,7 +294,7 @@ public class Realm {
         private String qop = "auth";
         private String nc = "00000001";
         private String cnonce = "";
-        private UriComponents uri;
+        private Uri uri;
         private String methodName = "GET";
         private boolean usePreemptive = false;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
@@ -414,11 +414,11 @@ public class Realm {
             return this;
         }
 
-        public UriComponents getUri() {
+        public Uri getUri() {
             return uri;
         }
 
-        public RealmBuilder setUri(UriComponents uri) {
+        public RealmBuilder setUri(Uri uri) {
             this.uri = uri;
             return this;
         }

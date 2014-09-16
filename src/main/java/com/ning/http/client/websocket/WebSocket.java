@@ -52,7 +52,7 @@ public interface WebSocket extends Closeable {
      * @param message a text message
      * @return this.
      */
-    WebSocket sendTextMessage(String message);
+    WebSocket sendMessage(String message);
 
     /**
      * Allows streaming of multiple text fragments.
@@ -61,7 +61,7 @@ public interface WebSocket extends Closeable {
      * @param last     flag indicating whether or not this is the last fragment.
      * @return this.
      */
-    WebSocket streamText(String fragment, boolean last);
+    WebSocket stream(String fragment, boolean last);
 
     /**
      * Send a <code>ping</ping> with an optional payload

@@ -15,7 +15,7 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.net.HttpURLConnection;
 import java.util.List;
@@ -28,7 +28,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ResponseHeaders(UriComponents uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
+    public ResponseHeaders(Uri uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
         headers = computerHeaders(urlConnection);
     }
 

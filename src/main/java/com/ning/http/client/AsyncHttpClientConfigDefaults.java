@@ -61,8 +61,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "maxRedirects", 5);
     }
 
-    public static boolean defaultCompressionEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
+    public static boolean defaultCompressionEnforced() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "compressionEnforced");
     }
 
     public static String defaultUserAgent() {

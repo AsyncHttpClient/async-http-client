@@ -19,7 +19,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Param;
 import com.ning.http.client.Request;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class AsyncHttpProviderUtils {
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
 
-    public static final void validateSupportedScheme(UriComponents uri) {
+    public static final void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();
         if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
                 && !scheme.equalsIgnoreCase("wss")) {
@@ -48,11 +48,11 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    public final static String getBaseUrl(UriComponents uri) {
+    public final static String getBaseUrl(Uri uri) {
         return uri.getScheme() + "://" + getAuthority(uri);
     }
 
-    public final static String getAuthority(UriComponents uri) {
+    public final static String getAuthority(Uri uri) {
         int port = uri.getPort() != -1 ? uri.getPort() : getDefaultPort(uri);
         return uri.getHost() + ":" + port;
     }
@@ -87,7 +87,7 @@ public class AsyncHttpProviderUtils {
         return bodyParts.isEmpty() ? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
 
-    public final static int getDefaultPort(UriComponents uri) {
+    public final static int getDefaultPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
             port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
@@ -99,7 +99,7 @@ public class AsyncHttpProviderUtils {
      * 
      * @return the raw path or "/" if it's null
      */
-    public final static String getNonEmptyPath(UriComponents uri) {
+    public final static String getNonEmptyPath(Uri uri) {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 

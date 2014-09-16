@@ -21,14 +21,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
+import com.ning.http.client.ConnectionPoolPartitioning;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.request.NettyRequest;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
-import com.ning.http.client.uri.UriComponents;
+import com.ning.http.client.uri.Uri;
 
 import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
@@ -58,7 +58,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private volatile boolean requestTimeoutReached;
     private volatile boolean idleConnectionTimeoutReached;
     private final long start = millisTime();
-    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    private final ConnectionPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
     private final int maxRetry;
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -81,7 +81,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     // state mutated only inside the event loop
     private Channel channel;
-    private UriComponents uri;
+    private Uri uri;
     private boolean keepAlive = true;
     private Request request;
     private NettyRequest nettyRequest;
@@ -93,19 +93,19 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
-    public NettyResponseFuture(UriComponents uri,//
+    public NettyResponseFuture(Uri uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
             int maxRetry,//
-            ConnectionPoolKeyStrategy connectionPoolKeyStrategy,//
+            ConnectionPoolPartitioning connectionPoolPartitioning,//
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+        this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
     }
@@ -131,12 +131,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (isCancelled.getAndSet(true))
             return false;
 
-        try {
-            Channels.setDiscard(channel);
-            channel.close();
-        } catch (Throwable t) {
-            // Ignore
-        }
+        Channels.setDiscard(channel);
+        Channels.silentlyCloseChannel(channel);
+
         if (!onThrowableCalled.getAndSet(true)) {
             try {
                 asyncHandler.onThrowable(new CancellationException());
@@ -248,16 +245,16 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**                 INTERNAL                **/
     /*********************************************/
 
-    public UriComponents getURI() {
+    public Uri getUri() {
         return uri;
     }
 
-    public void setURI(UriComponents uri) {
+    public void setUri(Uri uri) {
         this.uri = uri;
     }
 
-    public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
-        return connectionPoolKeyStrategy;
+    public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
+        return connectionPoolPartitioning;
     }
 
     public ProxyServer getProxyServer() {
@@ -414,14 +411,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public boolean canRetry() {
-        if (currentRetry.incrementAndGet() > maxRetry) {
-            return false;
-        }
-        return true;
+        return maxRetry > 0 && currentRetry.incrementAndGet() <= maxRetry;
     }
 
     public SocketAddress getChannelRemoteAddress() {
-        return channel() != null ? channel().getRemoteAddress() : null;
+        return channel != null ? channel.getRemoteAddress() : null;
     }
 
     public void setRequest(Request request) {
