@@ -315,6 +315,7 @@ public final class NettyRequestSender {
                 } catch (Throwable cause) {
                     // FIXME why not notify?
                     LOGGER.debug(cause.getMessage(), cause);
+                    // FIXME what about the attribute? how could this fail?
                     Channels.silentlyCloseChannel(channel);
                     return;
                 }
@@ -390,6 +391,7 @@ public final class NettyRequestSender {
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
+
         if (channel != null)
             channelManager.closeChannel(channel);
 

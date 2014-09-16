@@ -462,10 +462,11 @@ public final class HttpProtocol extends Protocol {
 
         AsyncHandler<?> handler = future.getAsyncHandler();
         try {
-            if (e instanceof HttpResponse && handleHttpResponse((HttpResponse) e, channel, future, handler))
-                return;
+            if (e instanceof HttpResponse) {
+                if (handleHttpResponse((HttpResponse) e, channel, future, handler))
+                    return;
 
-            if (e instanceof HttpChunk)
+            } else if (e instanceof HttpChunk)
                 handleChunk((HttpChunk) e, channel, future, handler);
 
         } catch (Exception t) {
@@ -475,6 +476,7 @@ public final class HttpProtocol extends Protocol {
                 return;
             }
 
+            // FIXME Weird: close channel in abort, then close again
             try {
                 requestSender.abort(channel, future, t);
             } catch (Exception abortException) {

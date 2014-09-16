@@ -82,6 +82,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 if (HttpChunk.class.cast(message).isLast())
                     // process the AsyncCallable before passing the message to the protocol
                     ac.call();
+                    // FIXME remove attribute?
             } else {
                 LOGGER.info("Received unexpected message while expecting a chunk: " + message);
                 ac.call();
@@ -94,6 +95,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             // unhandled message
+            // FIXME improve log
             LOGGER.trace("Closing an orphan channel {}", channel);
             Channels.silentlyCloseChannel(channel);
         }
