@@ -242,7 +242,7 @@ public class ChannelManager {
     }
 
     public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String partitionId) {
-        if (keepAlive && channel.isActive()) {
+        if (channel.isActive() && keepAlive && channel.isActive()) {
             LOGGER.debug("Adding key: {} for channel {}", partitionId, channel);
             channelPool.offer(channel, partitionId);
             if (maxConnectionsPerHostEnabled)
