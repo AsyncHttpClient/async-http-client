@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 import java.math.BigInteger;
@@ -28,7 +28,7 @@ public class RealmTest {
     public void testClone() {
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal("user").setPassword("pass");
-        builder.setEncoding(StandardCharsets.UTF_8.name()).setUsePreemptiveAuth(true);
+        builder.setEncoding(UTF_8.name()).setUsePreemptiveAuth(true);
         builder.setRealmName("realm").setAlgorithm("algo");
         builder.setScheme(AuthScheme.BASIC);
         Realm orig = builder.build();

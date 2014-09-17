@@ -76,7 +76,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
             protocol.handle(channel, future, msg);
 
         } else if (attribute != DiscardEvent.INSTANCE) {
-            LOGGER.trace("Closing an orphan channel {}", channel);
+            // unhandled message
+            LOGGER.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
             Channels.silentlyCloseChannel(channel);
         }
     }

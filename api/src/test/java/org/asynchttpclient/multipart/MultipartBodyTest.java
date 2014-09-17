@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.multipart;
 
-import static org.asynchttpclient.util.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;

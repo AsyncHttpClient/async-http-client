@@ -16,12 +16,12 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -52,7 +52,7 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
             response.setContentType("text/plain");
             response.setStatus(400);
             OutputStream out = response.getOutputStream();
-            out.write(BAD_REQUEST_STR.getBytes(StandardCharsets.UTF_8));
+            out.write(BAD_REQUEST_STR.getBytes(UTF_8));
             out.flush();
         }
     }

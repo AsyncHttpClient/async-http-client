@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.async.util.TestUtils.ADMIN;
 import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE_STRING;
@@ -39,7 +40,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.SimpleAsyncHttpClient;
 import org.asynchttpclient.consumers.AppendableBodyConsumer;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
-import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -141,7 +141,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
                 response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
                 response.setStatus(200);
-                response.getOutputStream().write("content".getBytes(StandardCharsets.UTF_8));
+                response.getOutputStream().write("content".getBytes(UTF_8));
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
             }

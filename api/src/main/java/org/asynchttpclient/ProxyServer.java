@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.util.StandardCharsets;
+import static java.nio.charset.StandardCharsets.*;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -54,8 +54,8 @@ public class ProxyServer {
     private final String password;
     private final int port;
     private final String url;
-    private String encoding = StandardCharsets.UTF_8.name();
-    private Charset charset = StandardCharsets.UTF_8;
+    private String encoding = UTF_8.name();
+    private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {

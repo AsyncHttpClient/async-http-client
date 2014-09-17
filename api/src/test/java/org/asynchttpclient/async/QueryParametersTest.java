@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.LoggerFactory;
@@ -92,10 +92,10 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, StandardCharsets.UTF_8.name());
+            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
             LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
-            String s = URLDecoder.decode(response.getHeader("q"), StandardCharsets.UTF_8.name());
+            String s = URLDecoder.decode(response.getHeader("q"), UTF_8.name());
             assertEquals(s, REQUEST_PARAM);
         } finally {
             client.close();
@@ -109,7 +109,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-            assertEquals(response.getHeader("q"), URLEncoder.encode(query, StandardCharsets.UTF_8.name()));
+            assertEquals(response.getHeader("q"), URLEncoder.encode(query, UTF_8.name()));
         } finally {
             c.close();
         }

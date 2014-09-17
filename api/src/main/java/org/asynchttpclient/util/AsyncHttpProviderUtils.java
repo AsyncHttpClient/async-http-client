@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.util;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class AsyncHttpProviderUtils {
 
     private final static byte[] NO_BYTES = new byte[0];
 
-    public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
+    public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
     public static final void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();

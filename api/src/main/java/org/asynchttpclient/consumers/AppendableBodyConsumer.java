@@ -12,8 +12,9 @@
  */
 package org.asynchttpclient.consumers;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import org.asynchttpclient.BodyConsumer;
-import org.asynchttpclient.util.StandardCharsets;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
 
     public AppendableBodyConsumer(Appendable appendable) {
         this.appendable = appendable;
-        this.encoding = StandardCharsets.UTF_8.name();
+        this.encoding = UTF_8.name();
     }
 
     @Override

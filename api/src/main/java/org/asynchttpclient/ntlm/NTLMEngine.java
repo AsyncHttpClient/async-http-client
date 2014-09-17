@@ -26,8 +26,9 @@
 
 package org.asynchttpclient.ntlm;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.StandardCharsets;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -81,8 +82,8 @@ public class NTLMEngine {
      */
     private String credentialCharset = DEFAULT_CHARSET;
 
-    private static final byte[] NTLMSSP_BYTES = "NTLMSSP".getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] MAGIC_CONSTANT = "KGS!@#$%".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] NTLMSSP_BYTES = "NTLMSSP".getBytes(US_ASCII);
+    private static final byte[] MAGIC_CONSTANT = "KGS!@#$%".getBytes(US_ASCII);
 
     /**
      * The signature string as bytes in the default encoding
@@ -98,6 +99,22 @@ public class NTLMEngine {
     }
 
     public static final NTLMEngine INSTANCE = new NTLMEngine();
+
+    private static byte[] getUnicodeLittleUnmarkedBytes(String s) throws NTLMEngineException {
+        try {
+            return s.getBytes("UnicodeLittleUnmarked");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new NTLMEngineException("UnicodeLittleUnmarked not supported! " + e.getMessage(), e);
+        }
+    }
+
+    private static String fromUnicodeLittleUnmarkedBytes(byte[] bytes) throws NTLMEngineException {
+        try {
+            return new String(bytes, "UnicodeLittleUnmarked");
+        } catch (UnsupportedEncodingException e) {
+            throw new NTLMEngineException(e.getMessage(), e);
+        }
+    }
 
     /**
      * Returns the response for the given message.
@@ -368,7 +385,7 @@ public class NTLMEngine {
      */
     private static byte[] lmHash(String password) throws NTLMEngineException {
         try {
-            byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.US_ASCII);
+            byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes(US_ASCII);
             int length = Math.min(oemPassword.length, 14);
             byte[] keyBytes = new byte[14];
             System.arraycopy(oemPassword, 0, keyBytes, 0, length);
@@ -396,7 +413,7 @@ public class NTLMEngine {
      *         the NTLM Response and the NTLMv2 and LMv2 Hashes.
      */
     private static byte[] ntlmHash(String password) throws NTLMEngineException {
-        byte[] unicodePassword = password.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+        byte[] unicodePassword = getUnicodeLittleUnmarkedBytes(password);
         MD4 md4 = new MD4();
         md4.update(unicodePassword);
         return md4.getOutput();
@@ -415,8 +432,8 @@ public class NTLMEngine {
         byte[] ntlmHash = ntlmHash(password);
         HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
         // Upper case username, mixed case target!!
-        hmacMD5.update(user.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED));
-        hmacMD5.update(target.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED));
+        hmacMD5.update(getUnicodeLittleUnmarkedBytes(user.toUpperCase(Locale.ENGLISH)));
+        hmacMD5.update(getUnicodeLittleUnmarkedBytes(target));
         return hmacMD5.getOutput();
     }
 
@@ -743,8 +760,8 @@ public class NTLMEngine {
             // Use only the base domain name!
             domain = convertDomain(domain);
 
-            hostBytes = host.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
-            domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+            hostBytes = getUnicodeLittleUnmarkedBytes(host);
+            domainBytes = getUnicodeLittleUnmarkedBytes(domain.toUpperCase(Locale.ENGLISH));
         }
 
         /**
@@ -821,7 +838,7 @@ public class NTLMEngine {
             if (getMessageLength() >= 12 + 8) {
                 byte[] bytes = readSecurityBuffer(12);
                 if (bytes.length != 0) {
-                    target = new String(bytes, StandardCharsets.UNICODE_LITTLE_UNMARKED);
+                    target = fromUnicodeLittleUnmarkedBytes(bytes);
                 }
             }
 
@@ -924,9 +941,9 @@ public class NTLMEngine {
                 lmResp = getLMResponse(password, nonce);
             }
 
-            domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
-            hostBytes = host.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
-            userBytes = user.getBytes(StandardCharsets.UNICODE_LITTLE_UNMARKED);
+            domainBytes = getUnicodeLittleUnmarkedBytes(domain.toUpperCase(Locale.ENGLISH));
+            hostBytes = getUnicodeLittleUnmarkedBytes(host);
+            userBytes = getUnicodeLittleUnmarkedBytes(user);
         }
 
         /**

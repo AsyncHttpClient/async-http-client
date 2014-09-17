@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.assertEquals;
@@ -19,7 +20,6 @@ import static org.testng.Assert.assertEquals;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
@@ -80,11 +80,11 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding(StandardCharsets.UTF_8.name());
+            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding(UTF_8.name());
             Future<Response> f = r.execute();
             Response resp = f.get();
             assertEquals(resp.getStatusCode(), 200);
-            assertEquals(body, resp.getResponseBody(StandardCharsets.UTF_8.name()));
+            assertEquals(body, resp.getResponseBody(UTF_8.name()));
         } finally {
             client.close();
         }

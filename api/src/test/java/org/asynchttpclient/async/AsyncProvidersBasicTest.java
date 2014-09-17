@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.async.util.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.util.DateUtils.millisTime;
@@ -39,7 +40,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.multipart.StringPart;
-import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
@@ -659,7 +659,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar", StandardCharsets.UTF_8);
+            Part p = new StringPart("foo", "bar", UTF_8);
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -1592,7 +1592,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             Response response = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(new String(response.getResponseBodyAsBytes(), StandardCharsets.UTF_8), "MIRROR");
+            assertEquals(new String(response.getResponseBodyAsBytes(), UTF_8), "MIRROR");
         } finally {
             client.close();
         }

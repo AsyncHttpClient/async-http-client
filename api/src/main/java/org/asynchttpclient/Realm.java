@@ -16,10 +16,10 @@
  */
 package org.asynchttpclient;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StandardCharsets;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -279,7 +279,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
-        private String enc = StandardCharsets.UTF_8.name();
+        private String enc = UTF_8.name();
         private String host = "localhost";
         private boolean messageType2Received;
         private boolean useAbsoluteURI = true;
@@ -510,7 +510,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(StandardCharsets.ISO_8859_1));
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                 throw new SecurityException(e);
@@ -556,7 +556,7 @@ public class Realm {
             md.update(new StringBuilder(principal).append(":")//
                     .append(realmName).append(":")//
                     .append(password).toString()//
-                    .getBytes(StandardCharsets.ISO_8859_1));
+                    .getBytes(ISO_8859_1));
             byte[] ha1 = md.digest();
 
             md.reset();
@@ -564,14 +564,14 @@ public class Realm {
             // HA2 if qop is auth-int is methodName:url:md5(entityBody)
             md.update(new StringBuilder(methodName).append(':')//
                     .append(uri).toString()//
-                    .getBytes(StandardCharsets.ISO_8859_1));
+                    .getBytes(ISO_8859_1));
             byte[] ha2 = md.digest();
 
             if (qop == null || qop.length() == 0) {
                 md.update(new StringBuilder(toBase16(ha1)).append(':')//
                         .append(nonce).append(':')//
                         .append(toBase16(ha2)).toString()//
-                        .getBytes(StandardCharsets.ISO_8859_1));
+                        .getBytes(ISO_8859_1));
 
             } else {
                 // qop ="auth" or "auth-int"
@@ -581,7 +581,7 @@ public class Realm {
                         .append(cnonce).append(':')//
                         .append(qop).append(':')//
                         .append(toBase16(ha2)).toString()//
-                        .getBytes(StandardCharsets.ISO_8859_1));
+                        .getBytes(ISO_8859_1));
             }
 
             byte[] digest = md.digest();

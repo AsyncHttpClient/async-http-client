@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient.multipart;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.multipart.Part.CRLF_BYTES;
 import static org.asynchttpclient.multipart.Part.EXTRA_BYTES;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class MultipartUtils {
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
     private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            .getBytes(StandardCharsets.US_ASCII);
+            .getBytes(US_ASCII);
 
     private MultipartUtils() {
     }
@@ -74,7 +74,7 @@ public class MultipartUtils {
                 // boundary defined in existing Content-Type
                 contentType = contentTypeHeader;
                 multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim())
-                        .getBytes(StandardCharsets.US_ASCII);
+                        .getBytes(US_ASCII);
             } else {
                 // generate boundary and append it to existing Content-Type
                 multipartBoundary = generateMultipartBoundary();
@@ -103,7 +103,7 @@ public class MultipartUtils {
         StringBuilder buffer = new StringBuilder(base);
         if (!base.endsWith(";"))
             buffer.append(";");
-        return buffer.append(" boundary=").append(new String(multipartBoundary, StandardCharsets.US_ASCII)).toString();
+        return buffer.append(" boundary=").append(new String(multipartBoundary, US_ASCII)).toString();
     }
 
     public static long writeBytesToChannel(WritableByteChannel target, byte[] bytes) throws IOException {

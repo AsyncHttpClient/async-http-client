@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.async.util.TestUtils.getClasspathFile;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
@@ -36,7 +37,6 @@ import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.multipart.FilePart;
 import org.asynchttpclient.multipart.StringPart;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -141,7 +141,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             tmpFile = File.createTempFile("textbytearray", ".txt");
             os = new FileOutputStream(tmpFile);
-            IOUtils.write(expectedContents.getBytes(StandardCharsets.UTF_8), os);
+            IOUtils.write(expectedContents.getBytes(UTF_8), os);
             tmpFileCreated = true;
 
             testFiles.add(tmpFile);
@@ -174,16 +174,16 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", StandardCharsets.UTF_8));
+            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", StandardCharsets.UTF_8));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", StandardCharsets.UTF_8));
+            builder.addBodyPart(new StringPart("Name", "Dominic", UTF_8));
+            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
 
             builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(StandardCharsets.UTF_8), "text/plain", StandardCharsets.UTF_8, "bytearray.txt"));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"));
 
             Request r = builder.build();
 

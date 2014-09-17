@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient.oauth;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.Param;
@@ -24,7 +25,6 @@ import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
 import java.util.ArrayList;
@@ -153,7 +153,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         signedText.append('&');
         UTF8UrlEncoder.appendEncoded(signedText, encodedParams);
 
-        byte[] rawBase = signedText.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] rawBase = signedText.toString().getBytes(UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
         // and finally, base64 encoded... phew!
         return Base64.encode(rawSignature);

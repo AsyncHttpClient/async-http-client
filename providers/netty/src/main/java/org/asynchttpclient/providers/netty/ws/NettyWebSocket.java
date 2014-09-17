@@ -13,8 +13,9 @@
  */
 package org.asynchttpclient.providers.netty.ws;
 
+import static java.nio.charset.StandardCharsets.*;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.asynchttpclient.util.StandardCharsets.UTF_8;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;

@@ -13,8 +13,9 @@
  */
 package org.asynchttpclient.providers.netty.ws;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.StandardCharsets;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -31,7 +32,7 @@ public final class WebSocketUtils {
 
     public static String getAcceptKey(String key) throws UnsupportedEncodingException {
         String acceptSeed = key + MAGIC_GUID;
-        byte[] sha1 = sha1(acceptSeed.getBytes(StandardCharsets.US_ASCII));
+        byte[] sha1 = sha1(acceptSeed.getBytes(US_ASCII));
         return base64Encode(sha1);
     }
 

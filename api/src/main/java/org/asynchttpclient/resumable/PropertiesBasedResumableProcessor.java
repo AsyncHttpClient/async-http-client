@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.resumable;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.File;
@@ -21,7 +22,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             os = new FileOutputStream(f);
 
             for (Map.Entry<String, Long> e : properties.entrySet()) {
-                os.write(append(e).getBytes(StandardCharsets.UTF_8));
+                os.write(append(e).getBytes(UTF_8));
             }
             os.flush();
         } catch (Throwable e) {
@@ -98,7 +98,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         Scanner scan = null;
         try {
-            scan = new Scanner(new File(TMP, storeName), StandardCharsets.UTF_8.name());
+            scan = new Scanner(new File(TMP, storeName), UTF_8.name());
             scan.useDelimiter("[=\n]");
 
             String key;

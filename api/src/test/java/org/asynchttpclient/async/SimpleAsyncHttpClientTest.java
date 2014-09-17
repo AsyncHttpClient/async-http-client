@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
@@ -28,7 +29,6 @@ import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
@@ -307,7 +307,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPut() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8, "fileName")).get();
+            Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");
@@ -331,7 +331,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPost() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8, "fileName")).get();
+            Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");

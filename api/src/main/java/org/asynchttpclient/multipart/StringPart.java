@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient.multipart;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
-
-import org.asynchttpclient.util.StandardCharsets;
 
 public class StringPart extends PartBase {
 
@@ -30,7 +30,7 @@ public class StringPart extends PartBase {
     /**
      * Default charset of string parameters
      */
-    public static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
+    public static final Charset DEFAULT_CHARSET = US_ASCII;
 
     /**
      * Default transfer encoding of string parameters
