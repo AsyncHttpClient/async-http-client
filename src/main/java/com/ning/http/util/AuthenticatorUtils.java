@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
@@ -65,7 +66,7 @@ public final class AuthenticatorUtils {
         append(builder, "cnonce", realm.getCnonce(), true);
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
-        return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
+        return new String(builder.toString().getBytes(ISO_8859_1));
     }
 
     private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {

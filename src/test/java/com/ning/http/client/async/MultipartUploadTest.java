@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.async;
 
-import static com.ning.http.util.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;

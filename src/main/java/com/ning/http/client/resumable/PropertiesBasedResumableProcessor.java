@@ -12,17 +12,15 @@
  */
 package com.ning.http.client.resumable;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.MiscUtils.closeSilently;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.util.StandardCharsets;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,7 +67,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             os = new FileOutputStream(f);
 
             for (Map.Entry<String, Long> e : properties.entrySet()) {
-                os.write((append(e)).getBytes(StandardCharsets.UTF_8));
+                os.write((append(e)).getBytes(UTF_8));
             }
             os.flush();
         } catch (Throwable e) {
@@ -88,7 +86,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         Scanner scan = null;
         try {
-            scan = new Scanner(new File(TMP, storeName), StandardCharsets.UTF_8.name());
+            scan = new Scanner(new File(TMP, storeName), UTF_8.name());
             scan.useDelimiter("[=\n]");
 
             String key;

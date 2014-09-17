@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.multipart;
 
-import com.ning.http.util.StandardCharsets;
+import static java.nio.charset.StandardCharsets.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class StringPart extends PartBase {
     /**
      * Default charset of string parameters
      */
-    public static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
+    public static final Charset DEFAULT_CHARSET = US_ASCII;
 
     /**
      * Default transfer encoding of string parameters

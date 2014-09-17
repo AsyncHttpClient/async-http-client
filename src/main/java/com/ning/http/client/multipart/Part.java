@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.multipart;
 
-import static com.ning.http.util.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.io.IOException;
 import java.io.OutputStream;

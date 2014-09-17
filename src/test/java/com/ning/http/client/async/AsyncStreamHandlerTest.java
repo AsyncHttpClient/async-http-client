@@ -34,7 +34,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;

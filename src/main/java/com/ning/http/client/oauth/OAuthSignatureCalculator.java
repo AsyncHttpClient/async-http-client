@@ -16,6 +16,7 @@
  */
 package com.ning.http.client.oauth;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.Param;
@@ -24,7 +25,6 @@ import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.SignatureCalculator;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.Base64;
-import com.ning.http.util.StandardCharsets;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.util.ArrayList;
@@ -152,7 +152,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         signedText.append('&');
         UTF8UrlEncoder.appendEncoded(signedText, encodedParams);
 
-        byte[] rawBase = signedText.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] rawBase = signedText.toString().getBytes(UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
         // and finally, base64 encoded... phew!
         return Base64.encode(rawSignature);

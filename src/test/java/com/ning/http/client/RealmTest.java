@@ -12,10 +12,11 @@
  */
 package com.ning.http.client;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Realm.RealmBuilder;
 import com.ning.http.client.uri.Uri;
-import com.ning.http.util.StandardCharsets;
 
 import org.testng.Assert;
 
@@ -111,7 +112,7 @@ public class RealmTest {
     private String getMd5(String what) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(what.getBytes(StandardCharsets.ISO_8859_1));
+            md.update(what.getBytes(ISO_8859_1));
             byte[] hash = md.digest();
             BigInteger bi = new BigInteger(1, hash);
             String result = bi.toString(16);

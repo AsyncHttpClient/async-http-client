@@ -15,8 +15,8 @@
  */
 package com.ning.http.client.providers.jdk;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import static com.ning.http.util.StandardCharsets.US_ASCII;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.multipart.MultipartUtils;

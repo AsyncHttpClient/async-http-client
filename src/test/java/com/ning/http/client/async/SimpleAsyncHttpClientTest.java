@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.async;
 
-import static com.ning.http.util.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 
 import static junit.framework.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
