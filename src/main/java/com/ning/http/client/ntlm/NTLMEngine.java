@@ -104,7 +104,7 @@ public class NTLMEngine {
     private static byte[] getUnicodeLittleUnmarkedBytes(String s) throws NTLMEngineException {
         try {
             return s.getBytes("UnicodeLittleUnmarked");
-        } catch (java.io.UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             throw new NTLMEngineException("UnicodeLittleUnmarked not supported! " + e.getMessage(), e);
         }
     }
@@ -415,14 +415,10 @@ public class NTLMEngine {
      *         the NTLM Response and the NTLMv2 and LMv2 Hashes.
      */
     private static byte[] ntlmHash(String password) throws NTLMEngineException {
-        try {
-            byte[] unicodePassword = password.getBytes("UnicodeLittleUnmarked");
-            MD4 md4 = new MD4();
-            md4.update(unicodePassword);
-            return md4.getOutput();
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new NTLMEngineException("Unicode not supported: " + e.getMessage(), e);
-        }
+        byte[] unicodePassword = getUnicodeLittleUnmarkedBytes(password);
+        MD4 md4 = new MD4();
+        md4.update(unicodePassword);
+        return md4.getOutput();
     }
 
     /**
