@@ -17,6 +17,7 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testMaxTotalConnectionsExceedingException() {
+    public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
@@ -42,16 +43,24 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 .build());
 
         try {
-            boolean caughtError = false;
+            List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < urls.length; i++) {
+                futures.add(client.prepareGet(urls[i]).execute());
+            }
+            
+            boolean caughtError = false;
+            int i;
+            for (i = 0; i < urls.length; i++) {
                 try {
-                    client.prepareGet(urls[i]).execute();
-                } catch (IOException e) {
+                    futures.get(i).get();
+                } catch (Exception e) {
                     // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(1, i);
                     caughtError = true;
+                    break;
                 }
             }
+
+            Assert.assertEquals(1, i);
             Assert.assertTrue(caughtError);
         } finally {
             client.close();
