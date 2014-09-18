@@ -418,7 +418,7 @@ public class ChannelManager {
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final String poolKey) {
 
         return new Callback(future) {
-            public void call() throws Exception {
+            public void call() {
                 tryToOfferChannelToPool(channel, keepAlive, poolKey);
             }
         };

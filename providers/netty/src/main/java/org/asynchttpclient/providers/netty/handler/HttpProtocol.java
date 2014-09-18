@@ -229,7 +229,7 @@ public final class HttpProtocol extends Protocol {
 
                 logger.debug("Sending authentication to {}", request.getUri());
                 Callback callback = new Callback(future) {
-                    public void call() throws Exception {
+                    public void call() throws IOException {
                         channelManager.drainChannel(channel, future);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
@@ -240,6 +240,7 @@ public final class HttpProtocol extends Protocol {
                     // before executing the next request.
                     Channels.setAttribute(channel, callback);
                 else
+                    // call might crash with an IOException
                     callback.call();
 
                 return true;
@@ -451,6 +452,7 @@ public final class HttpProtocol extends Protocol {
                     finishUpdate(future, channel, !last);
             }
         } catch (Exception t) {
+            // e.g. an IOException when trying to open a connection and send the next request
             if (hasIOExceptionFilters//
                     && t instanceof IOException//
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {
