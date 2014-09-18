@@ -133,7 +133,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1588,12 +1587,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeBasicAuthentication(realm));
                 } else if (lowerCaseAuth.startsWith("digest")) {
                     req.getHeaders().remove(Header.Authorization.toString());
-                    try {
-                        req.getHeaders().add(Header.Authorization.toString(),
-                                             AuthenticatorUtils.computeDigestAuthentication(realm));
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new IllegalStateException("Digest authentication not supported", e);
-                    }
+                    req.getHeaders().add(Header.Authorization.toString(),
+                                         AuthenticatorUtils.computeDigestAuthentication(realm));
                 } else {
                     throw new IllegalStateException("Unsupported authorization method: " + auth);
                 }
