@@ -508,8 +508,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setConnectionTimeout(int connectionTimeuot) {
-            configBuilder.setConnectionTimeout(connectionTimeuot);
+        public Builder setConnectTimeout(int connectTimeuot) {
+            configBuilder.setConnectTimeout(connectTimeuot);
             return this;
         }
 

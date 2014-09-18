@@ -35,7 +35,7 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig.Builder confbuilder = new AsyncHttpClientConfig.Builder();
-        confbuilder = confbuilder.setConnectionTimeout(100);
+        confbuilder = confbuilder.setConnectTimeout(100);
         confbuilder = confbuilder.setMaxConnections(50);
         confbuilder = confbuilder.setRequestTimeout(5 * 60 * 1000); // 5 minutes
 

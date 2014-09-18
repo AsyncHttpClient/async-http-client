@@ -123,7 +123,7 @@ import java.util.concurrent.Future;
  *      Response r = f.get();
  * </pre></blockquote>
  * <p/>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getReadTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
 public interface AsyncHttpClient extends Closeable {

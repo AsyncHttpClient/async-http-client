@@ -90,7 +90,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
                 .setAllowPoolingConnections(true)//
                 .setMaxConnections(100)//
-                .setConnectionTimeout(60000)//
+                .setConnectTimeout(60000)//
                 .setRequestTimeout(30000)//
                 .build();
 
@@ -126,7 +126,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
                 .setAllowPoolingConnections(true)//
                 .setMaxConnections(100)//
-                .setConnectionTimeout(60000)//
+                .setConnectTimeout(60000)//
                 .setRequestTimeout(30000)//
                 .build();
 

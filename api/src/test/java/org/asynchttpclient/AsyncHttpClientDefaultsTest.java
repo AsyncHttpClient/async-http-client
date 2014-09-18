@@ -20,32 +20,32 @@ public class AsyncHttpClientDefaultsTest {
         testIntegerSystemProperty("maxConnectionsPerHost", "defaultMaxConnectionsPerHost", "100");
     }
 
-    public void testDefaultConnectionTimeOutInMs() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTimeout(), 60 * 1000);
-        testIntegerSystemProperty("connectionTimeout", "defaultConnectionTimeout", "100");
+    public void testDefaultConnectTimeOut() {
+        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 60 * 1000);
+        testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
     }
 
-    public void testDefaultIdleConnectionInPoolTimeoutInMs() {
+    public void testDefaultPooledConnectionIdleTimeout() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
         testIntegerSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "100");
     }
 
-    public void testDefaultIdleConnectionTimeoutInMs() {
+    public void testDefaultReadTimeout() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
         testIntegerSystemProperty("readTimeout", "defaultReadTimeout", "100");
     }
 
-    public void testDefaultRequestTimeoutInMs() {
+    public void testDefaultRequestTimeout() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), 60 * 1000);
         testIntegerSystemProperty("requestTimeout", "defaultRequestTimeout", "100");
     }
 
-    public void testDefaultWebSocketIdleTimeoutInMs() {
+    public void testDefaultWebSocketTimeout() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultWebSocketTimeout(), 15 * 60 * 1000);
         testIntegerSystemProperty("webSocketTimeout", "defaultWebSocketTimeout", "100");
     }
 
-    public void testDefaultMaxConnectionLifeTimeInMs() {
+    public void testDefaultConnectionTTL() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTTL(), -1);
         testIntegerSystemProperty("connectionTTL", "defaultConnectionTTL", "100");
     }
@@ -105,7 +105,7 @@ public class AsyncHttpClientDefaultsTest {
         testIntegerSystemProperty("maxRequestRetry", "defaultMaxRequestRetry", "100");
     }
 
-    public void testDefaultAllowSslConnectionPool() {
+    public void testDefaultAllowPoolingSslConnections() {
        Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultAllowPoolingSslConnections());
        testBooleanSystemProperty("allowPoolingSslConnections", "defaultAllowPoolingSslConnections", "false");
     }

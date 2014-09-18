@@ -40,7 +40,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Override
     @Test
     public void multipleMaxConnectionOpenTest() throws Exception {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectionTimeout(5000)
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectTimeout(5000)
                 .setMaxConnections(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {

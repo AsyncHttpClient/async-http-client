@@ -77,7 +77,7 @@ public class ConnectionManager {
             this.connectionPool = new ConnectionPool(config.getMaxConnectionsPerHost(),//
                     config.getMaxConnections(),//
                     null,//
-                    config.getConnectionTimeout(),//
+                    config.getConnectTimeout(),//
                     config.getPooledConnectionIdleTimeout(),//
                     2000);
             canDestroyPool = true;
@@ -210,7 +210,7 @@ public class ConnectionManager {
     private Connection obtainConnection0(final Request request, final GrizzlyResponseFuture requestFuture) throws ExecutionException,
             InterruptedException, TimeoutException, IOException {
 
-        final int cTimeout = provider.getClientConfig().getConnectionTimeout();
+        final int cTimeout = provider.getClientConfig().getConnectTimeout();
         final FutureImpl<Connection> future = Futures.createSafeFuture();
         final CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                 createConnectionCompletionHandler(request, requestFuture, null));

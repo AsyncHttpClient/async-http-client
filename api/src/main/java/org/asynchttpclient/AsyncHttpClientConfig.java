@@ -67,7 +67,7 @@ public class AsyncHttpClientConfig {
         AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
 
-    protected int connectionTimeout;
+    protected int connectTimeout;
 
     protected int maxConnections;
     protected int maxConnectionsPerHost;
@@ -114,7 +114,7 @@ public class AsyncHttpClientConfig {
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(int connectionTimeout,//
+    private AsyncHttpClientConfig(int connectTimeout,//
             int maxConnections,//
             int maxConnectionsPerHost,//
             int requestTimeout,//
@@ -149,7 +149,7 @@ public class AsyncHttpClientConfig {
             int spdyInitialWindowSize, //
             int spdyMaxConcurrentStreams) {
 
-        this.connectionTimeout = connectionTimeout;
+        this.connectTimeout = connectTimeout;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         this.requestTimeout = requestTimeout;
@@ -209,8 +209,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
      */
-    public int getConnectionTimeout() {
-        return connectionTimeout;
+    public int getConnectTimeout() {
+        return connectTimeout;
     }
 
     /**
@@ -528,7 +528,7 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
-        private int connectionTimeout = defaultConnectionTimeout();
+        private int connectTimeout = defaultConnectTimeout();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private int requestTimeout = defaultRequestTimeout();
@@ -595,11 +595,11 @@ public class AsyncHttpClientConfig {
         /**
          * Set the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
          *
-         * @param connectionTimeout the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * @param connectTimeout the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
          * @return a {@link Builder}
          */
-        public Builder setConnectionTimeout(int connectionTimeout) {
-            this.connectionTimeout = connectionTimeout;
+        public Builder setConnectTimeout(int connectTimeout) {
+            this.connectTimeout = connectTimeout;
             return this;
         }
 
@@ -1037,7 +1037,7 @@ public class AsyncHttpClientConfig {
         public Builder(AsyncHttpClientConfig prototype) {
             allowPoolingConnections = prototype.isAllowPoolingConnections();
             providerConfig = prototype.getAsyncHttpProviderConfig();
-            connectionTimeout = prototype.getConnectionTimeout();
+            connectTimeout = prototype.getConnectTimeout();
             pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
             readTimeout = prototype.getReadTimeout();
             maxConnectionsPerHost = prototype.getMaxConnectionsPerHost();
@@ -1097,7 +1097,7 @@ public class AsyncHttpClientConfig {
             else if (hostnameVerifier == null)
                 hostnameVerifier = new DefaultHostnameVerifier();
 
-            return new AsyncHttpClientConfig(connectionTimeout,//
+            return new AsyncHttpClientConfig(connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//
                     requestTimeout,//

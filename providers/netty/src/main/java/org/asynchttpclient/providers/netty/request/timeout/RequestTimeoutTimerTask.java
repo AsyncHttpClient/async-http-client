@@ -37,7 +37,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         if (done.getAndSet(true) || requestSender.isClosed())
             return;
 
-        // in any case, cancel possible idleConnectionTimeout sibling
+        // in any case, cancel possible readTimeout sibling
         timeoutsHolder.cancel();
 
         if (nettyResponseFuture.isDone())

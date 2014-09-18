@@ -162,8 +162,8 @@ public class ChannelManager {
         webSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
         secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
 
-        if (config.getConnectionTimeout() > 0)
-            nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectionTimeout());
+        if (config.getConnectTimeout() > 0)
+            nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
         for (Entry<ChannelOption<Object>, Object> entry : nettyConfig.propertiesSet()) {
             ChannelOption<Object> key = entry.getKey();
             Object value = entry.getValue();

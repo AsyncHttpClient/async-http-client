@@ -13,9 +13,6 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.util.AsyncPropertiesHelper;
-import org.asynchttpclient.util.DefaultHostnameVerifier;
-
-import javax.net.ssl.HostnameVerifier;
 
 public final class AsyncHttpClientConfigDefaults {
 
@@ -32,8 +29,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "maxConnectionsPerHost");
     }
 
-    public static int defaultConnectionTimeout() {
-        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "connectionTimeout");
+    public static int defaultConnectTimeout() {
+        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT + "connectTimeout");
     }
 
     public static int defaultPooledConnectionIdleTimeout() {
