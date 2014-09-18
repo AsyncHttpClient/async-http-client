@@ -427,7 +427,7 @@ public class ChannelManager {
 
         return new Callback(future) {
             @Override
-            public void call() throws Exception {
+            public void call() {
                 tryToOfferChannelToPool(channel, keepAlive, poolKey);
             }
         };
