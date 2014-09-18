@@ -28,7 +28,7 @@ public class RealmTest {
     public void testClone() {
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal("user").setPassword("pass");
-        builder.setEncoding(UTF_8.name()).setUsePreemptiveAuth(true);
+        builder.setCharset(UTF_16).setUsePreemptiveAuth(true);
         builder.setRealmName("realm").setAlgorithm("algo");
         builder.setScheme(AuthScheme.BASIC);
         Realm orig = builder.build();
@@ -36,7 +36,7 @@ public class RealmTest {
         Realm clone = new RealmBuilder().clone(orig).build();
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
         assertEquals(clone.getPassword(), orig.getPassword());
-        assertEquals(clone.getEncoding(), orig.getEncoding());
+        assertEquals(clone.getCharset(), orig.getCharset());
         assertEquals(clone.getUsePreemptiveAuth(), orig.getUsePreemptiveAuth());
         assertEquals(clone.getRealmName(), orig.getRealmName());
         assertEquals(clone.getAlgorithm(), orig.getAlgorithm());

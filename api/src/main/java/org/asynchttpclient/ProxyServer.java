@@ -54,7 +54,6 @@ public class ProxyServer {
     private final String password;
     private final int port;
     private final String url;
-    private String encoding = UTF_8.name();
     private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
@@ -103,14 +102,9 @@ public class ProxyServer {
         return password;
     }
 
-    public ProxyServer setEncoding(String encoding) {
-        this.encoding = encoding;
-        this.charset = Charset.forName(encoding);
+    public ProxyServer setCharset(Charset charset) {
+        this.charset = charset;
         return this;
-    }
-
-    public String getEncoding() {
-        return encoding;
     }
 
     public Charset getCharset() {

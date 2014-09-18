@@ -46,11 +46,10 @@ public class Realm {
     private final Uri uri;
     private final String methodName;
     private final boolean usePreemptiveAuth;
-    private final String enc;
+    private final Charset charset;
     private final String host;
     private final boolean messageType2Received;
     private final String ntlmDomain;
-    private final Charset charset;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
     private final boolean targetProxy;
@@ -60,7 +59,7 @@ public class Realm {
     }
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
-            String qop, String nc, String cnonce, Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, String enc,
+            String qop, String nc, String cnonce, Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset,
             String host, boolean messageType2Received, String opaque, boolean useAbsoluteURI, boolean omitQuery, boolean targetProxy) {
 
         this.principal = principal;
@@ -78,10 +77,9 @@ public class Realm {
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.ntlmDomain = ntlmDomain;
-        this.enc = enc;
         this.host = host;
         this.messageType2Received = messageType2Received;
-        this.charset = enc != null ? Charset.forName(enc) : null;
+        this.charset = charset;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
         this.targetProxy = targetProxy;
@@ -138,10 +136,6 @@ public class Realm {
 
     public Uri getUri() {
         return uri;
-    }
-
-    public String getEncoding() {
-        return enc;
     }
 
     public Charset getCharset() {
@@ -279,7 +273,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
-        private String enc = UTF_8.name();
+        private Charset charset = UTF_8;
         private String host = "localhost";
         private boolean messageType2Received;
         private boolean useAbsoluteURI = true;
@@ -492,7 +486,7 @@ public class Realm {
             setNonce(clone.getNonce());
             setPassword(clone.getPassword());
             setPrincipal(clone.getPrincipal());
-            setEncoding(clone.getEncoding());
+            setCharset(clone.getCharset());
             setOpaque(clone.getOpaque());
             setQop(clone.getQop());
             setScheme(clone.getScheme());
@@ -537,12 +531,12 @@ public class Realm {
             return value.charAt(0) == '"' ? value.substring(1) : value;
         }
 
-        public String getEncoding() {
-            return enc;
+        public Charset getCharset() {
+            return charset;
         }
 
-        public RealmBuilder setEncoding(String enc) {
-            this.enc = enc;
+        public RealmBuilder setCharset(Charset charset) {
+            this.charset = charset;
             return this;
         }
 
@@ -629,7 +623,7 @@ public class Realm {
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
-                    usePreemptive, ntlmDomain, enc, host, messageType2Received, opaque, useAbsoluteURI, omitQuery, targetProxy);
+                    usePreemptive, ntlmDomain, charset, host, messageType2Received, opaque, useAbsoluteURI, omitQuery, targetProxy);
         }
     }
 }

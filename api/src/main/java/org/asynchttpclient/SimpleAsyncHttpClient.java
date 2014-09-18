@@ -16,6 +16,7 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -583,8 +584,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setRealmEnconding(String enc) {
-            realm().setEncoding(enc);
+        public Builder setRealmCharset(Charset charset) {
+            realm().setCharset(charset);
             return this;
         }
 
