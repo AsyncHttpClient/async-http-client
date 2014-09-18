@@ -20,22 +20,25 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.Test;
 
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
@@ -63,29 +66,30 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testMaxTotalConnectionsException() {
+    public void testMaxTotalConnectionsException() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = getTargetUrl();
-            int i;
-            Exception exception = null;
-            for (i = 0; i < 20; i++) {
-                try {
-                    log.info("{} requesting url [{}]...", i, url);
 
-                    if (i < 5) {
-                        client.prepareGet(url).execute().get();
-                    } else {
-                        client.prepareGet(url).execute();
-                    }
+            List<ListenableFuture<Response>> futures = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                log.info("{} requesting url [{}]...", i, url);
+                futures.add(client.prepareGet(url).execute());
+            }
+            
+            Exception exception = null;
+            for (ListenableFuture<Response> future : futures) {
+                try {
+                    future.get();
                 } catch (Exception ex) {
                     exception = ex;
                     break;
                 }
             }
+
             assertNotNull(exception);
-            assertNotNull(exception.getMessage());
-            assertEquals(exception.getMessage(), "Too many connections 1");
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
         } finally {
             client.close();
         }
@@ -152,7 +156,8 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 exception = ex;
             }
             assertNotNull(exception);
-            assertEquals(exception.getMessage(), "Too many connections 1");
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
         } finally {
             c.close();
         }
