@@ -214,8 +214,11 @@ public final class NettyRequestSender {
         try {
             writeRequest(future, channel);
         } catch (Exception ex) {
+            // write request isn't supposed to throw Exceptions
             LOGGER.debug("writeRequest failure", ex);
             if (ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
+                // FIXME what is this for? https://github.com/AsyncHttpClient/async-http-client/commit/a847c3d4523ccc09827743e15b17e6bab59c553b
+                // can such an exception happen as we write async?
                 LOGGER.debug("SSLEngine failure", ex);
                 future = null;
             } else {
