@@ -109,8 +109,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setIdleConnectionTimeout(int idleConnectionTimeout) {
-        this.readTimeout = idleConnectionTimeout;
+    public AsyncHttpClientConfigBean setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
         return this;
     }
 

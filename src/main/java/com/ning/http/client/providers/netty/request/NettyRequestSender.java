@@ -375,13 +375,12 @@ public final class NettyRequestSender {
             timeoutsHolder.requestTimeout = requestTimeout;
         }
 
-        int readTimeout = config.getReadTimeout();
-        if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
-            // no need for a idleConnectionTimeout that's less than the
-            // requestTimeoutInMs
-            Timeout idleConnectionTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder,
-                    requestTimeoutInMs, readTimeout), readTimeout);
-            timeoutsHolder.readTimeout = idleConnectionTimeout;
+        int readTimeoutValue = config.getReadTimeout();
+        if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
+            // no need for a readTimeout that's less than the requestTimeout
+            Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder,
+                    requestTimeoutInMs, readTimeoutValue), readTimeoutValue);
+            timeoutsHolder.readTimeout = readTimeout;
         }
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
     }

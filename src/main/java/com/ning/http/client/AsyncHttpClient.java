@@ -142,7 +142,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
  *      Response r = f.get();
  * </pre></blockquote>
  * <p/>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getReadTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
 public class AsyncHttpClient implements Closeable {
