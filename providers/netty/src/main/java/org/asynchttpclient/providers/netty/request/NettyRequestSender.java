@@ -314,7 +314,7 @@ public final class NettyRequestSender {
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest();
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
 
                     channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
                 } catch (Throwable cause) {

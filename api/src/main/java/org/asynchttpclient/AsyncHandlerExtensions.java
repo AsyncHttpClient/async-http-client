@@ -50,8 +50,10 @@ public interface AsyncHandlerExtensions {
      * Notify the callback when a request is being written on the wire.
      * If the original request causes multiple requests to be sent, for example, because of authorization or retry,
      * it will be notified multiple times.
+     * 
+     * @param request the real request object as passed to the provider
      */
-    void onSendRequest();
+    void onSendRequest(Object request);
 
     /**
      * Notify the callback every time a request is being retried.
