@@ -129,7 +129,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1586,11 +1585,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
                 if (lowerCaseAuth.startsWith("basic")) {
                     req.getHeaders().remove(Header.Authorization.toString());
-                    try {
-                        req.getHeaders().add(Header.Authorization.toString(),
-                                             AuthenticatorUtils.computeBasicAuthentication(realm));
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
+                    req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeBasicAuthentication(realm));
                 } else if (lowerCaseAuth.startsWith("digest")) {
                     req.getHeaders().remove(Header.Authorization.toString());
                     try {

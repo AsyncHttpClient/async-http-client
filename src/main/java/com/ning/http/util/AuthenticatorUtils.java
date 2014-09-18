@@ -20,19 +20,18 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.uri.Uri;
 
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
 
-    public static String computeBasicAuthentication(Realm realm) throws UnsupportedEncodingException {
+    public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(realm.getEncoding()));
+        return "Basic " + Base64.encode(s.getBytes(realm.getCharset()));
     }
 
-    public static String computeBasicAuthentication(ProxyServer proxyServer) throws UnsupportedEncodingException {
+    public static String computeBasicAuthentication(ProxyServer proxyServer) {
         String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(proxyServer.getEncoding()));
+        return "Basic " + Base64.encode(s.getBytes(proxyServer.getCharset()));
     }
     
     private static String computeRealmURI(Realm realm) {
