@@ -36,6 +36,12 @@ import java.util.List;
  */
 public class AsyncHttpProviderUtils {
 
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
+
+    static {
+        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
+    }
+
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
