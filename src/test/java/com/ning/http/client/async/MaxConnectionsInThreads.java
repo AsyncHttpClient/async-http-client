@@ -48,7 +48,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
 
         try {
             final Boolean[] caughtError = new Boolean[] { Boolean.FALSE };

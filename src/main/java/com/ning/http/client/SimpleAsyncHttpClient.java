@@ -499,7 +499,7 @@ public class SimpleAsyncHttpClient {
         }
 
         public Builder setConnectionTimeout(int connectionTimeuot) {
-            configBuilder.setConnectionTimeout(connectionTimeuot);
+            configBuilder.setConnectTimeout(connectionTimeuot);
             return this;
         }
 

@@ -2441,7 +2441,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final ProxyServer proxy = requestFuture.getProxy();
             String host = (proxy != null) ? proxy.getHost() : uri.getHost();
             int port = (proxy != null) ? proxy.getPort() : uri.getPort();
-            int cTimeout = provider.clientConfig.getConnectionTimeout();
+            int cTimeout = provider.clientConfig.getConnectTimeout();
             FutureImpl<Connection> future = Futures.createSafeFuture();
             CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                     createConnectionCompletionHandler(request, requestFuture, null));
@@ -2922,7 +2922,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 e.printStackTrace();
             }
             AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                    .setConnectionTimeout(5000)
+                    .setConnectTimeout(5000)
                     .setSSLContext(sslContext).build();
             AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
             try {

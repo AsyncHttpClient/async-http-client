@@ -130,7 +130,7 @@ public class RetryNonBlockingIssue {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
         .setAllowPoolingConnections(true)//
         .setMaxConnections(100)//
-        .setConnectionTimeout(60000)//
+        .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
         
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
@@ -164,7 +164,7 @@ public class RetryNonBlockingIssue {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
         .setAllowPoolingConnections(true)//
         .setMaxConnections(100)//
-        .setConnectionTimeout(60000)//
+        .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
@@ -197,7 +197,7 @@ public class RetryNonBlockingIssue {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
         .setAllowPoolingConnections(true)//
         .setMaxConnections(100)//
-        .setConnectionTimeout(30000)//
+        .setConnectTimeout(30000)//
         .setRequestTimeout(30000);
         AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new

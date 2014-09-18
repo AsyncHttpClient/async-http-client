@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class AsyncHttpClientConfig {
 
-    protected int connectionTimeout;
+    protected int connectTimeout;
 
     protected int maxConnections;
     protected int maxConnectionsPerHost;
@@ -84,7 +84,7 @@ public class AsyncHttpClientConfig {
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(int connectionTimeout,//
+    private AsyncHttpClientConfig(int connectTimeout,//
             int maxConnections,//
             int maxConnectionsPerHost,//
             int requestTimeout,//
@@ -116,7 +116,7 @@ public class AsyncHttpClientConfig {
             TimeConverter timeConverter,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
 
-        this.connectionTimeout = connectionTimeout;
+        this.connectTimeout = connectTimeout;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         this.requestTimeout = requestTimeout;
@@ -172,8 +172,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
      */
-    public int getConnectionTimeout() {
-        return connectionTimeout;
+    public int getConnectTimeout() {
+        return connectTimeout;
     }
 
     /**
@@ -453,7 +453,7 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
-        private int connectionTimeout = defaultConnectionTimeout();
+        private int connectTimeout = defaultConnectTimeout();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private int requestTimeout = defaultRequestTimeout();
@@ -515,11 +515,11 @@ public class AsyncHttpClientConfig {
         /**
          * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
          *
-         * @param connectionTimeOut the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
+         * @param connectTimeOut the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
          * @return a {@link Builder}
          */
-        public Builder setConnectionTimeout(int connectionTimeOut) {
-            this.connectionTimeout = connectionTimeOut;
+        public Builder setConnectTimeout(int connectTimeOut) {
+            this.connectTimeout = connectTimeOut;
             return this;
         }
 
@@ -911,7 +911,7 @@ public class AsyncHttpClientConfig {
         public Builder(AsyncHttpClientConfig prototype) {
             allowPoolingConnections = prototype.isAllowPoolingConnections();
             providerConfig = prototype.getAsyncHttpProviderConfig();
-            connectionTimeout = prototype.getConnectionTimeout();
+            connectTimeout = prototype.getConnectTimeout();
             pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
             readTimeout = prototype.getReadTimeout();
             maxConnectionsPerHost = prototype.getMaxConnectionsPerHost();
@@ -976,7 +976,7 @@ public class AsyncHttpClientConfig {
             else if (hostnameVerifier == null)
                 hostnameVerifier = new DefaultHostnameVerifier();
 
-            return new AsyncHttpClientConfig(connectionTimeout,//
+            return new AsyncHttpClientConfig(connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//
                     requestTimeout,//

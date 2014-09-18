@@ -47,7 +47,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     void configureDefaults() {
         maxConnections = defaultMaxConnections();
         maxConnectionsPerHost = defaultMaxConnectionsPerHost();
-        connectionTimeout = defaultConnectionTimeout();
+        connectTimeout = defaultConnectTimeout();
         webSocketTimeout = defaultWebSocketTimeout();
         pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         readTimeout = defaultReadTimeout();
@@ -95,7 +95,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setConnectionTimeOut(int connectionTimeOut) {
-        this.connectionTimeout = connectionTimeOut;
+        this.connectTimeout = connectionTimeOut;
         return this;
     }
 

@@ -428,7 +428,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
-            urlConnection.setConnectTimeout(config.getConnectionTimeout());
+            urlConnection.setConnectTimeout(config.getConnectTimeout());
 
             if (requestTimeout != -1)
                 urlConnection.setReadTimeout(requestTimeout);
