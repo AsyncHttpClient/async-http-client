@@ -12,26 +12,29 @@
  */
 package org.asynchttpclient.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
+import java.nio.charset.Charset;
 
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.uri.Uri;
 
-import java.security.NoSuchAlgorithmException;
-
 public final class AuthenticatorUtils {
 
     public static String computeBasicAuthentication(Realm realm) {
-        String s = realm.getPrincipal() + ":" + realm.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(realm.getCharset()));
+        return computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset());
     }
 
     public static String computeBasicAuthentication(ProxyServer proxyServer) {
-        String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(proxyServer.getCharset()));
+        return computeBasicAuthentication(proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getCharset());
+    }
+
+    private static String computeBasicAuthentication(String principal, String password, Charset charset) {
+        String s = principal + ":" + password;
+        return "Basic " + Base64.encode(s.getBytes(charset));
     }
 
     private static String computeRealmURI(Realm realm) {
@@ -48,7 +51,7 @@ public final class AuthenticatorUtils {
         }
     }
 
-    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
+    public static String computeDigestAuthentication(Realm realm) {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
