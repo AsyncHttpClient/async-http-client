@@ -252,8 +252,8 @@ public final class NettyRequestSender {
         ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy, useSSl);
 
         boolean channelPreempted = false;
-
         String poolKey = null;
+
         try {
             // Do not throw an exception when we need an extra connection for a redirect.
             if (!reclaimCache) {
@@ -267,7 +267,7 @@ public final class NettyRequestSender {
 
                 channelPreempted = true;
             }
-        
+
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
