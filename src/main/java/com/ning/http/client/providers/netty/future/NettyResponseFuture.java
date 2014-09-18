@@ -55,8 +55,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
     
-    private volatile boolean requestTimeoutReached;
-    private volatile boolean idleConnectionTimeoutReached;
     private final long start = millisTime();
     private final ConnectionPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
@@ -263,31 +261,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public void setAsyncHandler(AsyncHandler<V> asyncHandler) {
         this.asyncHandler = asyncHandler;
-    }
-
-    /**
-     * Is the Future still valid
-     * 
-     * @return <code>true</code> if response has expired and should be terminated.
-     */
-    public boolean hasExpired() {
-        return requestTimeoutReached || idleConnectionTimeoutReached;
-    }
-
-    public void setRequestTimeoutReached() {
-        this.requestTimeoutReached = true;
-    }
-
-    public boolean isRequestTimeoutReached() {
-        return requestTimeoutReached;
-    }
-
-    public void setIdleConnectionTimeoutReached() {
-        this.idleConnectionTimeoutReached = true;
-    }
-
-    public boolean isIdleConnectionTimeoutReached() {
-        return idleConnectionTimeoutReached;
     }
 
     public void cancelTimeouts() {
