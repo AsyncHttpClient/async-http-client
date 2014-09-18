@@ -252,20 +252,22 @@ public final class NettyRequestSender {
         ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy, useSSl);
 
         boolean channelPreempted = false;
+
         String poolKey = null;
-
-        // Do not throw an exception when we need an extra connection for a redirect.
-        if (!reclaimCache) {
-
-            // only compute when maxConnectionPerHost is enabled
-            // FIXME clean up
-            if (config.getMaxConnectionsPerHost() > 0)
-                poolKey = channelManager.getPartitionId(future);
-
-            channelPreempted = preemptChannel(asyncHandler, poolKey);
-        }
-
         try {
+            // Do not throw an exception when we need an extra connection for a redirect.
+            if (!reclaimCache) {
+                // only compute when maxConnectionPerHost is enabled
+                // FIXME clean up
+                if (config.getMaxConnectionsPerHost() > 0)
+                    poolKey = channelManager.getPartitionId(future);
+
+                if (!channelManager.preemptChannel(poolKey))
+                    throw tooManyConnections;
+
+                channelPreempted = true;
+            }
+        
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
@@ -496,22 +498,6 @@ public final class NettyRequestSender {
             }
         }
         return channel;
-    }
-
-    public boolean preemptChannel(AsyncHandler<?> asyncHandler, String poolKey) throws IOException {
-
-        boolean channelPreempted = false;
-        if (channelManager.preemptChannel(poolKey)) {
-            channelPreempted = true;
-        } else {
-            try {
-                asyncHandler.onThrowable(tooManyConnections);
-            } catch (Exception e) {
-                LOGGER.warn("asyncHandler.onThrowable crashed", e);
-            }
-            throw tooManyConnections;
-        }
-        return channelPreempted;
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
