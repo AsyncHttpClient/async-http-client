@@ -21,6 +21,8 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -37,6 +39,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
@@ -65,29 +68,30 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testMaxTotalConnectionsException() {
+    public void testMaxTotalConnectionsException() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
         try {
             String url = getTargetUrl();
-            int i;
+            
+            List<ListenableFuture<Response>> futures = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                log.info("{} requesting url [{}]...", i, url);
+                futures.add(client.prepareGet(url).execute());
+            }
+            
             Exception exception = null;
-            for (i = 0; i < 20; i++) {
+            for (ListenableFuture<Response> future : futures) {
                 try {
-                    log.info("{} requesting url [{}]...", i, url);
-
-                    if (i < 5) {
-                        client.prepareGet(url).execute().get();
-                    } else {
-                        client.prepareGet(url).execute();
-                    }
+                    future.get();
                 } catch (Exception ex) {
                     exception = ex;
                     break;
                 }
             }
+
             assertNotNull(exception);
-            assertNotNull(exception.getMessage());
-            assertEquals(exception.getMessage(), "Too many connections 1");
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
         } finally {
             client.close();
         }
@@ -154,7 +158,8 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 exception = ex;
             }
             assertNotNull(exception);
-            assertEquals(exception.getMessage(), "Too many connections 1");
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
         } finally {
             client.close();
         }
