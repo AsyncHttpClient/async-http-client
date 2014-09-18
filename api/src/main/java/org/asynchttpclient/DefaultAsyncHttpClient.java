@@ -227,18 +227,20 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     @Override
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
-        FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
-        fc = preProcessRequest(fc);
+        if (config.getRequestFilters().isEmpty()) {
+            return httpProvider.execute(request, handler);
 
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        } else {
+            FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
+            fc = preProcessRequest(fc);
+
+            return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        }
     }
 
     @Override
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase())
-                .request(request).build();
-        fc = preProcessRequest(fc);
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        return executeRequest(request, new AsyncCompletionHandlerBase());
     }
 
     /**
