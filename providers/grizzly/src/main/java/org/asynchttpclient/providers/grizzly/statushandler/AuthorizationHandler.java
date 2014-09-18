@@ -26,7 +26,6 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
 public final class AuthorizationHandler implements StatusHandler {
@@ -75,11 +74,7 @@ public final class AuthorizationHandler implements StatusHandler {
             req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeBasicAuthentication(realm));
         } else if (lowerCaseAuth.startsWith("digest")) {
             req.getHeaders().remove(Header.Authorization.toString());
-            try {
-                req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeDigestAuthentication(realm));
-            } catch (NoSuchAlgorithmException e) {
-                throw new IllegalStateException("Digest authentication not supported", e);
-            }
+            req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeDigestAuthentication(realm));
         } else {
             throw new IllegalStateException("Unsupported authorization method: " + auth);
         }

@@ -34,7 +34,6 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.slf4j.LoggerFactory;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
 public final class ProxyAuthorizationHandler implements StatusHandler {
@@ -70,11 +69,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         } else if (proxyAuthLowerCase.startsWith("digest")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
-            try {
-                req.getHeaders().add(Header.ProxyAuthorization.toString(), AuthenticatorUtils.computeDigestAuthentication(realm));
-            } catch (NoSuchAlgorithmException e) {
-                throw new IllegalStateException("Digest authentication not supported", e);
-            }
+            req.getHeaders().add(Header.ProxyAuthorization.toString(), AuthenticatorUtils.computeDigestAuthentication(realm));
         } else if (proxyAuthLowerCase.startsWith("ntlm")) {
 
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
