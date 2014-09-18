@@ -30,7 +30,7 @@ import org.asynchttpclient.uri.Uri;
  */
 public class AsyncHttpProviderUtils {
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
 
     static {
         REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
