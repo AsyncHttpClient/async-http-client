@@ -25,6 +25,7 @@ import com.ning.http.client.uri.Uri;
 import javax.net.ssl.SSLContext;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -498,8 +499,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setConnectionTimeout(int connectionTimeuot) {
-            configBuilder.setConnectionTimeout(connectionTimeuot);
+        public Builder setConnectTimeout(int connectTimeout) {
+            configBuilder.setConnectTimeout(connectTimeout);
             return this;
         }
 
@@ -573,8 +574,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setRealmEnconding(String enc) {
-            realm().setEnconding(enc);
+        public Builder setRealmCharset(Charset charset) {
+            realm().setCharset(charset);
             return this;
         }
 

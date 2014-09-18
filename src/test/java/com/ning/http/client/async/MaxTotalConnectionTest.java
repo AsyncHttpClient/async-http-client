@@ -37,7 +37,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsExceedingException() {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000)
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
                 .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
                 .build());
 
@@ -62,7 +62,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnections() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000)
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
                 .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1)
                 .build());
         try {
@@ -83,7 +83,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsCorrectExceptionHandling() throws InterruptedException, ExecutionException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeout(1000)
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
                 .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
                 .build());
         try {

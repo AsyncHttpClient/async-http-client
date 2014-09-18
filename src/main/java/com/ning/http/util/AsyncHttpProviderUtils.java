@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -35,7 +36,7 @@ import java.util.List;
  */
 public class AsyncHttpProviderUtils {
 
-    public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
+    public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
 

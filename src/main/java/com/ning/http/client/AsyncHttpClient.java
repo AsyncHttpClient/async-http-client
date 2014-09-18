@@ -142,7 +142,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
  *      Response r = f.get();
  * </pre></blockquote>
  * <p/>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getReadTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
 public class AsyncHttpClient implements Closeable {
@@ -485,10 +485,15 @@ public class AsyncHttpClient implements Closeable {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
-        fc = preProcessRequest(fc);
+        if (config.getRequestFilters().isEmpty()) {
+            return httpProvider.execute(request, handler);
 
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        } else {
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+            fc = preProcessRequest(fc);
+            
+            return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        }
     }
 
     /**
@@ -498,11 +503,8 @@ public class AsyncHttpClient implements Closeable {
      * @return a {@link Future} of type Response
      * @throws IOException
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
-        fc = preProcessRequest(fc);
-        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+        return executeRequest(request, new AsyncCompletionHandlerBase());
     }
 
     /**

@@ -56,7 +56,6 @@ import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -104,13 +103,8 @@ public final class NettyRequestFactory {
                 authorizationHeader = computeBasicAuthentication(realm);
                 break;
             case DIGEST:
-                if (isNonEmpty(realm.getNonce())) {
-                    try {
-                        authorizationHeader = computeDigestAuthentication(realm);
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new SecurityException(e);
-                    }
-                }
+                if (isNonEmpty(realm.getNonce()))
+                    authorizationHeader = computeDigestAuthentication(realm);
                 break;
             case NTLM:
                 String domain;

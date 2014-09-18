@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.async;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.DateUtils.millisTime;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 import static org.testng.Assert.assertEquals;
@@ -40,7 +41,6 @@ import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.multipart.StringPart;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
-    private static final String UTF_8 = "text/html;charset=UTF-8";
+    private static final String TEXT_HTML_UTF_8 = "text/html;charset=UTF-8";
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncProviderEncodingTest() throws Throwable {
@@ -203,7 +203,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getContentType(), UTF_8);
+                        assertEquals(response.getContentType(), TEXT_HTML_UTF_8);
                     } finally {
                         l.countDown();
                     }
@@ -230,7 +230,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getContentType(), UTF_8);
+                        assertEquals(response.getContentType(), TEXT_HTML_UTF_8);
                     } finally {
                         l.countDown();
                     }
@@ -536,7 +536,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("\u017D\u017D\u017D\u017D\u017D\u017D").execute().get();
-            assertEquals(r.getResponseBody().getBytes(StandardCharsets.ISO_8859_1), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(StandardCharsets.ISO_8859_1));
+            assertEquals(r.getResponseBody().getBytes(ISO_8859_1), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(ISO_8859_1));
         } finally {
             client.close();
         }
@@ -677,7 +677,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar", StandardCharsets.UTF_8);
+            Part p = new StringPart("foo", "bar", UTF_8);
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 

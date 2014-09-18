@@ -13,9 +13,10 @@
  */
 package com.ning.http.client.providers.netty.request.body;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,8 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
  */
 public class FeedableBodyGenerator implements BodyGenerator {
-    private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
-    private final static byte[] ZERO = "0".getBytes(StandardCharsets.US_ASCII);
+    private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
+    private final static byte[] ZERO = "0".getBytes(US_ASCII);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<BodyPart>();
     private final AtomicInteger queueSize = new AtomicInteger();
     private FeedListener listener;
@@ -87,7 +88,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
             int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
             int size = Math.min(nextPart.buffer.remaining(), capacity);
-            buffer.put(Integer.toHexString(size).getBytes(StandardCharsets.US_ASCII));
+            buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
             buffer.put(END_PADDING);
             for (int i = 0; i < size; i++) {
                 buffer.put(nextPart.buffer.get());

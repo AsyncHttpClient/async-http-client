@@ -428,7 +428,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
-            urlConnection.setConnectTimeout(config.getConnectionTimeout());
+            urlConnection.setConnectTimeout(config.getConnectTimeout());
 
             if (requestTimeout != -1)
                 urlConnection.setReadTimeout(requestTimeout);
@@ -493,12 +493,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                         break;
                     case DIGEST:
                         if (isNonEmpty(realm.getNonce())) {
-                            try {
-                                urlConnection.setRequestProperty("Authorization",
-                                        AuthenticatorUtils.computeDigestAuthentication(realm));
-                            } catch (NoSuchAlgorithmException e) {
-                                throw new SecurityException(e);
-                            }
+                            urlConnection.setRequestProperty("Authorization",
+                                    AuthenticatorUtils.computeDigestAuthentication(realm));
                         }
                         break;
                     case NTLM:

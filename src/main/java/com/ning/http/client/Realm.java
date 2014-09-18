@@ -17,11 +17,13 @@
 package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.ning.http.client.uri.Uri;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -46,7 +48,7 @@ public class Realm {
     private final Uri uri;
     private final String methodName;
     private final boolean usePreemptiveAuth;
-    private final String enc;
+    private final Charset charset;
     private final String host;
     private final boolean messageType2Received;
     private final boolean useAbsoluteURI;
@@ -78,7 +80,7 @@ public class Realm {
                   String method,
                   boolean usePreemptiveAuth,
                   String ntlmDomain,
-                  String enc,
+                  Charset charset,
                   String host,
                   boolean messageType2Received,
                   String opaque,
@@ -101,7 +103,7 @@ public class Realm {
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.ntlmDomain = ntlmDomain;
-        this.enc = enc;
+        this.charset = charset;
         this.host = host;
         this.messageType2Received = messageType2Received;
         this.useAbsoluteURI = useAbsoluteURI;
@@ -162,8 +164,8 @@ public class Realm {
         return uri;
     }
 
-    public String getEncoding() {
-        return enc;
+    public Charset getCharset() {
+        return charset;
     }
 
     public String getMethodName() {
@@ -298,7 +300,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive = false;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
-        private String enc = StandardCharsets.UTF_8.name();
+        private Charset charset = UTF_8;
         private String host = "localhost";
         private boolean messageType2Received = false;
         private boolean useAbsoluteURI = true;
@@ -512,7 +514,7 @@ public class Realm {
             setNonce(clone.getNonce());
             setPassword(clone.getPassword());
             setPrincipal(clone.getPrincipal());
-            setEnconding(clone.getEncoding());
+            setCharset(clone.getCharset());
             setOpaque(clone.getOpaque());
             setQop(clone.getQop());
             setScheme(clone.getScheme());
@@ -530,7 +532,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(StandardCharsets.ISO_8859_1));
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                 throw new SecurityException(e);
@@ -556,12 +558,12 @@ public class Realm {
             return value.startsWith("\"") ? value.substring(1) : value;
         }
 
-        public String getEncoding() {
-            return enc;
+        public Charset getCharset() {
+            return charset;
         }
 
-        public RealmBuilder setEnconding(String enc) {
-            this.enc = enc;
+        public RealmBuilder setCharset(Charset charset) {
+            this.charset = charset;
             return this;
         }
 
@@ -577,7 +579,7 @@ public class Realm {
                     .append(realmName)
                     .append(":")
                     .append(password)
-                    .toString().getBytes(StandardCharsets.ISO_8859_1));
+                    .toString().getBytes(ISO_8859_1));
             byte[] ha1 = md.digest();
 
             md.reset();
@@ -585,7 +587,7 @@ public class Realm {
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
             md.update(new StringBuilder(methodName)
                     .append(':')
-                    .append(uri).toString().getBytes(StandardCharsets.ISO_8859_1));
+                    .append(uri).toString().getBytes(ISO_8859_1));
             byte[] ha2 = md.digest();
 
             if(qop==null || qop.equals("")) {
@@ -593,7 +595,7 @@ public class Realm {
                     .append(':')
                     .append(nonce)
                     .append(':')
-                    .append(toBase16(ha2)).toString().getBytes(StandardCharsets.ISO_8859_1));
+                    .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
 
              } else {
                  //qop ="auth" or "auth-int"
@@ -607,7 +609,7 @@ public class Realm {
                     .append(':')
                     .append(qop)
                     .append(':')
-                    .append(toBase16(ha2)).toString().getBytes(StandardCharsets.ISO_8859_1));
+                    .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
             }
 
             byte[] digest = md.digest();
@@ -672,7 +674,7 @@ public class Realm {
                     methodName,
                     usePreemptive,
                     ntlmDomain,
-                    enc,
+                    charset,
                     host,
                     messageType2Received,
                     opaque,

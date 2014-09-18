@@ -78,7 +78,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                 .setAllowPoolingConnections(true)//
                 .setMaxConnectionsPerHost(1)//
                 .setMaxConnections(1)//
-                .setConnectionTimeout(1000)//
+                .setConnectTimeout(1000)//
                 .setRequestTimeout(1000)//
                 .setFollowRedirect(true);
 

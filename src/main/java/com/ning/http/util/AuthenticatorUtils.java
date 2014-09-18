@@ -14,26 +14,29 @@ package com.ning.http.util;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.uri.Uri;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.Charset;
 
 public final class AuthenticatorUtils {
 
-    public static String computeBasicAuthentication(Realm realm) throws UnsupportedEncodingException {
-        String s = realm.getPrincipal() + ":" + realm.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(realm.getEncoding()));
+    public static String computeBasicAuthentication(Realm realm) {
+        return computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset());
     }
 
-    public static String computeBasicAuthentication(ProxyServer proxyServer) throws UnsupportedEncodingException {
-        String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(proxyServer.getEncoding()));
+    public static String computeBasicAuthentication(ProxyServer proxyServer) {
+        return computeBasicAuthentication(proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getCharset());
     }
-    
+
+    private static String computeBasicAuthentication(String principal, String password, Charset charset) {
+        String s = principal + ":" + password;
+        return "Basic " + Base64.encode(s.getBytes(charset));
+    }
+
     private static String computeRealmURI(Realm realm) {
         Uri uri = realm.getUri();
         if (realm.isTargetProxy()) {
@@ -48,7 +51,7 @@ public final class AuthenticatorUtils {
         }
     }
     
-    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
+    public static String computeDigestAuthentication(Realm realm) {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
@@ -65,7 +68,7 @@ public final class AuthenticatorUtils {
         append(builder, "cnonce", realm.getCnonce(), true);
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
-        return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
+        return new String(builder.toString().getBytes(ISO_8859_1));
     }
 
     private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {

@@ -29,8 +29,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "maxConnectionsPerHost", -1);
     }
 
-    public static int defaultConnectionTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT + "connectionTimeout", 60 * 1000);
+    public static int defaultConnectTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "connectTimeout", 5 * 1000);
     }
 
     public static int defaultPooledConnectionIdleTimeout() {

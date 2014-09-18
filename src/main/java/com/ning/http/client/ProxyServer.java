@@ -16,8 +16,9 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.util.StandardCharsets;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +54,7 @@ public class ProxyServer {
     private final String password;
     private final int port;
     private final String url;
-    private String encoding = StandardCharsets.UTF_8.name();
+    private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
@@ -101,13 +102,13 @@ public class ProxyServer {
         return password;
     }
 
-    public ProxyServer setEncoding(String encoding) {
-        this.encoding = encoding;
+    public ProxyServer setCharset(Charset charset) {
+        this.charset = charset;
         return this;
     }
 
-    public String getEncoding() {
-        return encoding;
+    public Charset getCharset() {
+        return charset;
     }
 
     public ProxyServer addNonProxyHost(String uri) {

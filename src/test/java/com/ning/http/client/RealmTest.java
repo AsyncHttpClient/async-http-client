@@ -12,10 +12,11 @@
  */
 package com.ning.http.client;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Realm.RealmBuilder;
 import com.ning.http.client.uri.Uri;
-import com.ning.http.util.StandardCharsets;
 
 import org.testng.Assert;
 
@@ -29,7 +30,7 @@ public class RealmTest {
     public void testClone() {
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal("user").setPassword("pass");
-        builder.setEnconding("enc").setUsePreemptiveAuth(true);
+        builder.setCharset(UTF_16).setUsePreemptiveAuth(true);
         builder.setRealmName("realm").setAlgorithm("algo");
         builder.setScheme(AuthScheme.BASIC);
         Realm orig = builder.build();
@@ -37,7 +38,7 @@ public class RealmTest {
         Realm clone = new RealmBuilder().clone(orig).build();
         Assert.assertEquals(clone.getPrincipal(), orig.getPrincipal());
         Assert.assertEquals(clone.getPassword(), orig.getPassword());
-        Assert.assertEquals(clone.getEncoding(), orig.getEncoding());
+        Assert.assertEquals(clone.getCharset(), orig.getCharset());
         Assert.assertEquals(clone.getUsePreemptiveAuth(), orig.getUsePreemptiveAuth());
         Assert.assertEquals(clone.getRealmName(), orig.getRealmName());
         Assert.assertEquals(clone.getAlgorithm(), orig.getAlgorithm());
@@ -111,7 +112,7 @@ public class RealmTest {
     private String getMd5(String what) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(what.getBytes(StandardCharsets.ISO_8859_1));
+            md.update(what.getBytes(ISO_8859_1));
             byte[] hash = md.digest();
             BigInteger bi = new BigInteger(1, hash);
             String result = bi.toString(16);

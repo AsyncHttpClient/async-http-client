@@ -82,7 +82,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
@@ -129,12 +128,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1173,9 +1170,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (handler instanceof TransferCompletionHandler) {
                 ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
             }
-            if (handler instanceof AsyncHandlerExtensions) {
-                ((AsyncHandlerExtensions) handler).onSendRequest();
-            }
         }
 
         @Override
@@ -1586,19 +1580,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
                 if (lowerCaseAuth.startsWith("basic")) {
                     req.getHeaders().remove(Header.Authorization.toString());
-                    try {
-                        req.getHeaders().add(Header.Authorization.toString(),
-                                             AuthenticatorUtils.computeBasicAuthentication(realm));
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
+                    req.getHeaders().add(Header.Authorization.toString(), AuthenticatorUtils.computeBasicAuthentication(realm));
                 } else if (lowerCaseAuth.startsWith("digest")) {
                     req.getHeaders().remove(Header.Authorization.toString());
-                    try {
-                        req.getHeaders().add(Header.Authorization.toString(),
-                                             AuthenticatorUtils.computeDigestAuthentication(realm));
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new IllegalStateException("Digest authentication not supported", e);
-                    }
+                    req.getHeaders().add(Header.Authorization.toString(),
+                                         AuthenticatorUtils.computeDigestAuthentication(realm));
                 } else {
                     throw new IllegalStateException("Unsupported authorization method: " + auth);
                 }
@@ -2441,7 +2427,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final ProxyServer proxy = requestFuture.getProxy();
             String host = (proxy != null) ? proxy.getHost() : uri.getHost();
             int port = (proxy != null) ? proxy.getPort() : uri.getPort();
-            int cTimeout = provider.clientConfig.getConnectionTimeout();
+            int cTimeout = provider.clientConfig.getConnectTimeout();
             FutureImpl<Connection> future = Futures.createSafeFuture();
             CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                     createConnectionCompletionHandler(request, requestFuture, null));
@@ -2922,7 +2908,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 e.printStackTrace();
             }
             AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                    .setConnectionTimeout(5000)
+                    .setConnectTimeout(5000)
                     .setSSLContext(sslContext).build();
             AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
             try {

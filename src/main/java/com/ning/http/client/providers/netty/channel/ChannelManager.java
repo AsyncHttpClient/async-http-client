@@ -179,8 +179,8 @@ public class ChannelManager {
         DefaultChannelFuture.setUseDeadLockChecker(nettyConfig.isUseDeadLockChecker());
 
         // FIXME isn't there a constant for this name???
-        if (config.getConnectionTimeout() > 0)
-            nettyConfig.addProperty("connectTimeoutMillis", config.getConnectionTimeout());
+        if (config.getConnectTimeout() > 0)
+            nettyConfig.addProperty("connectTimeoutMillis", config.getConnectTimeout());
         for (Entry<String, Object> entry : nettyConfig.propertiesSet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -427,7 +427,7 @@ public class ChannelManager {
 
         return new Callback(future) {
             @Override
-            public void call() throws Exception {
+            public void call() {
                 tryToOfferChannelToPool(channel, keepAlive, poolKey);
             }
         };

@@ -44,7 +44,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
         long repeats = (1024 * 1024 * 100 / bytes.length) + 1;
         largeFile = createTempFile(bytes, (int) repeats);
         int timeout = (int) (largeFile.length() / 1000);
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectionTimeout(timeout).build();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build();
         AsyncHttpClient client = getAsyncHttpClient(config);
         try {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());

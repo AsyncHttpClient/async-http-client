@@ -12,6 +12,7 @@
  */
 package com.ning.http.client.providers.apache;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.MiscUtils.closeSilently;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
@@ -81,7 +82,6 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.StandardCharsets;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import javax.net.SocketFactory;
@@ -254,7 +254,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
             String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET.name() : request.getBodyEncoding();
 
-            post.getParams().setContentCharset(StandardCharsets.ISO_8859_1.name());
+            post.getParams().setContentCharset(ISO_8859_1.name());
             if (request.getByteData() != null) {
                 post.setRequestEntity(new ByteArrayRequestEntity(request.getByteData()));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getByteData().length));
@@ -280,7 +280,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
 
                 post.setRequestHeader("Content-Length", String.valueOf(sb.length()));
-                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", StandardCharsets.ISO_8859_1.name()));
+                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", ISO_8859_1.name()));
 
                 if (!request.getHeaders().containsKey("Content-Type")) {
                     post.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");

@@ -69,6 +69,7 @@ public final class NettyRequestSender {
     private final Timer nettyTimer;
     private final AtomicBoolean closed;
     private final NettyRequestFactory requestFactory;
+    private final IOException tooManyConnections;
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
             NettyAsyncHttpProviderConfig nettyConfig,//
@@ -80,6 +81,11 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.closed = closed;
         requestFactory = new NettyRequestFactory(config, nettyConfig);
+        if (config.getMaxConnections() > 0) {
+            tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
+            tooManyConnections.setStackTrace(new StackTraceElement[] {});
+        } else
+            tooManyConnections = null;
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request,//
@@ -208,8 +214,11 @@ public final class NettyRequestSender {
         try {
             writeRequest(future, channel);
         } catch (Exception ex) {
+            // write request isn't supposed to throw Exceptions
             LOGGER.debug("writeRequest failure", ex);
             if (ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
+                // FIXME what is this for? https://github.com/AsyncHttpClient/async-http-client/commit/a847c3d4523ccc09827743e15b17e6bab59c553b
+                // can such an exception happen as we write async?
                 LOGGER.debug("SSLEngine failure", ex);
                 future = null;
             } else {
@@ -310,7 +319,7 @@ public final class NettyRequestSender {
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest();
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
                     channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
@@ -375,13 +384,12 @@ public final class NettyRequestSender {
             timeoutsHolder.requestTimeout = requestTimeout;
         }
 
-        int readTimeout = config.getReadTimeout();
-        if (readTimeout != -1 && readTimeout < requestTimeoutInMs) {
-            // no need for a idleConnectionTimeout that's less than the
-            // requestTimeoutInMs
-            Timeout idleConnectionTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder,
-                    requestTimeoutInMs, readTimeout), readTimeout);
-            timeoutsHolder.readTimeout = idleConnectionTimeout;
+        int readTimeoutValue = config.getReadTimeout();
+        if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
+            // no need for a readTimeout that's less than the requestTimeout
+            Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder,
+                    requestTimeoutInMs, readTimeoutValue), readTimeoutValue);
+            timeoutsHolder.readTimeout = readTimeout;
         }
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
     }
@@ -496,13 +504,12 @@ public final class NettyRequestSender {
         if (channelManager.preemptChannel(poolKey)) {
             channelPreempted = true;
         } else {
-            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
             try {
-                asyncHandler.onThrowable(ex);
+                asyncHandler.onThrowable(tooManyConnections);
             } catch (Exception e) {
                 LOGGER.warn("asyncHandler.onThrowable crashed", e);
             }
-            throw ex;
+            throw tooManyConnections;
         }
         return channelPreempted;
     }

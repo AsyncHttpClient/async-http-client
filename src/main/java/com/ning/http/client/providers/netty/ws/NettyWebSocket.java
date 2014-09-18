@@ -13,8 +13,8 @@
  */
 package com.ning.http.client.providers.netty.ws;
 
+import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.client.providers.netty.util.ChannelBufferUtils.channelBuffer2bytes;
-import static com.ning.http.util.StandardCharsets.UTF_8;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 import org.jboss.netty.buffer.ChannelBuffer;

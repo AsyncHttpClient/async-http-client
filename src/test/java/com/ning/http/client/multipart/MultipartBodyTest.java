@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.multipart;
 
-import static com.ning.http.util.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -23,7 +23,6 @@ import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.multipart.FilePart;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.multipart.StringPart;
-import com.ning.http.util.StandardCharsets;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +43,7 @@ public class MultipartBodyTest {
         parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", StandardCharsets.UTF_8, "fileName"));
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
 
         // add a string
         parts.add(new StringPart("stringPart", "testString", UTF_8));
