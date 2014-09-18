@@ -163,12 +163,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
-
-    static {
-        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
-    }
-    
     private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
 
     private final TCPNIOTransport clientTransport;
@@ -628,7 +622,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     fc.fireEventUpstream(c,
                             new GracefulCloseEvent(HttpTransactionContext.this), null);
                 } else if (CloseType.REMOTELY.equals(type)) {
-                    abort(REMOTELY_CLOSED_EXCEPTION);
+                    abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
                 }
             }
         };
