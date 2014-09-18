@@ -82,7 +82,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
@@ -1170,9 +1169,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final AsyncHandler handler = context.handler;
             if (handler instanceof TransferCompletionHandler) {
                 ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
-            }
-            if (handler instanceof AsyncHandlerExtensions) {
-                ((AsyncHandlerExtensions) handler).onSendRequest();
             }
         }
 

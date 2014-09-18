@@ -319,7 +319,7 @@ public final class NettyRequestSender {
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest();
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
                     channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
