@@ -81,11 +81,8 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.closed = closed;
         requestFactory = new NettyRequestFactory(config, nettyConfig);
-        if (config.getMaxConnections() > 0) {
-            tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
-            tooManyConnections.setStackTrace(new StackTraceElement[] {});
-        } else
-            tooManyConnections = null;
+        tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
+        tooManyConnections.setStackTrace(new StackTraceElement[] {});
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request,//
