@@ -67,15 +67,11 @@ public class StringPart extends PartBase {
         this(name, value, contentType, charset, null);
     }
 
-    public StringPart(String name, String value, String contentType, Charset charset, String fileName) {
-        this(name, value, contentType, charset, fileName, null);
+    public StringPart(String name, String value, String contentType, Charset charset, String contentId) {
+        this(name, value, contentType, charset, contentId, null);
     }
 
-    public StringPart(String name, String value, String contentType, Charset charset, String fileName, String contentId) {
-        this(name, value, contentType, charset, fileName, contentId, null);
-    }
-
-    public StringPart(String name, String value, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+    public StringPart(String name, String value, String contentType, Charset charset, String contentId, String transferEncoding) {
         super(name, contentTypeOrDefault(contentType), charsetOrDefault(charset), contentId, transferEncodingOrDefault(transferEncoding));
         if (value == null)
             throw new NullPointerException("value");
@@ -87,7 +83,7 @@ public class StringPart extends PartBase {
         content = value.getBytes(getCharset());
         this.value = value;
     }
-
+    
     /**
      * Writes the data to the given OutputStream.
      * 
