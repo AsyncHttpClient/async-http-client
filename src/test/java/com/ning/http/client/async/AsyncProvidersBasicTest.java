@@ -677,7 +677,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar", UTF_8);
+            Part p = new StringPart("foo", "bar");
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -707,7 +707,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Throwable {
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().build();
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnforced(true).build();
         AsyncHttpClient client = getAsyncHttpClient(cf);
         try {
             final CountDownLatch l = new CountDownLatch(1);

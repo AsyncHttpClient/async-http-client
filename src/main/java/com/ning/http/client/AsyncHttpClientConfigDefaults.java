@@ -62,7 +62,7 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static boolean defaultCompressionEnforced() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "compressionEnforced");
+        return getBoolean(ASYNC_CLIENT + "compressionEnforced", false);
     }
 
     public static String defaultUserAgent() {

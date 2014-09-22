@@ -81,11 +81,8 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.closed = closed;
         requestFactory = new NettyRequestFactory(config, nettyConfig);
-        if (config.getMaxConnections() > 0) {
-            tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
-            tooManyConnections.setStackTrace(new StackTraceElement[] {});
-        } else
-            tooManyConnections = null;
+        tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
+        tooManyConnections.setStackTrace(new StackTraceElement[] {});
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request,//
@@ -254,18 +251,20 @@ public final class NettyRequestSender {
         boolean channelPreempted = false;
         String poolKey = null;
 
-        // Do not throw an exception when we need an extra connection for a redirect.
-        if (!reclaimCache) {
-
-            // only compute when maxConnectionPerHost is enabled
-            // FIXME clean up
-            if (config.getMaxConnectionsPerHost() > 0)
-                poolKey = channelManager.getPartitionId(future);
-
-            channelPreempted = preemptChannel(asyncHandler, poolKey);
-        }
-
         try {
+            // Do not throw an exception when we need an extra connection for a redirect.
+            if (!reclaimCache) {
+                // only compute when maxConnectionPerHost is enabled
+                // FIXME clean up
+                if (config.getMaxConnectionsPerHost() > 0)
+                    poolKey = channelManager.getPartitionId(future);
+
+                if (!channelManager.preemptChannel(poolKey))
+                    throw tooManyConnections;
+
+                channelPreempted = true;
+            }
+
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
@@ -496,22 +495,6 @@ public final class NettyRequestSender {
             }
         }
         return channel;
-    }
-
-    public boolean preemptChannel(AsyncHandler<?> asyncHandler, String poolKey) throws IOException {
-
-        boolean channelPreempted = false;
-        if (channelManager.preemptChannel(poolKey)) {
-            channelPreempted = true;
-        } else {
-            try {
-                asyncHandler.onThrowable(tooManyConnections);
-            } catch (Exception e) {
-                LOGGER.warn("asyncHandler.onThrowable crashed", e);
-            }
-            throw tooManyConnections;
-        }
-        return channelPreempted;
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

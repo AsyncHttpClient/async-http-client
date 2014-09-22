@@ -32,6 +32,7 @@ import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
+import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -40,10 +41,8 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
     public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
     static {
-        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
         CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
     }
 
@@ -134,7 +133,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 channelManager.closeChannel(channel);
 
             else if (!requestSender.retry(future))
-                requestSender.abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
+                requestSender.abort(channel, future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
         }
     }
 

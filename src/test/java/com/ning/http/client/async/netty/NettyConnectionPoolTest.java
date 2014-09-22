@@ -68,7 +68,8 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 exception = ex;
             }
             assertNotNull(exception);
-            assertEquals(exception.getMessage(), "Too many connections -1");
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "Too many connections -1");
         } finally {
             client.close();
         }
