@@ -46,7 +46,7 @@ public class MultipartBodyTest {
         parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
 
         // add a string
-        parts.add(new StringPart("stringPart", "testString", UTF_8));
+        parts.add(new StringPart("stringPart", "testString"));
 
         compareContentLength(parts);
     }

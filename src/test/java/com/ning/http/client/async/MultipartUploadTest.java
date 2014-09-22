@@ -42,7 +42,6 @@ import com.ning.http.client.Response;
 import com.ning.http.client.multipart.ByteArrayPart;
 import com.ning.http.client.multipart.FilePart;
 import com.ning.http.client.multipart.StringPart;
-import com.ning.http.util.AsyncHttpProviderUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -221,12 +220,12 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", UTF_8));
+            builder.addBodyPart(new StringPart("Name", "Dominic"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
 
-            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Age", "3"));
+            builder.addBodyPart(new StringPart("Height", "shrimplike"));
+            builder.addBodyPart(new StringPart("Hair", "ridiculous"));
 
             builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"));
 
