@@ -36,7 +36,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.multipart.FilePart;
 import org.asynchttpclient.multipart.StringPart;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -176,12 +175,12 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", UTF_8));
+            builder.addBodyPart(new StringPart("Name", "Dominic"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
 
-            builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
+            builder.addBodyPart(new StringPart("Age", "3"));
+            builder.addBodyPart(new StringPart("Height", "shrimplike"));
+            builder.addBodyPart(new StringPart("Hair", "ridiculous"));
 
             builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"));
 

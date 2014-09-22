@@ -41,36 +41,47 @@ public class StringPart extends PartBase {
      * Contents of this StringPart.
      */
     private final byte[] content;
+    private final String value;
 
     private static Charset charsetOrDefault(Charset charset) {
         return charset == null ? DEFAULT_CHARSET : charset;
     }
-
-    public StringPart(String name, String value, Charset charset) {
-        this(name, value, charset, null);
+    
+    private static String contentTypeOrDefault(String contentType) {
+        return contentType == null ? DEFAULT_CONTENT_TYPE : contentType;
+    }
+    
+    private static String transferEncodingOrDefault(String transferEncoding) {
+        return transferEncoding == null ? DEFAULT_TRANSFER_ENCODING : transferEncoding;
+    }
+    
+    public StringPart(String name, String value) {
+        this(name, value, null);
     }
 
-    /**
-     * Constructor.
-     * 
-     * @param name
-     *            The name of the part
-     * @param value
-     *            the string to post
-     * @param charset
-     *            the charset to be used to encode the string, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId
-     *            the content id
-     */
-    public StringPart(String name, String value, Charset charset, String contentId) {
+    public StringPart(String name, String value, String contentType) {
+        this(name, value, contentType, null);
+    }
 
-        super(name, DEFAULT_CONTENT_TYPE, charsetOrDefault(charset), DEFAULT_TRANSFER_ENCODING, contentId);
+    public StringPart(String name, String value, String contentType, Charset charset) {
+        this(name, value, contentType, charset, null);
+    }
+
+    public StringPart(String name, String value, String contentType, Charset charset, String contentId) {
+        this(name, value, contentType, charset, contentId, null);
+    }
+
+    public StringPart(String name, String value, String contentType, Charset charset, String contentId, String transferEncoding) {
+        super(name, contentTypeOrDefault(contentType), charsetOrDefault(charset), contentId, transferEncodingOrDefault(transferEncoding));
         if (value == null)
             throw new NullPointerException("value");
+
         if (value.indexOf(0) != -1)
             // See RFC 2048, 2.8. "8bit Data"
             throw new IllegalArgumentException("NULs may not be present in string parts");
-        content = value.getBytes(charsetOrDefault(charset));
+
+        content = value.getBytes(getCharset());
+        this.value = value;
     }
 
     /**
@@ -103,5 +114,9 @@ public class StringPart extends PartBase {
     @Override
     public long write(WritableByteChannel target, byte[] boundary) throws IOException {
         return MultipartUtils.writeBytesToChannel(target, getBytes(boundary));
+    }
+
+    public String getValue() {
+        return value;
     }
 }

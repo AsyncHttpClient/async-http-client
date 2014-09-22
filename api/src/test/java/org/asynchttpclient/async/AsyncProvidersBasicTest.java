@@ -659,7 +659,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar", UTF_8);
+            Part p = new StringPart("foo", "bar");
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
