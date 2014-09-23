@@ -113,7 +113,6 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                             abortChannelPreemption(poolKey);
                             ConnectException exception = new ConnectException("HostnameVerifier exception");
                             future.abort(exception);
-                            throw exception;
                         }
                     }
                 }
