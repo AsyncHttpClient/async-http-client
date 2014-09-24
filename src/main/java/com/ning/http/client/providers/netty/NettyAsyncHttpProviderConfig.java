@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.netty;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
@@ -101,6 +102,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     private ExecutorService bossExecutorService;
 
+    private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer httpsAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer wssAdditionalPipelineInitializer;
+
     /**
      * Allow configuring Netty's HttpClientCodecs.
      */
@@ -151,6 +157,38 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setBossExecutorService(ExecutorService bossExecutorService) {
         this.bossExecutorService = bossExecutorService;
+    }
+    
+    public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
+        return httpAdditionalPipelineInitializer;
+    }
+
+    public void setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
+        this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
+    }
+
+    public AdditionalPipelineInitializer getWsAdditionalPipelineInitializer() {
+        return wsAdditionalPipelineInitializer;
+    }
+
+    public void setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
+        this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
+    }
+
+    public AdditionalPipelineInitializer getHttpsAdditionalPipelineInitializer() {
+        return httpsAdditionalPipelineInitializer;
+    }
+
+    public void setHttpsAdditionalPipelineInitializer(AdditionalPipelineInitializer httpsAdditionalPipelineInitializer) {
+        this.httpsAdditionalPipelineInitializer = httpsAdditionalPipelineInitializer;
+    }
+
+    public AdditionalPipelineInitializer getWssAdditionalPipelineInitializer() {
+        return wssAdditionalPipelineInitializer;
+    }
+
+    public void setWssAdditionalPipelineInitializer(AdditionalPipelineInitializer wssAdditionalPipelineInitializer) {
+        this.wssAdditionalPipelineInitializer = wssAdditionalPipelineInitializer;
     }
 
     public int getHttpClientCodecMaxInitialLineLength() {
@@ -259,6 +297,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public static interface NettyWebSocketFactory {
         NettyWebSocket newNettyWebSocket(Channel channel, NettyAsyncHttpProviderConfig nettyConfig);
+    }
+
+    public static interface AdditionalPipelineInitializer {
+
+        void initPipeline(ChannelPipeline pipeline) throws Exception;
     }
 
     public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {

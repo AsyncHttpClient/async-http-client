@@ -207,6 +207,10 @@ public class ChannelManager {
                 pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
+
+                if (nettyConfig.getHttpAdditionalPipelineInitializer() != null)
+                    nettyConfig.getHttpAdditionalPipelineInitializer().initPipeline(pipeline);
+
                 return pipeline;
             }
         });
@@ -217,6 +221,10 @@ public class ChannelManager {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
                 pipeline.addLast(WS_PROCESSOR, wsProcessor);
+
+                if (nettyConfig.getWsAdditionalPipelineInitializer() != null)
+                    nettyConfig.getWsAdditionalPipelineInitializer().initPipeline(pipeline);
+
                 return pipeline;
             }
         });
@@ -230,6 +238,10 @@ public class ChannelManager {
                 pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
+
+                if (nettyConfig.getHttpsAdditionalPipelineInitializer() != null)
+                    nettyConfig.getHttpsAdditionalPipelineInitializer().initPipeline(pipeline);
+
                 return pipeline;
             }
         });
@@ -241,6 +253,10 @@ public class ChannelManager {
                 pipeline.addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this));
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
                 pipeline.addLast(WS_PROCESSOR, wsProcessor);
+
+                if (nettyConfig.getWssAdditionalPipelineInitializer() != null)
+                    nettyConfig.getWssAdditionalPipelineInitializer().initPipeline(pipeline);
+
                 return pipeline;
             }
         });
