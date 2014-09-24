@@ -895,12 +895,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.method(Method.CONNECT);
                     builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
                 } else if ((secure || httpCtx.isWSRequest) && config.isUseRelativeURIsWithConnectProxies()){
-                    builder.uri(uri.getPath());
+                    builder.uri(uri.getRawPath());
                 } else {
                     builder.uri(uri.toString());
                 }
             } else {
-                builder.uri(uri.getPath());
+                builder.uri(uri.getRawPath());
             }
             
             final BodyHandler bodyHandler = isPayloadAllowed(method) ?
