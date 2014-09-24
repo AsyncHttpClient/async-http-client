@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.Timer;
 
@@ -87,9 +88,9 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         return properties.entrySet();
     }
 
-    public static interface AdditionalChannelInitializer {
+    public static interface AdditionalPipelineInitializer {
 
-        void initChannel(Channel ch) throws Exception;
+        void initPipeline(ChannelPipeline pipeline) throws Exception;
     }
 
     public static interface ResponseBodyPartFactory {
@@ -130,10 +131,10 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
      */
     private EventLoopGroup eventLoopGroup;
 
-    private AdditionalChannelInitializer httpAdditionalChannelInitializer;
-    private AdditionalChannelInitializer wsAdditionalChannelInitializer;
-    private AdditionalChannelInitializer httpsAdditionalChannelInitializer;
-    private AdditionalChannelInitializer wssAdditionalChannelInitializer;
+    private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer httpsAdditionalPipelineInitializer;
+    private AdditionalPipelineInitializer wssAdditionalPipelineInitializer;
 
     /**
      * Allow configuring Netty's HttpClientCodecs.
@@ -176,36 +177,36 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         this.eventLoopGroup = eventLoopGroup;
     }
 
-    public AdditionalChannelInitializer getHttpAdditionalChannelInitializer() {
-        return httpAdditionalChannelInitializer;
+    public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
+        return httpAdditionalPipelineInitializer;
     }
 
-    public void setHttpAdditionalChannelInitializer(AdditionalChannelInitializer httpAdditionalChannelInitializer) {
-        this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
+    public void setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
+        this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
     }
 
-    public AdditionalChannelInitializer getWsAdditionalChannelInitializer() {
-        return wsAdditionalChannelInitializer;
+    public AdditionalPipelineInitializer getWsAdditionalPipelineInitializer() {
+        return wsAdditionalPipelineInitializer;
     }
 
-    public void setWsAdditionalChannelInitializer(AdditionalChannelInitializer wsAdditionalChannelInitializer) {
-        this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
+    public void setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
+        this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
     }
 
-    public AdditionalChannelInitializer getHttpsAdditionalChannelInitializer() {
-        return httpsAdditionalChannelInitializer;
+    public AdditionalPipelineInitializer getHttpsAdditionalPipelineInitializer() {
+        return httpsAdditionalPipelineInitializer;
     }
 
-    public void setHttpsAdditionalChannelInitializer(AdditionalChannelInitializer httpsAdditionalChannelInitializer) {
-        this.httpsAdditionalChannelInitializer = httpsAdditionalChannelInitializer;
+    public void setHttpsAdditionalPipelineInitializer(AdditionalPipelineInitializer httpsAdditionalPipelineInitializer) {
+        this.httpsAdditionalPipelineInitializer = httpsAdditionalPipelineInitializer;
     }
 
-    public AdditionalChannelInitializer getWssAdditionalChannelInitializer() {
-        return wssAdditionalChannelInitializer;
+    public AdditionalPipelineInitializer getWssAdditionalPipelineInitializer() {
+        return wssAdditionalPipelineInitializer;
     }
 
-    public void setWssAdditionalChannelInitializer(AdditionalChannelInitializer wssAdditionalChannelInitializer) {
-        this.wssAdditionalChannelInitializer = wssAdditionalChannelInitializer;
+    public void setWssAdditionalPipelineInitializer(AdditionalPipelineInitializer wssAdditionalPipelineInitializer) {
+        this.wssAdditionalPipelineInitializer = wssAdditionalPipelineInitializer;
     }
 
     public int getHttpClientCodecMaxInitialLineLength() {

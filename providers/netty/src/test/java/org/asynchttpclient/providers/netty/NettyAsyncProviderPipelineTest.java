@@ -22,12 +22,12 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig.AdditionalChannelInitializer;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer;
 import org.testng.annotations.Test;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpMessage;
 
 import java.util.concurrent.CountDownLatch;
@@ -44,10 +44,9 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
     public void asyncPipelineTest() throws Exception {
 
         NettyAsyncHttpProviderConfig nettyConfig = new NettyAsyncHttpProviderConfig();
-        nettyConfig.setHttpAdditionalChannelInitializer(new AdditionalChannelInitializer() {
-            public void initChannel(Channel ch) throws Exception {
-                // super.initPlainChannel(ch);
-                ch.pipeline().addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
+        nettyConfig.setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
+            public void initPipeline(ChannelPipeline pipeline) throws Exception {
+                pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         });
         AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()

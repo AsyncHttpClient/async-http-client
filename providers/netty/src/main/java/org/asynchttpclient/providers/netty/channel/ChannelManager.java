@@ -191,8 +191,8 @@ public class ChannelManager {
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
-                if (nettyConfig.getHttpAdditionalChannelInitializer() != null)
-                    nettyConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
+                if (nettyConfig.getHttpAdditionalPipelineInitializer() != null)
+                    nettyConfig.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
 
@@ -203,9 +203,8 @@ public class ChannelManager {
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
-                if (nettyConfig.getWsAdditionalChannelInitializer() != null) {
-                    nettyConfig.getWsAdditionalChannelInitializer().initChannel(ch);
-                }
+                if (nettyConfig.getWsAdditionalPipelineInitializer() != null)
+                    nettyConfig.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
 
@@ -220,8 +219,8 @@ public class ChannelManager {
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
-                if (nettyConfig.getHttpsAdditionalChannelInitializer() != null)
-                    nettyConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
+                if (nettyConfig.getHttpsAdditionalPipelineInitializer() != null)
+                    nettyConfig.getHttpsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
 
@@ -234,9 +233,8 @@ public class ChannelManager {
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
-                if (nettyConfig.getWssAdditionalChannelInitializer() != null) {
-                    nettyConfig.getWssAdditionalChannelInitializer().initChannel(ch);
-                }
+                if (nettyConfig.getWssAdditionalPipelineInitializer() != null)
+                    nettyConfig.getWssAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
     }
