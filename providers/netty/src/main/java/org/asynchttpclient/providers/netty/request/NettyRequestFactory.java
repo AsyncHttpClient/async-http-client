@@ -299,7 +299,7 @@ public final class NettyRequestFactory {
         }
 
         String hostHeader = hostHeader(request, uri);
-        if (hostHeader != null)
+        if (hostHeader != null && !headers.contains(HttpHeaders.Names.HOST))
             headers.set(HttpHeaders.Names.HOST, hostHeader);
 
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
