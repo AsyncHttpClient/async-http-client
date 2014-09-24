@@ -134,7 +134,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
                     pos += read;
                 }
 
-                httpResponse.getOutputStream().write(bytes);
+                httpResponse.getOutputStream().write(bytes, 0, pos + 1); // (pos + 1) because last read added -1
             }
 
             httpResponse.setStatus(200);
