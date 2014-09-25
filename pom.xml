@@ -434,16 +434,8 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.beanshell</groupId>
                     <artifactId>bsh</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -528,7 +520,7 @@
         <surefire.version>2.16</surefire.version>
         <logback.version>1.0.13</logback.version>
         <log4j.version>1.2.17</log4j.version>
-        <testng.version>6.8.7</testng.version>
+        <testng.version>6.8.8</testng.version>
         <jetty.version>9.0.5.v20130815</jetty.version>
         <tomcat.version>6.0.29</tomcat.version>
         <commons-io.version>2.4</commons-io.version>
