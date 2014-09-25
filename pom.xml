@@ -128,6 +128,12 @@
             <artifactId>testng</artifactId>
             <version>6.8.8</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.beanshell</groupId>
+                    <artifactId>bsh</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
