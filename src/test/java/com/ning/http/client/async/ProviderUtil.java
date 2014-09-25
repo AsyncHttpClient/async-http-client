@@ -17,7 +17,6 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.providers.apache.ApacheAsyncHttpProvider;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 
@@ -36,14 +35,6 @@ public class ProviderUtil {
             config = new AsyncHttpClientConfig.Builder().build();
         }
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-    }
-
-    public static AsyncHttpClient apacheProvider(AsyncHttpClientConfig config) {
-        if (config == null) {
-            return new AsyncHttpClient(new ApacheAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build()));
-        } else {
-            return new AsyncHttpClient(new ApacheAsyncHttpProvider(config));
-        }
     }
 
     public static AsyncHttpClient jdkProvider(AsyncHttpClientConfig config) {
