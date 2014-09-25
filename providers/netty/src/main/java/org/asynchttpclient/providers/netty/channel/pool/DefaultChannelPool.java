@@ -121,7 +121,7 @@ public final class DefaultChannelPool implements ChannelPool {
             return false;
 
         ChannelCreation creation = channel2Creation.get(channel);
-        return creation == null || now - creation.creationTime >= maxConnectionTTL;
+        return creation != null && now - creation.creationTime >= maxConnectionTTL;
     }
 
     private boolean isRemotelyClosed(Channel channel) {
