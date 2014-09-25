@@ -22,12 +22,12 @@ public final class BodyHandlerFactory {
 
     public BodyHandlerFactory(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
         handlers = new BodyHandler[] {//
-        new StringBodyHandler(grizzlyAsyncHttpProvider),//
-                new ByteArrayBodyHandler(grizzlyAsyncHttpProvider),//
-                new ParamsBodyHandler(grizzlyAsyncHttpProvider),//
+        new StringBodyHandler(),//
+                new ByteArrayBodyHandler(),//
+                new ParamsBodyHandler(),//
                 new StreamDataBodyHandler(),//
                 new PartsBodyHandler(),//
-                new FileBodyHandler(grizzlyAsyncHttpProvider),//
+                new FileBodyHandler(),//
                 new BodyGeneratorBodyHandler() //
         };
     }

@@ -17,7 +17,6 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
@@ -31,12 +30,6 @@ import java.net.URLEncoder;
 import java.util.List;
 
 public final class ParamsBodyHandler extends BodyHandler {
-
-    private final boolean compressionEnabled;
-
-    public ParamsBodyHandler(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
-    }
 
     // -------------------------------------------- Methods from BodyHandler
 
@@ -71,13 +64,13 @@ public final class ParamsBodyHandler extends BodyHandler {
             final byte[] data = sb.toString().getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
-            final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
+            final HttpContent content = requestPacket.httpContentBuilder()
+                    .content(gBuffer)
+                    .last(true)
+                    .build();
             if (requestPacket.getContentLength() == -1) {
-                if (!compressionEnabled) {
-                    requestPacket.setContentLengthLong(data.length);
-                }
+                requestPacket.setContentLengthLong(data.length);
             }
-            content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         }
         return true;

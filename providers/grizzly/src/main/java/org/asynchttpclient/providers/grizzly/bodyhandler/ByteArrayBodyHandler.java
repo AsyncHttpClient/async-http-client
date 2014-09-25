@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
 import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
@@ -25,13 +24,6 @@ import org.glassfish.grizzly.memory.MemoryManager;
 import java.io.IOException;
 
 public final class ByteArrayBodyHandler extends BodyHandler {
-
-    private final boolean compressionEnabled;
-
-    public ByteArrayBodyHandler(
-            final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
-    }
 
     // -------------------------------------------- Methods from BodyHandler
 
@@ -47,22 +39,20 @@ public final class ByteArrayBodyHandler extends BodyHandler {
         final MemoryManager mm = ctx.getMemoryManager();
         final Buffer gBuffer = Buffers.wrap(mm, data);
         if (requestPacket.getContentLength() == -1) {
-            if (!compressionEnabled) {
-                requestPacket.setContentLengthLong(data.length);
-            }
+            requestPacket.setContentLengthLong(data.length);
         }
-        final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-        content.setLast(true);
+        final HttpContent content = requestPacket.httpContentBuilder()
+                .content(gBuffer)
+                .last(true)
+                .build();
         ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         return true;
     }
 
     @Override
     protected long getContentLength(final Request request) {
-        if (request.getContentLength() >= 0) {
-            return request.getContentLength();
-        }
-        
-        return compressionEnabled ? -1 : request.getByteData().length;
+        return request.getContentLength() >= 0
+                ? request.getContentLength()
+                : request.getByteData().length;
     }
 }

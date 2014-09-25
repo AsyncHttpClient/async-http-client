@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 
 public final class FileBodyHandler extends BodyHandler {
 
@@ -40,13 +39,6 @@ public final class FileBodyHandler extends BodyHandler {
         SEND_FILE_SUPPORT = configSendFileSupport();
     }
 
-    private final boolean compressionEnabled;
-
-    public FileBodyHandler(
-            final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnforced();
-    }
-    
     // ------------------------------------------------ Methods from BodyHandler
 
     public boolean handlesBodyType(final Request request) {
@@ -59,7 +51,7 @@ public final class FileBodyHandler extends BodyHandler {
         final File f = request.getFile();
         requestPacket.setContentLengthLong(f.length());
         final HttpTxContext context = HttpTxContext.get(ctx);
-        if (compressionEnabled || !SEND_FILE_SUPPORT || requestPacket.isSecure()) {
+        if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
             final FileInputStream fis = new FileInputStream(request.getFile());
             final MemoryManager mm = ctx.getMemoryManager();
             AtomicInteger written = new AtomicInteger();
@@ -108,11 +100,9 @@ public final class FileBodyHandler extends BodyHandler {
 
     @Override
     protected long getContentLength(final Request request) {
-        if (request.getContentLength() >= 0) {
-            return request.getContentLength();
-        }
-        
-        return compressionEnabled ? -1 : request.getFile().length();
+        return request.getContentLength() >= 0
+                ? request.getContentLength()
+                : request.getFile().length();
     }
     
     // --------------------------------------------------------- Private Methods
