@@ -126,9 +126,8 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>5.8</version>
+            <version>6.8.8</version>
             <scope>test</scope>
-            <classifier>jdk15</classifier>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>

@@ -14,9 +14,7 @@ package com.ning.http.client.async;
 
 import static java.nio.charset.StandardCharsets.*;
 
-import static junit.framework.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 import static org.testng.AssertJUnit.assertNotNull;
 import static org.testng.AssertJUnit.assertNotSame;
 
@@ -220,11 +218,12 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
+        SimpleAsyncHttpClient client = null;
         try {
-            assertTrue(true);
+            client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
         } finally {
-            client.close();
+            if (client != null)
+                client.close();
         }
     }
 
