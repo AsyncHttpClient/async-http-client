@@ -385,12 +385,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 eventFilter.removeContentEncoding(encoding);
             }
         }
-        if (clientConfig.isCompressionEnforced()) {
-            eventFilter.addContentEncoding(
-                    new GZipContentEncoding(512,
-                                            512,
-                                            new ClientEncodingFilter()));
-        }
+        
+        eventFilter.addContentEncoding(
+                new GZipContentEncoding(512,
+                                        512,
+                                        new ClientEncodingFilter()));
+        
         fcb.add(eventFilter);
         fcb.add(clientFilter);
         clientTransport.getAsyncQueueIO().getWriter()
@@ -1043,7 +1043,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
             }
 
-
+            if (clientConfig.isCompressionEnforced() &&
+                    !headers.contains(Header.AcceptEncoding)) {
+                requestPacket.addHeader(Header.AcceptEncoding, "gzip");
+            }
         }
 
 
@@ -1760,10 +1763,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         public boolean applyEncoding(HttpHeader httpPacket) {
-
-           httpPacket.addHeader(Header.AcceptEncoding, "gzip");
-           return false;
-
+            return false;
         }
 
 
