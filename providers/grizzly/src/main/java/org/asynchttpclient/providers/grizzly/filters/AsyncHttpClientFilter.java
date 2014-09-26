@@ -513,6 +513,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (!headers.contains(Header.UserAgent)) {
             requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
         }
+        
+        if (config.isCompressionEnforced() &&
+                !headers.contains(Header.AcceptEncoding)) {
+            requestPacket.addHeader(Header.AcceptEncoding, "gzip");
+        }
     }
 
     private void addCookies(final Request request, final HttpRequestPacket requestPacket) {
