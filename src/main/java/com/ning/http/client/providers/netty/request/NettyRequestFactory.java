@@ -297,9 +297,8 @@ public final class NettyRequestFactory {
             headers.set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
         }
 
-        String hostHeader = hostHeader(request, uri);
-        if (hostHeader != null)
-            headers.set(HttpHeaders.Names.HOST, hostHeader);
+        if (!headers.contains(HttpHeaders.Names.HOST))
+            headers.set(HttpHeaders.Names.HOST, hostHeader(request, uri));
 
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         String authorizationHeader = authorizationHeader(request, uri, proxyServer, realm);

@@ -122,7 +122,7 @@ public final class DefaultChannelPool implements ChannelPool {
             return false;
 
         ChannelCreation creation = channelId2Creation.get(channel.getId());
-        return creation == null || now - creation.creationTime >= maxConnectionTTL;
+        return creation != null && now - creation.creationTime >= maxConnectionTTL;
     }
 
     private final class IdleChannelDetector implements TimerTask {

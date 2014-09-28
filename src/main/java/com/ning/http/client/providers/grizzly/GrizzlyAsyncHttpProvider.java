@@ -385,12 +385,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 eventFilter.removeContentEncoding(encoding);
             }
         }
-        if (clientConfig.isCompressionEnforced()) {
-            eventFilter.addContentEncoding(
-                    new GZipContentEncoding(512,
-                                            512,
-                                            new ClientEncodingFilter()));
-        }
+        
+        eventFilter.addContentEncoding(
+                new GZipContentEncoding(512,
+                                        512,
+                                        new ClientEncodingFilter()));
+        
         fcb.add(eventFilter);
         fcb.add(clientFilter);
         clientTransport.getAsyncQueueIO().getWriter()
@@ -1043,7 +1043,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
             }
 
-
+            if (clientConfig.isCompressionEnforced() &&
+                    !headers.contains(Header.AcceptEncoding)) {
+                requestPacket.addHeader(Header.AcceptEncoding, "gzip");
+            }
         }
 
 
@@ -1417,7 +1420,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return false;
         }
 
-
         @SuppressWarnings({"unchecked"})
         @Override
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
@@ -1761,10 +1763,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         public boolean applyEncoding(HttpHeader httpPacket) {
-
-           httpPacket.addHeader(Header.AcceptEncoding, "gzip");
-           return false;
-
+            return false;
         }
 
 
@@ -1922,24 +1921,20 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final byte[] data = request.getByteData();
             final Buffer gBuffer = Buffers.wrap(mm, data);
             if (requestPacket.getContentLength() == -1) {
-                if (!clientConfig.isCompressionEnforced()) {
-                    requestPacket.setContentLengthLong(data.length);
-                }
+                requestPacket.setContentLengthLong(data.length);
             }
-            final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-            content.setLast(true);
+            final HttpContent content = requestPacket.httpContentBuilder()
+                    .content(gBuffer)
+                    .last(true)
+                    .build();
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             return true;
         }
         
         @Override
         protected long getContentLength(final Request request) {
-            if (request.getContentLength() >= 0) {
-                return request.getContentLength();
-            }
-
-            return clientConfig.isCompressionEnforced()
-                    ? -1
+            return request.getContentLength() >= 0
+                    ? request.getContentLength()
                     : request.getByteData().length;
         }        
     }
@@ -1969,12 +1964,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
             if (requestPacket.getContentLength() == -1) {
-                if (!clientConfig.isCompressionEnforced()) {
-                    requestPacket.setContentLengthLong(data.length);
-                }
+                requestPacket.setContentLengthLong(data.length);
             }
-            final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-            content.setLast(true);
+            final HttpContent content = requestPacket.httpContentBuilder()
+                    .content(gBuffer)
+                    .last(true)
+                    .build();
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             return true;
         }
@@ -2017,11 +2012,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final byte[] data = sb.toString().getBytes(charset);
                 final MemoryManager mm = ctx.getMemoryManager();
                 final Buffer gBuffer = Buffers.wrap(mm, data);
-                final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-                if (requestPacket.getContentLength() == -1 && !clientConfig.isCompressionEnforced()) {
+                final HttpContent content = requestPacket.httpContentBuilder()
+                        .content(gBuffer)
+                        .last(true)
+                        .build();
+                if (requestPacket.getContentLength() == -1) {
                     requestPacket.setContentLengthLong(data.length);
                 }
-                content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
             
@@ -2069,9 +2066,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             buffer.trim();
             if (buffer.hasRemaining()) {
-                final HttpContent content = requestPacket.httpContentBuilder().content(buffer).build();
+                final HttpContent content = requestPacket.httpContentBuilder()
+                        .content(buffer)
+                        .last(true)
+                        .build();
                 buffer.allowBufferDispose(false);
-                content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
             
@@ -2171,8 +2170,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final File f = request.getFile();
             requestPacket.setContentLengthLong(f.length());
             final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
-            if (clientConfig.isCompressionEnforced() || !SEND_FILE_SUPPORT ||
-                    requestPacket.isSecure()) {
+            if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
                 
                 final FileInputStream fis = new FileInputStream(request.getFile());
                 final MemoryManager mm = ctx.getMemoryManager();
@@ -2227,12 +2225,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         protected long getContentLength(final Request request) {
-            if (request.getContentLength() >= 0) {
-                return request.getContentLength();
-            }
-
-            return clientConfig.isCompressionEnforced()
-                    ? -1
+            return request.getContentLength() >= 0
+                    ? request.getContentLength()
                     : request.getFile().length();
         }        
     } // END FileBodyHandler

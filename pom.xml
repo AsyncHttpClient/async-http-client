@@ -126,9 +126,14 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>5.8</version>
+            <version>6.8.8</version>
             <scope>test</scope>
-            <classifier>jdk15</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.beanshell</groupId>
+                    <artifactId>bsh</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -190,26 +195,6 @@
             <artifactId>commons-fileupload</artifactId>
             <version>1.2.2</version>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Optional Apache Http Client -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
     <build>
