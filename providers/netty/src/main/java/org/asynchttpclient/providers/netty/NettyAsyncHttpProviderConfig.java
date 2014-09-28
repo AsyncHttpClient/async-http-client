@@ -169,6 +169,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     private int webSocketMaxFrameSize = 10 * 1024;
 
+    private boolean keepEncodingHeader = false;
+
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
     }
@@ -310,5 +312,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     }
     public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+    }
+
+    public boolean isKeepEncodingHeader() {
+        return keepEncodingHeader;
+    }
+
+    public void setKeepEncodingHeader(boolean keepEncodingHeader) {
+        this.keepEncodingHeader = keepEncodingHeader;
     }
 }

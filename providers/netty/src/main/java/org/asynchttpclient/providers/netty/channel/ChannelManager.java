@@ -187,7 +187,7 @@ public class ChannelManager {
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(INFLATER_HANDLER, new HttpContentDecompressor())//
+                        .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
@@ -215,7 +215,7 @@ public class ChannelManager {
                 ch.pipeline()//
                         .addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this))//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(INFLATER_HANDLER, new HttpContentDecompressor())//
+                        .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
 
@@ -237,6 +237,18 @@ public class ChannelManager {
                     nettyConfig.getWssAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
+    }
+
+    private HttpContentDecompressor newHttpContentDecompressor() {
+        if (nettyConfig.isKeepEncodingHeader())
+            return new HttpContentDecompressor() {
+                @Override
+                protected String getTargetContentEncoding(String contentEncoding) throws Exception {
+                    return contentEncoding;
+                }
+            };
+        else
+            return new HttpContentDecompressor();
     }
 
     public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String partitionId) {
