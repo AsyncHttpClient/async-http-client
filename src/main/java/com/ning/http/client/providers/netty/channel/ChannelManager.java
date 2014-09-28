@@ -204,7 +204,7 @@ public class ChannelManager {
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
+                pipeline.addLast(INFLATER_HANDLER, newHttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
 
@@ -235,7 +235,7 @@ public class ChannelManager {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this));
                 pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
+                pipeline.addLast(INFLATER_HANDLER, newHttpContentDecompressor());
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
                 pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
 
@@ -260,6 +260,18 @@ public class ChannelManager {
                 return pipeline;
             }
         });
+    }
+
+    private HttpContentDecompressor newHttpContentDecompressor() {
+        if (nettyConfig.isKeepEncodingHeader())
+            return new HttpContentDecompressor() {
+                @Override
+                protected String getTargetContentEncoding(String contentEncoding) throws Exception {
+                    return contentEncoding;
+                }
+            };
+        else
+            return new HttpContentDecompressor();
     }
 
     public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String partition) {
@@ -388,14 +400,14 @@ public class ChannelManager {
     public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
         return pipeline.get(SSL_HANDLER) != null;
     }
-    
+
     public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws IOException,
             GeneralSecurityException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
         if (isSecure(scheme))
-            if (isSslHandlerConfigured(pipeline)){
+            if (isSslHandlerConfigured(pipeline)) {
                 pipeline.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             } else {
                 pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
@@ -434,7 +446,8 @@ public class ChannelManager {
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
         pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
         pipeline.remove(HTTP_HANDLER);
-        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, nettyConfig.getWebSocketMaxFrameSize()));
+        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER,
+                new WebSocket08FrameDecoder(false, false, nettyConfig.getWebSocketMaxFrameSize()));
         pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(nettyConfig.getWebSocketMaxBufferSize()));
     }
 
@@ -455,7 +468,7 @@ public class ChannelManager {
 
     public void flushPartition(String partitionId) {
         channelPool.flushPartition(partitionId);
-    } 
+    }
 
     public void flushPartitions(ChannelPoolPartitionSelector selector) {
         channelPool.flushPartitions(selector);

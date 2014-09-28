@@ -143,6 +143,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private int webSocketMaxFrameSize = 10 * 1024;
 
+    private boolean keepEncodingHeader = false;
+
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
     }
@@ -293,6 +295,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+    }
+
+    public boolean isKeepEncodingHeader() {
+        return keepEncodingHeader;
+    }
+
+    public void setKeepEncodingHeader(boolean keepEncodingHeader) {
+        this.keepEncodingHeader = keepEncodingHeader;
     }
 
     public static interface NettyWebSocketFactory {
