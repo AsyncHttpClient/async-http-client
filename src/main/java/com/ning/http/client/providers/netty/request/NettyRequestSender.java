@@ -39,6 +39,7 @@ import com.ning.http.client.ConnectionPoolPartitioning;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
@@ -243,6 +244,13 @@ public final class NettyRequestSender {
 
         boolean useSSl = isSecure(uri) && !useProxy;
 
+        // some headers are only set when performing the first request
+        HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        HttpMethod method = future.getNettyRequest().getHttpRequest().getMethod();
+        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, uri, proxy, realm));
+        requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, method));
+        
         // Do not throw an exception when we need an extra connection for a
         // redirect
         // FIXME why? This violate the max connection per host handling, right?
