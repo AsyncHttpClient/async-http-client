@@ -43,6 +43,7 @@ import org.asynchttpclient.ConnectionPoolPartitioning;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
@@ -237,6 +238,13 @@ public final class NettyRequestSender {
             boolean reclaimCache) throws IOException {
 
         boolean useSSl = isSecure(uri) && !useProxy;
+
+        // some headers are only set when performing the first request
+        HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        HttpMethod method = future.getNettyRequest().getHttpRequest().getMethod();
+        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, uri, proxy, realm));
+        requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, method));
 
         // Do not throw an exception when we need an extra connection for a
         // redirect
