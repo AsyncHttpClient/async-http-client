@@ -206,7 +206,7 @@ public final class NettyRequestSender {
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
 
-        LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
+        LOGGER.debug("Using cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
         Channels.setAttribute(channel, future);
 
         try {

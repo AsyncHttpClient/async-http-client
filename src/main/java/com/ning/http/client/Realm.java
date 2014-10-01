@@ -50,7 +50,6 @@ public class Realm {
     private final boolean usePreemptiveAuth;
     private final Charset charset;
     private final String host;
-    private final boolean messageType2Received;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
     private final boolean targetProxy;
@@ -82,7 +81,6 @@ public class Realm {
                   String ntlmDomain,
                   Charset charset,
                   String host,
-                  boolean messageType2Received,
                   String opaque,
                   boolean useAbsoluteURI,
                   boolean omitQuery,
@@ -105,7 +103,6 @@ public class Realm {
         this.ntlmDomain = ntlmDomain;
         this.charset = charset;
         this.host = host;
-        this.messageType2Received = messageType2Received;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
         this.targetProxy = targetProxy;
@@ -197,10 +194,6 @@ public class Realm {
      */
     public String getNtlmHost() {
         return host;
-    }
-
-    public boolean isNtlmMessageType2Received() {
-        return messageType2Received;
     }
 
     public boolean isUseAbsoluteURI() {
@@ -302,7 +295,6 @@ public class Realm {
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
         private Charset charset = UTF_8;
         private String host = "localhost";
-        private boolean messageType2Received = false;
         private boolean useAbsoluteURI = true;
         private boolean omitQuery = false;
         private boolean targetProxy = false;
@@ -501,11 +493,6 @@ public class Realm {
             return this;
         }
 
-        public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
-            this.messageType2Received = messageType2Received;
-            return this;
-        }
-
         public RealmBuilder clone(Realm clone) {
             setRealmName(clone.getRealmName());
             setAlgorithm(clone.getAlgorithm());
@@ -522,7 +509,6 @@ public class Realm {
             setUsePreemptiveAuth(clone.getUsePreemptiveAuth());
             setNtlmDomain(clone.getNtlmDomain());
             setNtlmHost(clone.getNtlmHost());
-            setNtlmMessageType2Received(clone.isNtlmMessageType2Received());
             setUseAbsoluteURI(clone.isUseAbsoluteURI());
             setOmitQuery(clone.isOmitQuery());
             setTargetProxy(clone.isTargetProxy());
@@ -676,7 +662,6 @@ public class Realm {
                     ntlmDomain,
                     charset,
                     host,
-                    messageType2Received,
                     opaque,
                     useAbsoluteURI,
                     omitQuery,

@@ -105,7 +105,7 @@ public final class NettyRequestFactory {
                     domain = realm.getNtlmDomain();
                 }
                 try {
-                    String msg = NTLMEngine.INSTANCE.generateType1Msg("NTLM " + domain, realm.getNtlmHost());
+                    String msg = NTLMEngine.INSTANCE.generateType1Msg(domain, realm.getNtlmHost());
                     authorizationHeader = "NTLM " + msg;
                 } catch (NTLMEngineException e) {
                     throw new IOException(e);
