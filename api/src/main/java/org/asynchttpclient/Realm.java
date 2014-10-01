@@ -48,7 +48,6 @@ public class Realm {
     private final boolean usePreemptiveAuth;
     private final Charset charset;
     private final String host;
-    private final boolean messageType2Received;
     private final String ntlmDomain;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
@@ -60,7 +59,7 @@ public class Realm {
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
             String qop, String nc, String cnonce, Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset,
-            String host, boolean messageType2Received, String opaque, boolean useAbsoluteURI, boolean omitQuery, boolean targetProxy) {
+            String host, String opaque, boolean useAbsoluteURI, boolean omitQuery, boolean targetProxy) {
 
         this.principal = principal;
         this.password = password;
@@ -78,7 +77,6 @@ public class Realm {
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.ntlmDomain = ntlmDomain;
         this.host = host;
-        this.messageType2Received = messageType2Received;
         this.charset = charset;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
@@ -171,10 +169,6 @@ public class Realm {
      */
     public String getNtlmHost() {
         return host;
-    }
-
-    public boolean isNtlmMessageType2Received() {
-        return messageType2Received;
     }
 
     public boolean isUseAbsoluteURI() {
@@ -275,7 +269,6 @@ public class Realm {
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
         private Charset charset = UTF_8;
         private String host = "localhost";
-        private boolean messageType2Received;
         private boolean useAbsoluteURI = true;
         private boolean omitQuery;
         private boolean targetProxy;
@@ -415,11 +408,6 @@ public class Realm {
             return this;
         }
 
-        public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
-            this.messageType2Received = messageType2Received;
-            return this;
-        }
-
         public boolean isUseAbsoluteURI() {
             return useAbsoluteURI;
         }
@@ -494,7 +482,6 @@ public class Realm {
             setUsePreemptiveAuth(clone.getUsePreemptiveAuth());
             setNtlmDomain(clone.getNtlmDomain());
             setNtlmHost(clone.getNtlmHost());
-            setNtlmMessageType2Received(clone.isNtlmMessageType2Received());
             setUseAbsoluteURI(clone.isUseAbsoluteURI());
             setOmitQuery(clone.isOmitQuery());
             setTargetProxy(clone.isTargetProxy());
@@ -623,7 +610,7 @@ public class Realm {
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
-                    usePreemptive, ntlmDomain, charset, host, messageType2Received, opaque, useAbsoluteURI, omitQuery, targetProxy);
+                    usePreemptive, ntlmDomain, charset, host, opaque, useAbsoluteURI, omitQuery, targetProxy);
         }
     }
 }
