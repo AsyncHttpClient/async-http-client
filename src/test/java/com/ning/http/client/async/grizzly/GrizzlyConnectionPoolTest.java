@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -17,7 +17,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import com.ning.http.client.ListenableFuture;
@@ -28,6 +27,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.ConnectionPoolTest;
 import com.ning.http.client.async.ProviderUtil;
+import java.util.concurrent.ExecutionException;
 
 public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 
@@ -50,9 +50,10 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             }
             try {
                 client.prepareConnect(url).execute().get();
-            } catch (IOException ioe) {
-                assertNotNull(ioe);
-                assertEquals("Max connections exceeded", ioe.getMessage());
+            } catch (ExecutionException ee) {
+                final Throwable cause = ee.getCause();
+                assertNotNull(cause);
+                assertEquals("Max connections exceeded", cause.getMessage());
             } catch (Exception e) {
                 fail("Unexpected exception thrown.", e);
             }

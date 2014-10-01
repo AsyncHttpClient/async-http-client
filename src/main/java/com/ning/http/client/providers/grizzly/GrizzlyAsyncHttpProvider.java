@@ -248,17 +248,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         try {
             connectionManager.doAsyncTrackedConnection(request, future, connectHandler);
+        } catch (IOException ioe) {
+            abort(future, ioe);
+        } catch (RuntimeException re) {
+            abort(future, re);
         } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                abort(future, e);
-            } else if (e instanceof IOException) {
-                abort(future, e);
-            } else {
-                if (LOGGER.isWarnEnabled()) {
-                    LOGGER.warn(e.toString(), e);
-                    abort(future, e);
-                }
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn(e.toString(), e);
             }
+            abort(future, e);
         }
 
         return future;
