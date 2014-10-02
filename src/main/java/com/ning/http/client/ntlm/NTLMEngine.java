@@ -968,24 +968,25 @@ public final class NTLMEngine {
 
     /** Type 1 message assembly class */
     static class Type1Message extends NTLMMessage {
-        protected byte[] hostBytes;
-        protected byte[] domainBytes;
+        // FIXME https://issues.apache.org/jira/browse/HTTPCLIENT-1557
+//        protected byte[] hostBytes;
+//        protected byte[] domainBytes;
 
         /** Constructor. Include the arguments the message will need */
         Type1Message(final String domain, final String host) throws NTLMEngineException {
-            super();
-            try {
-                // Strip off domain name from the host!
-                final String unqualifiedHost = convertHost(host);
-                // Use only the base domain name!
-                final String unqualifiedDomain = convertDomain(domain);
-
-                hostBytes = unqualifiedHost != null? unqualifiedHost.getBytes("ASCII") : null;
-                domainBytes = unqualifiedDomain != null ? unqualifiedDomain
-                        .toUpperCase(Locale.ENGLISH).getBytes("ASCII") : null;
-            } catch (final UnsupportedEncodingException e) {
-                throw new NTLMEngineException("Unicode unsupported: " + e.getMessage(), e);
-            }
+//            super();
+//            try {
+//                // Strip off domain name from the host!
+//                final String unqualifiedHost = convertHost(host);
+//                // Use only the base domain name!
+//                final String unqualifiedDomain = convertDomain(domain);
+//
+//                hostBytes = unqualifiedHost != null? unqualifiedHost.getBytes("ASCII") : null;
+//                domainBytes = unqualifiedDomain != null ? unqualifiedDomain
+//                        .toUpperCase(Locale.ENGLISH).getBytes("ASCII") : null;
+//            } catch (final UnsupportedEncodingException e) {
+//                throw new NTLMEngineException("Unicode unsupported: " + e.getMessage(), e);
+//            }
         }
 
         /**
