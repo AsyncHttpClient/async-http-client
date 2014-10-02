@@ -82,10 +82,6 @@ public class ProxyServer {
         return protocol;
     }
 
-    public String getProtocolAsString() {
-        return protocol.toString();
-    }
-
     public String getHost() {
         return host;
     }
