@@ -38,25 +38,26 @@ public abstract class NTLMTest extends AbstractBasicTest {
     public static class NTLMHandler extends AbstractHandler {
 
         @Override
-        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException,
-                ServletException {
+        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest,
+                HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String authorization = httpRequest.getHeader("Authorization");
             if (authorization == null) {
                 httpResponse.setStatus(401);
                 httpResponse.setHeader("WWW-Authenticate", "NTLM");
 
-            } else if (authorization.equals("NTLM TlRMTVNTUAABAAAAkYII4gAAAAAoAAAAAAAAACgAAAAFASgKAAAADw==")) {
+            } else if (authorization.equals("NTLM TlRMTVNTUAABAAAAAYIIogAAAAAoAAAAAAAAACgAAAAFASgKAAAADw==")) {
                 httpResponse.setStatus(401);
                 httpResponse.setHeader("WWW-Authenticate", "NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
 
             } else if (authorization
-                    .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAbIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAGkAZwBoAHQAQwBpAHQAeQA=")) {
+                    .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAGkAZwBoAHQAQwBpAHQAeQA=")) {
                 httpResponse.setStatus(200);
             } else {
                 httpResponse.setStatus(401);
             }
 
+            httpResponse.setContentLength(0);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
         }
@@ -101,3 +102,4 @@ public abstract class NTLMTest extends AbstractBasicTest {
         ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
     }
 }
+
