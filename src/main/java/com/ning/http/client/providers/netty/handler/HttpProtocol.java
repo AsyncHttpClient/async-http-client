@@ -221,11 +221,18 @@ public final class HttpProtocol extends Protocol {
                 if (!wwwAuthHeaders.contains("Kerberos") && (isNTLM(wwwAuthHeaders) || negociate)) {
                     // NTLM
                     newRealm = ntlmChallenge(wwwAuthHeaders.get(0), request, proxyServer, request.getHeaders(), realm, future, false);
+
+                    // don't forget to reuse channel: NTLM authenticates a connection
+                    future.setReuseChannel(true);
+
                 } else if (negociate) {
                     // SPNEGO KERBEROS
                     newRealm = kerberosChallenge(channel, wwwAuthHeaders, request, proxyServer, request.getHeaders(), realm, future, false);
                     if (newRealm == null)
                         return true;
+                    else
+                        // don't forget to reuse channel: KERBEROS authenticates a connection
+                        future.setReuseChannel(true);
 
                 } else {
                     newRealm = new Realm.RealmBuilder()//
@@ -245,8 +252,6 @@ public final class HttpProtocol extends Protocol {
                 Callback callback = new Callback(future) {
                     public void call() throws IOException {
                         channelManager.drainChannel(channel, future);
-                     // don't forget to reuse channel: NTLM authenticates a connection
-                        future.setReuseChannel(true);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
                 };
