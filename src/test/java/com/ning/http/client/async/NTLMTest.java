@@ -57,7 +57,7 @@ public abstract class NTLMTest extends AbstractBasicTest {
             } else {
                 httpResponse.setStatus(401);
             }
-
+            httpResponse.setContentLength(0);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
         }
