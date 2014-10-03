@@ -993,7 +993,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 case DIGEST:
                     return AuthenticatorUtils.computeDigestAuthentication(realm);
                 case NTLM:
-                    return ntlmEngine.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+                    return ntlmEngine.generateType1Msg();
                 default:
                     return null;
                 }

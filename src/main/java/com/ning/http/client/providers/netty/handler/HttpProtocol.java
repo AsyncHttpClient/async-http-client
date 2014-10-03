@@ -119,7 +119,7 @@ public final class HttpProtocol extends Protocol {
 
         if (wwwAuth.equals("NTLM")) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
-            String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
+            String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg();
 
             addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
             future.getAndSetAuth(false);
