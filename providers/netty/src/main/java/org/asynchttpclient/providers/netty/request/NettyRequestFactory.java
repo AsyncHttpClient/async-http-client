@@ -47,7 +47,6 @@ import org.asynchttpclient.cookie.CookieEncoder;
 import org.asynchttpclient.generators.FileBodyGenerator;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.ntlm.NTLMEngine;
-import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.request.body.NettyBody;
 import org.asynchttpclient.providers.netty.request.body.NettyBodyBody;
@@ -98,18 +97,8 @@ public final class NettyRequestFactory {
         if (realm != null && realm.getUsePreemptiveAuth()) {
             switch (realm.getAuthScheme()) {
             case NTLM:
-                String domain;
-                if (proxyServer != null && proxyServer.getNtlmDomain() != null) {
-                    domain = proxyServer.getNtlmDomain();
-                } else {
-                    domain = realm.getNtlmDomain();
-                }
-                try {
-                    String msg = NTLMEngine.INSTANCE.generateType1Msg(domain, realm.getNtlmHost());
-                    authorizationHeader = "NTLM " + msg;
-                } catch (NTLMEngineException e) {
-                    throw new IOException(e);
-                }
+                String msg = NTLMEngine.INSTANCE.generateType1Msg();
+                authorizationHeader = "NTLM " + msg;
                 break;
             case KERBEROS:
             case SPNEGO:
@@ -175,12 +164,8 @@ public final class NettyRequestFactory {
         } else if (proxyServer != null && proxyServer.getPrincipal() != null && isNonEmpty(proxyServer.getNtlmDomain())) {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
             if (!isNTLM(auth)) {
-                try {
-                    String msg = NTLMEngine.INSTANCE.generateType1Msg(proxyServer.getNtlmDomain(), proxyServer.getHost());
-                    proxyAuthorization = "NTLM " + msg;
-                } catch (NTLMEngineException e) {
-                    throw new IOException(e);
-                }
+                String msg = NTLMEngine.INSTANCE.generateType1Msg();
+                proxyAuthorization = "NTLM " + msg;
             }
         }
 

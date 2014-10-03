@@ -78,7 +78,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
             String msg;
             try {
                 if (isNTLMFirstHandShake(proxyAuth)) {
-                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType1Msg(proxyServer.getNtlmDomain(), "");
+                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType1Msg();
                 } else {
                     String serverChallenge = proxyAuth.trim().substring("NTLM ".length());
                     msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType3Msg(principal, password, proxyServer.getNtlmDomain(),

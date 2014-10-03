@@ -457,7 +457,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             case DIGEST:
                 return computeDigestAuthentication(realm);
             case NTLM:
-                return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+                return NTLM_ENGINE.generateType1Msg();
             default:
                 return null;
             }
