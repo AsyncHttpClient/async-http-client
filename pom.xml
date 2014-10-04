@@ -398,7 +398,7 @@
         </snapshotRepository>
         <site>
             <id>github</id>
-            <url>gitsite:git@github.com/sonatype/async-http-client.git</url>
+            <url>gitsite:git@github.com/AsyncHttpClient/async-http-client.git</url>
         </site>
     </distributionManagement>
     <repositories>
