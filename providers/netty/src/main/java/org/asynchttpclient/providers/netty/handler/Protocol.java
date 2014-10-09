@@ -13,6 +13,12 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_CHARSET;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_LANGUAGE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.REFERER;
+import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
@@ -26,10 +32,14 @@ import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.MaxRedirectException;
@@ -72,6 +82,16 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.code());
     }
 
+    public static final Set<String> PROPAGATED_ON_REDIRECT_HEADERS = new HashSet<String>();
+    static {
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_CHARSET.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_ENCODING.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_LANGUAGE.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(REFERER.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(USER_AGENT.toLowerCase(Locale.US));
+    }
+
     public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {
         this.channelManager = channelManager;
@@ -89,6 +109,17 @@ public abstract class Protocol {
     public abstract void onError(NettyResponseFuture<?> future, Throwable error);
 
     public abstract void onClose(NettyResponseFuture<?> future);
+
+    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request) {
+        FluentCaseInsensitiveStringsMap redirectHeaders = new FluentCaseInsensitiveStringsMap();
+        for (Map.Entry<String, List<String>> headerEntry : request.getHeaders()) {
+            String headerName = headerEntry.getKey();
+            List<String> headerValues = headerEntry.getValue();
+            if (PROPAGATED_ON_REDIRECT_HEADERS.contains(headerName.toLowerCase(Locale.US)))
+                redirectHeaders.add(headerName, headerValues);
+        }
+        return redirectHeaders;
+    }
 
     protected boolean exitAfterHandlingRedirect(//
             Channel channel,//
@@ -137,6 +168,8 @@ public abstract class Protocol {
                         if (c != null)
                             requestBuilder.addOrReplaceCookie(c);
                     }
+
+                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest()));
 
                     Callback callback = channelManager.newDrainCallback(future, channel, initialConnectionKeepAlive, initialPoolKey);
 
