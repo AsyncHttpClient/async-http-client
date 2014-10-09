@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtils.isNTLM;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.getNTLM;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.providers.netty.util.HttpUtils.useProxyConnect;
@@ -157,13 +157,14 @@ public final class NettyRequestFactory {
 
         if (method == HttpMethod.CONNECT) {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            if (isNTLM(auth)) {
-                proxyAuthorization = auth.get(0);
+            String ntlmHeader = getNTLM(auth);
+            if (ntlmHeader != null) {
+                proxyAuthorization = ntlmHeader;
             }
 
         } else if (proxyServer != null && proxyServer.getPrincipal() != null && isNonEmpty(proxyServer.getNtlmDomain())) {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            if (!isNTLM(auth)) {
+            if (getNTLM(auth) == null) {
                 String msg = NTLMEngine.INSTANCE.generateType1Msg();
                 proxyAuthorization = "NTLM " + msg;
             }

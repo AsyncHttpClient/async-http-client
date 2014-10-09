@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.providers.netty.util;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import java.util.List;
 
 import org.asynchttpclient.uri.Uri;
@@ -28,8 +26,15 @@ public final class HttpUtils {
     private HttpUtils() {
     }
 
-    public static boolean isNTLM(List<String> auth) {
-        return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
+    public static String getNTLM(List<String> authenticateHeaders) {
+        if (authenticateHeaders != null) {
+            for (String authenticateHeader: authenticateHeaders) {
+                if (authenticateHeader.startsWith("NTLM"))
+                    return authenticateHeader;
+            }
+        }
+
+        return null;
     }
 
     public static boolean isWebSocket(String scheme) {

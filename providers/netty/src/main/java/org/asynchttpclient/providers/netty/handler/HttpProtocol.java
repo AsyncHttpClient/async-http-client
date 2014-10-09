@@ -17,7 +17,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
-import static org.asynchttpclient.providers.netty.util.HttpUtils.isNTLM;
+import static org.asynchttpclient.providers.netty.util.HttpUtils.getNTLM;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -81,8 +81,9 @@ public final class HttpProtocol extends Protocol {
                     .build();
 
         } catch (Throwable throwable) {
-            if (isNTLM(proxyAuth)) {
-                return ntlmChallenge(proxyAuth.get(0), request, proxyServer, headers, realm, future, proxyInd);
+            String ntlmAuthenticate = getNTLM(proxyAuth);
+            if (ntlmAuthenticate != null) {
+                return ntlmChallenge(ntlmAuthenticate, request, proxyServer, headers, realm, future, proxyInd);
             }
             requestSender.abort(channel, future, throwable);
             return null;
@@ -204,9 +205,10 @@ public final class HttpProtocol extends Protocol {
                 future.setState(NettyResponseFuture.STATE.NEW);
                 Realm newRealm = null;
                 boolean negociate = wwwAuthHeaders.contains("Negotiate");
-                if (!wwwAuthHeaders.contains("Kerberos") && (isNTLM(wwwAuthHeaders) || negociate)) {
+                String ntlmAuthenticate = getNTLM(wwwAuthHeaders);
+                if (!wwwAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
                     // NTLM
-                    newRealm = ntlmChallenge(wwwAuthHeaders.get(0), request, proxyServer, request.getHeaders(), realm, future, false);
+                    newRealm = ntlmChallenge(ntlmAuthenticate, request, proxyServer, request.getHeaders(), realm, future, false);
 
                     // don't forget to reuse channel: NTLM authenticates a connection
                     future.setReuseChannel(true);
@@ -290,8 +292,9 @@ public final class HttpProtocol extends Protocol {
                 FluentCaseInsensitiveStringsMap requestHeaders = request.getHeaders();
 
                 boolean negociate = proxyAuthHeaders.contains("Negotiate");
-                if (!proxyAuthHeaders.contains("Kerberos") && (isNTLM(proxyAuthHeaders) || negociate)) {
-                    newRealm = ntlmProxyChallenge(proxyAuthHeaders.get(0), request, proxyServer, requestHeaders, realm, future, true);
+                String ntlmAuthenticate = getNTLM(proxyAuthHeaders);
+                if (!proxyAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
+                    newRealm = ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, requestHeaders, realm, future, true);
                     // SPNEGO KERBEROS
                 } else if (negociate) {
                     newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
