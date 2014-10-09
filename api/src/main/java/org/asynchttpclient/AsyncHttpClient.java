@@ -17,7 +17,6 @@
 package org.asynchttpclient;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.concurrent.Future;
 
 /**
@@ -251,16 +250,14 @@ public interface AsyncHttpClient extends Closeable {
      * @param handler an instance of {@link AsyncHandler}
      * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      * @return a {@link Future} of type T
-     * @throws IOException
      */
-    <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException;
+    <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler);
 
     /**
      * Execute an HTTP request.
      *
      * @param request {@link Request}
      * @return a {@link Future} of type Response
-     * @throws IOException
      */
-    ListenableFuture<Response> executeRequest(Request request) throws IOException;
+    ListenableFuture<Response> executeRequest(Request request);
 }

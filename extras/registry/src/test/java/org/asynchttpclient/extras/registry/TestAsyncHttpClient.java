@@ -22,8 +22,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SignatureCalculator;
 
-import java.io.IOException;
-
 public class TestAsyncHttpClient implements AsyncHttpClient {
 
     public TestAsyncHttpClient() {
@@ -120,12 +118,12 @@ public class TestAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
-    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
         return null;
     }
 
     @Override
-    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
+    public ListenableFuture<Response> executeRequest(Request request) {
         return null;
     }
 

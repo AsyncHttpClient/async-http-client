@@ -12,12 +12,22 @@
  */
 package org.asynchttpclient.async;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SimpleAsyncHttpClient;
@@ -30,15 +40,6 @@ import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Future;
 
 public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
@@ -298,8 +299,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         try {
             derived.get().get();
             fail("Expected closed AHC");
-        } catch (IOException e) {
-            // expected
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof IOException);
         }
     }
 

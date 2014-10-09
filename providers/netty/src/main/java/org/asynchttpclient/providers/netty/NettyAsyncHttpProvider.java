@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.netty;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
@@ -77,8 +76,13 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
     @Override
-    public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return requestSender.sendRequest(request, asyncHandler, null, false);
+    public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {
+        try {
+            return requestSender.sendRequest(request, asyncHandler, null, false);
+        } catch (Exception e) {
+            asyncHandler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
+        }
     }
 
     public void flushChannelPoolPartition(String partitionId) {

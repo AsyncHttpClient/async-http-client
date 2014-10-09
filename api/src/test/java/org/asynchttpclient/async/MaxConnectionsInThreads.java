@@ -16,12 +16,27 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.*;
+
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -29,93 +44,77 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
 abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     // FIXME weird
     private static URI servletEndpointUri;
 
     @Test(groups = { "online", "default_provider" })
-    public void testMaxConnectionsWithinThreads() {
+    public void testMaxConnectionsWithinThreads() throws InterruptedException {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
-                .setAllowPoolingConnections(true).setMaxConnections(1).setMaxConnectionsPerHost(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true)//
+                .setMaxConnections(1).setMaxConnectionsPerHost(1).build());
 
+        final CountDownLatch inThreadsLatch = new CountDownLatch(2);
+        final AtomicReference<Integer> failedRank = new AtomicReference(-1);
+        
         try {
-            final Boolean[] caughtError = new Boolean[] { Boolean.FALSE };
-            List<Thread> ts = new ArrayList<Thread>();
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
+                final int rank = i;
                 Thread t = new Thread() {
                     public void run() {
-                        try {
-                            client.prepareGet(url).execute();
-                        } catch (IOException e) {
-                            // assert that 2nd request fails, because maxTotalConnections=1
-                            // logger.debug(i);
-                            caughtError[0] = true;
-                            logger.error("Exception ", e);
-                        }
+                        client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
+                            @Override
+                            public Response onCompleted(Response response) throws Exception {
+                                Response r = super.onCompleted(response);
+                                inThreadsLatch.countDown();
+                                return r;
+                            }
+                            
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                super.onThrowable(t);
+                                failedRank.set(rank);
+                                inThreadsLatch.countDown();
+                            }
+                        });
                     }
                 };
                 t.start();
-                ts.add(t);
             }
 
-            for (Thread t : ts) {
-                try {
-                    t.join();
-                } catch (InterruptedException e) {
-                    logger.error("Exception ", e);
-                }
-            }
+            inThreadsLatch.await();
 
-            // Let the threads finish
-            try {
-                Thread.sleep(4500);
-            } catch (InterruptedException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
+            assertEquals(failedRank.get().intValue(), 1, "Max Connections should have been reached");
 
-            assertTrue(caughtError[0], "Max Connections should have been reached");
-
-            boolean errorInNotThread = false;
+            final CountDownLatch notInThreadsLatch = new CountDownLatch(2);
+            failedRank.set(-1);
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
-                try {
-                    client.prepareGet(url).execute();
-                    // client.prepareGet(url).execute();
-                } catch (IOException e) {
-                    // assert that 2nd request fails, because maxTotalConnections=1
-                    // logger.debug(i);
-                    errorInNotThread = true;
-                    System.err.println("============");
-                    e.printStackTrace();
-                    System.err.println("============");
-                }
+                final int rank = i;
+                client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
+                    @Override
+                    public Response onCompleted(Response response) throws Exception {
+                        Response r = super.onCompleted(response);
+                        notInThreadsLatch.countDown();
+                        return r;
+                    }
+                    
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        super.onThrowable(t);
+                        failedRank.set(rank);
+                        notInThreadsLatch.countDown();
+                    }
+                });
             }
-            // Let the request finish
-            try {
-                Thread.sleep(2500);
-            } catch (InterruptedException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            assertTrue(errorInNotThread, "Max Connections should have been reached");
+            
+            notInThreadsLatch.await();
+            
+            assertEquals(failedRank.get().intValue(), 1, "Max Connections should have been reached");
         } finally {
             client.close();
         }

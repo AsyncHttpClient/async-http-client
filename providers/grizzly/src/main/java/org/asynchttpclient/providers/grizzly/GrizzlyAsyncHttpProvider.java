@@ -117,10 +117,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     /**
      * {@inheritDoc}
      */
-    public <T> ListenableFuture<T> execute(final Request request, final AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(final Request request, final AsyncHandler<T> handler) {
 
         if (clientTransport.isStopped()) {
-            throw new IOException("AsyncHttpClient has been closed.");
+            IOException e = new IOException("AsyncHttpClient has been closed.");
+            handler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
         }
         final ProxyServer proxy = ProxyUtils.getProxyServer(clientConfig, request);
         final GrizzlyResponseFuture<T> future = new GrizzlyResponseFuture<T>(this, request, handler, proxy);
@@ -152,7 +154,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         };
 
-        connectionManager.doTrackedConnection(request, future, connectHandler);
+        try {
+            connectionManager.doTrackedConnection(request, future, connectHandler);
+        } catch (IOException e) {
+            handler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
+        }
 
         return future;
     }

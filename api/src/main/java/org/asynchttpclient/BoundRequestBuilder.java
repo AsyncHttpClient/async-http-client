@@ -15,7 +15,6 @@ package org.asynchttpclient;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
@@ -35,11 +34,11 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
         this.client = client;
     }
 
-    public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) {
         return client.executeRequest(build(), handler);
     }
 
-    public ListenableFuture<Response> execute() throws IOException {
+    public ListenableFuture<Response> execute() {
         return client.executeRequest(build(), new AsyncCompletionHandlerBase());
     }
 

@@ -16,18 +16,17 @@
  */
 package org.asynchttpclient;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.resumable.ResumableAsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
@@ -225,21 +224,26 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
-    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
 
         if (config.getRequestFilters().isEmpty()) {
             return httpProvider.execute(request, handler);
 
         } else {
             FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
-            fc = preProcessRequest(fc);
+            try {
+                fc = preProcessRequest(fc);
+            } catch (Exception e) {
+                handler.onThrowable(e);
+                return new ListenableFuture.CompletedFailure<T>("preProcessRequest failed", e);
+            }
 
             return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
         }
     }
 
     @Override
-    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
+    public ListenableFuture<Response> executeRequest(Request request) {
         return executeRequest(request, new AsyncCompletionHandlerBase());
     }
 
@@ -249,17 +253,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
      */
-    private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
+    private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws FilterException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
+            fc = asyncFilter.filter(fc);
+            if (fc == null) {
+                throw new NullPointerException("FilterContext is null");
             }
         }
 

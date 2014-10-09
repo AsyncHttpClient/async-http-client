@@ -16,7 +16,6 @@
 package org.asynchttpclient;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
@@ -28,9 +27,8 @@ public interface AsyncHttpProvider extends Closeable {
      *
      * @param handler an instance of {@link AsyncHandler}
      * @return a {@link ListenableFuture} of Type T.
-     * @throws IOException
      */
-    <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
+    <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler);
 
     /**
      * Close the current underlying TCP/HTTP connection.

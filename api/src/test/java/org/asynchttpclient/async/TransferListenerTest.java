@@ -16,7 +16,6 @@ import static org.asynchttpclient.async.util.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -117,18 +116,14 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 }
             });
 
-            try {
-                Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
+            Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
 
-                assertNotNull(response);
-                assertEquals(response.getStatusCode(), 200);
-                assertNotNull(hRead.get());
-                assertNotNull(hSent.get());
-                assertNull(bb.get());
-                assertNull(throwable.get());
-            } catch (IOException ex) {
-                fail("Should have timed out");
-            }
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertNull(bb.get());
+            assertNull(throwable.get());
         } finally {
             c.close();
         }
@@ -178,18 +173,14 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 }
             });
 
-            try {
-                Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
 
-                assertNotNull(response);
-                assertEquals(response.getStatusCode(), 200);
-                assertNotNull(hRead.get());
-                assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
-                assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
-            } catch (IOException ex) {
-                fail("Should have timed out");
-            }
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
+            assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
         } finally {
             client.close();
         }
@@ -237,18 +228,14 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 }
             });
 
-            try {
-                Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
+            Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
 
-                assertNotNull(response);
-                assertEquals(response.getStatusCode(), 200);
-                assertNotNull(hRead.get());
-                assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
-                assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
-            } catch (IOException ex) {
-                fail("Should have timed out");
-            }
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
+            assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
         } finally {
             client.close();
         }

@@ -44,39 +44,29 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.utils.Charsets;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
-import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class GrizzlyFeedableBodyGeneratorTest {
 
-    private static final byte[] DATA =
-            "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ".getBytes(Charsets.ASCII_CHARSET);
+    private static final byte[] DATA = "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ".getBytes(Charsets.ASCII_CHARSET);
     private static final int TEMP_FILE_SIZE = 2 * 1024 * 1024;
     private static final int NON_SECURE_PORT = 9991;
     private static final int SECURE_PORT = 9992;
 
-
     private HttpServer server;
     private File tempFile;
 
-
     // ------------------------------------------------------------------- Setup
-
 
     @BeforeMethod
     public void setup() throws Exception {
         generateTempFile();
         server = new HttpServer();
-        NetworkListener nonSecure =
-                new NetworkListener("nonsecure",
-                                    DEFAULT_NETWORK_HOST,
-                                    NON_SECURE_PORT);
-        NetworkListener secure =
-                new NetworkListener("secure",
-                                    DEFAULT_NETWORK_HOST,
-                                    SECURE_PORT);
+        NetworkListener nonSecure = new NetworkListener("nonsecure", DEFAULT_NETWORK_HOST, NON_SECURE_PORT);
+        NetworkListener secure = new NetworkListener("secure", DEFAULT_NETWORK_HOST, SECURE_PORT);
         secure.setSecure(true);
         secure.setSSLEngineConfig(createSSLConfig());
         server.addListener(nonSecure);
@@ -85,9 +75,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
         server.start();
     }
 
-
     // --------------------------------------------------------------- Tear Down
-
 
     @AfterMethod
     public void tearDown() {
@@ -99,9 +87,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
         server = null;
     }
 
-
     // ------------------------------------------------------------ Test Methods
-
 
     @Test
     public void testSimpleFeederMultipleThreads() throws Exception {
@@ -125,7 +111,6 @@ public class GrizzlyFeedableBodyGeneratorTest {
 
     // --------------------------------------------------------- Private Methods
 
-
     private void doSimpleFeeder(final boolean secure) {
         final int threadCount = 10;
         final CountDownLatch latch = new CountDownLatch(threadCount);
@@ -133,99 +118,84 @@ public class GrizzlyFeedableBodyGeneratorTest {
         final String scheme = (secure ? "https" : "http");
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                .setMaxConnectionsPerHost(60)
-                .setMaxConnections(60)
-                .setAcceptAnyCertificate(true)
-                .build();
-        final AsyncHttpClient client =
-                new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-        final int[] statusCodes = new int[threadCount];
-        final int[] totalsReceived = new int[threadCount];
-        final Throwable[] errors = new Throwable[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            final int idx = i;
-            service.execute(new Runnable() {
-                @Override
-                public void run() {
-                    FeedableBodyGenerator generator =
-                            new FeedableBodyGenerator();
-                    FeedableBodyGenerator.SimpleFeeder simpleFeeder =
-                            new FeedableBodyGenerator.SimpleFeeder(generator) {
-                                @Override
-                                public void flush() throws IOException {
-                                    FileInputStream in = null;
-                                    try {
-                                        final byte[] bytesIn = new byte[2048];
-                                        in = new FileInputStream(tempFile);
-                                        int read;
-                                        while ((read = in.read(bytesIn)) != -1) {
-                                            final Buffer b =
-                                                    Buffers.wrap(
-                                                            DEFAULT_MEMORY_MANAGER,
-                                                            bytesIn,
-                                                            0,
-                                                            read);
-                                            feed(b, false);
-                                        }
-                                        feed(Buffers.EMPTY_BUFFER, true);
-                                    } finally {
-                                        if (in != null) {
-                                            try {
-                                                in.close();
-                                            } catch (IOException ignored) {
-                                            }
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(60).setMaxConnections(60).setAcceptAnyCertificate(true).build();
+        final AsyncHttpClient client = new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        try {
+            final int[] statusCodes = new int[threadCount];
+            final int[] totalsReceived = new int[threadCount];
+            final Throwable[] errors = new Throwable[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                final int idx = i;
+                service.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        FeedableBodyGenerator generator = new FeedableBodyGenerator();
+                        FeedableBodyGenerator.SimpleFeeder simpleFeeder = new FeedableBodyGenerator.SimpleFeeder(generator) {
+                            @Override
+                            public void flush() throws IOException {
+                                FileInputStream in = null;
+                                try {
+                                    final byte[] bytesIn = new byte[2048];
+                                    in = new FileInputStream(tempFile);
+                                    int read;
+                                    while ((read = in.read(bytesIn)) != -1) {
+                                        final Buffer b = Buffers.wrap(DEFAULT_MEMORY_MANAGER, bytesIn, 0, read);
+                                        feed(b, false);
+                                    }
+                                    feed(Buffers.EMPTY_BUFFER, true);
+                                } finally {
+                                    if (in != null) {
+                                        try {
+                                            in.close();
+                                        } catch (IOException ignored) {
                                         }
                                     }
                                 }
-                            };
-                    generator.setFeeder(simpleFeeder);
-                    generator.setMaxPendingBytes(10000);
+                            }
+                        };
+                        generator.setFeeder(simpleFeeder);
+                        generator.setMaxPendingBytes(10000);
 
-                    RequestBuilder builder = new RequestBuilder("POST");
-                    builder.setUrl(scheme + "://localhost:" + port + "/test");
-                    builder.setBody(generator);
-                    try {
-                        client.executeRequest(builder.build(),
-                                new AsyncCompletionHandler<org.asynchttpclient.Response>() {
-                                    @Override
-                                    public org.asynchttpclient.Response onCompleted(org.asynchttpclient.Response response)
-                                    throws Exception {
-                                        try {
-                                            totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
-                                        } catch (Exception e) {
-                                            errors[idx] = e;
-                                        }
-                                        statusCodes[idx] = response.getStatusCode();
-                                        latch.countDown();
-                                        return response;
-                                    }
+                        RequestBuilder builder = new RequestBuilder("POST");
+                        builder.setUrl(scheme + "://localhost:" + port + "/test");
+                        builder.setBody(generator);
+                        client.executeRequest(builder.build(), new AsyncCompletionHandler<org.asynchttpclient.Response>() {
+                            @Override
+                            public org.asynchttpclient.Response onCompleted(org.asynchttpclient.Response response) throws Exception {
+                                try {
+                                    totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
+                                } catch (Exception e) {
+                                    errors[idx] = e;
+                                }
+                                statusCodes[idx] = response.getStatusCode();
+                                latch.countDown();
+                                return response;
+                            }
 
-                                    @Override
-                                    public void onThrowable(Throwable t) {
-                                        errors[idx] = t;
-                                        t.printStackTrace();
-                                        latch.countDown();
-                                    }
-                               });
-                    } catch (IOException e) {
-                        errors[idx] = e;
-                        latch.countDown();
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                errors[idx] = t;
+                                t.printStackTrace();
+                                latch.countDown();
+                            }
+                        });
                     }
-                }
-            });
-        }
+                });
+            }
 
-        try {
-            latch.await(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            fail("Latch interrupted");
-        }
+            try {
+                latch.await(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                fail("Latch interrupted");
+            }
 
-        for (int i = 0; i < threadCount; i++) {
-            assertEquals(200, statusCodes[i]);
-            assertNull(errors[i]);
-            assertEquals(tempFile.length(), totalsReceived[i]);
+            for (int i = 0; i < threadCount; i++) {
+                assertEquals(statusCodes[i], 200);
+                assertNull(errors[i]);
+                assertEquals(totalsReceived[i], tempFile.length());
+            }
+        } finally {
+            client.close();
         }
     }
 
@@ -236,140 +206,123 @@ public class GrizzlyFeedableBodyGeneratorTest {
         final String scheme = (secure ? "https" : "http");
         final ExecutorService service = Executors.newCachedThreadPool();
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
-                .setMaxConnectionsPerHost(60)
-                .setMaxConnections(60)
-                .setAcceptAnyCertificate(true)
-                .build();
-        final AsyncHttpClient client =
-                new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-        final int[] statusCodes = new int[threadCount];
-        final int[] totalsReceived = new int[threadCount];
-        final Throwable[] errors = new Throwable[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            final int idx = i;
-            service.execute(new Runnable() {
-                @Override
-                public void run() {
-                    FeedableBodyGenerator generator =
-                            new FeedableBodyGenerator();
-                    FeedableBodyGenerator.NonBlockingFeeder nonBlockingFeeder =
-                            new FeedableBodyGenerator.NonBlockingFeeder(generator) {
-                                private final Random r = new Random();
-                                private final InputStream in;
-                                private final byte[] bytesIn = new byte[2048];
-                                private boolean isDone;
-                                
-                                {
-                                    try {
-                                        in = new FileInputStream(tempFile);
-                                    } catch (IOException e) {
-                                        throw new IllegalStateException(e);
-                                    }
-                                }
-
-                                @Override
-                                public void canFeed() throws IOException {
-                                    final int read = in.read(bytesIn);
-                                    if (read == -1) {
-                                        isDone = true;
-                                        feed(Buffers.EMPTY_BUFFER, true);
-                                        return;
-                                    }
-
-                                    final Buffer b =
-                                            Buffers.wrap(
-                                                    DEFAULT_MEMORY_MANAGER,
-                                                    bytesIn,
-                                                    0,
-                                                    read);
-                                    feed(b, false);
-                                }
-
-                                @Override
-                                public boolean isDone() {
-                                    return isDone;
-                                }
-
-                                @Override
-                                public boolean isReady() {
-                                    // simulate real-life usecase, where data could not be ready
-                                    return r.nextInt(100) < 80;
-                                }
-
-                                @Override
-                                public void notifyReadyToFeed(
-                                        final NonBlockingFeeder.ReadyToFeedListener listener) {
-                                    service.execute(new Runnable() {
-
-                                        public void run() {
-                                            try {
-                                                Thread.sleep(2);
-                                            } catch (InterruptedException e) {
-                                            }
-                                            
-                                            listener.ready();
-                                        }
-                                        
-                                    });
-                                }
-                            };
-                    generator.setFeeder(nonBlockingFeeder);
-                    generator.setMaxPendingBytes(10000);
-
-                    RequestBuilder builder = new RequestBuilder("POST");
-                    builder.setUrl(scheme + "://localhost:" + port + "/test");
-                    builder.setBody(generator);
-                    try {
-                        client.executeRequest(builder.build(),
-                                new AsyncCompletionHandler<org.asynchttpclient.Response>() {
-                                    @Override
-                                    public org.asynchttpclient.Response onCompleted(org.asynchttpclient.Response response)
-                                    throws Exception {
-                                        try {
-                                            totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
-                                        } catch (Exception e) {
-                                            errors[idx] = e;
-                                        }
-                                        statusCodes[idx] = response.getStatusCode();
-                                        latch.countDown();
-                                        return response;
-                                    }
-
-                                    @Override
-                                    public void onThrowable(Throwable t) {
-                                        errors[idx] = t;
-                                        t.printStackTrace();
-                                        latch.countDown();
-                                    }
-                               });
-                    } catch (IOException e) {
-                        errors[idx] = e;
-                        latch.countDown();
-                    }
-                }
-            });
-        }
-
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(60).setMaxConnections(60).setAcceptAnyCertificate(true).build();
+        final AsyncHttpClient client = new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
         try {
-            latch.await(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            fail("Latch interrupted");
-        } finally {
-            service.shutdownNow();
-        }
+            final int[] statusCodes = new int[threadCount];
+            final int[] totalsReceived = new int[threadCount];
+            final Throwable[] errors = new Throwable[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                final int idx = i;
+                service.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        FeedableBodyGenerator generator = new FeedableBodyGenerator();
+                        FeedableBodyGenerator.NonBlockingFeeder nonBlockingFeeder = new FeedableBodyGenerator.NonBlockingFeeder(generator) {
+                            private final Random r = new Random();
+                            private final InputStream in;
+                            private final byte[] bytesIn = new byte[2048];
+                            private boolean isDone;
 
-        for (int i = 0; i < threadCount; i++) {
-            assertEquals(200, statusCodes[i]);
-            assertNull(errors[i]);
-            assertEquals(tempFile.length(), totalsReceived[i]);
+                            {
+                                try {
+                                    in = new FileInputStream(tempFile);
+                                } catch (IOException e) {
+                                    throw new IllegalStateException(e);
+                                }
+                            }
+
+                            @Override
+                            public void canFeed() throws IOException {
+                                final int read = in.read(bytesIn);
+                                if (read == -1) {
+                                    isDone = true;
+                                    feed(Buffers.EMPTY_BUFFER, true);
+                                    return;
+                                }
+
+                                final Buffer b = Buffers.wrap(DEFAULT_MEMORY_MANAGER, bytesIn, 0, read);
+                                feed(b, false);
+                            }
+
+                            @Override
+                            public boolean isDone() {
+                                return isDone;
+                            }
+
+                            @Override
+                            public boolean isReady() {
+                                // simulate real-life usecase, where data could
+                                // not be ready
+                                return r.nextInt(100) < 80;
+                            }
+
+                            @Override
+                            public void notifyReadyToFeed(final NonBlockingFeeder.ReadyToFeedListener listener) {
+                                service.execute(new Runnable() {
+
+                                    public void run() {
+                                        try {
+                                            Thread.sleep(2);
+                                        } catch (InterruptedException e) {
+                                        }
+
+                                        listener.ready();
+                                    }
+
+                                });
+                            }
+                        };
+                        generator.setFeeder(nonBlockingFeeder);
+                        generator.setMaxPendingBytes(10000);
+
+                        RequestBuilder builder = new RequestBuilder("POST");
+                        builder.setUrl(scheme + "://localhost:" + port + "/test");
+                        builder.setBody(generator);
+                        client.executeRequest(builder.build(), new AsyncCompletionHandler<org.asynchttpclient.Response>() {
+                            @Override
+                            public org.asynchttpclient.Response onCompleted(org.asynchttpclient.Response response) throws Exception {
+                                try {
+                                    totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
+                                } catch (Exception e) {
+                                    errors[idx] = e;
+                                }
+                                statusCodes[idx] = response.getStatusCode();
+                                latch.countDown();
+                                return response;
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                errors[idx] = t;
+                                t.printStackTrace();
+                                latch.countDown();
+                            }
+                        });
+                    }
+                });
+            }
+
+            try {
+                latch.await(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                fail("Latch interrupted");
+            } finally {
+                service.shutdownNow();
+            }
+
+            for (int i = 0; i < threadCount; i++) {
+                assertEquals(statusCodes[i], 200);
+                assertNull(errors[i]);
+                assertEquals(totalsReceived[i], tempFile.length());
+            }
+        } finally {
+            client.close();
         }
     }
-    
-    private static SSLEngineConfigurator createSSLConfig()
-    throws Exception {
-        final SSLContextConfigurator sslContextConfigurator =
-                new SSLContextConfigurator();
+
+    private static SSLEngineConfigurator createSSLConfig() throws Exception {
+        final SSLContextConfigurator sslContextConfigurator = new SSLContextConfigurator();
         final ClassLoader cl = GrizzlyFeedableBodyGeneratorTest.class.getClassLoader();
         // override system properties
         final URL cacertsUrl = cl.getResource("ssltest-cacerts.jks");
@@ -385,11 +338,8 @@ public class GrizzlyFeedableBodyGeneratorTest {
             sslContextConfigurator.setKeyStorePass("changeit");
         }
 
-        return new SSLEngineConfigurator(
-                sslContextConfigurator.createSSLContext(),
-                false, false, false);
+        return new SSLEngineConfigurator(sslContextConfigurator.createSSLContext(), false, false, false);
     }
-
 
     private void generateTempFile() throws IOException {
         tempFile = File.createTempFile("feedable", null);
@@ -408,19 +358,14 @@ public class GrizzlyFeedableBodyGeneratorTest {
         out.close();
     }
 
-
     // ---------------------------------------------------------- Nested Classes
-
 
     private static final class ConsumingHandler extends HttpHandler {
 
-
         // -------------------------------------------- Methods from HttpHandler
 
-
         @Override
-        public void service(Request request, Response response)
-        throws Exception {
+        public void service(Request request, Response response) throws Exception {
             int total = 0;
             byte[] bytesIn = new byte[2048];
             InputStream in = request.getInputStream();
