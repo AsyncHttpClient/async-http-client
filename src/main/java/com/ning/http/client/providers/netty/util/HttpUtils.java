@@ -13,8 +13,6 @@
  */
 package com.ning.http.client.providers.netty.util;
 
-import static com.ning.http.util.MiscUtils.isNonEmpty;
-
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 import com.ning.http.client.uri.Uri;
@@ -33,8 +31,15 @@ public final class HttpUtils {
     private HttpUtils() {
     }
 
-    public static boolean isNTLM(List<String> auth) {
-        return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
+    public static String getNTLM(List<String> authenticateHeaders) {
+        if (authenticateHeaders != null) {
+            for (String authenticateHeader: authenticateHeaders) {
+                if (authenticateHeader.startsWith("NTLM"))
+                    return authenticateHeader;
+            }
+        }
+
+        return null;
     }
 
     public static List<String> getNettyHeaderValuesByCaseInsensitiveName(HttpHeaders headers, String name) {
