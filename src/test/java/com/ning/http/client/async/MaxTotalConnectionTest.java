@@ -15,21 +15,23 @@
  */
 package com.ning.http.client.async;
 
+import static org.testng.Assert.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
@@ -60,75 +62,46 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 }
             }
 
-            Assert.assertEquals(1, i);
-            Assert.assertTrue(caughtError);
+            assertEquals(i, 1);
+            assertTrue(caughtError);
         } finally {
             client.close();
         }
     }
 
     @Test
-    public void testMaxTotalConnections() throws IOException {
+    public void testMaxTotalConnections() throws InterruptedException {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
-                .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1)
-                .build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
+                .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build());
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final AtomicReference<String> failedUrl = new AtomicReference<String>();
+
         try {
             for (String url : urls) {
-                client.prepareGet(url).execute();
-            }
-        } finally {
-            client.close();
-        }
-    }
-
-    /**
-     * JFA: Disable this test for 1.2.0 release as it can easily fail because a request may complete before the second one is made, hence failing. The issue occurs frequently on Linux.
-     * @throws ExecutionException 
-     * @throws InterruptedException 
-     */
-    @Test(enabled = false)
-    public void testMaxTotalConnectionsCorrectExceptionHandling() throws InterruptedException, ExecutionException {
-        String[] urls = new String[] { "http://google.com", "http://github.com/" };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
-                .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
-                .build());
-        try {
-            List<Future<?>> futures = new ArrayList<Future<?>>();
-            boolean caughtError = false;
-            for (int i = 0; i < urls.length; i++) {
-                try {
-                    Future<Response> future = client.prepareGet(urls[i]).execute();
-                    if (future != null) {
-                        futures.add(future);
+                final String thisUrl = url;
+                client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
+                    @Override
+                    public Response onCompleted(Response response) throws Exception {
+                        Response r = super.onCompleted(response);
+                        latch.countDown();
+                        return r;
                     }
-                } catch (IOException e) {
-                    // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(i, 1);
-                    caughtError = true;
-                }
-            }
-            Assert.assertTrue(caughtError);
 
-            // get results of executed requests
-            for (Future<?> future : futures) {
-                future.get();
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        super.onThrowable(t);
+                        failedUrl.set(thisUrl);
+                        latch.countDown();
+                    }
+                });
             }
 
-            // try to execute once again, expecting that 1 connection is released
-            caughtError = false;
-            for (int i = 0; i < urls.length; i++) {
-                try {
-                    client.prepareGet(urls[i]).execute();
-                } catch (IOException e) {
-                    // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(i, 1);
-                    caughtError = true;
-                }
-            }
-            Assert.assertTrue(caughtError);
+            latch.await();
+            assertNull(failedUrl.get());
+
         } finally {
             client.close();
         }

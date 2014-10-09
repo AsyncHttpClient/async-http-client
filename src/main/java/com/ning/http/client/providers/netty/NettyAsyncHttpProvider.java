@@ -28,7 +28,6 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPoolPartitionSelector;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
@@ -83,8 +82,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     @Override
-    public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return requestSender.sendRequest(request, asyncHandler, null, false);
+    public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {
+        try {
+            return requestSender.sendRequest(request, asyncHandler, null, false);
+        } catch (Exception e) {
+            asyncHandler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
+        }
     }
 
     public void flushChannelPoolPartition(String partitionId) {

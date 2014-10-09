@@ -30,8 +30,11 @@
  */
 package com.ning.http.client;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Extended {@link Future}
@@ -79,4 +82,60 @@ public interface ListenableFuture<V> extends Future<V> {
      *                              immediately but the executor rejected it.
      */
     ListenableFuture<V> addListener(Runnable listener, Executor exec);
+
+    public class CompletedFailure<T> implements ListenableFuture<T>{
+
+        private final ExecutionException e;
+
+        public CompletedFailure(Throwable t) {
+            e = new ExecutionException(t);
+        }
+
+        public CompletedFailure(String message, Throwable t) {
+            e = new ExecutionException(message, t);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return true;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            throw e;
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            throw e;
+        }
+
+        @Override
+        public void done() {
+        }
+
+        @Override
+        public void abort(Throwable t) {
+        }
+
+        @Override
+        public void touch() {
+        }
+
+        @Override
+        public ListenableFuture<T> addListener(Runnable listener, Executor exec) {
+            exec.execute(listener);
+            return this;
+        }
+    }
 }

@@ -43,9 +43,7 @@ import static org.glassfish.grizzly.memory.MemoryManager.DEFAULT_MEMORY_MANAGER;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.utils.Charsets;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
-import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.Assert.*;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -179,31 +177,26 @@ public class GrizzlyFeedableBodyGeneratorTest {
                         RequestBuilder builder = new RequestBuilder("POST");
                         builder.setUrl(scheme + "://localhost:" + port + "/test");
                         builder.setBody(generator);
-                        try {
-                            client.executeRequest(builder.build(), new AsyncCompletionHandler<com.ning.http.client.Response>() {
-                                @Override
-                                public com.ning.http.client.Response onCompleted(com.ning.http.client.Response response) throws Exception {
-                                    try {
-                                        totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
-                                    } catch (Exception e) {
-                                        errors[idx] = e;
-                                    }
-                                    statusCodes[idx] = response.getStatusCode();
-                                    latch.countDown();
-                                    return response;
+                        client.executeRequest(builder.build(), new AsyncCompletionHandler<com.ning.http.client.Response>() {
+                            @Override
+                            public com.ning.http.client.Response onCompleted(com.ning.http.client.Response response) throws Exception {
+                                try {
+                                    totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
+                                } catch (Exception e) {
+                                    errors[idx] = e;
                                 }
+                                statusCodes[idx] = response.getStatusCode();
+                                latch.countDown();
+                                return response;
+                            }
 
-                                @Override
-                                public void onThrowable(Throwable t) {
-                                    errors[idx] = t;
-                                    t.printStackTrace();
-                                    latch.countDown();
-                                }
-                            });
-                        } catch (IOException e) {
-                            errors[idx] = e;
-                            latch.countDown();
-                        }
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                errors[idx] = t;
+                                t.printStackTrace();
+                                latch.countDown();
+                            }
+                        });
                     }
                 });
             }
@@ -217,9 +210,9 @@ public class GrizzlyFeedableBodyGeneratorTest {
             }
 
             for (int i = 0; i < threadCount; i++) {
-                assertEquals(200, statusCodes[i]);
+                assertEquals(statusCodes[i], 200);
                 assertNull(errors[i]);
-                assertEquals(tempFile.length(), totalsReceived[i]);
+                assertEquals(totalsReceived[i], tempFile.length());
             }
         } finally {
             client.close();
@@ -309,31 +302,26 @@ public class GrizzlyFeedableBodyGeneratorTest {
                         RequestBuilder builder = new RequestBuilder("POST");
                         builder.setUrl(scheme + "://localhost:" + port + "/test");
                         builder.setBody(generator);
-                        try {
-                            client.executeRequest(builder.build(), new AsyncCompletionHandler<com.ning.http.client.Response>() {
-                                @Override
-                                public com.ning.http.client.Response onCompleted(com.ning.http.client.Response response) throws Exception {
-                                    try {
-                                        totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
-                                    } catch (Exception e) {
-                                        errors[idx] = e;
-                                    }
-                                    statusCodes[idx] = response.getStatusCode();
-                                    latch.countDown();
-                                    return response;
+                        client.executeRequest(builder.build(), new AsyncCompletionHandler<com.ning.http.client.Response>() {
+                            @Override
+                            public com.ning.http.client.Response onCompleted(com.ning.http.client.Response response) throws Exception {
+                                try {
+                                    totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
+                                } catch (Exception e) {
+                                    errors[idx] = e;
                                 }
+                                statusCodes[idx] = response.getStatusCode();
+                                latch.countDown();
+                                return response;
+                            }
 
-                                @Override
-                                public void onThrowable(Throwable t) {
-                                    errors[idx] = t;
-                                    t.printStackTrace();
-                                    latch.countDown();
-                                }
-                            });
-                        } catch (IOException e) {
-                            errors[idx] = e;
-                            latch.countDown();
-                        }
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                errors[idx] = t;
+                                t.printStackTrace();
+                                latch.countDown();
+                            }
+                        });
                     }
                 });
             }
@@ -347,9 +335,9 @@ public class GrizzlyFeedableBodyGeneratorTest {
             }
 
             for (int i = 0; i < threadCount; i++) {
-                assertEquals(200, statusCodes[i]);
+                assertEquals(statusCodes[i], 200);
                 assertNull(errors[i]);
-                assertEquals(tempFile.length(), totalsReceived[i]);
+                assertEquals(totalsReceived[i], tempFile.length());
             }
         } finally {
             client.close();

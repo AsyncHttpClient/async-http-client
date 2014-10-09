@@ -13,10 +13,7 @@
 package com.ning.http.client.async;
 
 import static java.nio.charset.StandardCharsets.*;
-
 import static org.testng.Assert.*;
-import static org.testng.AssertJUnit.assertNotNull;
-import static org.testng.AssertJUnit.assertNotSame;
 
 import org.testng.annotations.Test;
 
@@ -35,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
@@ -254,8 +252,11 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         try {
             derived.get().get();
             fail("Expected closed AHC");
-        } catch (IOException e) {
             // expected -- Seems to me that this behavior conflicts with the requirements of Future.get()
+            
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof IOException);
+        
         } finally {
             client.close();
             derived.close();

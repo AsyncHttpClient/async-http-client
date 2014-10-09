@@ -33,15 +33,14 @@ import java.io.IOException;
  */
 public class FilterContext<T> {
 
-    @SuppressWarnings("rawtypes")
-    private final FilterContextBuilder b;
+    private final FilterContextBuilder<T> b;
 
     /**
      * Create a new {@link FilterContext}
      *
      * @param b a {@link FilterContextBuilder}
      */
-    private FilterContext(@SuppressWarnings("rawtypes") FilterContextBuilder b) {
+    private FilterContext(FilterContextBuilder<T> b) {
         this.b = b;
     }
 
@@ -50,7 +49,6 @@ public class FilterContext<T> {
      *
      * @return the original or decorated {@link AsyncHandler}
      */
-    @SuppressWarnings("unchecked")
     public AsyncHandler<T> getAsyncHandler() {
         return b.asyncHandler;
     }
@@ -109,8 +107,7 @@ public class FilterContext<T> {
         public FilterContextBuilder() {
         }
 
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        public FilterContextBuilder(FilterContext clone) {
+        public FilterContextBuilder(FilterContext<T> clone) {
             asyncHandler = clone.getAsyncHandler();
             request = clone.getRequest();
             responseStatus = clone.getResponseStatus();
@@ -122,8 +119,7 @@ public class FilterContext<T> {
             return asyncHandler;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder asyncHandler(AsyncHandler<T> asyncHandler) {
+        public FilterContextBuilder<T> asyncHandler(AsyncHandler<T> asyncHandler) {
             this.asyncHandler = asyncHandler;
             return this;
         }
@@ -132,39 +128,33 @@ public class FilterContext<T> {
             return request;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder request(Request request) {
+        public FilterContextBuilder<T> request(Request request) {
             this.request = request;
             return this;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder responseStatus(HttpResponseStatus responseStatus) {
+        public FilterContextBuilder<T> responseStatus(HttpResponseStatus responseStatus) {
             this.responseStatus = responseStatus;
             return this;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder responseHeaders(HttpResponseHeaders headers) {
+        public FilterContextBuilder<T> responseHeaders(HttpResponseHeaders headers) {
             this.headers = headers;
             return this;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder replayRequest(boolean replayRequest) {
+        public FilterContextBuilder<T> replayRequest(boolean replayRequest) {
             this.replayRequest = replayRequest;
             return this;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContextBuilder ioException(IOException ioException) {
+        public FilterContextBuilder<T> ioException(IOException ioException) {
             this.ioException = ioException;
             return this;
         }
 
-        @SuppressWarnings("rawtypes")
-        public FilterContext build() {
-            return new FilterContext(this);
+        public FilterContext<T> build() {
+            return new FilterContext<T>(this);
         }
     }
 }

@@ -28,9 +28,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Random;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
 
 /**
@@ -106,11 +104,11 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                     System.out.println("Headers:" + res.getHeaders());
                     System.out.println("==============");
                     System.out.flush();
-                    assertEquals("Should have 500 status code", 500, res.getStatusCode());
-                    assertTrue("Should have failed due to chunking", res.getHeader("X-Exception").contains("invalid.chunk.length"));
+                    assertEquals(res.getStatusCode(), 500, "Should have 500 status code");
+                    assertTrue(res.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
                     fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + res.getHeader("X-Exception"));
                 } else {
-                    assertEquals(LARGE_IMAGE_BYTES, readInputStreamToBytes(res.getResponseBodyAsStream()));
+                    assertEquals(readInputStreamToBytes(res.getResponseBodyAsStream()), LARGE_IMAGE_BYTES);
                 }
             } catch (Exception e) {
 

@@ -114,8 +114,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
-        return execute(request, handler, null);
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) {
+        try {
+            return execute(request, handler, null);
+        } catch (IOException e) {
+            handler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
+        }
     }
 
     private <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, JDKFuture<?> future) throws IOException {

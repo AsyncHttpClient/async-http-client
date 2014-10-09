@@ -17,7 +17,6 @@
 package com.ning.http.client;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -222,11 +221,11 @@ public class AsyncHttpClient implements Closeable {
             super(BoundRequestBuilder.class, prototype);
         }
 
-        public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) throws IOException {
+        public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) {
             return AsyncHttpClient.this.executeRequest(build(), handler);
         }
 
-        public ListenableFuture<Response> execute() throws IOException {
+        public ListenableFuture<Response> execute() {
             return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
         }
 
@@ -480,17 +479,20 @@ public class AsyncHttpClient implements Closeable {
      * @param handler an instance of {@link AsyncHandler}
      * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      * @return a {@link Future} of type T
-     * @throws IOException
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
 
         if (config.getRequestFilters().isEmpty()) {
             return httpProvider.execute(request, handler);
 
         } else {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
-            fc = preProcessRequest(fc);
+            FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
+            try {
+                fc = preProcessRequest(fc);
+            } catch (Exception e) {
+                handler.onThrowable(e);
+                return new ListenableFuture.CompletedFailure<T>("preProcessRequest failed", e);
+            }
             
             return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
         }
@@ -501,9 +503,8 @@ public class AsyncHttpClient implements Closeable {
      *
      * @param request {@link Request}
      * @return a {@link Future} of type Response
-     * @throws IOException
      */
-    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
+    public ListenableFuture<Response> executeRequest(Request request) {
         return executeRequest(request, new AsyncCompletionHandlerBase());
     }
 
@@ -513,18 +514,11 @@ public class AsyncHttpClient implements Closeable {
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
      */
-    @SuppressWarnings("rawtypes")
-    private FilterContext preProcessRequest(FilterContext fc) throws IOException {
+    private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws FilterException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
+            fc = asyncFilter.filter(fc);
+            if (fc == null) {
+                throw new NullPointerException("FilterContext is null");
             }
         }
 
@@ -538,7 +532,7 @@ public class AsyncHttpClient implements Closeable {
             builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
             request = builder.build();
         }
-        fc = new FilterContext.FilterContextBuilder(fc).request(request).build();
+        fc = new FilterContext.FilterContextBuilder<T>(fc).request(request).build();
         return fc;
     }
 

@@ -202,13 +202,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     // ------------------------------------------ Methods from AsyncHttpProvider
 
 
-    @SuppressWarnings({"unchecked"})
     @Override
-    public <T> ListenableFuture<T> execute(final Request request,
-                                           final AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(final Request request, final AsyncHandler<T> handler) {
 
         if (clientTransport.isStopped()) {
-            throw new IOException("AsyncHttpClient has been closed.");
+            IOException e = new IOException("AsyncHttpClient has been closed.");
+            handler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>(e);
         }
         final ProxyServer proxy = ProxyUtils.getProxyServer(clientConfig, request);
         final GrizzlyResponseFuture<T> future = new GrizzlyResponseFuture<T>(this, request, handler, proxy);
@@ -2908,19 +2908,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     .setConnectTimeout(5000)
                     .setSSLContext(sslContext).build();
             AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+            long start = System.currentTimeMillis();
             try {
-                long start = System.currentTimeMillis();
-                try {
-                    client.executeRequest(client.prepareGet("http://www.google.com").build()).get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("COMPLETE: " + (System.currentTimeMillis() - start) + "ms");
-            } catch (IOException e) {
+                client.executeRequest(client.prepareGet("http://www.google.com").build()).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
+            LOGGER.debug("COMPLETE: " + (System.currentTimeMillis() - start) + "ms");
         }
 }
 

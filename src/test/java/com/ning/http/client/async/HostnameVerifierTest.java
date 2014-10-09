@@ -15,6 +15,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -30,6 +31,7 @@ import javax.net.ssl.*;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,11 +43,11 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
 public abstract class HostnameVerifierTest extends AbstractBasicTest {
 
@@ -225,9 +227,9 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             File file = new File(url.toURI());
 
             try {
-                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-            } catch (ConnectException ex) {
-                assertEquals(ConnectException.class, ex.getClass());
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            } catch (ExecutionException ex) {
+                assertTrue(ex.getCause() instanceof ConnectException);
             }
         } finally {
             client.close();
@@ -245,9 +247,9 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             File file = new File(url.toURI());
 
             try {
-                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-            } catch (ConnectException ex) {
-                assertEquals(ConnectException.class, ex.getClass());
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            } catch (ExecutionException ex) {
+                assertTrue(ex.getCause() instanceof ConnectException);
             }
         } finally {
             client.close();
@@ -265,9 +267,9 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             File file = new File(url.toURI());
 
             try {
-                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-            } catch (ConnectException ex) {
-                assertEquals(ConnectException.class, ex.getClass());
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            } catch (ExecutionException ex) {
+                assertTrue(ex.getCause() instanceof ConnectException);
             }
         } finally {
             client.close();

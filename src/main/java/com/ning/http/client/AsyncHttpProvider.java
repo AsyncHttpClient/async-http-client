@@ -15,8 +15,6 @@
  */
 package com.ning.http.client;
 
-import java.io.IOException;
-
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
  * By default, the {@link com.ning.http.client.providers.netty.NettyAsyncHttpProvider} is used.
@@ -28,9 +26,8 @@ public interface AsyncHttpProvider {
      *
      * @param handler an instance of {@link AsyncHandler}
      * @return a {@link ListenableFuture} of Type T.
-     * @throws IOException
      */
-    <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
+    <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler);
 
     /**
      * Close the current underlying TCP/HTTP connection.

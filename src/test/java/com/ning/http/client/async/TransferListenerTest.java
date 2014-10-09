@@ -15,7 +15,6 @@ package com.ning.http.client.async;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
 
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -120,8 +119,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertNotNull(bb.get());
             assertNull(throwable.get());
-        } catch (IOException ex) {
-            fail("Should have timed out");
         } finally {
             client.close();
         }
@@ -180,8 +177,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), largeFile.length());
             assertEquals(bbSentLenght.get(), largeFile.length());
-        } catch (IOException ex) {
-            fail("Should have timed out");
         } finally {
             client.close();
         }
@@ -240,8 +235,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), largeFile.length());
             assertEquals(bbSentLenght.get(), largeFile.length());
-        } catch (IOException ex) {
-            fail("Should have timed out");
         } finally {
             client.close();
         }
