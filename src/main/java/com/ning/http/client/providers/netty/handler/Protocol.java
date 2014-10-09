@@ -20,6 +20,7 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
@@ -50,6 +52,9 @@ import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class Protocol {
@@ -73,6 +78,16 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.getCode());
     }
 
+    public static final Set<String> PROPAGATED_ON_REDIRECT_HEADERS = new HashSet<String>();
+    static {
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_CHARSET.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_ENCODING.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_LANGUAGE.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(REFERER.toLowerCase(Locale.US));
+        PROPAGATED_ON_REDIRECT_HEADERS.add(USER_AGENT.toLowerCase(Locale.US));
+    }
+
     public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {
         this.channelManager = channelManager;
@@ -90,6 +105,17 @@ public abstract class Protocol {
     public abstract void onError(NettyResponseFuture<?> future, Throwable e);
 
     public abstract void onClose(NettyResponseFuture<?> future);
+
+    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request) {
+        FluentCaseInsensitiveStringsMap redirectHeaders = new FluentCaseInsensitiveStringsMap();
+        for (Map.Entry<String, List<String>> headerEntry : request.getHeaders()) {
+            String headerName = headerEntry.getKey();
+            List<String> headerValues = headerEntry.getValue();
+            if (PROPAGATED_ON_REDIRECT_HEADERS.contains(headerName.toLowerCase(Locale.US)))
+                redirectHeaders.add(headerName, headerValues);
+        }
+        return redirectHeaders;
+    }
 
     protected boolean exitAfterHandlingRedirect(//
             Channel channel,//
@@ -138,6 +164,8 @@ public abstract class Protocol {
                         if (c != null)
                             requestBuilder.addOrReplaceCookie(c);
                     }
+
+                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest()));
 
                     Callback callback = channelManager.newDrainCallback(future, channel, initialConnectionKeepAlive, initialPoolKey);
 
