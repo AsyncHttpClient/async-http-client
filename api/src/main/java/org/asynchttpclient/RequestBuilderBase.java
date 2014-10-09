@@ -66,7 +66,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
-        private ConnectionPoolPartitioning connectionPoolPartitioning = PerHostConnectionPoolPartitioning.INSTANCE;
+        private ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
         private List<Param> queryParams;
 
         public RequestImpl() {
