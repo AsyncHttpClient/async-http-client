@@ -69,7 +69,7 @@ public abstract class AbstractFilePart extends PartBase {
         if (fileName != null) {
             visitor.withBytes(FILE_NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(fileName.getBytes(US_ASCII));
+            visitor.withBytes(fileName.getBytes(getCharset() != null ? getCharset(): US_ASCII));
             visitor.withByte(QUOTE_BYTE);
         }
     }
