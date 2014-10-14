@@ -607,8 +607,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
-        computeFinalUri();
         executeSignatureCalculator();
+        computeFinalUri();
         computeRequestCharset();
         computeRequestLength();
         return request;
