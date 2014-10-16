@@ -19,7 +19,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -62,7 +61,7 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
+    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException {
         return acceptAnyCertificate ? looseTrustManagerSSLContext : SSLContext.getDefault();
     }
 }
