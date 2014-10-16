@@ -104,6 +104,8 @@ public class AsyncHttpClientConfig {
     protected boolean disableUrlEncodingForBoundRequests;
     protected int ioThreadMultiplier;
     protected TimeConverter timeConverter;
+    protected String[] enabledProtocols;
+    protected String[] enabledCipherSuites;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
     
     // AHC 2 specific
@@ -144,6 +146,8 @@ public class AsyncHttpClientConfig {
             boolean disableUrlEncodingForBoundRequests, //
             int ioThreadMultiplier, //
             TimeConverter timeConverter,//
+            String[] enabledProtocols,//
+            String[] enabledCipherSuites,//
             AsyncHttpProviderConfig<?, ?> providerConfig,//
             boolean spdyEnabled, //
             int spdyInitialWindowSize, //
@@ -179,6 +183,8 @@ public class AsyncHttpClientConfig {
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.timeConverter = timeConverter;
+        this.enabledProtocols = enabledProtocols;
+        this.enabledCipherSuites = enabledCipherSuites;
         this.providerConfig = providerConfig;
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
@@ -514,7 +520,7 @@ public class AsyncHttpClientConfig {
     /**
      * @return the TimeConverter used for converting RFC2616Dates into time
      *
-     * @since 2.0.0
+     * since 1.9.0
      */
     public TimeConverter getTimeConverter() {
         return timeConverter;
@@ -522,6 +528,20 @@ public class AsyncHttpClientConfig {
 
     public boolean isAcceptAnyCertificate() {
         return acceptAnyCertificate;
+    }
+
+    /**
+     * since 1.9.0
+     */
+    public String[] getEnabledProtocols() {
+        return enabledProtocols;
+    }
+
+    /**
+     * since 1.9.0
+     */
+    public String[] getEnabledCipherSuites() {
+        return enabledCipherSuites;
     }
 
     /**
@@ -560,6 +580,8 @@ public class AsyncHttpClientConfig {
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private TimeConverter timeConverter;
+        private String[] enabledProtocols;
+        private String[] enabledCipherSuites;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
         
         // AHC 2
@@ -1028,7 +1050,17 @@ public class AsyncHttpClientConfig {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
         }
-        
+
+        public Builder setEnabledProtocols(String[] enabledProtocols) {
+            this.enabledProtocols = enabledProtocols;
+            return this;
+        }
+
+        public Builder setEnabledCipherSuites(String[] enabledCipherSuites) {
+            this.enabledCipherSuites = enabledCipherSuites;
+            return this;
+        }
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -1070,7 +1102,9 @@ public class AsyncHttpClientConfig {
             strict302Handling = prototype.isStrict302Handling();
             timeConverter = prototype.timeConverter;
             acceptAnyCertificate = prototype.acceptAnyCertificate;
-            
+            enabledProtocols = prototype.enabledProtocols;
+            enabledCipherSuites = prototype.enabledCipherSuites;
+
             spdyEnabled = prototype.isSpdyEnabled();
             spdyInitialWindowSize = prototype.getSpdyInitialWindowSize();
             spdyMaxConcurrentStreams = prototype.getSpdyMaxConcurrentStreams();
@@ -1127,6 +1161,8 @@ public class AsyncHttpClientConfig {
                     disableUrlEncodingForBoundRequests, //
                     ioThreadMultiplier, //
                     timeConverter,//
+                    enabledProtocols, //
+                    enabledCipherSuites, //
                     providerConfig, //
                     spdyEnabled, //
                     spdyInitialWindowSize, //

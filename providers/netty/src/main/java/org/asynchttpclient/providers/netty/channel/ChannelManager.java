@@ -41,12 +41,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolPartitioning;
 import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.SSLEngineFactory;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
@@ -59,7 +59,6 @@ import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +78,7 @@ public class ChannelManager {
 
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig nettyConfig;
+    private final SSLEngineFactory sslEngineFactory;
 
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
@@ -104,6 +104,7 @@ public class ChannelManager {
 
         this.config = config;
         this.nettyConfig = nettyConfig;
+        this.sslEngineFactory = nettyConfig.getSslEngineFactory() != null? nettyConfig.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
         ChannelPool channelPool = nettyConfig.getChannelPool();
         if (channelPool == null && config.isAllowPoolingConnections()) {
@@ -343,18 +344,7 @@ public class ChannelManager {
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
 
-        SSLEngine sslEngine = null;
-        if (nettyConfig.getSslEngineFactory() != null) {
-            sslEngine = nettyConfig.getSslEngineFactory().newSSLEngine();
-
-        } else {
-            SSLContext sslContext = config.getSSLContext();
-            if (sslContext == null)
-                sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
-
-            sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
-            sslEngine.setUseClientMode(true);
-        }
+        SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
 
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)

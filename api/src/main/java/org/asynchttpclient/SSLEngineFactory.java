@@ -13,19 +13,51 @@
  */
 package org.asynchttpclient;
 
+import java.security.GeneralSecurityException;
+
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import java.security.GeneralSecurityException;
+import org.asynchttpclient.util.SslUtils;
 
 /**
  * Factory that creates an {@link SSLEngine} to be used for a single SSL connection.
  */
 public interface SSLEngineFactory {
+
     /**
      * Creates new {@link SSLEngine}.
      *
      * @return new engine
      * @throws GeneralSecurityException if the SSLEngine cannot be created
      */
-    SSLEngine newSSLEngine() throws GeneralSecurityException;
+    SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException;
+
+    public static class DefaultSSLEngineFactory implements SSLEngineFactory {
+
+        private final AsyncHttpClientConfig config;
+
+        public DefaultSSLEngineFactory(AsyncHttpClientConfig config) {
+            this.config = config;
+        }
+
+        @Override
+        public SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException {
+            SSLContext sslContext = config.getSSLContext();
+
+            if (sslContext == null)
+                sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
+
+            SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+            sslEngine.setUseClientMode(true);
+
+            if (config.getEnabledProtocols() != null)
+                sslEngine.setEnabledProtocols(config.getEnabledProtocols());
+
+            if (config.getEnabledCipherSuites() != null)
+                sslEngine.setEnabledCipherSuites(config.getEnabledCipherSuites());
+
+            return sslEngine;
+        }
+    }
 }
