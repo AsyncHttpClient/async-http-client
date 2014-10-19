@@ -162,7 +162,7 @@ WebSocket websocket = c.prepareGet(getTargetUrl())
           }
 
           @Override
-          public void onClose(.WebSocket websocket) {
+          public void onClose(WebSocket websocket) {
               latch.countDown();
           }
 
