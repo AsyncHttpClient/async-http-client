@@ -185,8 +185,6 @@ Keep up to date on the library development by joining the Asynchronous HTTP Clie
 
 [Google Group](http://groups.google.com/group/asynchttpclient)
 
-or follow us on [Twitter](http://twitter.com/jfarcand)
-
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/6433679063b2351599c6ca44a08246a2 "githalytics.com")](http://githalytics.com/AsyncHttpClient/async-http-client)
 
 ## Contributing
