@@ -12,10 +12,20 @@
  */
 package org.asynchttpclient.providers.netty;
 
+import static org.testng.Assert.assertEquals;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.async.AsyncProvidersBasicTest;
+import org.asynchttpclient.async.util.EventCollectingHandler;
+import org.testng.annotations.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.netty.channel.ChannelOption;
 
@@ -34,5 +44,29 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected String acceptEncodingHeader() {
         return "gzip,deflate";
+    }
+
+    @Test(groups = { "standalone", "default_provider", "async" })
+    public void testNewConnectionEventsFired() throws Exception {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler handler = new EventCollectingHandler();
+            client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
+            handler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            List<String> expectedEvents = Arrays.asList(
+                    "PoolConnection",
+                    "OpenConnection",
+                    "ConnectionOpen",
+                    "SendRequest",
+                    "HeaderWriteCompleted",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+        }
+
     }
 }
