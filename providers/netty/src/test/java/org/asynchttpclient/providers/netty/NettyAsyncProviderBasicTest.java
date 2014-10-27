@@ -58,6 +58,7 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
             List<String> expectedEvents = Arrays.asList(
                     "PoolConnection",
                     "OpenConnection",
+                    "DnsResolved",
                     "ConnectionOpen",
                     "SendRequest",
                     "HeaderWriteCompleted",

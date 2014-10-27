@@ -85,4 +85,14 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     public void onRetry() {
         firedEvents.add("Retry");
     }
+
+    @Override
+    public void onDnsResolved() {
+        firedEvents.add("DnsResolved");
+    }
+
+    @Override
+    public void onSslHandshakeCompleted() {
+        firedEvents.add("SslHandshakeCompleted");
+    }
 }

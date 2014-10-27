@@ -29,6 +29,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
@@ -106,6 +107,10 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                         LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
                                 Base64.encode(session.getId()), session.isValid(), host);
                         if (hostnameVerifier.verify(host, session)) {
+                            final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                            if (asyncHandler instanceof AsyncHandlerExtensions)
+                                AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
+
                             writeRequest(channel);
                         } else {
                             abortChannelPreemption(poolKey);
