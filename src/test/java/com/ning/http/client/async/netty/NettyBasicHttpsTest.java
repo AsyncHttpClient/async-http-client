@@ -42,6 +42,8 @@ public class NettyBasicHttpsTest extends BasicHttpsTest {
             List<String> expectedEvents = Arrays.asList(
                     "PoolConnection",
                     "OpenConnection",
+                    "DnsResolved",
+                    "SslHandshakeCompleted",
                     "ConnectionOpen",
                     "SendRequest",
                     "HeaderWriteCompleted",
