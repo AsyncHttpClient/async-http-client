@@ -14,18 +14,24 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import io.netty.channel.Channel;
-
-import java.net.ConnectException;
-import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
+import org.asynchttpclient.async.util.EventCollectingHandler;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.providers.netty.channel.pool.NoopChannelPool;
 import org.testng.annotations.Test;
+
+import java.net.ConnectException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import io.netty.channel.Channel;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
@@ -125,4 +131,31 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             client.close();
         }
     }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testPooledEventsFired() throws Exception {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler firstHandler = new EventCollectingHandler();
+            client.executeRequest(request, firstHandler).get(3, TimeUnit.SECONDS);
+            firstHandler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            EventCollectingHandler secondHandler = new EventCollectingHandler();
+            client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
+            secondHandler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            List<String> expectedEvents = Arrays.asList(
+                    "PoolConnection",
+                    "ConnectionPooled",
+                    "SendRequest",
+                    "HeaderWriteCompleted",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(secondHandler.firedEvents, expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
+        }
+    }
+
 }

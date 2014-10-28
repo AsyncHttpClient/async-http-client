@@ -271,7 +271,7 @@ public final class NettyRequestSender {
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
-            ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap);
+            ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
             channelFuture.addListener(new NettyConnectListener<T>(config, future, this, channelManager, channelPreempted, poolKey));
 
         } catch (Throwable t) {
@@ -354,8 +354,11 @@ public final class NettyRequestSender {
             return new InetSocketAddress(proxy.getHost(), proxy.getPort());
     }
 
-    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
+    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
+
+        if (asyncHandler instanceof AsyncHandlerExtensions)
+            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved();
 
         if (request.getLocalAddress() != null)
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));

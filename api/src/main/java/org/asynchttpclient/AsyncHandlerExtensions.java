@@ -59,4 +59,14 @@ public interface AsyncHandlerExtensions {
      * Notify the callback every time a request is being retried.
      */
     void onRetry();
+
+    /**
+     * Notify the callback after DNS resolution has completed.
+     */
+    void onDnsResolved();
+
+    /**
+     * Notify the callback when the SSL handshake performed to establish an HTTPS connection has been completed.
+     */
+    void onSslHandshakeCompleted();
 }
