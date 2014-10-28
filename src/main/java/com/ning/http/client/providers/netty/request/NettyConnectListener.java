@@ -22,6 +22,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
@@ -71,7 +72,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         if (channelPreempted)
             channelManager.abortChannelPreemption(poolKey);
     }
-    
+
     private void writeRequest(Channel channel, String poolKey) {
 
         LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
@@ -108,6 +109,10 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                             LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
                                     Base64.encode(session.getId()), session.isValid(), host);
                         if (hostnameVerifier.verify(host, session)) {
+                            final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                            if (asyncHandler instanceof AsyncHandlerExtensions)
+                                AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
+
                             writeRequest(channel, poolKey);
                         } else {
                             abortChannelPreemption(poolKey);

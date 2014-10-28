@@ -21,16 +21,22 @@ import static org.testng.Assert.fail;
 import org.jboss.netty.channel.Channel;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Joiner;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.ConnectionPoolTest;
+import com.ning.http.client.async.EventCollectingHandler;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
 import com.ning.http.client.providers.netty.channel.pool.NoopChannelPool;
 
 import java.net.ConnectException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
@@ -131,5 +137,31 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
         }
     }
 
+    @Test
+    public void testPooledEventsFired() throws Exception {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler firstHandler = new EventCollectingHandler();
+            client.executeRequest(request, firstHandler).get(3, TimeUnit.SECONDS);
+            firstHandler.waitForCompletion();
+
+            EventCollectingHandler secondHandler = new EventCollectingHandler();
+            client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
+            secondHandler.waitForCompletion();
+
+            List<String> expectedEvents = Arrays.asList(
+                    "PoolConnection",
+                    "ConnectionPooled",
+                    "SendRequest",
+                    "HeaderWriteCompleted",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(secondHandler.firedEvents, expectedEvents,
+                    "Got: " + Joiner.on(", ").join(secondHandler.firedEvents));
+        }
+    }
 
 }

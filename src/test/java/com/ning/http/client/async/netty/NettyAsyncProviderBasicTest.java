@@ -12,14 +12,26 @@
  */
 package com.ning.http.client.async.netty;
 
+import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.Test;
 
+import com.google.common.base.Joiner;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.async.AsyncProvidersBasicTest;
+import com.ning.http.client.async.EventCollectingHandler;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Test
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
@@ -37,5 +49,31 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected String generatedAcceptEncodingHeader() {
         return "gzip,deflate";
+    }
+
+    @Test(groups = { "standalone", "default_provider", "async" })
+    public void testNewConnectionEventsFired() throws InterruptedException, TimeoutException, ExecutionException {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler handler = new EventCollectingHandler();
+            client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
+            handler.waitForCompletion();
+
+            List<String> expectedEvents = Arrays.asList(
+                    "PoolConnection",
+                    "OpenConnection",
+                    "DnsResolved",
+                    "ConnectionOpen",
+                    "SendRequest",
+                    "HeaderWriteCompleted",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(handler.firedEvents, expectedEvents,
+                    "Got: " + Joiner.on(", ").join(handler.firedEvents));
+        }
+
     }
 }
