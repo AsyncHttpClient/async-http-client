@@ -95,6 +95,8 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
@@ -2274,6 +2276,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_CONT = 0x0;
         private static final byte OPCODE_TEXT = 0x1;
         private static final byte OPCODE_BINARY = 0x2;
+        private static final byte OPCODE_PING = 0x9;
+        private static final byte OPCODE_PONG = 0xa;
         private static final byte OPCODE_UNKNOWN = -1;
 
         // We don't need to synchronize as replacing the "ws-decoder" will process using the same thread.
@@ -2376,6 +2380,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     pendingOpcode = OPCODE_TEXT;
                 } else if (frame instanceof BinaryWebSocketFrame) {
                     pendingOpcode = OPCODE_BINARY;
+                } else if (frame instanceof PingWebSocketFrame) {
+                    pendingOpcode = OPCODE_PING;
+                } else if (frame instanceof PongWebSocketFrame) {
+                    pendingOpcode = OPCODE_PONG;
                 }
 
                 HttpChunk webSocketChunk = new HttpChunk() {
@@ -2409,6 +2417,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                         } else if (pendingOpcode == OPCODE_TEXT) {
                             webSocket.onTextFragment(frame.getBinaryData().toString(UTF8), frame.isFinalFragment());
+                        } else if (pendingOpcode == OPCODE_PING) {
+                            webSocket.onPing(rp.getBodyPartBytes());
+                        } else if (pendingOpcode == OPCODE_PONG) {
+                            webSocket.onPong(rp.getBodyPartBytes());
                         }
 
                         if (frame instanceof CloseWebSocketFrame) {

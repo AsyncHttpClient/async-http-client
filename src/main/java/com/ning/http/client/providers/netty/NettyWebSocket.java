@@ -16,6 +16,8 @@ import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
+import com.ning.http.client.websocket.WebSocketPingListener;
+import com.ning.http.client.websocket.WebSocketPongListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -210,6 +212,20 @@ public class NettyWebSocket implements WebSocket {
 
         if (last) {
             textBuffer.setLength(0);
+        }
+    }
+
+    public void onPing(byte[] payload) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPingListener)
+                WebSocketPingListener.class.cast(listener).onPing(payload);
+        }
+    }
+
+    public void onPong(byte[] payload) {
+        for (WebSocketListener listener : listeners) {
+            if (listener instanceof WebSocketPongListener)
+                WebSocketPongListener.class.cast(listener).onPong(payload);
         }
     }
 
