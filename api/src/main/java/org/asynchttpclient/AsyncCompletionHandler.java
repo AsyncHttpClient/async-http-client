@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(AsyncCompletionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncCompletionHandler.class);
     private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
     /**
@@ -67,7 +67,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * {@inheritDoc}
      */
     public void onThrowable(Throwable t) {
-        log.debug(t.getMessage(), t);
+        LOGGER.debug(t.getMessage(), t);
     }
 
     /**
