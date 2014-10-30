@@ -213,6 +213,8 @@ final class UriParser {
                 if (end >= 0 && path.indexOf("/../", end) != 0) {
                     path = path.substring(0, end) + path.substring(i + 3);
                     i = 0;
+                } else if (end == 0) {
+                    break;
                 }
             } else
                 i = i + 3;
