@@ -21,7 +21,7 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     public void testDefaultConnectTimeOut() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 60 * 1000);
+        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
         testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
     }
 
