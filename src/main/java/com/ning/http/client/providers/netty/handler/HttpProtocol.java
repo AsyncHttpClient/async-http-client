@@ -56,9 +56,13 @@ import java.util.List;
 
 public final class HttpProtocol extends Protocol {
 
+    private final ConnectionStrategy connectionStrategy;
+
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {
         super(channelManager, config, nettyConfig, requestSender);
+
+        connectionStrategy = nettyConfig.getConnectionStrategy();
     }
 
     private Realm.RealmBuilder newRealmBuilder(Realm realm) {
@@ -402,10 +406,6 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean isConnectionKeepAlive(HttpHeaders headers) {
-        return !HttpHeaders.Values.CLOSE.equalsIgnoreCase(headers.get(HttpHeaders.Names.CONNECTION));
-    }
-    
     private boolean handleHttpResponse(final HttpResponse response,//
             final Channel channel,//
             final NettyResponseFuture<?> future,//
@@ -419,7 +419,7 @@ public final class HttpProtocol extends Protocol {
         // the handler in case of trailing headers
         future.setHttpHeaders(response.headers());
 
-        future.setKeepAlive(isConnectionKeepAlive(httpRequest.headers()) && isConnectionKeepAlive(response.headers()));
+        future.setKeepAlive(connectionStrategy.keepAlive(httpRequest, response));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
         int statusCode = response.getStatus().getCode();
