@@ -27,6 +27,8 @@ import java.util.Set;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.SSLEngineFactory;
 import org.asynchttpclient.providers.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.providers.netty.handler.ConnectionStrategy;
+import org.asynchttpclient.providers.netty.handler.Http1Point1ConnectionStrategy;
 import org.asynchttpclient.providers.netty.response.EagerNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
@@ -170,6 +172,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
     private int webSocketMaxFrameSize = 10 * 1024;
 
     private boolean keepEncodingHeader = false;
+
+    private ConnectionStrategy connectionStrategy = new Http1Point1ConnectionStrategy();
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -320,5 +324,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setKeepEncodingHeader(boolean keepEncodingHeader) {
         this.keepEncodingHeader = keepEncodingHeader;
+    }
+
+    public ConnectionStrategy getConnectionStrategy() {
+        return connectionStrategy;
+    }
+
+    public void setConnectionStrategy(ConnectionStrategy connectionStrategy) {
+        this.connectionStrategy = connectionStrategy;
     }
 }
