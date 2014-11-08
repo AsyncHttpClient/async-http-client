@@ -248,9 +248,9 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
      */
     public int getRequestTimeout() {
         return requestTimeout;
@@ -664,9 +664,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+         * Set the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
          *
-         * @param requestTimeout the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+         * @param requestTimeout the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
          * @return a {@link Builder}
          */
         public Builder setRequestTimeout(int requestTimeout) {
