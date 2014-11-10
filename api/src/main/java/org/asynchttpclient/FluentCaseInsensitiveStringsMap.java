@@ -449,18 +449,13 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     @Override
     public List<String> get(Object key) {
-        if (key == null) {
-            return null;
-        }
+        if (key == null)
+            return Collections.emptyList();
 
         String lcKey = key.toString().toLowerCase(Locale.ENGLISH);
         String realKey = keyLookup.get(lcKey);
 
-        if (realKey == null) {
-            return null;
-        } else {
-            return values.get(realKey);
-        }
+        return realKey != null ? values.get(realKey) : Collections.<String> emptyList();
     }
 
     /**
