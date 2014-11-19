@@ -40,12 +40,6 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this.inputStream = inputStream;
-
-        if (inputStream.markSupported()) {
-            inputStream.mark(0);
-        } else {
-            logger.info("inputStream.markSupported() not supported. Some features will not work.");
-        }
     }
 
     public InputStream getInputStream() {
@@ -97,12 +91,8 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
                         buffer.put(END_PADDING);
 
-
                         return buffer.position();
                     } else {
-                        if (inputStream.markSupported()) {
-                            inputStream.reset();
-                        }
                         eof = false;
                     }
                     return -1;
@@ -118,14 +108,8 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                 buffer.put(chunk, 0, read);
                 // Was missing the final chunk \r\n.
                 buffer.put(END_PADDING);
-            } else {
-                if (read > 0) {
-                    buffer.put(chunk, 0, read);
-                } else {
-                    if (inputStream.markSupported()) {
-                        inputStream.reset();
-                    }
-                }
+            } else if (read > 0) {
+                buffer.put(chunk, 0, read);
             }
             return read;
         }
