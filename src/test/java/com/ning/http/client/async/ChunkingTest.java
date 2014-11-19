@@ -18,19 +18,20 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
+
 import org.testng.annotations.Test;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Random;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
 
 /**
@@ -69,64 +70,54 @@ abstract public class ChunkingTest extends AbstractBasicTest {
      * Tests that the custom chunked stream result in success and content returned that is unchunked
      */
     @Test()
-    public void testCustomChunking() throws Throwable {
-        doTest(true);
+    public void testBufferLargerThanFile() throws Throwable {
+        doTest(new BufferedInputStream(new FileInputStream(getTestFile()), 400000));
     }
 
-    private void doTest(boolean customChunkedInputStream) throws Exception {
-        AsyncHttpClient c = null;
+    @Test()
+    public void testBufferSmallThanFile() throws Throwable {
+        doTest(new BufferedInputStream(new FileInputStream(getTestFile())));
+    }
+
+    @Test()
+    public void testDirectFile() throws Throwable {
+        doTest(new FileInputStream(getTestFile()));
+    }
+
+    public void doTest(InputStream is) throws Throwable {
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+                .setAllowPoolingConnection(true)//
+                .setMaximumConnectionsPerHost(1)//
+                .setMaximumConnectionsTotal(1)//
+                .setConnectionTimeoutInMs(1000)//
+                .setRequestTimeoutInMs(1000)//
+                .setFollowRedirects(true);
+
+        AsyncHttpClient client = getAsyncHttpClient(bc.build());
         try {
-            AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsPerHost(1);
-            bc.setMaximumConnectionsTotal(1);
-            bc.setConnectionTimeoutInMs(1000);
-            bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirects(true);
-
-            c = getAsyncHttpClient(bc.build());
-
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
-            if (customChunkedInputStream) {
-                // made buff in stream big enough to mark.
-                builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(getTestFile()), 400000)));
+            // made buff in stream big enough to mark.
+            builder.setBody(new InputStreamBodyGenerator(is));
+
+            ListenableFuture<Response> response = client.executeRequest(builder.build());
+            Response res = response.get();
+            assertNotNull(res.getResponseBodyAsStream());
+            if (500 == res.getStatusCode()) {
+                assertEquals(res.getStatusCode(), 500, "Should have 500 status code");
+                assertTrue(res.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
+                fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + res.getHeader("X-Exception"));
             } else {
-                // made buff in stream big enough to mark.
-                builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(getTestFile()), 400000)));
-            }
-            com.ning.http.client.Request r = builder.build();
-            Response res = null;
-
-            try {
-                ListenableFuture<Response> response = c.executeRequest(r);
-                res = response.get();
-                assertNotNull(res.getResponseBodyAsStream());
-                if (500 == res.getStatusCode()) {
-                    System.out.println("==============");
-                    System.out.println("500 response from call");
-                    System.out.println("Headers:" + res.getHeaders());
-                    System.out.println("==============");
-                    System.out.flush();
-                    assertEquals("Should have 500 status code", 500, res.getStatusCode());
-                    assertTrue("Should have failed due to chunking", res.getHeader("X-Exception").contains("invalid.chunk.length"));
-                    fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + res.getHeader("X-Exception"));
-                } else {
-                    assertEquals(LARGE_IMAGE_BYTES, readInputStreamToBytes(res.getResponseBodyAsStream()));
-                }
-            } catch (Exception e) {
-
-                fail("Exception Thrown:" + e.getMessage());
+                assertEquals(readInputStreamToBytes(res.getResponseBodyAsStream()), LARGE_IMAGE_BYTES);
             }
         } finally {
-            if (c != null)
-                c.close();
+            if (client != null)
+                client.close();
         }
     }
-
-    private byte[] readInputStreamToBytes(InputStream stream) {
-        byte[] data = new byte[0];
+    
+    
+    private byte[] readInputStreamToBytes(InputStream stream) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try {
             int nRead;
@@ -135,33 +126,21 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             while ((nRead = stream.read(tmp, 0, tmp.length)) != -1) {
                 buffer.write(tmp, 0, nRead);
             }
+
             buffer.flush();
-            data = buffer.toByteArray();
-        } catch (Exception e) {
+            return buffer.toByteArray();
 
         } finally {
             try {
                 stream.close();
             } catch (Exception e2) {
             }
-            return data;
         }
     }
 
-    private static File getTestFile() {
+    private static File getTestFile() throws URISyntaxException {
         String testResource1 = "300k.png";
-
-        File testResource1File = null;
-        try {
-            ClassLoader cl = ChunkingTest.class.getClassLoader();
-            URL url = cl.getResource(testResource1);
-            testResource1File = new File(url.toURI());
-        } catch (Throwable e) {
-            // TODO Auto-generated catch block
-            fail("unable to find " + testResource1);
-        }
-
-        return testResource1File;
+        URL url = ChunkingTest.class.getClassLoader().getResource(testResource1);
+        return new File(url.toURI());
     }
-
 }
