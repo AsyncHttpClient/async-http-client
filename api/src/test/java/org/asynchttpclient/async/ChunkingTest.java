@@ -18,6 +18,10 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.FileAssert.fail;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
@@ -25,9 +29,6 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 
 /**
  * Test that the url fetcher is able to communicate via a proxy
@@ -37,28 +38,36 @@ import java.io.FileInputStream;
 abstract public class ChunkingTest extends AbstractBasicTest {
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimeters.
-
-    /**
-     * Tests that the custom chunked stream result in success and content returned that is unchunked
-     */
     @Test()
-    public void testCustomChunking() throws Exception {
-        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
+    public void testBufferLargerThanFile() throws Throwable {
+        doTest(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE), 400000));
+    }
 
-        bc.setAllowPoolingConnections(true);
-        bc.setMaxConnectionsPerHost(1);
-        bc.setMaxConnections(1);
-        bc.setConnectTimeout(1000);
-        bc.setRequestTimeout(1000);
-        bc.setFollowRedirect(true);
+    @Test()
+    public void testBufferSmallThanFile() throws Throwable {
+        doTest(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE)));
+    }
+
+    @Test()
+    public void testDirectFile() throws Throwable {
+        doTest(new FileInputStream(LARGE_IMAGE_FILE));
+    }
+
+    public void doTest(InputStream is) throws Throwable {
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+        .setAllowPoolingConnections(true)//
+        .setMaxConnectionsPerHost(1)//
+        .setMaxConnections(1)//
+        .setConnectTimeout(1000)//
+        .setRequestTimeout(1000)
+        .setFollowRedirect(true);
 
         AsyncHttpClient c = getAsyncHttpClient(bc.build());
         try {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
-            // made buff in stream big enough to mark.
-            builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE), 400000)));
+            builder.setBody(new InputStreamBodyGenerator(is));
 
             Request r = builder.build();
 

@@ -57,11 +57,6 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
         private InputStreamBody(InputStream inputStream) {
             this.inputStream = inputStream;
-            if (inputStream.markSupported()) {
-                inputStream.mark(0);
-            } else {
-                LOGGER.info("inputStream.markSupported() not supported. Some features will not work.");
-            }
         }
 
         public long getContentLength() {
@@ -82,10 +77,6 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
             if (read > 0) {
                 buffer.put(chunk, 0, read);
-            } else {
-                if (inputStream.markSupported()) {
-                    inputStream.reset();
-                }
             }
             return read;
         }
