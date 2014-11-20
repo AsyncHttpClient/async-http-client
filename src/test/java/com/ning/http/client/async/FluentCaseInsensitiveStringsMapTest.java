@@ -217,7 +217,7 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.get("foo"), Arrays.asList("bar"));
         assertNull(map.getFirstValue("baz"));
         assertNull(map.getJoinedValue("baz", ", "));
-        assertNull(map.get("baz"));
+        assertTrue(map.get("baz").isEmpty());
     }
 
     @Test
@@ -295,7 +295,7 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.get("foo"), Arrays.asList("bar"));
         assertNull(map.getFirstValue("baz"));
         assertNull(map.getJoinedValue("baz", ", "));
-        assertNull(map.get("baz"));
+        assertTrue(map.get("baz").isEmpty());
     }
 
     @Test
@@ -318,10 +318,10 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.keySet(), Collections.<String>emptyList());
         assertNull(map.getFirstValue("foo"));
         assertNull(map.getJoinedValue("foo", ", "));
-        assertNull(map.get("foo"));
+        assertTrue(map.get("foo").isEmpty());
         assertNull(map.getFirstValue("baz"));
         assertNull(map.getJoinedValue("baz", ", "));
-        assertNull(map.get("baz"));
+        assertTrue(map.get("baz").isEmpty());
     }
 
     @Test
@@ -480,7 +480,7 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.get("foo"), Arrays.asList("bar"));
         assertNull(map.getFirstValue("baz"));
         assertNull(map.getJoinedValue("baz", ", "));
-        assertNull(map.get("baz"));
+        assertTrue(map.get("baz").isEmpty());
     }
 
     @Test
@@ -547,7 +547,7 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("Bar", "baz")));
         assertNull(map.getFirstValue("foo"));
         assertNull(map.getJoinedValue("foo", ", "));
-        assertNull(map.get("foo"));
+        assertTrue(map.get("foo").isEmpty());
         assertEquals(map.getFirstValue("bar"), "baz");
         assertEquals(map.getJoinedValue("bar", ", "), "baz");
         assertEquals(map.get("bar"), Arrays.asList("baz"));

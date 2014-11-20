@@ -16,6 +16,7 @@ package com.ning.http.client.providers.netty.util;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 import com.ning.http.client.uri.Uri;
+import com.ning.http.util.MiscUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public final class HttpUtils {
     }
 
     public static String getNTLM(List<String> authenticateHeaders) {
-        if (authenticateHeaders != null) {
+        if (MiscUtils.isNonEmpty(authenticateHeaders)) {
             for (String authenticateHeader: authenticateHeaders) {
                 if (authenticateHeader.startsWith("NTLM"))
                     return authenticateHeader;

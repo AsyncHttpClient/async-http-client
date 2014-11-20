@@ -500,28 +500,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void stringBuilderBodyConsumerTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        
-        try {
-            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl())
-                    .setHeader("Content-Type", "text/html")
-                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())))
-                    .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
-            Future<Response> f = r.execute();
-
-            System.out.println("waiting for response");
-            Response response = f.get();
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBody(), MY_MESSAGE);
-            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-            assertNotNull(response.getHeader("X-Auth"));
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
     public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
