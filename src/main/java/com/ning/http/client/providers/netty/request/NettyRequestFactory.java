@@ -26,7 +26,7 @@ import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
 import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
-import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -46,6 +46,7 @@ import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.request.body.NettyBody;
 import com.ning.http.client.providers.netty.request.body.NettyBodyBody;
 import com.ning.http.client.providers.netty.request.body.NettyByteArrayBody;
+import com.ning.http.client.providers.netty.request.body.NettyDirectBody;
 import com.ning.http.client.providers.netty.request.body.NettyFileBody;
 import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
 import com.ning.http.client.providers.netty.request.body.NettyMultipartBody;
@@ -263,11 +264,11 @@ public final class NettyRequestFactory {
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
-        if (body instanceof NettyByteArrayBody) {
-            byte[] bytes = NettyByteArrayBody.class.cast(body).getBytes();
+        if (body instanceof NettyDirectBody) {
+            ChannelBuffer buffer = NettyDirectBody.class.cast(body).channelBuffer();
             httpRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
             // body is passed as null as it's written directly with the request
-            httpRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
+            httpRequest.setContent(buffer);
             nettyRequest = new NettyRequest(httpRequest, null);
 
         } else {

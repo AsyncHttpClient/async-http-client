@@ -16,23 +16,31 @@ package com.ning.http.client.providers.netty.request.body;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class NettyByteArrayBody extends NettyDirectBody {
+import java.util.List;
 
-    private final byte[] bytes;
+public class NettyCompositeByteArrayBody extends NettyDirectBody {
+
+    private final byte[][] bytes;
     private final String contentType;
+    private final long contentLength;
 
-    public NettyByteArrayBody(byte[] bytes) {
+    public NettyCompositeByteArrayBody(List<byte[]> bytes) {
         this(bytes, null);
     }
 
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
+    public NettyCompositeByteArrayBody(List<byte[]> bytes, String contentType) {
+        this.bytes = new byte[bytes.size()][];
+        bytes.toArray(this.bytes);
         this.contentType = contentType;
+        long l = 0;
+        for (byte[] b : bytes)
+            l += b.length;
+        contentLength = l;
     }
 
     @Override
     public long getContentLength() {
-        return bytes.length;
+        return contentLength;
     }
 
     @Override

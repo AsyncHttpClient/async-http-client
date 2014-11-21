@@ -14,34 +14,19 @@
 package com.ning.http.client.providers.netty.request.body;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.Channel;
 
-public class NettyByteArrayBody extends NettyDirectBody {
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 
-    private final byte[] bytes;
-    private final String contentType;
+import java.io.IOException;
 
-    public NettyByteArrayBody(byte[] bytes) {
-        this(bytes, null);
-    }
+public abstract class NettyDirectBody implements NettyBody {
 
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
-        this.contentType = contentType;
-    }
+    public abstract ChannelBuffer channelBuffer();
 
     @Override
-    public long getContentLength() {
-        return bytes.length;
-    }
-
-    @Override
-    public String getContentType() {
-        return contentType;
-    }
-
-    @Override
-    public ChannelBuffer channelBuffer() {
-        return ChannelBuffers.wrappedBuffer(bytes);
+    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
     }
 }
