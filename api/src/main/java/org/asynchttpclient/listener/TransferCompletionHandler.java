@@ -61,6 +61,10 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<TransferListener>();
     private final boolean accumulateResponseBytes;
     private FluentCaseInsensitiveStringsMap headers;
+    // Netty 3 bug hack: last chunk is not notified, fixed in Netty 4
+    private boolean patchForNetty3;
+    private long expectedTotal;
+    private long seen;
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
@@ -79,6 +83,10 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public TransferCompletionHandler(boolean accumulateResponseBytes) {
         this.accumulateResponseBytes = accumulateResponseBytes;
+    }
+
+    public void patchForNetty3() {
+        this.patchForNetty3 = true;
     }
 
     /**
@@ -113,6 +121,11 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public void headers(FluentCaseInsensitiveStringsMap headers) {
         this.headers = headers;
+        if (patchForNetty3) {
+            String contentLength = headers.getFirstValue("Content-Length");
+            if (contentLength != null)
+                expectedTotal = Long.valueOf(contentLength);
+        }
     }
 
     @Override
@@ -133,6 +146,13 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public Response onCompleted(Response response) throws Exception {
+        if (patchForNetty3) {
+            // some chunks weren't notified, probably the last one
+            if (seen < expectedTotal) {
+                // do once
+                fireOnBytesSent(expectedTotal - seen, expectedTotal, expectedTotal);
+            }
+        }
         fireOnEnd();
         return response;
     }
@@ -147,6 +167,9 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public STATE onContentWriteProgress(long amount, long current, long total) {
+        if (patchForNetty3) {
+            seen += amount;
+        }
         fireOnBytesSent(amount, current, total);
         return STATE.CONTINUE;
     }

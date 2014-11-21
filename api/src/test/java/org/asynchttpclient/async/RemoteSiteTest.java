@@ -187,7 +187,8 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    // FIXME Get a 302 in France...
+    @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testUrlRequestParametersEncoding() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,22 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.extras.registry;
+package org.asynchttpclient.providers.netty3;
 
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.extras.registry.AbstractAsyncHttpClientFactoryTest;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
-import org.testng.annotations.Test;
+import org.asynchttpclient.async.ByteBufferCapacityTest;
 
-@Test
-public class NettyAsyncHttpClientFactoryTest extends AbstractAsyncHttpClientFactoryTest {
+public class NettyByteBufferCapacityTest extends ByteBufferCapacityTest {
 
     @Override
-    public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new NettyAsyncHttpProvider(config);
+    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+        return NettyProviderUtil.nettyProvider(config);
     }
 }

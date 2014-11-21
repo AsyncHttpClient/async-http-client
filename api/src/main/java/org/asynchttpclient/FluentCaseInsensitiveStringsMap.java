@@ -409,10 +409,8 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     public String getFirstValue(String key) {
         List<String> values = get(key);
 
-        if (values == null) {
+        if (values.isEmpty()) {
             return null;
-        } else if (values.isEmpty()) {
-            return "";
         } else {
             return values.get(0);
         }
@@ -427,7 +425,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     public String getJoinedValue(String key, String delimiter) {
         List<String> values = get(key);
 
-        if (values == null) {
+        if (values.isEmpty()) {
             return null;
         } else if (values.size() == 1) {
             return values.get(0);

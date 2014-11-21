@@ -20,18 +20,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -46,6 +34,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfigDefaults;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.util.AsyncPropertiesHelper;
+import org.asynchttpclient.util.ProxyUtils;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * Proxy usage tests.
@@ -161,17 +164,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        Properties originalProps = System.getProperties();
+        // FIXME not threadsafe!
+        Properties originalProps = new Properties();
+        originalProps.putAll(System.getProperties());
         try {
-            Properties props = new Properties();
-            props.putAll(originalProps);
-
-            // FIXME most likely non threadsafe!
-            System.setProperties(props);
-
-            System.setProperty("http.proxyHost", "127.0.0.1");
-            System.setProperty("http.proxyPort", String.valueOf(port1));
-            System.setProperty("http.nonProxyHosts", "localhost");
+            System.setProperty(ProxyUtils.PROXY_HOST, "127.0.0.1");
+            System.setProperty(ProxyUtils.PROXY_PORT, String.valueOf(port1));
+            System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "localhost");
+            AsyncPropertiesHelper.reloadProperties();
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
             AsyncHttpClient client = getAsyncHttpClient(cfg);
@@ -201,17 +201,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void testIgnoreProxyPropertiesByDefault() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        Properties originalProps = System.getProperties();
+        // FIXME not threadsafe!
+        Properties originalProps = new Properties();
+        originalProps.putAll(System.getProperties());
         try {
-            Properties props = new Properties();
-            props.putAll(originalProps);
-
-            // FIXME not threadsafe!
-            System.setProperties(props);
-
-            System.setProperty("http.proxyHost", "127.0.0.1");
-            System.setProperty("http.proxyPort", String.valueOf(port1));
-            System.setProperty("http.nonProxyHosts", "localhost");
+            System.setProperty(ProxyUtils.PROXY_HOST, "127.0.0.1");
+            System.setProperty(ProxyUtils.PROXY_PORT, String.valueOf(port1));
+            System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "localhost");
+            AsyncPropertiesHelper.reloadProperties();
 
             AsyncHttpClient client = getAsyncHttpClient(null);
             try {
@@ -233,19 +230,16 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        Properties originalProps = System.getProperties();
+        // FIXME not threadsafe!
+        Properties originalProps = new Properties();
+        originalProps.putAll(System.getProperties());
         try {
-            Properties props = new Properties();
-            props.putAll(originalProps);
-
-            // FIXME not threadsafe!
-            System.setProperties(props);
-
-            System.setProperty("http.proxyHost", "127.0.0.1");
-            System.setProperty("http.proxyPort", String.valueOf(port1));
-            System.setProperty("http.nonProxyHosts", "localhost");
-            System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.useProxyProperties", "true");
-
+            System.setProperty(ProxyUtils.PROXY_HOST, "127.0.0.1");
+            System.setProperty(ProxyUtils.PROXY_PORT, String.valueOf(port1));
+            System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "localhost");
+            System.setProperty(AsyncHttpClientConfigDefaults.ASYNC_CLIENT + "useProxyProperties", "true");
+            AsyncPropertiesHelper.reloadProperties();
+            
             AsyncHttpClient client = getAsyncHttpClient(null);
             try {
                 String target = "http://127.0.0.1:1234/";
@@ -273,17 +267,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void testWildcardNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        Properties originalProps = System.getProperties();
+        // FIXME not threadsafe!
+        Properties originalProps = new Properties();
+        originalProps.putAll(System.getProperties());
         try {
-            Properties props = new Properties();
-            props.putAll(originalProps);
-
-            // FIXME not threadsafe!
-            System.setProperties(props);
-
-            System.setProperty("http.proxyHost", "127.0.0.1");
-            System.setProperty("http.proxyPort", String.valueOf(port1));
-            System.setProperty("http.nonProxyHosts", "127.*");
+            System.setProperty(ProxyUtils.PROXY_HOST, "127.0.0.1");
+            System.setProperty(ProxyUtils.PROXY_PORT, String.valueOf(port1));
+            System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "127.*");
+            AsyncPropertiesHelper.reloadProperties();
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
             AsyncHttpClient client = getAsyncHttpClient(cfg);

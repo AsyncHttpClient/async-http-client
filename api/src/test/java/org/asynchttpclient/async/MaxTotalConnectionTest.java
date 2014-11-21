@@ -77,6 +77,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build());
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final AtomicReference<Throwable> ex = new AtomicReference<Throwable>();
         final AtomicReference<String> failedUrl = new AtomicReference<String>();
 
         try {
@@ -93,6 +94,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                     @Override
                     public void onThrowable(Throwable t) {
                         super.onThrowable(t);
+                        ex.set(t);
                         failedUrl.set(thisUrl);
                         latch.countDown();
                     }
@@ -100,6 +102,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
             }
 
             latch.await();
+            assertNull(ex.get());
             assertNull(failedUrl.get());
 
         } finally {
