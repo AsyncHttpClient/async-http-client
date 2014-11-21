@@ -75,7 +75,7 @@ public abstract class ResponseBase implements Response {
 
     @Override
     public final List<String> getHeaders(String name) {
-        return headers != null ? getHeaders().get(name) : null;
+        return headers != null ? getHeaders().get(name) : Collections.<String> emptyList();
     }
 
     @Override
