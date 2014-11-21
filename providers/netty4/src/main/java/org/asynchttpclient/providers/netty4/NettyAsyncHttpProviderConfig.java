@@ -18,6 +18,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.util.Timer;
 
 import java.util.HashMap;
@@ -26,8 +28,8 @@ import java.util.Set;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.SSLEngineFactory;
+import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty4.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty4.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty4.handler.Http1Point1ConnectionStrategy;
 import org.asynchttpclient.providers.netty4.response.EagerNettyResponseBodyPart;
 import org.asynchttpclient.providers.netty4.response.LazyNettyResponseBodyPart;
@@ -173,7 +175,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     private boolean keepEncodingHeader = false;
 
-    private ConnectionStrategy connectionStrategy = new Http1Point1ConnectionStrategy();
+    private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new Http1Point1ConnectionStrategy();
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -326,11 +328,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
         this.keepEncodingHeader = keepEncodingHeader;
     }
 
-    public ConnectionStrategy getConnectionStrategy() {
+    public ConnectionStrategy<HttpRequest, HttpResponse> getConnectionStrategy() {
         return connectionStrategy;
     }
 
-    public void setConnectionStrategy(ConnectionStrategy connectionStrategy) {
+    public void setConnectionStrategy(ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy) {
         this.connectionStrategy = connectionStrategy;
     }
 }

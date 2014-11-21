@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.providers.netty3.handler;
 
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.getNTLM;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.getNTLM;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -34,6 +34,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
+import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty3.Callback;
 import org.asynchttpclient.providers.netty3.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty3.channel.ChannelManager;
@@ -55,7 +56,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 public final class HttpProtocol extends Protocol {
 
-    private final ConnectionStrategy connectionStrategy;
+    private final ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy;
 
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {

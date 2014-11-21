@@ -13,11 +13,11 @@
  */
 package org.asynchttpclient.providers.netty4.request;
 
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.getNTLM;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.isSecure;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.isWebSocket;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.useProxyConnect;
-import static org.asynchttpclient.providers.netty4.ws.WebSocketUtils.getKey;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.getNTLM;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.useProxyConnect;
+import static org.asynchttpclient.providers.netty.commons.util.WebSocketUtils.getKey;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;

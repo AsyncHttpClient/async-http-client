@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.providers.netty3.request;
 
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.WEBSOCKET;
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.isSecure;
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.useProxyConnect;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;

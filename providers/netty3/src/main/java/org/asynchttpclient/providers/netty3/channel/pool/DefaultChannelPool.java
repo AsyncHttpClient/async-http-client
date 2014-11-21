@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.commons.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty3.channel.Channels;
 import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;
 import org.jboss.netty.channel.Channel;

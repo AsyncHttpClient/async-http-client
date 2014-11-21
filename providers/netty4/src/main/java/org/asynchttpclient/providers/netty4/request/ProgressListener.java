@@ -23,9 +23,9 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProgressAsyncHandler;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty4.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

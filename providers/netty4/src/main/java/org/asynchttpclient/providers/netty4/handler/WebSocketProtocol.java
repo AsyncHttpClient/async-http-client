@@ -14,7 +14,7 @@
 package org.asynchttpclient.providers.netty4.handler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
-import static org.asynchttpclient.providers.netty4.ws.WebSocketUtils.getAcceptKey;
+import static org.asynchttpclient.providers.netty.commons.util.WebSocketUtils.getAcceptKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;

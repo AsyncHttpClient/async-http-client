@@ -11,18 +11,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty4.ws;
-
-import static java.nio.charset.StandardCharsets.*;
-
-import org.asynchttpclient.util.Base64;
+package org.asynchttpclient.providers.netty.commons.util;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public final class WebSocketUtils {
+import org.asynchttpclient.util.Base64;
 
+public final class WebSocketUtils {
     public static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
     public static String getKey() {
@@ -32,7 +29,7 @@ public final class WebSocketUtils {
 
     public static String getAcceptKey(String key) throws UnsupportedEncodingException {
         String acceptSeed = key + MAGIC_GUID;
-        byte[] sha1 = sha1(acceptSeed.getBytes(US_ASCII));
+        byte[] sha1 = sha1(acceptSeed.getBytes("US-ASCII"));
         return base64Encode(sha1);
     }
 
@@ -71,4 +68,6 @@ public final class WebSocketUtils {
     public static int createRandomNumber(int min, int max) {
         return (int) (Math.random() * max + min);
     }
+
 }
+

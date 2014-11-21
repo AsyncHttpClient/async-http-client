@@ -17,7 +17,7 @@ import io.netty.channel.Channel;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
-import org.asynchttpclient.providers.netty4.DiscardEvent;
+import org.asynchttpclient.providers.netty.commons.DiscardEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

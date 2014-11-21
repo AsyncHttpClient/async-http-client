@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.providers.netty3.handler;
 
+import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -21,7 +22,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * Connection strategy implementing standard HTTP 1.1 behaviour.
  */
-public class Http1Point1ConnectionStrategy implements ConnectionStrategy {
+public class Http1Point1ConnectionStrategy implements ConnectionStrategy<HttpRequest, HttpResponse> {
 
     /**
      * Implemented in accordance with RFC 7230 section 6.1

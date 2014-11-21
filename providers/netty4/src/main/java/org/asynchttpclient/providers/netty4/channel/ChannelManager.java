@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient.providers.netty4.channel;
 
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.WEBSOCKET;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.isSecure;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -47,10 +47,10 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolPartitioning;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.SSLEngineFactory;
+import org.asynchttpclient.providers.netty.commons.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty4.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty4.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.providers.netty4.channel.pool.NoopChannelPool;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;

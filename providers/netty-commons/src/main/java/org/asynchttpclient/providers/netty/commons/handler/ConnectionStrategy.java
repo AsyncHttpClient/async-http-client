@@ -11,15 +11,12 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty4.handler;
-
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
+package org.asynchttpclient.providers.netty.commons.handler;
 
 /**
  * Provides an interface for decisions about HTTP connections.
  */
-public interface ConnectionStrategy {
+public interface ConnectionStrategy<REQUEST, RESPONSE> {
 
     /**
      * Determines whether the connection should be kept alive after this HTTP message exchange.
@@ -27,5 +24,5 @@ public interface ConnectionStrategy {
      * @param response the HTTP response
      * @return true if the connection should be kept alive, false if it should be closed.
      */
-    boolean keepAlive(HttpRequest request, HttpResponse response);
+    boolean keepAlive(REQUEST request, RESPONSE response);
 }

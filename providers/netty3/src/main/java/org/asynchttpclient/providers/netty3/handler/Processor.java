@@ -17,12 +17,12 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.commons.DiscardEvent;
+import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty3.Callback;
-import org.asynchttpclient.providers.netty3.DiscardEvent;
 import org.asynchttpclient.providers.netty3.channel.ChannelManager;
 import org.asynchttpclient.providers.netty3.channel.Channels;
 import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty3.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty3.request.NettyRequestSender;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.jboss.netty.channel.Channel;

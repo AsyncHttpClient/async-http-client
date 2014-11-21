@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.providers.netty3.handler;
 
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.HTTP;
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.HTTP;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_CHARSET;

@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.providers.netty3.channel;
 
-import org.asynchttpclient.providers.netty3.DiscardEvent;
+import org.asynchttpclient.providers.netty.commons.DiscardEvent;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -17,7 +17,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
-import static org.asynchttpclient.providers.netty4.util.HttpUtils.getNTLM;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.getNTLM;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -41,6 +41,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
+import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
@@ -55,7 +56,7 @@ import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
 
-    private final ConnectionStrategy connectionStrategy;
+    private final ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy;
 
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         super(channelManager, config, nettyConfig, requestSender);

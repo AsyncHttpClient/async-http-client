@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient.providers.netty3.channel;
 
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.WEBSOCKET;
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.isSecure;
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
 
@@ -34,10 +34,10 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolPartitioning;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.SSLEngineFactory;
+import org.asynchttpclient.providers.netty.commons.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty3.Callback;
 import org.asynchttpclient.providers.netty3.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty3.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty3.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty3.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.providers.netty3.channel.pool.NoopChannelPool;
 import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;

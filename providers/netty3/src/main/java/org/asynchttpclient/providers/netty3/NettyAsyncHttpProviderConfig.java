@@ -20,13 +20,15 @@ import java.util.concurrent.ExecutorService;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.SSLEngineFactory;
+import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty3.channel.pool.ChannelPool;
-import org.asynchttpclient.providers.netty3.handler.ConnectionStrategy;
 import org.asynchttpclient.providers.netty3.handler.Http1Point1ConnectionStrategy;
 import org.asynchttpclient.providers.netty3.ws.NettyWebSocket;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.util.Timer;
 
 /**
@@ -146,7 +148,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private boolean keepEncodingHeader = false;
 
-    private ConnectionStrategy connectionStrategy = new Http1Point1ConnectionStrategy();
+    private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new Http1Point1ConnectionStrategy();
 
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
@@ -308,11 +310,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.keepEncodingHeader = keepEncodingHeader;
     }
 
-    public ConnectionStrategy getConnectionStrategy() {
+    public ConnectionStrategy<HttpRequest, HttpResponse> getConnectionStrategy() {
         return connectionStrategy;
     }
 
-    public void setConnectionStrategy(ConnectionStrategy connectionStrategy) {
+    public void setConnectionStrategy(ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy) {
         this.connectionStrategy = connectionStrategy;
     }
 

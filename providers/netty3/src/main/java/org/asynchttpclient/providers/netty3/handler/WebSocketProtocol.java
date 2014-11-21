@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.providers.netty3.handler;
 
-import static org.asynchttpclient.providers.netty3.ws.WebSocketUtils.getAcceptKey;
+import static org.asynchttpclient.providers.netty.commons.util.WebSocketUtils.getAcceptKey;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 
 import java.io.IOException;

@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.providers.netty3.channel.pool;
 
+import org.asynchttpclient.providers.netty.commons.channel.pool.ChannelPoolPartitionSelector;
 import org.jboss.netty.channel.Channel;
 
 public class NoopChannelPool implements ChannelPool {

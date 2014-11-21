@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.providers.netty3.request;
 
-import static org.asynchttpclient.providers.netty3.util.HttpUtils.*;
-import static org.asynchttpclient.providers.netty3.ws.WebSocketUtils.getKey;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.*;
+import static org.asynchttpclient.providers.netty.commons.util.WebSocketUtils.getKey;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
