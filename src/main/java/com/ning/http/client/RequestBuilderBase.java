@@ -53,6 +53,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private ArrayList<Cookie> cookies;
         private byte[] byteData;
+        private List<byte[]> compositeByteData;
         private String stringData;
         private InputStream streamData;
         private BodyGenerator bodyGenerator;
@@ -82,6 +83,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
+                this.compositeByteData = prototype.getCompositeByteData();
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.bodyGenerator = prototype.getBodyGenerator();
@@ -130,6 +132,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public byte[] getByteData() {
             return byteData;
+        }
+
+        public List<byte[]> getCompositeByteData() {
+            return compositeByteData;
         }
 
         public String getStringData() {
@@ -372,6 +378,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public void resetNonMultipartData() {
         request.byteData = null;
+        request.compositeByteData = null;
         request.stringData = null;
         request.streamData = null;
         request.bodyGenerator = null;
@@ -395,6 +402,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setBody(List<byte[]> data) {
+        resetFormParams();
+        resetNonMultipartData();
+        resetMultipartData();
+        request.compositeByteData = data;
+        return derived.cast(this);
+    }
+    
     public T setBody(String data) {
         resetFormParams();
         resetNonMultipartData();

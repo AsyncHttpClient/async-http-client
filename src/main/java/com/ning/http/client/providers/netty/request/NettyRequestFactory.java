@@ -46,6 +46,7 @@ import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.request.body.NettyBody;
 import com.ning.http.client.providers.netty.request.body.NettyBodyBody;
 import com.ning.http.client.providers.netty.request.body.NettyByteArrayBody;
+import com.ning.http.client.providers.netty.request.body.NettyCompositeByteArrayBody;
 import com.ning.http.client.providers.netty.request.body.NettyDirectBody;
 import com.ning.http.client.providers.netty.request.body.NettyFileBody;
 import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
@@ -206,6 +207,9 @@ public final class NettyRequestFactory {
 
             if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());
+
+            else if (request.getCompositeByteData() != null)
+                nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
 
             else if (request.getStringData() != null)
                 nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
