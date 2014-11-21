@@ -396,6 +396,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
+        request.bodyGenerator = null;
         request.length = -1;
     }
 
