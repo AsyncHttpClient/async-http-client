@@ -25,7 +25,7 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderVal
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -51,6 +51,8 @@ import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.request.body.NettyBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyBodyBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyByteArrayBody;
+import org.asynchttpclient.providers.netty4.request.body.NettyCompositeByteArrayBody;
+import org.asynchttpclient.providers.netty4.request.body.NettyDirectBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyFileBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyMultipartBody;
@@ -203,16 +205,19 @@ public final class NettyRequestFactory {
 
             Charset bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : Charset.forName(request.getBodyEncoding());
 
-            if (request.getByteData() != null) {
+            if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());
 
-            } else if (request.getStringData() != null) {
+            else if (request.getCompositeByteData() != null)
+                nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
+                
+            else if (request.getStringData() != null)
                 nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
 
-            } else if (request.getStreamData() != null) {
+            else if (request.getStreamData() != null)
                 nettyBody = new NettyInputStreamBody(request.getStreamData());
 
-            } else if (isNonEmpty(request.getFormParams())) {
+            else if (isNonEmpty(request.getFormParams())) {
 
                 String contentType = null;
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
@@ -220,22 +225,21 @@ public final class NettyRequestFactory {
 
                 nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getFormParams(), bodyCharset), contentType);
 
-            } else if (isNonEmpty(request.getParts())) {
+            } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
 
-            } else if (request.getFile() != null) {
+            else if (request.getFile() != null)
                 nettyBody = new NettyFileBody(request.getFile(), nettyConfig);
 
-            } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
+            else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
                 nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), nettyConfig);
 
-            } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+            } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
 
-            } else if (request.getBodyGenerator() != null) {
+            else if (request.getBodyGenerator() != null)
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), nettyConfig);
-            }
         }
 
         return nettyBody;
@@ -262,9 +266,9 @@ public final class NettyRequestFactory {
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
-        if (body instanceof NettyByteArrayBody) {
-            byte[] bytes = NettyByteArrayBody.class.cast(body).getBytes();
-            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, Unpooled.wrappedBuffer(bytes));
+        if (body instanceof NettyDirectBody) {
+            ByteBuf buf = NettyDirectBody.class.cast(body).byteBuf();
+            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, buf);
             // body is passed as null as it's written directly with the request
             nettyRequest = new NettyRequest(httpRequest, null);
 

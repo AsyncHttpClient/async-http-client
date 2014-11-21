@@ -13,33 +13,34 @@
  */
 package org.asynchttpclient.providers.netty3.request.body;
 
-import java.io.IOException;
+import java.util.List;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;
-import org.jboss.netty.channel.Channel;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 
-public class NettyByteArrayBody implements NettyBody {
+public class NettyCompositeByteArrayBody extends NettyDirectBody {
 
-    private final byte[] bytes;
+    private final byte[][] bytes;
     private final String contentType;
+    private final long contentLength;
 
-    public NettyByteArrayBody(byte[] bytes) {
+    public NettyCompositeByteArrayBody(List<byte[]> bytes) {
         this(bytes, null);
     }
 
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
+    public NettyCompositeByteArrayBody(List<byte[]> bytes, String contentType) {
+        this.bytes = new byte[bytes.size()][];
+        bytes.toArray(this.bytes);
         this.contentType = contentType;
-    }
-
-    public byte[] getBytes() {
-        return bytes;
+        long l = 0;
+        for (byte[] b : bytes)
+            l += b.length;
+        contentLength = l;
     }
 
     @Override
     public long getContentLength() {
-        return bytes.length;
+        return contentLength;
     }
 
     @Override
@@ -48,7 +49,7 @@ public class NettyByteArrayBody implements NettyBody {
     }
 
     @Override
-    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
-        throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
+    public ChannelBuffer channelBuffer() {
+        return ChannelBuffers.wrappedBuffer(bytes);
     }
 }

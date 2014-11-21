@@ -80,6 +80,11 @@ public interface Request {
     byte[] getByteData();
 
     /**
+     * @return the current request's body as a composite of byte arrays
+     */
+    List<byte[]> getCompositeByteData();
+    
+    /**
      * Return the current request's body as a string
      *
      * @return an String representation of the current request's body.

@@ -13,7 +13,10 @@
  */
 package org.asynchttpclient.providers.netty3.request;
 
-import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.*;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.getNTLM;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.providers.netty.commons.util.WebSocketUtils.getKey;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
@@ -41,13 +44,15 @@ import org.asynchttpclient.providers.netty3.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty3.request.body.NettyBody;
 import org.asynchttpclient.providers.netty3.request.body.NettyBodyBody;
 import org.asynchttpclient.providers.netty3.request.body.NettyByteArrayBody;
+import org.asynchttpclient.providers.netty3.request.body.NettyCompositeByteArrayBody;
+import org.asynchttpclient.providers.netty3.request.body.NettyDirectBody;
 import org.asynchttpclient.providers.netty3.request.body.NettyFileBody;
 import org.asynchttpclient.providers.netty3.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty3.request.body.NettyMultipartBody;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UTF8UrlEncoder;
-import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -202,6 +207,9 @@ public final class NettyRequestFactory {
             if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());
 
+            else if (request.getCompositeByteData() != null)
+                nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
+                
             else if (request.getStringData() != null)
                 nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
 
@@ -259,11 +267,11 @@ public final class NettyRequestFactory {
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
-        if (body instanceof NettyByteArrayBody) {
-            byte[] bytes = NettyByteArrayBody.class.cast(body).getBytes();
+        if (body instanceof NettyDirectBody) {
+            ChannelBuffer buffer = NettyDirectBody.class.cast(body).channelBuffer();
             httpRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
             // body is passed as null as it's written directly with the request
-            httpRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
+            httpRequest.setContent(buffer);
             nettyRequest = new NettyRequest(httpRequest, null);
 
         } else {

@@ -11,38 +11,21 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty4.request.body;
+package org.asynchttpclient.providers.netty3.request.body;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import java.io.IOException;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
 
-public class NettyByteArrayBody extends NettyDirectBody {
+public abstract class NettyDirectBody implements NettyBody {
 
-    private final byte[] bytes;
-    private final String contentType;
-
-    public NettyByteArrayBody(byte[] bytes) {
-        this(bytes, null);
-    }
-
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
-        this.contentType = contentType;
-    }
+    public abstract ChannelBuffer channelBuffer();
 
     @Override
-    public long getContentLength() {
-        return bytes.length;
-    }
-
-    @Override
-    public String getContentType() {
-        return contentType;
-    }
-
-    @Override
-    public ByteBuf byteBuf() {
-        return Unpooled.wrappedBuffer(bytes);
+    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
     }
 }

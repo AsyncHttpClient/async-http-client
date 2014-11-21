@@ -13,36 +13,20 @@
  */
 package org.asynchttpclient.providers.netty4.request.body;
 
+import java.io.IOException;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
+
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 
+public abstract class NettyDirectBody implements NettyBody {
 
-public class NettyByteArrayBody extends NettyDirectBody {
-
-    private final byte[] bytes;
-    private final String contentType;
-
-    public NettyByteArrayBody(byte[] bytes) {
-        this(bytes, null);
-    }
-
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
-        this.contentType = contentType;
-    }
+    public abstract ByteBuf byteBuf();
 
     @Override
-    public long getContentLength() {
-        return bytes.length;
-    }
-
-    @Override
-    public String getContentType() {
-        return contentType;
-    }
-
-    @Override
-    public ByteBuf byteBuf() {
-        return Unpooled.wrappedBuffer(bytes);
+    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
     }
 }

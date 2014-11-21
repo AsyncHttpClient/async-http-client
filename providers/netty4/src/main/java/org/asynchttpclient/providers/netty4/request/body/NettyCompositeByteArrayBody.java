@@ -16,24 +16,31 @@ package org.asynchttpclient.providers.netty4.request.body;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.util.List;
 
-public class NettyByteArrayBody extends NettyDirectBody {
+public class NettyCompositeByteArrayBody extends NettyDirectBody {
 
-    private final byte[] bytes;
+    private final byte[][] bytes;
     private final String contentType;
+    private final long contentLength;
 
-    public NettyByteArrayBody(byte[] bytes) {
+    public NettyCompositeByteArrayBody(List<byte[]> bytes) {
         this(bytes, null);
     }
 
-    public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
+    public NettyCompositeByteArrayBody(List<byte[]> bytes, String contentType) {
+        this.bytes = new byte[bytes.size()][];
+        bytes.toArray(this.bytes);
         this.contentType = contentType;
+        long l = 0;
+        for (byte[] b : bytes)
+            l += b.length;
+        contentLength = l;
     }
 
     @Override
     public long getContentLength() {
-        return bytes.length;
+        return contentLength;
     }
 
     @Override
