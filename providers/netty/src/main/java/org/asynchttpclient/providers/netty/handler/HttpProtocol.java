@@ -53,7 +53,9 @@ import org.asynchttpclient.providers.netty.response.NettyResponseStatus;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
 
-public final class HttpProtocol extends Protocol {
+import org.asynchttpclient.providers.netty.handler.IExitHandler;
+
+public final class HttpProtocol extends Protocol implements IExitHandler {
 
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         super(channelManager, config, nettyConfig, requestSender);
@@ -486,5 +488,15 @@ public final class HttpProtocol extends Protocol {
 
     @Override
     public void onClose(NettyResponseFuture<?> future) {
+    }
+    
+    @Override
+    public boolean exitAfterHandling() {
+    	return true;
+    }
+    
+    @Override
+    public boolean exitHandler(ExitResponses e) {
+    	return true;
     }
 }
