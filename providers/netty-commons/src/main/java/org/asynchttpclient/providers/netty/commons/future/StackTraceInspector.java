@@ -30,11 +30,16 @@ public class StackTraceInspector {
                 || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean abortOnDisconnectException(Throwable t) {
+    public static boolean abortOnNetty3DisconnectException(Throwable t) {
         return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
                 || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
     }
 
+    public static boolean abortOnNetty4DisconnectException(Throwable t) {
+        return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
+                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+    }
+    
     public static boolean abortOnReadOrWriteException(Throwable t) {
 
         try {
