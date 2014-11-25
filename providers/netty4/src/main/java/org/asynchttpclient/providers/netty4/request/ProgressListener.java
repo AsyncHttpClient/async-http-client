@@ -55,11 +55,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     private boolean abortOnThrowable(Throwable cause, Channel channel) {
 
         if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
-            if (cause instanceof IllegalStateException) {
-                LOGGER.debug(cause.getMessage(), cause);
-                Channels.silentlyCloseChannel(channel);
-
-            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
+            if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
                 LOGGER.debug(cause.getMessage(), cause);
                 Channels.silentlyCloseChannel(channel);
                 

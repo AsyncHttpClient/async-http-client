@@ -318,17 +318,10 @@ public final class NettyRequestSender {
                 configureTransferAdapter(handler, httpRequest);
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
-                try {
-                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
+                if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
 
-                    channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
-                } catch (Throwable cause) {
-                    // FIXME why not notify?
-                    LOGGER.debug(cause.getMessage(), cause);
-                    Channels.silentlyCloseChannel(channel);
-                    return;
-                }
+                channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
             }
 
             if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT) && nettyRequest.getBody() != null)
@@ -338,7 +331,8 @@ public final class NettyRequestSender {
             if (Channels.isChannelValid(channel))
                 scheduleTimeouts(future);
 
-        } catch (Throwable ioe) {
+        } catch (Throwable t) {
+            LOGGER.error("Can't write request", t);
             Channels.silentlyCloseChannel(channel);
         }
     }
