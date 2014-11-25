@@ -323,8 +323,9 @@ public final class NettyRequestSender {
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
-            if (!future.isHeadersAlreadyWrittenOnContinue() &&future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
+            if (!future.isHeadersAlreadyWrittenOnContinue()) {
+                if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
                 channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
             }
 
