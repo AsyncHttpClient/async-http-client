@@ -323,18 +323,9 @@ public final class NettyRequestSender {
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
-            if (!future.isHeadersAlreadyWrittenOnContinue()) {
-                try {
-                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
-                    channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
-                } catch (Throwable cause) {
-                    // FIXME why not notify?
-                    LOGGER.debug(cause.getMessage(), cause);
-                    // FIXME what about the attribute? how could this fail?
-                    Channels.silentlyCloseChannel(channel);
-                    return;
-                }
+            if (!future.isHeadersAlreadyWrittenOnContinue() &&future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
+                channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
             }
 
             // FIXME what happens to this second write if the first one failed? Should it be done in the ProgressListener?
@@ -346,7 +337,8 @@ public final class NettyRequestSender {
             if (Channels.isChannelValid(channel))
                 scheduleTimeouts(future);
 
-        } catch (Throwable ioe) {
+        } catch (Throwable t) {
+            LOGGER.error("Can't write request", t);
             Channels.silentlyCloseChannel(channel);
         }
     }
