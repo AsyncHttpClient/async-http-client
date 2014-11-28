@@ -32,7 +32,6 @@ import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
-import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -128,12 +127,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                 return;
 
             protocol.onClose(future);
-
-            if (future.isDone())
-                channelManager.closeChannel(channel);
-
-            else if (!requestSender.retry(future))
-                requestSender.abort(channel, future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
+            requestSender.handleUnexpectedClosedChannel(channel, future);
         }
     }
 
