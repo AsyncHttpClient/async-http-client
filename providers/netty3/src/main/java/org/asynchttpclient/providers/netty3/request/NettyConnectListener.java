@@ -115,9 +115,10 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
                             writeRequest(channel, poolKey);
                         } else {
-                            abortChannelPreemption(poolKey);
-                            future.abort(new ConnectException("HostnameVerifier exception"));
+                            onFutureFailure(channel, new ConnectException("HostnameVerifier exception"));
                         }
+                    } else {
+                        onFutureFailure(channel, handshakeFuture.getCause());
                     }
                 }
             });
