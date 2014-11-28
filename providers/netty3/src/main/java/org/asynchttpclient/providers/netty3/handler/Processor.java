@@ -40,11 +40,6 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
-    static {
-        CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
-    }
-
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
@@ -123,7 +118,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty()
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
             protocol.onClose(future);
@@ -159,7 +154,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
                     // FIXME why drop the original exception and throw a new one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.
                             Channels.silentlyCloseChannel(channel);
                         return;

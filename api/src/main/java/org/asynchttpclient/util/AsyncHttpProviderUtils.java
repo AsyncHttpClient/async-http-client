@@ -31,9 +31,10 @@ import org.asynchttpclient.uri.Uri;
 public class AsyncHttpProviderUtils {
 
     public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
-
+    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
     static {
-        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
+        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
+        CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
     }
 
     private final static byte[] NO_BYTES = new byte[0];

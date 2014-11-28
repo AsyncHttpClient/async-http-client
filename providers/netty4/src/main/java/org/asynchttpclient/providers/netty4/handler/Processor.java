@@ -13,7 +13,8 @@
  */
 package org.asynchttpclient.providers.netty4.handler;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -39,11 +40,6 @@ import org.slf4j.LoggerFactory;
 public class Processor extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
-
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel Closed");
-    static {
-        CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
-    }
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
