@@ -15,6 +15,7 @@ package org.asynchttpclient.providers.netty3.request;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.useProxyConnect;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
@@ -206,29 +207,37 @@ public final class NettyRequestSender {
         future.attachChannel(channel, false);
 
         LOGGER.debug("Using cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
-        Channels.setAttribute(channel, future);
 
-        try {
-            writeRequest(future, channel);
-        } catch (Exception ex) {
-            // write request isn't supposed to throw Exceptions
-            LOGGER.debug("writeRequest failure", ex);
-            if (ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
-                // FIXME what is this for? https://github.com/AsyncHttpClient/async-http-client/commit/a847c3d4523ccc09827743e15b17e6bab59c553b
-                // can such an exception happen as we write async?
-                LOGGER.debug("SSLEngine failure", ex);
-                future = null;
-            } else {
-                try {
-                    asyncHandler.onThrowable(ex);
-                } catch (Throwable t) {
-                    LOGGER.warn("doConnect.writeRequest()", t);
+        if (Channels.isChannelValid(channel)) {
+            Channels.setAttribute(channel, future);
+
+            try {
+                writeRequest(future, channel);
+            } catch (Exception ex) {
+                // write request isn't supposed to throw Exceptions
+                LOGGER.debug("writeRequest failure", ex);
+                if (ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
+                    // FIXME what is this for? https://github.com/AsyncHttpClient/async-http-client/commit/a847c3d4523ccc09827743e15b17e6bab59c553b
+                    // can such an exception happen as we write async?
+                    LOGGER.debug("SSLEngine failure", ex);
+                    future = null;
+                } else {
+                    try {
+                        asyncHandler.onThrowable(ex);
+                    } catch (Throwable t) {
+                        LOGGER.warn("doConnect.writeRequest()", t);
+                    }
+                    IOException ioe = new IOException(ex.getMessage());
+                    ioe.initCause(ex);
+                    throw ioe;
                 }
-                IOException ioe = new IOException(ex.getMessage());
-                ioe.initCause(ex);
-                throw ioe;
             }
+        } else {
+            // bad luck, the channel was closed in-between
+            // there's a very good chance onClose was already notified but the future wasn't already registered
+            handleUnexpectedClosedChannel(channel, future);
         }
+
         return future;
     }
 
@@ -414,6 +423,14 @@ public final class NettyRequestSender {
         }
     }
 
+    public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
+        if (future.isDone())
+            channelManager.closeChannel(channel);
+
+        else if (!retry(future))
+            abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
+    }
+    
     public boolean retry(NettyResponseFuture<?> future) {
 
         if (isClosed())

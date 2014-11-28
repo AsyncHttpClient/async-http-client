@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.providers.netty3.handler;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION;
+
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
@@ -24,7 +26,6 @@ import org.asynchttpclient.providers.netty3.channel.ChannelManager;
 import org.asynchttpclient.providers.netty3.channel.Channels;
 import org.asynchttpclient.providers.netty3.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty3.request.NettyRequestSender;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -118,16 +119,11 @@ public class Processor extends SimpleChannelUpstreamHandler {
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty()
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION, channel))
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
             protocol.onClose(future);
-
-            if (future.isDone())
-                channelManager.closeChannel(channel);
-
-            else if (!requestSender.retry(future))
-                requestSender.abort(channel, future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
+            requestSender.handleUnexpectedClosedChannel(channel, future);
         }
     }
 
@@ -154,7 +150,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
                     // FIXME why drop the original exception and throw a new one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION, channel))
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.
                             Channels.silentlyCloseChannel(channel);
                         return;

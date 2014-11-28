@@ -13,8 +13,7 @@
  */
 package org.asynchttpclient.providers.netty4.handler;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
-
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -108,12 +107,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
                 return;
 
             protocol.onClose(future);
-
-            if (future.isDone())
-                channelManager.closeChannel(channel);
-
-            else if (!requestSender.retry(future))
-                requestSender.abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
+            requestSender.handleUnexpectedClosedChannel(channel, future);
         }
     }
 
