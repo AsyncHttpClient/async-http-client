@@ -23,7 +23,6 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -54,7 +53,6 @@ import org.asynchttpclient.providers.netty.request.body.NettyByteArrayBody;
 import org.asynchttpclient.providers.netty.request.body.NettyFileBody;
 import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
-import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
@@ -95,48 +93,41 @@ public final class NettyRequestFactory {
         String authorizationHeader = null;
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
-            switch (realm.getAuthScheme()) {
+        	AuthorizationHeaderStrategy.IAuthorizationHeaderStrategy authorizationHeaderStrategy = null;
+            
+        	switch (realm.getAuthScheme()) {
             case NTLM:
-                String msg = NTLMEngine.INSTANCE.generateType1Msg();
-                authorizationHeader = "NTLM " + msg;
-                break;
+            	authorizationHeaderStrategy = new AuthorizationHeaderStrategy().new NTLMAuthorizationHeaderStrategy();
+            	break;
             case KERBEROS:
+            	authorizationHeaderStrategy = new AuthorizationHeaderStrategy().new KERBEROSAuthorizationHeaderStrategy();
+            	break;
             case SPNEGO:
-                String host;
-                if (proxyServer != null)
-                    host = proxyServer.getHost();
-                else if (request.getVirtualHost() != null)
-                    host = request.getVirtualHost();
-                else
-                    host = uri.getHost();
-
-                try {
-                    authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
-                } catch (Throwable e) {
-                    throw new IOException(e);
-                }
+            	authorizationHeaderStrategy = new AuthorizationHeaderStrategy().new SPNEGOAuthorizationHeaderStrategy();
                 break;
             default:
                 break;
             }
+            
+            if(authorizationHeaderStrategy != null)
+                authorizationHeader = authorizationHeaderStrategy.deriveFirstRequestOnlyAuthorizationHeader(request, uri, proxyServer);
         }
         
         return authorizationHeader;
     }
     
     private String systematicAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) {
-
         String authorizationHeader = null;
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
-
-            switch (realm.getAuthScheme()) {
+        	AuthorizationHeaderStrategy.IAuthorizationHeaderStrategy authorizationHeaderStrategy = null;
+  
+        	switch (realm.getAuthScheme()) {
             case BASIC:
-                authorizationHeader = computeBasicAuthentication(realm);
+            	authorizationHeaderStrategy = new AuthorizationHeaderStrategy().new BASICAuthorizationHeaderStrategy();
                 break;
             case DIGEST:
-                if (isNonEmpty(realm.getNonce()))
-                    authorizationHeader = computeDigestAuthentication(realm);
+            	authorizationHeaderStrategy = new AuthorizationHeaderStrategy().new DIGESTAuthorizationHeaderStrategy();
                 break;
             case NTLM:
             case KERBEROS:
@@ -147,8 +138,11 @@ public final class NettyRequestFactory {
             default:
                 throw new IllegalStateException("Invalid Authentication " + realm);
             }
+        
+        	if(authorizationHeaderStrategy != null)
+                authorizationHeader = authorizationHeaderStrategy.deriveSystematicAuthorizationHeader(realm);
         }
-
+        
         return authorizationHeader;
     }
 
