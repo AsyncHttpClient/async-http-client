@@ -46,11 +46,7 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling100;
-import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling401;
-import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling407;
 import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingConnect;
-import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingHeaders;
 import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingStatus;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
@@ -69,7 +65,7 @@ public final class HttpProtocol extends Protocol {
         return realm != null ? new Realm.RealmBuilder().clone(realm) : new Realm.RealmBuilder();
     }
 
-    public Realm kerberosChallenge(Channel channel, List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
+    private Realm kerberosChallenge(Channel channel, List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
             NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
         Uri uri = request.getUri();
@@ -104,7 +100,7 @@ public final class HttpProtocol extends Protocol {
         headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
     }
 
-    public Realm ntlmChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
+    private Realm ntlmChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
             NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
         boolean useRealm = proxyServer == null && realm != null;
@@ -138,7 +134,7 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    public Realm ntlmProxyChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
+    private Realm ntlmProxyChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
             NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
@@ -194,7 +190,7 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    private boolean exitAfterHandling4011(//
+    private boolean exitAfterHandling401(//
             final Channel channel,//
             final NettyResponseFuture<?> future,//
             HttpResponse response,//
@@ -265,7 +261,7 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean exitAfterHandling1001(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
+    private boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
         if (statusCode == CONTINUE.code()) {
             future.setHeadersAlreadyWrittenOnContinue(true);
             future.setDontWriteBodyBecauseExpectContinue(false);
@@ -277,7 +273,7 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean exitAfterHandling4071(//
+    private boolean exitAfterHandling407(//
             Channel channel,//
             NettyResponseFuture<?> future,//
             HttpResponse response,//
@@ -372,7 +368,7 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean exitAfterHandlingHeaders1(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders)
+    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders)
             throws IOException, Exception {
         if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
@@ -411,27 +407,19 @@ public final class HttpProtocol extends Protocol {
         
         IExitHandler eahStatus = new ExitAfterHandlingStatus();
         IExitHandler eahConnect = new ExitAfterHandlingConnect();
-        IExitHandler eah401 = new ExitAfterHandling401();
-        IExitHandler eah407 = new ExitAfterHandling407();
-        IExitHandler eah100 = new ExitAfterHandling100();
-        IExitHandler eahHeaders = new ExitAfterHandlingHeaders();
         
         //return eahStatus.exitHandler(this, exitResponses);
         
-        return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) ||
-                //exitAfterHandling4011(channel, future, response, request, statusCode, realm, proxyServer) || //
-        		eah401.exitHandler(this, exitResponses) ||
-                //exitAfterHandling4071(channel, future, response, request, statusCode, realm, proxyServer) || //
-        		eah407.exitHandler(this, exitResponses) ||
-                //exitAfterHandling1001(channel, future, statusCode) || //
-        		eah100.exitHandler(this, exitResponses) ||
+        return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
+                || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
+                exitAfterHandling407(channel, future, response, request, statusCode, realm, proxyServer) || //
+                exitAfterHandling100(channel, future, statusCode) || //
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode) || //
                 //exitAfterHandlingConnect1(channel, future, request, proxyServer, statusCode, httpRequest) || //
                 //exitAfterHandlingStatus1(channel, future, response, handler, status) || //
                 eahConnect.exitHandler(this, exitResponses) ||
                 eahStatus.exitHandler(this, exitResponses) ||
-                //exitAfterHandlingHeaders1(channel, future, response, handler, responseHeaders);
-                eahHeaders.exitHandler(this, exitResponses);
+                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders);
         
     }
 
