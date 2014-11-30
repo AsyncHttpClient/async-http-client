@@ -46,6 +46,12 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelManager;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling100;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling401;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandling407;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingConnect;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingHeaders;
+import org.asynchttpclient.providers.netty.handler.exit_types.ExitAfterHandlingStatus;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.NettyResponseHeaders;
@@ -54,7 +60,7 @@ import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
-
+	
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         super(channelManager, config, nettyConfig, requestSender);
     }
@@ -187,193 +193,7 @@ public final class HttpProtocol extends Protocol {
             channelManager.closeChannel(channel);
         }
     }
-
-    private boolean exitAfterHandling401(//
-            final Channel channel,//
-            final NettyResponseFuture<?> future,//
-            HttpResponse response,//
-            final Request request,//
-            int statusCode,//
-            Realm realm,//
-            ProxyServer proxyServer) throws Exception {
-
-        if (statusCode == UNAUTHORIZED.code() && realm != null && !future.getAndSetAuth(true)) {
-
-            List<String> wwwAuthHeaders = response.headers().getAll(HttpHeaders.Names.WWW_AUTHENTICATE);
-
-            if (!wwwAuthHeaders.isEmpty()) {
-                future.setState(NettyResponseFuture.STATE.NEW);
-                Realm newRealm = null;
-                boolean negociate = wwwAuthHeaders.contains("Negotiate");
-                String ntlmAuthenticate = getNTLM(wwwAuthHeaders);
-                if (!wwwAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
-                    // NTLM
-                    newRealm = ntlmChallenge(ntlmAuthenticate, request, proxyServer, request.getHeaders(), realm, future, false);
-
-                    // don't forget to reuse channel: NTLM authenticates a connection
-                    future.setReuseChannel(true);
-
-                } else if (negociate) {
-                    newRealm = kerberosChallenge(channel, wwwAuthHeaders, request, proxyServer, request.getHeaders(), realm, future, false);
-                    // SPNEGO KERBEROS
-                    if (newRealm == null)
-                        return true;
-                    else
-                        // don't forget to reuse channel: KERBEROS authenticates a connection
-                        future.setReuseChannel(true);
-
-                } else {
-                    newRealm = new Realm.RealmBuilder()//
-                            .clone(realm)//
-                            .setScheme(realm.getAuthScheme())//
-                            .setUri(request.getUri())//
-                            .setMethodName(request.getMethod())//
-                            .setUsePreemptiveAuth(true)//
-                            .parseWWWAuthenticateHeader(wwwAuthHeaders.get(0))//
-                            .build();
-                }
-
-                Realm nr = newRealm;
-                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
-
-                logger.debug("Sending authentication to {}", request.getUri());
-                Callback callback = new Callback(future) {
-                    public void call() throws IOException {
-                        channelManager.drainChannel(channel, future);
-                        requestSender.sendNextRequest(nextRequest, future);
-                    }
-                };
-
-                if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response))
-                    // We must make sure there is no bytes left
-                    // before executing the next request.
-                    Channels.setAttribute(channel, callback);
-                else
-                    // call might crash with an IOException
-                    callback.call();
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
-        if (statusCode == CONTINUE.code()) {
-            future.setHeadersAlreadyWrittenOnContinue(true);
-            future.setDontWriteBodyBecauseExpectContinue(false);
-            // FIXME why not reuse the channel?
-            requestSender.writeRequest(future, channel);
-            return true;
-
-        }
-        return false;
-    }
-
-    private boolean exitAfterHandling407(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
-            HttpResponse response,//
-            Request request,//
-            int statusCode,//
-            Realm realm,//
-            ProxyServer proxyServer) throws Exception {
-
-        if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && realm != null && !future.getAndSetAuth(true)) {
-
-            List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
-
-            if (!proxyAuthHeaders.isEmpty()) {
-                logger.debug("Sending proxy authentication to {}", request.getUri());
-
-                future.setState(NettyResponseFuture.STATE.NEW);
-                Realm newRealm = null;
-                FluentCaseInsensitiveStringsMap requestHeaders = request.getHeaders();
-
-                boolean negociate = proxyAuthHeaders.contains("Negotiate");
-                String ntlmAuthenticate = getNTLM(proxyAuthHeaders);
-                if (!proxyAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
-                    newRealm = ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, requestHeaders, realm, future, true);
-                    // SPNEGO KERBEROS
-                } else if (negociate) {
-                    newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
-                    if (newRealm == null)
-                        return true;
-                } else {
-                    newRealm = new Realm.RealmBuilder().clone(realm)//
-                            .setScheme(realm.getAuthScheme())//
-                            .setUri(request.getUri())//
-                            .setOmitQuery(true)//
-                            .setMethodName(HttpMethod.CONNECT.name())//
-                            .setUsePreemptiveAuth(true)//
-                            .parseProxyAuthenticateHeader(proxyAuthHeaders.get(0))//
-                            .build();
-                }
-
-                future.setReuseChannel(true);
-                future.setConnectAllowed(true);
-                Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(requestHeaders).setRealm(newRealm).build();
-                requestSender.sendNextRequest(nextRequest, future);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean exitAfterHandlingConnect(//
-            final Channel channel,//
-            final NettyResponseFuture<?> future,//
-            final Request request,//
-            ProxyServer proxyServer,//
-            int statusCode,//
-            HttpRequest httpRequest) throws IOException {
-
-        if (statusCode == OK.code() && httpRequest.getMethod() == HttpMethod.CONNECT) {
-
-            if (future.isKeepAlive())
-                future.attachChannel(channel, true);
-
-            try {
-                Uri requestUri = request.getUri();
-                String scheme = requestUri.getScheme();
-                String host = requestUri.getHost();
-                int port = getDefaultPort(requestUri);
-
-                logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
-                channelManager.upgradeProtocol(channel.pipeline(), scheme, host, port);
-
-            } catch (Throwable ex) {
-                requestSender.abort(channel, future, ex);
-            }
-
-            future.setReuseChannel(true);
-            future.setConnectAllowed(false);
-            requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status)
-            throws IOException, Exception {
-        if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != STATE.CONTINUE) {
-            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
-            return true;
-        }
-        return false;
-    }
-
-    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders)
-            throws IOException, Exception {
-        if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE) {
-            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
-            return true;
-        }
-        return false;
-    }
-
+    
     private boolean isConnectionKeepAlive(HttpHeaders headers) {
         return !HttpHeaders.Values.CLOSE.equalsIgnoreCase(headers.get(HttpHeaders.Names.CONNECTION));
     }
@@ -396,14 +216,27 @@ public final class HttpProtocol extends Protocol {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         NettyResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
-        return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
-                || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
-                exitAfterHandling407(channel, future, response, request, statusCode, realm, proxyServer) || //
-                exitAfterHandling100(channel, future, statusCode) || //
+        ExitResponses exitResponses = new ExitResponses(
+        		channel, future, handler, status, responseHeaders,
+        		response, request, statusCode, realm, proxyServer, httpRequest, channelManager,
+        		requestSender
+        		);
+        
+        IExitHandler eahStatus = new ExitAfterHandlingStatus();
+        IExitHandler eahConnect = new ExitAfterHandlingConnect();
+        IExitHandler eah401 = new ExitAfterHandling401();
+        IExitHandler eah407 = new ExitAfterHandling407();
+        IExitHandler eah100 = new ExitAfterHandling100();
+        IExitHandler eahHeaders = new ExitAfterHandlingHeaders();
+        
+        return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) ||
+        		eah401.exitHandler(this, exitResponses) ||
+        		eah407.exitHandler(this, exitResponses) ||
+        		eah100.exitHandler(this, exitResponses) ||
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode) || //
-                exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
-                exitAfterHandlingStatus(channel, future, response, handler, status) || //
-                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders);
+                eahConnect.exitHandler(this, exitResponses) ||
+                eahStatus.exitHandler(this, exitResponses) ||
+                eahHeaders.exitHandler(this, exitResponses);
     }
 
     @Override
@@ -487,4 +320,5 @@ public final class HttpProtocol extends Protocol {
     @Override
     public void onClose(NettyResponseFuture<?> future) {
     }
+    
 }
