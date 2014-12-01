@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,18 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
+package com.ning.http.client.ws;
 
-package com.ning.http.client.websocket.grizzly;
+/**
+ * A WebSocket's Pong Listener
+ */
+public interface WebSocketPongListener extends WebSocketListener {
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.websocket.RedirectTest;
-
-public class GrizzlyRedirectTest extends RedirectTest {
-
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.grizzlyProvider(config);
-    }
+    /**
+     * Invoked when a pong message is received
+     * @param message a byte array
+     */
+    void onPong(byte[] message);
 }

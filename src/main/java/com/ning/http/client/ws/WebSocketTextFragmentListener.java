@@ -1,25 +1,26 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
+
+import com.ning.http.client.HttpResponseBodyPart;
 
 /**
- * A WebSocket's Pong Listener
+ * Invoked when WebSocket text fragments are received.
+ *
+ * @param fragment text fragment
  */
-public interface WebSocketPongListener extends WebSocketListener {
+public interface WebSocketTextFragmentListener extends WebSocketListener {
 
-    /**
-     * Invoked when a pong message is received
-     * @param message a byte array
-     */
-    void onPong(byte[] message);
+    void onFragment(HttpResponseBodyPart fragment);
 }

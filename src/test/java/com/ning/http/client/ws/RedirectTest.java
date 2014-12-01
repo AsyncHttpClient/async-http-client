@@ -11,7 +11,7 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 import static org.testng.Assert.assertEquals;
 
@@ -32,6 +32,9 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ws.WebSocket;
+import com.ning.http.client.ws.WebSocketListener;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
 
 public abstract class RedirectTest extends AbstractBasicTest {
 
@@ -92,13 +95,13 @@ public abstract class RedirectTest extends AbstractBasicTest {
             WebSocket websocket = client.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                     text.set("OnOpen");
                     latch.countDown();
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override

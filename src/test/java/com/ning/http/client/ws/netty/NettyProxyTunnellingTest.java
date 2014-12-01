@@ -10,14 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket.netty;
+package com.ning.http.client.ws.netty;
 
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.websocket.ProxyTunnellingTest;
+import com.ning.http.client.ws.ProxyTunnellingTest;
 
 @Test
 public class NettyProxyTunnellingTest extends ProxyTunnellingTest {

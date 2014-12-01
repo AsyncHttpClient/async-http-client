@@ -10,13 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ws.WebSocket;
+import com.ning.http.client.ws.WebSocketByteListener;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
 
 import javax.servlet.http.HttpServletRequest;
 

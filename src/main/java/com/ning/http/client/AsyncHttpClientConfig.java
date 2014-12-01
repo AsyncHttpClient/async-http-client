@@ -183,8 +183,8 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
-     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
+     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.ws.WebSocket} may be idle before being timed out.
+     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.ws.WebSocket} may be idle before being timed out.
      */
     public int getWebSocketTimeout() {
         return webSocketTimeout;
@@ -546,10 +546,10 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
+         * Set the maximum time in millisecond an {@link com.ning.http.client.ws.WebSocket} can stay idle.
          *
          * @param webSocketTimeout
-         *         the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
+         *         the maximum time in millisecond an {@link com.ning.http.client.ws.WebSocket} can stay idle.
          * @return a {@link Builder}
          */
         public Builder setWebSocketTimeout(int webSocketTimeout) {

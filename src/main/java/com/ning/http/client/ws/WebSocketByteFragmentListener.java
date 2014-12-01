@@ -11,16 +11,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 import com.ning.http.client.HttpResponseBodyPart;
 
 /**
- * Invoked when WebSocket text fragments are received.
+ * Invoked when WebSocket binary fragments are received.
  *
  * @param fragment text fragment
  */
-public interface WebSocketTextFragmentListener extends WebSocketListener {
+public interface WebSocketByteFragmentListener extends WebSocketListener {
 
     void onFragment(HttpResponseBodyPart fragment);
 }

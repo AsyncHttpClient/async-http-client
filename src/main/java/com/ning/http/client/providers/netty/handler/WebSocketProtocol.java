@@ -42,7 +42,7 @@ import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
 import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
 import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
-import com.ning.http.client.websocket.WebSocketUpgradeHandler;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
 
 import java.io.IOException;
 import java.util.Locale;

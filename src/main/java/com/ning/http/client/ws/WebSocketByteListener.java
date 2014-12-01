@@ -10,16 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket.netty;
+package com.ning.http.client.ws;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.websocket.ByteMessageTest;
+/**
+ * A {@link WebSocketListener} for bytes
+ */
+public interface WebSocketByteListener extends WebSocketListener {
 
-public class NettyByteMessageTest extends ByteMessageTest {
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
-    }
+    /**
+     * Invoked when bytes are available.
+     * @param message a byte array.
+     */
+    void onMessage(byte[] message);
 }

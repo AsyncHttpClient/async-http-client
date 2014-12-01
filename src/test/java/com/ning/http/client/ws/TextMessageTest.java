@@ -10,12 +10,18 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ws.WebSocket;
+import com.ning.http.client.ws.WebSocketListener;
+import com.ning.http.client.ws.WebSocketTextListener;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
+
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,13 +84,13 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                     text.set("OnOpen");
                     latch.countDown();
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
@@ -143,11 +149,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     text.set("OnClose");
                     latch.countDown();
                 }
@@ -176,11 +182,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             WebSocket websocket = client.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     text.set("OnClose");
                     latch.countDown();
                 }
@@ -217,11 +223,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     latch.countDown();
                 }
 
@@ -257,11 +263,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     latch.countDown();
                 }
 
@@ -279,11 +285,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     latch.countDown();
                 }
 
@@ -319,12 +325,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                     websocket.sendMessage("ECHO").sendMessage("ECHO");
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     latch.countDown();
                 }
 
@@ -357,11 +363,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     latch.countDown();
                 }
 
@@ -399,11 +405,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                     closeLatch.countDown();
                 }
 

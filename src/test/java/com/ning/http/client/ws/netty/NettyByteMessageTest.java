@@ -10,16 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws.netty;
 
-/**
- * A WebSocket's Ping Listener
- */
-public interface WebSocketPingListener extends WebSocketListener {
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.async.ProviderUtil;
+import com.ning.http.client.ws.ByteMessageTest;
 
-    /**
-     * Invoked when a ping message is received
-     * @param message a byte array
-     */
-    void onPing(byte[] message);
+public class NettyByteMessageTest extends ByteMessageTest {
+    @Override
+    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+        return ProviderUtil.nettyProvider(config);
+    }
 }

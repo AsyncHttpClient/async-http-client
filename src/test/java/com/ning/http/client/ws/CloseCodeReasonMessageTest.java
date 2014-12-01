@@ -10,9 +10,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ws.WebSocket;
+import com.ning.http.client.ws.WebSocketCloseCodeReasonListener;
+import com.ning.http.client.ws.WebSocketListener;
+import com.ning.http.client.ws.WebSocketTextListener;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
+
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -75,11 +81,11 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
         }
 
         @Override
-        public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+        public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
         }
 
         @Override
-        public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+        public void onClose(com.ning.http.client.ws.WebSocket websocket) {
         }
 
         public void onClose(WebSocket websocket, int code, String reason) {
@@ -108,11 +114,11 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
@@ -144,11 +150,11 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
                 }
 
                 @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
                 }
 
                 @Override

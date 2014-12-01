@@ -11,18 +11,25 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package com.ning.http.client.websocket.netty;
+package com.ning.http.client.ws.grizzly;
+
+import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.websocket.CloseCodeReasonMessageTest;
+import com.ning.http.client.ws.CloseCodeReasonMessageTest;
 
-public class NettyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
+public class GrizzlyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return ProviderUtil.grizzlyProvider(config);
     }
 
+    @Override
+    @Test
+    public void onCloseWithCode() throws Throwable {
+        super.onCloseWithCode(); // To change body of overridden methods use File | Settings | File Templates.
+    }
 }

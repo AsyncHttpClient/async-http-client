@@ -11,7 +11,7 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package com.ning.http.client.websocket;
+package com.ning.http.client.ws;
 
 /**
  * Default WebSocketListener implementation.  Most methods are no-ops.  This 

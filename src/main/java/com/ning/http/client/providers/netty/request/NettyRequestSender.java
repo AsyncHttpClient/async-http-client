@@ -54,7 +54,7 @@ import com.ning.http.client.providers.netty.request.timeout.ReadTimeoutTimerTask
 import com.ning.http.client.providers.netty.request.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.request.timeout.TimeoutsHolder;
 import com.ning.http.client.uri.Uri;
-import com.ning.http.client.websocket.WebSocketUpgradeHandler;
+import com.ning.http.client.ws.WebSocketUpgradeHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
