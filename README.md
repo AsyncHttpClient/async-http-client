@@ -10,9 +10,11 @@ Async Http Client library purpose is to allow Java applications to easily execut
 <dependency>
   <groupId>com.ning</groupId>
   <artifactId>async-http-client</artifactId>
-  <version>1.8.15</version>
+  <version>1.9.0</version>
 </dependency>
 ```
+
+Check [migration guide](MIGRATION.md) for migrating from 1.8 to 1.9.
 
 You can also download the artifact
 
