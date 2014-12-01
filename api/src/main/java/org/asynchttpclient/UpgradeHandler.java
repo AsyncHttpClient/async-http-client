@@ -13,7 +13,7 @@
 package org.asynchttpclient;
 
 /**
- * Invoked when an {@link AsyncHandler.STATE#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.websocket.WebSocket}
+ * Invoked when an {@link AsyncHandler.STATE#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.ws.WebSocket}
  * as type.
  *
  * @param <T>

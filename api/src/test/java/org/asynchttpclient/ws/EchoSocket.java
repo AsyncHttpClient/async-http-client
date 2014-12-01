@@ -1,4 +1,4 @@
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.ws;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;

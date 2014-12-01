@@ -44,7 +44,7 @@ import org.asynchttpclient.providers.netty4.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty4.response.NettyResponseHeaders;
 import org.asynchttpclient.providers.netty4.response.NettyResponseStatus;
 import org.asynchttpclient.providers.netty4.ws.NettyWebSocket;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class WebSocketProtocol extends Protocol {
 

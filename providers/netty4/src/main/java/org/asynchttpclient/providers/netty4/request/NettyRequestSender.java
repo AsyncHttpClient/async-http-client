@@ -58,7 +58,7 @@ import org.asynchttpclient.providers.netty4.request.timeout.ReadTimeoutTimerTask
 import org.asynchttpclient.providers.netty4.request.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.providers.netty4.request.timeout.TimeoutsHolder;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

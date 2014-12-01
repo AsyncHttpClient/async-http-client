@@ -48,7 +48,7 @@ import org.asynchttpclient.providers.netty3.request.timeout.ReadTimeoutTimerTask
 import org.asynchttpclient.providers.netty3.request.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.providers.netty3.request.timeout.TimeoutsHolder;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;

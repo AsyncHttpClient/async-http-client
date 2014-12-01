@@ -33,7 +33,7 @@ import org.asynchttpclient.providers.netty3.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty3.response.NettyResponseHeaders;
 import org.asynchttpclient.providers.netty3.response.NettyResponseStatus;
 import org.asynchttpclient.providers.netty3.ws.NettyWebSocket;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpChunk;

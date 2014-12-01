@@ -10,31 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.ws;
 
 /**
- * A generic {@link WebSocketListener} for WebSocket events. Use the appropriate listener for receiving message bytes.
+ * A WebSocket's Ping Listener
  */
-public interface WebSocketListener {
+public interface WebSocketPingListener extends WebSocketListener {
 
     /**
-     * Invoked when the {@link WebSocket} is open.
-     *
-     * @param websocket
+     * Invoked when a ping message is received
+     * @param message a byte array
      */
-    void onOpen(WebSocket websocket);
-
-    /**
-     * Invoked when the {@link WebSocket} is close.
-     *
-     * @param websocket
-     */
-    void onClose(WebSocket websocket);
-
-    /**
-     * Invoked when the {@link WebSocket} is open.
-     *
-     * @param t a {@link Throwable}
-     */
-    void onError(Throwable t);
+    void onPing(byte[] message);
 }

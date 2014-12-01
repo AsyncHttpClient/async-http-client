@@ -11,7 +11,7 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.ws;
 
 import static org.asynchttpclient.async.util.TestUtils.addHttpConnector;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
@@ -20,6 +20,9 @@ import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketListener;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;

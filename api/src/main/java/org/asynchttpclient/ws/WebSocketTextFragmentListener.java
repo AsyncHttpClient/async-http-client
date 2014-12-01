@@ -11,16 +11,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.ws;
 
 import org.asynchttpclient.HttpResponseBodyPart;
 
 /**
- * Invoked when WebSocket binary fragments are received.
+ * Invoked when WebSocket text fragments are received.
  * 
  * @param fragment text fragment
  */
-public interface WebSocketByteFragmentListener extends WebSocketListener {
+public interface WebSocketTextFragmentListener extends WebSocketListener {
 
     void onFragment(HttpResponseBodyPart fragment);
 }

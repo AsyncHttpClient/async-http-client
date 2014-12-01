@@ -33,9 +33,9 @@ import org.asynchttpclient.providers.grizzly.statushandler.AuthorizationHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.ProxyAuthorizationHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.RedirectHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
-import org.asynchttpclient.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
+import org.asynchttpclient.providers.grizzly.ws.GrizzlyWebSocketAdapter;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 

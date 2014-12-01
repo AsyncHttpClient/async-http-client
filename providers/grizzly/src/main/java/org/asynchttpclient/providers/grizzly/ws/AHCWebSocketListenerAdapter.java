@@ -11,14 +11,14 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package org.asynchttpclient.providers.grizzly.websocket;
+package org.asynchttpclient.providers.grizzly.ws;
 
-import org.asynchttpclient.websocket.WebSocketByteListener;
-import org.asynchttpclient.websocket.WebSocketCloseCodeReasonListener;
-import org.asynchttpclient.websocket.WebSocketListener;
-import org.asynchttpclient.websocket.WebSocketPingListener;
-import org.asynchttpclient.websocket.WebSocketPongListener;
-import org.asynchttpclient.websocket.WebSocketTextListener;
+import org.asynchttpclient.ws.WebSocketByteListener;
+import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
+import org.asynchttpclient.ws.WebSocketListener;
+import org.asynchttpclient.ws.WebSocketPingListener;
+import org.asynchttpclient.ws.WebSocketPongListener;
+import org.asynchttpclient.ws.WebSocketTextListener;
 import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
 

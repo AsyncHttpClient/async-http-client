@@ -35,7 +35,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * provider is explicitly specified by the developer.
      */
     private static final String[] DEFAULT_PROVIDERS = {//
-    "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",/**/
+    "org.asynchttpclient.providers.netty4.NettyAsyncHttpProvider",/**/
+    "org.asynchttpclient.providers.netty3.NettyAsyncHttpProvider",/**/
     "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"//
     };
 
@@ -57,7 +58,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      *
      * The default providers will be searched for in this order:
      * <ul>
-     *     <li>netty</li>
+     *     <li>netty4</li>
+     *     <li>netty3</li>
      *     <li>grizzly</li>
      * </ul>
      *

@@ -10,16 +10,17 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.grizzly.websocket;
+package org.asynchttpclient.ws;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
-import org.asynchttpclient.websocket.ByteMessageTest;
+/**
+ * A {@link WebSocketListener} for bytes
+ */
+public interface WebSocketByteListener extends WebSocketListener {
 
-public class GrizzlyTextMessageTest extends ByteMessageTest {
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return GrizzlyProviderUtil.grizzlyProvider(config);
-    }
+    /**
+     * Invoked when bytes are available.
+     * 
+     * @param message a byte array.
+     */
+    void onMessage(byte[] message);
 }

@@ -20,7 +20,7 @@ import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.websocket.WebSocket;
+import org.asynchttpclient.ws.WebSocket;
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
 import org.glassfish.grizzly.Closeable;

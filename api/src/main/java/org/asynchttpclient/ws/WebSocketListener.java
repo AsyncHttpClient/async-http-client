@@ -10,17 +10,31 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.ws;
 
 /**
- * A {@link WebSocketListener} for bytes
+ * A generic {@link WebSocketListener} for WebSocket events. Use the appropriate listener for receiving message bytes.
  */
-public interface WebSocketByteListener extends WebSocketListener {
+public interface WebSocketListener {
 
     /**
-     * Invoked when bytes are available.
-     * 
-     * @param message a byte array.
+     * Invoked when the {@link WebSocket} is open.
+     *
+     * @param websocket
      */
-    void onMessage(byte[] message);
+    void onOpen(WebSocket websocket);
+
+    /**
+     * Invoked when the {@link WebSocket} is close.
+     *
+     * @param websocket
+     */
+    void onClose(WebSocket websocket);
+
+    /**
+     * Invoked when the {@link WebSocket} is open.
+     *
+     * @param t a {@link Throwable}
+     */
+    void onError(Throwable t);
 }

@@ -15,7 +15,7 @@ package org.asynchttpclient.providers.netty3.ws;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty3.NettyProviderUtil;
-import org.asynchttpclient.websocket.ProxyTunnellingTest;
+import org.asynchttpclient.ws.ProxyTunnellingTest;
 import org.testng.annotations.Test;
 
 @Test

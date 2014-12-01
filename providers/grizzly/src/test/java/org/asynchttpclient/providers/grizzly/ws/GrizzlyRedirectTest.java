@@ -11,14 +11,14 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package org.asynchttpclient.providers.grizzly.websocket;
+package org.asynchttpclient.providers.grizzly.ws;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
-import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
+import org.asynchttpclient.ws.RedirectTest;
 
-public class GrizzlyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
+public class GrizzlyRedirectTest extends RedirectTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

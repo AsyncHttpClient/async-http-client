@@ -11,12 +11,12 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package org.asynchttpclient.providers.grizzly.websocket;
+package org.asynchttpclient.providers.grizzly.ws;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import org.asynchttpclient.websocket.WebSocket;
-import org.asynchttpclient.websocket.WebSocketListener;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketListener;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
 
 public final class GrizzlyWebSocketAdapter implements WebSocket {

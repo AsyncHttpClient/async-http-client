@@ -16,7 +16,7 @@ package org.asynchttpclient.providers.netty4.ws;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty4.NettyProviderUtil;
-import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
+import org.asynchttpclient.ws.CloseCodeReasonMessageTest;
 
 public class NettyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
 

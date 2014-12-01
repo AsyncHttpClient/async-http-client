@@ -137,7 +137,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
-        return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeout();
+        return request.getRequestTimeout() != 0 ? request.getRequestTimeout() : config.getRequestTimeout();
     }
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {

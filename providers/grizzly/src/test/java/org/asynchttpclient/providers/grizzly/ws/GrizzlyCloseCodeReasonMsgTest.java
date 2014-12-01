@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,16 +10,18 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.websocket;
 
-/**
- * A WebSocket's Ping Listener
- */
-public interface WebSocketPingListener extends WebSocketListener {
+package org.asynchttpclient.providers.grizzly.ws;
 
-    /**
-     * Invoked when a ping message is received
-     * @param message a byte array
-     */
-    void onPing(byte[] message);
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
+import org.asynchttpclient.ws.CloseCodeReasonMessageTest;
+
+public class GrizzlyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
+
+    @Override
+    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+        return GrizzlyProviderUtil.grizzlyProvider(config);
+    }
 }

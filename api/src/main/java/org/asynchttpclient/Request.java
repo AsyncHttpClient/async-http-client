@@ -173,7 +173,7 @@ public interface Request {
      * Overrides the config default value
      * @return the request timeout
      */
-    int getRequestTimeoutInMs();
+    int getRequestTimeout();
 
     /**
      * Return the HTTP Range header value, or
