@@ -69,6 +69,7 @@ public abstract class Protocol {
     private final boolean hasResponseFilters;
     protected final boolean hasIOExceptionFilters;
     private final TimeConverter timeConverter;
+    private final MaxRedirectException maxRedirectException;
 
     public static final Set<Integer> REDIRECT_STATUSES = new HashSet<Integer>();
     static {
@@ -98,6 +99,8 @@ public abstract class Protocol {
         hasResponseFilters = !config.getResponseFilters().isEmpty();
         hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
         timeConverter = config.getTimeConverter();
+        maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+        maxRedirectException.setStackTrace(new StackTraceElement[] {});
     }
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
@@ -126,7 +129,7 @@ public abstract class Protocol {
 
         if (followRedirect(config, request) && REDIRECT_STATUSES.contains(statusCode)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
-                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+                throw maxRedirectException;
 
             } else {
                 // We must allow 401 handling again.
