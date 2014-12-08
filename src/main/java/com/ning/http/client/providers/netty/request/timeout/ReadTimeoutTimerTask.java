@@ -67,8 +67,5 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             // otherwise, no need to reschedule: requestTimeout will happen sooner
             timeoutsHolder.readTimeout = null;
         }
-
-        // this task should be evacuated from the timer but who knows
-        nettyResponseFuture = null;
     }
 }
