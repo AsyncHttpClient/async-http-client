@@ -45,8 +45,5 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         String message = "Request timed out to " + remoteAddress + " of " + requestTimeout + " ms";
         long age = millisTime() - nettyResponseFuture.getStart();
         expire(message, age);
-        
-        // this task should be evacuated from the timer but who knows
-        nettyResponseFuture = null;
     }
 }
