@@ -524,9 +524,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum number of connections per hosts an {@link com.ning.http.client.AsyncHttpClient} can handle.
+         * Set the maximum number of connections per (scheme, host, port) an {@link com.ning.http.client.AsyncHttpClient} can handle.
          *
-         * @param maxConnectionsPerHost the maximum number of connections per host an {@link com.ning.http.client.AsyncHttpClient} can handle.
+         * @param maxConnectionsPerHost the maximum number of connections per (scheme, host, port) an {@link com.ning.http.client.AsyncHttpClient} can handle.
          * @return a {@link Builder}
          */
         public Builder setMaxConnectionsPerHost(int maxConnectionsPerHost) {
