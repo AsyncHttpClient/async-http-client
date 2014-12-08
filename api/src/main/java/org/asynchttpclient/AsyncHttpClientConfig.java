@@ -604,9 +604,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum number of connections per hosts an {@link AsyncHttpClient} can handle.
+         * Set the maximum number of connections per (scheme, host, port) an {@link AsyncHttpClient} can handle.
          *
-         * @param maxConnectionsPerHost the maximum number of connections per host an {@link AsyncHttpClient} can handle.
+         * @param maxConnectionsPerHost the maximum number of connections per (scheme, host, port) an {@link AsyncHttpClient} can handle.
          * @return a {@link Builder}
          */
         public Builder setMaxConnectionsPerHost(int maxConnectionsPerHost) {
