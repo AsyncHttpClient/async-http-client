@@ -69,6 +69,10 @@ public class MultipartBody implements RandomAccessBody {
         return contentType;
     }
 
+    public byte[] getBoundary() {
+        return boundary;
+    }
+
     // RandomAccessBody API, suited for HTTP but not for HTTPS
     public long transferTo(long position, WritableByteChannel target) throws IOException {
 
