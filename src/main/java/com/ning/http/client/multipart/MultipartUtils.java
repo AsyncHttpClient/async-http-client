@@ -16,12 +16,13 @@
 package com.ning.http.client.multipart;
 
 import static java.nio.charset.StandardCharsets.*;
-
 import static com.ning.http.client.multipart.Part.CRLF_BYTES;
 import static com.ning.http.client.multipart.Part.EXTRA_BYTES;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.util.StringUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,9 +102,9 @@ public class MultipartUtils {
     }
 
     private static String computeContentType(String base, byte[] multipartBoundary) {
-        StringBuilder buffer = new StringBuilder(base);
+        StringBuilder buffer = StringUtils.stringBuilder().append(base);
         if (!base.endsWith(";"))
-            buffer.append(";");
+            buffer.append(';');
         return buffer.append(" boundary=").append(new String(multipartBoundary, US_ASCII)).toString();
     }
 

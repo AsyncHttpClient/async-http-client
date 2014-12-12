@@ -55,7 +55,7 @@ public enum QueryComputer {
         
         protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
-            StringBuilder sb = new StringBuilder(query.length() + queryParams.size() * 16);
+            StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
             encodeAndAppendQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
@@ -64,7 +64,7 @@ public enum QueryComputer {
 
         protected final String withQueryWithoutParams(final String query) {
             // encode query
-            StringBuilder sb = new StringBuilder(query.length() + 6);
+            StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
             sb.setLength(sb.length() - 1);
             return sb.toString();
@@ -72,7 +72,7 @@ public enum QueryComputer {
 
         protected final String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate encoded query params
-            StringBuilder sb = new StringBuilder(queryParams.size() * 16);
+            StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
@@ -95,7 +95,7 @@ public enum QueryComputer {
         
         protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
-            StringBuilder sb = new StringBuilder(query.length() + queryParams.size() * 16);
+            StringBuilder sb = StringUtils.stringBuilder();
             sb.append(query);
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
@@ -109,7 +109,7 @@ public enum QueryComputer {
 
         protected final String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate raw queryParams
-            StringBuilder sb = new StringBuilder(queryParams.size() * 16);
+            StringBuilder sb = StringUtils.stringBuilder();
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();

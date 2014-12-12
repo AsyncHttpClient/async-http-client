@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.ning.http.client.uri.Uri;
+import com.ning.http.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -560,7 +561,9 @@ public class Realm {
             } catch (NoSuchAlgorithmException e) {
                 throw new SecurityException(e);
             }
-            md.update(new StringBuilder(principal)
+            
+            StringBuilder sb = StringUtils.stringBuilder();
+            md.update(sb.append(principal)
                     .append(":")
                     .append(realmName)
                     .append(":")
@@ -571,40 +574,40 @@ public class Realm {
             md.reset();
 
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
-            md.update(new StringBuilder(methodName)
+            
+            // BEWARE: compute first as it used the cached StringBuilder
+            String url = uri.toUrl();
+            
+            sb.setLength(0);
+            md.update(sb.append(methodName)
                     .append(':')
-                    .append(uri).toString().getBytes(ISO_8859_1));
+                    .append(url).toString().getBytes(ISO_8859_1));
             byte[] ha2 = md.digest();
 
-            if(qop==null || qop.equals("")) {
-                 md.update(new StringBuilder(toBase16(ha1))
-                    .append(':')
-                    .append(nonce)
-                    .append(':')
-                    .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
-
-             } else {
-                 //qop ="auth" or "auth-int"
-                 md.update(new StringBuilder(toBase16(ha1))
-                    .append(':')
-                    .append(nonce)
-                    .append(':')
-                    .append(NC)
-                    .append(':')
-                    .append(cnonce)
-                    .append(':')
-                    .append(qop)
-                    .append(':')
-                    .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
+            sb.setLength(0);
+            appendBase16(sb, ha1);
+            sb.append(':').append(nonce).append(':');
+            
+            if (isNonEmpty(qop)) {
+                //qop ="auth" or "auth-int"
+                sb.append(NC)//
+                        .append(':')//
+                        .append(cnonce)//
+                        .append(':')//
+                        .append(qop)//
+                        .append(':');
             }
 
+            appendBase16(sb, ha2);
+            md.update(sb.toString().getBytes(ISO_8859_1));
+            
             byte[] digest = md.digest();
 
             response = toHexString(digest);
         }
 
         private static String toHexString(byte[] data) {
-            StringBuilder buffer = new StringBuilder();
+            StringBuilder buffer = StringUtils.stringBuilder();
             for (int i = 0; i < data.length; i++) {
                 buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
                 buffer.append(Integer.toHexString(data[i] & 0x0f));
@@ -612,9 +615,8 @@ public class Realm {
             return buffer.toString();
         }
 
-        private static String toBase16(byte[] bytes) {
+        private static void appendBase16(StringBuilder buf, byte[] bytes) {
             int base = 16;
-            StringBuilder buf = new StringBuilder();
             for (byte b : bytes) {
                 int bi = 0xff & b;
                 int c = '0' + (bi / base) % base;
@@ -626,7 +628,6 @@ public class Realm {
                     c = 'a' + (c - '0' - 10);
                 buf.append((char) c);
             }
-            return buf.toString();
         }
 
         /**
@@ -668,5 +669,4 @@ public class Realm {
                     targetProxy);
         }
     }
-
 }

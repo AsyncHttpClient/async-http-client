@@ -169,7 +169,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public static String formParams2UTF8String(List<Param> params) {
-        StringBuilder sb = new StringBuilder(params.size() * 15);
+        StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
             UTF8UrlEncoder.appendEncoded(sb, param.getName());
             sb.append("=");

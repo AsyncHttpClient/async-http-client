@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.cookie;
 
+import com.ning.http.util.StringUtils;
+
 import java.util.Collection;
 
 public final class CookieEncoder {
@@ -20,7 +22,7 @@ public final class CookieEncoder {
     }
 
     public static String encode(Collection<Cookie> cookies) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = StringUtils.stringBuilder();
 
         for (Cookie cookie : cookies) {
             add(sb, cookie.getName(), cookie.getRawValue());

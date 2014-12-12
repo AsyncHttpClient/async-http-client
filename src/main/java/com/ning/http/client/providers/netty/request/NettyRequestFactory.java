@@ -53,6 +53,7 @@ import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
 import com.ning.http.client.providers.netty.request.body.NettyMultipartBody;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.uri.Uri;
+import com.ning.http.util.StringUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.IOException;
@@ -188,7 +189,7 @@ public final class NettyRequestFactory {
 
     private byte[] computeBodyFromParams(List<Param> params, Charset bodyCharset) {
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
             UTF8UrlEncoder.appendEncoded(sb, param.getName());
             sb.append('=');

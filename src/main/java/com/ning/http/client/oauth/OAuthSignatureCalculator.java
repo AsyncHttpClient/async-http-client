@@ -25,6 +25,7 @@ import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.SignatureCalculator;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.Base64;
+import com.ning.http.util.StringUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.util.ArrayList;
@@ -95,7 +96,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      */
     public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
-        StringBuilder signedText = new StringBuilder(100);
+        StringBuilder signedText = StringUtils.stringBuilder();
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
 
@@ -162,7 +163,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      * Method used for constructing
      */
     public String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
-        StringBuilder sb = new StringBuilder(200);
+        StringBuilder sb = StringUtils.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
         if (userAuth.getKey() != null) {
