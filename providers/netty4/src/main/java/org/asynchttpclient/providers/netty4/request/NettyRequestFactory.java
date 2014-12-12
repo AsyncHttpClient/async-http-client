@@ -58,6 +58,7 @@ import org.asynchttpclient.providers.netty4.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyMultipartBody;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
 public final class NettyRequestFactory {
@@ -188,7 +189,7 @@ public final class NettyRequestFactory {
 
     private byte[] computeBodyFromParams(List<Param> params, Charset bodyCharset) {
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
             UTF8UrlEncoder.appendEncoded(sb, param.getName());
             sb.append('=');

@@ -16,8 +16,13 @@
  */
 package org.asynchttpclient.oauth;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
@@ -25,12 +30,8 @@ import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
@@ -96,7 +97,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      */
     public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
-        StringBuilder signedText = new StringBuilder(100);
+        StringBuilder signedText = StringUtils.stringBuilder();
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
 
@@ -163,7 +164,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      * Method used for constructing
      */
     public String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
-        StringBuilder sb = new StringBuilder(200);
+        StringBuilder sb = StringUtils.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
         if (userAuth.getKey() != null) {

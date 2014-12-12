@@ -14,13 +14,15 @@ package org.asynchttpclient.cookie;
 
 import java.util.Collection;
 
+import org.asynchttpclient.util.StringUtils;
+
 public final class CookieEncoder {
 
     private CookieEncoder() {
     }
 
     public static String encode(Collection<Cookie> cookies) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = StringUtils.stringBuilder();
 
         for (Cookie cookie : cookies) {
             add(sb, cookie.getName(), cookie.getRawValue());

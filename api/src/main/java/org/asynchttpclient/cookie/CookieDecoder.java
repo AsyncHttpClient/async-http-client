@@ -14,6 +14,7 @@ package org.asynchttpclient.cookie;
 
 import org.asynchttpclient.date.CalendarTimeConverter;
 import org.asynchttpclient.date.TimeConverter;
+import org.asynchttpclient.util.StringUtils;
 
 public class CookieDecoder {
 
@@ -92,7 +93,7 @@ public class CookieDecoder {
                         char c = header.charAt(i);
                         if (c == '"' || c == '\'') {
                             // NAME="VALUE" or NAME='VALUE'
-                            StringBuilder newValueBuf = new StringBuilder(header.length() - i);
+                            StringBuilder newValueBuf = StringUtils.stringBuilder();
 
                             int rawValueStart = i;
                             int rawValueEnd = i;

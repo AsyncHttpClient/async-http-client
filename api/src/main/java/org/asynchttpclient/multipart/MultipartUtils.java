@@ -15,14 +15,10 @@
  */
 package org.asynchttpclient.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.multipart.Part.CRLF_BYTES;
 import static org.asynchttpclient.multipart.Part.EXTRA_BYTES;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,6 +30,11 @@ import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultipartUtils {
 
@@ -100,9 +101,9 @@ public class MultipartUtils {
     }
 
     private static String computeContentType(String base, byte[] multipartBoundary) {
-        StringBuilder buffer = new StringBuilder(base);
+        StringBuilder buffer = StringUtils.stringBuilder().append(base);
         if (!base.endsWith(";"))
-            buffer.append(";");
+            buffer.append(';');
         return buffer.append(" boundary=").append(new String(multipartBoundary, US_ASCII)).toString();
     }
 
