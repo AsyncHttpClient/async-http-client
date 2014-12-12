@@ -25,6 +25,4 @@ public class NettyRemoteSiteTest extends RemoteSiteTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
     }
-
-
 }

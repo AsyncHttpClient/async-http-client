@@ -191,23 +191,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
             log.info(String.format("Executing request [%s] ...", requestUrl2));
             Response response = client.prepareGet(requestUrl2).execute().get();
-            Assert.assertEquals(response.getStatusCode(), 301);
-        } finally {
-            client.close();
-        }
-    }
-
-    /**
-     * See https://issues.sonatype.org/browse/AHC-61
-     * 
-     * @throws Throwable
-     */
-    @Test(groups = { "online", "default_provider" })
-    public void testAHC60() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
-            Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get();
-            Assert.assertEquals(response.getStatusCode(), 200);
+            Assert.assertEquals(response.getStatusCode(), 302);
         } finally {
             client.close();
         }
