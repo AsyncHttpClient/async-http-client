@@ -79,7 +79,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     }
 
     private static String append(Map.Entry<String, Long> e) {
-        return new StringBuilder(e.getKey()).append("=").append(e.getValue()).append("\n").toString();
+        return new StringBuilder(e.getKey()).append('=').append(e.getValue()).append('\n').toString();
     }
 
     @Override

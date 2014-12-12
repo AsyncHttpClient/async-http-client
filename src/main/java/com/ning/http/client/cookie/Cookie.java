@@ -144,7 +144,7 @@ public class Cookie {
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append(name);
-        buf.append("=");
+        buf.append('=');
         buf.append(rawValue);
         if (domain != null) {
             buf.append("; domain=");
@@ -161,7 +161,7 @@ public class Cookie {
         if (maxAge >= 0) {
             buf.append("; maxAge=");
             buf.append(maxAge);
-            buf.append("s");
+            buf.append('s');
         }
         if (secure) {
             buf.append("; secure");
