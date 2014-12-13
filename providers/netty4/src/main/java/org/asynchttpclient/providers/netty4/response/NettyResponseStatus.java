@@ -38,7 +38,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
 
     @Override
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new NettyResponse(this, headers, bodyParts, config.getTimeConverter());
+        return new NettyResponse(this, headers, bodyParts);
     }
 
     /**

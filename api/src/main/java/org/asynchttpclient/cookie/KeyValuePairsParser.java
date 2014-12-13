@@ -12,9 +12,8 @@
  */
 package org.asynchttpclient.cookie;
 
-import org.asynchttpclient.date.RFC2616Date;
-import org.asynchttpclient.date.RFC2616DateParser;
-import org.asynchttpclient.date.TimeConverter;
+import java.text.ParsePosition;
+import java.util.Date;
 
 /**
  * A companion for CookieDecoder that parses key-value pairs (cookie name/value
@@ -24,26 +23,28 @@ import org.asynchttpclient.date.TimeConverter;
  */
 class KeyValuePairsParser {
 
-    private final TimeConverter timeBuilder;
     private String name;
     private String value;
     private String rawValue;
     private String domain;
     private String path;
-    private long expires = -1L;
+    private String expires;
     private int maxAge = -1;
     private boolean secure;
     private boolean httpOnly;
 
-    /**
-     * @param timeBuilder used for parsing expires attribute
-     */
-    public KeyValuePairsParser(TimeConverter timeBuilder) {
-        this.timeBuilder = timeBuilder;
+    public Cookie cookie() {
+        return name != null ? new Cookie(name, value, rawValue, domain, path, computeExpires(), maxAge, secure, httpOnly) : null;
     }
 
-    public Cookie cookie() {
-        return name != null ? new Cookie(name, value, rawValue, domain, path, expires, maxAge, secure, httpOnly) : null;
+    private long computeExpires() {
+        if (expires != null) {
+            Date expiresDate = RFC2616DateParser.get().parse(expires, new ParsePosition(0));
+            if (expiresDate != null)
+                return expiresDate.getTime();
+        }
+        
+        return -1L;
     }
 
     /**
@@ -156,15 +157,7 @@ class KeyValuePairsParser {
     }
 
     private void setExpire(String value) {
-
-        RFC2616Date dateElements = new RFC2616DateParser(value).parse();
-        if (dateElements != null) {
-            try {
-                expires = timeBuilder.toTime(dateElements);
-            } catch (Exception e1) {
-                // ignore failure to parse -> treat as session cookie
-            }
-        }
+        expires = value;
     }
 
     private void setMaxAge(String value) {

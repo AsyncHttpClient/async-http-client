@@ -44,7 +44,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
-import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -72,7 +71,6 @@ public abstract class Protocol {
 
     private final boolean hasResponseFilters;
     protected final boolean hasIOExceptionFilters;
-    private final TimeConverter timeConverter;
     private final MaxRedirectException maxRedirectException;
 
     public static final Set<Integer> REDIRECT_STATUSES = new HashSet<Integer>();
@@ -102,7 +100,6 @@ public abstract class Protocol {
 
         hasResponseFilters = !config.getResponseFilters().isEmpty();
         hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
-        timeConverter = config.getTimeConverter();
         maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
         maxRedirectException.setStackTrace(new StackTraceElement[0]);
     }
@@ -167,7 +164,7 @@ public abstract class Protocol {
                     logger.debug("Redirecting to {}", newUrl);
 
                     for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
-                        Cookie c = CookieDecoder.decode(cookieStr, timeConverter);
+                        Cookie c = CookieDecoder.decode(cookieStr);
                         if (c != null)
                             requestBuilder.addOrReplaceCookie(c);
                     }

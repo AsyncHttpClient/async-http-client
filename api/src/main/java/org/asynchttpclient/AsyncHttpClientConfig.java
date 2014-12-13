@@ -29,7 +29,6 @@ import java.util.concurrent.Executors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
-import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -103,7 +102,6 @@ public class AsyncHttpClientConfig {
     protected int maxRequestRetry;
     protected boolean disableUrlEncodingForBoundRequests;
     protected int ioThreadMultiplier;
-    protected TimeConverter timeConverter;
     protected String[] enabledProtocols;
     protected String[] enabledCipherSuites;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -145,7 +143,6 @@ public class AsyncHttpClientConfig {
             int maxRequestRetry, //
             boolean disableUrlEncodingForBoundRequests, //
             int ioThreadMultiplier, //
-            TimeConverter timeConverter,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
             AsyncHttpProviderConfig<?, ?> providerConfig,//
@@ -182,7 +179,6 @@ public class AsyncHttpClientConfig {
         this.maxRequestRetry = maxRequestRetry;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.ioThreadMultiplier = ioThreadMultiplier;
-        this.timeConverter = timeConverter;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
         this.providerConfig = providerConfig;
@@ -517,15 +513,6 @@ public class AsyncHttpClientConfig {
         return connectionTTL;
     }
 
-    /**
-     * @return the TimeConverter used for converting RFC2616Dates into time
-     *
-     * since 1.9.0
-     */
-    public TimeConverter getTimeConverter() {
-        return timeConverter;
-    }
-
     public boolean isAcceptAnyCertificate() {
         return acceptAnyCertificate;
     }
@@ -579,7 +566,6 @@ public class AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
-        private TimeConverter timeConverter;
         private String[] enabledProtocols;
         private String[] enabledCipherSuites;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -1041,11 +1027,6 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setTimeConverter(TimeConverter timeConverter) {
-            this.timeConverter = timeConverter;
-            return this;
-        }
-
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
@@ -1100,7 +1081,6 @@ public class AsyncHttpClientConfig {
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
-            timeConverter = prototype.timeConverter;
             acceptAnyCertificate = prototype.acceptAnyCertificate;
             enabledProtocols = prototype.enabledProtocols;
             enabledCipherSuites = prototype.enabledCipherSuites;
@@ -1160,7 +1140,6 @@ public class AsyncHttpClientConfig {
                     maxRequestRetry, //
                     disableUrlEncodingForBoundRequests, //
                     ioThreadMultiplier, //
-                    timeConverter,//
                     enabledProtocols, //
                     enabledCipherSuites, //
                     providerConfig, //

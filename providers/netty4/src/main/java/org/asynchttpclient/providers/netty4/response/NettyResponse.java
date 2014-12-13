@@ -30,7 +30,6 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
-import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.providers.ResponseBase;
 
 /**
@@ -38,14 +37,10 @@ import org.asynchttpclient.providers.ResponseBase;
  */
 public class NettyResponse extends ResponseBase {
 
-    private final TimeConverter timeConverter;
-
     public NettyResponse(HttpResponseStatus status,//
             HttpResponseHeaders headers,//
-            List<HttpResponseBodyPart> bodyParts,//
-            TimeConverter timeConverter) {
+            List<HttpResponseBodyPart> bodyParts) {
         super(status, headers, bodyParts);
-        this.timeConverter = timeConverter;
     }
 
     @Override
@@ -71,7 +66,7 @@ public class NettyResponse extends ResponseBase {
         if (isNonEmpty(setCookieHeaders)) {
             List<Cookie> cookies = new ArrayList<Cookie>();
             for (String value : setCookieHeaders) {
-                Cookie c = CookieDecoder.decode(value, timeConverter);
+                Cookie c = CookieDecoder.decode(value);
                 if (c != null)
                     cookies.add(c);
             }

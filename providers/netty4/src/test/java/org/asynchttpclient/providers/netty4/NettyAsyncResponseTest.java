@@ -47,7 +47,7 @@ public class NettyAsyncResponseTest {
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null, null);
+        }, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
@@ -65,7 +65,7 @@ public class NettyAsyncResponseTest {
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null, null);
+        }, null);
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
 
@@ -81,7 +81,7 @@ public class NettyAsyncResponseTest {
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
             }
-        }, null, null);
+        }, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
