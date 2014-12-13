@@ -49,10 +49,9 @@ public class NettyResponse extends ResponseBase {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        // should be fine; except that it may split multi-byte chars (last char may become '?')
-        charset = calculateCharset(charset);
         byte[] b = contentToBytes(bodyParts, maxLength);
-        return new String(b, charset);
+        // should be fine; except that it may split multi-byte chars (last char may become '?')
+        return new String(b, calculateCharset(charset));
     }
 
     protected List<Cookie> buildCookies() {

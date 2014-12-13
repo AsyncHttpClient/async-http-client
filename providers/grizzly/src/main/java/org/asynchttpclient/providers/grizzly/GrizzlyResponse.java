@@ -69,7 +69,6 @@ public class GrizzlyResponse extends ResponseBase {
      * {@inheritDoc}
      */
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        charset = calculateCharset(charset);
         final Buffer responseBody = getResponseBody0();
         final int len = Math.min(responseBody.remaining(), maxLength);
         final int pos = responseBody.position();
