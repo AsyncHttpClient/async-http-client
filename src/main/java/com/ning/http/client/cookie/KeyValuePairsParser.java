@@ -12,9 +12,8 @@
  */
 package com.ning.http.client.cookie;
 
-import com.ning.http.client.date.RFC2616Date;
-import com.ning.http.client.date.RFC2616DateParser;
-import com.ning.http.client.date.TimeConverter;
+import java.text.ParsePosition;
+import java.util.Date;
 
 /**
  * A companion for CookieDecoder that parses key-value pairs (cookie name/value
@@ -24,28 +23,30 @@ import com.ning.http.client.date.TimeConverter;
  */
 class KeyValuePairsParser {
 
-    private final TimeConverter timeBuilder;
     private String name;
     private String value;
     private String rawValue;
     private String domain;
     private String path;
-    private long expires = -1L;
+    private String expires;
     private int maxAge = -1;
     private boolean secure;
     private boolean httpOnly;
 
-    /**
-     * @param timeBuilder used for parsing expires attribute
-     */
-    public KeyValuePairsParser(TimeConverter timeBuilder) {
-        this.timeBuilder = timeBuilder;
-    }
-
     public Cookie cookie() {
-        return name != null ? new Cookie(name, value, rawValue, domain, path, expires, maxAge, secure, httpOnly) : null;
+        return name != null ? new Cookie(name, value, rawValue, domain, path, computeExpires(), maxAge, secure, httpOnly) : null;
     }
 
+    private long computeExpires() {
+        if (expires != null) {
+            Date expiresDate = RFC2616DateParser.get().parse(expires, new ParsePosition(0));
+            if (expiresDate != null)
+                return expiresDate.getTime();
+        }
+        
+        return -1L;
+    }
+    
     /**
      * Parse and store a key-value pair. First one is considered to be the
      * cookie name/value. Unknown attribute names are silently discarded.
@@ -156,15 +157,7 @@ class KeyValuePairsParser {
     }
 
     private void setExpire(String value) {
-
-        RFC2616Date dateElements = new RFC2616DateParser(value).parse();
-        if (dateElements != null) {
-            try {
-                expires = timeBuilder.toTime(dateElements);
-            } catch (Exception e1) {
-                // ignore failure to parse -> treat as session cookie
-            }
-        }
+        expires = value;
     }
 
     private void setMaxAge(String value) {

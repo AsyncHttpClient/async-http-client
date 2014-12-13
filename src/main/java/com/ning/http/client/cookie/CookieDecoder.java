@@ -12,32 +12,21 @@
  */
 package com.ning.http.client.cookie;
 
-import com.ning.http.client.date.CalendarTimeConverter;
-import com.ning.http.client.date.TimeConverter;
 import com.ning.http.util.StringUtils;
 
 public class CookieDecoder {
-
-    public static final TimeConverter DEFAULT_TIME_CONVERTER = new CalendarTimeConverter();
-
-    public static Cookie decode(String header) {
-        return decode(header, DEFAULT_TIME_CONVERTER);
-    }
 
     /**
      * Decodes the specified HTTP header value into {@link Cookie}.
      * 
      * @return the decoded {@link Cookie}
      */
-    public static Cookie decode(String header, TimeConverter timeConverter) {
-
-        if (timeConverter == null)
-            timeConverter = DEFAULT_TIME_CONVERTER;
+    public static Cookie decode(String header) {
 
         if (header.length() == 0)
             return null;
 
-        KeyValuePairsParser pairsParser = new KeyValuePairsParser(timeConverter);
+        KeyValuePairsParser pairsParser = new KeyValuePairsParser();
 
         final int headerLen = header.length();
         loop: for (int i = 0;;) {

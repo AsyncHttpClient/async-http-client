@@ -17,7 +17,6 @@ package com.ning.http.client;
 
 import static com.ning.http.client.AsyncHttpClientConfigDefaults.*;
 
-import com.ning.http.client.date.TimeConverter;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
@@ -78,7 +77,6 @@ public class AsyncHttpClientConfig {
     protected int maxRequestRetry;
     protected boolean disableUrlEncodingForBoundRequests;
     protected int ioThreadMultiplier;
-    protected TimeConverter timeConverter;
     protected String[] enabledProtocols;
     protected String[] enabledCipherSuites;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -115,7 +113,6 @@ public class AsyncHttpClientConfig {
             int maxRequestRetry, //
             boolean disableUrlEncodingForBoundedRequests, //
             int ioThreadMultiplier, //
-            TimeConverter timeConverter,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
@@ -149,7 +146,6 @@ public class AsyncHttpClientConfig {
         this.maxRequestRetry = maxRequestRetry;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundedRequests;
         this.ioThreadMultiplier = ioThreadMultiplier;
-        this.timeConverter = timeConverter;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
         this.providerConfig = providerConfig;
@@ -442,13 +438,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * since 1.8.2
-     */
-    public TimeConverter getTimeConverter() {
-        return timeConverter;
-    }
-
-    /**
      * since 1.9.0
      */
     public boolean isAcceptAnyCertificate() {
@@ -506,7 +495,6 @@ public class AsyncHttpClientConfig {
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private String[] enabledProtocols;
         private String[] enabledCipherSuites;
-        private TimeConverter timeConverter;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
@@ -915,11 +903,6 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setTimeConverter(TimeConverter timeConverter) {
-            this.timeConverter = timeConverter;
-            return this;
-        }
-
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
@@ -974,7 +957,6 @@ public class AsyncHttpClientConfig {
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
-            timeConverter = prototype.timeConverter;
             enabledProtocols = prototype.enabledProtocols;
             enabledCipherSuites = prototype.enabledCipherSuites;
             acceptAnyCertificate = prototype.acceptAnyCertificate;
@@ -1039,7 +1021,6 @@ public class AsyncHttpClientConfig {
                     maxRequestRetry, //
                     disableUrlEncodingForBoundedRequests, //
                     ioThreadMultiplier, //
-                    timeConverter,//
                     enabledProtocols, //
                     enabledCipherSuites, //
                     providerConfig);
