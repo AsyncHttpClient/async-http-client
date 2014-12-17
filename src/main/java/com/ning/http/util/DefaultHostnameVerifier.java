@@ -96,7 +96,7 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
 
             if (peerCertificates[0] instanceof X509Certificate) {
                 X509Certificate peerCertificate = (X509Certificate) peerCertificates[0];
-                log.debug("peerCertificate = {0}", peerCertificate);
+                log.debug("peerCertificate = {}", peerCertificate);
                 try {
                     checker.match(hostname, peerCertificate);
                     // Certificate matches hostname if no exception is thrown.
@@ -112,7 +112,7 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
             log.debug("Not using certificates for peers, try verifying the principal");
             try {
                 Principal peerPrincipal = session.getPeerPrincipal();
-                log.debug("peerPrincipal = {0}", peerPrincipal);
+                log.debug("peerPrincipal = {}", peerPrincipal);
                 if (peerPrincipal instanceof KerberosPrincipal) {
                     return checker.match(hostname, (KerberosPrincipal) peerPrincipal);
                 } else {
