@@ -88,12 +88,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
             int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
             int size = Math.min(nextPart.buffer.remaining(), capacity);
-            buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
-            buffer.put(END_PADDING);
-            for (int i = 0; i < size; i++) {
-                buffer.put(nextPart.buffer.get());
+            if (size != 0) {
+                buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
+                buffer.put(END_PADDING);
+                for (int i = 0; i < size; i++) {
+                    buffer.put(nextPart.buffer.get());
+                }
+                buffer.put(END_PADDING);
             }
-            buffer.put(END_PADDING);
             if (!nextPart.buffer.hasRemaining()) {
                 if (nextPart.isLast) {
                     finishState = CLOSING;
