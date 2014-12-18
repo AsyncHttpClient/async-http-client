@@ -888,19 +888,28 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
             final boolean useProxy = proxy != null;
+            
             if (useProxy) {
-                if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(connection)) {
-                    secure = false;
-                    httpCtx.establishingTunnel = true;
-                    builder.method(Method.CONNECT);
-                    builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
-                } else if ((secure || httpCtx.isWSRequest) && config.isUseRelativeURIsWithConnectProxies()){
-                    builder.uri(uri.getRawPath());
+                if (secure || httpCtx.isWSRequest) { // TUNNELING?
+                    if (!httpCtx.isTunnelEstablished(connection)) {
+                        secure = false;
+                        httpCtx.establishingTunnel = true;
+                        builder.method(Method.CONNECT);
+                        builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
+                    } else {
+                        if (config.isUseRelativeURIsWithConnectProxies()) {
+                            builder.uri(uri.getRawPath());
+                            builder.query(uri.getRawQuery());
+                        } else {
+                            builder.uri(uri.toString());
+                        }
+                    }
                 } else {
                     builder.uri(uri.toString());
                 }
             } else {
                 builder.uri(uri.getRawPath());
+                builder.query(uri.getRawQuery());
             }
             
             final BodyHandler bodyHandler = isPayloadAllowed(method) ?
@@ -936,10 +945,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(secure, connection));
 
-            if (!useProxy && !httpCtx.isWSRequest) {
-                requestPacket.setQueryString(uri.getRawQuery());
-                //addQueryString(request, requestPacket);
-            }
             addHeaders(request, requestPacket);
             addCookies(request, requestPacket);
             addAuthorizationHeader(request, requestPacket);
