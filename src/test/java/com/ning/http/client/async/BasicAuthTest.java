@@ -24,7 +24,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Response;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
 
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
