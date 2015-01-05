@@ -12,34 +12,11 @@
         The Async Http Client Netty 4 Provider.
     </description>
 
-	<repositories>
-		<repository>
-			<id>sonatype-releases</id>
-			<url>https://oss.sonatype.org/content/repositories/releases</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>sonatype-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.24.Final</version>
+			<version>4.0.25.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>
@@ -57,5 +34,4 @@
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
-
 </project>
