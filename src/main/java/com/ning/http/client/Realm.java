@@ -531,6 +531,7 @@ public class Realm {
             byte[] b = new byte[8];
             ThreadLocalRandom.current().nextBytes(b);
             b = md.digest(b);
+            md.reset();
 
             cnonce = toHexString(b);
         }
@@ -572,7 +573,6 @@ public class Realm {
                     .append(password)
                     .toString().getBytes(ISO_8859_1));
             byte[] ha1 = md.digest();
-
             md.reset();
 
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
@@ -604,6 +604,7 @@ public class Realm {
             md.update(sb.toString().getBytes(ISO_8859_1));
             
             byte[] digest = md.digest();
+            md.reset();
 
             response = toHexString(digest);
         }
@@ -643,8 +644,6 @@ public class Realm {
             if (isNonEmpty(nonce)) {
                 MessageDigest md = digestThreadLocal.get();
                 newCnonce(md);
-                md.reset();
-
                 newResponse(md);
             }
 
