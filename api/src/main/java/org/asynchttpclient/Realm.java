@@ -23,6 +23,7 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
@@ -275,6 +276,17 @@ public class Realm {
         private boolean omitQuery;
         private boolean targetProxy;
 
+        private static final ThreadLocal<MessageDigest> digestThreadLocal = new ThreadLocal<MessageDigest>() {
+            @Override
+            protected MessageDigest initialValue() {
+                try {
+                    return MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
         public String getNtlmDomain() {
             return ntlmDomain;
         }
@@ -490,14 +502,13 @@ public class Realm {
             return this;
         }
 
-        private void newCnonce() {
-            try {
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
-                cnonce = toHexString(b);
-            } catch (Exception e) {
-                throw new SecurityException(e);
-            }
+        private void newCnonce(MessageDigest md) {
+            byte[] b = new byte[8];
+            ThreadLocalRandom.current().nextBytes(b);
+            b = md.digest(b);
+            md.reset();
+
+            cnonce = toHexString(b);
         }
 
         /**
@@ -529,14 +540,7 @@ public class Realm {
             return this;
         }
 
-        private void newResponse() {
-            MessageDigest md = null;
-            try {
-                md = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
-                throw new SecurityException(e);
-            }
-            
+        private void newResponse(MessageDigest md) {
             StringBuilder sb = StringUtils.stringBuilder();
             md.update(sb.append(principal)
                     .append(":")
@@ -545,7 +549,6 @@ public class Realm {
                     .append(password)
                     .toString().getBytes(ISO_8859_1));
             byte[] ha1 = md.digest();
-
             md.reset();
 
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
@@ -575,8 +578,9 @@ public class Realm {
 
             appendBase16(sb, ha2);
             md.update(sb.toString().getBytes(ISO_8859_1));
-            
+
             byte[] digest = md.digest();
+            md.reset();
 
             response = toHexString(digest);
         }
@@ -614,8 +618,9 @@ public class Realm {
 
             // Avoid generating
             if (isNonEmpty(nonce)) {
-                newCnonce();
-                newResponse();
+                MessageDigest md = digestThreadLocal.get();
+                newCnonce(md);
+                newResponse(md);
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
