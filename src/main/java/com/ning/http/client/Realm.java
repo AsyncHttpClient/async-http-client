@@ -23,10 +23,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.StringUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.
@@ -300,6 +300,17 @@ public class Realm {
         private boolean omitQuery = false;
         private boolean targetProxy = false;
 
+        private static final ThreadLocal<MessageDigest> digestThreadLocal = new ThreadLocal<MessageDigest>() {
+            @Override
+            protected MessageDigest initialValue() {
+                try {
+                    return MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
         public String getNtlmDomain() {
             return ntlmDomain;
         }
@@ -516,14 +527,12 @@ public class Realm {
             return this;
         }
 
-        private void newCnonce() {
-            try {
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
-                cnonce = toHexString(b);
-            } catch (Exception e) {
-                throw new SecurityException(e);
-            }
+        private void newCnonce(MessageDigest md) {
+            byte[] b = new byte[8];
+            ThreadLocalRandom.current().nextBytes(b);
+            b = md.digest(b);
+
+            cnonce = toHexString(b);
         }
 
         /**
@@ -554,14 +563,7 @@ public class Realm {
             return this;
         }
 
-        private void newResponse() throws UnsupportedEncodingException {
-            MessageDigest md = null;
-            try {
-                md = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
-                throw new SecurityException(e);
-            }
-            
+        private void newResponse(MessageDigest md) {
             StringBuilder sb = StringUtils.stringBuilder();
             md.update(sb.append(principal)
                     .append(":")
@@ -639,12 +641,11 @@ public class Realm {
 
             // Avoid generating
             if (isNonEmpty(nonce)) {
-                newCnonce();
-                try {
-                    newResponse();
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                MessageDigest md = digestThreadLocal.get();
+                newCnonce(md);
+                md.reset();
+
+                newResponse(md);
             }
 
             return new Realm(scheme,
