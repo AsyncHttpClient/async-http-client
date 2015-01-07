@@ -59,8 +59,6 @@ import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
-import static com.ning.http.util.MiscUtil.isNonEmpty;
-import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
@@ -561,18 +559,26 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     @SuppressWarnings({"unchecked"})
-    boolean sendRequest(final FilterChainContext ctx,
-                     final Request request,
+    boolean sendRequest(final HttpTransactionContext httpCtx,
+                     final FilterChainContext ctx,
                      final HttpRequestPacket requestPacket,
                      final BodyHandler bodyHandler)
     throws IOException {
+        
+        final Request request = httpCtx.request;
+        final AsyncHandler h = httpCtx.handler;
+        if (h instanceof TransferCompletionHandler) {
+            final FluentCaseInsensitiveStringsMap map =
+                    new FluentCaseInsensitiveStringsMap(request.getHeaders());
+            TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+        }
 
+        requestPacket.setConnection(ctx.getConnection());
+        
         boolean isWriteComplete = true;
         
         if (bodyHandler != null) { // Check if the HTTP request has body
-            final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
-            
-            context.bodyHandler = bodyHandler;
+            httpCtx.bodyHandler = bodyHandler;
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("REQUEST: " + requestPacket.toString());
             }
@@ -867,42 +873,36 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 convertToUpgradeRequest(httpCtx);
             }
             final Request req = httpCtx.request;
-            final URI uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
             final Method method = Method.valueOf(request.getMethod());
-            final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-            boolean secure = "https".equals(uri.getScheme());
-            builder.method(method);
-            builder.protocol(Protocol.HTTP_1_1);
+            final URI uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
             
-            if (!request.getHeaders().containsKey(Header.Host.toString())) {
-                String host = request.getVirtualHost();
-                if (host != null) {
-                    builder.header(Header.Host, host);
-                } else {
-                    if (uri.getPort() == -1) {
-                        builder.header(Header.Host, uri.getHost());
-                    } else {
-                        builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
-                    }
-                }
-            }
+            boolean secure = "https".equals(uri.getScheme());
+            
             final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
             final boolean useProxy = proxy != null;
+
+            final boolean isEstablishingConnectTunnel =
+                    useProxy && (secure || httpCtx.isWSRequest) &&
+                    !httpCtx.isTunnelEstablished(connection);
             
+            if (isEstablishingConnectTunnel) {
+                // once the tunnel is established, sendAsGrizzlyRequest will
+                // be called again and we'll finally send the request over the tunnel
+                return establishConnectTunnel(proxy, httpCtx, uri, ctx);
+            }
+
+            final HttpRequestPacket.Builder builder =
+                    HttpRequestPacket.builder()
+                    .protocol(Protocol.HTTP_1_1)
+                    .method(method);
+                        
             if (useProxy) {
-                if (secure || httpCtx.isWSRequest) { // TUNNELING?
-                    if (!httpCtx.isTunnelEstablished(connection)) {
-                        secure = false;
-                        httpCtx.establishingTunnel = true;
-                        builder.method(Method.CONNECT);
-                        builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
+                if (secure || httpCtx.isWSRequest) { // Sending message over established CONNECT tunnel
+                    if (config.isUseRelativeURIsWithConnectProxies()) {
+                        builder.uri(uri.getRawPath());
+                        builder.query(uri.getRawQuery());
                     } else {
-                        if (config.isUseRelativeURIsWithConnectProxies()) {
-                            builder.uri(uri.getRawPath());
-                            builder.query(uri.getRawQuery());
-                        } else {
-                            builder.uri(uri.toString());
-                        }
+                        builder.uri(uri.toString());
                     }
                 } else {
                     builder.uri(uri.toString());
@@ -912,10 +912,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 builder.query(uri.getRawQuery());
             }
             
-            final BodyHandler bodyHandler = isPayloadAllowed(method) ?
-                    bodyHandlerFactory.getBodyHandler(request) :
-                    null;
-            
+            HttpRequestPacket requestPacket;
+            final BodyHandler bodyHandler = isPayloadAllowed(method)
+                    ? bodyHandlerFactory.getBodyHandler(request)
+                    : null;
+
             if (bodyHandler != null) {
                 final long contentLength = request.getContentLength();
                 if (contentLength >= 0) {
@@ -925,53 +926,68 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.chunked(true);
                 }
             }
-            
-            HttpRequestPacket requestPacket;
-            if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
+
+            if (httpCtx.isWSRequest) {
                 try {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
                     secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
                     httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
-                    requestPacket = (HttpRequestPacket)
-                            httpCtx.handshake.composeHeaders().getHttpHeader();
+                    requestPacket = (HttpRequestPacket) httpCtx.handshake.composeHeaders().getHttpHeader();
                 } catch (URISyntaxException e) {
                     throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.wsRequestURI);
                 }
             } else {
                 requestPacket = builder.build();
             }
-            requestPacket.setSecure(secure);
 
+            requestPacket.setSecure(secure);
             ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(secure, connection));
 
-            addHeaders(request, requestPacket);
+            copyHeaders(request, requestPacket);
             addCookies(request, requestPacket);
-            addAuthorizationHeader(request, requestPacket);
+
+            addServiceHeaders(requestPacket);
+            addHostHeaderIfNeeded(request, uri, requestPacket);
+            addAuthorizationHeader(getRealm(request), requestPacket);
 
             if (useProxy) {
-                if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
-                    requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
-                }
-
-                if (proxy.getPrincipal() != null) {
-                    requestPacket.setHeader(Header.ProxyAuthorization,
-                            AuthenticatorUtils.computeBasicAuthentication(proxy));
-                }
-            }
-            final AsyncHandler h = httpCtx.handler;
-            if (h instanceof TransferCompletionHandler) {
-                final FluentCaseInsensitiveStringsMap map =
-                        new FluentCaseInsensitiveStringsMap(request.getHeaders());
-                TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+                addProxyHeaders(proxy, requestPacket);
             }
             
-            requestPacket.setConnection(connection);
-            return sendRequest(ctx, request, requestPacket,
+            return sendRequest(httpCtx, ctx, requestPacket,
                     wrapWithExpectHandlerIfNeeded(bodyHandler, requestPacket));
 
         }
 
+        private boolean establishConnectTunnel(
+                final ProxyServer proxy,
+                final HttpTransactionContext httpCtx,
+                final URI uri,
+                final FilterChainContext ctx) throws IOException {
+            final Connection connection = ctx.getConnection();
+            
+            final HttpRequestPacket requestPacket =
+                    HttpRequestPacket.builder()
+                    .protocol(Protocol.HTTP_1_0)
+                    .method(Method.CONNECT)
+                    .uri(AsyncHttpProviderUtils.getAuthority(uri))
+                    .build();
+
+            httpCtx.establishingTunnel = true;
+            
+            // turn off SSL, because CONNECT will be sent in plain mode
+            ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(false, connection));
+
+            final Request request = httpCtx.request;
+            addServiceHeaders(requestPacket);
+            addHostHeaderIfNeeded(request, uri, requestPacket);
+            addAuthorizationHeader(getRealm(request), requestPacket);
+            addProxyHeaders(proxy, requestPacket);
+            
+            return sendRequest(httpCtx, ctx, requestPacket, null);
+        }
+        
         /**
          * check if we need to wrap the BodyHandler with ExpectHandler
          */
@@ -997,11 +1013,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return method.getPayloadExpectation() != Method.PayloadExpectation.NOT_ALLOWED;
         }
         
-        private void addAuthorizationHeader(final Request request, final HttpRequestPacket requestPacket) {
-            Realm realm = request.getRealm();
-            if (realm == null) {
-                realm = config.getRealm();
-            }
+        private void addAuthorizationHeader(final Realm realm, final HttpRequestPacket requestPacket) {
             if (realm != null && realm.getUsePreemptiveAuth()) {
                 final String authHeaderValue = generateAuthHeader(realm);
                 if (authHeaderValue != null) {
@@ -1010,6 +1022,40 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
+        private void addProxyHeaders(final ProxyServer proxy,
+                final HttpRequestPacket requestPacket)
+                throws UnsupportedEncodingException {
+            
+            if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
+                requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
+            }
+            
+            if (proxy.getPrincipal() != null) {
+                requestPacket.setHeader(Header.ProxyAuthorization,
+                        AuthenticatorUtils.computeBasicAuthentication(proxy));
+            }
+        }
+
+        private void addHostHeaderIfNeeded(final Request request,
+                final URI uri, final HttpRequestPacket requestPacket) {
+            if (!requestPacket.containsHeader(Header.Host)) {
+                String host = request.getVirtualHost();
+                if (host != null) {
+                    requestPacket.addHeader(Header.Host, host);
+                } else {
+                    if (uri.getPort() == -1) {
+                        requestPacket.addHeader(Header.Host, uri.getHost());
+                    } else {
+                        requestPacket.addHeader(Header.Host, uri.getHost() + ':' + uri.getPort());
+                    }
+                }
+            }
+        }
+
+        private Realm getRealm(final Request request) {
+            return request.getRealm() != null ? request.getRealm() : config.getRealm();
+        }
+        
         private String generateAuthHeader(final Realm realm) {
             try {
                 switch (realm.getAuthScheme()) {
@@ -1051,7 +1097,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.requestUrl = sb.toString();
         }
 
-        private void addHeaders(final Request request,
+        private void copyHeaders(final Request request,
                                 final HttpRequestPacket requestPacket) {
 
             final FluentCaseInsensitiveStringsMap map = request.getHeaders();
@@ -1066,7 +1112,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
             }
-
+        }
+        
+        private void addServiceHeaders(final HttpRequestPacket requestPacket) {
             final MimeHeaders headers = requestPacket.getHeaders();
             if (!headers.contains(Header.Connection)) {
                 requestPacket.addHeader(Header.Connection, "keep-alive");
@@ -1079,8 +1127,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (!headers.contains(Header.UserAgent)) {
                 requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
             }
-
-
         }
 
 
