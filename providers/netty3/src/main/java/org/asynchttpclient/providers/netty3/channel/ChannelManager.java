@@ -450,7 +450,7 @@ public class ChannelManager {
         };
     }
 
-    public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
+    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
         Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPartitionId(future)));
     }
 

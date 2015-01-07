@@ -68,8 +68,14 @@ public final class HttpProtocol extends Protocol {
         return realm != null ? new Realm.RealmBuilder().clone(realm) : new Realm.RealmBuilder();
     }
 
-    private Realm kerberosChallenge(Channel channel, List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
+    private Realm kerberosChallenge(Channel channel,//
+            List<String> proxyAuth,//
+            Request request,//
+            ProxyServer proxyServer,//
+            FluentCaseInsensitiveStringsMap headers,//
+            Realm realm,//
+            NettyResponseFuture<?> future,//
+            boolean proxyInd) throws NTLMEngineException {
 
         Uri uri = request.getUri();
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
@@ -103,8 +109,13 @@ public final class HttpProtocol extends Protocol {
         headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
     }
 
-    private Realm ntlmChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
+    private Realm ntlmChallenge(String authenticateHeader,//
+            Request request,//
+            ProxyServer proxyServer,//
+            FluentCaseInsensitiveStringsMap headers,//
+            Realm realm,//
+            NettyResponseFuture<?> future,//
+            boolean proxyInd) throws NTLMEngineException {
 
         boolean useRealm = proxyServer == null && realm != null;
 
@@ -137,8 +148,14 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    private Realm ntlmProxyChallenge(String authenticateHeader, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
+    private Realm ntlmProxyChallenge(String authenticateHeader,//
+            Request request,//
+            ProxyServer proxyServer,//
+            FluentCaseInsensitiveStringsMap headers,//
+            Realm realm,//
+            NettyResponseFuture<?> future,//
+            boolean proxyInd) throws NTLMEngineException {
+
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
 
@@ -165,7 +182,7 @@ public final class HttpProtocol extends Protocol {
 
         boolean keepAlive = future.isKeepAlive();
         if (expectOtherChunks && keepAlive)
-            channelManager.drainChannel(channel, future);
+            channelManager.drainChannelAndOffer(channel, future);
         else
             channelManager.tryToOfferChannelToPool(channel, keepAlive, channelManager.getPartitionId(future));
         markAsDone(future, channel);
@@ -215,17 +232,11 @@ public final class HttpProtocol extends Protocol {
                     // NTLM
                     newRealm = ntlmChallenge(ntlmAuthenticate, request, proxyServer, request.getHeaders(), realm, future, false);
 
-                    // don't forget to reuse channel: NTLM authenticates a connection
-                    future.setReuseChannel(true);
-
                 } else if (negociate) {
                     newRealm = kerberosChallenge(channel, wwwAuthHeaders, request, proxyServer, request.getHeaders(), realm, future, false);
                     // SPNEGO KERBEROS
                     if (newRealm == null)
                         return true;
-                    else
-                        // don't forget to reuse channel: KERBEROS authenticates a connection
-                        future.setReuseChannel(true);
 
                 } else {
                     newRealm = new Realm.RealmBuilder()//
@@ -242,20 +253,22 @@ public final class HttpProtocol extends Protocol {
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
 
                 logger.debug("Sending authentication to {}", request.getUri());
-                Callback callback = new Callback(future) {
-                    public void call() throws IOException {
-                        channelManager.drainChannel(channel, future);
+                if (future.isKeepAlive()) {
+                    if (HttpHeaders.isTransferEncodingChunked(response)) {
+                        // we must first drain the channel, let's use a fresh one for performing auth
+                        Channels.setAttribute(channel, new Callback(future) {
+                            public void call() throws IOException {
+                                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+                            }
+                        });
+                    } else {
+                        future.setReuseChannel(true);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
-                };
-
-                if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response))
-                    // We must make sure there is no bytes left
-                    // before executing the next request.
-                    Channels.setAttribute(channel, callback);
-                else
-                    // call might crash with an IOException
-                    callback.call();
+                } else {
+                    channelManager.closeChannel(channel);
+                    requestSender.sendNextRequest(nextRequest, future);
+                }
 
                 return true;
             }

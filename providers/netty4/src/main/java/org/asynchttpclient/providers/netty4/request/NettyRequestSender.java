@@ -50,6 +50,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
 import org.asynchttpclient.providers.netty4.channel.Channels;
@@ -521,11 +522,25 @@ public final class NettyRequestSender {
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
 
-        channelManager.drainChannel(channel, future);
+        channelManager.drainChannelAndOffer(channel, future);
         sendNextRequest(newRequest, future);
     }
 
     public boolean isClosed() {
         return closed.get();
+    }
+
+    public final Callback newExecuteNextRequestCallback(final NettyResponseFuture<?> future, final Request nextRequest) {
+
+        return new Callback(future) {
+            @Override
+            public void call() throws IOException {
+                sendNextRequest(nextRequest, future);
+            }
+        };
+    }
+    
+    public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
+        Channels.setAttribute(channel, newExecuteNextRequestCallback(future, nextRequest));
     }
 }
