@@ -18,9 +18,9 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.MaxConnectionsInThreads;
 import org.testng.annotations.Test;
 
-@Test
 public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads {
 
+    @Test(enabled = false)
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
