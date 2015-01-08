@@ -253,6 +253,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         	
             if (request.getHeader("X-401") != null) {
                 response.setStatus(401);
+                response.setContentLength(0);
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
 
@@ -267,12 +268,15 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 size = request.getContentLength();
             }
             byte[] bytes = new byte[size];
+            int contentLength = 0;
             if (bytes.length > 0) {
                 int read = request.getInputStream().read(bytes);
                 if (read > 0) {
+                    contentLength = read;
                     response.getOutputStream().write(bytes, 0, read);
                 }
             }
+            response.setContentLength(contentLength);
             response.getOutputStream().flush();
             response.getOutputStream().close();
         }
@@ -300,7 +304,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         try {
             setUpSecondServer();
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
-            // .setHeader( "X-302", "/bla" )
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
             Future<Response> f = r.execute();

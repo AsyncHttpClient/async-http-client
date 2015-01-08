@@ -39,10 +39,8 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
-import com.ning.http.client.providers.netty.Callback;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
-import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
@@ -247,22 +245,13 @@ public final class HttpProtocol extends Protocol {
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
 
                 logger.debug("Sending authentication to {}", request.getUri());
-                if (future.isKeepAlive()) {
+                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
                     future.setReuseChannel(true);
-                    if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        Channels.setAttribute(channel, new Callback(future) {
-                            public void call() throws IOException {
-                                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
-                            }
-                        });
-                    } else {
-                        requestSender.sendNextRequest(nextRequest, future);
-                    }
                 } else {
                     channelManager.closeChannel(channel);
-                    requestSender.sendNextRequest(nextRequest, future);
                 }
 
+                requestSender.sendNextRequest(nextRequest, future);
                 return true;
             }
         }
@@ -329,23 +318,14 @@ public final class HttpProtocol extends Protocol {
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
                 
                 logger.debug("Sending proxy authentication to {}", request.getUri());
-                if (future.isKeepAlive()) {
+                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
                     future.setConnectAllowed(true);
                     future.setReuseChannel(true);
-                    if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        Channels.setAttribute(channel, new Callback(future) {
-                            public void call() throws IOException {
-                                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
-                            }
-                        });
-                    } else {
-                        requestSender.sendNextRequest(nextRequest, future);
-                    }
                 } else {
                     channelManager.closeChannel(channel);
-                    requestSender.sendNextRequest(nextRequest, future);
                 }
 
+                requestSender.sendNextRequest(nextRequest, future);
                 return true;
             }
         }

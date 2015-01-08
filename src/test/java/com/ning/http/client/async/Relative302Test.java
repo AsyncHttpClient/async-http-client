@@ -58,6 +58,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
                 if (param.startsWith("X-redirect") && !isSet.getAndSet(true)) {
                     httpResponse.addHeader("Location", httpRequest.getHeader(param));
+                    httpResponse.setContentLength(0);
                     httpResponse.setStatus(302);
                     httpResponse.getOutputStream().flush();
                     httpResponse.getOutputStream().close();
@@ -65,6 +66,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
                 }
             }
             httpResponse.setStatus(200);
+            httpResponse.setContentLength(0);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
         }
