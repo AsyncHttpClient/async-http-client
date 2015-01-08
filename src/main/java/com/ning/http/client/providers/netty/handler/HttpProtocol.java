@@ -233,6 +233,7 @@ public final class HttpProtocol extends Protocol {
                         return true;
 
                 } else {
+                    // BASIC or DIGEST
                     newRealm = new Realm.RealmBuilder()//
                             .clone(realm)//
                             .setScheme(realm.getAuthScheme())//
@@ -304,15 +305,17 @@ public final class HttpProtocol extends Protocol {
                 boolean negociate = proxyAuthHeaders.contains("Negotiate");
                 String ntlmAuthenticate = getNTLM(proxyAuthHeaders);
                 if (!proxyAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
+                    // NTLM
                     newRealm = ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, requestHeaders, realm, future, true);
-                    // SPNEGO KERBEROS
 
                 } else if (negociate) {
+                    // SPNEGO KERBEROS
                     newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
                     if (newRealm == null)
                         return true;
 
                 } else {
+                    // BASIC or DIGEST
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
                             .setUri(request.getUri())//
