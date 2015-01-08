@@ -254,13 +254,11 @@ public final class HttpProtocol extends Protocol {
                             .build();
                 }
 
-                Realm nr = newRealm;
-                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
+                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
 
                 logger.debug("Sending authentication to {}", request.getUri());
                 if (future.isKeepAlive()) {
                     if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        // we must first drain the channel, let's use a fresh one for performing auth
                         Channels.setAttribute(channel, new Callback(future) {
                             public void call() throws IOException {
                                 requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
@@ -295,8 +293,8 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandling407(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
+            final Channel channel,//
+            final NettyResponseFuture<?> future,//
             HttpResponse response,//
             Request request,//
             int statusCode,//
@@ -319,10 +317,12 @@ public final class HttpProtocol extends Protocol {
                 if (!proxyAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
                     newRealm = ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, requestHeaders, realm, future, true);
                     // SPNEGO KERBEROS
+
                 } else if (negociate) {
                     newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
                     if (newRealm == null)
                         return true;
+
                 } else {
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
@@ -334,10 +334,24 @@ public final class HttpProtocol extends Protocol {
                             .build();
                 }
 
-                future.setReuseChannel(true);
-                future.setConnectAllowed(true);
-                Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(requestHeaders).setRealm(newRealm).build();
-                requestSender.sendNextRequest(nextRequest, future);
+                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
+
+                logger.debug("Sending authentication to {}", request.getUri());
+                if (future.isKeepAlive()) {
+                    future.setReuseChannel(true);
+                    if (HttpHeaders.isTransferEncodingChunked(response)) {
+                        Channels.setAttribute(channel, new Callback(future) {
+                            public void call() throws IOException {
+                                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+                            }
+                        });
+                    } else {
+                        requestSender.sendNextRequest(nextRequest, future);
+                    }
+                } else {
+                    channelManager.closeChannel(channel);
+                    requestSender.sendNextRequest(nextRequest, future);
+                }
                 return true;
             }
         }

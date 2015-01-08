@@ -239,6 +239,7 @@ public final class HttpProtocol extends Protocol {
                         return true;
 
                 } else {
+                    // BASIC or DIGEST
                     newRealm = new Realm.RealmBuilder()//
                             .clone(realm)//
                             .setScheme(realm.getAuthScheme())//
@@ -249,20 +250,18 @@ public final class HttpProtocol extends Protocol {
                             .build();
                 }
 
-                Realm nr = newRealm;
-                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
+                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
 
                 logger.debug("Sending authentication to {}", request.getUri());
                 if (future.isKeepAlive()) {
+                    future.setReuseChannel(true);
                     if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        // we must first drain the channel, let's use a fresh one for performing auth
                         Channels.setAttribute(channel, new Callback(future) {
                             public void call() throws IOException {
                                 requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
                             }
                         });
                     } else {
-                        future.setReuseChannel(true);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
                 } else {
@@ -312,13 +311,17 @@ public final class HttpProtocol extends Protocol {
                 boolean negociate = proxyAuthHeaders.contains("Negotiate");
                 String ntlmAuthenticate = getNTLM(proxyAuthHeaders);
                 if (!proxyAuthHeaders.contains("Kerberos") && ntlmAuthenticate != null) {
+                    // NTLM
                     newRealm = ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, requestHeaders, realm, future, true);
-                    // SPNEGO KERBEROS
+
                 } else if (negociate) {
+                    // SPNEGO KERBEROS
                     newRealm = kerberosChallenge(channel, proxyAuthHeaders, request, proxyServer, requestHeaders, realm, future, true);
                     if (newRealm == null)
                         return true;
+
                 } else {
+                    // BASIC or DIGEST
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
                             .setUri(request.getUri())//
