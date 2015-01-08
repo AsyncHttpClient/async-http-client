@@ -20,7 +20,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.MaxConnectionsInThreads;
 import com.ning.http.client.async.ProviderUtil;
 
-@Test(enabled = false)
 public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads {
 
     @Override
@@ -28,4 +27,8 @@ public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads 
         return ProviderUtil.grizzlyProvider(config);
     }
 
+    @Test(enabled = false)
+    @Override
+    public void testMaxConnectionsWithinThreads() throws InterruptedException {
+    }
 }
