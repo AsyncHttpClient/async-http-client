@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.async;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -226,22 +228,22 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
             System.err.println("redirecthandler");
             System.err.println("request: " + request.getRequestURI());
-            if ("/uff".equals(request.getRequestURI())) {
 
+            if ("/uff".equals(request.getRequestURI())) {
                 System.err.println("redirect to /bla");
                 response.setStatus(302);
                 response.setHeader("Location", "/bla");
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
 
-                return;
-
             } else {
                 System.err.println("got redirected" + request.getRequestURI());
+                response.setStatus(200);
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
                 response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
-                response.setStatus(200);
-                response.getOutputStream().write("content".getBytes("UTF-8"));
+                byte[] b = "content".getBytes(UTF_8);
+                response.setContentLength(b.length);
+                response.getOutputStream().write(b);
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
             }
@@ -249,34 +251,33 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     }
 
     private class SimpleHandler extends AbstractHandler {
+
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         	
             if (request.getHeader("X-401") != null) {
                 response.setStatus(401);
                 response.setContentLength(0);
-                response.getOutputStream().flush();
-                response.getOutputStream().close();
 
-                return;
-            }
-            response.addHeader("X-Auth", request.getHeader("Authorization"));
-            response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
-            response.setStatus(200);
-
-            int size = 10 * 1024;
-            if (request.getContentLength() > 0) {
-                size = request.getContentLength();
-            }
-            byte[] bytes = new byte[size];
-            int contentLength = 0;
-            if (bytes.length > 0) {
-                int read = request.getInputStream().read(bytes);
-                if (read > 0) {
-                    contentLength = read;
-                    response.getOutputStream().write(bytes, 0, read);
+            } else {
+                response.addHeader("X-Auth", request.getHeader("Authorization"));
+                response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
+                response.setStatus(200);
+    
+                int size = 10 * 1024;
+                if (request.getContentLength() > 0) {
+                    size = request.getContentLength();
                 }
+                byte[] bytes = new byte[size];
+                int contentLength = 0;
+                if (bytes.length > 0) {
+                    int read = request.getInputStream().read(bytes);
+                    if (read > 0) {
+                        contentLength = read;
+                        response.getOutputStream().write(bytes, 0, read);
+                    }
+                }
+                response.setContentLength(contentLength);
             }
-            response.setContentLength(contentLength);
             response.getOutputStream().flush();
             response.getOutputStream().close();
         }

@@ -51,6 +51,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;
+            httpResponse.setStatus(200);
             httpResponse.setContentType("text/html; charset=utf-8");
             Enumeration<?> e = httpRequest.getHeaderNames();
             while (e.hasMoreElements()) {
@@ -58,14 +59,11 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
                 if (param.startsWith("X-redirect") && !isSet.getAndSet(true)) {
                     httpResponse.addHeader("Location", httpRequest.getHeader(param));
-                    httpResponse.setContentLength(0);
                     httpResponse.setStatus(302);
-                    httpResponse.getOutputStream().flush();
-                    httpResponse.getOutputStream().close();
-                    return;
+                    break;
                 }
             }
-            httpResponse.setStatus(200);
+            
             httpResponse.setContentLength(0);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
