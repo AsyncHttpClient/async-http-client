@@ -42,10 +42,8 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
-import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
-import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty4.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty4.response.NettyResponseBodyPart;
@@ -253,17 +251,9 @@ public final class HttpProtocol extends Protocol {
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
 
                 logger.debug("Sending authentication to {}", request.getUri());
-                if (future.isKeepAlive()) {
+                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
                     future.setReuseChannel(true);
-                    if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        Channels.setAttribute(channel, new Callback(future) {
-                            public void call() throws IOException {
-                                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
-                            }
-                        });
-                    } else {
-                        requestSender.sendNextRequest(nextRequest, future);
-                    }
+                    requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
                 } else {
                     channelManager.closeChannel(channel);
                     requestSender.sendNextRequest(nextRequest, future);
@@ -332,10 +322,18 @@ public final class HttpProtocol extends Protocol {
                             .build();
                 }
 
-                future.setReuseChannel(true);
-                future.setConnectAllowed(true);
-                Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(requestHeaders).setRealm(newRealm).build();
-                requestSender.sendNextRequest(nextRequest, future);
+                final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build();
+
+                logger.debug("Sending proxy authentication to {}", request.getUri());
+                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
+                    future.setConnectAllowed(true);
+                    future.setReuseChannel(true);
+                    requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+                } else {
+                    channelManager.closeChannel(channel);
+                    requestSender.sendNextRequest(nextRequest, future);
+                }
+
                 return true;
             }
         }
@@ -439,7 +437,7 @@ public final class HttpProtocol extends Protocol {
         try {
             if (e instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e;
-                // we buffer the response until we get the LastHttpContent
+                // we buffer the response until we get the first HttpContent
                 future.setPendingResponse(response);
                 return;
 

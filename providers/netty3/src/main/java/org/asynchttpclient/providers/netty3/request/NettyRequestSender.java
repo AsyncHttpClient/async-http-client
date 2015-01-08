@@ -40,7 +40,6 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.providers.netty3.Callback;
 import org.asynchttpclient.providers.netty3.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty3.channel.ChannelManager;
 import org.asynchttpclient.providers.netty3.channel.Channels;
@@ -539,19 +538,5 @@ public final class NettyRequestSender {
 
     public boolean isClosed() {
         return closed.get();
-    }
-
-    public final Callback newExecuteNextRequestCallback(final NettyResponseFuture<?> future, final Request nextRequest) {
-
-        return new Callback(future) {
-            @Override
-            public void call() throws IOException {
-                sendNextRequest(nextRequest, future);
-            }
-        };
-    }
-    
-    public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
-        Channels.setAttribute(channel, newExecuteNextRequestCallback(future, nextRequest));
     }
 }

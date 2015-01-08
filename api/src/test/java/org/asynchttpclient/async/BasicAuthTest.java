@@ -126,25 +126,24 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
             LOGGER.info("request: " + request.getRequestURI());
-            if ("/uff".equals(request.getRequestURI())) {
 
+            if ("/uff".equals(request.getRequestURI())) {
                 LOGGER.info("redirect to /bla");
                 response.setStatus(302);
+                response.setContentLength(0);
                 response.setHeader("Location", "/bla");
-                response.getOutputStream().flush();
-                response.getOutputStream().close();
-
-                return;
 
             } else {
                 LOGGER.info("got redirected" + request.getRequestURI());
+                response.setStatus(200);
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
                 response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
-                response.setStatus(200);
-                response.getOutputStream().write("content".getBytes(UTF_8));
-                response.getOutputStream().flush();
-                response.getOutputStream().close();
+                byte[] b = "content".getBytes(UTF_8);
+                response.setContentLength(b.length);
+                response.getOutputStream().write(b);
             }
+            response.getOutputStream().flush();
+            response.getOutputStream().close();
         }
     }
 
@@ -154,25 +153,27 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
             if (request.getHeader("X-401") != null) {
                 response.setStatus(401);
-                response.getOutputStream().flush();
-                response.getOutputStream().close();
+                response.setContentLength(0);
 
-                return;
-            }
-            response.addHeader("X-Auth", request.getHeader("Authorization"));
-            response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
-            response.setStatus(200);
-
-            int size = 10 * 1024;
-            if (request.getContentLength() > 0) {
-                size = request.getContentLength();
-            }
-            byte[] bytes = new byte[size];
-            if (bytes.length > 0) {
-                int read = request.getInputStream().read(bytes);
-                if (read > 0) {
-                    response.getOutputStream().write(bytes, 0, read);
+            } else {
+                response.addHeader("X-Auth", request.getHeader("Authorization"));
+                response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
+                response.setStatus(200);
+    
+                int size = 10 * 1024;
+                if (request.getContentLength() > 0) {
+                    size = request.getContentLength();
                 }
+                byte[] bytes = new byte[size];
+                int contentLength = 0;
+                if (bytes.length > 0) {
+                    int read = request.getInputStream().read(bytes);
+                    if (read > 0) {
+                        contentLength = read;
+                        response.getOutputStream().write(bytes, 0, read);
+                    }
+                }
+                response.setContentLength(contentLength);
             }
             response.getOutputStream().flush();
             response.getOutputStream().close();

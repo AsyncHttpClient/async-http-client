@@ -50,6 +50,7 @@ import org.asynchttpclient.SSLEngineFactory;
 import org.asynchttpclient.providers.netty.commons.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.channel.pool.ChannelPool;
 import org.asynchttpclient.providers.netty4.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.providers.netty4.channel.pool.NoopChannelPool;
@@ -425,7 +426,11 @@ public class ChannelManager {
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
-        Channels.setAttribute(channel, newDrainCallback(future, channel, future.isKeepAlive(), getPartitionId(future)));
+        drainChannelAndOffer(channel, future, future.isKeepAlive(), getPartitionId(future));
+    }
+
+    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, String poolKey) {
+        Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, poolKey));
     }
 
     public void flushPartition(String partitionId) {
