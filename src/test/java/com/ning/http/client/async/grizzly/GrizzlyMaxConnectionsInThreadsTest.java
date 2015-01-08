@@ -13,11 +13,14 @@
 
 package com.ning.http.client.async.grizzly;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.MaxConnectionsInThreads;
 import com.ning.http.client.async.ProviderUtil;
 
+@Test(enabled = false)
 public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads {
 
     @Override
