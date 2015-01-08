@@ -41,10 +41,8 @@ import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.providers.netty.Callback;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.netty.channel.ChannelManager;
-import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.client.uri.Uri;
@@ -118,8 +116,8 @@ public abstract class Protocol {
     }
 
     protected boolean exitAfterHandlingRedirect(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
+            final Channel channel,//
+            final NettyResponseFuture<?> future,//
             HttpResponse response,//
             Request request,//
             int statusCode) throws Exception {
@@ -167,22 +165,28 @@ public abstract class Protocol {
 
                     requestBuilder.setHeaders(propagatedHeaders(future.getRequest()));
 
-                    Callback callback = channelManager.newDrainCallback(future, channel, initialConnectionKeepAlive, initialPoolKey);
+                    final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
-                    if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        // We must make sure there is no bytes left before
-                        // executing the next request.
-                        // FIXME investigate this
-                        Channels.setAttribute(channel, callback);
+                    logger.debug("Sending redirect to {}", request.getUri());
+
+                    if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
+                        
+                        boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
+                                && request.getUri().getHost().equals(nextRequest.getUri().getHost())
+                                && request.getUri().getPort() == nextRequest.getUri().getPort();
+
+                        if (redirectToSameHost) {
+                            future.setReuseChannel(true);
+                        } else {
+                            channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPoolKey);
+                        }
+
                     } else {
-                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the
-                        // request has not been sent, right?
-                        callback.call();
+                        // redirect + chunking = WAT
+                        channelManager.closeChannel(channel);
                     }
 
-                    Request redirectRequest = requestBuilder.setUrl(newUrl).build();
-                    // FIXME why not reuse the channel is same host?
-                    requestSender.sendNextRequest(redirectRequest, future);
+                    requestSender.sendNextRequest(nextRequest, future);
                     return true;
                 }
             }
