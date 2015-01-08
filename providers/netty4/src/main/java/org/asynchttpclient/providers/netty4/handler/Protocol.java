@@ -171,22 +171,31 @@ public abstract class Protocol {
 
                     requestBuilder.setHeaders(propagatedHeaders(future.getRequest()));
 
-                    Callback callback = channelManager.newDrainCallback(future, channel, initialConnectionKeepAlive, initialPoolKey);
+                    final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
-                    if (HttpHeaders.isTransferEncodingChunked(response)) {
-                        // We must make sure there is no bytes left before
-                        // executing the next request.
-                        // FIXME investigate this
-                        Channels.setAttribute(channel, callback);
+                    logger.debug("Sending redirect to {}", request.getUri());
+
+                    if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
+                        
+                        boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
+                                && request.getUri().getHost().equals(nextRequest.getUri().getHost())
+                                && request.getUri().getPort() == nextRequest.getUri().getPort();
+
+                        if (redirectToSameHost) {
+                            future.setReuseChannel(true);
+                            requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+
+                        } else {
+                            channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPoolKey);
+                            requestSender.sendNextRequest(nextRequest, future);
+                        }
+
                     } else {
-                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the
-                        // request has not been sent, right?
-                        callback.call();
+                        // redirect + chunking = WAT
+                        channelManager.closeChannel(channel);
+                        requestSender.sendNextRequest(nextRequest, future);
                     }
-
-                    Request redirectRequest = requestBuilder.setUrl(newUrl).build();
-                    // FIXME why not reuse the channel is same host?
-                    requestSender.sendNextRequest(redirectRequest, future);
+                    
                     return true;
                 }
             }
