@@ -16,12 +16,14 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.asynchttpclient.Realm.AuthScheme;
 
 /**
  * Represents a proxy server.
@@ -56,6 +58,8 @@ public class ProxyServer {
     private final String url;
     private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
+    private String ntlmHost;
+    private AuthScheme scheme = AuthScheme.BASIC;
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
@@ -76,6 +80,15 @@ public class ProxyServer {
 
     public ProxyServer(final String host, final int port) {
         this(Protocol.HTTP, host, port, null, null);
+    }
+
+    public Realm.RealmBuilder realmBuilder() {
+        return new Realm.RealmBuilder()//
+        .setNtlmDomain(ntlmDomain)
+        .setNtlmHost(ntlmHost)
+        .setPrincipal(principal)
+        .setPassword(password)
+        .setScheme(scheme);
     }
 
     public Protocol getProtocol() {
@@ -132,6 +145,22 @@ public class ProxyServer {
 
     public String getNtlmDomain() {
         return ntlmDomain;
+    }
+
+    public AuthScheme getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(AuthScheme scheme) {
+        this.scheme = scheme;
+    }
+
+    public String getNtlmHost() {
+        return ntlmHost;
+    }
+
+    public void setNtlmHost(String ntlmHost) {
+        this.ntlmHost = ntlmHost;
     }
 
     @Override

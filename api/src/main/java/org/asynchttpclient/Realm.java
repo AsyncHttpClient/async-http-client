@@ -50,7 +50,7 @@ public class Realm {
     private final String methodName;
     private final boolean usePreemptiveAuth;
     private final Charset charset;
-    private final String host;
+    private final String ntlmHost;
     private final String ntlmDomain;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
@@ -79,7 +79,7 @@ public class Realm {
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.ntlmDomain = ntlmDomain;
-        this.host = host;
+        this.ntlmHost = host;
         this.charset = charset;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
@@ -92,10 +92,6 @@ public class Realm {
 
     public String getPassword() {
         return password;
-    }
-
-    public AuthScheme getAuthScheme() {
-        return scheme;
     }
 
     public AuthScheme getScheme() {
@@ -171,7 +167,7 @@ public class Realm {
      * @return the NTLM host
      */
     public String getNtlmHost() {
-        return host;
+        return ntlmHost;
     }
 
     public boolean isUseAbsoluteURI() {
@@ -271,7 +267,7 @@ public class Realm {
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
         private Charset charset = UTF_8;
-        private String host = "localhost";
+        private String ntlmHost = "localhost";
         private boolean useAbsoluteURI = true;
         private boolean omitQuery;
         private boolean targetProxy;
@@ -297,11 +293,11 @@ public class Realm {
         }
 
         public String getNtlmHost() {
-            return host;
+            return ntlmHost;
         }
 
         public RealmBuilder setNtlmHost(String host) {
-            this.host = host;
+            this.ntlmHost = host;
             return this;
         }
 
@@ -624,7 +620,7 @@ public class Realm {
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
-                    usePreemptive, ntlmDomain, charset, host, opaque, useAbsoluteURI, omitQuery, targetProxy);
+                    usePreemptive, ntlmDomain, charset, ntlmHost, opaque, useAbsoluteURI, omitQuery, targetProxy);
         }
     }
 }

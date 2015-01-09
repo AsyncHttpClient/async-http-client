@@ -451,7 +451,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private String generateAuthHeader(final Realm realm) {
         try {
-            switch (realm.getAuthScheme()) {
+            switch (realm.getScheme()) {
             case BASIC:
                 return computeBasicAuthentication(realm);
             case DIGEST:

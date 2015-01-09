@@ -42,6 +42,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.cookie.CookieEncoder;
 import org.asynchttpclient.generators.FileBodyGenerator;
@@ -98,7 +99,7 @@ public final class NettyRequestFactory {
         String authorizationHeader = null;
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
-            switch (realm.getAuthScheme()) {
+            switch (realm.getScheme()) {
             case NTLM:
                 String msg = NTLMEngine.INSTANCE.generateType1Msg();
                 authorizationHeader = "NTLM " + msg;
@@ -133,7 +134,7 @@ public final class NettyRequestFactory {
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
 
-            switch (realm.getAuthScheme()) {
+            switch (realm.getScheme()) {
             case BASIC:
                 authorizationHeader = computeBasicAuthentication(realm);
                 break;
@@ -180,7 +181,7 @@ public final class NettyRequestFactory {
 
         String proxyAuthorization = null;
 
-        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null && !isNonEmpty(proxyServer.getNtlmDomain())) {
+        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null && proxyServer.getScheme() == AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
         }
 
