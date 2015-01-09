@@ -1040,7 +1040,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         
         private String generateAuthHeader(final Realm realm) {
             try {
-                switch (realm.getAuthScheme()) {
+                switch (realm.getScheme()) {
                 case BASIC:
                     return AuthenticatorUtils.computeBasicAuthentication(realm);
                 case DIGEST:
@@ -1633,7 +1633,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                 final Request req = httpTransactionContext.request;
                 realm = new Realm.RealmBuilder().clone(realm)
-                                .setScheme(realm.getAuthScheme())
+                                .setScheme(realm.getScheme())
                                 .setUri(httpTransactionContext.request.getUri())
                                 .setMethodName(req.getMethod())
                                 .setUsePreemptiveAuth(true)

@@ -50,7 +50,7 @@ public class Realm {
     private final String methodName;
     private final boolean usePreemptiveAuth;
     private final Charset charset;
-    private final String host;
+    private final String ntlmHost;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
     private final boolean targetProxy;
@@ -81,7 +81,7 @@ public class Realm {
                   boolean usePreemptiveAuth,
                   String ntlmDomain,
                   Charset charset,
-                  String host,
+                  String ntlmHost,
                   String opaque,
                   boolean useAbsoluteURI,
                   boolean omitQuery,
@@ -103,7 +103,7 @@ public class Realm {
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.ntlmDomain = ntlmDomain;
         this.charset = charset;
-        this.host = host;
+        this.ntlmHost = ntlmHost;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
         this.targetProxy = targetProxy;
@@ -117,12 +117,7 @@ public class Realm {
         return password;
     }
 
-    public AuthScheme getAuthScheme() {
-        return scheme;
-    }
-
     public AuthScheme getScheme() {
-
         return scheme;
     }
 
@@ -194,7 +189,7 @@ public class Realm {
      * @return the NTLM host
      */
     public String getNtlmHost() {
-        return host;
+        return ntlmHost;
     }
 
     public boolean isUseAbsoluteURI() {
@@ -295,7 +290,7 @@ public class Realm {
         private boolean usePreemptive = false;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
         private Charset charset = UTF_8;
-        private String host = "localhost";
+        private String ntlmHost = "localhost";
         private boolean useAbsoluteURI = true;
         private boolean omitQuery = false;
         private boolean targetProxy = false;
@@ -321,11 +316,11 @@ public class Realm {
         }
 
         public String getNtlmHost() {
-            return host;
+            return ntlmHost;
         }
 
         public RealmBuilder setNtlmHost(String host) {
-            this.host = host;
+            this.ntlmHost = host;
             return this;
         }
 
@@ -662,7 +657,7 @@ public class Realm {
                     usePreemptive,
                     ntlmDomain,
                     charset,
-                    host,
+                    ntlmHost,
                     opaque,
                     useAbsoluteURI,
                     omitQuery,

@@ -42,7 +42,7 @@ public class RealmTest {
         Assert.assertEquals(clone.getUsePreemptiveAuth(), orig.getUsePreemptiveAuth());
         Assert.assertEquals(clone.getRealmName(), orig.getRealmName());
         Assert.assertEquals(clone.getAlgorithm(), orig.getAlgorithm());
-        Assert.assertEquals(clone.getAuthScheme(), orig.getAuthScheme());
+        Assert.assertEquals(clone.getScheme(), orig.getScheme());
     }
 
     @Test(groups = "fast")

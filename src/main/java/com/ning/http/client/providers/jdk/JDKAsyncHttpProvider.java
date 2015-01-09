@@ -491,7 +491,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
             Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
             if (realm != null && realm.getUsePreemptiveAuth()) {
-                switch (realm.getAuthScheme()) {
+                switch (realm.getScheme()) {
                     case BASIC:
                         urlConnection.setRequestProperty("Authorization",
                                 AuthenticatorUtils.computeBasicAuthentication(realm));

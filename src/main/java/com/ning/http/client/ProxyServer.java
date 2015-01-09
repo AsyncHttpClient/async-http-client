@@ -18,6 +18,8 @@ package com.ning.http.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.ning.http.client.Realm.AuthScheme;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +58,8 @@ public class ProxyServer {
     private final String url;
     private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
+    private String ntlmHost;
+    private AuthScheme scheme = AuthScheme.BASIC;
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
@@ -78,6 +82,15 @@ public class ProxyServer {
         this(Protocol.HTTP, host, port, null, null);
     }
 
+    public Realm.RealmBuilder realmBuilder() {
+        return new Realm.RealmBuilder()//
+        .setNtlmDomain(ntlmDomain)
+        .setNtlmHost(ntlmHost)
+        .setPrincipal(principal)
+        .setPassword(password)
+        .setScheme(scheme);
+    }
+    
     public Protocol getProtocol() {
         return protocol;
     }
@@ -128,6 +141,22 @@ public class ProxyServer {
 
     public String getNtlmDomain() {
         return ntlmDomain;
+    }
+    
+    public AuthScheme getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(AuthScheme scheme) {
+        this.scheme = scheme;
+    }
+
+    public String getNtlmHost() {
+        return ntlmHost;
+    }
+
+    public void setNtlmHost(String ntlmHost) {
+        this.ntlmHost = ntlmHost;
     }
 
     public String getUrl() {
