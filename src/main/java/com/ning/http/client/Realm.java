@@ -526,8 +526,6 @@ public class Realm {
             byte[] b = new byte[8];
             ThreadLocalRandom.current().nextBytes(b);
             b = md.digest(b);
-            md.reset();
-
             cnonce = toHexString(b);
         }
 
@@ -561,27 +559,22 @@ public class Realm {
 
         private void newResponse(MessageDigest md) {
             StringBuilder sb = StringUtils.stringBuilder();
-            md.update(sb.append(principal)
+            byte[] ha1 = md.digest(sb.append(principal)
                     .append(":")
                     .append(realmName)
                     .append(":")
                     .append(password)
                     .toString().getBytes(ISO_8859_1));
-            byte[] ha1 = md.digest();
-            md.reset();
-
-            //HA2 if qop is auth-int is methodName:url:md5(entityBody)
+            sb.setLength(0);
             
             // BEWARE: compute first as it used the cached StringBuilder
             String url = uri.toUrl();
             
-            sb.setLength(0);
-            md.update(sb.append(methodName)
+            byte[] ha2 = md.digest(sb.append(methodName)
                     .append(':')
                     .append(url).toString().getBytes(ISO_8859_1));
-            byte[] ha2 = md.digest();
-
             sb.setLength(0);
+
             appendBase16(sb, ha1);
             sb.append(':').append(nonce).append(':');
             
@@ -596,35 +589,31 @@ public class Realm {
             }
 
             appendBase16(sb, ha2);
-            md.update(sb.toString().getBytes(ISO_8859_1));
-            
-            byte[] digest = md.digest();
-            md.reset();
-
+            byte[] digest = md.digest(sb.toString().getBytes(ISO_8859_1));
+            sb.setLength(0);
             response = toHexString(digest);
         }
 
         private static String toHexString(byte[] data) {
             StringBuilder buffer = StringUtils.stringBuilder();
-            for (int i = 0; i < data.length; i++) {
-                buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
-                buffer.append(Integer.toHexString(data[i] & 0x0f));
-            }
-            return buffer.toString();
+            appendBase16(buffer, data);
+            String hex = buffer.toString();
+            buffer.setLength(0);
+            return hex;
         }
 
+        
+        private static final char[] HEXADECIMAL = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
+            'e', 'f'
+        };
+
         private static void appendBase16(StringBuilder buf, byte[] bytes) {
-            int base = 16;
-            for (byte b : bytes) {
-                int bi = 0xff & b;
-                int c = '0' + (bi / base) % base;
-                if (c > '9')
-                    c = 'a' + (c - '0' - 10);
-                buf.append((char) c);
-                c = '0' + bi % base;
-                if (c > '9')
-                    c = 'a' + (c - '0' - 10);
-                buf.append((char) c);
+            for (int i = 0; i < bytes.length; i++) {
+                final int low = (bytes[i] & 0x0f);
+                final int high = ((bytes[i] & 0xf0) >> 4);
+                buf.append(HEXADECIMAL[high]);
+                buf.append(HEXADECIMAL[low]);
             }
         }
 
