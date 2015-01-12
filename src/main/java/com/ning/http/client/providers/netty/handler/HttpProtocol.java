@@ -166,10 +166,7 @@ public final class HttpProtocol extends Protocol {
         
         addType3NTLMAuthorizationHeader(wwwAuth, headers, realm, true);
 
-        return proxyServer.realmBuilder()//
-                .setScheme(AuthScheme.NTLM)//
-                .setUri(request.getUri())//
-                .setMethodName(request.getMethod()).build();
+        return realm;
     }
 
     private void addType3NTLMAuthorizationHeader(String auth, FluentCaseInsensitiveStringsMap headers, Realm realm, boolean proxyInd) throws NTLMEngineException {
