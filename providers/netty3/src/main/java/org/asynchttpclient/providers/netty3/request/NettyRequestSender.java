@@ -70,7 +70,6 @@ public final class NettyRequestSender {
     private final Timer nettyTimer;
     private final AtomicBoolean closed;
     private final NettyRequestFactory requestFactory;
-    private final IOException tooManyConnections;
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
             NettyAsyncHttpProviderConfig nettyConfig,//
@@ -82,8 +81,6 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.closed = closed;
         requestFactory = new NettyRequestFactory(config, nettyConfig);
-        tooManyConnections = new IOException(String.format("Too many connections %s", config.getMaxConnections()));
-        tooManyConnections.setStackTrace(new StackTraceElement[] {});
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request,//
@@ -275,8 +272,7 @@ public final class NettyRequestSender {
                 if (config.getMaxConnectionsPerHost() > 0)
                     poolKey = channelManager.getPartitionId(future);
 
-                if (!channelManager.preemptChannel(poolKey))
-                    throw tooManyConnections;
+                channelManager.preemptChannel(poolKey);
 
                 channelPreempted = true;
             }

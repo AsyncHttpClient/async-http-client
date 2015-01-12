@@ -58,4 +58,10 @@ public class MiscUtils {
             } catch (IOException e) {
             }
     }
+
+    public static IOException buildStaticException(String message) {
+        IOException ioe = new IOException(message);
+        ioe.setStackTrace(new StackTraceElement[] {});
+        return ioe;
+    }
 }

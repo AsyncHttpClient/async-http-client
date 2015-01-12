@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.netty4.channel;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.util.MiscUtils.buildStaticException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -80,16 +81,16 @@ public class ChannelManager {
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig nettyConfig;
     private final SSLEngineFactory sslEngineFactory;
-
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
-
     private final Bootstrap plainBootstrap;
     private final Bootstrap secureBootstrap;
     private final Bootstrap webSocketBootstrap;
     private final Bootstrap secureWebSocketBootstrap;
-
     private final long handshakeTimeout;
+    private final IOException tooManyConnections;
+    private final IOException tooManyConnectionsPerHost;
+    private final IOException poolAlreadyClosed;
 
     private final ChannelPool channelPool;
     private final boolean maxConnectionsEnabled;
@@ -115,6 +116,9 @@ public class ChannelManager {
         }
         this.channelPool = channelPool;
 
+        tooManyConnections = buildStaticException(String.format("Too many connections %s", config.getMaxConnections()));
+        tooManyConnectionsPerHost = buildStaticException(String.format("Too many connections per host %s", config.getMaxConnectionsPerHost()));
+        poolAlreadyClosed = buildStaticException("Pool is already closed");
         maxConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
@@ -295,8 +299,13 @@ public class ChannelManager {
         return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(poolKey).tryAcquire();
     }
 
-    public boolean preemptChannel(String poolKey) {
-        return channelPool.isOpen() && tryAcquireGlobal() && tryAcquirePerHost(poolKey);
+    public void preemptChannel(String poolKey) throws IOException {
+        if (!channelPool.isOpen())
+            throw poolAlreadyClosed;
+        if (!tryAcquireGlobal())
+            throw tooManyConnections;
+        if (!tryAcquirePerHost(poolKey))
+            throw tooManyConnectionsPerHost;
     }
 
     public void close() {

@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.netty3.channel;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isSecure;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.isWebSocket;
+import static org.asynchttpclient.util.MiscUtils.buildStaticException;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
 
@@ -93,6 +94,9 @@ public class ChannelManager {
     private final ConcurrentHashMap<Integer, String> channelId2KeyPool;
     private final long handshakeTimeout;
     private final Timer nettyTimer;
+    private final IOException tooManyConnections;
+    private final IOException tooManyConnectionsPerHost;
+    private final IOException poolAlreadyClosed;
 
     private final ClientSocketChannelFactory socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
@@ -118,6 +122,9 @@ public class ChannelManager {
         }
         this.channelPool = channelPool;
 
+        tooManyConnections = buildStaticException(String.format("Too many connections %s", config.getMaxConnections()));
+        tooManyConnectionsPerHost = buildStaticException(String.format("Too many connections per host %s", config.getMaxConnectionsPerHost()));
+        poolAlreadyClosed = buildStaticException("Pool is already closed");
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
@@ -316,8 +323,13 @@ public class ChannelManager {
         return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(poolKey).tryAcquire();
     }
 
-    public boolean preemptChannel(String poolKey) {
-        return channelPool.isOpen() && tryAcquireGlobal() && tryAcquirePerHost(poolKey);
+    public void preemptChannel(String poolKey) throws IOException {
+        if (!channelPool.isOpen())
+            throw poolAlreadyClosed;
+        if (!tryAcquireGlobal())
+            throw tooManyConnections;
+        if (!tryAcquirePerHost(poolKey))
+            throw tooManyConnectionsPerHost;
     }
 
     public void close() {
