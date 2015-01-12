@@ -39,15 +39,11 @@ public final class AuthenticatorUtils {
 
     private static String computeRealmURI(Realm realm) {
         Uri uri = realm.getUri();
-        if (realm.isTargetProxy()) {
-            return "/";
+        if (realm.isUseAbsoluteURI()) {
+            return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
         } else {
-            if (realm.isUseAbsoluteURI()) {
-                return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
-            } else {
-                String path = getNonEmptyPath(uri);
-                return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
-            }
+            String path = getNonEmptyPath(uri);
+            return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
         }
     }
     
