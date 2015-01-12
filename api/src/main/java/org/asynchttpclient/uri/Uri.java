@@ -105,8 +105,8 @@ public class Uri {
                 sb.append(path);
             if (query != null)
                 sb.append('?').append(query);
-
             url = sb.toString();
+            sb.setLength(0);
         }
         return url;
     }
