@@ -128,11 +128,11 @@ public final class NettyRequestFactory {
         return authorizationHeader;
     }
     
-    private String systematicAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) {
+    private String systematicAuthorizationHeader(Request request, Uri uri, Realm realm) {
 
         String authorizationHeader = null;
 
-        if (realm != null && realm.getUsePreemptiveAuth()) {
+        if (realm != null && realm.getUsePreemptiveAuth() && !realm.isTargetProxy()) {
 
             switch (realm.getScheme()) {
             case BASIC:
@@ -177,12 +177,33 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
     
-    private String systematicProxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) {
+    private String systematicProxyAuthorizationHeader(Request request, Realm realm, ProxyServer proxyServer, HttpMethod method) {
 
         String proxyAuthorization = null;
 
-        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null && proxyServer.getScheme() == AuthScheme.BASIC) {
+        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null
+                && proxyServer.getScheme() == AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
+
+        } else if (realm != null && realm.getUsePreemptiveAuth() && realm.isTargetProxy()) {
+
+            switch (realm.getScheme()) {
+            case BASIC:
+                proxyAuthorization = computeBasicAuthentication(realm);
+                break;
+            case DIGEST:
+                if (isNonEmpty(realm.getNonce()))
+                    proxyAuthorization = computeDigestAuthentication(realm);
+                break;
+            case NTLM:
+            case KERBEROS:
+            case SPNEGO:
+                // NTLM, KERBEROS and SPNEGO are only set on the first request, see firstRequestOnlyAuthorizationHeader
+            case NONE:
+                break;
+            default:
+                throw new IllegalStateException("Invalid Authentication " + realm);
+            }
         }
 
         return proxyAuthorization;
@@ -327,9 +348,9 @@ public final class NettyRequestFactory {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         // don't override authorization but append
-        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, proxyServer, realm));
+        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, realm));
 
-        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, method));
+        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, realm, proxyServer, method));
 
         // Add default accept headers
         if (!headers.contains(HttpHeaders.Names.ACCEPT))
