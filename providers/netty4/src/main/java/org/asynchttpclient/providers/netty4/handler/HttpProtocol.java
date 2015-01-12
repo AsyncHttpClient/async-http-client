@@ -324,7 +324,7 @@ public final class HttpProtocol extends Protocol {
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setUri(request.getUri())//
                             .setOmitQuery(true)//
-                            .setMethodName(HttpMethod.CONNECT.name())//
+                            .setMethodName(request.getMethod())//
                             .setUsePreemptiveAuth(true)//
                             .parseProxyAuthenticateHeader(proxyAuthHeaders.get(0))//
                             .build();
