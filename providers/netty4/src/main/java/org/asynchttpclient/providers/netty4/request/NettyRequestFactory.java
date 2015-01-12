@@ -128,7 +128,7 @@ public final class NettyRequestFactory {
         return authorizationHeader;
     }
     
-    private String systematicAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) {
+    private String systematicAuthorizationHeader(Request request, Uri uri, Realm realm) {
 
         String authorizationHeader = null;
 
@@ -327,7 +327,7 @@ public final class NettyRequestFactory {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         // don't override authorization but append
-        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, proxyServer, realm));
+        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, realm));
 
         setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, method));
 
