@@ -107,6 +107,7 @@ public class Uri {
             if (query != null)
                 sb.append('?').append(query);
             url = sb.toString();
+            sb.setLength(0);
         }
 
         return url;
