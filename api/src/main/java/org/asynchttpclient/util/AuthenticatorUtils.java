@@ -38,16 +38,12 @@ public final class AuthenticatorUtils {
     }
 
     private static String computeRealmURI(Realm realm) {
-        if (realm.isTargetProxy()) {
-            return "/";
+        Uri uri = realm.getUri();
+        if (realm.isUseAbsoluteURI()) {
+            return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
         } else {
-            Uri uri = realm.getUri();
-            if (realm.isUseAbsoluteURI()) {
-                return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
-            } else {
-                String path = getNonEmptyPath(uri);
-                return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
-            }
+            String path = getNonEmptyPath(uri);
+            return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
         }
     }
 
