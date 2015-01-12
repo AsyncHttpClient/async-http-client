@@ -84,6 +84,7 @@ public class ProxyServer {
 
     public Realm.RealmBuilder realmBuilder() {
         return new Realm.RealmBuilder()//
+        .setTargetProxy(true)
         .setNtlmDomain(ntlmDomain)
         .setNtlmHost(ntlmHost)
         .setPrincipal(principal)
