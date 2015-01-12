@@ -16,6 +16,7 @@ package com.ning.http.client.providers.netty.channel;
 import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
 import static com.ning.http.client.providers.netty.util.HttpUtils.isSecure;
 import static com.ning.http.client.providers.netty.util.HttpUtils.isWebSocket;
+import static com.ning.http.util.MiscUtils.buildStaticException;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
 
@@ -107,12 +108,6 @@ public class ChannelManager {
 
     private Processor wsProcessor;
 
-    private IOException buildStaticException(String message) {
-        IOException ioe = new IOException(message);
-        ioe.setStackTrace(new StackTraceElement[] {});
-        return ioe;
-    }
-    
     public ChannelManager(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Timer nettyTimer) {
 
         this.config = config;
@@ -131,7 +126,6 @@ public class ChannelManager {
         tooManyConnections = buildStaticException(String.format("Too many connections %s", config.getMaxConnections()));
         tooManyConnectionsPerHost = buildStaticException(String.format("Too many connections per host %s", config.getMaxConnectionsPerHost()));
         poolAlreadyClosed = buildStaticException("Pool is already closed");
-        
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
