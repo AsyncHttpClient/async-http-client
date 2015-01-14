@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2015 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -892,8 +892,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             // sucks!
             Thread.sleep(1000);
             future.cancel(true);
-            Response response = future.get(TIMEOUT, TimeUnit.SECONDS);
-            Assert.assertNull(response);
+            try {
+                future.get(TIMEOUT, TimeUnit.SECONDS);
+                Assert.fail("CancellationException is expected, but nothing is thrown");
+            } catch (CancellationException ce) {
+            } catch (Throwable t) {
+                Assert.fail("CancellationException is expected", t);
+            }
         } finally {
             client.close();
         }
