@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -36,7 +36,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ResponseBase;
 import com.ning.http.client.cookie.Cookie;
-import com.ning.http.util.AsyncHttpProviderUtils;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 /**
  * {@link com.ning.http.client.HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
@@ -48,23 +48,26 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 public class GrizzlyResponse extends ResponseBase {
 
     private final Buffer responseBody;
-
+    private final HttpResponsePacket httpResponsePacket;
 
     // ------------------------------------------------------------ Constructors
 
 
-    public GrizzlyResponse(final HttpResponseStatus status,
+    public GrizzlyResponse(final HttpResponsePacket httpResponsePacket,
+                           final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
                            final List<HttpResponseBodyPart> bodyParts) {
 
         super(status, headers, bodyParts);
 
+        this.httpResponsePacket = httpResponsePacket;
+        
         if (isNonEmpty(bodyParts)) {
             if (bodyParts.size() == 1) {
                 responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
             } else {
                 final Buffer firstBuffer = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
-                final MemoryManager mm = MemoryManager.DEFAULT_MEMORY_MANAGER;
+                final MemoryManager mm = httpResponsePacket.getRequest().getConnection().getMemoryManager();
                 Buffer constructedBodyBuffer = firstBuffer;
                 for (int i = 1, len = bodyParts.size(); i < len; i++) {
                     constructedBodyBuffer =
@@ -185,17 +188,11 @@ public class GrizzlyResponse extends ResponseBase {
         String charsetLocal = charset;
 
         if (charsetLocal == null) {
-            String contentType = getContentType();
-            if (contentType != null) {
-                charsetLocal = AsyncHttpProviderUtils.parseCharset(contentType);
-            }
+            charsetLocal = httpResponsePacket.getCharacterEncoding();
         }
 
-        if (charsetLocal == null) {
-            charsetLocal = Charsets.DEFAULT_CHARACTER_ENCODING;
-        }
-
-        return Charsets.lookupCharset(charsetLocal);
-
+        return charsetLocal == null ?
+                Charsets.ASCII_CHARSET :
+                Charsets.lookupCharset(charsetLocal);
     }
 }

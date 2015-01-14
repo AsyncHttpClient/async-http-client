@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -14,7 +14,6 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.HttpTransactionContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -178,7 +177,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                         feeder.flush();
                     }
                 } catch (IOException ioe) {
-                    HttpTransactionContext.get(c).abort(ioe);
+                    HttpTransactionContext.currentTransaction(c).abort(ioe);
                 }
             }
         };
@@ -218,7 +217,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     try {
                         feeder.flush();
                     } catch (IOException ioe) {
-                        HttpTransactionContext.get(c).abort(ioe);
+                        HttpTransactionContext.currentTransaction(c).abort(ioe);
                     }
                 }
             }
@@ -375,9 +374,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     future.get();
                 }
             } catch (ExecutionException e) {
-                HttpTransactionContext.get(c).abort(e.getCause());
+                HttpTransactionContext.currentTransaction(c).abort(e.getCause());
             } catch (Exception e) {
-                HttpTransactionContext.get(c).abort(e);
+                HttpTransactionContext.currentTransaction(c).abort(e);
             }
         }
 
@@ -583,7 +582,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void onError(Throwable t) {
                 c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                HttpTransactionContext.get(c).abort(t);
+                HttpTransactionContext.currentTransaction(c).abort(t);
             }
 
         } // END WriteHandlerImpl
@@ -603,7 +602,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 } catch (IOException e) {
                     final Connection c = feedableBodyGenerator.context.getConnection();
                     c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                    HttpTransactionContext.get(c).abort(e);
+                    HttpTransactionContext.currentTransaction(c).abort(e);
                 }
             }
 

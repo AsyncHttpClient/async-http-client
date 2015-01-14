@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -25,7 +25,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.glassfish.grizzly.CompletionHandler;
+import org.glassfish.grizzly.utils.Futures;
 
 /**
  * {@link AbstractListenableFuture} implementation adaptation of Grizzly's
@@ -34,17 +35,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
+final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
+        implements CompletionHandler<V> {
 
-    private final AtomicBoolean done = new AtomicBoolean(false);
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final AsyncHandler handler;
     private final GrizzlyAsyncHttpProvider provider;
     private final Request request;
     private final ProxyServer proxy;
     private Connection connection;
 
-    FutureImpl<V> delegate;
+    private final FutureImpl<V> delegate;
 
 
     // ------------------------------------------------------------ Constructors
@@ -59,6 +59,9 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.request = request;
         this.handler = handler;
         this.proxy = proxy;
+        
+        delegate = Futures.<V>createSafeFuture();
+        delegate.addCompletionHandler(this);
     }
 
 
@@ -66,40 +69,18 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
 
     public void done() {
-
-        if (!done.compareAndSet(false, true) || cancelled.get()) {
-            return;
-        }
-        runListeners();
+        done(null);
     }
 
+    public void done(V result) {
+        delegate.result(result);
+    }
 
     public void abort(Throwable t) {
 
-        if (done.get() || !cancelled.compareAndSet(false, true)) {
-            return;
-        }
-
         delegate.failure(t);
-        if (handler != null) {
-            try {
-                handler.onThrowable(t);
-            } catch (Throwable ignore) {
-            }
-
-        }
-        closeConnection();
-        runListeners();
 
     }
-
-
-    public void content(V v) {
-
-        delegate.result(v);
-
-    }
-
 
     public void touch() {
 
@@ -130,19 +111,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-
-        if (done.get() || !cancelled.compareAndSet(false, true)) {
-            return false;
-        }
-        if (handler != null) {
-            try {
-                handler.onThrowable(new CancellationException());
-            } catch (Throwable ignore) {
-            }
-        }
-        runListeners();
         return delegate.cancel(mayInterruptIfRunning);
-
     }
 
 
@@ -169,14 +138,45 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 
-        if (!delegate.isCancelled() || !delegate.isDone()) {
-            return delegate.get(timeout, unit);
-        } else {
-            return null;
-        }
+        return delegate.get(timeout, unit);
 
     }
 
+    // ----------------------------------------------------- Methods from CompletionHandler
+
+    @Override
+    public void cancelled() {
+        if (handler != null) {
+            try {
+                handler.onThrowable(new CancellationException());
+            } catch (Throwable ignore) {
+            }
+        }
+        
+        runListeners();
+    }
+
+    @Override
+    public void failed(final Throwable t) {
+        if (handler != null) {
+            try {
+                handler.onThrowable(t);
+            } catch (Throwable ignore) {
+            }
+
+        }
+        closeConnection();
+        runListeners();
+    }
+
+    @Override
+    public void completed(V result) {
+        runListeners();
+    }
+
+    @Override
+    public void updated(V result) {
+    }        
 
     // ------------------------------------------------- Package Private Methods
 
@@ -188,20 +188,13 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
 
-    void setDelegate(final FutureImpl<V> delegate) {
-
-        this.delegate = delegate;
-
-    }
-
-
     // --------------------------------------------------------- Private Methods
 
 
     private void closeConnection() {
 
         if (connection != null && connection.isOpen()) {
-            connection.close().markForRecycle(true);
+            connection.closeSilently();
         }
 
     }

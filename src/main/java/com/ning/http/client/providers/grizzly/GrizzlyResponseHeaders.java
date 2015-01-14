@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,6 +18,7 @@ import com.ning.http.client.HttpResponseHeaders;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;
+import org.glassfish.grizzly.utils.Charsets;
 
 /**
  * {@link HttpResponseHeaders} implementation using the Grizzly 2.0 HTTP client
@@ -53,10 +54,9 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
                 if (!initialized) {
                     initialized = true;
                     final MimeHeaders headersLocal = response.getHeaders();
-                    for (String name : headersLocal.names()) {
-                        for (String header : headersLocal.values(name)) {
-                            headers.add(name, header);
-                        }
+                    for (int i = 0; i < headersLocal.size(); i++) {
+                        headers.add(headersLocal.getName(i).toString(Charsets.ASCII_CHARSET),
+                                headersLocal.getValue(i).toString(Charsets.ASCII_CHARSET));
                     }
                 }
             }

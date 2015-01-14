@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -97,12 +97,8 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
         return response.getProtocolString();
     }
 
-    public HttpResponsePacket getResponse() {
-        return response;
-    }
-    
     @Override
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new GrizzlyResponse(this, headers, bodyParts);
+        return new GrizzlyResponse(response, this, headers, bodyParts);
     }
 }
