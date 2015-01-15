@@ -198,11 +198,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**   org.asynchttpclient.ListenableFuture  **/
     /*********************************************/
 
+    private boolean terminateAndExit() {
+        cancelTimeouts();
+        return isDone.getAndSet(true) || isCancelled.get();
+    }
+
     public final void done() {
 
-        cancelTimeouts();
-
-        if (isDone.getAndSet(true) || isCancelled.get())
+        if (terminateAndExit())
             return;
 
         try {
@@ -223,9 +226,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public final void abort(final Throwable t) {
 
-        cancelTimeouts();
-
-        if (isDone.getAndSet(true) || isCancelled.get())
+        if (terminateAndExit())
             return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
