@@ -329,8 +329,12 @@ public class ChannelManager {
             throw poolAlreadyClosed;
         if (!tryAcquireGlobal())
             throw tooManyConnections;
-        if (!tryAcquirePerHost(poolKey))
+        if (!tryAcquirePerHost(poolKey)) {
+            if (maxTotalConnectionsEnabled)
+                freeChannels.release();
+
             throw tooManyConnectionsPerHost;
+        }
     }
 
     public void close() {
