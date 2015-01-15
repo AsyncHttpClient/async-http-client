@@ -115,7 +115,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     @Override
     public boolean isDone() {
-        return isDone.get() || isCancelled.get();
+        return isDone.get() || isCancelled();
     }
 
     @Override
@@ -163,6 +163,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private V getContent() throws ExecutionException {
 
+        if (isCancelled())
+            throw new CancellationException();
+
         ExecutionException e = exEx.get();
         if (e != null)
             throw e;
@@ -196,11 +199,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**   org.asynchttpclient.ListenableFuture  **/
     /*********************************************/
 
+    private boolean terminateAndExit() {
+        cancelTimeouts();
+        return isDone.getAndSet(true) || isCancelled.get();
+    }
+
     public final void done() {
 
-        cancelTimeouts();
-
-        if (isDone.getAndSet(true) || isCancelled.get())
+        if (terminateAndExit())
             return;
 
         try {
@@ -221,9 +227,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public final void abort(final Throwable t) {
 
-        cancelTimeouts();
-
-        if (isDone.get() || isCancelled.getAndSet(true))
+        if (terminateAndExit())
             return;
 
         exEx.compareAndSet(null, new ExecutionException(t));

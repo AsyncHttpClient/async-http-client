@@ -834,7 +834,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider", "async" })
+    @Test(groups = { "standalone", "default_provider", "async" }, expectedExceptions = { CancellationException.class })
     public void asyncDoPostDelayCancelTest() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
@@ -850,8 +850,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             });
             future.cancel(true);
-            Response response = future.get(TIMEOUT, TimeUnit.SECONDS);
-            assertNull(response);
+            future.get(TIMEOUT, TimeUnit.SECONDS);
+
         } finally {
             client.close();
         }
