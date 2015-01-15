@@ -93,7 +93,7 @@ public class ChannelManager {
     private final IOException poolAlreadyClosed;
 
     private final ChannelPool channelPool;
-    private final boolean maxConnectionsEnabled;
+    private final boolean maxTotalConnectionsEnabled;
     private final Semaphore freeChannels;
     private final ChannelGroup openChannels;
     private final boolean maxConnectionsPerHostEnabled;
@@ -119,10 +119,10 @@ public class ChannelManager {
         tooManyConnections = buildStaticException(String.format("Too many connections %s", config.getMaxConnections()));
         tooManyConnectionsPerHost = buildStaticException(String.format("Too many connections per host %s", config.getMaxConnectionsPerHost()));
         poolAlreadyClosed = buildStaticException("Pool is already closed");
-        maxConnectionsEnabled = config.getMaxConnections() > 0;
+        maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
-        if (maxConnectionsEnabled) {
+        if (maxTotalConnectionsEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
@@ -280,7 +280,7 @@ public class ChannelManager {
     }
 
     private boolean tryAcquireGlobal() {
-        return !maxConnectionsEnabled || freeChannels.tryAcquire();
+        return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
     }
 
     private Semaphore getFreeConnectionsForHost(String poolKey) {
@@ -304,8 +304,12 @@ public class ChannelManager {
             throw poolAlreadyClosed;
         if (!tryAcquireGlobal())
             throw tooManyConnections;
-        if (!tryAcquirePerHost(poolKey))
+        if (!tryAcquirePerHost(poolKey)) {
+            if (maxTotalConnectionsEnabled)
+                freeChannels.release();
+
             throw tooManyConnectionsPerHost;
+        }
     }
 
     public void close() {
@@ -334,7 +338,7 @@ public class ChannelManager {
     }
 
     public void abortChannelPreemption(String poolKey) {
-        if (maxConnectionsEnabled)
+        if (maxTotalConnectionsEnabled)
             freeChannels.release();
         if (maxConnectionsPerHostEnabled)
             getFreeConnectionsForHost(poolKey).release();
