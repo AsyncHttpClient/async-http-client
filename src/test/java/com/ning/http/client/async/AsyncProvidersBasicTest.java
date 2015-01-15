@@ -872,7 +872,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider", "async" })
+    @Test(groups = { "standalone", "default_provider", "async" }, expectedExceptions = { CancellationException.class })
     public void asyncDoPostDelayCancelTest() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
@@ -892,13 +892,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             // sucks!
             Thread.sleep(1000);
             future.cancel(true);
-            try {
-                future.get(TIMEOUT, TimeUnit.SECONDS);
-                Assert.fail("CancellationException is expected, but nothing is thrown");
-            } catch (CancellationException ce) {
-            } catch (Throwable t) {
-                Assert.fail("CancellationException is expected", t);
-            }
+            future.get(TIMEOUT, TimeUnit.SECONDS);
+
         } finally {
             client.close();
         }
