@@ -151,8 +151,10 @@ public final class DefaultChannelPool implements ChannelPool {
             Object attribute = Channels.getAttribute(channel);
             if (attribute instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-                if (!future.isDone())
+                if (!future.isDone()) {
                     LOGGER.error("Future not in appropriate state %s, not closing", future);
+                    return false;
+                }
             }
             return true;
         }
@@ -163,19 +165,19 @@ public final class DefaultChannelPool implements ChannelPool {
             List<IdleChannel> closedChannels = null;
             for (int i = 0; i < candidates.size(); i++) {
                 IdleChannel idleChannel = candidates.get(i);
-                if (!isChannelCloseable(idleChannel.channel))
-                    if (closedChannels == null) {
-                        // first non closeable to be skipped, copy all previously skipped closeable channels
-                        closedChannels = new ArrayList<IdleChannel>(candidates.size());
-                        for (int j = 0; j < i; j++)
-                            closedChannels.add(candidates.get(j));
-                    } else {
-                        LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
-                        close(idleChannel.channel);
-                        if (closedChannels != null) {
-                            closedChannels.add(idleChannel);
-                        }
+                if (isChannelCloseable(idleChannel.channel)) {
+                    LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
+                    close(idleChannel.channel);
+                    if (closedChannels != null) {
+                        closedChannels.add(idleChannel);
                     }
+
+                } else if (closedChannels == null) {
+                    // first non closeable to be skipped, copy all previously skipped closeable channels
+                    closedChannels = new ArrayList<IdleChannel>(candidates.size());
+                    for (int j = 0; j < i; j++)
+                        closedChannels.add(candidates.get(j));
+                }
             }
 
             return closedChannels != null ? closedChannels : candidates;
