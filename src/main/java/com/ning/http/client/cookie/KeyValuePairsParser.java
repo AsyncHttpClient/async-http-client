@@ -131,7 +131,7 @@ class KeyValuePairsParser {
         char c5 = header.charAt(nameStart + 5);
 
         if (isDomain(c0, c1, c2, c3, c4, c5))
-            domain = value;
+            domain = value.isEmpty() ? null : value;
         else if (isSecure(c0, c1, c2, c3, c4, c5))
             secure = true;
     }

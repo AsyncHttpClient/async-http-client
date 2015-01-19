@@ -14,6 +14,7 @@ package com.ning.http.client.cookie;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 import org.testng.annotations.Test;
 
@@ -43,5 +44,11 @@ public class CookieDecoderTest {
         assertNotNull(cookie);
         assertEquals(cookie.getValue(), "VALUE1\"");
         assertEquals(cookie.getRawValue(), "\"VALUE1\\\"\"");
+    }
+
+    @Test(groups = "fast")
+    public void testIgnoreEmptyDomain() {
+        Cookie cookie = CookieDecoder.decode("sessionid=OTY4ZDllNTgtYjU3OC00MWRjLTkzMWMtNGUwNzk4MTY0MTUw;Domain=;Path=/");
+        assertNull(cookie.getDomain());
     }
 }
