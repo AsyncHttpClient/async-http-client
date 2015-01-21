@@ -39,8 +39,8 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(RequestBuilder.class, method, false);
     }
 
-    public RequestBuilder(String method, boolean useRawUrl) {
-        super(RequestBuilder.class, method, useRawUrl);
+    public RequestBuilder(String method, boolean disableUrlEncoding) {
+        super(RequestBuilder.class, method, disableUrlEncoding);
     }
 
     public RequestBuilder(String method, QueryComputer queryComputer) {
