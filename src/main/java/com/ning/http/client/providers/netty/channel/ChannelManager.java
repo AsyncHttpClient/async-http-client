@@ -394,8 +394,10 @@ public class ChannelManager {
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
-        return handshakeTimeout > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeout)
-                : new SslHandler(sslEngine);
+        SslHandler sslHandler = handshakeTimeout > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer,
+                handshakeTimeout) : new SslHandler(sslEngine);
+        sslHandler.setCloseOnSSLException(true);
+        return sslHandler;
     }
 
     public static SslHandler getSslHandler(ChannelPipeline pipeline) {
