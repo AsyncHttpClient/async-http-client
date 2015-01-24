@@ -171,12 +171,18 @@ public class AsyncHttpProviderUtils {
     public static String formParams2UTF8String(List<Param> params) {
         StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
-            UTF8UrlEncoder.appendEncoded(sb, param.getName());
-            sb.append("=");
-            UTF8UrlEncoder.appendEncoded(sb, param.getValue());
-            sb.append("&");
+            encodeAndAppendParam(sb, param.getName(), param.getValue());
         }
         sb.setLength(sb.length() - 1);
         return sb.toString();
+    }
+    
+    public static void encodeAndAppendParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+        UTF8UrlEncoder.appendEncoded(sb, name);
+        if (value != null) {
+            sb.append('=');
+            UTF8UrlEncoder.appendEncoded(sb, value);
+        }
+        sb.append('&');
     }
 }

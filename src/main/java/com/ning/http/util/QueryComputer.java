@@ -13,7 +13,7 @@
 package com.ning.http.util;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-
+import static com.ning.http.util.AsyncHttpProviderUtils.encodeAndAppendParam;
 import com.ning.http.client.Param;
 
 import java.util.List;
@@ -22,18 +22,9 @@ public enum QueryComputer {
 
     URL_ENCODING_ENABLED_QUERY_COMPUTER {
 
-        private final void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-            UTF8UrlEncoder.appendEncoded(sb, name);
-            if (value != null) {
-                sb.append('=');
-                UTF8UrlEncoder.appendEncoded(sb, value);
-            }
-            sb.append('&');
-        }
-
         private final void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
             for (Param param : queryParams)
-                encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
+                encodeAndAppendParam(sb, param.getName(), param.getValue());
         }
         
         // FIXME this could be improved: remove split
@@ -43,12 +34,12 @@ public enum QueryComputer {
                 pos = queryParamString.indexOf('=');
                 if (pos <= 0) {
                     CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString);
-                    encodeAndAppendQueryParam(sb, decodedName, null);
+                    encodeAndAppendParam(sb, decodedName, null);
                 } else {
                     CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString, 0, pos);
                     int valueStart = pos + 1;
                     CharSequence decodedValue = UTF8UrlDecoder.decode(queryParamString, valueStart, queryParamString.length() - valueStart);
-                    encodeAndAppendQueryParam(sb, decodedName, decodedValue);
+                    encodeAndAppendParam(sb, decodedName, decodedValue);
                 }
             }
         }

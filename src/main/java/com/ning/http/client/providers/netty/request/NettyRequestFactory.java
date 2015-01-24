@@ -22,6 +22,7 @@ import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.AsyncHttpProviderUtils.getAuthority;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
+import static com.ning.http.util.AsyncHttpProviderUtils.formParams2UTF8String;
 import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
 import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
@@ -34,7 +35,6 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Param;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Realm.AuthScheme;
@@ -54,8 +54,6 @@ import com.ning.http.client.providers.netty.request.body.NettyInputStreamBody;
 import com.ning.http.client.providers.netty.request.body.NettyMultipartBody;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.uri.Uri;
-import com.ning.http.util.StringUtils;
-import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -209,19 +207,6 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
 
-    private byte[] computeBodyFromParams(List<Param> params, Charset bodyCharset) {
-
-        StringBuilder sb = StringUtils.stringBuilder();
-        for (Param param : params) {
-            UTF8UrlEncoder.appendEncoded(sb, param.getName());
-            sb.append('=');
-            UTF8UrlEncoder.appendEncoded(sb, param.getValue());
-            sb.append('&');
-        }
-        sb.setLength(sb.length() - 1);
-        return sb.toString().getBytes(bodyCharset);
-    }
-
     private NettyBody body(Request request, HttpMethod method) throws IOException {
         NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
@@ -246,7 +231,7 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getFormParams(), bodyCharset), contentType);
+                nettyBody = new NettyByteArrayBody(formParams2UTF8String(request.getFormParams()).getBytes(bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
