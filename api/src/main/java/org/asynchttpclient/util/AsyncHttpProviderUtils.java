@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
 
@@ -142,5 +143,23 @@ public class AsyncHttpProviderUtils {
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
         return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
+    }
+
+    public static String formParams2UTF8String(List<Param> params) {
+        StringBuilder sb = StringUtils.stringBuilder();
+        for (Param param : params) {
+            encodeAndAppendParam(sb, param.getName(), param.getValue());
+        }
+        sb.setLength(sb.length() - 1);
+        return sb.toString();
+    }
+
+    public static void encodeAndAppendParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+        UTF8UrlEncoder.appendEncoded(sb, name);
+        if (value != null) {
+            sb.append('=');
+            UTF8UrlEncoder.appendEncoded(sb, value);
+        }
+        sb.append('&');
     }
 }

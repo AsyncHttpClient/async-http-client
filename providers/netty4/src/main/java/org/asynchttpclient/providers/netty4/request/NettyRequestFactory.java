@@ -22,6 +22,7 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.formParams2UTF8String;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -39,7 +40,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Param;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -59,8 +59,6 @@ import org.asynchttpclient.providers.netty4.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyMultipartBody;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StringUtils;
-import org.asynchttpclient.util.UTF8UrlEncoder;
 
 public final class NettyRequestFactory {
 
@@ -207,19 +205,6 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
 
-    private byte[] computeBodyFromParams(List<Param> params, Charset bodyCharset) {
-
-        StringBuilder sb = StringUtils.stringBuilder();
-        for (Param param : params) {
-            UTF8UrlEncoder.appendEncoded(sb, param.getName());
-            sb.append('=');
-            UTF8UrlEncoder.appendEncoded(sb, param.getValue());
-            sb.append('&');
-        }
-        sb.setLength(sb.length() - 1);
-        return sb.toString().getBytes(bodyCharset);
-    }
-
     private NettyBody body(Request request, HttpMethod method) throws IOException {
         NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
@@ -244,7 +229,8 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getFormParams(), bodyCharset), contentType);
+                // FIXME could this be done with Netty's ByteBuf?
+                nettyBody = new NettyByteArrayBody(formParams2UTF8String(request.getFormParams()).getBytes(bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
