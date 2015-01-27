@@ -25,7 +25,9 @@ import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
+import java.net.ConnectException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class TextMessageTest extends AbstractBasicTest {
@@ -89,17 +91,16 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
-    public void onFailureTest() throws Exception {
+    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class })
+    public void onFailureTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Throwable t = null;
-            try {
-                /* WebSocket websocket = */c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
-            } catch (Throwable t2) {
-                t = t2;
-            }
-            assertTrue(t != null);
+            c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
+        } catch (ExecutionException e) {
+            if (e.getCause() != null)
+                throw e.getCause();
+            else
+                throw e;
         } finally {
             c.close();
         }
