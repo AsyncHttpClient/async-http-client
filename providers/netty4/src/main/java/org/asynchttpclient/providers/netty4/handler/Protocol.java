@@ -50,10 +50,8 @@ import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
-import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty4.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
@@ -140,11 +138,11 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
 
+                if (config.isRemoveQueryParamOnRedirect())
+                    uri = uri.withNewQuery(null);
+
                 if (!uri.equals(future.getUri())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
-
-                    if (!config.isRemoveQueryParamOnRedirect())
-                        requestBuilder.addQueryParams(future.getRequest().getQueryParams());
 
                     // if we are to strictly handle 302, we should keep the original method (which browsers don't)
                     // 303 must force GET
