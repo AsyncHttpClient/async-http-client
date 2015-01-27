@@ -73,7 +73,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
-            assertEquals(request.getUrl(), getTargetUrl() + "?q=%20%20x");
+            assertEquals(request.getUrl(), getTargetUrl() + "?q=+%20x");
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -88,7 +88,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
 
             }).get();
-            assertEquals(url, getTargetUrl() + "?q=%20%20x");
+            assertEquals(url, getTargetUrl() + "?q=+%20x");
         } finally {
             client.close();
         }

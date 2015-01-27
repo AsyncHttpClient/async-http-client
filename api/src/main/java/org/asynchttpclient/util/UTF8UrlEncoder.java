@@ -15,33 +15,69 @@
  */
 package org.asynchttpclient.util;
 
+import java.util.BitSet;
+
 /**
  * Convenience class that encapsulates details of "percent encoding"
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
-public class UTF8UrlEncoder {
-    private static final boolean encodeSpaceUsingPlus = System.getProperty("com.UTF8UrlEncoder.encodeSpaceUsingPlus") != null;
+public final class UTF8UrlEncoder {
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
      * (all non-Ascii characters need to be encoded anyway)
      */
-    private final static boolean[] SAFE_ASCII = new boolean[128];
+    public final static BitSet RFC3986_UNRESERVED_CHARS = new BitSet(256);
+    public final static BitSet RFC3986_RESERVED_CHARS = new BitSet(256);
+    public final static BitSet BUILT_QUERY_UNTOUCHED_CHARS = new BitSet(256);
+    // http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+    public final static BitSet FORM_URL_ENCODED_SAFE_CHARS = new BitSet(256);
 
     static {
         for (int i = 'a'; i <= 'z'; ++i) {
-            SAFE_ASCII[i] = true;
+            RFC3986_UNRESERVED_CHARS.set(i);
+            FORM_URL_ENCODED_SAFE_CHARS.set(i);
         }
         for (int i = 'A'; i <= 'Z'; ++i) {
-            SAFE_ASCII[i] = true;
+            RFC3986_UNRESERVED_CHARS.set(i);
+            FORM_URL_ENCODED_SAFE_CHARS.set(i);
         }
         for (int i = '0'; i <= '9'; ++i) {
-            SAFE_ASCII[i] = true;
+            RFC3986_UNRESERVED_CHARS.set(i);
+            FORM_URL_ENCODED_SAFE_CHARS.set(i);
         }
-        SAFE_ASCII['-'] = true;
-        SAFE_ASCII['.'] = true;
-        SAFE_ASCII['_'] = true;
-        SAFE_ASCII['~'] = true;
+        RFC3986_UNRESERVED_CHARS.set('-');
+        RFC3986_UNRESERVED_CHARS.set('.');
+        RFC3986_UNRESERVED_CHARS.set('_');
+        RFC3986_UNRESERVED_CHARS.set('~');
+
+        FORM_URL_ENCODED_SAFE_CHARS.set('-');
+        FORM_URL_ENCODED_SAFE_CHARS.set('.');
+        FORM_URL_ENCODED_SAFE_CHARS.set('_');
+        FORM_URL_ENCODED_SAFE_CHARS.set('*');
+
+        RFC3986_RESERVED_CHARS.set('!');
+        RFC3986_RESERVED_CHARS.set('*');
+        RFC3986_RESERVED_CHARS.set('\'');
+        RFC3986_RESERVED_CHARS.set('(');
+        RFC3986_RESERVED_CHARS.set(')');
+        RFC3986_RESERVED_CHARS.set(';');
+        RFC3986_RESERVED_CHARS.set(':');
+        RFC3986_RESERVED_CHARS.set('@');
+        RFC3986_RESERVED_CHARS.set('&');
+        RFC3986_RESERVED_CHARS.set('=');
+        RFC3986_RESERVED_CHARS.set('+');
+        RFC3986_RESERVED_CHARS.set('$');
+        RFC3986_RESERVED_CHARS.set(',');
+        RFC3986_RESERVED_CHARS.set('/');
+        RFC3986_RESERVED_CHARS.set('?');
+        RFC3986_RESERVED_CHARS.set('#');
+        RFC3986_RESERVED_CHARS.set('[');
+        RFC3986_RESERVED_CHARS.set(']');
+        
+        BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_UNRESERVED_CHARS);
+        BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_RESERVED_CHARS);
+        BUILT_QUERY_UNTOUCHED_CHARS.set('%');
     }
 
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
@@ -51,28 +87,40 @@ public class UTF8UrlEncoder {
 
     public static String encode(String input) {
         StringBuilder sb = new StringBuilder(input.length() + 16);
-        appendEncoded(sb, input);
+        encodeAndAppendQueryElement(sb, input);
         return sb.toString();
     }
 
-    public static StringBuilder appendEncoded(StringBuilder sb, CharSequence input) {
+    public static StringBuilder encodeAndAppendQuery(StringBuilder sb, String query) {
+        return appendEncoded(sb, query, BUILT_QUERY_UNTOUCHED_CHARS, false);
+    }
+
+    public static StringBuilder encodeAndAppendQueryElement(StringBuilder sb, CharSequence input) {
+        return appendEncoded(sb, input, RFC3986_UNRESERVED_CHARS, false);
+    }
+
+    public static StringBuilder encodeAndAppendFormElement(StringBuilder sb, CharSequence input) {
+        return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, true);
+    }
+
+    private static StringBuilder appendEncoded(StringBuilder sb, CharSequence input, BitSet dontNeedEncoding, boolean encodeSpaceAsPlus) {
         int c;
         for (int i = 0; i < input.length(); i+= Character.charCount(c)) {
             c = Character.codePointAt(input, i);
             if (c <= 127)
-                if (SAFE_ASCII[c])
+                if (dontNeedEncoding.get(c))
                     sb.append((char) c);
                 else
-                    appendSingleByteEncoded(sb, c);
+                    appendSingleByteEncoded(sb, c, encodeSpaceAsPlus);
             else
                 appendMultiByteEncoded(sb, c);
         }
         return sb;
     }
 
-    private final static void appendSingleByteEncoded(StringBuilder sb, int value) {
+    private final static void appendSingleByteEncoded(StringBuilder sb, int value, boolean encodeSpaceAsPlus) {
 
-        if (encodeSpaceUsingPlus && value == 32) {
+        if (value == ' ' && encodeSpaceAsPlus) {
             sb.append('+');
             return;
         }
@@ -84,17 +132,17 @@ public class UTF8UrlEncoder {
 
     private final static void appendMultiByteEncoded(StringBuilder sb, int value) {
         if (value < 0x800) {
-            appendSingleByteEncoded(sb, (0xc0 | (value >> 6)));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xc0 | (value >> 6)), false);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), false);
         } else if (value < 0x10000) {
-            appendSingleByteEncoded(sb, (0xe0 | (value >> 12)));
-            appendSingleByteEncoded(sb, (0x80 | ((value >> 6) & 0x3f)));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xe0 | (value >> 12)), false);
+            appendSingleByteEncoded(sb, (0x80 | ((value >> 6) & 0x3f)), false);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), false);
         } else {
-            appendSingleByteEncoded(sb, (0xf0 | (value >> 18)));
-            appendSingleByteEncoded(sb, (0x80 | (value >> 12) & 0x3f));
-            appendSingleByteEncoded(sb, (0x80 | (value >> 6) & 0x3f));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xf0 | (value >> 18)), false);
+            appendSingleByteEncoded(sb, (0x80 | (value >> 12) & 0x3f), false);
+            appendSingleByteEncoded(sb, (0x80 | (value >> 6) & 0x3f), false);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), false);
         }
     }
 }

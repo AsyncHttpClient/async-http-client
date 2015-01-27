@@ -22,7 +22,7 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.formParams2UTF8String;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -229,7 +229,7 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(formParams2UTF8String(request.getFormParams()).getBytes(bodyCharset), contentType);
+                nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams()).getBytes(bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);

@@ -120,7 +120,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
             sb.append(uri.getPath());
         
         String baseURL = sb.toString();
-        UTF8UrlEncoder.appendEncoded(signedText, baseURL);
+        UTF8UrlEncoder.encodeAndAppendQueryElement(signedText, baseURL);
 
         /**
          * List of all query and form parameters added to this request; needed
@@ -152,7 +152,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         // and all that needs to be URL encoded (... again!)
         signedText.append('&');
-        UTF8UrlEncoder.appendEncoded(signedText, encodedParams);
+        UTF8UrlEncoder.encodeAndAppendQueryElement(signedText, encodedParams);
 
         byte[] rawBase = signedText.toString().getBytes(UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
@@ -174,12 +174,12 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         // careful: base64 has chars that need URL encoding:
         sb.append(KEY_OAUTH_SIGNATURE).append("=\"");
-        UTF8UrlEncoder.appendEncoded(sb, signature).append("\", ");
+        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, signature).append("\", ");
         sb.append(KEY_OAUTH_TIMESTAMP).append("=\"").append(oauthTimestamp).append("\", ");
 
         // also: nonce may contain things that need URL encoding (esp. when using base64):
         sb.append(KEY_OAUTH_NONCE).append("=\"");
-        UTF8UrlEncoder.appendEncoded(sb, nonce);
+        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, nonce);
         sb.append("\", ");
 
         sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");

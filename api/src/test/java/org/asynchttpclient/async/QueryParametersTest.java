@@ -109,7 +109,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-            assertEquals(response.getHeader("q"), URLEncoder.encode(query, UTF_8.name()));
+            assertEquals(response.getHeader("q"), query);
         } finally {
             c.close();
         }
