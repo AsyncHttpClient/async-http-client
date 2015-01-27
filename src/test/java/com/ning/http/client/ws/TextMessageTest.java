@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -121,7 +122,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class })
+    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class })
     public void onFailureTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
