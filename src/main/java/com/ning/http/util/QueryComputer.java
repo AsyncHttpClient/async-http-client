@@ -13,7 +13,8 @@
 package com.ning.http.util;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import static com.ning.http.util.AsyncHttpProviderUtils.encodeAndAppendParam;
+import static com.ning.http.util.AsyncHttpProviderUtils.encodeAndAppendQueryParam;
+import static com.ning.http.util.UTF8UrlEncoder.encodeAndAppendQuery;
 import com.ning.http.client.Param;
 
 import java.util.List;
@@ -24,30 +25,14 @@ public enum QueryComputer {
 
         private final void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
             for (Param param : queryParams)
-                encodeAndAppendParam(sb, param.getName(), param.getValue());
-        }
-        
-        // FIXME this could be improved: remove split
-        private final void encodeAndAppendQuery(final StringBuilder sb, final String query) {
-            int pos;
-            for (String queryParamString : query.split("&")) {
-                pos = queryParamString.indexOf('=');
-                if (pos <= 0) {
-                    CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString);
-                    encodeAndAppendParam(sb, decodedName, null);
-                } else {
-                    CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString, 0, pos);
-                    int valueStart = pos + 1;
-                    CharSequence decodedValue = UTF8UrlDecoder.decode(queryParamString, valueStart, queryParamString.length() - valueStart);
-                    encodeAndAppendParam(sb, decodedName, decodedValue);
-                }
-            }
+                encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
         }
         
         protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
             StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
+            sb.append('&');
             encodeAndAppendQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
@@ -57,7 +42,6 @@ public enum QueryComputer {
             // encode query
             StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
-            sb.setLength(sb.length() - 1);
             return sb.toString();
         }
 

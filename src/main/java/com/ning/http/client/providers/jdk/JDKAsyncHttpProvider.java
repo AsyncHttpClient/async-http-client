@@ -562,7 +562,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                     urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
                 } else if (isNonEmpty(request.getFormParams())) {
-                    String formBody = AsyncHttpProviderUtils.formParams2UTF8String(request.getFormParams());
+                    String formBody = AsyncHttpProviderUtils.urlEncodeFormParams(request.getFormParams());
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(formBody.length()));
                     urlConnection.setFixedLengthStreamingMode(formBody.length());
 

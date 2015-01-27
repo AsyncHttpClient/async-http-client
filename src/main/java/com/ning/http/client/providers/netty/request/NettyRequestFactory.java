@@ -22,7 +22,7 @@ import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.AsyncHttpProviderUtils.getAuthority;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
-import static com.ning.http.util.AsyncHttpProviderUtils.formParams2UTF8String;
+import static com.ning.http.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
 import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
@@ -231,7 +231,7 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(formParams2UTF8String(request.getFormParams()).getBytes(bodyCharset), contentType);
+                nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams()).getBytes(bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);

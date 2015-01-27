@@ -71,7 +71,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
             String requestUrl = request.getUrl();
-            Assert.assertEquals(requestUrl, getTargetUrl() + "?q=%20%20x");
+            Assert.assertEquals(requestUrl, getTargetUrl() + "?q=+%20x");
             Future<String> responseFuture = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
                 public String onCompleted(Response response) throws Exception {
@@ -86,7 +86,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             });
             String url = responseFuture.get();
-            Assert.assertEquals(url, getTargetUrl() + "?q=%20%20x");
+            Assert.assertEquals(url, getTargetUrl() + "?q=+%20x");
         } finally {
             client.close();
         }

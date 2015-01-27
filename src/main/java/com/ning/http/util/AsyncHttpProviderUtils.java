@@ -168,20 +168,29 @@ public class AsyncHttpProviderUtils {
         return request.getFollowRedirect() != null ? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }
 
-    public static String formParams2UTF8String(List<Param> params) {
+    public static String urlEncodeFormParams(List<Param> params) {
         StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
-            encodeAndAppendParam(sb, param.getName(), param.getValue());
+            encodeAndAppendFormParam(sb, param.getName(), param.getValue());
         }
         sb.setLength(sb.length() - 1);
         return sb.toString();
     }
-    
-    public static void encodeAndAppendParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-        UTF8UrlEncoder.appendEncoded(sb, name);
+
+    private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+        UTF8UrlEncoder.encodeAndAppendFormElement(sb, name);
         if (value != null) {
             sb.append('=');
-            UTF8UrlEncoder.appendEncoded(sb, value);
+            UTF8UrlEncoder.encodeAndAppendFormElement(sb, value);
+        }
+        sb.append('&');
+    }
+
+    public static void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, name);
+        if (value != null) {
+            sb.append('=');
+            UTF8UrlEncoder.encodeAndAppendQueryElement(sb, value);
         }
         sb.append('&');
     }
