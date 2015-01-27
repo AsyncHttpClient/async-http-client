@@ -134,11 +134,11 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
 
+                if (config.isRemoveQueryParamOnRedirect())
+                    uri = uri.withNewQuery(null);
+
                 if (!uri.equals(future.getUri())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
-
-                    if (!config.isRemoveQueryParamOnRedirect())
-                        requestBuilder.addQueryParams(future.getRequest().getQueryParams());
 
                     // if we are to strictly handle 302, we should keep the original method (which browsers don't)
                     // 303 must force GET
