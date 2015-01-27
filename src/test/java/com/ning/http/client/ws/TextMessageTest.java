@@ -12,23 +12,21 @@
  */
 package com.ning.http.client.ws;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ws.WebSocket;
-import com.ning.http.client.ws.WebSocketListener;
-import com.ning.http.client.ws.WebSocketTextListener;
-import com.ning.http.client.ws.WebSocketUpgradeHandler;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncHttpClient;
 
 import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 public abstract class TextMessageTest extends AbstractBasicTest {
 
@@ -123,19 +121,18 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class })
     public void onFailureTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Throwable t = null;
-            try {
-                client.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
-            } catch (Throwable t2) {
-                t = t2;
-            }
-            assertTrue(t != null);
+            c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
+        } catch (ExecutionException e) {
+            if (e.getCause() != null)
+                throw e.getCause();
+            else
+                throw e;
         } finally {
-            client.close();
+            c.close();
         }
     }
 
