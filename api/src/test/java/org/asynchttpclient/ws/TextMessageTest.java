@@ -16,19 +16,16 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketListener;
-import org.asynchttpclient.ws.WebSocketTextListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-import org.testng.annotations.Test;
-
 import java.net.ConnectException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.testng.annotations.Test;
 
 public abstract class TextMessageTest extends AbstractBasicTest {
 
@@ -91,7 +88,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class })
+    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class })
     public void onFailureTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
