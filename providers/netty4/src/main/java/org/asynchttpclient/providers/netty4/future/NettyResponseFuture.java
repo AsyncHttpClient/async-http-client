@@ -227,10 +227,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public final void abort(final Throwable t) {
 
+        exEx.compareAndSet(null, new ExecutionException(t));
+
         if (terminateAndExit())
             return;
 
-        exEx.compareAndSet(null, new ExecutionException(t));
         if (onThrowableCalled.compareAndSet(false, true)) {
             try {
                 asyncHandler.onThrowable(t);
