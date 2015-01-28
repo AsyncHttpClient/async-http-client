@@ -115,14 +115,14 @@ public interface Request {
     /**
      * Return the current form parameters.
      *
-     * @return a {@link FluentStringsMap} of parameters.
+     * @return a {@link List<Param>} of parameters.
      */
     List<Param> getFormParams();
 
     /**
-     * Return the current {@link Part}
+     * Return the current {@link Part}s
      *
-     * @return the current {@link Part}
+     * @return the current {@link Part}s
      */
     List<Part> getParts();
 
@@ -136,7 +136,7 @@ public interface Request {
     /**
      * Return the query params.
      *
-     * @return {@link FluentStringsMap} of query string
+     * @return {@link List<Param>} of query string
      */
     List<Param> getQueryParams();
 
