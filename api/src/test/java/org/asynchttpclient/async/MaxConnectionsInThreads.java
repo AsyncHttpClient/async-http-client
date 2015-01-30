@@ -58,7 +58,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 .setMaxConnections(1).setMaxConnectionsPerHost(1).build());
 
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
-        final AtomicReference<Integer> failedRank = new AtomicReference(-1);
+        final AtomicReference<Integer> failedRank = new AtomicReference<>(-1);
         
         try {
             for (int i = 0; i < urls.length; i++) {

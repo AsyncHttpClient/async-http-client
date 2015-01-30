@@ -357,13 +357,10 @@ public class ChannelManager {
     }
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
-
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
-
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
-
         return sslHandler;
     }
 

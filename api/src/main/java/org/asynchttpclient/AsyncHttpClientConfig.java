@@ -26,13 +26,11 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.util.DefaultHostnameVerifier;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
@@ -81,7 +79,6 @@ public class AsyncHttpClientConfig {
     protected int connectionTTL;
 
     protected SSLContext sslContext;
-    protected HostnameVerifier hostnameVerifier;
     protected boolean acceptAnyCertificate;
 
     protected boolean followRedirect;
@@ -125,7 +122,6 @@ public class AsyncHttpClientConfig {
             int idleConnectionInPoolTimeout,//
             int maxConnectionLifeTime,//
             SSLContext sslContext, //
-            HostnameVerifier hostnameVerifier,//
             boolean acceptAnyCertificate, //
             boolean followRedirect, //
             int maxRedirects, //
@@ -161,7 +157,6 @@ public class AsyncHttpClientConfig {
         this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
         this.connectionTTL = maxConnectionLifeTime;
         this.sslContext = sslContext;
-        this.hostnameVerifier = hostnameVerifier;
         this.acceptAnyCertificate = acceptAnyCertificate;
         this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
@@ -462,15 +457,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the {@link HostnameVerifier}
-     *
-     * @return the {@link HostnameVerifier}
-     */
-    public HostnameVerifier getHostnameVerifier() {
-        return hostnameVerifier;
-    }
-
-    /**
      * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
      */
     public int getIoThreadMultiplier() {
@@ -546,7 +532,6 @@ public class AsyncHttpClientConfig {
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         private int connectionTTL = defaultConnectionTTL();
         private SSLContext sslContext;
-        private HostnameVerifier hostnameVerifier;
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
@@ -933,17 +918,6 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link HostnameVerifier}
-         *
-         * @param hostnameVerifier {@link HostnameVerifier}
-         * @return this
-         */
-        public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier) {
-            this.hostnameVerifier = hostnameVerifier;
-            return this;
-        }
-
-        /**
          * Configures this AHC instance to be strict in it's handling of 302 redirects
          * in a POST/Redirect/GET situation.
          *
@@ -1079,7 +1053,6 @@ public class AsyncHttpClientConfig {
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowPoolingSslConnections = prototype.isAllowPoolingConnections();
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
-            hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
             acceptAnyCertificate = prototype.acceptAnyCertificate;
             enabledProtocols = prototype.enabledProtocols;
@@ -1106,11 +1079,6 @@ public class AsyncHttpClientConfig {
             if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
 
-            if (acceptAnyCertificate)
-                hostnameVerifier = null;
-            else if (hostnameVerifier == null)
-                hostnameVerifier = new DefaultHostnameVerifier();
-
             return new AsyncHttpClientConfig(connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//
@@ -1122,7 +1090,6 @@ public class AsyncHttpClientConfig {
                     pooledConnectionIdleTimeout,//
                     connectionTTL,//
                     sslContext, //
-                    hostnameVerifier,//
                     acceptAnyCertificate, //
                     followRedirect, //
                     maxRedirects, //

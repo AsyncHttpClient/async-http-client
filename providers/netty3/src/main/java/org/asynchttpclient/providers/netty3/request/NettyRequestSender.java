@@ -281,7 +281,7 @@ public final class NettyRequestSender {
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
             ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
-            channelFuture.addListener(new NettyConnectListener<T>(config, future, this, channelManager, channelPreempted, poolKey));
+            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, poolKey));
 
         } catch (Throwable t) {
             if (channelPreempted)

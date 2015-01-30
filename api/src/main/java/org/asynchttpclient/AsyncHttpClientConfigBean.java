@@ -19,7 +19,6 @@ import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.util.ProxyUtils;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
 import java.util.LinkedList;
@@ -218,11 +217,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setRemoveQueryParamOnRedirect(boolean removeQueryParamOnRedirect) {
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
-        return this;
-    }
-
-    public AsyncHttpClientConfigBean setHostnameVerifier(HostnameVerifier hostnameVerifier) {
-        this.hostnameVerifier = hostnameVerifier;
         return this;
     }
 

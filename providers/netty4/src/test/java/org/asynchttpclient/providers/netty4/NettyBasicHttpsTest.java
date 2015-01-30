@@ -41,7 +41,6 @@ public class NettyBasicHttpsTest extends BasicHttpsTest {
                     "PoolConnection",
                     "OpenConnection",
                     "DnsResolved",
-                    "SslHandshakeCompleted",
                     "ConnectionOpen",
                     "SendRequest",
                     "HeaderWriteCompleted",

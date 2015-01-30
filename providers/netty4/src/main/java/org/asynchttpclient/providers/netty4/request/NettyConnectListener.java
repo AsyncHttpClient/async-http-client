@@ -17,25 +17,15 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
-
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandlerExtensions;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
 import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
-import org.asynchttpclient.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,20 +36,17 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
 
-    private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
     private final String poolKey;
 
-    public NettyConnectListener(AsyncHttpClientConfig config,//
-            NettyResponseFuture<T> future,//
+    public NettyConnectListener(NettyResponseFuture<T> future,//
             NettyRequestSender requestSender,//
             ChannelManager channelManager,//
             boolean channelPreempted,//
             String poolKey) {
-        this.config = config;
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
@@ -91,37 +78,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private void onFutureSuccess(final Channel channel) throws ConnectException {
         Channels.setAttribute(channel, future);
-        final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
-        final SslHandler sslHandler = ChannelManager.getSslHandler(channel.pipeline());
-        if (hostnameVerifier != null && sslHandler != null) {
-            final String host = future.getUri().getHost();
-            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<? super Channel>>() {
-                @Override
-                public void operationComplete(Future<? super Channel> handshakeFuture) throws Exception {
-                    if (handshakeFuture.isSuccess()) {
-                        Channel channel = (Channel) handshakeFuture.getNow();
-                        SSLEngine engine = sslHandler.engine();
-                        SSLSession session = engine.getSession();
-
-                        LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
-                                Base64.encode(session.getId()), session.isValid(), host);
-                        if (hostnameVerifier.verify(host, session)) {
-                            final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
-                            if (asyncHandler instanceof AsyncHandlerExtensions)
-                                AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
-
-                            writeRequest(channel);
-                        } else {
-                            onFutureFailure(channel, new ConnectException("HostnameVerifier exception"));
-                        }
-                    } else {
-                        onFutureFailure(channel, handshakeFuture.cause());
-                    }
-                }
-            });
-        } else {
-            writeRequest(channel);
-        }
+        writeRequest(channel);
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {
