@@ -41,8 +41,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onOpen() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -67,15 +66,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "OnOpen");
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onEmptyListenerTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             WebSocket websocket = null;
             try {
                 websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().build()).get();
@@ -83,30 +79,24 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                 fail();
             }
             assertTrue(websocket != null);
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class })
     public void onFailureTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
             if (e.getCause() != null)
                 throw e.getCause();
             else
                 throw e;
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onTimeoutCloseTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -131,15 +121,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "OnClose");
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onClose() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -166,15 +153,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "OnClose");
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void echoText() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -206,15 +190,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHO");
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void echoDoubleListenerText() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -268,15 +249,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
-        } finally {
-            c.close();
         }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -307,14 +285,11 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
-        } finally {
-            c.close();
         }
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -347,15 +322,12 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void echoTextAndThenClose() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch textLatch = new CountDownLatch(1);
             final CountDownLatch closeLatch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -391,8 +363,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             closeLatch.await();
 
             assertEquals(text.get(), "ECHO");
-        } finally {
-            c.close();
         }
     }
 }

@@ -82,8 +82,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .build();
 
-        AsyncHttpClient c = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(config)) {
             Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
 
             ListenableFuture<Response> response = c.executeRequest(r);
@@ -91,9 +90,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
             res = response.get();
             assertNotNull(res.getResponseBody());
             assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
-
-        } finally {
-            c.close();
         }
     }
 

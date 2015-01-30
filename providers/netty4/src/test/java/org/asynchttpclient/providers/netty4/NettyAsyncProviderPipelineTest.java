@@ -50,10 +50,9 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
                 pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         });
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAsyncHttpClientProviderConfig(nettyConfig).build());
 
-        try {
+        try (AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
+                .setAsyncHttpClientProviderConfig(nettyConfig).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
@@ -71,8 +70,6 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 fail("Timeout out");
             }
-        } finally {
-            p.close();
         }
     }
 

@@ -71,13 +71,10 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        } finally {
-            c.close();
         }
     }
 
@@ -86,8 +83,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             List<Future<Response>> futures = new ArrayList<Future<Response>>();
             for (int i = 0; i < 200; i++) {
                 futures.add(c.preparePost(getTargetUrl()).execute());
@@ -98,8 +94,6 @@ public abstract class FilterTest extends AbstractBasicTest {
                 assertNotNull(f.get());
                 assertEquals(r.getStatusCode(), 200);
             }
-        } finally {
-            c.close();
         }
     }
 
@@ -107,15 +101,12 @@ public abstract class FilterTest extends AbstractBasicTest {
     public void maxConnectionsText() throws Exception {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (ExecutionException ex) {
             assertTrue(ex.getCause() instanceof FilterException);
-        } finally {
-            c.close();
         }
     }
 
@@ -130,15 +121,11 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
-
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        } finally {
-            c.close();
         }
     }
 
@@ -159,16 +146,12 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
-
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Replay"), "true");
-        } finally {
-            c.close();
         }
     }
 
@@ -189,16 +172,12 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
-
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Replay"), "true");
-        } finally {
-            c.close();
         }
     }
 
@@ -220,16 +199,12 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
-
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("Ping"), "Pong");
-        } finally {
-            c.close();
         }
     }
 }

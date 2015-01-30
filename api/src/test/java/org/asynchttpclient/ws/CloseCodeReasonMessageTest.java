@@ -43,8 +43,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -54,15 +53,12 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertTrue(text.get().startsWith("1000"));
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -70,13 +66,10 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "1001-Idle Timeout");
-        } finally {
-            c.close();
         }
     }
 
-    public final static class Listener implements WebSocketListener,
-            WebSocketCloseCodeReasonListener {
+    public final static class Listener implements WebSocketListener, WebSocketCloseCodeReasonListener {
 
         final CountDownLatch latch;
         final AtomicReference<String> text;
@@ -109,8 +102,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void wrongStatusCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
@@ -138,15 +130,12 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
             latch.await();
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
-        } finally {
-            c.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void wrongProtocolCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
@@ -174,8 +163,6 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
             latch.await();
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
-        } finally {
-            c.close();
         }
     }
 }

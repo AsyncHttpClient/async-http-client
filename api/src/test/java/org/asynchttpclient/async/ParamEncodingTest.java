@@ -59,15 +59,12 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addFormParam("test", value).execute();
             Response resp = f.get(10, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("X-Param"), value.trim());
-        } finally {
-            client.close();
         }
     }
 

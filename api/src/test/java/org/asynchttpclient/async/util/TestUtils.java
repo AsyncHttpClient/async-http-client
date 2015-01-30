@@ -71,15 +71,8 @@ public class TestUtils {
     }
 
     public static synchronized int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            if (socket != null)
-                socket.close();
         }
     }
 
@@ -87,9 +80,7 @@ public class TestUtils {
         long repeats = approxSize / TestUtils.PATTERN_BYTES.length + 1;
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP_DIR);
         tmpFile.deleteOnExit();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(tmpFile);
+        try (FileOutputStream out = new FileOutputStream(tmpFile)) {
             for (int i = 0; i < repeats; i++) {
                 out.write(PATTERN_BYTES);
             }
@@ -98,10 +89,6 @@ public class TestUtils {
             assertEquals(tmpFile.length(), expectedFileSize, "Invalid file length");
 
             return tmpFile;
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 

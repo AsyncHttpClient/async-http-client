@@ -101,14 +101,11 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        } finally {
-            c.close();
         }
     }
 
@@ -121,8 +118,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -133,8 +129,6 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        } finally {
-            c.close();
         }
     }
 
@@ -147,14 +141,11 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
             assertEquals(response.getUri().toString(), getTargetUrl());
-        } finally {
-            c.close();
         }
     }
 }

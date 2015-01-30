@@ -51,13 +51,10 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
     public void testUnauthorizedWhileUploading() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute()
                     .get();
             assertEquals(response.getStatusCode(), 401);
-        } finally {
-            client.close();
         }
     }
 }

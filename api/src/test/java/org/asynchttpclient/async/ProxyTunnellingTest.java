@@ -82,8 +82,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setAcceptAnyCertificate(true)//
         .build();
 
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config)) {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
@@ -100,8 +99,6 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), "keep-alive");
-        } finally {
-            asyncHttpClient.close();
         }
     }
 
@@ -112,8 +109,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setProxyServer(new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1))//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config)) {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
@@ -129,15 +125,13 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), "keep-alive");
-        } finally {
-            asyncHttpClient.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
                 .setProviderClass(getProviderClass())//
                 .setProxyProtocol(ProxyServer.Protocol.HTTPS)//
                 .setProxyHost("127.0.0.1")//
@@ -146,14 +140,11 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl2())//
                 .setAcceptAnyCertificate(true)//
                 .setHeader("Content-Type", "text/html")//
-                .build();
-        try {
+                .build()) {
             Response r = client.get().get();
 
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), "keep-alive");
-        } finally {
-            client.close();
         }
     }
 }

@@ -40,11 +40,11 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
                 .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
-                .build());
+                .build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < urls.length; i++) {
                 futures.add(client.prepareGet(urls[i]).execute());
@@ -64,8 +64,6 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
 
             Assert.assertEquals(1, i);
             Assert.assertTrue(caughtError);
-        } finally {
-            client.close();
         }
     }
 
@@ -73,14 +71,14 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnections() throws InterruptedException {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
-                .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build());
-
         final CountDownLatch latch = new CountDownLatch(2);
         final AtomicReference<Throwable> ex = new AtomicReference<Throwable>();
         final AtomicReference<String> failedUrl = new AtomicReference<String>();
 
-        try {
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
+                .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             for (String url : urls) {
                 final String thisUrl = url;
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
@@ -104,9 +102,6 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
             latch.await();
             assertNull(ex.get());
             assertNull(failedUrl.get());
-
-        } finally {
-            client.close();
         }
     }
 }

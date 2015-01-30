@@ -40,8 +40,10 @@ public abstract class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicT
 
     @Test(groups = { "standalone", "default_provider" })
     public void testAccumulateErrorBody() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build();
-        try {
+        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+                .setProviderClass(getProviderClass())//
+                .setUrl(getTargetUrl() + "/nonexistent")//
+                .setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build()) {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
             Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
@@ -50,15 +52,15 @@ public abstract class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicT
             assertEquals(response.getStatusCode(), 404);
             assertEquals(o.toString(), "");
             assertTrue(response.getResponseBody().startsWith("<html>"));
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testOmitErrorBody() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build();
-        try {
+        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+                .setProviderClass(getProviderClass())//
+                .setUrl(getTargetUrl() + "/nonexistent")//
+                .setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build()) {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
             Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
@@ -67,8 +69,6 @@ public abstract class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicT
             assertEquals(response.getStatusCode(), 404);
             assertEquals(o.toString(), "");
             assertEquals(response.getResponseBody(), "");
-        } finally {
-            client.close();
         }
     }
 

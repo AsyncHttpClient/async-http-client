@@ -75,8 +75,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 
@@ -98,8 +97,6 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
             } catch (IOException ex) {
                 fail("Should have timed out");
             }
-        } finally {
-            c.close();
         }
     }
 

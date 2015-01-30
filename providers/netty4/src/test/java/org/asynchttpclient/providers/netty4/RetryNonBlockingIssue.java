@@ -94,8 +94,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setRequestTimeout(30000)//
                 .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -114,9 +113,6 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             }
             System.out.println(b.toString());
             System.out.flush();
-
-        } finally {
-            client.close();
         }
     }
 
@@ -130,9 +126,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setRequestTimeout(30000)//
                 .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -151,9 +145,6 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             }
             System.out.println(b.toString());
             System.out.flush();
-
-        } finally {
-            client.close();
         }
     }
 

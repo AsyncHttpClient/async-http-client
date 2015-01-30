@@ -54,13 +54,13 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true)//
-                .setMaxConnections(1).setMaxConnectionsPerHost(1).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true)//
+                .setMaxConnections(1).setMaxConnectionsPerHost(1).build();
 
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
         final AtomicReference<Integer> failedRank = new AtomicReference<>(-1);
         
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
                 final int rank = i;
@@ -115,8 +115,6 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
             notInThreadsLatch.await();
             
             assertEquals(failedRank.get().intValue(), 1, "Max Connections should have been reached");
-        } finally {
-            client.close();
         }
     }
 

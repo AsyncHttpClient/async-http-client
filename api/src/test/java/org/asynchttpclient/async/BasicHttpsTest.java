@@ -45,21 +45,17 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Exception {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Exception {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
             String body = "hello there";
 
             // once
@@ -71,15 +67,12 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build())) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -88,16 +81,13 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get();
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void reconnectsAfterFailedCertificationPath() throws Exception {
         AtomicBoolean trusted = new AtomicBoolean(false);
-        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build())) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
@@ -121,8 +111,6 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            c.close();
         }
     }
 }

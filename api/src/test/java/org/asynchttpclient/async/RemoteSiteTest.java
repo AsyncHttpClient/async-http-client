@@ -53,82 +53,63 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://www.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void testMailGoogleCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 301);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testWwwMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testUpdateMicrosoftCom() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleComWithTimeout() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertTrue(response.getStatusCode() == 301 || response.getStatusCode() == 302);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStatusHEADContentLenghtTest() throws Exception {
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
-        try {
+        try (AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl("http://www.google.com/").build();
 
@@ -147,8 +128,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             if (!l.await(5, TimeUnit.SECONDS)) {
                 fail("Timeout out");
             }
-        } finally {
-            p.close();
         }
     }
 
@@ -157,8 +136,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).setFollowRedirect(true)
                 .setAllowPoolingConnections(false).setMaxRedirects(6).build();
 
-        AsyncHttpClient c = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(config)) {
             Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();
             if (response != null) {
                 System.out.println(response);
@@ -167,37 +145,29 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             t.printStackTrace();
             assertNotNull(t.getCause());
             assertEquals(t.getCause().getMessage(), "invalid version format: ICY");
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void asyncFullBodyProperlyRead() throws Exception {
-        final AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
 
             InputStream stream = r.getResponseBodyAsStream();
             int contentLength = Integer.valueOf(r.getHeader("Content-Length"));
 
             assertEquals(contentLength, IOUtils.toByteArray(stream).length);
-        } finally {
-            client.close();
         }
     }
 
     // FIXME Get a 302 in France...
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testUrlRequestParametersEncoding() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
             logger.info(String.format("Executing request [%s] ...", requestUrl2));
             Response response = client.prepareGet(requestUrl2).execute().get();
             assertEquals(response.getStatusCode(), 302);
-        } finally {
-            client.close();
         }
     }
 
@@ -205,21 +175,17 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     public void stripQueryStringTest() throws Exception {
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" })
     public void evilCoookieTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             RequestBuilder builder2 = new RequestBuilder("GET");
             builder2.setFollowRedirect(true);
             builder2.setUrl("http://www.google.com/");
@@ -230,15 +196,12 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testAHC62Com() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
             Response response = c.prepareGet("http://api.crunchbase.com/v/1/financial-organization/kinsey-hills-group.js")
                     .execute(new AsyncHandler<Response>() {
 
@@ -271,8 +234,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
                     }).get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertTrue(response.getResponseBody().length() >= 3870);
-        } finally {
-            c.close();
         }
     }
 }

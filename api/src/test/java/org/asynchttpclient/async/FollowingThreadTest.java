@@ -50,8 +50,7 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
 
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
-                        final AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
-                        try {
+                        try (AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
                             ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
 
                                 public void onThrowable(Throwable t) {
@@ -83,7 +82,6 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
                         } catch (Exception e) {
                             e.printStackTrace();
                         } finally {
-                            ahc.close();
                             countDown.countDown();
                         }
                     }

@@ -80,8 +80,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -124,8 +123,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertNull(bb.get());
             assertNull(throwable.get());
-        } finally {
-            c.close();
         }
     }
 
@@ -142,9 +139,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 100 * 10);
 
         int timeout = (int) (file.length() / 1000);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build());
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
@@ -181,15 +177,12 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
             assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutFileBodyGeneratorTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -236,8 +229,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
             assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
-        } finally {
-            client.close();
         }
     }
 }

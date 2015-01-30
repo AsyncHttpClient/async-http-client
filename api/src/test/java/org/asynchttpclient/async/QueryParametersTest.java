@@ -72,16 +72,13 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("a"), "1");
             assertEquals(resp.getHeader("b"), "2");
-        } finally {
-            client.close();
         }
     }
 
@@ -90,28 +87,22 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
             LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
             String s = URLDecoder.decode(response.getHeader("q"), UTF_8.name());
             assertEquals(s, REQUEST_PARAM);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithColonTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getHeader("q"), query);
-        } finally {
-            c.close();
         }
     }
 }

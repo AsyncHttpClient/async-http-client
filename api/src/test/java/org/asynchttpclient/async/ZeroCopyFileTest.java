@@ -68,8 +68,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
             final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
@@ -95,22 +94,17 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
             assertTrue(operationCompleted.get());
             assertTrue(headerSent.get());
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
-        } finally {
-            client.close();
         }
     }
 
@@ -121,79 +115,72 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
-        final FileOutputStream stream = new FileOutputStream(tmp);
-        try {
-            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
-                public void onThrowable(Throwable t) {
-                }
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            try (FileOutputStream stream = new FileOutputStream(tmp)) {
+                Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                    public void onThrowable(Throwable t) {
+                    }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                    bodyPart.writeTo(stream);
-                    return STATE.CONTINUE;
-                }
+                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                        bodyPart.writeTo(stream);
+                        return STATE.CONTINUE;
+                    }
 
-                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                    return STATE.CONTINUE;
-                }
+                    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                        return STATE.CONTINUE;
+                    }
 
-                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                    return STATE.CONTINUE;
-                }
+                    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                        return STATE.CONTINUE;
+                    }
 
-                public Response onCompleted() throws Exception {
-                    return null;
-                }
-            }).get();
-            assertNull(resp);
-            assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
-        } finally {
-            stream.close();
-            client.close();
+                    public Response onCompleted() throws Exception {
+                        return null;
+                    }
+                }).get();
+                assertNull(resp);
+                assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
+            }
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
-        final FileOutputStream stream = new FileOutputStream(tmp);
-        try {
-
-            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
-                public void onThrowable(Throwable t) {
-                }
-
-                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                    bodyPart.writeTo(stream);
-
-                    if (bodyPart.getBodyPartBytes().length == 0) {
-                        return STATE.ABORT;
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            try (FileOutputStream stream = new FileOutputStream(tmp)) {
+                Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                    public void onThrowable(Throwable t) {
                     }
 
-                    return STATE.CONTINUE;
-                }
+                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                        bodyPart.writeTo(stream);
 
-                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                    return STATE.CONTINUE;
-                }
+                        if (bodyPart.getBodyPartBytes().length == 0) {
+                            return STATE.ABORT;
+                        }
 
-                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                    return STATE.CONTINUE;
-                }
+                        return STATE.CONTINUE;
+                    }
 
-                public Response onCompleted() throws Exception {
-                    return null;
-                }
-            }).get();
-            assertNull(resp);
-            assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
-        } finally {
-            stream.close();
-            client.close();
+                    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                        return STATE.CONTINUE;
+                    }
+
+                    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                        return STATE.CONTINUE;
+                    }
+
+                    public Response onCompleted() throws Exception {
+                        return null;
+                    }
+                }).get();
+                assertNull(resp);
+                assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
+            }
         }
     }
 }

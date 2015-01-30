@@ -92,113 +92,89 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server, false);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicPreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server, true);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server2, false);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestPreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server2, true);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFutureAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFutureAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server2, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
-        try {
+        try (AsyncHttpClient client = newClient()) {
             Future<Response> f = execute(client, server2, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 

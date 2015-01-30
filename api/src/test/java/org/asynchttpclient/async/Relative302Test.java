@@ -90,19 +90,14 @@ public abstract class Relative302Test extends AbstractBasicTest {
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
 
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
-
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
 
             String baseUrl = getBaseUrl(response.getUri());
-
             assertTrue(baseUrl.startsWith("http://www.google."), "response does not show redirection to a google subdomain, got " + baseUrl);
-        } finally {
-            c.close();
         }
     }
 
@@ -110,18 +105,15 @@ public abstract class Relative302Test extends AbstractBasicTest {
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 404);
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
-        } finally {
-            c.close();
         }
     }
 
@@ -130,8 +122,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
@@ -141,8 +132,6 @@ public abstract class Relative302Test extends AbstractBasicTest {
             assertEquals(response.getUri().toString(), destinationUrl);
 
             logger.debug("{} was redirected to {}", redirectTarget, destinationUrl);
-        } finally {
-            c.close();
         }
     }
 
@@ -151,8 +140,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
@@ -162,8 +150,6 @@ public abstract class Relative302Test extends AbstractBasicTest {
             assertEquals(response.getUri().toString(), destinationUrl);
 
             logger.debug("{} was redirected to {}", redirectTarget, destinationUrl);
-        } finally {
-            c.close();
         }
     }
 

@@ -62,8 +62,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
         .setRequestTimeout(1000)
         .setFollowRedirect(true);
 
-        AsyncHttpClient c = getAsyncHttpClient(bc.build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(bc.build())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -85,8 +84,6 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             } else {
                 assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
             }
-        } finally {
-            c.close();
         }
     }
 }

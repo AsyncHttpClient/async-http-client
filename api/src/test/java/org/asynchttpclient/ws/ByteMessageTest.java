@@ -39,8 +39,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
 
@@ -73,15 +72,12 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHO".getBytes());
-        } finally {
-            c.close();
         }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -121,15 +117,12 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            c.close();
         }
     }
 
     @Test
     public void echoOnOpenMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -168,14 +161,11 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            c.close();
         }
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -214,8 +204,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             websocket.stream("ECHO".getBytes(), true);
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            c.close();
         }
     }
 }
