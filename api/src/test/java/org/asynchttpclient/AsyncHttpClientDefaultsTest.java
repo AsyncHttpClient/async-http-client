@@ -115,11 +115,6 @@ public class AsyncHttpClientDefaultsTest {
         testBooleanSystemProperty("disableUrlEncodingForBoundRequests", "defaultDisableUrlEncodingForBoundRequests", "true");
     }
 
-    public void testDefaultRemoveQueryParamOnRedirect() {
-       Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultRemoveQueryParamOnRedirect());
-       testBooleanSystemProperty("removeQueryParamOnRedirect", "defaultRemoveQueryParamOnRedirect", "false");
-    }
-
     public void testDefaultSpdyEnabled() {
         Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultSpdyEnabled());
         testBooleanSystemProperty("spdyEnabled", "defaultSpdyEnabled", "true");

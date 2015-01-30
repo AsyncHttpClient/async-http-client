@@ -83,7 +83,6 @@ public class AsyncHttpClientConfig {
 
     protected boolean followRedirect;
     protected int maxRedirects;
-    protected boolean removeQueryParamOnRedirect;
     protected boolean strict302Handling;
 
     protected ProxyServerSelector proxyServerSelector;
@@ -125,7 +124,6 @@ public class AsyncHttpClientConfig {
             boolean acceptAnyCertificate, //
             boolean followRedirect, //
             int maxRedirects, //
-            boolean removeQueryParamOnRedirect,//
             boolean strict302Handling, //
             ExecutorService applicationThreadPool,//
             ProxyServerSelector proxyServerSelector, //
@@ -160,7 +158,6 @@ public class AsyncHttpClientConfig {
         this.acceptAnyCertificate = acceptAnyCertificate;
         this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
-        this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
         this.strict302Handling = strict302Handling;
         this.proxyServerSelector = proxyServerSelector;
         this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
@@ -431,15 +428,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return true if the query parameters will be stripped from the request when a redirect is requested.
-     *
-     * @return true if the query parameters will be stripped from the request when a redirect is requested.
-     */
-    public boolean isRemoveQueryParamOnRedirect() {
-        return removeQueryParamOnRedirect;
-    }
-
-    /**
      * @return <code>true</code> if both the application and reaper thread pools
      * haven't yet been shutdown.
      * @since 1.7.21
@@ -535,7 +523,6 @@ public class AsyncHttpClientConfig {
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
-        private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
         private ProxyServerSelector proxyServerSelector = null;
         private boolean useProxySelector = defaultUseProxySelector();
@@ -873,17 +860,6 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set to false if you don't want the query parameters removed when a redirect occurs.
-         *
-         * @param removeQueryParamOnRedirect
-         * @return this
-         */
-        public Builder setRemoveQueryParamsOnRedirect(boolean removeQueryParamOnRedirect) {
-            this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
-            return this;
-        }
-
-        /**
          * Sets whether AHC should use the default JDK ProxySelector to select a proxy server.
          * <p/>
          * If useProxySelector is set to <code>true</code> but {@link #setProxyServer(ProxyServer)}
@@ -1052,7 +1028,6 @@ public class AsyncHttpClientConfig {
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowPoolingSslConnections = prototype.isAllowPoolingConnections();
-            removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             strict302Handling = prototype.isStrict302Handling();
             acceptAnyCertificate = prototype.acceptAnyCertificate;
             enabledProtocols = prototype.enabledProtocols;
@@ -1093,7 +1068,6 @@ public class AsyncHttpClientConfig {
                     acceptAnyCertificate, //
                     followRedirect, //
                     maxRedirects, //
-                    removeQueryParamOnRedirect,//
                     strict302Handling, //
                     applicationThreadPool, //
                     proxyServerSelector, //

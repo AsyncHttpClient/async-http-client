@@ -138,9 +138,6 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
 
-                if (config.isRemoveQueryParamOnRedirect())
-                    uri = uri.withNewQuery(null);
-
                 if (!uri.equals(future.getUri())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
 

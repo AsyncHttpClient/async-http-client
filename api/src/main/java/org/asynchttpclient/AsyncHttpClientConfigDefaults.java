@@ -105,10 +105,6 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
     }
 
-    public static boolean defaultRemoveQueryParamOnRedirect() {
-        return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect");
-    }
-
     public static boolean defaultSpdyEnabled() {
         return AsyncPropertiesHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT + "spdyEnabled");
     }
