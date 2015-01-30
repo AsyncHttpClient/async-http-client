@@ -105,10 +105,6 @@ public final class AsyncHttpClientConfigDefaults {
         return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
     }
 
-    public static boolean defaultRemoveQueryParamOnRedirect() {
-        return getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
-    }
-    
     public static boolean defaultAcceptAnyCertificate() {
         return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
     }

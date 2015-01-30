@@ -214,21 +214,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void stripQueryStringNegativeTest() throws Throwable {
-
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setRemoveQueryParamsOnRedirect(false).setFollowRedirect(true).build();
-        AsyncHttpClient client = getAsyncHttpClient(cg);
-        try {
-            Response response = client.prepareGet("http://www.freakonomics.com/?p=55846").execute().get();
-
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 301);
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "online", "default_provider" })
     public void evilCoookieTest() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {

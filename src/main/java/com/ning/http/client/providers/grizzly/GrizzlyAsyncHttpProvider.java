@@ -20,9 +20,6 @@ import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.CloseListener;
-import org.glassfish.grizzly.CloseType;
-import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
@@ -72,8 +69,6 @@ import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
-import org.glassfish.grizzly.websockets.HandShake;
-import org.glassfish.grizzly.websockets.ProtocolHandler;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.Version;
 import org.glassfish.grizzly.websockets.WebSocketFilter;
@@ -144,7 +139,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -1646,12 +1640,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 builder.setMethod("GET");
             }
             builder.setUrl(uri.toString());
+            builder.resetQuery();
 
-            if (ctx.provider.clientConfig.isRemoveQueryParamOnRedirect()) {
-                builder.resetQuery();
-            } else {
-                builder.addQueryParams(ctx.request.getQueryParams());
-            }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
                 builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
             }
