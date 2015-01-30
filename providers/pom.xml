@@ -44,7 +44,6 @@
     </build>
 
     <modules>
-<!--         <module>grizzly</module> -->
 		<module>netty-commons</module>
         <module>netty3</module>
         <module>netty4</module>
