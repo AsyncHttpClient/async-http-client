@@ -113,8 +113,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").setScheme(Realm.AuthScheme.DIGEST).build());
 
             Future<Response> f = r.execute();
@@ -122,15 +121,12 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp.getHeader("X-Auth"));
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").build());
 
             Future<Response> f = r.execute();
@@ -138,23 +134,18 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp.getHeader("X-Auth"));
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).setScheme(Realm.AuthScheme.DIGEST).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(20, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 401);
-        } finally {
-            client.close();
         }
     }
 

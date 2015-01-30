@@ -69,8 +69,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testEmptyBody() throws IOException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
             final AtomicBoolean status = new AtomicBoolean(false);
@@ -121,15 +120,12 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
             assertEquals(queue.size(), 0);
             assertTrue(status.get());
             assertEquals(headers.get(), 1);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testPutEmptyBody() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response response = client.preparePut(getTargetUrl()).setBody("String").execute().get();
 
             assertNotNull(response);
@@ -137,9 +133,6 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
             assertEquals(response.getResponseBody(), "");
             assertTrue(response.getResponseBodyAsStream() instanceof InputStream);
             assertEquals(response.getResponseBodyAsStream().read(), -1);
-
-        } finally {
-            client.close();
         }
     }
 }

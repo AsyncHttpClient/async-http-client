@@ -93,15 +93,10 @@ public class GrizzlyNoTransferEncodingTest {
             .setIOThreadMultiplier(2) // 2 is default
             .build();
 
-        AsyncHttpClient client = new AsyncHttpClient(
-                new GrizzlyAsyncHttpProvider(config), config);
-
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config)) {
             Future<com.ning.http.client.Response> f = client.prepareGet(url).execute();
             com.ning.http.client.Response r = f.get(10, TimeUnit.SECONDS);
             Assert.assertEquals(TEST_MESSAGE, r.getResponseBody());
-        } finally {
-            client.close();
         }
     }
 }

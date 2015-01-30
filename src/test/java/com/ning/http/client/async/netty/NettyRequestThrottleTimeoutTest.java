@@ -73,10 +73,8 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAllowPoolingConnections(true).setMaxConnections(1).build());
-
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
+        .setAllowPoolingConnections(true).setMaxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(2);
 
             final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
@@ -126,9 +124,6 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
             assertTrue(tooManyConnections.size() == 0,
                     "Should not have any connection errors where too many connections have been attempted");
-
-        } finally {
-            client.close();
         }
     }
 }

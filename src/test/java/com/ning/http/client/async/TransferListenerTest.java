@@ -109,8 +109,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response response = client.prepareGet(getTargetUrl()).execute(tl).get();
 
             assertNotNull(response);
@@ -119,8 +118,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertNotNull(bb.get());
             assertNull(throwable.get());
-        } finally {
-            client.close();
         }
     }
 
@@ -167,8 +164,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response response = client.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
 
             assertNotNull(response);
@@ -177,8 +173,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), largeFile.length());
             assertEquals(bbSentLenght.get(), largeFile.length());
-        } finally {
-            client.close();
         }
     }
 
@@ -225,8 +219,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
 
             assertNotNull(response);
@@ -235,8 +228,6 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNotNull(hSent.get());
             assertEquals(bbReceivedLenght.get(), largeFile.length());
             assertEquals(bbSentLenght.get(), largeFile.length());
-        } finally {
-            client.close();
         }
     }
 
@@ -256,15 +247,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
+        try (FileOutputStream out = new FileOutputStream(file)) {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
             }
         }
     }

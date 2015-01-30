@@ -98,8 +98,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setAcceptAnyCertificate(true)//
         .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
             Future<Response> responseFuture = client.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
@@ -116,9 +115,6 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), "keep-alive");
-
-        } finally {
-            client.close();
         }
     }
 
@@ -130,8 +126,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setFollowRedirect(true)//
         .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
             Future<Response> responseFuture = client.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
@@ -148,8 +143,6 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), "keep-alive");
-        } finally {
-            client.close();
         }
     }
 
@@ -181,15 +174,12 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setAcceptAnyCertificate(true)//
         .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Response resp = client.prepareGet(getTargetUrl2()).setProxyServer(new ProxyServer("127.0.0.1", port1 - 1).addNonProxyHost("127.0.0.1")).execute().get(3, TimeUnit.SECONDS);
 
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("X-pathInfo"), "/foo/test");
-        } finally {
-            client.close();
         }
     }
 }

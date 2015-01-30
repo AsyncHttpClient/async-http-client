@@ -50,23 +50,17 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
                 byte[] b = new byte[MAX_BODY_SIZE];
                 int offset = 0;
                 int numBytesRead;
-                ServletInputStream is = request.getInputStream();
-                try {
+                try (ServletInputStream is = request.getInputStream()) {
                     while ((numBytesRead = is.read(b, offset, MAX_BODY_SIZE - offset)) != -1) {
                         offset += numBytesRead;
                     }
-                } finally {
-                    is.close();
                 }
                 assertEquals(request.getContentLength(), offset);
                 response.setStatus(200);
                 response.setCharacterEncoding(request.getCharacterEncoding());
                 response.setContentLength(request.getContentLength());
-                ServletOutputStream os = response.getOutputStream();
-                try {
+                try (ServletOutputStream os = response.getOutputStream()) {
                     os.write(b, 0, offset);
-                } finally {
-                    os.close();
                 }
             }
         });
@@ -81,15 +75,12 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
             Future<Response> f = r.execute();
             Response resp = f.get();
             assertEquals(resp.getStatusCode(), 200);
             assertEquals(body, resp.getResponseBody("UTF-8"));
-        } finally {
-            client.close();
         }
     }
 }

@@ -54,16 +54,13 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
         long repeats = (1024 * 1024 / bytes.length) + 1;
         File largeFile = FilePartLargeFileTest.createTempFile(bytes, (int) repeats);
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
             rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", UTF_8));
 
             Response response = rb.execute().get();
             Assert.assertEquals(401, response.getStatusCode());
-        } finally {
-            client.close();
         }
     }
 }

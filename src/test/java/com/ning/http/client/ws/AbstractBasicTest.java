@@ -68,16 +68,8 @@ public abstract class AbstractBasicTest extends Server {
     }
 
     protected int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 

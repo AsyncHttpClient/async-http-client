@@ -30,8 +30,7 @@ public abstract class ListenableFutureTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testListenableFuture() throws Throwable {
         final AtomicInteger statusCode = new AtomicInteger(500);
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final ListenableFuture<Response> future = client.prepareGet(getTargetUrl()).execute();
             future.addListener(new Runnable() {
@@ -50,8 +49,6 @@ public abstract class ListenableFutureTest extends AbstractBasicTest {
 
             latch.await(10, TimeUnit.SECONDS);
             assertEquals(statusCode.get(), 200);
-        } finally {
-            client.close();
         }
     }
 }

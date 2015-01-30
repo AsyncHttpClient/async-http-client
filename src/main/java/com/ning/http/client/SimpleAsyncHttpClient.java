@@ -62,7 +62,7 @@ import java.util.concurrent.Future;
  * Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
  * </pre></blockquote>
  */
-public class SimpleAsyncHttpClient {
+public class SimpleAsyncHttpClient implements AutoCloseable {
 
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;

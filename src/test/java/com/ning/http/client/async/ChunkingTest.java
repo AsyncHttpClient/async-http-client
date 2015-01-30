@@ -93,8 +93,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                 .setRequestTimeout(1000)//
                 .setFollowRedirect(true);
 
-        AsyncHttpClient client = getAsyncHttpClient(bc.build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(bc.build())) {
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
             // made buff in stream big enough to mark.
@@ -110,9 +109,6 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             } else {
                 assertEquals(readInputStreamToBytes(res.getResponseBodyAsStream()), LARGE_IMAGE_BYTES);
             }
-        } finally {
-            if (client != null)
-                client.close();
         }
     }
     

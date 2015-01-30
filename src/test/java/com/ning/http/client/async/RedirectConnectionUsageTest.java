@@ -111,8 +111,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
                 .setRequestTimeout(1000)//
                 .setFollowRedirect(true);
 
-        AsyncHttpClient client = getAsyncHttpClient(bc.build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(bc.build())) {
 
             RequestBuilder builder = new RequestBuilder("GET");
             builder.setUrl(servletEndpointRedirectUrl);
@@ -135,10 +134,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             }
 
 
-        }
-        finally {
-            // can hang here
-            if (client != null) client.close();
         }
     }
 

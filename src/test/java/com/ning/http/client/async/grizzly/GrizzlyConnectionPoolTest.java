@@ -39,10 +39,9 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Override
     @Test
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build());
-        try {
+        try(AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build())) {
             String url = getTargetUrl();
-            ListenableFuture lockRequest = null;
+            ListenableFuture<?> lockRequest = null;
             try {
                 lockRequest = client.prepareGet(url).addHeader("LockThread", "true").execute();
             } catch (Exception e) {
@@ -58,8 +57,6 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
                 fail("Unexpected exception thrown.", e);
             }
             lockRequest.cancel(true);
-        } finally {
-            client.close();
         }
     }
 
@@ -67,8 +64,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Test
     public void multipleMaxConnectionOpenTest() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setConnectTimeout(5000).setMaxConnections(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             String body = "hello there";
 
             // once
@@ -86,8 +82,6 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
                 exception = ex;
             }
             assertNotNull(exception);
-        } finally {
-            c.close();
         }
     }
 }

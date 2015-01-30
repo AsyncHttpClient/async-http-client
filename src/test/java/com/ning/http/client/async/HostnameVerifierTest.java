@@ -149,16 +149,8 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
     }
 
     protected int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 
@@ -199,8 +191,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void positiveHostnameVerifierTest() throws Throwable {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext()).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext()).build())) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -211,16 +202,13 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void negativeHostnameVerifierTest() throws Throwable {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext()).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext()).build())) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -231,16 +219,13 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             } catch (ExecutionException ex) {
                 assertTrue(ex.getCause() instanceof ConnectException);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void remoteIDHostnameVerifierTest() throws Throwable {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext()).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext()).build())) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -251,16 +236,13 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             } catch (ExecutionException ex) {
                 assertTrue(ex.getCause() instanceof ConnectException);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void remotePosHostnameVerifierTest() throws Throwable {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext()).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext()).build())) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -271,8 +253,6 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             } catch (ExecutionException ex) {
                 assertTrue(ex.getCause() instanceof ConnectException);
             }
-        } finally {
-            client.close();
         }
     }
 

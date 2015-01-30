@@ -64,16 +64,13 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 400);
             String respStr = resp.getResponseBody();
             assertEquals(BAD_REQUEST_STR, respStr);
-        } finally {
-            client.close();
         }
     }
 }

@@ -32,8 +32,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -43,15 +42,12 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
             latch.await();
             assertTrue(text.get().startsWith("1000"));
-        } finally {
-            client.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
@@ -65,8 +61,6 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             assertTrue(Integer.parseInt(parts[2].substring(0, parts[2].indexOf('m'))) > 10000);
             assertEquals(parts[3], ">");
             assertEquals(parts[4], "10000ms");
-        } finally {
-            client.close();
         }
     }
 
@@ -102,8 +96,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void wrongStatusCode() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
@@ -131,15 +124,12 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             latch.await();
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
-        } finally {
-            client.close();
         }
     }
 
     @Test(timeOut = 60000)
     public void wrongProtocolCode() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
 
@@ -167,8 +157,6 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             latch.await();
             assertNotNull(throwable.get());
             assertEquals(throwable.get().getClass(), IllegalStateException.class);
-        } finally {
-            client.close();
         }
     }
 }

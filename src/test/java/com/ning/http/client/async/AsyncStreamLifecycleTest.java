@@ -101,8 +101,7 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testStream() throws IOException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
             final AtomicBoolean status = new AtomicBoolean(false);
@@ -153,8 +152,6 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
             assertTrue(queue.contains("part2"));
             assertTrue(status.get());
             assertEquals(headers.get(), 1);
-        } finally {
-            client.close();
         }
     }
 }

@@ -64,8 +64,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build())) {
             Exception exception = null;
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
@@ -76,8 +75,6 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             assertNotNull(exception);
             assertNotNull(exception.getCause());
             assertEquals(exception.getCause().getMessage(), "Pool is already closed");
-        } finally {
-            client.close();
         }
     }
 
@@ -94,8 +91,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build())) {
             Exception exception = null;
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
@@ -104,16 +100,12 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                 exception = ex;
             }
             assertNull(exception);
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testHostNotContactable() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAllowPoolingConnections(true).setMaxConnections(1).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(true).setMaxConnections(1).build())) {
             String url = null;
             try {
                 url = "http://127.0.0.1:" + findFreePort();
@@ -132,8 +124,6 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                     assertTrue(cause instanceof ConnectException);
                 }
             }
-        } finally {
-            client.close();
         }
     }
 
@@ -163,5 +153,4 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
                     "Got: " + Joiner.on(", ").join(secondHandler.firedEvents));
         }
     }
-
 }

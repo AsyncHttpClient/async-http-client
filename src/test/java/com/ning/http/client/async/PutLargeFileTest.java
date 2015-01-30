@@ -45,16 +45,13 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
         largeFile = createTempFile(bytes, (int) repeats);
         int timeout = (int) (largeFile.length() / 1000);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build();
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
             rb.setBody(largeFile);
 
             Response response = rb.execute().get();
             Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
         }
     }
 
@@ -64,16 +61,13 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
         long repeats = (1024 / bytes.length) + 1;
         largeFile = createTempFile(bytes, (int) repeats);
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
             rb.setBody(largeFile);
 
             Response response = rb.execute().get();
             Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
         }
     }
 
@@ -124,15 +118,9 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
     public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
+        try (FileOutputStream out = new FileOutputStream(file)) {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
             }
         }
     }

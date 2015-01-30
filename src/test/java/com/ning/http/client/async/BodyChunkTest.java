@@ -38,9 +38,7 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
         confbuilder = confbuilder.setMaxConnections(50);
         confbuilder = confbuilder.setRequestTimeout(5 * 60 * 1000); // 5 minutes
 
-        // Create client
-        AsyncHttpClient client = getAsyncHttpClient(confbuilder.build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(confbuilder.build())) {
             RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
 
             requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
@@ -51,8 +49,6 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
             Response response = future.get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBody(), MY_MESSAGE);
-        } finally {
-            client.close();
         }
     }
 }

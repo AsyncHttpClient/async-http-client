@@ -81,14 +81,11 @@ public abstract class NTLMTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRealm(realmBuilder.build()).build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
             Assert.assertEquals(status, 200);
-        } finally {
-            client.close();
         }
     }
 

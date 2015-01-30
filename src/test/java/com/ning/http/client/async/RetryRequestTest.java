@@ -74,8 +74,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build())) {
             client.executeRequest(client.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {
@@ -84,8 +83,6 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
             if (t.getCause() != AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION) {
                 fail();
             }
-        } finally {
-            client.close();
         }
     }
 }

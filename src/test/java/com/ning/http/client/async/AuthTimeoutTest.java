@@ -125,9 +125,9 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, false);
             try {
                 f.get();
@@ -135,17 +135,15 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
             } catch (Exception e) {
                 inspectException(e);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, true);
             try {
                 f.get();
@@ -153,17 +151,15 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
             } catch (Exception e) {
                 inspectException(e);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, false);
             try {
                 f.get();
@@ -171,88 +167,76 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
             } catch (Exception e) {
                 inspectException(e);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, true);
             f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build();
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             Future<Response> f = execute(client, true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
-        } finally {
-            client.close();
         }
     }
 

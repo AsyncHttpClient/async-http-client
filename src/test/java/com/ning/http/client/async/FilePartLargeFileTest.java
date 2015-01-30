@@ -43,16 +43,13 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutImageFile() throws Exception {
         File largeFile = getTestFile();
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build();
-        AsyncHttpClient client = getAsyncHttpClient(config);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
             rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", UTF_8));
 
             Response response = rb.execute().get();
             Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
         }
     }
 
@@ -62,16 +59,13 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
         long repeats = (1024 * 1024 / bytes.length) + 1;
         File largeFile = createTempFile(bytes, (int) repeats);
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
             rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", UTF_8));
 
             Response response = rb.execute().get();
             Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
         }
     }
 
@@ -134,15 +128,9 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
+        try (FileOutputStream out = new FileOutputStream(file)) {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
             }
         }
     }

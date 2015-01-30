@@ -53,16 +53,9 @@ public class RetryNonBlockingIssue {
     private int port1;
 
     public static int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
+        try (ServerSocket socket = new ServerSocket(0)) {
             // 0 is open a socket on any free port
-            socket = new ServerSocket(0);
             return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 
@@ -133,9 +126,8 @@ public class RetryNonBlockingIssue {
         .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
         
-        AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
@@ -152,9 +144,6 @@ public class RetryNonBlockingIssue {
             }
             System.out.println(b.toString());
             System.out.flush();
-
-        } finally {
-            client.close();
         }
     }
 
@@ -166,9 +155,8 @@ public class RetryNonBlockingIssue {
         .setMaxConnections(100)//
         .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
-        AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
@@ -185,9 +173,6 @@ public class RetryNonBlockingIssue {
             }
             System.out.println(b.toString());
             System.out.flush();
-
-        }finally {
-            client.close();
         }
     }
 
@@ -199,10 +184,9 @@ public class RetryNonBlockingIssue {
         .setMaxConnections(100)//
         .setConnectTimeout(30000)//
         .setRequestTimeout(30000);
-        AsyncHttpClient client = new AsyncHttpClient(bc.build());
         List<ListenableFuture<Response>> res = new
                 ArrayList<ListenableFuture<Response>>();
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
@@ -220,9 +204,6 @@ public class RetryNonBlockingIssue {
             }
             System.out.println(b.toString());
             System.out.flush();
-
-        } finally {
-            client.close();
         }
     }
 

@@ -124,15 +124,12 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient client = getAsyncHttpClient(cg);
 
-        try {
-        Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        } finally {
-            client.close();
+        try (AsyncHttpClient client = getAsyncHttpClient(cg)) {
+            Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("X-httpToHttps"), "PASS");
         }
     }
 
@@ -149,8 +146,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient client = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(cg)) {
             Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -161,8 +157,6 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        } finally {
-            client.close();
         }
     }
 
@@ -175,14 +169,11 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        AsyncHttpClient client = getAsyncHttpClient(cg);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(cg)) {
             Response response = client.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
             assertEquals(response.getUri().toString(), getTargetUrl());
-        } finally {
-            client.close();
         }
     }
 }

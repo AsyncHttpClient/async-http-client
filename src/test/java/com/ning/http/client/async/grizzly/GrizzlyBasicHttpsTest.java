@@ -45,9 +45,8 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(hostnameVerifier).setRequestTimeout(20000).build());
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(hostnameVerifier).setRequestTimeout(20000).build())) {
 
-        try {
             try {
             client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
             
@@ -57,9 +56,6 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
             } catch (Exception e) {
                 Assert.assertTrue(false, "Shouldn't be here: should get a ConnectException wrapping a ConnectException");
             }
-            
-        } finally {
-            client.close();
         }
     }
 }

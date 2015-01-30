@@ -66,8 +66,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -98,15 +97,12 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             assertEquals(resp.getResponseBody(), "This is a simple test file");
             assertTrue(operationCompleted.get());
             assertTrue(headerSent.get());
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -117,8 +113,6 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
-        } finally {
-            client.close();
         }
     }
 
@@ -129,8 +123,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -164,15 +157,12 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             stream.close();
             assertNull(resp);
             assertEquals(file.length(), tmp.length());
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -211,8 +201,6 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             stream.close();
             assertNull(resp);
             assertEquals(file.length(), tmp.length());
-        } finally {
-            client.close();
         }
     }
 }

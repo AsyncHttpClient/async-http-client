@@ -59,8 +59,7 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void Expect100Continue() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             ClassLoader cl = getClass().getClassLoader();
             URL url = cl.getResource("SimpleTextFile.txt");
             File file = new File(url.toURI());
@@ -70,8 +69,6 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
-        } finally {
-            client.close();
         }
     }
 

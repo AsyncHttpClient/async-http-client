@@ -161,16 +161,8 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     }
 
     protected int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 
@@ -210,8 +202,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Throwable {
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
             URL url = cl.getResource("SimpleTextFile.txt");
@@ -222,15 +213,12 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
-        } finally {
-            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
-        try {
+        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
             String body = "hello there";
 
             // once
@@ -242,15 +230,12 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            c.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build())) {
             String body = "hello there";
             client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -259,8 +244,6 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get();
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            client.close();
         }
     }
 
@@ -268,8 +251,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
         
         AtomicBoolean trust = new AtomicBoolean(false);
-        AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build());
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build())) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
@@ -292,37 +274,37 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
-        } finally {
-            client.close();
         }
     }
 
     private static KeyManager[] createKeyManagers() throws GeneralSecurityException, IOException {
-        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-cacerts.jks");
-        char[] keyStorePassword = "changeit".toCharArray();
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(keyStoreStream, keyStorePassword);
-        assert(ks.size() > 0);
-
-        // Set up key manager factory to use our key store
-        char[] certificatePassword = "changeit".toCharArray();
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, certificatePassword);
-
-        // Initialize the SSLContext to work with our key managers.
-        return kmf.getKeyManagers();
+        try (InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-cacerts.jks")) {
+            char[] keyStorePassword = "changeit".toCharArray();
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(keyStoreStream, keyStorePassword);
+            assert(ks.size() > 0);
+    
+            // Set up key manager factory to use our key store
+            char[] certificatePassword = "changeit".toCharArray();
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, certificatePassword);
+    
+            // Initialize the SSLContext to work with our key managers.
+            return kmf.getKeyManagers();
+        }
     }
 
     private static TrustManager[] createTrustManagers() throws GeneralSecurityException, IOException {
-        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-keystore.jks");
-        char[] keyStorePassword = "changeit".toCharArray();
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(keyStoreStream, keyStorePassword);
-        assert(ks.size() > 0);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(ks);
-        return tmf.getTrustManagers();
+        try (InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-keystore.jks")) {
+            char[] keyStorePassword = "changeit".toCharArray();
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(keyStoreStream, keyStorePassword);
+            assert(ks.size() > 0);
+    
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(ks);
+            return tmf.getTrustManagers();
+        }
     }
 
     public static SSLContext createSSLContext(AtomicBoolean trust) {

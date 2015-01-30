@@ -137,8 +137,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
                 .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
-        final AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config)) {
             final int[] statusCodes = new int[threadCount];
             final int[] totalsReceived = new int[threadCount];
             final Throwable[] errors = new Throwable[threadCount];
@@ -151,23 +150,14 @@ public class GrizzlyFeedableBodyGeneratorTest {
                         FeedableBodyGenerator.SimpleFeeder simpleFeeder = new FeedableBodyGenerator.SimpleFeeder(generator) {
                             @Override
                             public void flush() throws IOException {
-                                FileInputStream in = null;
-                                try {
+                                try (FileInputStream in = new FileInputStream(tempFile)) {
                                     final byte[] bytesIn = new byte[2048];
-                                    in = new FileInputStream(tempFile);
                                     int read;
                                     while ((read = in.read(bytesIn)) != -1) {
                                         final Buffer b = Buffers.wrap(DEFAULT_MEMORY_MANAGER, bytesIn, 0, read);
                                         feed(b, false);
                                     }
                                     feed(Buffers.EMPTY_BUFFER, true);
-                                } finally {
-                                    if (in != null) {
-                                        try {
-                                            in.close();
-                                        } catch (IOException ignored) {
-                                        }
-                                    }
                                 }
                             }
                         };
@@ -214,8 +204,6 @@ public class GrizzlyFeedableBodyGeneratorTest {
                 assertNull(errors[i]);
                 assertEquals(totalsReceived[i], tempFile.length());
             }
-        } finally {
-            client.close();
         }
     }
 
@@ -231,8 +219,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
                 .setMaxConnections(60)
                 .setAcceptAnyCertificate(true)
                 .build();
-        final AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config)) {
             final int[] statusCodes = new int[threadCount];
             final int[] totalsReceived = new int[threadCount];
             final Throwable[] errors = new Throwable[threadCount];
@@ -339,8 +326,6 @@ public class GrizzlyFeedableBodyGeneratorTest {
                 assertNull(errors[i]);
                 assertEquals(totalsReceived[i], tempFile.length());
             }
-        } finally {
-            client.close();
         }
     }
 

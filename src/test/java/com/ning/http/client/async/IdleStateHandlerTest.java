@@ -29,10 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.testng.Assert.fail;
 
 public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -76,14 +73,9 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(10 * 1000).build();
-        AsyncHttpClient client = getAsyncHttpClient(cg);
 
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(cg)) {
             client.prepareGet(getTargetUrl()).execute().get();
-        } catch (ExecutionException e) {
-            fail("Should allow to finish processing request.", e);
-        } finally {
-            client.close();
         }
     }
 }

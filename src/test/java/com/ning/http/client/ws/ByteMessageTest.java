@@ -70,8 +70,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
 
@@ -103,15 +102,12 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHO".getBytes());
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -150,15 +146,12 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void echoOnOpenMessagesTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -196,14 +189,11 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            client.close();
         }
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
@@ -241,8 +231,6 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             websocket.stream("ECHO".getBytes(), true);
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
-        } finally {
-            client.close();
         }
     }
 }

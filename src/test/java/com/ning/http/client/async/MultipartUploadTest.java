@@ -13,7 +13,6 @@
 package com.ning.http.client.async;
 
 import static java.nio.charset.StandardCharsets.*;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -64,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -131,9 +131,12 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
     /**
      * Tests that the streaming of a file works.
+     * @throws IOException 
+     * @throws ExecutionException 
+     * @throws InterruptedException 
      */
     @Test
-    public void testSendingSmallFilesAndByteArray() {
+    public void testSendingSmallFilesAndByteArray() throws IOException, InterruptedException, ExecutionException {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
         String expectedContents3 = "filecontent: hello2";
@@ -181,11 +184,8 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         gzipped.add(false);
 
         boolean tmpFileCreated = false;
-        File tmpFile = null;
-        FileOutputStream os = null;
-        try {
-            tmpFile = File.createTempFile("textbytearray", ".txt");
-            os = new FileOutputStream(tmpFile);
+        File tmpFile = File.createTempFile("textbytearray", ".txt");
+        try (FileOutputStream os = new FileOutputStream(tmpFile)) {
             IOUtils.write(expectedContents.getBytes("UTF-8"), os);
             tmpFileCreated = true;
 
@@ -199,10 +199,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         } catch (IOException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
-        } finally {
-            if (os != null) {
-                IOUtils.closeQuietly(os);
-            }
         }
 
         if (!tmpFileCreated) {
@@ -213,9 +209,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         bc.setFollowRedirect(true);
 
-        AsyncHttpClient client = new AsyncHttpClient(bc.build());
-
-        try {
+        try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
@@ -237,11 +231,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             testSentFile(expected, testFiles, res, gzipped);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Download Exception");
         } finally {
-            client.close();
             FileUtils.deleteQuietly(tmpFile);
         }
     }

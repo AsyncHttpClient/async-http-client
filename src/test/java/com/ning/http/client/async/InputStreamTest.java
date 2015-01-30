@@ -54,8 +54,7 @@ public abstract class InputStreamTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
@@ -88,8 +87,6 @@ public abstract class InputStreamTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("X-Param"), "abc");
-        } finally {
-            client.close();
         }
     }
 

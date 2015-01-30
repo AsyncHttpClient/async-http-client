@@ -77,8 +77,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
             long repeats = (1024 * 100 * 10 / bytes.length) + 1;
             File largeFile = createTempFile(bytes, (int) repeats);
@@ -102,8 +101,6 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
             } catch (IOException ex) {
                 fail("Should have timed out");
             }
-        } finally {
-            client.close();
         }
     }
 
@@ -123,15 +120,9 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
     public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
+        try (FileOutputStream out = new FileOutputStream(file)) {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
             }
         }
     }
