@@ -17,6 +17,7 @@ import com.ning.http.util.SslUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 import java.security.GeneralSecurityException;
 
@@ -49,6 +50,10 @@ public interface SSLEngineFactory {
                 sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
 
             SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+            if (!config.isAcceptAnyCertificate()) {
+                SSLParameters params = sslEngine.getSSLParameters();
+                params.setEndpointIdentificationAlgorithm("HTTPS");
+            }
             sslEngine.setUseClientMode(true);
 
             if (config.getEnabledProtocols() != null)

@@ -43,7 +43,6 @@ public class NettyBasicHttpsTest extends BasicHttpsTest {
                     "PoolConnection",
                     "OpenConnection",
                     "DnsResolved",
-                    "SslHandshakeCompleted",
                     "ConnectionOpen",
                     "SendRequest",
                     "HeaderWriteCompleted",
@@ -54,7 +53,6 @@ public class NettyBasicHttpsTest extends BasicHttpsTest {
             assertEquals(handler.firedEvents, expectedEvents,
                     "Got: " + Joiner.on(", ").join(handler.firedEvents));
         }
-
     }
 
     @Override

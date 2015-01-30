@@ -13,16 +13,53 @@
 
 package com.ning.http.client.async.grizzly;
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.async.BasicHttpsTest;
 import com.ning.http.client.async.ProviderUtil;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
+import java.net.ConnectException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
+    }
+    
+    @Test(timeOut = 5000)
+    public void failInstantlyIfHostNamesDiffer() throws Exception {
+
+        HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+            public boolean verify(String arg0, SSLSession arg1) {
+                return false;
+            }
+        };
+
+        AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(hostnameVerifier).setRequestTimeout(20000).build());
+
+        try {
+            try {
+            client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            
+            Assert.assertTrue(false, "Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                Assert.assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
+            } catch (Exception e) {
+                Assert.assertTrue(false, "Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
+            
+        } finally {
+            client.close();
+        }
     }
 }
