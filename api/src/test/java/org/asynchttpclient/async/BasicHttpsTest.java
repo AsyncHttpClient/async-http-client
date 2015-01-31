@@ -84,29 +84,23 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void reconnectsAfterFailedCertificationPath() throws Exception {
-        AtomicBoolean trusted = new AtomicBoolean(false);
-        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build())) {
+        
+        AtomicBoolean trust = new AtomicBoolean(false);
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build())) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
             Throwable cause = null;
             try {
-                c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+                client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (final ExecutionException e) {
                 cause = e.getCause();
-                if (cause instanceof ConnectException) {
-                    //assertNotNull(cause.getCause());
-                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
-                } else {
-                   assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
-                }
             }
-            assertNotNull(cause);
-
-            trusted.set(true);
+            assertTrue(cause instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
 
             // second request should succeed
-            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            trust.set(true);
+            Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         }
