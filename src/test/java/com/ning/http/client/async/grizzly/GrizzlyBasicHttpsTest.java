@@ -31,4 +31,9 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
     @Override
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Exception {
     }
+
+    @Test(enabled = false)
+    @Override
+    public void reconnectsAfterFailedCertificationPath() throws Exception {
+    }
 }

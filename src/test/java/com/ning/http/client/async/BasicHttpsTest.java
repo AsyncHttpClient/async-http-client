@@ -258,14 +258,8 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
                 client.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (final ExecutionException e) {
                 cause = e.getCause();
-                if (cause instanceof ConnectException) {
-                    //assertNotNull(cause.getCause());
-                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
-                } else {
-                   assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
-                }
             }
-            assertNotNull(cause);
+            assertTrue(cause instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
 
             // second request should succeed
             trust.set(true);
