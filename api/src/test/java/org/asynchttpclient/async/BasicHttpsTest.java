@@ -18,9 +18,7 @@ package org.asynchttpclient.async;
 import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.async.util.TestUtils.SIMPLE_TEXT_FILE_STRING;
 import static org.asynchttpclient.async.util.TestUtils.createSSLContext;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
@@ -111,6 +109,21 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
+        }
+    }
+
+    @Test(timeOut = 5000)
+    public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Exception {
+
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setRequestTimeout(2000).build())) {
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                fail("Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                assertTrue(e.getCause() instanceof SSLHandshakeException, "Cause should be a SSLHandshakeException");
+            } catch (Exception e) {
+                fail("Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
         }
     }
 }
