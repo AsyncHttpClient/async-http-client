@@ -58,9 +58,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public abstract class BasicHttpsTest extends AbstractBasicTest {
 
@@ -277,6 +275,21 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
         }
     }
 
+    @Test(timeOut = 2000)
+    public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Exception {
+
+        try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setRequestTimeout(2000).build())) {
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                fail("Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                assertTrue(e.getCause() instanceof SSLHandshakeException, "Cause should be a SSLHandshakeException");
+            } catch (Exception e) {
+                fail("Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
+        }
+    }
+ 
     private static KeyManager[] createKeyManagers() throws GeneralSecurityException, IOException {
         try (InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-cacerts.jks")) {
             char[] keyStorePassword = "changeit".toCharArray();
