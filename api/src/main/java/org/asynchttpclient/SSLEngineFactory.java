@@ -53,6 +53,7 @@ public interface SSLEngineFactory {
             if (!config.isAcceptAnyCertificate()) {
                 SSLParameters params = sslEngine.getSSLParameters();
                 params.setEndpointIdentificationAlgorithm("HTTPS");
+                sslEngine.setSSLParameters(params);
             }
             sslEngine.setUseClientMode(true);
 
