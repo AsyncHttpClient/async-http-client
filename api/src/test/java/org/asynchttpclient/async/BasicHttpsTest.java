@@ -112,17 +112,14 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(timeOut = 5000)
-    public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Exception {
+    @Test(timeOut = 2000, expectedExceptions = { SSLHandshakeException.class } )
+    public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
         try (AsyncHttpClient client = getAsyncHttpClient(new Builder().setRequestTimeout(2000).build())) {
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-                fail("Shouldn't be here: should get an Exception");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause() instanceof SSLHandshakeException, "Cause should be a SSLHandshakeException");
-            } catch (Exception e) {
-                fail("Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+                throw e.getCause() != null ? e.getCause() : e;
             }
         }
     }
