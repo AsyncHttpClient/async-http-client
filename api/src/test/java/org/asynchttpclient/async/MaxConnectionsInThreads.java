@@ -16,17 +16,16 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.*;
-
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -58,12 +57,11 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 .setMaxConnections(1).setMaxConnectionsPerHost(1).build();
 
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
-        final AtomicReference<Integer> failedRank = new AtomicReference<>(-1);
+        final AtomicInteger failedCount = new AtomicInteger();
         
         try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
-                final int rank = i;
                 Thread t = new Thread() {
                     public void run() {
                         client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
@@ -77,7 +75,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                             @Override
                             public void onThrowable(Throwable t) {
                                 super.onThrowable(t);
-                                failedRank.set(rank);
+                                failedCount.incrementAndGet();
                                 inThreadsLatch.countDown();
                             }
                         });
@@ -88,13 +86,12 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
             inThreadsLatch.await();
 
-            assertEquals(failedRank.get().intValue(), 1, "Max Connections should have been reached");
+            assertEquals(failedCount.get(), 1, "Max Connections should have been reached when launching from concurrent threads");
 
             final CountDownLatch notInThreadsLatch = new CountDownLatch(2);
-            failedRank.set(-1);
+            failedCount.set(0);
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
-                final int rank = i;
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
                     @Override
                     public Response onCompleted(Response response) throws Exception {
@@ -106,7 +103,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                     @Override
                     public void onThrowable(Throwable t) {
                         super.onThrowable(t);
-                        failedRank.set(rank);
+                        failedCount.incrementAndGet();
                         notInThreadsLatch.countDown();
                     }
                 });
@@ -114,7 +111,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
             
             notInThreadsLatch.await();
             
-            assertEquals(failedRank.get().intValue(), 1, "Max Connections should have been reached");
+            assertEquals(failedCount.get(), 1, "Max Connections should have been reached when launching from main thread");
         }
     }
 
