@@ -13,8 +13,6 @@
 
 package com.ning.http.client.async.grizzly;
 
-import org.testng.annotations.Test;
-
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.MaxConnectionsInThreads;
@@ -25,10 +23,5 @@ public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
-    }
-
-    @Test(enabled = false)
-    @Override
-    public void testMaxConnectionsWithinThreads() throws InterruptedException {
     }
 }
