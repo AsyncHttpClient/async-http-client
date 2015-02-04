@@ -61,7 +61,6 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
         try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
-                final int rank = i;
                 Thread t = new Thread() {
                     public void run() {
                         client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
