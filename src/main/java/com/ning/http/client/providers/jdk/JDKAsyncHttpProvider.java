@@ -224,6 +224,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         public T call() throws Exception {
+            terminate = true;
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
                 Uri uri = request.getUri();
