@@ -572,7 +572,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
          * (order does not matter with current implementation but may in future)
          */
         if (signatureCalculator != null) {
-            signatureCalculator.calculateAndAddSignature(request, this);
+            RequestBuilder rb = new RequestBuilder(request).setSignatureCalculator(null);
+            rb.queryParams = this.queryParams;
+            Request unsignedRequest = rb.build();
+            signatureCalculator.calculateAndAddSignature(unsignedRequest, this);
         }
     }
     
