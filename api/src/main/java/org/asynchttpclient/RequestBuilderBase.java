@@ -17,6 +17,16 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+import java.io.File;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.uri.Uri;
@@ -24,15 +34,6 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.QueryComputer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Builder for {@link Request}
@@ -66,7 +67,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private Boolean followRedirect;
         private int requestTimeout;
         private long rangeOffset;
-        public String charset;
+        public Charset charset;
         private ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
         private List<Param> queryParams;
 
@@ -96,7 +97,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.followRedirect = prototype.getFollowRedirect();
                 this.requestTimeout = prototype.getRequestTimeout();
                 this.rangeOffset = prototype.getRangeOffset();
-                this.charset = prototype.getBodyEncoding();
+                this.charset = prototype.getBodyCharset();
                 this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
             }
         }
@@ -212,7 +213,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public String getBodyEncoding() {
+        public Charset getBodyCharset() {
             return charset;
         }
 
@@ -552,7 +553,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setBodyEncoding(String charset) {
+    public T setBodyCharset(Charset charset) {
         request.charset = charset;
         return derived.cast(this);
     }
@@ -584,7 +585,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             try {
                 final String contentType = request.headers.getFirstValue("Content-Type");
                 if (contentType != null) {
-                    final String charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                    final Charset charset = AsyncHttpProviderUtils.parseCharset(contentType);
                     if (charset != null) {
                         // ensure that if charset is provided with the Content-Type header,
                         // we propagate that down to the charset of the Request object

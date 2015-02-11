@@ -22,6 +22,7 @@ import org.asynchttpclient.uri.Uri;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,7 +79,7 @@ public interface Response {
      * @return The response body
      * @throws java.io.IOException
      */
-    String getResponseBodyExcerpt(int maxLength, String charset) throws IOException;
+    String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException;
 
     /**
      * Return the entire response body as a String.
@@ -88,7 +89,7 @@ public interface Response {
      * @return the entire response body as a String.
      * @throws IOException
      */
-    String getResponseBody(String charset) throws IOException;
+    String getResponseBody(Charset charset) throws IOException;
 
     /**
      * Returns the first maxLength bytes of the response body as a string. Note that this does not check whether the content type is actually a textual one, but it will use the

@@ -28,8 +28,6 @@ import org.testng.annotations.Test;
 import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.net.ConnectException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -209,7 +209,7 @@ public final class NettyRequestFactory {
         NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
 
-            Charset bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : Charset.forName(request.getBodyEncoding());
+            Charset bodyCharset = request.getBodyCharset() == null ? DEFAULT_CHARSET : request.getBodyCharset();
 
             if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());

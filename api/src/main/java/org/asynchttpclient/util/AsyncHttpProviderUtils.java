@@ -115,7 +115,7 @@ public class AsyncHttpProviderUtils {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 
-    public static String parseCharset(String contentType) {
+    public static Charset parseCharset(String contentType) {
         for (String part : contentType.split(";")) {
             if (part.trim().startsWith("charset=")) {
                 String[] val = part.split("=");
@@ -126,7 +126,8 @@ public class AsyncHttpProviderUtils {
                     // not correct, but client should be able to handle
                     // it (all browsers do, Grizzly strips it by default)
                     // This is a poor man's trim("\"").trim("'")
-                    return charset.replaceAll("\"", "").replaceAll("'", "");
+                    String charsetName = charset.replaceAll("\"", "").replaceAll("'", "");
+                    return Charset.forName(charsetName);
                 }
             }
         }

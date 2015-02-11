@@ -15,6 +15,7 @@ package org.asynchttpclient.webdav;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
@@ -61,7 +62,7 @@ public class WebDavResponse implements Response {
         return response.getResponseBodyExcerpt(maxLength);
     }
 
-    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
         return response.getResponseBodyExcerpt(maxLength, charset);
     }
 
@@ -69,7 +70,7 @@ public class WebDavResponse implements Response {
         return response.getResponseBody();
     }
 
-    public String getResponseBody(String charset) throws IOException {
+    public String getResponseBody(Charset charset) throws IOException {
         return response.getResponseBody(charset);
     }
 

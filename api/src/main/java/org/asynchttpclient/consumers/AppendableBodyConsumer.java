@@ -12,13 +12,14 @@
  */
 package org.asynchttpclient.consumers;
 
-import static java.nio.charset.StandardCharsets.*;
-
-import org.asynchttpclient.BodyConsumer;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+
+import org.asynchttpclient.BodyConsumer;
 
 /**
  * An {@link Appendable} customer for {@link ByteBuffer}
@@ -26,22 +27,22 @@ import java.nio.ByteBuffer;
 public class AppendableBodyConsumer implements BodyConsumer {
 
     private final Appendable appendable;
-    private final String encoding;
+    private final Charset charset;
 
-    public AppendableBodyConsumer(Appendable appendable, String encoding) {
+    public AppendableBodyConsumer(Appendable appendable, Charset charset) {
         this.appendable = appendable;
-        this.encoding = encoding;
+        this.charset = charset;
     }
 
     public AppendableBodyConsumer(Appendable appendable) {
         this.appendable = appendable;
-        this.encoding = UTF_8.name();
+        this.charset = UTF_8;
     }
 
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         appendable
-                .append(new String(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining(), encoding));
+                .append(new String(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining(), charset));
     }
 
     @Override

@@ -16,6 +16,7 @@ package org.asynchttpclient.webdav;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -159,12 +160,12 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+                public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
                     return wrappedResponse.getResponseBodyExcerpt(maxLength, charset);
                 }
 
                 @Override
-                public String getResponseBody(String charset) throws IOException {
+                public String getResponseBody(Charset charset) throws IOException {
                     return wrappedResponse.getResponseBody(charset);
                 }
 

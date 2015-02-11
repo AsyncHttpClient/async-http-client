@@ -18,6 +18,7 @@ import static org.asynchttpclient.providers.netty3.util.ChannelBufferUtils.chann
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class NettyResponse extends ResponseBase {
         return getResponseBody(null);
     }
 
-    public String getResponseBody(String charset) throws IOException {
+    public String getResponseBody(Charset charset) throws IOException {
         return getResponseBodyAsChannelBuffer().toString(calculateCharset(charset));
     }
 
@@ -91,7 +92,7 @@ public class NettyResponse extends ResponseBase {
         return getResponseBodyExcerpt(maxLength, null);
     }
 
-    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
         String response = getResponseBody(charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }

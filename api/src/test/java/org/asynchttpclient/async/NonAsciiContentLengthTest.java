@@ -73,11 +73,11 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
-            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding(UTF_8.name());
+            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyCharset(UTF_8);
             Future<Response> f = r.execute();
             Response resp = f.get();
             assertEquals(resp.getStatusCode(), 200);
-            assertEquals(body, resp.getResponseBody(UTF_8.name()));
+            assertEquals(body, resp.getResponseBody(UTF_8));
         }
     }
 }

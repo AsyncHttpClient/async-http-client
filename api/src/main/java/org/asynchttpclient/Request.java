@@ -16,15 +16,16 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.uri.Uri;
-
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * The Request class can be used to construct HTTP request:
@@ -183,11 +184,11 @@ public interface Request {
     long getRangeOffset();
 
     /**
-     * Return the encoding value used when encoding the request's body.
+     * Return the charset value used when decoding the request's body.
      *
-     * @return the encoding value used when encoding the request's body.
+     * @return the charset value used when decoding the request's body.
      */
-    String getBodyEncoding();
+    Charset getBodyCharset();
 
     ConnectionPoolPartitioning getConnectionPoolPartitioning();
 }

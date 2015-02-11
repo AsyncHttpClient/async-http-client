@@ -30,14 +30,14 @@ public abstract class ResponseBase implements Response {
 
     protected abstract List<Cookie> buildCookies();
 
-    protected Charset calculateCharset(String charset) {
+    protected Charset calculateCharset(Charset charset) {
 
         if (charset == null) {
             String contentType = getContentType();
             if (contentType != null)
                 charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
         }
-        return charset != null ? Charset.forName(charset) : AsyncHttpProviderUtils.DEFAULT_CHARSET;
+        return charset != null ? charset : AsyncHttpProviderUtils.DEFAULT_CHARSET;
     }
 
     @Override

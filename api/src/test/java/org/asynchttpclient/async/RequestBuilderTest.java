@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.async;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -117,8 +118,8 @@ public class RequestBuilderTest {
     @Test(groups = {"standalone", "default_provider"})
     public void testContentTypeCharsetToBodyEncoding() {
         final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=utf-8").build();
-        assertEquals(req.getBodyEncoding(), "utf-8");
+        assertEquals(req.getBodyCharset(), UTF_8);
         final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"utf-8\"").build();
-        assertEquals(req2.getBodyEncoding(), "utf-8");
+        assertEquals(req2.getBodyCharset(), UTF_8);
     }
 }

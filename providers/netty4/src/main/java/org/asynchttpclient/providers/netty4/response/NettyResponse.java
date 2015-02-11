@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +49,7 @@ public class NettyResponse extends ResponseBase {
         return getResponseBodyExcerpt(maxLength, null);
     }
 
-    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
         byte[] b = contentToBytes(bodyParts, maxLength);
         // should be fine; except that it may split multi-byte chars (last char may become '?')
         return new String(b, calculateCharset(charset));
@@ -100,7 +101,7 @@ public class NettyResponse extends ResponseBase {
     }
 
     @Override
-    public String getResponseBody(String charset) throws IOException {
+    public String getResponseBody(Charset charset) throws IOException {
         return new String(getResponseBodyAsBytes(), calculateCharset(charset));
     }
 
