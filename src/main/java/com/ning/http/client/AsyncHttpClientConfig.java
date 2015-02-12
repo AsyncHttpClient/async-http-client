@@ -379,6 +379,12 @@ public class AsyncHttpClientConfig {
      * @return the {@link HostnameVerifier}
      */
     public HostnameVerifier getHostnameVerifier() {
+        if (hostnameVerifier == null && !acceptAnyCertificate) {
+            synchronized(this) {
+                if (hostnameVerifier == null)
+                    hostnameVerifier = new DefaultHostnameVerifier();
+            }
+        }
         return hostnameVerifier;
     }
 
@@ -964,8 +970,6 @@ public class AsyncHttpClientConfig {
 
             if (acceptAnyCertificate)
                 hostnameVerifier = null;
-            else if (hostnameVerifier == null)
-                hostnameVerifier = new DefaultHostnameVerifier();
 
             return new AsyncHttpClientConfig(connectTimeout,//
                     maxConnections,//
