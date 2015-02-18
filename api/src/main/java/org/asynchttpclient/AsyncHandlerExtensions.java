@@ -63,5 +63,5 @@ public interface AsyncHandlerExtensions {
     /**
      * Notify the callback after DNS resolution has completed.
      */
-    void onDnsResolved();
+    void onDnsResolved(java.net.InetSocketAddress remoteAddress);
 }
