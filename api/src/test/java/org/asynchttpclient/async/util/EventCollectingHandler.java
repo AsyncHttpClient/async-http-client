@@ -12,17 +12,18 @@
  */
 package org.asynchttpclient.async.util;
 
+import java.net.InetSocketAddress;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.testng.Assert;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class EventCollectingHandler extends AsyncCompletionHandlerBase implements AsyncHandlerExtensions {
     public Queue<String> firedEvents = new ConcurrentLinkedQueue<String>();
@@ -99,7 +100,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onDnsResolved(java.net.InetSocketAddress remoteAddress) {
+    public void onDnsResolved(InetSocketAddress remoteAddress) {
         firedEvents.add("DnsResolved");
     }
 }

@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient;
 
+import java.net.InetSocketAddress;
+
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
  * For now, those methods are in a dedicated interface in order not to break the existing API,
@@ -63,5 +65,5 @@ public interface AsyncHandlerExtensions {
     /**
      * Notify the callback after DNS resolution has completed.
      */
-    void onDnsResolved(java.net.InetSocketAddress remoteAddress);
+    void onDnsResolved(InetSocketAddress remoteAddress);
 }
