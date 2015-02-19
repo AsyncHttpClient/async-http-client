@@ -361,7 +361,7 @@ public final class NettyRequestSender {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved();
+            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress);
 
         if (request.getLocalAddress() != null)
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));

@@ -99,7 +99,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onDnsResolved() {
+    public void onDnsResolved(java.net.InetSocketAddress remoteAddress) {
         firedEvents.add("DnsResolved");
     }
 }
