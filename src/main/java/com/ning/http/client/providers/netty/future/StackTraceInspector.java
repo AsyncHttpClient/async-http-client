@@ -13,6 +13,7 @@
 package com.ning.http.client.providers.netty.future;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 public class StackTraceInspector {
 
@@ -33,7 +34,8 @@ public class StackTraceInspector {
     }
 
     public static boolean recoverOnDisconnectException(Throwable t) {
-        return exceptionInMethod(t, "org.jboss.netty.handler.ssl.SslHandler", "channelDisconnected")
+        return t instanceof ClosedChannelException ||
+                exceptionInMethod(t, "org.jboss.netty.handler.ssl.SslHandler", "channelDisconnected")
                 || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
