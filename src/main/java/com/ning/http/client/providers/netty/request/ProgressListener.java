@@ -52,7 +52,7 @@ public class ProgressListener implements ChannelFutureProgressListener {
         if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
             // The write operation failed. If the channel was cached, it means it got asynchronously closed.
             // Let's retry a second time.
-            if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadOrWriteException(cause)) {
+            if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
                 LOGGER.debug(cause == null ? "" : cause.getMessage(), cause);
                 Channels.silentlyCloseChannel(channel);
 

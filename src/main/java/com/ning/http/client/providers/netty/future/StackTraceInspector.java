@@ -25,17 +25,17 @@ public class StackTraceInspector {
         return false;
     }
 
-    private static boolean abortOnConnectCloseException(Throwable t) {
+    private static boolean recoverOnConnectCloseException(Throwable t) {
         return exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
-                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean abortOnDisconnectException(Throwable t) {
+    public static boolean recoverOnDisconnectException(Throwable t) {
         return exceptionInMethod(t, "org.jboss.netty.handler.ssl.SslHandler", "channelDisconnected")
-                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean abortOnReadOrWriteException(Throwable t) {
+    public static boolean recoverOnReadOrWriteException(Throwable t) {
 
         try {
             for (StackTraceElement element : t.getStackTrace()) {
@@ -48,7 +48,7 @@ public class StackTraceInspector {
         }
 
         if (t.getCause() != null)
-            return abortOnReadOrWriteException(t.getCause());
+            return recoverOnReadOrWriteException(t.getCause());
 
         return false;
     }
