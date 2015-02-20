@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.netty3.request;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
 
 import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
@@ -93,7 +92,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                 && cause != null
                 && (future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.recoverOnNetty3DisconnectException(cause))) {
 
-            if (!requestSender.retry(future))
+            if (requestSender.retry(future))
                 return;
         }
 

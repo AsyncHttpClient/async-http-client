@@ -19,7 +19,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
