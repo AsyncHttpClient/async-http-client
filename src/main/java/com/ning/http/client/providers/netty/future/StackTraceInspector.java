@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.netty.future;
 
+import java.io.IOException;
+
 public class StackTraceInspector {
 
     private static boolean exceptionInMethod(Throwable t, String className, String methodName) {
@@ -36,6 +38,9 @@ public class StackTraceInspector {
     }
 
     public static boolean recoverOnReadOrWriteException(Throwable t) {
+
+        if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage()))
+            return true;
 
         try {
             for (StackTraceElement element : t.getStackTrace()) {
