@@ -13,6 +13,7 @@
 package org.asynchttpclient.providers.netty.commons.future;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 public class StackTraceInspector {
 
@@ -33,12 +34,14 @@ public class StackTraceInspector {
     }
 
     public static boolean recoverOnNetty3DisconnectException(Throwable t) {
-        return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
+        return t instanceof ClosedChannelException
+                || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
                 || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
     public static boolean recoverOnNetty4DisconnectException(Throwable t) {
-        return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
+        return t instanceof ClosedChannelException
+                || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
                 || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
     
