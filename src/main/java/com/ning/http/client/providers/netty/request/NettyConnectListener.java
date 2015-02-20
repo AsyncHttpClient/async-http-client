@@ -28,7 +28,6 @@ import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.future.StackTraceInspector;
 
 import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 
 /**
  * Non Blocking connect.
@@ -93,7 +92,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
                 && cause != null
                 && (future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.recoverOnDisconnectException(cause))) {
 
-            if (!requestSender.retry(future))
+            if (requestSender.retry(future))
                 return;
         }
 
