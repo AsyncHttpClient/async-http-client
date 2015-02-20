@@ -141,7 +141,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
                     }
                 }
 
-                if (StackTraceInspector.abortOnReadOrWriteException(cause)) {
+                if (StackTraceInspector.recoverOnReadOrWriteException(cause)) {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }

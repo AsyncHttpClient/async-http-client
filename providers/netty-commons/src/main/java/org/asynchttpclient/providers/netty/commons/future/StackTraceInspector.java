@@ -25,22 +25,22 @@ public class StackTraceInspector {
         return false;
     }
 
-    private static boolean abortOnConnectCloseException(Throwable t) {
+    private static boolean recoverOnConnectCloseException(Throwable t) {
         return exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
-                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean abortOnNetty3DisconnectException(Throwable t) {
+    public static boolean recoverOnNetty3DisconnectException(Throwable t) {
         return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
-                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean abortOnNetty4DisconnectException(Throwable t) {
+    public static boolean recoverOnNetty4DisconnectException(Throwable t) {
         return exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
-                || (t.getCause() != null && abortOnConnectCloseException(t.getCause()));
+                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
     
-    public static boolean abortOnReadOrWriteException(Throwable t) {
+    public static boolean recoverOnReadOrWriteException(Throwable t) {
 
         try {
             for (StackTraceElement element : t.getStackTrace()) {
@@ -53,7 +53,7 @@ public class StackTraceInspector {
         }
 
         if (t.getCause() != null)
-            return abortOnReadOrWriteException(t.getCause());
+            return recoverOnReadOrWriteException(t.getCause());
 
         return false;
     }
