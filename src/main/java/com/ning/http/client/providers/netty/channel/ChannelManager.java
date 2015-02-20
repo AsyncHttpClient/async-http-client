@@ -155,8 +155,8 @@ public class ChannelManager {
         }
 
         if (maxConnectionsPerHostEnabled) {
-            freeChannelsPerHost = new ConcurrentHashMap<String, Semaphore>();
-            channelId2KeyPool = new ConcurrentHashMap<Integer, String>();
+            freeChannelsPerHost = new ConcurrentHashMap<>();
+            channelId2KeyPool = new ConcurrentHashMap<>();
         } else {
             freeChannelsPerHost = null;
             channelId2KeyPool = null;
@@ -381,8 +381,11 @@ public class ChannelManager {
             getFreeConnectionsForHost(poolKey).release();
     }
 
-    public void registerOpenChannel(Channel channel) {
+    public void registerOpenChannel(Channel channel, final String poolKey) {
         openChannels.add(channel);
+        if (maxConnectionsPerHostEnabled) {
+            channelId2KeyPool.put(channel.getId(), poolKey);
+        }
     }
 
     private HttpClientCodec newHttpClientCodec() {
