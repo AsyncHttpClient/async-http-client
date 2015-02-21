@@ -26,7 +26,7 @@ public class ResumableIOExceptionFilter implements IOExceptionFilter {
 
             Request request = ResumableAsyncHandler.class.cast(ctx.getAsyncHandler()).adjustRequestRange(ctx.getRequest());
 
-            return new FilterContext.FilterContextBuilder<T>(ctx).request(request).replayRequest(true).build();
+            return new FilterContext.FilterContextBuilder<>(ctx).request(request).replayRequest(true).build();
         }
         return ctx;
     }

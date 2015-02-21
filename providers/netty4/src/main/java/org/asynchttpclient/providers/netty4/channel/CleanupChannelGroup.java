@@ -69,7 +69,7 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 return super.close();
             } else {
                 // FIXME DefaultChannelGroupFuture is package protected
-                // Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
+                // Collection<ChannelFuture> futures = new ArrayList<>();
                 // logger.debug("CleanupChannelGroup already closed");
                 // return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures,
                 // GlobalEventExecutor.INSTANCE);

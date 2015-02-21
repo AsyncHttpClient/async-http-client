@@ -48,8 +48,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamGETTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -87,7 +87,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamPOSTTest() throws Exception {
 
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
 
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             Future<String> f = c.preparePost(getTargetUrl())//
@@ -126,9 +126,9 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamInterruptTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
         final AtomicBoolean bodyReceived = new AtomicBoolean(false);
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             c.preparePost(getTargetUrl())//
             .setHeader("Content-Type", "application/x-www-form-urlencoded")//
@@ -165,8 +165,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamFutureTest() throws Exception {
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             Future<String> f = c.preparePost(getTargetUrl()).addFormParam("param_1", "value_1").execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
@@ -237,7 +237,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamReusePOSTTest() throws Exception {
 
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             BoundRequestBuilder rb = c.preparePost(getTargetUrl())//
                     .setHeader("Content-Type", "application/x-www-form-urlencoded")
@@ -306,8 +306,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStream302RedirectWithBody() throws Exception {
-        final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<Integer> statusCode = new AtomicReference<>(0);
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
         try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
             Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
@@ -412,7 +412,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncOptionsTest() throws Exception {
-        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
 
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final String[] expected = { "GET", "HEAD", "OPTIONS", "POST", "TRACE" };

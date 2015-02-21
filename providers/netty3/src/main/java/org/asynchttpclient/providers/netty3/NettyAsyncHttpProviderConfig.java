@@ -36,7 +36,7 @@ import org.jboss.netty.util.Timer;
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
 
-    private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<>();
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}

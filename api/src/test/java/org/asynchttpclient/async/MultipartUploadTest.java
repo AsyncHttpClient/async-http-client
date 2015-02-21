@@ -120,17 +120,17 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             fail("unable to find " + testResource3);
         }
 
-        List<File> testFiles = new ArrayList<File>();
+        List<File> testFiles = new ArrayList<>();
         testFiles.add(testResource1File);
         testFiles.add(testResource2File);
         testFiles.add(testResource3File);
 
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add(expectedContents);
         expected.add(expectedContents2);
         expected.add(expectedContents3);
 
-        List<Boolean> gzipped = new ArrayList<Boolean>();
+        List<Boolean> gzipped = new ArrayList<>();
         gzipped.add(false);
         gzipped.add(true);
         gzipped.add(false);
@@ -348,7 +348,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             // Check that we have a file upload request
             boolean isMultipart = ServletFileUpload.isMultipartContent(request);
             if (isMultipart) {
-                List<String> files = new ArrayList<String>();
+                List<String> files = new ArrayList<>();
                 ServletFileUpload upload = new ServletFileUpload();
                 // Parse the request
                 FileItemIterator iter = null;

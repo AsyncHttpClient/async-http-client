@@ -71,7 +71,7 @@ public abstract class Protocol {
     protected final boolean hasIOExceptionFilters;
     private final MaxRedirectException maxRedirectException;
 
-    public static final Set<Integer> REDIRECT_STATUSES = new HashSet<Integer>();
+    public static final Set<Integer> REDIRECT_STATUSES = new HashSet<>();
     static {
         REDIRECT_STATUSES.add(MOVED_PERMANENTLY.getCode());
         REDIRECT_STATUSES.add(FOUND.getCode());
@@ -79,7 +79,7 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.getCode());
     }
 
-    public static final Set<String> PROPAGATED_ON_REDIRECT_HEADERS = new HashSet<String>();
+    public static final Set<String> PROPAGATED_ON_REDIRECT_HEADERS = new HashSet<>();
     static {
         PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT.toLowerCase(Locale.US));
         PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_CHARSET.toLowerCase(Locale.US));

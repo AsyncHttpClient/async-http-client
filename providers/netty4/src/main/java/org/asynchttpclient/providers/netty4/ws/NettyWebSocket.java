@@ -198,7 +198,7 @@ public class NettyWebSocket implements WebSocket {
 
     private List<byte[]> fragments() {
         if (_fragments == null)
-            _fragments = new ArrayList<byte[]>(2);
+            _fragments = new ArrayList<>(2);
         return _fragments;
     }
 

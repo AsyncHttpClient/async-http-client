@@ -26,7 +26,7 @@ import org.asynchttpclient.Response;
 import org.testng.Assert;
 
 public class EventCollectingHandler extends AsyncCompletionHandlerBase implements AsyncHandlerExtensions {
-    public Queue<String> firedEvents = new ConcurrentLinkedQueue<String>();
+    public Queue<String> firedEvents = new ConcurrentLinkedQueue<>();
     private CountDownLatch completionLatch = new CountDownLatch(1);
 
     public void waitForCompletion(int timeout, TimeUnit unit) throws InterruptedException {

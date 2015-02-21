@@ -22,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
 
-    private static ConcurrentMap<String, AsyncHttpClient> asyncHttpClientMap = new ConcurrentHashMap<String, AsyncHttpClient>();
+    private static ConcurrentMap<String, AsyncHttpClient> asyncHttpClientMap = new ConcurrentHashMap<>();
     private static volatile AsyncHttpClientRegistry _instance;
     private static Lock lock = new ReentrantLock();
 

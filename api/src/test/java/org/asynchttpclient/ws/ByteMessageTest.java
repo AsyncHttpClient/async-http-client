@@ -41,7 +41,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     public void echoByte() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
+            final AtomicReference<byte[]> text = new AtomicReference<>(new byte[0]);
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
@@ -79,7 +79,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
-            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
+            final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
@@ -124,7 +124,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     public void echoOnOpenMessagesTest() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
-            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
+            final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
             /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
@@ -167,7 +167,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     public void echoFragments() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
+            final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 

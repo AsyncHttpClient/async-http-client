@@ -38,9 +38,9 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureFilters() {
-        requestFilters = new LinkedList<RequestFilter>();
-        responseFilters = new LinkedList<ResponseFilter>();
-        ioExceptionFilters = new LinkedList<IOExceptionFilter>();
+        requestFilters = new LinkedList<>();
+        responseFilters = new LinkedList<>();
+        ioExceptionFilters = new LinkedList<>();
     }
 
     void configureDefaults() {

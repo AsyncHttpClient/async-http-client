@@ -43,7 +43,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void onOpen() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
@@ -98,7 +98,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void onTimeoutCloseTest() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
@@ -128,7 +128,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void onClose() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
@@ -160,7 +160,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void echoText() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -197,7 +197,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void echoDoubleListenerText() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -256,7 +256,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(2);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -291,7 +291,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     public void echoFragments() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -330,7 +330,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch textLatch = new CountDownLatch(1);
             final CountDownLatch closeLatch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             final WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 

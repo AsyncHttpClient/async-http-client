@@ -45,7 +45,7 @@ public class FluentStringsMapTest {
         map.add("fOO", "bAr");
         map.add("Baz", Arrays.asList("fOo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("fOO", "Baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("fOO", "Baz")));
 
         assertEquals(map.getFirstValue("fOO"), "bAr");
         assertEquals(map.getJoinedValue("fOO", ", "), "bAr");
@@ -69,7 +69,7 @@ public class FluentStringsMapTest {
         map.add("fOO", "bAr");
         map.add(null, Arrays.asList("fOo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("fOO")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("fOO")));
 
         assertEquals(map.getFirstValue("fOO"), "bAr");
         assertEquals(map.getJoinedValue("fOO", ", "), "bAr");
@@ -92,7 +92,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bla", "blubb");
         map.add("fOO", "duh");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "fOO")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "fOO")));
 
         assertEquals(map.getFirstValue("foo"), "baz,foo");
         assertEquals(map.getJoinedValue("foo", ", "), "baz,foo, bar, bla, blubb");
@@ -108,7 +108,7 @@ public class FluentStringsMapTest {
 
         map.add("foo", "");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "");
         assertEquals(map.getJoinedValue("foo", ", "), "");
         assertEquals(map.get("foo"), Arrays.asList(""));
@@ -127,7 +127,7 @@ public class FluentStringsMapTest {
 
     @Test
     public void mapConstructorTest() {
-        Map<String, Collection<String>> headerMap = new LinkedHashMap<String, Collection<String>>();
+        Map<String, Collection<String>> headerMap = new LinkedHashMap<>();
 
         headerMap.put("foo", Arrays.asList("baz,foo"));
         headerMap.put("baz", Arrays.asList("bar"));
@@ -139,7 +139,7 @@ public class FluentStringsMapTest {
         headerMap.remove("bar");
         headerMap.remove("baz");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz", "bar")));
         assertEquals(map.getFirstValue("foo"), "baz,foo");
         assertEquals(map.getJoinedValue("foo", ", "), "baz,foo");
         assertEquals(map.get("foo"), Arrays.asList("baz,foo"));
@@ -173,7 +173,7 @@ public class FluentStringsMapTest {
         srcHeaders.delete("baz");
         assertTrue(srcHeaders.keySet().isEmpty());
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz", "bar")));
         assertEquals(map.getFirstValue("foo"), "baz,foo");
         assertEquals(map.getJoinedValue("foo", ", "), "baz,foo");
         assertEquals(map.get("foo"), Arrays.asList("baz,foo"));
@@ -199,7 +199,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -209,7 +209,7 @@ public class FluentStringsMapTest {
 
         map.delete("baz");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -225,7 +225,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -235,7 +235,7 @@ public class FluentStringsMapTest {
 
         map.delete("bAz");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -251,7 +251,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -261,7 +261,7 @@ public class FluentStringsMapTest {
 
         map.delete("bar");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -277,7 +277,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -287,7 +287,7 @@ public class FluentStringsMapTest {
 
         map.delete(null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -303,7 +303,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -313,7 +313,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll("baz", "Boo");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -329,7 +329,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -339,7 +339,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll("Foo", "baz");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -355,7 +355,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -381,7 +381,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -391,7 +391,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll(Arrays.asList("bAz", "fOO"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -407,7 +407,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -417,7 +417,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll((String[]) null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -433,7 +433,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -443,7 +443,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll((Collection<String>) null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -459,7 +459,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -469,7 +469,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith("foo", "blub", "bla");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "blub");
         assertEquals(map.getJoinedValue("foo", ", "), "blub, bla");
         assertEquals(map.get("foo"), Arrays.asList("blub", "bla"));
@@ -485,7 +485,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -495,7 +495,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith("foo", Arrays.asList("blub", "bla"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "blub");
         assertEquals(map.getJoinedValue("foo", ", "), "blub, bla");
         assertEquals(map.get("foo"), Arrays.asList("blub", "bla"));
@@ -511,7 +511,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -521,7 +521,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith("Foo", Arrays.asList("blub", "bla"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "Foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz", "Foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -540,7 +540,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -550,7 +550,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith("bar", Arrays.asList("blub"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz", "bar")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -569,7 +569,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -579,7 +579,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith(null, Arrays.asList("blub"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -595,7 +595,7 @@ public class FluentStringsMapTest {
         map.add("foo", "bar");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -605,7 +605,7 @@ public class FluentStringsMapTest {
 
         map.replaceWith("baz", (Collection<String>) null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -622,7 +622,7 @@ public class FluentStringsMapTest {
         map.add("bar", "foo, bar", "baz");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -635,7 +635,7 @@ public class FluentStringsMapTest {
 
         map.replaceAll(new FluentStringsMap().add("bar", "baz").add("Foo", "blub", "bla"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz", "Foo")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz", "Foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -658,7 +658,7 @@ public class FluentStringsMapTest {
         map.add("bar", "foo, bar", "baz");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -669,13 +669,13 @@ public class FluentStringsMapTest {
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        LinkedHashMap<String, Collection<String>> newValues = new LinkedHashMap<String, Collection<String>>();
+        LinkedHashMap<String, Collection<String>> newValues = new LinkedHashMap<>();
 
         newValues.put("bar", Arrays.asList("baz"));
         newValues.put("foo", null);
         map.replaceAll(newValues);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("bar", "baz")));
         assertNull(map.getFirstValue("foo"));
         assertNull(map.getJoinedValue("foo", ", "));
         assertNull(map.get("foo"));
@@ -695,7 +695,7 @@ public class FluentStringsMapTest {
         map.add("bar", "foo, bar", "baz");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -708,7 +708,7 @@ public class FluentStringsMapTest {
 
         map.replaceAll((FluentStringsMap) null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -728,7 +728,7 @@ public class FluentStringsMapTest {
         map.add("bar", "foo, bar", "baz");
         map.add("baz", Arrays.asList("foo", "bar"));
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));
@@ -741,7 +741,7 @@ public class FluentStringsMapTest {
 
         map.replaceAll((Map<String, Collection<String>>) null);
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
         assertEquals(map.getJoinedValue("foo", ", "), "bar");
         assertEquals(map.get("foo"), Arrays.asList("bar"));

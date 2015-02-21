@@ -54,7 +54,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
     private static final int C10K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;
-    protected List<Server> servers = new ArrayList<Server>(SRV_COUNT);
+    protected List<Server> servers = new ArrayList<>(SRV_COUNT);
     private int[] ports;
 
     @BeforeClass(alwaysRun = true)
@@ -100,7 +100,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(C10K).setAllowPoolingConnections(true).build())) {
-            List<Future<Integer>> resps = new ArrayList<Future<Integer>>(C10K);
+            List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {
                 resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));

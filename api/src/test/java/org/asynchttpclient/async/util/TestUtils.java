@@ -155,11 +155,11 @@ public class TestUtils {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
-        Set<String> knownRoles = new HashSet<String>();
+        Set<String> knownRoles = new HashSet<>();
         knownRoles.add(USER);
         knownRoles.add(ADMIN);
 
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> cm = new ArrayList<>();
         cm.add(mapping);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();

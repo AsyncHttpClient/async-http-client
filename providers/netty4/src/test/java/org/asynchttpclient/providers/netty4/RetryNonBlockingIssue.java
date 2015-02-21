@@ -95,7 +95,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .build();
 
         try (AsyncHttpClient client = getAsyncHttpClient(config)) {
-            List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
+            List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
@@ -127,7 +127,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .build();
 
         try (AsyncHttpClient client = getAsyncHttpClient(config)) {
-            List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
+            List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
             }
@@ -151,7 +151,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
-        private Map<String, Integer> requests = new ConcurrentHashMap<String, Integer>();
+        private Map<String, Integer> requests = new ConcurrentHashMap<>();
 
         private synchronized int increment(String id) {
             int val = 0;

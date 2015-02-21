@@ -61,7 +61,7 @@ public class ThrottleRequestFilter implements RequestFilter {
             throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
-        return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(new AsyncHandlerWrapper<T>(ctx.getAsyncHandler(), available))
+        return new FilterContext.FilterContextBuilder<>(ctx).asyncHandler(new AsyncHandlerWrapper<>(ctx.getAsyncHandler(), available))
                 .build();
     }
 }

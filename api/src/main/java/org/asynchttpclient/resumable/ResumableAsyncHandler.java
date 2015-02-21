@@ -227,7 +227,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
 
     private static class ResumableIndexThread extends Thread {
 
-        public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<ResumableProcessor>();
+        public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<>();
 
         public ResumableIndexThread() {
             Runtime.getRuntime().addShutdownHook(this);
@@ -293,7 +293,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         }
 
         public Map<String, Long> load() {
-            return new HashMap<String, Long>();
+            return new HashMap<>();
         }
     }
 

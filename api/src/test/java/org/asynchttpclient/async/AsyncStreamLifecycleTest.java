@@ -106,7 +106,7 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
     public void testStream() throws IOException {
         try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
             final AtomicBoolean err = new AtomicBoolean(false);
-            final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
+            final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);
             final AtomicInteger headers = new AtomicInteger(0);
             final CountDownLatch latch = new CountDownLatch(1);

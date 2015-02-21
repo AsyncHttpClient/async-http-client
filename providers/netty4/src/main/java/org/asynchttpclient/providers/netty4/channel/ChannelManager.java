@@ -148,8 +148,8 @@ public class ChannelManager {
         }
 
         if (maxConnectionsPerHostEnabled) {
-            freeChannelsPerHost = new ConcurrentHashMap<String, Semaphore>();
-            channel2KeyPool = new ConcurrentHashMap<Channel, String>();
+            freeChannelsPerHost = new ConcurrentHashMap<>();
+            channel2KeyPool = new ConcurrentHashMap<>();
         } else {
             freeChannelsPerHost = null;
             channel2KeyPool = null;

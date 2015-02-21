@@ -72,8 +72,8 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
         final CountDownLatch latch = new CountDownLatch(2);
-        final AtomicReference<Throwable> ex = new AtomicReference<Throwable>();
-        final AtomicReference<String> failedUrl = new AtomicReference<String>();
+        final AtomicReference<Throwable> ex = new AtomicReference<>();
+        final AtomicReference<String> failedUrl = new AtomicReference<>();
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
                 .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();

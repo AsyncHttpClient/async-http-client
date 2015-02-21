@@ -45,7 +45,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     public void onCloseWithCode() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
@@ -60,7 +60,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     public void onCloseWithCodeServerClose() throws Exception {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<String> text = new AtomicReference<String>("");
+            final AtomicReference<String> text = new AtomicReference<>("");
 
             c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
@@ -104,7 +104,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     public void wrongStatusCode() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
             c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -137,7 +137,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
             c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 

@@ -84,7 +84,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
         try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
-            List<Future<Response>> futures = new ArrayList<Future<Response>>();
+            List<Future<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 200; i++) {
                 futures.add(c.preparePost(getTargetUrl()).execute());
             }
@@ -140,7 +140,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
                 if (replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -166,7 +166,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -193,7 +193,7 @@ public abstract class FilterTest extends AbstractBasicTest {
                 if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().getHeaders().getFirstValue("Ping").equals("Pong") && replay.getAndSet(false)) {
 
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }

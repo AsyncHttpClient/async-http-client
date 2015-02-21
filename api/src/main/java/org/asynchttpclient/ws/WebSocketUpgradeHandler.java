@@ -147,7 +147,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     public final static class Builder {
 
-        private List<WebSocketListener> listeners = new ArrayList<WebSocketListener>();
+        private List<WebSocketListener> listeners = new ArrayList<>();
 
         /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}

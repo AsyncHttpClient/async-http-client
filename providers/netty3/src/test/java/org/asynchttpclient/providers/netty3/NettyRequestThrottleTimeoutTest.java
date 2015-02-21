@@ -85,7 +85,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(samples);
-            final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
+            final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<>(2));
 
             for (int i = 0; i < samples; i++) {
                 new Thread(new Runnable() {

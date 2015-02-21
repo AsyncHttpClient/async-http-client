@@ -232,12 +232,12 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             return httpProvider.execute(request, handler);
 
         } else {
-            FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
+            FilterContext<T> fc = new FilterContext.FilterContextBuilder<>().asyncHandler(handler).request(request).build();
             try {
                 fc = preProcessRequest(fc);
             } catch (Exception e) {
                 handler.onThrowable(e);
-                return new ListenableFuture.CompletedFailure<T>("preProcessRequest failed", e);
+                return new ListenableFuture.CompletedFailure<>("preProcessRequest failed", e);
             }
 
             return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
@@ -273,7 +273,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
             request = builder.build();
         }
-        fc = new FilterContext.FilterContextBuilder<T>(fc).request(request).build();
+        fc = new FilterContext.FilterContextBuilder<>(fc).request(request).build();
         return fc;
     }
 

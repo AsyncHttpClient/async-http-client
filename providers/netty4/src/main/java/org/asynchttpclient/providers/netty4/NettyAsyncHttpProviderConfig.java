@@ -42,7 +42,7 @@ import org.asynchttpclient.providers.netty4.ws.NettyWebSocket;
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<ChannelOption<Object>, Object> {
 
-    private final Map<ChannelOption<Object>, Object> properties = new HashMap<ChannelOption<Object>, Object>();
+    private final Map<ChannelOption<Object>, Object> properties = new HashMap<>();
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its
