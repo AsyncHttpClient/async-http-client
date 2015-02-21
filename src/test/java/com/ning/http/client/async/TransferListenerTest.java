@@ -76,10 +76,10 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Throwable {
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<byte[]> bb = new AtomicReference<byte[]>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
+        final AtomicReference<byte[]> bb = new AtomicReference>();
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         TransferCompletionHandler tl = new TransferCompletionHandler();
@@ -124,9 +124,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutTest() throws Throwable {
 
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
         final AtomicLong bbReceivedLenght = new AtomicLong(0);
         final AtomicLong bbSentLenght = new AtomicLong(0);
 
@@ -179,9 +179,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutBodyTest() throws Throwable {
 
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
         final AtomicLong bbReceivedLenght = new AtomicLong(0);
         final AtomicLong bbSentLenght = new AtomicLong(0);
 

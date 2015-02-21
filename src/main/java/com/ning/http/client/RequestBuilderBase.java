@@ -81,14 +81,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
-                this.cookies = new ArrayList<Cookie>(prototype.getCookies());
+                this.cookies = new ArrayList<>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
                 this.compositeByteData = prototype.getCompositeByteData();
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.bodyGenerator = prototype.getBodyGenerator();
-                this.formParams = prototype.getFormParams() == null ? null : new ArrayList<Param>(prototype.getFormParams());
-                this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
+                this.formParams = prototype.getFormParams() == null ? null : new ArrayList<>(prototype.getFormParams());
+                this.parts = prototype.getParts() == null ? null : new ArrayList<>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getContentLength();
                 this.proxyServer = prototype.getProxyServer();
@@ -203,7 +203,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             if (queryParams == null)
                 // lazy load
                 if (isNonEmpty(uri.getQuery())) {
-                    queryParams = new ArrayList<Param>(1);
+                    queryParams = new ArrayList<>(1);
                     for (String queryStringParam : uri.getQuery().split("&")) {
                         int pos = queryStringParam.indexOf('=');
                         if (pos <= 0)
@@ -328,11 +328,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private void lazyInitCookies() {
         if (request.cookies == null)
-            request.cookies = new ArrayList<Cookie>(3);
+            request.cookies = new ArrayList<>(3);
     }
 
     public T setCookies(Collection<Cookie> cookies) {
-        request.cookies = new ArrayList<Cookie>(cookies);
+        request.cookies = new ArrayList<>(cookies);
         return derived.cast(this);
     }
 
@@ -450,7 +450,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if (map == null)
             return null;
 
-        List<Param> params = new ArrayList<Param>(map.size());
+        List<Param> params = new ArrayList<>(map.size());
         for (Map.Entry<String, List<String>> entries : map.entrySet()) {
             String name = entries.getKey();
             for (String value : entries.getValue())

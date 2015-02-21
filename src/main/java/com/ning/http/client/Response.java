@@ -183,7 +183,7 @@ public interface Response {
     boolean hasResponseBody();
 
     public static class ResponseBuilder {
-        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<HttpResponseBodyPart>();
+        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>();
         private HttpResponseStatus status;
         private HttpResponseHeaders headers;
 

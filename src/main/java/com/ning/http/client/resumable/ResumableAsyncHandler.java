@@ -216,7 +216,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
 
     private static class ResumableIndexThread extends Thread {
 
-        public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<ResumableProcessor>();
+        public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<>();
 
         public ResumableIndexThread() {
             Runtime.getRuntime().addShutdownHook(this);

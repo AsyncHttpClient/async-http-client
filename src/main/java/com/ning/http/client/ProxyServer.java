@@ -49,7 +49,7 @@ public class ProxyServer {
         }
     }
 
-    private final List<String> nonProxyHosts = new ArrayList<String>();
+    private final List<String> nonProxyHosts = new ArrayList<>();
     private final Protocol protocol;
     private final String host;
     private final String principal;

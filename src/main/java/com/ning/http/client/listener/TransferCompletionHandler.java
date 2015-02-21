@@ -59,7 +59,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
-    private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<TransferListener>();
+    private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<>();
     private final boolean accumulateResponseBytes;
     private FluentCaseInsensitiveStringsMap headers;
     private long expectedTotal;

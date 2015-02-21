@@ -205,7 +205,7 @@ public class NettyWebSocket implements WebSocket {
 
     private List<ChannelBuffer> fragments() {
         if (_fragments == null)
-            _fragments = new ArrayList<ChannelBuffer>(2);
+            _fragments = new ArrayList<>(2);
         return _fragments;
     }
 

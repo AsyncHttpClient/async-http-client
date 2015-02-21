@@ -201,7 +201,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      * when it would occur it'd be harder to track down.
      */
     final static class OAuthParameterSet {
-        final private ArrayList<Parameter> allParameters = new ArrayList<Parameter>();
+        final private ArrayList<Parameter> allParameters = new ArrayList<>();
 
         public OAuthParameterSet() {
         }

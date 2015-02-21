@@ -75,7 +75,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
 
         final CountDownLatch latch = new CountDownLatch(2);
-        final AtomicReference<String> failedUrl = new AtomicReference<String>();
+        final AtomicReference<String> failedUrl = new AtomicReference<>();
 
         try (AsyncHttpClient client = getAsyncHttpClient(config)) {
             for (String url : urls) {

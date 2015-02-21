@@ -98,7 +98,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
     public void wrongStatusCode() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
             WebSocket websocket = client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
@@ -131,7 +131,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
             WebSocket websocket = client.prepareGet("ws://www.google.com/").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 

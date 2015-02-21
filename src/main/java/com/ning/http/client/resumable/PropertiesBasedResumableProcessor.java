@@ -33,7 +33,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     private final static Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
     private final static File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
     private final static String storeName = "ResumableAsyncHandler.properties";
-    private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<String, Long>();
+    private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<>();
 
     @Override
     public void put(String url, long transferredBytes) {

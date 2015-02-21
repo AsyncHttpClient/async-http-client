@@ -65,7 +65,7 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 // First time close() is called.
                 return super.close();
             } else {
-                Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
+                Collection<ChannelFuture> futures = new ArrayList<>();
                 logger.debug("CleanupChannelGroup Already closed");
                 return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures);
             }

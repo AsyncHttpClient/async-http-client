@@ -43,8 +43,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
-    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<Integer, ChannelCreation>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
@@ -175,7 +175,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
                 } else if (closedChannels == null) {
                     // first non closeable to be skipped, copy all previously skipped closeable channels
-                    closedChannels = new ArrayList<IdleChannel>(candidates.size());
+                    closedChannels = new ArrayList<>(candidates.size());
                     for (int j = 0; j < i; j++)
                         closedChannels.add(candidates.get(j));
                 }
@@ -232,7 +232,7 @@ public final class DefaultChannelPool implements ChannelPool {
         ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionId);
         if (partition == null) {
             // lazy init partition
-            ConcurrentLinkedQueue<IdleChannel> newPartition = new ConcurrentLinkedQueue<IdleChannel>();
+            ConcurrentLinkedQueue<IdleChannel> newPartition = new ConcurrentLinkedQueue<>();
             partition = partitions.putIfAbsent(partitionId, newPartition);
             if (partition == null)
                 partition = newPartition;

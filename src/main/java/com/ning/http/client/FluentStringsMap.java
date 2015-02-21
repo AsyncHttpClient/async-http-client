@@ -33,7 +33,7 @@ import java.util.Set;
  * return this instance.
  */
 public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map.Entry<String, List<String>>> {
-    private final Map<String, List<String>> values = new LinkedHashMap<String, List<String>>();
+    private final Map<String, List<String>> values = new LinkedHashMap<>();
 
     public FluentStringsMap() {
     }
@@ -59,7 +59,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
             List<String> curValues = values.get(key);
 
             if (curValues == null) {
-                curValues = new ArrayList<String>(1);
+                curValues = new ArrayList<>(1);
                 values.put(key, curValues);
             }
             curValues.add(value);
@@ -365,7 +365,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         if (values.isEmpty())
             return Collections.emptyList();
         else {
-            List<Param> params = new ArrayList<Param>(values.size());
+            List<Param> params = new ArrayList<>(values.size());
             for (Map.Entry<String, List<String>> entry : values.entrySet()) {
                 String name = entry.getKey();
                 for (String value: entry.getValue())

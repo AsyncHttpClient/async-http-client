@@ -99,7 +99,7 @@ public class NettyResponse extends ResponseBase {
 
     @Override
     protected List<Cookie> buildCookies() {
-        List<Cookie> cookies = new ArrayList<Cookie>();
+        List<Cookie> cookies = new ArrayList<>();
         for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
             if (header.getKey().equalsIgnoreCase(HttpHeaders.Names.SET_COOKIE)) {
                 // TODO: ask for parsed header

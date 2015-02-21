@@ -44,7 +44,7 @@ public final class HttpUtils {
     }
 
     public static List<String> getNettyHeaderValuesByCaseInsensitiveName(HttpHeaders headers, String name) {
-        ArrayList<String> l = new ArrayList<String>();
+        ArrayList<String> l = new ArrayList<>();
         for (Entry<String, String> e : headers) {
             if (e.getKey().equalsIgnoreCase(name)) {
                 l.add(e.getValue().trim());

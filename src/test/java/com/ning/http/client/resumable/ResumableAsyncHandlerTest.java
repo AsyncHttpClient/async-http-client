@@ -29,7 +29,7 @@ public class ResumableAsyncHandlerTest {
     public void testAdjustRange() {
         MapResumableProcessor proc = new MapResumableProcessor();
 
-        ResumableAsyncHandler<Response> h = new ResumableAsyncHandler<Response>(proc);
+        ResumableAsyncHandler<Response> h = new ResumableAsyncHandler<>(proc);
         Request request = new RequestBuilder("GET").setUrl("http://test/url").build();
         Request newRequest = h.adjustRequestRange(request);
         assertEquals(newRequest.getUri(), request.getUri());

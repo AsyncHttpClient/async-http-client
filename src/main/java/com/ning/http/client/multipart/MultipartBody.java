@@ -33,7 +33,7 @@ public class MultipartBody implements RandomAccessBody {
     private final long contentLength;
     private final String contentType;
     private final List<Part> parts;
-    private final List<RandomAccessFile> pendingOpenFiles = new ArrayList<RandomAccessFile>();
+    private final List<RandomAccessFile> pendingOpenFiles = new ArrayList<>();
 
     private boolean transfertDone = false;
 

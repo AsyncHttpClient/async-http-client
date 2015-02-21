@@ -97,7 +97,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(2);
 
-            final Map<String, Boolean> remoteAddresses = new ConcurrentHashMap<String, Boolean>();
+            final Map<String, Boolean> remoteAddresses = new ConcurrentHashMap<>();
 
             AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 

@@ -480,9 +480,9 @@ public class AsyncHttpClientConfig {
         private String userAgent = defaultUserAgent();
         private ExecutorService applicationThreadPool;
         private Realm realm;
-        private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
-        private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
-        private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
+        private final List<RequestFilter> requestFilters = new LinkedList<>();
+        private final List<ResponseFilter> responseFilters = new LinkedList<>();
+        private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<>();
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundRequests();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();

@@ -126,7 +126,7 @@ public class RetryNonBlockingIssue {
         .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
         
-        List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
+        List<ListenableFuture<Response>> res = new ArrayList<>();
         try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -155,7 +155,7 @@ public class RetryNonBlockingIssue {
         .setMaxConnections(100)//
         .setConnectTimeout(60000)//
         .setRequestTimeout(30000);
-        List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
+        List<ListenableFuture<Response>> res = new ArrayList<>();
         try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -184,8 +184,7 @@ public class RetryNonBlockingIssue {
         .setMaxConnections(100)//
         .setConnectTimeout(30000)//
         .setRequestTimeout(30000);
-        List<ListenableFuture<Response>> res = new
-                ArrayList<ListenableFuture<Response>>();
+        List<ListenableFuture<Response>> res = new ArrayList<>();
         try (AsyncHttpClient client = new AsyncHttpClient(bc.build())) {
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -210,7 +209,7 @@ public class RetryNonBlockingIssue {
     @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
-        private Map<String, Integer> requests = new ConcurrentHashMap<String, Integer>();
+        private Map<String, Integer> requests = new ConcurrentHashMap<>();
 
         private synchronized int increment(String id) {
             int val = 0;

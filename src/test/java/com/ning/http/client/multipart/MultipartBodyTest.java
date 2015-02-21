@@ -36,7 +36,7 @@ public class MultipartBodyTest {
 
     @Test(groups = "fast")
     public void testBasics() {
-        final List<Part> parts = new ArrayList<Part>();
+        final List<Part> parts = new ArrayList<>();
 
         // add a file
         final File testFile = getTestfile();

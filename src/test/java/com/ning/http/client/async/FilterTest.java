@@ -81,7 +81,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
         try (AsyncHttpClient client = getAsyncHttpClient(b.build())) {
-            List<Future<Response>> futures = new ArrayList<Future<Response>>();
+            List<Future<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 200; i++) {
                 futures.add(client.preparePost(getTargetUrl()).execute());
             }

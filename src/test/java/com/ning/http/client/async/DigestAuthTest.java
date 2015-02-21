@@ -82,10 +82,10 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> cm = new ArrayList<>();
         cm.add(mapping);
 
-        Set<String> knownRoles = new HashSet<String>();
+        Set<String> knownRoles = new HashSet<>();
         knownRoles.add(user);
         knownRoles.add(admin);
 
