@@ -296,7 +296,7 @@ public final class NettyRequestSender {
     private <T> NettyResponseFuture<T> newNettyResponseFuture(Uri uri, Request request, AsyncHandler<T> asyncHandler,
             NettyRequest nettyRequest, ProxyServer proxyServer) {
 
-        NettyResponseFuture<T> future = new NettyResponseFuture<T>(//
+        NettyResponseFuture<T> future = new NettyResponseFuture<>(//
                 uri,//
                 request,//
                 asyncHandler,//

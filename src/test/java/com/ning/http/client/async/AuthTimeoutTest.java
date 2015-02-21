@@ -81,13 +81,13 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
-        Set<String> knownRoles = new HashSet<String>();
+        Set<String> knownRoles = new HashSet<>();
         knownRoles.add(user);
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
 
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> cm = new ArrayList<>();
         cm.add(mapping);
 
         security.setConstraintMappings(cm, knownRoles);

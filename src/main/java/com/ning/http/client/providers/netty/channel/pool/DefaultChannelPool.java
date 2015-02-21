@@ -139,7 +139,7 @@ public final class DefaultChannelPool implements ChannelPool {
                         || !Channels.isChannelValid(idleChannel.channel)) {
                     LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
                     if (idleTimeoutChannels == null)
-                        idleTimeoutChannels = new ArrayList<IdleChannel>();
+                        idleTimeoutChannels = new ArrayList<>();
                     idleTimeoutChannels.add(idleChannel);
                 }
             }

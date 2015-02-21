@@ -77,7 +77,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         .setAllowPoolingConnections(true).setMaxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(2);
 
-            final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
+            final List<Exception> tooManyConnections = new ArrayList<>(2);
             for (int i = 0; i < 2; i++) {
                 new Thread(new Runnable() {
 

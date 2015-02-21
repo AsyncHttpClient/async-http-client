@@ -270,7 +270,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, List<String>> m = new HashMap<String, List<String>>();
+            Map<String, List<String>> m = new HashMap<>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
@@ -335,8 +335,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(120 * 1000).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
-            final AtomicReference<Response> responseRef = new AtomicReference<Response>(null);
-            final AtomicReference<Throwable> throwableRef = new AtomicReference<Throwable>(null);
+            final AtomicReference<Response> responseRef = new AtomicReference<>(null);
+            final AtomicReference<Throwable> throwableRef = new AtomicReference<>(null);
 
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
                 @Override
@@ -718,7 +718,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, List<String>> m = new HashMap<String, List<String>>();
+            Map<String, List<String>> m = new HashMap<>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
@@ -1419,7 +1419,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             StringBuilder sb = new StringBuilder();
             sb.append("LockThread=true");
 
-            final AtomicReference<CancellationException> ex = new AtomicReference<CancellationException>();
+            final AtomicReference<CancellationException> ex = new AtomicReference<>();
             ex.set(null);
             try {
                 Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {

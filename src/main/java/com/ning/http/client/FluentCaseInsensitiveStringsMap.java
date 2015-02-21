@@ -137,7 +137,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
                 }
 
                 if (curValues == null) {
-                    curValues = new ArrayList<String>();
+                    curValues = new ArrayList<>();
                     this.values.put(realKey, curValues);
                 }
                 curValues.addAll(nonNullValues);

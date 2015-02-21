@@ -126,7 +126,7 @@ public class FluentStringsMapTest {
 
     @Test
     public void mapConstructorTest() {
-        Map<String, Collection<String>> headerMap = new LinkedHashMap<String, Collection<String>>();
+        Map<String, Collection<String>> headerMap = new LinkedHashMap<>();
 
         headerMap.put("foo", Arrays.asList("baz,foo"));
         headerMap.put("baz", Arrays.asList("bar"));
@@ -138,7 +138,7 @@ public class FluentStringsMapTest {
         headerMap.remove("bar");
         headerMap.remove("baz");
 
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("foo", "baz", "bar")));
         assertEquals(map.getFirstValue("foo"), "baz,foo");
         assertEquals(map.getJoinedValue("foo", ", "), "baz,foo");
         assertEquals(map.get("foo"), Arrays.asList("baz,foo"));

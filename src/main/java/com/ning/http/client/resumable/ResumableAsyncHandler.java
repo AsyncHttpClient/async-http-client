@@ -285,7 +285,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
 
         @Override
         public Map<String, Long> load() {
-            return new HashMap<String, Long>();
+            return new HashMap<>();
         }
     }
 

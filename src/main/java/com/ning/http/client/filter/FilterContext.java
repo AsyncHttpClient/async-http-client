@@ -154,7 +154,7 @@ public class FilterContext<T> {
         }
 
         public FilterContext<T> build() {
-            return new FilterContext<T>(this);
+            return new FilterContext<>(this);
         }
     }
 }

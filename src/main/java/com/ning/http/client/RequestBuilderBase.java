@@ -433,7 +433,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T addQueryParam(String name, String value) {
         if (queryParams == null)
-            queryParams = new ArrayList<Param>(1);
+            queryParams = new ArrayList<>(1);
         queryParams.add(new Param(name, value));
         return derived.cast(this);
     }
@@ -475,7 +475,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         if (request.formParams == null)
-            request.formParams = new ArrayList<Param>(1);
+            request.formParams = new ArrayList<>(1);
         request.formParams.add(new Param(name, value));
         return derived.cast(this);
     }

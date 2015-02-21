@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
     private final static byte[] ZERO = "0".getBytes(US_ASCII);
-    private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<BodyPart>();
+    private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
     private final AtomicInteger queueSize = new AtomicInteger();
     private FeedListener listener;
 

@@ -93,7 +93,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
             List<String> curValues = this.values.get(key);
 
             if (curValues == null) {
-                this.values.put(key, new ArrayList<String>(values));
+                this.values.put(key, new ArrayList<>(values));
             } else {
                 curValues.addAll(values);
             }
@@ -154,7 +154,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
             if (values == null) {
                 this.values.remove(key);
             } else {
-                this.values.put(key, new ArrayList<String>(values));
+                this.values.put(key, new ArrayList<>(values));
             }
         }
         return this;

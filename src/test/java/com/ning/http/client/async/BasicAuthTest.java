@@ -105,10 +105,10 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> cm = new ArrayList<>();
         cm.add(mapping);
 
-        Set<String> knownRoles = new HashSet<String>();
+        Set<String> knownRoles = new HashSet<>();
         knownRoles.add(user);
         knownRoles.add(admin);
 
@@ -172,7 +172,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
-        Set<String> knownRoles = new HashSet<String>();
+        Set<String> knownRoles = new HashSet<>();
         knownRoles.add(user);
         knownRoles.add(admin);
 
@@ -187,7 +187,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             }
         };
 
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> cm = new ArrayList<>();
         cm.add(mapping);
 
         security.setConstraintMappings(cm, knownRoles);

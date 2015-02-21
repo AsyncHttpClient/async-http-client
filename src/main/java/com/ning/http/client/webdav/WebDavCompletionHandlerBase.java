@@ -50,7 +50,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
     private final List<HttpResponseBodyPart> bodies =
-            Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
+            Collections.synchronizedList(new ArrayList<>());
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
 
