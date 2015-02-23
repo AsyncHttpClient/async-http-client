@@ -502,8 +502,6 @@ public class Realm {
             byte[] b = new byte[8];
             ThreadLocalRandom.current().nextBytes(b);
             b = md.digest(b);
-            md.reset();
-
             cnonce = toHexString(b);
         }
 
@@ -537,6 +535,9 @@ public class Realm {
         }
 
         private void newResponse(MessageDigest md) {
+            // BEWARE: compute first as it used the cached StringBuilder
+            String url = uri.toUrl();
+            
             StringBuilder sb = StringUtils.stringBuilder();
             sb.append(principal)
             .append(":")
@@ -544,23 +545,18 @@ public class Realm {
             .append(":")
             .append(password);
             md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            sb.setLength(0);
             byte[] ha1 = md.digest();
-            md.reset();
 
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
-            
-            // BEWARE: compute first as it used the cached StringBuilder
-            String url = uri.toUrl();
-            
-            sb.setLength(0);
             sb.append(methodName)
             .append(':')
             .append(url);
 
             md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            sb.setLength(0);
             byte[] ha2 = md.digest();
 
-            sb.setLength(0);
             appendBase16(sb, ha1);
             sb.append(':').append(nonce).append(':');
             
@@ -576,9 +572,8 @@ public class Realm {
 
             appendBase16(sb, ha2);
             md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
-
+            sb.setLength(0);
             byte[] digest = md.digest();
-            md.reset();
 
             response = toHexString(digest);
         }
