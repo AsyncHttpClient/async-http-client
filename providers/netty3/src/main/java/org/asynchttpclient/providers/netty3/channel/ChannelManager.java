@@ -428,10 +428,6 @@ public class ChannelManager {
         }
     }
 
-    public String getPartitionId(NettyResponseFuture<?> future) {
-        return future.getConnectionPoolPartitioning().getPartitionId(future.getUri(), future.getProxyServer());
-    }
-
     public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
@@ -469,7 +465,7 @@ public class ChannelManager {
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
-        drainChannelAndOffer(channel, future, future.isKeepAlive(), getPartitionId(future));
+        drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartitionId());
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, String poolKey) {

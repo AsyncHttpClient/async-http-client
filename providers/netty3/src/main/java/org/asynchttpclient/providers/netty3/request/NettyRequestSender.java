@@ -270,7 +270,7 @@ public final class NettyRequestSender {
                 // only compute when maxConnectionPerHost is enabled
                 // FIXME clean up
                 if (config.getMaxConnectionsPerHost() > 0)
-                    poolKey = channelManager.getPartitionId(future);
+                    poolKey = future.getPartitionId();
 
                 channelManager.preemptChannel(poolKey);
 

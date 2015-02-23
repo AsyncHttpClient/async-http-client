@@ -393,10 +393,6 @@ public class ChannelManager {
         }
     }
 
-    public String getPartitionId(NettyResponseFuture<?> future) {
-        return future.getConnectionPoolPartitioning().getPartitionId(future.getUri(), future.getProxyServer());
-    }
-
     /**
      * Always make sure the channel who got cached support the proper protocol.
      * It could only occurs when a HttpMethod. CONNECT is used against a proxy
@@ -436,7 +432,7 @@ public class ChannelManager {
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
-        drainChannelAndOffer(channel, future, future.isKeepAlive(), getPartitionId(future));
+        drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartitionId());
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, String poolKey) {
