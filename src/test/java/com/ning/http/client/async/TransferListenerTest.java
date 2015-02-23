@@ -79,7 +79,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         final AtomicReference<Throwable> throwable = new AtomicReference<>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
-        final AtomicReference<byte[]> bb = new AtomicReference>();
+        final AtomicReference<byte[]> bb = new AtomicReference<>();
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         TransferCompletionHandler tl = new TransferCompletionHandler();
