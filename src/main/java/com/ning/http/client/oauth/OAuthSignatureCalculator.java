@@ -85,7 +85,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     @Override
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
-        long timestamp = System.currentTimeMillis() / 1000L;
+        long timestamp = generateTimestamp();
         String signature = calculateSignature(request.getMethod(), request.getUri(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
@@ -185,7 +185,11 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return sb.toString();
     }
 
-    private synchronized String generateNonce() {
+    protected long generateTimestamp() {
+        return System.currentTimeMillis() / 1000L;
+    }
+    
+    protected synchronized String generateNonce() {
         random.nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
