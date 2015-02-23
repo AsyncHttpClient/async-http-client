@@ -31,7 +31,7 @@ import com.ning.http.util.UTF8UrlEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
@@ -57,12 +57,6 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     private static final String OAUTH_VERSION_1_0 = "1.0";
     private static final String OAUTH_SIGNATURE_METHOD = "HMAC-SHA1";
 
-    /**
-     * To generate Nonce, need some (pseudo)randomness; no need for
-     * secure variant here.
-     */
-    protected final Random random;
-
     protected final byte[] nonceBuffer = new byte[16];
 
     protected final ThreadSafeHMAC mac;
@@ -79,7 +73,6 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         mac = new ThreadSafeHMAC(consumerAuth, userAuth);
         this.consumerAuth = consumerAuth;
         this.userAuth = userAuth;
-        random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
     }
 
     @Override
@@ -189,8 +182,8 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return System.currentTimeMillis() / 1000L;
     }
     
-    protected synchronized String generateNonce() {
-        random.nextBytes(nonceBuffer);
+    protected String generateNonce() {
+        ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
 //      return String.valueOf(Math.abs(random.nextLong()));
