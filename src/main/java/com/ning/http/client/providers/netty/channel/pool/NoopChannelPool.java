@@ -18,7 +18,7 @@ import org.jboss.netty.channel.Channel;
 public class NoopChannelPool implements ChannelPool {
 
     @Override
-    public boolean offer(Channel connection, String poolKey) {
+    public boolean offer(Channel connection, String partition) {
         return false;
     }
 

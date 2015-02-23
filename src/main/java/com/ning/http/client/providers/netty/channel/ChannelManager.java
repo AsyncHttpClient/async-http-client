@@ -92,7 +92,7 @@ public class ChannelManager {
     private final ChannelGroup openChannels;
     private final boolean maxConnectionsPerHostEnabled;
     private final ConcurrentHashMap<String, Semaphore> freeChannelsPerHost;
-    private final ConcurrentHashMap<Integer, String> channelId2KeyPool;
+    private final ConcurrentHashMap<Integer, String> channelId2Partition;
     private final long handshakeTimeout;
     private final Timer nettyTimer;
     private final IOException tooManyConnections;
@@ -137,9 +137,9 @@ public class ChannelManager {
                     if (removed) {
                         freeChannels.release();
                         if (maxConnectionsPerHostEnabled) {
-                            String poolKey = channelId2KeyPool.remove(Channel.class.cast(o).getId());
-                            if (poolKey != null) {
-                                Semaphore freeChannelsForHost = freeChannelsPerHost.get(poolKey);
+                            String partition = channelId2Partition.remove(Channel.class.cast(o).getId());
+                            if (partition != null) {
+                                Semaphore freeChannelsForHost = freeChannelsPerHost.get(partition);
                                 if (freeChannelsForHost != null)
                                     freeChannelsForHost.release();
                             }
@@ -156,10 +156,10 @@ public class ChannelManager {
 
         if (maxConnectionsPerHostEnabled) {
             freeChannelsPerHost = new ConcurrentHashMap<>();
-            channelId2KeyPool = new ConcurrentHashMap<>();
+            channelId2Partition = new ConcurrentHashMap<>();
         } else {
             freeChannelsPerHost = null;
-            channelId2KeyPool = null;
+            channelId2Partition = null;
         }
 
         handshakeTimeout = nettyConfig.getHandshakeTimeout();
@@ -287,7 +287,7 @@ public class ChannelManager {
             LOGGER.debug("Adding key: {} for channel {}", partition, channel);
             channelPool.offer(channel, partition);
             if (maxConnectionsPerHostEnabled)
-                channelId2KeyPool.putIfAbsent(channel.getId(), partition);
+                channelId2Partition.putIfAbsent(channel.getId(), partition);
             Channels.setDiscard(channel);
         } else {
             // not offered
@@ -308,28 +308,28 @@ public class ChannelManager {
         return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
     }
 
-    private Semaphore getFreeConnectionsForHost(String poolKey) {
-        Semaphore freeConnections = freeChannelsPerHost.get(poolKey);
+    private Semaphore getFreeConnectionsForHost(String partition) {
+        Semaphore freeConnections = freeChannelsPerHost.get(partition);
         if (freeConnections == null) {
             // lazy create the semaphore
             Semaphore newFreeConnections = new Semaphore(config.getMaxConnectionsPerHost());
-            freeConnections = freeChannelsPerHost.putIfAbsent(poolKey, newFreeConnections);
+            freeConnections = freeChannelsPerHost.putIfAbsent(partition, newFreeConnections);
             if (freeConnections == null)
                 freeConnections = newFreeConnections;
         }
         return freeConnections;
     }
 
-    private boolean tryAcquirePerHost(String poolKey) {
-        return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(poolKey).tryAcquire();
+    private boolean tryAcquirePerHost(String partition) {
+        return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(partition).tryAcquire();
     }
 
-    public void preemptChannel(String poolKey) throws IOException {
+    public void preemptChannel(String partition) throws IOException {
         if (!channelPool.isOpen())
             throw poolAlreadyClosed;
         if (!tryAcquireGlobal())
             throw tooManyConnections;
-        if (!tryAcquirePerHost(poolKey)) {
+        if (!tryAcquirePerHost(partition)) {
             if (maxTotalConnectionsEnabled)
                 freeChannels.release();
 
@@ -374,17 +374,17 @@ public class ChannelManager {
         openChannels.remove(channel);
     }
 
-    public void abortChannelPreemption(String poolKey) {
+    public void abortChannelPreemption(String partition) {
         if (maxTotalConnectionsEnabled)
             freeChannels.release();
         if (maxConnectionsPerHostEnabled)
-            getFreeConnectionsForHost(poolKey).release();
+            getFreeConnectionsForHost(partition).release();
     }
 
-    public void registerOpenChannel(Channel channel, final String poolKey) {
+    public void registerOpenChannel(Channel channel, final String partition) {
         openChannels.add(channel);
         if (maxConnectionsPerHostEnabled) {
-            channelId2KeyPool.put(channel.getId(), poolKey);
+            channelId2Partition.put(channel.getId(), partition);
         }
     }
 
@@ -459,22 +459,22 @@ public class ChannelManager {
     }
 
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive,
-            final String poolKey) {
+            final String partition) {
 
         return new Callback(future) {
             @Override
             public void call() {
-                tryToOfferChannelToPool(channel, keepAlive, poolKey);
+                tryToOfferChannelToPool(channel, keepAlive, partition);
             }
         };
     }
 
     public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
-        drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartitionId());
+        drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartition());
     }
 
-    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, String poolKey) {
-        Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, poolKey));
+    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, String partition) {
+        Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, partition));
     }
     
     public void flushPartition(String partitionId) {
