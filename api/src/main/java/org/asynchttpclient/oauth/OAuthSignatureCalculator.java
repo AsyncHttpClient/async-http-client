@@ -71,10 +71,6 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
     protected final RequestToken userAuth;
 
-    protected final Long testTimestamp;
-
-    protected final String testNonce;
-
     /**
      * @param consumerAuth Consumer key to use for signature calculation
      * @param userAuth     Request/access token to use for signature calculation
@@ -83,26 +79,13 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         mac = new ThreadSafeHMAC(consumerAuth, userAuth);
         this.consumerAuth = consumerAuth;
         this.userAuth = userAuth;
-        this.testTimestamp = 0L;
-        this.testNonce = null;
         random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
     }
 
-    OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth, Long testTimestamp, String testNonce) {
-        mac = new ThreadSafeHMAC(consumerAuth, userAuth);
-        this.consumerAuth = consumerAuth;
-        this.userAuth = userAuth;
-        this.testTimestamp = testTimestamp;
-        this.testNonce = testNonce;
-        random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
-    }
-
-
-    //@Override // silly 1.5; doesn't allow this for interfaces
-
+    @Override
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
-        String nonce = (this.testNonce != null) ? this.testNonce : generateNonce();
-        long timestamp = (this.testTimestamp > 0L) ? this.testTimestamp : System.currentTimeMillis() / 1000L;
+        String nonce = generateNonce();
+        long timestamp = generateTimestamp();
         String signature = calculateSignature(request.getMethod(), request.getUri(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
@@ -202,11 +185,15 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return sb.toString();
     }
 
-    private synchronized String generateNonce() {
+    protected synchronized String generateNonce() {
         random.nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
 //      return String.valueOf(Math.abs(random.nextLong()));
+    }
+
+    protected long generateTimestamp() {
+        return System.currentTimeMillis() / 1000L;
     }
 
     /**
@@ -265,8 +252,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
             return value;
         }
 
-        //@Override // silly 1.5; doesn't allow this for interfaces
-
+        @Override
         public int compareTo(Parameter other) {
             int diff = key.compareTo(other.key);
             if (diff == 0) {

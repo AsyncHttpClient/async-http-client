@@ -16,7 +16,6 @@
 package org.asynchttpclient.oauth;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
 import java.io.UnsupportedEncodingException;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -53,6 +51,28 @@ public class TestSignatureCalculator {
 
     final static long TIMESTAMP = 1191242096;
 
+    private static class StaticOAuthSignatureCalculator extends OAuthSignatureCalculator {
+        
+        private final long timestamp;
+        private final String nonce;
+        
+        public StaticOAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth, long timestamp, String nonce) {
+            super(consumerAuth, userAuth);
+            this.timestamp = timestamp;   
+            this.nonce = nonce;
+        }
+        
+        @Override
+        protected long generateTimestamp() {
+            return timestamp;
+        }
+
+        @Override
+        protected String generateNonce() {
+            return nonce;
+        }
+    }
+    
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
     @Test(groups = "fast")
@@ -73,7 +93,7 @@ public class TestSignatureCalculator {
     public void testPostCalculateSignature() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
-        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user, TIMESTAMP, NONCE);
+        OAuthSignatureCalculator calc = new StaticOAuthSignatureCalculator(consumer, user, TIMESTAMP, NONCE);
 
         List<Param> formParams = new ArrayList<Param>();
         formParams.add(new Param("file", "vacation.jpg"));
@@ -108,7 +128,7 @@ public class TestSignatureCalculator {
     public void testGetWithRequestBuilder() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
-        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user, TIMESTAMP, NONCE);
+        OAuthSignatureCalculator calc = new StaticOAuthSignatureCalculator(consumer, user, TIMESTAMP, NONCE);
 
         List<Param> queryParams = new ArrayList<Param>();
         queryParams.add(new Param("file", "vacation.jpg"));
