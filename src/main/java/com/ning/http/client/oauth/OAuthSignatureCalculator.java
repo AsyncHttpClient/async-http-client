@@ -122,7 +122,11 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
          * List of all query and form parameters added to this request; needed
          * for calculating request signature
          */
-        OAuthParameterSet allParameters = new OAuthParameterSet();
+        int allParametersSize = 5
+                + (userAuth.getKey() != null ? 1 : 0)
+                + (formParams != null ? formParams.size() : 0)
+                + (queryParams != null ? queryParams.size() : 0);
+        OAuthParameterSet allParameters = new OAuthParameterSet(allParametersSize);
 
         // start with standard OAuth parameters we need
         allParameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getKey());
@@ -203,9 +207,10 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      * when it would occur it'd be harder to track down.
      */
     final static class OAuthParameterSet {
-        final private ArrayList<Parameter> allParameters = new ArrayList<>();
+        private final ArrayList<Parameter> allParameters;
 
-        public OAuthParameterSet() {
+        public OAuthParameterSet(int size) {
+            allParameters = new ArrayList<>(size);
         }
 
         public OAuthParameterSet add(String key, String value) {
