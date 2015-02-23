@@ -380,8 +380,11 @@ public class ChannelManager {
             getFreeConnectionsForHost(poolKey).release();
     }
 
-    public void registerOpenChannel(Channel channel) {
+    public void registerOpenChannel(Channel channel, String partition) {
         openChannels.add(channel);
+        if (maxConnectionsPerHostEnabled) {
+            channelId2KeyPool.put(channel.getId(), partition);
+        }
     }
 
     private HttpClientCodec newHttpClientCodec() {

@@ -35,6 +35,8 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,6 +245,27 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
             latch.await(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(count.get(), 0);
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
+
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+        .setMaxConnections(6)
+        .setMaxConnectionsPerHost(3)
+        .build();
+
+        Request request = new RequestBuilder().setUrl(getTargetUrl()).setHeader("Connection", "close").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
         }
     }
 }
