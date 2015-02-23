@@ -558,22 +558,26 @@ public class Realm {
         }
 
         private void newResponse(MessageDigest md) {
-            StringBuilder sb = StringUtils.stringBuilder();
-            byte[] ha1 = md.digest(sb.append(principal)
-                    .append(":")
-                    .append(realmName)
-                    .append(":")
-                    .append(password)
-                    .toString().getBytes(ISO_8859_1));
-            sb.setLength(0);
-            
             // BEWARE: compute first as it used the cached StringBuilder
             String url = uri.toUrl();
-            
-            byte[] ha2 = md.digest(sb.append(methodName)
-                    .append(':')
-                    .append(url).toString().getBytes(ISO_8859_1));
+
+            StringBuilder sb = StringUtils.stringBuilder();
+            sb.append(principal)
+            .append(":")
+            .append(realmName)
+            .append(":")
+            .append(password);
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
+            byte[] ha1 = md.digest();
+            
+            sb.append(methodName)
+            .append(':')
+            .append(url);
+            
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            sb.setLength(0);
+            byte[] ha2 = md.digest();
 
             appendBase16(sb, ha1);
             sb.append(':').append(nonce).append(':');
@@ -589,16 +593,17 @@ public class Realm {
             }
 
             appendBase16(sb, ha2);
-            byte[] digest = md.digest(sb.toString().getBytes(ISO_8859_1));
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
+            byte[] digest = md.digest();
             response = toHexString(digest);
         }
 
         private static String toHexString(byte[] data) {
-            StringBuilder buffer = StringUtils.stringBuilder();
-            appendBase16(buffer, data);
-            String hex = buffer.toString();
-            buffer.setLength(0);
+            StringBuilder sb = StringUtils.stringBuilder();
+            appendBase16(sb, data);
+            String hex = sb.toString();
+            sb.setLength(0);
             return hex;
         }
 

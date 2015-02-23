@@ -16,12 +16,15 @@
  */
 package com.ning.http.client.oauth;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.ning.http.util.StringUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.nio.ByteBuffer;
 
 /**
  * Since cloning (of MAC instances)  is not necessarily supported on all platforms
@@ -38,11 +41,11 @@ public class ThreadSafeHMAC {
     private final Mac mac;
 
     public ThreadSafeHMAC(ConsumerKey consumerAuth, RequestToken userAuth) {
-        StringBuilder sb = new StringBuilder(consumerAuth.getSecret().length() + userAuth.getSecret().length() + 16);
+        StringBuilder sb = StringUtils.stringBuilder();
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
         sb.append('&');
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, userAuth.getSecret());
-        byte[] keyBytes = sb.toString().getBytes(UTF_8);
+        byte[] keyBytes = StringUtils.stringBuilder2Bytes(sb, UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key
@@ -55,8 +58,9 @@ public class ThreadSafeHMAC {
 
     }
 
-    public synchronized byte[] digest(byte[] message) {
+    public synchronized byte[] digest(ByteBuffer message) {
         mac.reset();
-        return mac.doFinal(message);
+        mac.update(message);
+        return mac.doFinal();
     }
 }
