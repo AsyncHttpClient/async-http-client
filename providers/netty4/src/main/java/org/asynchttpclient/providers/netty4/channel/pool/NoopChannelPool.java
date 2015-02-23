@@ -20,12 +20,12 @@ import io.netty.channel.Channel;
 public class NoopChannelPool implements ChannelPool {
 
     @Override
-    public boolean offer(Channel channel, String poolKey) {
+    public boolean offer(Channel channel, String partition) {
         return false;
     }
 
     @Override
-    public Channel poll(String poolKey) {
+    public Channel poll(String partition) {
         return null;
     }
 

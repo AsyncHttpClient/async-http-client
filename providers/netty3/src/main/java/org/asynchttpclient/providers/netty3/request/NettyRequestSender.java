@@ -185,13 +185,13 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolPartitioning poolKeyGen,
+    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolPartitioning partitioning,
             ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen, asyncHandler);
+            return pollAndVerifyCachedChannel(uri, proxyServer, partitioning, asyncHandler);
     }
 
     private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, Uri uri, ProxyServer proxy,
@@ -262,7 +262,7 @@ public final class NettyRequestSender {
         ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy, useSSl);
 
         boolean channelPreempted = false;
-        String poolKey = null;
+        String partition = null;
 
         try {
             // Do not throw an exception when we need an extra connection for a redirect.
@@ -270,9 +270,9 @@ public final class NettyRequestSender {
                 // only compute when maxConnectionPerHost is enabled
                 // FIXME clean up
                 if (config.getMaxConnectionsPerHost() > 0)
-                    poolKey = future.getPartitionId();
+                    partition = future.getPartitionId();
 
-                channelManager.preemptChannel(poolKey);
+                channelManager.preemptChannel(partition);
 
                 channelPreempted = true;
             }
@@ -281,11 +281,11 @@ public final class NettyRequestSender {
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
             ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
-            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, poolKey));
+            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partition));
 
         } catch (Throwable t) {
             if (channelPreempted)
-                channelManager.abortChannelPreemption(poolKey);
+                channelManager.abortChannelPreemption(partition);
 
             abort(null, future, t.getCause() == null ? t : t.getCause());
         }

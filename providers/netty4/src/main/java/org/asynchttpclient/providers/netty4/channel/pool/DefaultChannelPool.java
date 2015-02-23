@@ -86,11 +86,11 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final class ChannelCreation {
         final long creationTime;
-        final String poolKey;
+        final String partition;
 
-        ChannelCreation(long creationTime, String poolKey) {
+        ChannelCreation(long creationTime, String partition) {
             this.creationTime = creationTime;
-            this.poolKey = poolKey;
+            this.partition = partition;
         }
     }
 
@@ -293,7 +293,7 @@ public final class DefaultChannelPool implements ChannelPool {
      */
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = channel2Creation.remove(channel);
-        return !isClosed.get() && creation != null && partitions.get(creation.poolKey).remove(channel);
+        return !isClosed.get() && creation != null && partitions.get(creation.partition).remove(channel);
     }
 
     /**

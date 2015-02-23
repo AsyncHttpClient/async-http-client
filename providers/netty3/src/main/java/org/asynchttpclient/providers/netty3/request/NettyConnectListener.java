@@ -37,35 +37,35 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     private final NettyRequestSender requestSender;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
-    private final String poolKey;
+    private final String partition;
 
     public NettyConnectListener(NettyResponseFuture<T> future,//
             NettyRequestSender requestSender,//
             ChannelManager channelManager,//
             boolean channelPreempted,//
-            String poolKey) {
+            String partition) {
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
-        this.poolKey = poolKey;
+        this.partition = partition;
     }
 
     public NettyResponseFuture<T> future() {
         return future;
     }
 
-    private void abortChannelPreemption(String poolKey) {
+    private void abortChannelPreemption(String partition) {
         if (channelPreempted)
-            channelManager.abortChannelPreemption(poolKey);
+            channelManager.abortChannelPreemption(partition);
     }
 
-    private void writeRequest(Channel channel, String poolKey) {
+    private void writeRequest(Channel channel, String partition) {
 
         LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
 
         if (future.isDone()) {
-            abortChannelPreemption(poolKey);
+            abortChannelPreemption(partition);
             return;
         }
 
@@ -74,17 +74,17 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpen();
 
-        channelManager.registerOpenChannel(channel, poolKey);
+        channelManager.registerOpenChannel(channel, partition);
         requestSender.writeRequest(future, channel);
     }
 
     private void onFutureSuccess(final Channel channel) throws ConnectException {
         Channels.setAttribute(channel, future);
-        writeRequest(channel, poolKey);
+        writeRequest(channel, partition);
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {
-        abortChannelPreemption(poolKey);
+        abortChannelPreemption(partition);
 
         boolean canRetry = future.canRetry();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
