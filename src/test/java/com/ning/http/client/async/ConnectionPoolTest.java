@@ -40,6 +40,8 @@ import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
@@ -244,6 +246,27 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
             latch.await(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(count.get(), 0);
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
+
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+        .setMaxConnections(6)
+        .setMaxConnectionsPerHost(3)
+        .build();
+
+        Request request = new RequestBuilder().setUrl(getTargetUrl()).setHeader("Connection", "close").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
+            Thread.sleep(1000);
+            client.executeRequest(request).get();
         }
     }
 }
