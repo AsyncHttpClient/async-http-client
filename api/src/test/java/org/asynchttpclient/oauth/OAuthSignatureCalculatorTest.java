@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * online oauth signature checker.
  *
  */
-public class TestSignatureCalculator {
+public class OAuthSignatureCalculatorTest {
     private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
 
     private static final String CONSUMER_SECRET = "kd94hf93k423kf44";
