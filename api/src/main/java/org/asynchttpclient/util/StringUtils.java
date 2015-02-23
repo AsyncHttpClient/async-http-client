@@ -12,6 +12,10 @@
  */
 package org.asynchttpclient.util;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+
 public final class StringUtils {
 
     private static final ThreadLocal<StringBuilder> STRING_BUILDERS = new ThreadLocal<StringBuilder>() {
@@ -32,5 +36,16 @@ public final class StringUtils {
     
     private StringUtils() {
         // unused
+    }
+
+    public static ByteBuffer stringBuilder2ByteBuffer(StringBuilder sb, Charset charset) {
+        return charset.encode(CharBuffer.wrap(sb));
+    }
+    
+    public static byte[] stringBuilder2Bytes(StringBuilder sb, Charset charset) {
+        ByteBuffer bb = stringBuilder2ByteBuffer(sb, charset);
+        byte[] rawBase = new byte[bb.remaining()];
+        bb.get(rawBase);
+        return rawBase;
     }
 }

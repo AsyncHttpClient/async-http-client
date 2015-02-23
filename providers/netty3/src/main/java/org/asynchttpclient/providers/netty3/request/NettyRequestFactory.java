@@ -229,7 +229,8 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams()).getBytes(bodyCharset), contentType);
+                // FIXME could this be done with Netty's ByteBuf?
+                nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);

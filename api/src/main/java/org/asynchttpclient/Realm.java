@@ -538,12 +538,12 @@ public class Realm {
 
         private void newResponse(MessageDigest md) {
             StringBuilder sb = StringUtils.stringBuilder();
-            md.update(sb.append(principal)
-                    .append(":")
-                    .append(realmName)
-                    .append(":")
-                    .append(password)
-                    .toString().getBytes(ISO_8859_1));
+            sb.append(principal)
+            .append(":")
+            .append(realmName)
+            .append(":")
+            .append(password);
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
             byte[] ha1 = md.digest();
             md.reset();
 
@@ -553,9 +553,11 @@ public class Realm {
             String url = uri.toUrl();
             
             sb.setLength(0);
-            md.update(sb.append(methodName)
-                    .append(':')
-                    .append(url).toString().getBytes(ISO_8859_1));
+            sb.append(methodName)
+            .append(':')
+            .append(url);
+
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
             byte[] ha2 = md.digest();
 
             sb.setLength(0);
@@ -573,7 +575,7 @@ public class Realm {
             }
 
             appendBase16(sb, ha2);
-            md.update(sb.toString().getBytes(ISO_8859_1));
+            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
 
             byte[] digest = md.digest();
             md.reset();

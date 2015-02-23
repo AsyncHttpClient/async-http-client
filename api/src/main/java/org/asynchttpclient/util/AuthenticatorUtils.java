@@ -64,7 +64,8 @@ public final class AuthenticatorUtils {
         append(builder, "cnonce", realm.getCnonce(), true);
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
-        return new String(builder.toString().getBytes(ISO_8859_1));
+        // FIXME isn't there a more efficient way?
+        return new String(StringUtils.stringBuilder2Bytes(builder, ISO_8859_1));
     }
 
     private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {

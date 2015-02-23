@@ -146,13 +146,17 @@ public class AsyncHttpProviderUtils {
         return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }
 
-    public static String urlEncodeFormParams(List<Param> params) {
+    private static StringBuilder urlEncodeFormParams0(List<Param> params) {
         StringBuilder sb = StringUtils.stringBuilder();
         for (Param param : params) {
             encodeAndAppendFormParam(sb, param.getName(), param.getValue());
         }
         sb.setLength(sb.length() - 1);
-        return sb.toString();
+        return sb;
+    }
+    
+    public static byte[] urlEncodeFormParams(List<Param> params, Charset charset) {
+        return StringUtils.stringBuilder2Bytes(urlEncodeFormParams0(params), charset);
     }
 
     private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {

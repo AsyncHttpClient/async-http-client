@@ -16,12 +16,15 @@
  */
 package org.asynchttpclient.oauth;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import org.asynchttpclient.util.UTF8UrlEncoder;
+import java.nio.ByteBuffer;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.UTF8UrlEncoder;
 
 /**
  * Since cloning (of MAC instances)  is not necessarily supported on all platforms
@@ -38,8 +41,11 @@ public class ThreadSafeHMAC {
     private final Mac mac;
 
     public ThreadSafeHMAC(ConsumerKey consumerAuth, RequestToken userAuth) {
-        byte[] keyBytes = (UTF8UrlEncoder.encode(consumerAuth.getSecret()) + "&" + UTF8UrlEncoder.encode(userAuth.getSecret()))
-                .getBytes(UTF_8);
+        StringBuilder sb = StringUtils.stringBuilder();
+        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
+        sb.append('&');
+        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, userAuth.getSecret());
+        byte[] keyBytes = StringUtils.stringBuilder2Bytes(sb, UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key
@@ -52,8 +58,9 @@ public class ThreadSafeHMAC {
 
     }
 
-    public synchronized byte[] digest(byte[] message) {
+    public synchronized byte[] digest(ByteBuffer message) {
         mac.reset();
-        return mac.doFinal(message);
+        mac.update(message);
+        return mac.doFinal();
     }
 }
