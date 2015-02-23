@@ -232,7 +232,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             return httpProvider.execute(request, handler);
 
         } else {
-            FilterContext<T> fc = new FilterContext.FilterContextBuilder<>().asyncHandler(handler).request(request).build();
+            FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
             try {
                 fc = preProcessRequest(fc);
             } catch (Exception e) {
