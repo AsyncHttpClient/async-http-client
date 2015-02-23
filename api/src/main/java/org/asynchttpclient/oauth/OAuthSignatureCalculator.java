@@ -57,7 +57,11 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     private static final String OAUTH_VERSION_1_0 = "1.0";
     private static final String OAUTH_SIGNATURE_METHOD = "HMAC-SHA1";
 
-    protected final byte[] nonceBuffer = new byte[16];
+    protected static final ThreadLocal<byte[]> NONCE_BUFFER = new ThreadLocal<byte[]>() {
+        protected byte[] initialValue() {
+            return new byte[16];
+        }
+    };
 
     protected final ThreadSafeHMAC mac;
 
@@ -179,6 +183,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     }
 
     protected synchronized String generateNonce() {
+        byte[] nonceBuffer = NONCE_BUFFER.get();
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
