@@ -44,7 +44,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Channel, ChannelCreation> channel2Creation = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
@@ -61,6 +61,10 @@ public final class DefaultChannelPool implements ChannelPool {
                 hashedWheelTimer);
     }
 
+    private int channelId(Channel channel) {
+        return channel.hashCode();
+    }
+    
     public DefaultChannelPool(
             long maxIdleTime,//
             int maxConnectionTTL,//
@@ -121,7 +125,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (maxConnectionTTLDisabled)
             return false;
 
-        ChannelCreation creation = channel2Creation.get(channel);
+        ChannelCreation creation = channelId2Creation.get(channelId(channel));
         return creation != null && now - creation.creationTime >= maxConnectionTTL;
     }
 
@@ -213,7 +217,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
                     if (!closedChannels.isEmpty()) {
                         for (IdleChannel closedChannel : closedChannels)
-                            channel2Creation.remove(closedChannel.channel);
+                            channelId2Creation.remove(channelId(closedChannel.channel));
 
                         partition.removeAll(closedChannels);
                         closedCount += closedChannels.size();
@@ -258,7 +262,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
         boolean added = getPartition(partitionId).add(new IdleChannel(channel, now));
         if (added)
-            channel2Creation.putIfAbsent(channel, new ChannelCreation(now, partitionId));
+            channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionId));
 
         return added;
     }
@@ -292,7 +296,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = channel2Creation.remove(channel);
+        ChannelCreation creation = channelId2Creation.remove(channelId(channel));
         return !isClosed.get() && creation != null && partitions.get(creation.partition).remove(channel);
     }
 
@@ -316,13 +320,13 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         partitions.clear();
-        channel2Creation.clear();
+        channelId2Creation.clear();
     }
 
     private void close(Channel channel) {
         // FIXME pity to have to do this here
         Channels.setDiscard(channel);
-        channel2Creation.remove(channel);
+        channelId2Creation.remove(channelId(channel));
         Channels.silentlyCloseChannel(channel);
     }
 
