@@ -38,14 +38,18 @@ public final class StringUtils {
         // unused
     }
 
-    public static ByteBuffer stringBuilder2ByteBuffer(StringBuilder sb, Charset charset) {
-        return charset.encode(CharBuffer.wrap(sb));
+    public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
+        return charset.encode(CharBuffer.wrap(cs));
     }
-    
-    public static byte[] stringBuilder2Bytes(StringBuilder sb, Charset charset) {
-        ByteBuffer bb = stringBuilder2ByteBuffer(sb, charset);
+
+    public static byte[] byteBuffer2ByteArray(ByteBuffer bb) {
         byte[] rawBase = new byte[bb.remaining()];
         bb.get(rawBase);
         return rawBase;
+    }
+
+    public static byte[] charSequence2Bytes(CharSequence sb, Charset charset) {
+        ByteBuffer bb = charSequence2ByteBuffer(sb, charset);
+        return byteBuffer2ByteArray(bb);
     }
 }

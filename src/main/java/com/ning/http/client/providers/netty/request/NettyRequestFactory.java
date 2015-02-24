@@ -231,6 +231,7 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
+                // FIXME use a ByteBuffer
                 nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))

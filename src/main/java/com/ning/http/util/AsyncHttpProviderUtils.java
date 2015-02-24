@@ -178,7 +178,7 @@ public class AsyncHttpProviderUtils {
     }
     
     public static byte[] urlEncodeFormParams(List<Param> params, Charset charset) {
-        return StringUtils.stringBuilder2Bytes(urlEncodeFormParams0(params), charset);
+        return StringUtils.charSequence2Bytes(urlEncodeFormParams0(params), charset);
     }
 
     private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {

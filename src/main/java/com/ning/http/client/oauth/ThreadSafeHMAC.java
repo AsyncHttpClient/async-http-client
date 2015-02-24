@@ -45,7 +45,7 @@ public class ThreadSafeHMAC {
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
         sb.append('&');
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, userAuth.getSecret());
-        byte[] keyBytes = StringUtils.stringBuilder2Bytes(sb, UTF_8);
+        byte[] keyBytes = StringUtils.charSequence2Bytes(sb, UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key
