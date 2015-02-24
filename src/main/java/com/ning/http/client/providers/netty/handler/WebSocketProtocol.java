@@ -92,8 +92,6 @@ public final class WebSocketProtocol extends Protocol {
             if (connection == null)
                 connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
             boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
-
-            status = new NettyResponseStatus(future.getUri(), config, response);
             final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
 
             if (!statusReceived) {
