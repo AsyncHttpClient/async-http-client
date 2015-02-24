@@ -52,6 +52,7 @@ import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.request.body.NettyBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyBodyBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyByteArrayBody;
+import org.asynchttpclient.providers.netty4.request.body.NettyByteBufferBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyCompositeByteArrayBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyDirectBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyFileBody;
@@ -59,6 +60,7 @@ import org.asynchttpclient.providers.netty4.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty4.request.body.NettyMultipartBody;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.StringUtils;
 
 public final class NettyRequestFactory {
 
@@ -218,7 +220,7 @@ public final class NettyRequestFactory {
                 nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
                 
             else if (request.getStringData() != null)
-                nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
+                nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
             else if (request.getStreamData() != null)
                 nettyBody = new NettyInputStreamBody(request.getStreamData());
@@ -229,8 +231,7 @@ public final class NettyRequestFactory {
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                // FIXME could this be done with Netty's ByteBuf?
-                nettyBody = new NettyByteArrayBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
+                nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);

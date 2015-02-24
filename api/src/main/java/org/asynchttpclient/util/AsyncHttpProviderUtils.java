@@ -17,6 +17,7 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -155,8 +156,8 @@ public class AsyncHttpProviderUtils {
         return sb;
     }
     
-    public static byte[] urlEncodeFormParams(List<Param> params, Charset charset) {
-        return StringUtils.charSequence2Bytes(urlEncodeFormParams0(params), charset);
+    public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
+        return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params), charset);
     }
 
     private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
