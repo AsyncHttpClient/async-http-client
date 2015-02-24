@@ -16,7 +16,7 @@ import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
 
 public abstract class Callback {
 
-    private final NettyResponseFuture<?> future;
+    protected final NettyResponseFuture<?> future;
 
     public Callback(NettyResponseFuture<?> future) {
         this.future = future;

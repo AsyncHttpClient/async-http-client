@@ -280,7 +280,6 @@ public final class HttpProtocol extends Protocol {
         if (statusCode == CONTINUE.getCode()) {
             future.setHeadersAlreadyWrittenOnContinue(true);
             future.setDontWriteBodyBecauseExpectContinue(false);
-            // FIXME why not reuse the channel?
             requestSender.writeRequest(future, channel);
             return true;
 

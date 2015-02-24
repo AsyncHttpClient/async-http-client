@@ -43,8 +43,10 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.providers.netty.commons.handler.ConnectionStrategy;
+import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
+import org.asynchttpclient.providers.netty4.channel.Channels;
 import org.asynchttpclient.providers.netty4.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty4.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty4.response.NettyResponseBodyPart;
@@ -279,10 +281,15 @@ public final class HttpProtocol extends Protocol {
         if (statusCode == CONTINUE.code()) {
             future.setHeadersAlreadyWrittenOnContinue(true);
             future.setDontWriteBodyBecauseExpectContinue(false);
-            // FIXME why not reuse the channel?
-            requestSender.writeRequest(future, channel);
+            // directly send the body
+            Channels.setAttribute(channel, new Callback(future) {
+                @Override
+                public void call() throws IOException {
+                    Channels.setAttribute(channel, future);
+                    requestSender.writeRequest(future, channel);
+                }
+            });
             return true;
-
         }
         return false;
     }
@@ -376,7 +383,8 @@ public final class HttpProtocol extends Protocol {
 
             future.setReuseChannel(true);
             future.setConnectAllowed(false);
-            requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);
+
+            requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getRequest()).build());
             return true;
         }
 
@@ -429,6 +437,38 @@ public final class HttpProtocol extends Protocol {
                 exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders);
     }
 
+    private void handleChunk(HttpContent chunk,//
+            final Channel channel,//
+            final NettyResponseFuture<?> future,//
+            AsyncHandler<?> handler) throws IOException, Exception {
+
+        boolean interrupt = false;
+        boolean last = chunk instanceof LastHttpContent;
+        
+        // Netty 4: the last chunk is not empty
+        if (last) {
+            LastHttpContent lastChunk = (LastHttpContent) chunk;
+            HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
+            if (!trailingHeaders.isEmpty()) {
+                NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), trailingHeaders);
+                interrupt = handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE;
+            }
+        }
+
+        ByteBuf buf = chunk.content();
+        try {
+            if (!interrupt && (buf.readableBytes() > 0 || last)) {
+                NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
+                interrupt = updateBodyAndInterrupt(future, handler, part);
+            }
+        } finally {
+            buf.release();
+        }
+
+        if (interrupt || last)
+            finishUpdate(future, channel, !last);
+    }
+    
     @Override
     public void handle(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
 
@@ -444,45 +484,11 @@ public final class HttpProtocol extends Protocol {
         AsyncHandler<?> handler = future.getAsyncHandler();
         try {
             if (e instanceof HttpResponse) {
-                HttpResponse response = (HttpResponse) e;
-                // we buffer the response until we get the first HttpContent
-                future.setPendingResponse(response);
-                return;
-
-            } else if (e instanceof HttpContent) {
-                HttpResponse response = future.getPendingResponse();
-                future.setPendingResponse(null);
-                if (response != null && handleHttpResponse(response, channel, future, handler))
+                if (handleHttpResponse((HttpResponse) e, channel, future, handler))
                     return;
 
-                HttpContent chunk = (HttpContent) e;
-
-                boolean interrupt = false;
-                boolean last = chunk instanceof LastHttpContent;
-
-                // Netty 4: the last chunk is not empty
-                if (last) {
-                    LastHttpContent lastChunk = (LastHttpContent) chunk;
-                    HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
-                    if (!trailingHeaders.isEmpty()) {
-                        NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), trailingHeaders);
-                        interrupt = handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE;
-                    }
-                }
-
-                ByteBuf buf = chunk.content();
-                try {
-                    if (!interrupt && (buf.readableBytes() > 0 || last)) {
-                        NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
-                        interrupt = updateBodyAndInterrupt(future, handler, part);
-                    }
-                } finally {
-                    // FIXME we shouldn't need this, should we? But a leak was reported there without it?!
-                    buf.release();
-                }
-
-                if (interrupt || last)
-                    finishUpdate(future, channel, !last);
+            } else if (e instanceof HttpContent) {
+                handleChunk((HttpContent) e, channel, future, handler);
             }
         } catch (Exception t) {
             // e.g. an IOException when trying to open a connection and send the next request

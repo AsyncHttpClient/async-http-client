@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
@@ -61,10 +62,15 @@ public class Processor extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
         Object attribute = Channels.getAttribute(channel);
 
-        if (attribute instanceof Callback && msg instanceof LastHttpContent) {
+        if (attribute instanceof Callback) {
             Callback ac = (Callback) attribute;
-            ac.call();
-            Channels.setAttribute(channel, DiscardEvent.INSTANCE);
+            if (msg instanceof LastHttpContent) {
+                ac.call();
+            } else if (!(msg instanceof HttpContent)) {
+                LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
+                ac.call();
+                Channels.setDiscard(channel);
+            }
 
         } else if (attribute instanceof NettyResponseFuture) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;

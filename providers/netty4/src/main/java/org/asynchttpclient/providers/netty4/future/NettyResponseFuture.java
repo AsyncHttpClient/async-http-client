@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.netty4.future;
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
@@ -85,7 +84,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private NettyRequest nettyRequest;
     private HttpHeaders httpHeaders;
     private AsyncHandler<V> asyncHandler;
-    private HttpResponse pendingResponse;
     private boolean streamWasAlreadyConsumed;
     private boolean reuseChannel;
     private boolean headersAlreadyWrittenOnContinue;
@@ -337,14 +335,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public boolean getAndSetStatusReceived(boolean sr) {
         return statusReceived.getAndSet(sr);
-    }
-
-    public HttpResponse getPendingResponse() {
-        return pendingResponse;
-    }
-
-    public void setPendingResponse(HttpResponse pendingResponse) {
-        this.pendingResponse = pendingResponse;
     }
 
     public boolean isStreamWasAlreadyConsumed() {

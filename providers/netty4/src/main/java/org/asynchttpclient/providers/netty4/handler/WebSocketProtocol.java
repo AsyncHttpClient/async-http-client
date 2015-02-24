@@ -19,7 +19,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -35,6 +34,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.providers.netty4.Callback;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
 import org.asynchttpclient.providers.netty4.channel.Channels;
@@ -67,19 +67,23 @@ public final class WebSocketProtocol extends Protocol {
         }
     }
 
-    @Override
-    public void handle(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
-        WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
-        Request request = future.getRequest();
+    private class UpgradeCallback extends Callback {
 
-        if (e instanceof HttpResponse) {
-            HttpResponse response = (HttpResponse) e;
-            // we buffer the response until we get the LastHttpContent
-            future.setPendingResponse(response);
-
-        } else if (e instanceof LastHttpContent) {
-            HttpResponse response = future.getPendingResponse();
-            future.setPendingResponse(null);
+        private final Channel channel;
+        private final HttpResponse response;
+        
+        public UpgradeCallback(NettyResponseFuture<?> future, Channel channel, HttpResponse response) {
+            super(future);
+            this.channel = channel;
+            this.response = response;
+        }
+        
+        @Override
+        public void call() throws Exception {
+            
+            WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+            Request request = future.getRequest();
+            
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
@@ -97,9 +101,7 @@ public final class WebSocketProtocol extends Protocol {
             if (connection == null)
                 connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
             boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
-
-            status = new NettyResponseStatus(future.getUri(), config, response);
-            final boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
+            boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
 
             if (!statusReceived) {
                 try {
@@ -126,10 +128,23 @@ public final class WebSocketProtocol extends Protocol {
 
             invokeOnSucces(channel, handler);
             future.done();
+            // set back the future so the protocol gets notified of frames
+            Channels.setAttribute(channel, future);
+        }
+        
+    }
+    
+    @Override
+    public void handle(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
+
+        if (e instanceof HttpResponse) {
+            HttpResponse response = (HttpResponse) e;
+            Channels.setAttribute(channel, new UpgradeCallback(future, channel, response));
 
         } else if (e instanceof WebSocketFrame) {
 
             final WebSocketFrame frame = (WebSocketFrame) e;
+            WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
             NettyWebSocket webSocket = NettyWebSocket.class.cast(handler.onCompleted());
             invokeOnSucces(channel, handler);
 
@@ -172,7 +187,7 @@ public final class WebSocketProtocol extends Protocol {
         logger.warn("onError {}", e);
 
         try {
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future);
+            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
 
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
             if (webSocket != null) {
