@@ -65,7 +65,7 @@ public final class AuthenticatorUtils {
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
         // FIXME isn't there a more efficient way?
-        return new String(StringUtils.stringBuilder2Bytes(builder, ISO_8859_1));
+        return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1));
     }
 
     private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {

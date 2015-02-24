@@ -544,7 +544,7 @@ public class Realm {
             .append(realmName)
             .append(":")
             .append(password);
-            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
             byte[] ha1 = md.digest();
 
@@ -553,7 +553,7 @@ public class Realm {
             .append(':')
             .append(url);
 
-            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
             byte[] ha2 = md.digest();
 
@@ -571,7 +571,7 @@ public class Realm {
             }
 
             appendBase16(sb, ha2);
-            md.update(StringUtils.stringBuilder2ByteBuffer(sb, ISO_8859_1));
+            md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
             byte[] digest = md.digest();
 

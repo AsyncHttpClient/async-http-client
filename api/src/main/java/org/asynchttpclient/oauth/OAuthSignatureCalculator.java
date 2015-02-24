@@ -170,7 +170,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         sb.append('&');
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
 
-        ByteBuffer rawBase = StringUtils.stringBuilder2ByteBuffer(sb, UTF_8);
+        ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
         // and finally, base64 encoded... phew!
         return Base64.encode(rawSignature);
