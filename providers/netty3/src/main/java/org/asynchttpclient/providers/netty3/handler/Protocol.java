@@ -16,12 +16,7 @@ package org.asynchttpclient.providers.netty3.handler;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.HTTP;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_CHARSET;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_LANGUAGE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.REFERER;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
@@ -79,16 +74,6 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.getCode());
     }
 
-    public static final Set<String> PROPAGATED_ON_REDIRECT_HEADERS = new HashSet<>();
-    static {
-        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT.toLowerCase(Locale.US));
-        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_CHARSET.toLowerCase(Locale.US));
-        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_ENCODING.toLowerCase(Locale.US));
-        PROPAGATED_ON_REDIRECT_HEADERS.add(ACCEPT_LANGUAGE.toLowerCase(Locale.US));
-        PROPAGATED_ON_REDIRECT_HEADERS.add(REFERER.toLowerCase(Locale.US));
-        PROPAGATED_ON_REDIRECT_HEADERS.add(USER_AGENT.toLowerCase(Locale.US));
-    }
-
     public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {
         this.channelManager = channelManager;
@@ -108,15 +93,14 @@ public abstract class Protocol {
 
     public abstract void onClose(NettyResponseFuture<?> future);
 
-    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request) {
-        FluentCaseInsensitiveStringsMap redirectHeaders = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, List<String>> headerEntry : request.getHeaders()) {
-            String headerName = headerEntry.getKey();
-            List<String> headerValues = headerEntry.getValue();
-            if (PROPAGATED_ON_REDIRECT_HEADERS.contains(headerName.toLowerCase(Locale.US)))
-                redirectHeaders.add(headerName, headerValues);
-        }
-        return redirectHeaders;
+    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, boolean switchToGet) {
+        
+        FluentCaseInsensitiveStringsMap originalHeaders = request.getHeaders();
+        originalHeaders.remove(HOST);
+        originalHeaders.remove(CONTENT_LENGTH);
+        if (switchToGet)
+            originalHeaders.remove(CONTENT_TYPE);
+        return originalHeaders;
     }
 
     protected boolean exitAfterHandlingRedirect(//
@@ -143,9 +127,9 @@ public abstract class Protocol {
 
                     // if we are to strictly handle 302, we should keep the original method (which browsers don't)
                     // 303 must force GET
-                    if ((statusCode == FOUND.getCode() && !config.isStrict302Handling()) || statusCode == SEE_OTHER.getCode())
+                    boolean switchToGet = !request.getMethod().equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                    if (switchToGet)
                         requestBuilder.setMethod("GET");
-
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final String initialPartition = future.getPartitionId();
@@ -164,7 +148,7 @@ public abstract class Protocol {
                             requestBuilder.addOrReplaceCookie(c);
                     }
 
-                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest()));
+                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), switchToGet));
 
                     final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
