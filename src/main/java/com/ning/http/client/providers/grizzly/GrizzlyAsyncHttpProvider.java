@@ -2953,8 +2953,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
             try {
                 if (ahcListener instanceof WebSocketCloseCodeReasonListener) {
-                    ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
-                    WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+                    if (null != dataFrame){
+                        ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
+                        WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+                    } else {
+                        WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, 1011, null);
+                    }
                 } else {
                     ahcListener.onClose(webSocket);
                 }
