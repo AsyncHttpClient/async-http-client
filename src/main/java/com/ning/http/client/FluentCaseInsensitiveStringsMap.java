@@ -184,7 +184,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * @return This object
      */
     public FluentCaseInsensitiveStringsMap replace(final String key, final String... values) {
-        return replace(key, Arrays.asList(values));
+        return replace(key, (Collection<String>)Arrays.asList(values));
     }
 
     /**
