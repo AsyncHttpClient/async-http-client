@@ -213,7 +213,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void onFailure(Connection connection, Throwable t) {
-                onComplete(connection);
+                HttpTransactionContext.currentTransaction(c).abort(t);
             }
             
             public void onComplete(Connection connection) {
