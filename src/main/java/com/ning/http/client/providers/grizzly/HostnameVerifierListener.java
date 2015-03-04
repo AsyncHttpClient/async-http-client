@@ -56,7 +56,13 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
             task.verify();
         }
     }
-    
+
+    @Override
+    public void onFailure(Connection connection, Throwable t) {
+        // do nothing
+        LOGGER.debug("SSL Handshake onFailure: ", t);
+    }
+
     static CompletionHandler<Connection> wrapWithHostnameVerifierHandler(
             final CompletionHandler<Connection> completionHandler,
             final HostnameVerifier verifier, final String host) {
