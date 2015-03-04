@@ -225,6 +225,10 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     }
                 }
             }
+
+            public void onFailure(Connection connection, Throwable t) {
+                
+            }
         });
         filter.handshake(context.getConnection(),  null);
     }
