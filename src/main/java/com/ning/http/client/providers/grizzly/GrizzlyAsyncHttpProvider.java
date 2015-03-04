@@ -932,7 +932,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
                     secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
-                    httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
+                    httpCtx.handshake = httpCtx.protocolHandler.createClientHandShake(wsURI);
                     requestPacket = (HttpRequestPacket) httpCtx.handshake.composeHeaders().getHttpHeader();
                 } catch (URISyntaxException e) {
                     throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.wsRequestURI);
@@ -2953,8 +2953,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
             try {
                 if (ahcListener instanceof WebSocketCloseCodeReasonListener) {
-                    ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
-                    WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+                    if (null != dataFrame){
+                        ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
+                        WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+                    } else {
+                        WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, 1011, null);
+                    }
                 } else {
                     ahcListener.onClose(webSocket);
                 }

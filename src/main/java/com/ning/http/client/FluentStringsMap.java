@@ -139,7 +139,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * @return This object
      */
     public FluentStringsMap replace(final String key, final String... values) {
-        return replace(key, Arrays.asList(values));
+        return replace(key, (Collection<String>)Arrays.asList(values));
     }
 
     /**
