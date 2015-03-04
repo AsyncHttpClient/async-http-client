@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -49,6 +49,14 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
         LOGGER.debug("SSL Handshake onStart: ");
     }
 
+    @Override
+    public void onFailure(Connection connection, Throwable t) {
+        final HostnameVerifierTask task = VERIFIER_TASK_ATTR.remove(connection);
+        if (task != null) {
+            task.delegate.failed(t);
+        }
+    }
+    
     @Override
     public void onComplete(final Connection connection) {
         final HostnameVerifierTask task = VERIFIER_TASK_ATTR.remove(connection);

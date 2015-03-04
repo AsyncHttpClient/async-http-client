@@ -91,6 +91,7 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.UpgradeHandler;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
@@ -358,20 +359,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             resolver = timeoutFilter.getResolver();
         }
 
-        SSLContext context = clientConfig.getSSLContext();
-        boolean defaultSecState = (context != null);
-        if (context == null) {
-            try {
-                context = SslUtils.getInstance().getSSLContext(clientConfig.isAcceptAnyCertificate());
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        final SSLEngineConfigurator configurator =
-                new SSLEngineConfigurator(context,
-                        true,
-                        false,
-                        false);
+        final boolean defaultSecState = (clientConfig.getSSLContext() != null);
+        final SSLEngineConfigurator configurator
+                = new AhcSSLEngineConfigurator(
+                        providerConfig.getSslEngineFactory() != null
+                                ? providerConfig.getSslEngineFactory()
+                                : new SSLEngineFactory.DefaultSSLEngineFactory(clientConfig));
+        
         final SwitchingSSLFilter sslFilter =
                 new SwitchingSSLFilter(configurator, defaultSecState);
         if (clientConfig.getHostnameVerifier() != null) {
@@ -731,7 +725,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final URI wsURI = httpCtx.wsRequestURI.toJavaNetURI();
                     secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
-                    httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
+                    httpCtx.handshake = httpCtx.protocolHandler.createClientHandShake(wsURI);
                     requestPacket = (HttpRequestPacket) httpCtx.handshake.composeHeaders().getHttpHeader();
                 } catch (URISyntaxException e) {
                     throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.wsRequestURI);
@@ -2148,108 +2142,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
     } // END BodyGeneratorBodyHandler
-
-    static final class SwitchingSSLFilter extends SSLFilter {
-
-        private final boolean secureByDefault;
-        final Attribute<Boolean> CONNECTION_IS_SECURE =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
-
-        // -------------------------------------------------------- Constructors
-
-
-        SwitchingSSLFilter(final SSLEngineConfigurator clientConfig,
-                           final boolean secureByDefault) {
-
-            super(null, clientConfig);
-            this.secureByDefault = secureByDefault;
-
-        }
-
-
-        // ---------------------------------------------- Methods from SSLFilter
-
-
-        @Override
-        public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event) throws IOException {
-
-            if (event.type() == SSLSwitchingEvent.class) {
-                final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-                CONNECTION_IS_SECURE.set(se.connection, se.secure);
-                return ctx.getStopAction();
-            }
-            return ctx.getInvokeAction();
-
-        }
-
-        @Override
-        public NextAction handleRead(FilterChainContext ctx) throws IOException {
-
-            if (isSecure(ctx.getConnection())) {
-                return super.handleRead(ctx);
-            }
-            return ctx.getInvokeAction();
-
-        }
-
-        @Override
-        public NextAction handleWrite(FilterChainContext ctx) throws IOException {
-
-            if (isSecure(ctx.getConnection())) {
-                return super.handleWrite(ctx);
-            }
-            return ctx.getInvokeAction();
-
-        }
-
-        @Override
-        public void onFilterChainChanged(FilterChain filterChain) {
-            // no-op
-        }
-
-
-        // ----------------------------------------------------- Private Methods
-
-
-        private boolean isSecure(final Connection c) {
-
-            Boolean secStatus = CONNECTION_IS_SECURE.get(c);
-            if (secStatus == null) {
-                secStatus = secureByDefault;
-            }
-            return secStatus;
-
-        }
-
-
-        // ------------------------------------------------------ Nested Classes
-
-        static final class SSLSwitchingEvent implements FilterChainEvent {
-
-            final boolean secure;
-            final Connection connection;
-
-            // ---------------------------------------------------- Constructors
-
-
-            SSLSwitchingEvent(final boolean secure, final Connection c) {
-
-                this.secure = secure;
-                connection = c;
-
-            }
-
-            // ----------------------------------- Methods from FilterChainEvent
-
-
-            @Override
-            public Object type() {
-                return SSLSwitchingEvent.class;
-            }
-
-        } // END SSLSwitchingEvent
-
-    } // END SwitchingSSLFilter
 
     private static final class GrizzlyWebSocketAdapter implements WebSocket {
         

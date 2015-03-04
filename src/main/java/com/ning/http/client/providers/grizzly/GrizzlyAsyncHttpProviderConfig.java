@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.SSLEngineFactory;
 
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -94,6 +95,8 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
 
     protected ConnectionPool connectionPool;
 
+    private SSLEngineFactory sslEngineFactory;
+    
     // ------------------------------------ Methods from AsyncHttpProviderConfig
 
     /**
@@ -155,5 +158,13 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
 
     public void setConnectionPool(ConnectionPool connectionPool) {
         this.connectionPool = connectionPool;
+    }
+    
+    public SSLEngineFactory getSslEngineFactory() {
+        return sslEngineFactory;
+    }
+
+    public void setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
+        this.sslEngineFactory = sslEngineFactory;
     }
 }

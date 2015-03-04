@@ -211,6 +211,11 @@ public class FeedableBodyGenerator implements BodyGenerator {
             public void onStart(Connection connection) {
             }
 
+            @Override
+            public void onFailure(Connection connection, Throwable t) {
+                onComplete(connection);
+            }
+            
             public void onComplete(Connection connection) {
                 if (c.equals(connection)) {
                     filter.removeHandshakeListener(this);
