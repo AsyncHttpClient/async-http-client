@@ -932,7 +932,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
                     secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
-                    httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
+                    httpCtx.handshake = httpCtx.protocolHandler.createClientHandShake(wsURI);
                     requestPacket = (HttpRequestPacket) httpCtx.handshake.composeHeaders().getHttpHeader();
                 } catch (URISyntaxException e) {
                     throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.wsRequestURI);
