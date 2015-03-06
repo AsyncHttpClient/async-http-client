@@ -284,10 +284,10 @@ public class ChannelManager {
     public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, String partition) {
         if (channel.isConnected() && keepAlive && channel.isReadable()) {
             LOGGER.debug("Adding key: {} for channel {}", partition, channel);
+            Channels.setDiscard(channel);
             channelPool.offer(channel, partition);
             if (maxConnectionsPerHostEnabled)
                 channelId2KeyPool.putIfAbsent(channel.getId(), partition);
-            Channels.setDiscard(channel);
         } else {
             // not offered
             closeChannel(channel);
