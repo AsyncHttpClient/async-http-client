@@ -15,14 +15,16 @@
  */
 package org.asynchttpclient.util;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
 
 /**
  * This class is a copy of http://github.com/sonatype/wagon-ning/raw/master/src/main/java/org/apache/maven/wagon/providers/http/SslUtils.java
@@ -64,7 +66,16 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException {
-        return acceptAnyCertificate? looseTrustManagerSSLContext: SSLContext.getDefault();
+    public SSLContext getSSLContext(AsyncHttpClientConfig config) throws GeneralSecurityException {
+        SSLContext sslContext = config.getSSLContext();
+
+        if (sslContext != null) {
+            sslContext = config.isAcceptAnyCertificate() ? looseTrustManagerSSLContext : SSLContext.getDefault();
+            if (config.getSslSessionCacheSize() != null)
+                sslContext.getClientSessionContext().setSessionCacheSize(config.getSslSessionCacheSize());
+            if (config.getSslSessionTimeout() != null)
+                sslContext.getClientSessionContext().setSessionTimeout(config.getSslSessionTimeout());
+        }
+        return sslContext;
     }
 }
