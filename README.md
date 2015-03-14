@@ -1,6 +1,8 @@
 Async Http Client
 -----------------
 
+[Javadoc](http://www.javadoc.io/doc/com.ning/async-http-client/)
+
 Getting started [HTML](https://asynchttpclient.github.io/async-http-client/), 
                 with [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
 
@@ -20,7 +22,7 @@ You can also download the artifact
 
 [Maven Search](http://search.maven.org)
 
-Then in your code you can simply do [Javadoc](https://asynchttpclient.github.io/async-http-client/apidocs/reference/packages.html)
+Then in your code you can simply do
 
 ```java
 import com.ning.http.client.*;
