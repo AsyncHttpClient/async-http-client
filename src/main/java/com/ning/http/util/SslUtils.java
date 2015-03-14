@@ -15,6 +15,8 @@
  */
 package com.ning.http.util;
 
+import com.ning.http.client.AsyncHttpClientConfig;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -61,7 +63,16 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException {
-        return acceptAnyCertificate ? looseTrustManagerSSLContext : SSLContext.getDefault();
+    public SSLContext getSSLContext(AsyncHttpClientConfig config) throws GeneralSecurityException {
+        SSLContext sslContext = config.getSSLContext();
+
+        if (sslContext != null) {
+            sslContext = config.isAcceptAnyCertificate() ? looseTrustManagerSSLContext : SSLContext.getDefault();
+            if (config.getSslSessionCacheSize() != null)
+                sslContext.getClientSessionContext().setSessionCacheSize(config.getSslSessionCacheSize());
+            if (config.getSslSessionTimeout() != null)
+                sslContext.getClientSessionContext().setSessionTimeout(config.getSslSessionTimeout());
+        }
+        return sslContext;
     }
 }

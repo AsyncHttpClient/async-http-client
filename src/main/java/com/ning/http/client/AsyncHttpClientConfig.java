@@ -78,6 +78,8 @@ public class AsyncHttpClientConfig {
     protected int ioThreadMultiplier;
     protected String[] enabledProtocols;
     protected String[] enabledCipherSuites;
+    protected Integer sslSessionCacheSize;
+    protected Integer sslSessionTimeout;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
 
     protected AsyncHttpClientConfig() {
@@ -113,6 +115,8 @@ public class AsyncHttpClientConfig {
             int ioThreadMultiplier, //
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
+            Integer sslSessionCacheSize,//
+            Integer sslSessionTimeout,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
 
         this.connectTimeout = connectTimeout;
@@ -145,6 +149,8 @@ public class AsyncHttpClientConfig {
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
+        this.sslSessionCacheSize = sslSessionCacheSize;
+        this.sslSessionTimeout = sslSessionCacheSize;
         this.providerConfig = providerConfig;
     }
 
@@ -453,6 +459,20 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * since 1.9.13
+     */
+    public Integer getSslSessionCacheSize() {
+        return sslSessionCacheSize;
+    }
+
+    /**
+     * since 1.9.13
+     */
+    public Integer getSslSessionTimeout() {
+        return sslSessionTimeout;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -488,6 +508,8 @@ public class AsyncHttpClientConfig {
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private String[] enabledProtocols;
         private String[] enabledCipherSuites;
+        private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
+        private Integer sslSessionTimeout = defaultSslSessionTimeout();
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
@@ -900,6 +922,16 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setSslSessionCacheSize(Integer sslSessionCacheSize) {
+            this.sslSessionCacheSize = sslSessionCacheSize;
+            return this;
+        }
+        
+        public Builder setSslSessionTimeout(Integer sslSessionTimeout) {
+            this.sslSessionTimeout = sslSessionTimeout;
+            return this;
+        }
+        
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -940,6 +972,8 @@ public class AsyncHttpClientConfig {
             strict302Handling = prototype.isStrict302Handling();
             enabledProtocols = prototype.enabledProtocols;
             enabledCipherSuites = prototype.enabledCipherSuites;
+            sslSessionCacheSize = prototype.sslSessionCacheSize;
+            sslSessionTimeout = prototype.sslSessionTimeout;
             acceptAnyCertificate = prototype.acceptAnyCertificate;
         }
 
@@ -1001,6 +1035,8 @@ public class AsyncHttpClientConfig {
                     ioThreadMultiplier, //
                     enabledProtocols, //
                     enabledCipherSuites, //
+                    sslSessionCacheSize, //
+                    sslSessionTimeout, //
                     providerConfig);
         }
     }

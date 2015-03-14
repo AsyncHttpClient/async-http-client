@@ -108,4 +108,12 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultAcceptAnyCertificate() {
         return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
     }
+    
+    public static Integer defaultSslSessionCacheSize() {
+        return Integer.getInteger(ASYNC_CLIENT + "sslSessionCacheSize");
+    }
+
+    public static Integer defaultSslSessionTimeout() {
+        return Integer.getInteger(ASYNC_CLIENT + "sslSessionTimeout");
+    }
 }

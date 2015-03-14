@@ -68,7 +68,6 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -183,15 +182,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         if (request.getUri().getScheme().equals("https")) {
             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
-            SSLContext sslContext = config.getSSLContext();
-            if (sslContext == null) {
-                try {
-                    sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
-                } catch (NoSuchAlgorithmException e) {
-                    throw new IOException(e.getMessage());
-                } catch (GeneralSecurityException e) {
-                    throw new IOException(e.getMessage());
-                }
+            SSLContext sslContext;
+            try {
+                sslContext = SslUtils.getInstance().getSSLContext(config);
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e.getMessage());
             }
             secure.setSSLSocketFactory(sslContext.getSocketFactory());
             secure.setHostnameVerifier(config.getHostnameVerifier());

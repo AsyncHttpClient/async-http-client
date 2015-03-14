@@ -44,11 +44,8 @@ public interface SSLEngineFactory {
 
         @Override
         public SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException {
-            SSLContext sslContext = config.getSSLContext();
-
-            if (sslContext == null)
-                sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
-
+            SSLContext sslContext = SslUtils.getInstance().getSSLContext(config);
+            
             SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
             if (!config.isAcceptAnyCertificate()) {
                 SSLParameters params = sslEngine.getSSLParameters();
