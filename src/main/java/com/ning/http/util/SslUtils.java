@@ -66,7 +66,7 @@ public class SslUtils {
     public SSLContext getSSLContext(AsyncHttpClientConfig config) throws GeneralSecurityException {
         SSLContext sslContext = config.getSSLContext();
 
-        if (sslContext != null) {
+        if (sslContext == null) {
             sslContext = config.isAcceptAnyCertificate() ? looseTrustManagerSSLContext : SSLContext.getDefault();
             if (config.getSslSessionCacheSize() != null)
                 sslContext.getClientSessionContext().setSessionCacheSize(config.getSslSessionCacheSize());
