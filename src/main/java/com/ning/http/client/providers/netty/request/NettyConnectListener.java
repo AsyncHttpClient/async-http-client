@@ -18,6 +18,7 @@ import static com.ning.http.util.AsyncHttpProviderUtils.getBaseUrl;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +62,11 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             channelManager.abortChannelPreemption(partition);
     }
 
-    private void writeRequest(Channel channel, String partition) {
+    private void writeRequest(Channel channel) {
 
         LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
+
+        Channels.setAttribute(channel, future);
 
         if (future.isDone()) {
             abortChannelPreemption(partition);
@@ -79,8 +82,24 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void onFutureSuccess(final Channel channel) throws ConnectException {
-        Channels.setAttribute(channel, future);
-        writeRequest(channel, partition);
+        
+        SslHandler sslHandler = channel.getPipeline().get(SslHandler.class);
+
+        if (sslHandler != null) {
+            sslHandler.handshake().addListener(new ChannelFutureListener() {
+                
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess())
+                        writeRequest(channel);
+                    else
+                        onFutureFailure(channel, future.getCause());
+                }
+            });
+        
+        } else {
+            writeRequest(channel);
+        }
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {
