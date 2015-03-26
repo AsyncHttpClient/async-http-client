@@ -62,9 +62,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * Invoked once the HTTP response processing is finished.
-     * <p/>
-     * <p/>
-     * Gets always invoked as last callback method.
      *
      * @param response The {@link Response}
      * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
