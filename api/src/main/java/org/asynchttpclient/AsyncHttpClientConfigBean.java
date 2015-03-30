@@ -64,6 +64,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         strict302Handling = defaultStrict302Handling();
         acceptAnyCertificate = defaultAcceptAnyCertificate();
+        sslSessionCacheSize = defaultSslSessionCacheSize();
+        sslSessionTimeout = defaultSslSessionTimeout();
 
         if (defaultUseProxySelector()) {
             proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
@@ -221,6 +223,16 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setAcceptAnyCertificate(boolean acceptAnyCertificate) {
         this.acceptAnyCertificate = acceptAnyCertificate;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setSslSessionCacheSize(Integer sslSessionCacheSize) {
+        this.sslSessionCacheSize = sslSessionCacheSize;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setSslSessionTimeout(Integer sslSessionTimeout) {
+        this.sslSessionTimeout = sslSessionTimeout;
         return this;
     }
 }

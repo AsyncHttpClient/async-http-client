@@ -17,6 +17,9 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.ConnectException;
 
@@ -62,6 +65,8 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
         LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
 
+        Channels.setAttribute(channel, future);
+        
         if (future.isDone()) {
             abortChannelPreemption(partition);
             return;
@@ -76,8 +81,24 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void onFutureSuccess(final Channel channel) throws ConnectException {
-        Channels.setAttribute(channel, future);
-        writeRequest(channel);
+
+        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+
+        if (sslHandler != null) {
+            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+                @Override
+                public void operationComplete(Future<Channel> future) throws Exception {
+                 
+                    if (future.isSuccess())
+                        writeRequest(channel);
+                    else
+                        onFutureFailure(channel, future.cause());
+                }
+            });
+        
+        } else {
+            writeRequest(channel);
+        }
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {

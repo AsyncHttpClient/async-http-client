@@ -27,6 +27,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
@@ -100,6 +101,34 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
+    @Test(timeOut = 60000, expectedExceptions = { ExecutionException.class })
+    public void getWebSocketThrowsException() throws Throwable {
+        final CountDownLatch latch = new CountDownLatch(1);
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+
+                @Override
+                public void onMessage(String message) {
+                }
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    latch.countDown();
+                }
+            }).build()).get();
+        }
+        
+        latch.await();
+    }
+
     @Test(timeOut = 60000)
     public void wrongStatusCode() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
@@ -125,7 +154,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
                     throwable.set(t);
                     latch.countDown();
                 }
-            }).build()).get();
+            }).build());
 
             latch.await();
             assertNotNull(throwable.get());
@@ -158,7 +187,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
                     throwable.set(t);
                     latch.countDown();
                 }
-            }).build()).get();
+            }).build());
 
             latch.await();
             assertNotNull(throwable.get());
