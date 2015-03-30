@@ -181,12 +181,13 @@ public final class HttpProtocol extends Protocol {
 
     private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
 
+        markAsDone(future, channel);
+
         boolean keepAlive = future.isKeepAlive();
         if (expectOtherChunks && keepAlive)
             channelManager.drainChannelAndOffer(channel, future);
         else
             channelManager.tryToOfferChannelToPool(channel, keepAlive, future.getPartition());
-        markAsDone(future, channel);
     }
 
     private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart)
