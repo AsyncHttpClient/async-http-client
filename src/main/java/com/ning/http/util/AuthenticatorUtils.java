@@ -37,13 +37,16 @@ public final class AuthenticatorUtils {
         return "Basic " + Base64.encode(s.getBytes(charset));
     }
 
-    private static String computeRealmURI(Realm realm) {
-        Uri uri = realm.getUri();
-        if (realm.isUseAbsoluteURI()) {
-            return realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+    public static String computeRealmURI(Realm realm) {
+        return computeRealmURI(realm.getUri(), realm.isUseAbsoluteURI(), realm.isOmitQuery());
+    }
+    
+    public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {
+        if (useAbsoluteURI) {
+            return omitQuery && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
         } else {
             String path = getNonEmptyPath(uri);
-            return realm.isOmitQuery() || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
+            return omitQuery || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
         }
     }
     
@@ -54,14 +57,20 @@ public final class AuthenticatorUtils {
         append(builder, "realm", realm.getRealmName(), true);
         append(builder, "nonce", realm.getNonce(), true);
         append(builder, "uri", computeRealmURI(realm), true);
-        append(builder, "algorithm", realm.getAlgorithm(), false);
+        if (isNonEmpty(realm.getAlgorithm()))
+            append(builder, "algorithm", realm.getAlgorithm(), false);
 
         append(builder, "response", realm.getResponse(), true);
-        if (isNonEmpty(realm.getOpaque()))
+
+        if (realm.getOpaque() != null)
             append(builder, "opaque", realm.getOpaque(), true);
-        append(builder, "qop", realm.getQop(), false);
-        append(builder, "nc", realm.getNc(), false);
-        append(builder, "cnonce", realm.getCnonce(), true);
+
+        if (realm.getQop() != null) {
+            append(builder, "qop", realm.getQop(), false);
+            // nc and cnonce only sent if server sent qop
+            append(builder, "nc", realm.getNc(), false);
+            append(builder, "cnonce", realm.getCnonce(), true);
+        }
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
         // FIXME isn't there a more efficient way?
