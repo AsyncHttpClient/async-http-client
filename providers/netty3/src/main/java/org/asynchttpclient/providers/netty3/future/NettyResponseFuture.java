@@ -199,6 +199,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private boolean terminateAndExit() {
         cancelTimeouts();
+        this.channel = null;
+        this.reuseChannel = false;
         return isDone.getAndSet(true) || isCancelled.get();
     }
 
@@ -386,11 +388,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
         this.channel = channel;
         this.reuseChannel = reuseChannel;
-    }
-
-    public void detachChannel() {
-        this.channel = null;
-        this.reuseChannel = false;
     }
 
     public Channel channel() {

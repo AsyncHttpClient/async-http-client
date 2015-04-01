@@ -189,7 +189,7 @@ public final class HttpProtocol extends Protocol {
 
     private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
 
-        future.detachChannel();
+        future.cancelTimeouts();
 
         boolean keepAlive = future.isKeepAlive();
         if (expectOtherChunks && keepAlive)
