@@ -73,7 +73,7 @@ public class RealmTest {
         Realm orig = builder.build();
 
         String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri);
+        String ha2 = getMd5(method + ":" + uri.getPath());
         String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + ha2);
 
         assertEquals(expectedResponse, orig.getResponse());
@@ -101,7 +101,7 @@ public class RealmTest {
         String nc = orig.getNc();
         String cnonce = orig.getCnonce();
         String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri);
+        String ha2 = getMd5(method + ":" + uri.getPath());
         String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
 
         assertEquals(expectedResponse, orig.getResponse());
