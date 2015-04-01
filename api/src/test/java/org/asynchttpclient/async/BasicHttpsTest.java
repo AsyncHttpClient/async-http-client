@@ -25,7 +25,6 @@ import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
 
-import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 
 import java.util.concurrent.ExecutionException;
