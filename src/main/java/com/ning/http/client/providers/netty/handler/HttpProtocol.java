@@ -181,7 +181,8 @@ public final class HttpProtocol extends Protocol {
 
     private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
 
-        future.detachChannel();
+        // cancel timeouts asap so they don't trigger while draining the channel or offering to the pool
+        future.cancelTimeouts();
 
         boolean keepAlive = future.isKeepAlive();
         if (expectOtherChunks && keepAlive)
