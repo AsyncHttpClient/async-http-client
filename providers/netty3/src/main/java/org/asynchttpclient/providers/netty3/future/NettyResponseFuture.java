@@ -388,6 +388,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.reuseChannel = reuseChannel;
     }
 
+    public void detachChannel() {
+        this.channel = null;
+        this.reuseChannel = false;
+    }
+
     public Channel channel() {
         return channel;
     }
