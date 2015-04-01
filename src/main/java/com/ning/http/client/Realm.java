@@ -519,7 +519,10 @@ public class Realm {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
             setOpaque(match(headerLine, "opaque"));
-            // FIXME what about algorithm and opaque?
+            String algorithm = match(headerLine, "algorithm");
+            if (isNonEmpty(algorithm)) {
+                setAlgorithm(algorithm);
+            }
             setQop(match(headerLine, "qop"));
             if (isNonEmpty(getNonce())) {
                 setScheme(AuthScheme.DIGEST);
