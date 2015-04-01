@@ -79,7 +79,6 @@ public abstract class AbstractBasicTest {
     }
 
     public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
-        public Runnable runnable;
 
         @Override
         public Response onCompleted(Response response) throws Exception {
