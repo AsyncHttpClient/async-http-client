@@ -273,7 +273,6 @@ public final class NettyRequestSender {
                     partition = future.getPartitionId();
 
                 channelManager.preemptChannel(partition);
-
                 channelPreempted = true;
             }
 
