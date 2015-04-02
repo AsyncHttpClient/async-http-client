@@ -273,7 +273,6 @@ public final class NettyRequestSender {
                 if (config.getMaxConnectionsPerHost() > 0)
                     partition = future.getPartition();
                 channelManager.preemptChannel(partition);
-
                 channelPreempted = true;
             }
 
