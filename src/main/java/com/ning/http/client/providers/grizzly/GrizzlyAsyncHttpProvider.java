@@ -15,7 +15,6 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.providers.grizzly.events.SSLSwitchingEvent;
 
-import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.WriteResult;
@@ -480,12 +479,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final AsyncHandler h = httpTxCtx.getAsyncHandler();
         
         // create HttpContext and mutually bind it with HttpTransactionContext
-        final HttpContext httpCtx = HttpContext.newInstance(
-                connection, connection, connection, requestPacket);
-        requestPacket.getProcessingState().setHttpContext(httpCtx);
+        final HttpContext httpCtx = new AhcHttpContext(
+                connection, connection, connection, requestPacket, httpTxCtx);
         HttpTransactionContext.bind(httpCtx, httpTxCtx);
-        httpCtx.attach(ctx);
         
+        requestPacket.getProcessingState().setHttpContext(httpCtx);
+        httpCtx.attach(ctx);
         
         if (h instanceof TransferCompletionHandler) {
             final FluentCaseInsensitiveStringsMap map

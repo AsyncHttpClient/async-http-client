@@ -24,8 +24,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.ning.http.client.providers.grizzly.ConnectionManager.isConnectionCacheable;
-import static com.ning.http.client.providers.grizzly.ConnectionManager.markConnectionAsDoNotCache;
 
 /**
  * {@link HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
@@ -100,12 +98,12 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public void markUnderlyingConnectionAsToBeClosed() {
-        markConnectionAsDoNotCache(connection);
+        content.getHttpHeader().getProcessingState().setKeepAlive(false);
     }
 
     @Override
     public boolean isUnderlyingConnectionToBeClosed() {
-        return !isConnectionCacheable(connection);
+        return content.getHttpHeader().getProcessingState().isStayAlive();
     }
 
     // ----------------------------------------------- Package Protected Methods

@@ -111,7 +111,7 @@ public final class HttpTransactionContext {
     }
 
     static HttpTransactionContext cleanupTransaction(final HttpContext httpCtx) {
-        final HttpTransactionContext httpTxContext = REQUEST_STATE_ATTR.remove(httpCtx);
+        final HttpTransactionContext httpTxContext = currentTransaction(httpCtx);
         if (httpTxContext != null) {
             httpCtx.getCloseable().removeCloseListener(httpTxContext.listener);
         }
@@ -129,7 +129,7 @@ public final class HttpTransactionContext {
     }
 
     static HttpTransactionContext currentTransaction(final HttpContext httpCtx) {
-        return REQUEST_STATE_ATTR.get(httpCtx);
+        return ((AhcHttpContext) httpCtx).getHttpTransactionContext();
     }
     
     static HttpTransactionContext startTransaction(

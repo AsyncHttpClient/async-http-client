@@ -43,10 +43,11 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.http.HttpClientFilter;
 import org.glassfish.grizzly.http.HttpContent;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpHeader;
-import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
-import org.glassfish.grizzly.http.Method;
+import org.glassfish.grizzly.http.Protocol;
+import org.glassfish.grizzly.http.util.DataChunk;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.utils.Exceptions;
@@ -57,7 +58,6 @@ import org.slf4j.LoggerFactory;
 
 import static com.ning.http.client.providers.netty.util.HttpUtils.getNTLM;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import org.glassfish.grizzly.http.HttpContext;
 /**
  * AHC {@link HttpClientFilter} implementation.
  * 
@@ -73,6 +73,34 @@ final class AhcEventFilter extends HttpClientFilter {
     private static IOException maximumPooledConnectionExceededReason;
     
     private final GrizzlyAsyncHttpProvider provider;
+    
+
+    /**
+     * Close bytes.
+     */
+    private static final byte[] CLOSE_BYTES = {
+        (byte) 'c',
+        (byte) 'l',
+        (byte) 'o',
+        (byte) 's',
+        (byte) 'e'
+    };
+    /**
+     * Keep-alive bytes.
+     */
+    private static final byte[] KEEPALIVE_BYTES = {
+        (byte) 'k',
+        (byte) 'e',
+        (byte) 'e',
+        (byte) 'p',
+        (byte) '-',
+        (byte) 'a',
+        (byte) 'l',
+        (byte) 'i',
+        (byte) 'v',
+        (byte) 'e'
+    };
+    
     // -------------------------------------------------------- Constructors
 
     AhcEventFilter(final GrizzlyAsyncHttpProvider provider,
@@ -124,7 +152,8 @@ final class AhcEventFilter extends HttpClientFilter {
         final AsyncHandler handler = context.getAsyncHandler();
         if (handler != null && context.currentState != AsyncHandler.STATE.ABORT) {
             try {
-                context.currentState = handler.onBodyPartReceived(new GrizzlyResponseBodyPart(content, ctx.getConnection()));
+                context.currentState = handler.onBodyPartReceived(
+                        new GrizzlyResponseBodyPart(content, ctx.getConnection()));
             } catch (Exception e) {
                 handler.onThrowable(e);
             }
@@ -263,20 +292,32 @@ final class AhcEventFilter extends HttpClientFilter {
 
     @SuppressWarnings(value = {"unchecked"})
     @Override
-    protected void onHttpHeadersParsed(final HttpHeader httpHeader,
-            final FilterChainContext ctx) {
-        super.onHttpHeadersParsed(httpHeader, ctx);
+    protected boolean onHttpHeaderParsed(final HttpHeader httpHeader,
+            final Buffer buffer, final FilterChainContext ctx) {
+        super.onHttpHeaderParsed(httpHeader, buffer, ctx);
         LOGGER.debug("RESPONSE: {}", httpHeader);
+        
+        final HttpResponsePacket responsePacket =
+                (HttpResponsePacket) httpHeader;
+        
+        // @TODO review this after Grizzly 2.3.20 is integrated
+        final boolean isKeepAlive = checkKeepAlive(responsePacket);
+        responsePacket.getProcessingState().setKeepAlive(isKeepAlive);
+        
+        if (httpHeader.isSkipRemainder()) {
+            return false;
+        }
+        
         final HttpTransactionContext context =
                 HttpTransactionContext.currentTransaction(httpHeader);
-        if (httpHeader.containsHeader(Header.Connection)) {
-            if ("close".equals(httpHeader.getHeader(Header.Connection))) {
-                ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
-            }
+        if (context.establishingTunnel) {
+            // finish request/response processing, because Grizzly itself
+            // treats CONNECT traffic as part of request-response processing
+            // and we don't want it be treated like that
+            httpHeader.setExpectContent(false);
+            return false;
         }
-        if (httpHeader.isSkipRemainder() || context.establishingTunnel) {
-            return;
-        }
+        
         final AsyncHandler handler = context.getAsyncHandler();
         final List<ResponseFilter> filters =
                 provider.getClientConfig().getResponseFilters();
@@ -319,7 +360,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 } catch (Exception e) {
                     context.abort(e);
                 }
-                return;
+                return false;
             }
         }
         if (context.statusHandler != null &&
@@ -329,7 +370,7 @@ final class AhcEventFilter extends HttpClientFilter {
                             (HttpResponsePacket) httpHeader, context, ctx);
             if (!result) {
                 httpHeader.setSkipRemainder(true);
-                return;
+                return false;
             }
         }
         if (context.isWSRequest) {
@@ -372,19 +413,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 }
             }
         }
-    }
-
-    @Override
-    protected boolean onHttpHeaderParsed(final HttpHeader httpHeader,
-            final Buffer buffer, final FilterChainContext ctx) {
-        super.onHttpHeaderParsed(httpHeader, buffer, ctx);
-        final HttpRequestPacket request = ((HttpResponsePacket) httpHeader).getRequest();
-        if (Method.CONNECT.equals(request.getMethod())) {
-            // finish request/response processing, because Grizzly itself
-            // treats CONNECT traffic as part of request-response processing
-            // and we don't want it be treated like that
-            httpHeader.setExpectContent(false);
-        }
+        
         return false;
     }
 
@@ -454,7 +483,8 @@ final class AhcEventFilter extends HttpClientFilter {
         if (!context.isReuseConnection()) {
             final Connection c = (Connection) httpContext.getCloseable();
             final ConnectionManager cm = context.provider.getConnectionManager();
-            if (!cm.canReturnConnection(c) || !cm.returnConnection(context.getAhcRequest(), c)) {
+            if (!httpContext.getRequest().getProcessingState().isStayAlive() ||
+                    !cm.canReturnConnection(c) || !cm.returnConnection(context.getAhcRequest(), c)) {
                 //                context.abort());
                 if (maximumPooledConnectionExceededReason == null) {
                     maximumPooledConnectionExceededReason
@@ -477,6 +507,49 @@ final class AhcEventFilter extends HttpClientFilter {
                 || HttpStatus.PERMANENT_REDIRECT_308.statusMatches(status);
     }
 
+    private static boolean checkKeepAlive(final HttpResponsePacket response) {
+        final int statusCode = response.getStatus();
+        final boolean isExpectContent = response.isExpectContent();
+        
+        boolean keepAlive = !statusDropsConnection(statusCode) ||
+                (!isExpectContent || !response.isChunked() || response.getContentLength() == -1); // double-check the transfer encoding here
+        
+        if (keepAlive) {
+            // Check the Connection header
+            final DataChunk cVal =
+                    response.getHeaders().getValue(Header.Connection);
+            
+            if (response.getProtocol().compareTo(Protocol.HTTP_1_1) < 0) {
+                // HTTP 1.0 response
+                // "Connection: keep-alive" should be specified explicitly
+                keepAlive = cVal != null && cVal.equalsIgnoreCase(KEEPALIVE_BYTES);
+            } else {
+                // HTTP 1.1+
+                // keep-alive by default, if there's no "Connection: close"
+                keepAlive = cVal == null || !cVal.equalsIgnoreCase(CLOSE_BYTES);
+            }
+        }
+        
+        return keepAlive;
+    }
+    
+    /**
+     * Determine if we must drop the connection because of the HTTP status
+     * code. Use the same list of codes as Apache/httpd.
+     */
+    private static boolean statusDropsConnection(int status) {
+        return status == 400 /* SC_BAD_REQUEST */ ||
+               status == 408 /* SC_REQUEST_TIMEOUT */ ||
+               status == 411 /* SC_LENGTH_REQUIRED */ ||
+               status == 413 /* SC_REQUEST_ENTITY_TOO_LARGE */ ||
+               status == 414 /* SC_REQUEST_URI_TOO_LARGE */ ||
+               status == 417 /* FAILED EXPECTATION */ || 
+               status == 500 /* SC_INTERNAL_SERVER_ERROR */ ||
+               status == 503 /* SC_SERVICE_UNAVAILABLE */ ||
+               status == 501 /* SC_NOT_IMPLEMENTED */ ||
+               status == 505 /* SC_VERSION_NOT_SUPPORTED */;
+    }
+    
     // ------------------------------------------------------- Inner Classes
     private static final class AuthorizationHandler implements StatusHandler {
 

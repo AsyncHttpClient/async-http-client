@@ -100,7 +100,7 @@ class ConnectionManager {
             }
             openConnectionAsync(request, proxy, requestFuture, connectHandler);
         } else {
-            provider.touchConnection(c, request);
+//            provider.touchConnection(c, request);
             connectHandler.completed(c);
         }
     }
@@ -165,9 +165,9 @@ class ConnectionManager {
     }
 
     boolean returnConnection(final Request request, final Connection c) {
-        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         final boolean result = DO_NOT_CACHE.get(c) == null &&
-                pool.offer(getPartitionId(request, proxyServer), c);
+                pool.offer(getPartitionId(request,
+                        ProxyUtils.getProxyServer(config, request)), c);
         if (result) {
             if (provider.resolver != null) {
                 provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
@@ -206,7 +206,7 @@ class ConnectionManager {
             }
 
             public void completed(final Connection connection) {
-                provider.touchConnection(connection, request);
+//                provider.touchConnection(connection, request);
                 if (wrappedHandler != null) {
                     connection.addCloseListener(connectionMonitor);
                     wrappedHandler.completed(connection);
