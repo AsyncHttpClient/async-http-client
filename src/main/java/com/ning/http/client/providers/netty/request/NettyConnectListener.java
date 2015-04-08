@@ -91,15 +91,15 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
                 @Override
                 public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
-                    if (handshakeFuture.isSuccess()){
+                    if (handshakeFuture.isSuccess()) {
                         final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
                         if (asyncHandler instanceof AsyncHandlerExtensions)
                             AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
 
                         writeRequest(channel);
-                    }
-                    else
+                    } else {
                         onFutureFailure(channel, handshakeFuture.getCause());
+                    }
                 }
             });
 
