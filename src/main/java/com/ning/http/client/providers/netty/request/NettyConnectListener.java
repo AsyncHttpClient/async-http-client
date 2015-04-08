@@ -15,6 +15,7 @@ package com.ning.http.client.providers.netty.request;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.getBaseUrl;
 
+import com.ning.http.client.AsyncHandler;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -82,21 +83,26 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void onFutureSuccess(final Channel channel) throws ConnectException {
-        
+
         SslHandler sslHandler = channel.getPipeline().get(SslHandler.class);
 
         if (sslHandler != null) {
             sslHandler.handshake().addListener(new ChannelFutureListener() {
-                
+
                 @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess())
+                public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
+                    if (handshakeFuture.isSuccess()){
+                        final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                        if (asyncHandler instanceof AsyncHandlerExtensions)
+                            AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
+
                         writeRequest(channel);
+                    }
                     else
-                        onFutureFailure(channel, future.getCause());
+                        onFutureFailure(channel, handshakeFuture.getCause());
                 }
             });
-        
+
         } else {
             writeRequest(channel);
         }
