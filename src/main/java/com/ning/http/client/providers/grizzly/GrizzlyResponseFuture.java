@@ -14,18 +14,15 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
-
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.impl.FutureImpl;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import org.glassfish.grizzly.CompletionHandler;
+import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.utils.Futures;
 
 /**
@@ -38,27 +35,21 @@ import org.glassfish.grizzly.utils.Futures;
 final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
         implements CompletionHandler<V> {
 
-    private final AsyncHandler handler;
-    private final GrizzlyAsyncHttpProvider provider;
-    private final Request request;
-    private final ProxyServer proxy;
-    private Connection connection;
-
     private final FutureImpl<V> delegate;
+//    private final GrizzlyAsyncHttpProvider provider;
+//    private Request request;
+//    private Connection connection;
+    private AsyncHandler asyncHandler;
+    
+    // transaction context. Not null if connection is established
+    private volatile HttpTransactionContext transactionCtx;
 
 
     // ------------------------------------------------------------ Constructors
 
 
-    GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider,
-                          final Request request,
-                          final AsyncHandler handler,
-                          final ProxyServer proxy) {
-
-        this.provider = provider;
-        this.request = request;
-        this.handler = handler;
-        this.proxy = proxy;
+    GrizzlyResponseFuture(final AsyncHandler asyncHandler) {
+        this.asyncHandler = asyncHandler;
         
         delegate = Futures.<V>createSafeFuture();
         delegate.addCompletionHandler(this);
@@ -83,8 +74,10 @@ final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
     }
 
     public void touch() {
-
-        provider.touchConnection(connection, request);
+        final HttpTransactionContext tx = transactionCtx;
+        if (tx != null) {
+            tx.touchConnection();
+        }
 
     }
 
@@ -136,7 +129,8 @@ final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
     }
 
 
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
 
         return delegate.get(timeout, unit);
 
@@ -146,9 +140,10 @@ final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
 
     @Override
     public void cancelled() {
-        if (handler != null) {
+        final AsyncHandler ah = asyncHandler;
+        if (ah != null) {
             try {
-                handler.onThrowable(new CancellationException());
+                ah.onThrowable(new CancellationException());
             } catch (Throwable ignore) {
             }
         }
@@ -158,14 +153,19 @@ final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
 
     @Override
     public void failed(final Throwable t) {
-        if (handler != null) {
+        final AsyncHandler ah = asyncHandler;
+        if (ah != null) {
             try {
-                handler.onThrowable(t);
+                ah.onThrowable(t);
             } catch (Throwable ignore) {
             }
-
         }
-        closeConnection();
+            
+        final HttpTransactionContext tx = transactionCtx;
+        if (tx != null) {
+            tx.closeConnection();
+        }
+
         runListeners();
     }
 
@@ -180,26 +180,30 @@ final class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V>
 
     // ------------------------------------------------- Package Private Methods
 
-
-    void setConnection(final Connection connection) {
-
-        this.connection = connection;
-
+    AsyncHandler getAsyncHandler() {
+        return asyncHandler;
     }
 
-
-    // --------------------------------------------------------- Private Methods
-
-
-    private void closeConnection() {
-
-        if (connection != null && connection.isOpen()) {
-            connection.closeSilently();
-        }
-
+    void setAsyncHandler(final AsyncHandler asyncHandler) {
+        this.asyncHandler = asyncHandler;
     }
 
-    public ProxyServer getProxy() {
-        return proxy;
+    /**
+     * @return {@link HttpTransactionContext}, or <tt>null</tt> if connection is
+     *          not established
+     */
+    HttpTransactionContext getHttpTransactionCtx() {
+        return transactionCtx;
+    }
+
+    /**
+     * @param transactionCtx
+     * @return <tt>true</tt> if we can continue request/response processing,
+     *          or <tt>false</tt> if future has been aborted
+     */
+    boolean setHttpTransactionCtx(
+            final HttpTransactionContext transactionCtx) {
+        this.transactionCtx = transactionCtx;
+        return !delegate.isDone();
     }
 }

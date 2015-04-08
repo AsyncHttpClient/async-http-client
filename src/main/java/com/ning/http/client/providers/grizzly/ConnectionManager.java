@@ -86,39 +86,42 @@ class ConnectionManager {
         return (canCache != null) ? canCache : false;
     }
 
-    void doAsyncTrackedConnection(final Request request,
+    void getConnectionAsync(final Request request,
             final GrizzlyResponseFuture requestFuture,
             final CompletionHandler<Connection> connectHandler)
             throws IOException, ExecutionException, InterruptedException {
         
-        Connection c = pool.poll(getPartitionId(request, requestFuture.getProxy()));
+        final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
+        
+        Connection c = pool.poll(getPartitionId(request, proxy));
         if (c == null) {
             if (!connectionMonitor.acquire()) {
                 throw new IOException("Max connections exceeded");
             }
-            doAsyncConnect(request, requestFuture, connectHandler);
+            openConnectionAsync(request, proxy, requestFuture, connectHandler);
         } else {
             provider.touchConnection(c, request);
             connectHandler.completed(c);
         }
     }
 
-    Connection obtainConnection(final Request request,
+    Connection openConnectionSync(final Request request,
             final GrizzlyResponseFuture requestFuture)
             throws IOException, ExecutionException,
             InterruptedException, TimeoutException {
         
-        final Connection c = obtainConnection0(request, requestFuture);
+        final Connection c = openConnectionSync0(request,
+                ProxyUtils.getProxyServer(config, request), requestFuture);
         DO_NOT_CACHE.set(c, Boolean.TRUE);
         return c;
     }
 
-    void doAsyncConnect(final Request request,
+    private void openConnectionAsync(final Request request,
+            final ProxyServer proxy,
             final GrizzlyResponseFuture requestFuture,
             final CompletionHandler<Connection> connectHandler)
             throws IOException, ExecutionException, InterruptedException {
         
-        ProxyServer proxy = requestFuture.getProxy();
         final Uri uri = request.getUri();
         String host = (proxy != null) ? proxy.getHost() : uri.getHost();
         int port = (proxy != null) ? proxy.getPort() : uri.getPort();
@@ -132,40 +135,33 @@ class ConnectionManager {
                     HostnameVerifierListener.wrapWithHostnameVerifierHandler(
                             completionHandler, verifier, uri.getHost());
         }
-        if (request.getLocalAddress() != null) {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, getPort(uri, port)),
-                    new InetSocketAddress(request.getLocalAddress(), 0),
-                    completionHandler);
-        } else {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, getPort(uri, port)),
-                    completionHandler);
-        }
+        
+        connectionHandler.connect(
+                new InetSocketAddress(host, getPort(uri, port)),
+                new InetSocketAddress(request.getLocalAddress(), 0),
+                completionHandler);
     }
 
-    private Connection obtainConnection0(final Request request,
+    private Connection openConnectionSync0(final Request request,
+            final ProxyServer proxy,
             final GrizzlyResponseFuture requestFuture)
             throws IOException, ExecutionException,
             InterruptedException, TimeoutException {
         
         final Uri uri = request.getUri();
-        final ProxyServer proxy = requestFuture.getProxy();
         String host = (proxy != null) ? proxy.getHost() : uri.getHost();
         int port = (proxy != null) ? proxy.getPort() : uri.getPort();
         int cTimeout = config.getConnectTimeout();
         FutureImpl<Connection> future = Futures.createSafeFuture();
         CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                 createConnectionCompletionHandler(request, requestFuture, null));
-        if (cTimeout > 0) {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, getPort(uri, port)), ch);
-            return future.get(cTimeout, TimeUnit.MILLISECONDS);
-        } else {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, getPort(uri, port)), ch);
-            return future.get();
-        }
+
+        connectionHandler.connect(
+                new InetSocketAddress(host, getPort(uri, port)), ch);
+        
+        return cTimeout > 0
+                ? future.get(cTimeout, TimeUnit.MILLISECONDS)
+                : future.get();
     }
 
     boolean returnConnection(final Request request, final Connection c) {
@@ -188,7 +184,7 @@ class ConnectionManager {
         pool.destroy();
     }
 
-    CompletionHandler<Connection> createConnectionCompletionHandler(
+    private CompletionHandler<Connection> createConnectionCompletionHandler(
             final Request request, final GrizzlyResponseFuture future,
             final CompletionHandler<Connection> wrappedHandler) {
         
@@ -201,7 +197,7 @@ class ConnectionManager {
                 }
             }
 
-            public void failed(Throwable throwable) {
+            public void failed(final Throwable throwable) {
                 if (wrappedHandler != null) {
                     wrappedHandler.failed(throwable);
                 } else {
@@ -209,8 +205,7 @@ class ConnectionManager {
                 }
             }
 
-            public void completed(Connection connection) {
-                future.setConnection(connection);
+            public void completed(final Connection connection) {
                 provider.touchConnection(connection, request);
                 if (wrappedHandler != null) {
                     connection.addCloseListener(connectionMonitor);

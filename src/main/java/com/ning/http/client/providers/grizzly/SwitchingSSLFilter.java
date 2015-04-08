@@ -12,6 +12,7 @@
  */
 package com.ning.http.client.providers.grizzly;
 
+import com.ning.http.client.providers.grizzly.events.SSLSwitchingEvent;
 import java.io.IOException;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
@@ -41,7 +42,7 @@ final class SwitchingSSLFilter extends SSLFilter {
     public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event) throws IOException {
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-            CONNECTION_IS_SECURE.set(se.connection, se.secure);
+            CONNECTION_IS_SECURE.set(se.getConnection(), se.isSecure());
             return ctx.getStopAction();
         }
         return ctx.getInvokeAction();
@@ -88,23 +89,5 @@ final class SwitchingSSLFilter extends SSLFilter {
         return secStatus;
     }
 
-    // ------------------------------------------------------ Nested Classes
-    static final class SSLSwitchingEvent implements FilterChainEvent {
-
-        final boolean secure;
-        final Connection connection;
-        // ---------------------------------------------------- Constructors
-
-        SSLSwitchingEvent(final boolean secure, final Connection c) {
-            this.secure = secure;
-            connection = c;
-        }
-        // ----------------------------------- Methods from FilterChainEvent
-
-        @Override
-        public Object type() {
-            return SSLSwitchingEvent.class;
-        }
-    } // END SSLSwitchingEvent
     
 } // END SwitchingSSLFilter

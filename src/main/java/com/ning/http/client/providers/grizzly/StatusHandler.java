@@ -26,7 +26,9 @@ interface StatusHandler {
         CONTINUE, STOP
     }
 
-    boolean handleStatus(final HttpResponsePacket httpResponse, final HttpTransactionContext httpTransactionContext, final FilterChainContext ctx);
+    boolean handleStatus(final HttpResponsePacket httpResponse,
+            final HttpTransactionContext httpTransactionContext,
+            final FilterChainContext ctx);
 
     boolean handlesStatus(final int statusCode);
     

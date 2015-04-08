@@ -37,6 +37,7 @@ import org.glassfish.grizzly.utils.Futures;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
+import org.glassfish.grizzly.utils.Exceptions;
 import static org.glassfish.grizzly.utils.Exceptions.*;
 
 /**
@@ -177,7 +178,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                         feeder.flush();
                     }
                 } catch (IOException ioe) {
-                    HttpTransactionContext.currentTransaction(c).abort(ioe);
+                    HttpTransactionContext.currentTransaction(requestPacket).abort(ioe);
                 }
             }
         };
@@ -212,8 +213,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
 
             @Override
-            public void onFailure(Connection connection, Throwable t) {
-                HttpTransactionContext.currentTransaction(c).abort(t);
+            public void onFailure(final Connection connection, final Throwable t) {
+                connection.closeWithReason(Exceptions.makeIOException(t));
             }
             
             public void onComplete(Connection connection) {
@@ -222,7 +223,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     try {
                         feeder.flush();
                     } catch (IOException ioe) {
-                        HttpTransactionContext.currentTransaction(c).abort(ioe);
+                        connection.closeWithReason(ioe);
                     }
                 }
             }
@@ -379,9 +380,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     future.get();
                 }
             } catch (ExecutionException e) {
-                HttpTransactionContext.currentTransaction(c).abort(e.getCause());
+                c.closeWithReason(Exceptions.makeIOException(e.getCause()));
             } catch (Exception e) {
-                HttpTransactionContext.currentTransaction(c).abort(e);
+                c.closeWithReason(Exceptions.makeIOException(e));
             }
         }
 
@@ -587,7 +588,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void onError(Throwable t) {
                 c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                HttpTransactionContext.currentTransaction(c).abort(t);
+                c.closeWithReason(Exceptions.makeIOException(t));
             }
 
         } // END WriteHandlerImpl
@@ -607,7 +608,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 } catch (IOException e) {
                     final Connection c = feedableBodyGenerator.context.getConnection();
                     c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                    HttpTransactionContext.currentTransaction(c).abort(e);
+                    c.closeWithReason(Exceptions.makeIOException(e));
                 }
             }
 
