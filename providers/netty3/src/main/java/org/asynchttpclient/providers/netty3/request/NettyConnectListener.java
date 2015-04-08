@@ -17,6 +17,7 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
 
 import java.net.ConnectException;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty3.channel.ChannelManager;
@@ -88,11 +89,16 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
             sslHandler.handshake().addListener(new ChannelFutureListener() {
                 
                 @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess())
+                public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
+                    if (handshakeFuture.isSuccess()) {
+                        final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                        if (asyncHandler instanceof AsyncHandlerExtensions)
+                            AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
+
                         writeRequest(channel);
-                    else
-                        onFutureFailure(channel, future.getCause());
+                    } else {
+                        onFutureFailure(channel, handshakeFuture.getCause());
+                    }
                 }
             });
         

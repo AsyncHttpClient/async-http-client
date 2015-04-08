@@ -23,6 +23,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.ConnectException;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.providers.netty.commons.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty4.channel.ChannelManager;
@@ -87,12 +88,17 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         if (sslHandler != null) {
             sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
-                public void operationComplete(Future<Channel> future) throws Exception {
+                public void operationComplete(Future<Channel> handshakeFuture) throws Exception {
                  
-                    if (future.isSuccess())
+                    if (handshakeFuture.isSuccess()) {
+                        final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                        if (asyncHandler instanceof AsyncHandlerExtensions)
+                            AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
+
                         writeRequest(channel);
-                    else
-                        onFutureFailure(channel, future.cause());
+                    } else {
+                        onFutureFailure(channel, handshakeFuture.cause());
+                    }
                 }
             });
         

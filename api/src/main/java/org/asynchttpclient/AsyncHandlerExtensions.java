@@ -16,14 +16,14 @@ import java.net.InetSocketAddress;
 
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
- * For now, those methods are in a dedicated interface in order not to break the existing API,
- * but could be merged into one of the existing ones in AHC 2.
+ * For now, those methods are in a dedicated interface in order not to break the
+ * existing API, but could be merged into one of the existing ones in AHC 2.
  * 
  * More additional hooks might come, such as:
  * <ul>
- *   <li>onConnectionClosed()</li>
- *   <li>onBytesSent(long numberOfBytes)</li>
- *   <li>onBytesReceived(long numberOfBytes)</li>
+ * <li>onConnectionClosed()</li>
+ * <li>onBytesSent(long numberOfBytes)</li>
+ * <li>onBytesReceived(long numberOfBytes)</li>
  * </ul>
  */
 public interface AsyncHandlerExtensions {
@@ -44,14 +44,15 @@ public interface AsyncHandlerExtensions {
     void onPoolConnection();
 
     /**
-     * Notify the callback when a new connection was successfully fetched from the pool.
+     * Notify the callback when a new connection was successfully fetched from
+     * the pool.
      */
     void onConnectionPooled();
 
     /**
-     * Notify the callback when a request is being written on the wire.
-     * If the original request causes multiple requests to be sent, for example, because of authorization or retry,
-     * it will be notified multiple times.
+     * Notify the callback when a request is being written on the wire. If the
+     * original request causes multiple requests to be sent, for example,
+     * because of authorization or retry, it will be notified multiple times.
      * 
      * @param request the real request object as passed to the provider
      */
@@ -66,4 +67,10 @@ public interface AsyncHandlerExtensions {
      * Notify the callback after DNS resolution has completed.
      */
     void onDnsResolved(InetSocketAddress remoteAddress);
+
+    /**
+     * Notify the callback when the SSL handshake performed to establish an
+     * HTTPS connection has been completed.
+     */
+    void onSslHandshakeCompleted();
 }

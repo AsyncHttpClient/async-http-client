@@ -103,4 +103,9 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     public void onDnsResolved(InetSocketAddress remoteAddress) {
         firedEvents.add("DnsResolved");
     }
+
+    @Override
+    public void onSslHandshakeCompleted() {
+        firedEvents.add("SslHandshakeCompleted");
+    }
 }
