@@ -104,4 +104,9 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     public void onDnsResolved() {
         firedEvents.add("DnsResolved");
     }
+
+    @Override
+    public void onSslHandshakeCompleted() {
+        firedEvents.add("SslHandshakeCompleted");
+    }
 }
