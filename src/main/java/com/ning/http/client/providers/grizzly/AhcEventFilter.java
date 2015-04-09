@@ -827,7 +827,6 @@ final class AhcEventFilter extends HttpClientFilter {
             builder.setMethod("GET");
         }
         builder.setUrl(uri.toString());
-        builder.resetQuery();
         for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
             builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
         }
