@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -65,6 +66,16 @@ public class NettyWebSocket implements WebSocket {
         this.channel = channel;
         this.listeners = listeners;
         maxBufferSize = nettyConfig.getWebSocketMaxBufferSize();
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return channel.remoteAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        return channel.localAddress();
     }
 
     @Override

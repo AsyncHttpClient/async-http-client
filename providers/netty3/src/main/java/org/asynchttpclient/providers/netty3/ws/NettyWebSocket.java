@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.providers.netty3.util.ChannelBufferUtils.channelBuffer2bytes;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -67,6 +68,16 @@ public class NettyWebSocket implements WebSocket {
         maxBufferSize = nettyConfig.getWebSocketMaxBufferSize();
     }
 
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return channel.getRemoteAddress();
+    }
+    
+    @Override
+    public SocketAddress getLocalAddress() {
+        return channel.getLocalAddress();
+    }
+    
     @Override
     public WebSocket sendMessage(byte[] message) {
         channel.write(new BinaryWebSocketFrame(wrappedBuffer(message)));
