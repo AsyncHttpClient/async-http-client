@@ -14,6 +14,7 @@ package org.asynchttpclient.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -112,6 +113,14 @@ public class WebDavResponse implements Response {
 
     public boolean hasResponseBody() {
         return response.hasResponseBody();
+    }
+
+    public SocketAddress getRemoteAddress() {
+        return response.getRemoteAddress();
+    }
+
+    public SocketAddress getLocalAddress() {
+        return response.getLocalAddress();
     }
 
     public Document getBodyAsXML() {

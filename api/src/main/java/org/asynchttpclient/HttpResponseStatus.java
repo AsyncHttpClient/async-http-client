@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient;
 
+import java.net.SocketAddress;
 import java.util.List;
 
 import org.asynchttpclient.uri.Uri;
@@ -44,8 +45,8 @@ public abstract class HttpResponseStatus {
 
     /**
      * Prepare a {@link Response}
-     *
-     * @param headers   {@link HttpResponseHeaders}
+     * 
+     * @param headers {@link HttpResponseHeaders}
      * @param bodyParts list of {@link HttpResponseBodyPart}
      * @param config the client config
      * @return a {@link Response}
@@ -93,4 +94,20 @@ public abstract class HttpResponseStatus {
      * @return protocol name + version
      */
     public abstract String getProtocolText();
+
+    /**
+     * Get remote address client initiated request to.
+     * 
+     * @return remote address client initiated request to, may be {@code null}
+     *         if asynchronous provider is unable to provide the remote address
+     */
+    public abstract SocketAddress getRemoteAddress();
+
+    /**
+     * Get local address client initiated request from.
+     * 
+     * @return local address client initiated request from, may be {@code null}
+     *         if asynchronous provider is unable to provide the local address
+     */
+    public abstract SocketAddress getLocalAddress();
 }

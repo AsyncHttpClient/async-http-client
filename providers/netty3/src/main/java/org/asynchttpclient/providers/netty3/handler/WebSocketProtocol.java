@@ -74,7 +74,7 @@ public final class WebSocketProtocol extends Protocol {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
-            HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
+            HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {

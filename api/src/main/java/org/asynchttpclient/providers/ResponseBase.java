@@ -11,6 +11,7 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +54,16 @@ public abstract class ResponseBase implements Response {
     @Override
     public final Uri getUri() {
         return status.getUri();
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return status.getRemoteAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        return status.getLocalAddress();
     }
 
     @Override

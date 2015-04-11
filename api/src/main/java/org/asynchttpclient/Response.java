@@ -21,6 +21,7 @@ import org.asynchttpclient.uri.Uri;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -182,6 +183,22 @@ public interface Response {
      */
     boolean hasResponseBody();
 
+    /**
+     * Get remote address client initiated request to.
+     * 
+     * @return remote address client initiated request to, may be {@code null}
+     *         if asynchronous provider is unable to provide the remote address
+     */
+    SocketAddress getRemoteAddress();
+
+    /**
+     * Get local address client initiated request from.
+     * 
+     * @return local address client initiated request from, may be {@code null}
+     *         if asynchronous provider is unable to provide the local address
+     */
+    SocketAddress getLocalAddress();
+    
     public static class ResponseBuilder {
         private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>();
         private HttpResponseStatus status;

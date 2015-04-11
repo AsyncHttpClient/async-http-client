@@ -15,6 +15,7 @@ package org.asynchttpclient.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -228,6 +229,16 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 public boolean hasResponseBody() {
                     return wrappedResponse.hasResponseBody();
                 }
+
+                @Override
+                public SocketAddress getRemoteAddress() {
+                    return wrappedResponse.getRemoteAddress();
+                }
+
+                @Override
+                public SocketAddress getLocalAddress() {
+                    return wrappedResponse.getLocalAddress();
+                }
             };
         }
 
@@ -259,6 +270,16 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         @Override
         public String getProtocolText() {
             return wrapped.getStatusText();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() {
+            return wrapped.getRemoteAddress();
+        }
+        
+        @Override
+        public SocketAddress getLocalAddress() {
+            return wrapped.getLocalAddress();
         }
     }
 

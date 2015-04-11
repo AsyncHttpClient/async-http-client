@@ -430,7 +430,7 @@ public final class HttpProtocol extends Protocol {
 
         future.setKeepAlive(connectionStrategy.keepAlive(httpRequest, response));
 
-        NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response);
+        NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
         int statusCode = response.getStatus().getCode();
         Request request = future.getRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();

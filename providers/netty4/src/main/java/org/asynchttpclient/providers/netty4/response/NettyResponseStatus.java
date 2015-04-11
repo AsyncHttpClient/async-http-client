@@ -13,6 +13,12 @@
  */
 package org.asynchttpclient.providers.netty4.response;
 
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpResponse;
+
+import java.net.SocketAddress;
+import java.util.List;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -20,20 +26,25 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
 
-import io.netty.handler.codec.http.HttpResponse;
-
-import java.util.List;
-
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
 public class NettyResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
+    private final SocketAddress remoteAddress;
+    private final SocketAddress localAddress;
 
-    public NettyResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpResponse response) {
+    public NettyResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpResponse response, Channel channel) {
         super(uri, config);
         this.response = response;
+        if (channel != null) {
+            remoteAddress = channel.remoteAddress();
+            localAddress = channel.localAddress();
+        } else {
+            remoteAddress = null;
+            localAddress = null;
+        }
     }
 
     @Override
@@ -77,5 +88,15 @@ public class NettyResponseStatus extends HttpResponseStatus {
     @Override
     public String getProtocolText() {
         return response.getProtocolVersion().text();
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        return localAddress;
     }
 }
