@@ -14,7 +14,7 @@ package com.ning.http.client.cookie;
 
 public class Cookie {
 
-    public static Cookie newValidCookie(String name, String value, String domain, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -56,7 +56,7 @@ public class Cookie {
         domain = validateValue("domain", domain);
         path = validateValue("path", path);
 
-        return new Cookie(name, value, rawValue, domain, path, expires, maxAge, secure, httpOnly);
+        return new Cookie(name, value, wrap, domain, path, expires, maxAge, secure, httpOnly);
     }
 
     private static String validateValue(String name, String value) {
@@ -84,7 +84,7 @@ public class Cookie {
 
     private final String name;
     private final String value;
-    private final String rawValue;
+    private final boolean wrap;
     private final String domain;
     private final String path;
     private long expires;
@@ -92,10 +92,10 @@ public class Cookie {
     private final boolean secure;
     private final boolean httpOnly;
 
-    public Cookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public Cookie(String name, String value, boolean wrap, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
         this.name = name;
         this.value = value;
-        this.rawValue = rawValue;
+        this.wrap = wrap;
         this.domain = domain;
         this.path = path;
         this.expires = expires;
@@ -116,8 +116,8 @@ public class Cookie {
         return value;
     }
 
-    public String getRawValue() {
-        return rawValue;
+    public boolean isWrap() {
+        return wrap;
     }
 
     public String getPath() {
@@ -145,7 +145,10 @@ public class Cookie {
         StringBuilder buf = new StringBuilder();
         buf.append(name);
         buf.append('=');
-        buf.append(rawValue);
+        if (wrap)
+            buf.append('"').append(value).append('"');
+        else
+            buf.append(value);
         if (domain != null) {
             buf.append("; domain=");
             buf.append(domain);
