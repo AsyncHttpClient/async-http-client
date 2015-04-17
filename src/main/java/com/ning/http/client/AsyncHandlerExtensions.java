@@ -12,6 +12,8 @@
  */
 package com.ning.http.client;
 
+import java.net.InetAddress;
+
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
  * For now, those methods are in a dedicated interface in order not to break the existing API,
@@ -62,8 +64,10 @@ public interface AsyncHandlerExtensions {
 
     /**
      * Notify the callback after DNS resolution has completed.
+     * 
+     * @param address the resolved address
      */
-    void onDnsResolved();
+    void onDnsResolved(InetAddress address);
 
     /**
      * Notify the callback when the SSL handshake performed to establish an HTTPS connection has been completed.

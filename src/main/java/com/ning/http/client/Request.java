@@ -190,4 +190,6 @@ public interface Request {
     String getBodyEncoding();
 
     ConnectionPoolPartitioning getConnectionPoolPartitioning();
+
+    NameResolver getNameResolver();
 }

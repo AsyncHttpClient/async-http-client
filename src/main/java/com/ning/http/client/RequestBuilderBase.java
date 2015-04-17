@@ -69,6 +69,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long rangeOffset;
         public String charset;
         private ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
+        private NameResolver nameResolver = NameResolver.JdkNameResolver.INSTANCE;
         private List<Param> queryParams;
 
         public RequestImpl() {
@@ -99,105 +100,135 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
+                this.nameResolver = prototype.getNameResolver();
             }
         }
 
+        @Override
         public String getMethod() {
             return method;
         }
 
+        @Override
         public InetAddress getInetAddress() {
             return address;
         }
 
+        @Override
         public InetAddress getLocalAddress() {
             return localAddress;
         }
 
+        @Override
         public Uri getUri() {
             return uri;
         }
 
+        @Override
         public String getUrl() {
             return uri.toUrl();
         }
 
+        @Override
         public FluentCaseInsensitiveStringsMap getHeaders() {
             return headers;
         }
 
+        @Override
         public Collection<Cookie> getCookies() {
             return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
         }
 
+        @Override
         public byte[] getByteData() {
             return byteData;
         }
 
+        @Override
         public List<byte[]> getCompositeByteData() {
             return compositeByteData;
         }
 
+        @Override
         public String getStringData() {
             return stringData;
         }
 
+        @Override
         public InputStream getStreamData() {
             return streamData;
         }
 
+        @Override
         public BodyGenerator getBodyGenerator() {
             return bodyGenerator;
         }
 
+        @Override
         public long getContentLength() {
             return length;
         }
 
+        @Override
         public List<Param> getFormParams() {
             return formParams != null ? formParams : Collections.<Param> emptyList();
         }
 
+        @Override
         public List<Part> getParts() {
             return parts != null ? parts : Collections.<Part> emptyList();
         }
 
+        @Override
         public String getVirtualHost() {
             return virtualHost;
         }
 
+        @Override
         public ProxyServer getProxyServer() {
             return proxyServer;
         }
 
+        @Override
         public Realm getRealm() {
             return realm;
         }
 
+        @Override
         public File getFile() {
             return file;
         }
 
+        @Override
         public Boolean getFollowRedirect() {
             return followRedirects;
         }
 
+        @Override
         public int getRequestTimeout() {
             return requestTimeout;
         }
 
+        @Override
         public long getRangeOffset() {
             return rangeOffset;
         }
 
+        @Override
         public String getBodyEncoding() {
             return charset;
         }
 
+        @Override
         public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
             return connectionPoolPartitioning;
         }
 
+        @Override
+        public NameResolver getNameResolver() {
+            return nameResolver;
+        }
+        
         @Override
         public List<Param> getQueryParams() {
             if (queryParams == null)
@@ -536,6 +567,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setConnectionPoolKeyStrategy(ConnectionPoolPartitioning connectionPoolKeyStrategy) {
         request.connectionPoolPartitioning = connectionPoolKeyStrategy;
+        return derived.cast(this);
+    }
+
+    public T setNameResolver(NameResolver nameResolver) {
+        request.nameResolver = nameResolver;
         return derived.cast(this);
     }
 
