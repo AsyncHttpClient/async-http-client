@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
@@ -65,8 +65,10 @@ public interface AsyncHandlerExtensions {
 
     /**
      * Notify the callback after DNS resolution has completed.
+     * 
+     * @param address the resolved address
      */
-    void onDnsResolved(InetSocketAddress remoteAddress);
+    void onDnsResolved(InetAddress address);
 
     /**
      * Notify the callback when the SSL handshake performed to establish an

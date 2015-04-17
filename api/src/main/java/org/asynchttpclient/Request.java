@@ -191,4 +191,6 @@ public interface Request {
     Charset getBodyCharset();
 
     ConnectionPoolPartitioning getConnectionPoolPartitioning();
+
+    NameResolver getNameResolver();
 }

@@ -32,7 +32,9 @@ import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -347,22 +349,30 @@ public final class NettyRequestSender {
         }
     }
 
-    private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) {
-        if (request.getInetAddress() != null)
-            return new InetSocketAddress(request.getInetAddress(), getDefaultPort(uri));
+    private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) throws UnknownHostException {
 
-        else if (!useProxy || avoidProxy(proxy, uri.getHost()))
-            return new InetSocketAddress(uri.getHost(), getDefaultPort(uri));
+        InetAddress address;
+        int port = getDefaultPort(uri);
 
-        else
-            return new InetSocketAddress(proxy.getHost(), proxy.getPort());
+        if (request.getInetAddress() != null) {
+            address = request.getInetAddress();
+
+        } else if (!useProxy || avoidProxy(proxy, uri.getHost())) {
+            address = request.getNameResolver().resolve(uri.getHost());
+
+        } else {
+            address = request.getNameResolver().resolve(proxy.getHost());
+            port = proxy.getPort();
+        }
+
+        return new InetSocketAddress(address, port);
     }
 
-    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) {
+    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress);
+            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
 
         if (request.getLocalAddress() != null)
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.async.util;
 
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -100,7 +100,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onDnsResolved(InetSocketAddress remoteAddress) {
+    public void onDnsResolved(InetAddress remoteAddress) {
         firedEvents.add("DnsResolved");
     }
 

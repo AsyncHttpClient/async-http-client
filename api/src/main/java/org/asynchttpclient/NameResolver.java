@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,21 +12,20 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-public interface ConnectionPoolPartitioning {
+public interface NameResolver {
 
-    String getPartitionId(Uri uri, ProxyServer proxy);
+    InetAddress resolve(String name) throws UnknownHostException;
 
-    public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
+    public enum JdkNameResolver implements NameResolver {
 
         INSTANCE;
 
         @Override
-        public String getPartitionId(Uri uri, ProxyServer proxyServer) {
-            String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
-            return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
+        public InetAddress resolve(String name) throws UnknownHostException {
+            return InetAddress.getByName(name);
         }
     }
 }

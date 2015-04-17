@@ -69,6 +69,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long rangeOffset;
         public Charset charset;
         private ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
+        private NameResolver nameResolver = NameResolver.JdkNameResolver.INSTANCE;
         private List<Param> queryParams;
 
         public RequestImpl() {
@@ -99,6 +100,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyCharset();
                 this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
+                this.nameResolver = prototype.getNameResolver();
             }
         }
 
@@ -220,6 +222,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         @Override
         public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
             return connectionPoolPartitioning;
+        }
+
+        @Override
+        public NameResolver getNameResolver() {
+            return nameResolver;
         }
 
         @Override
@@ -560,6 +567,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setConnectionPoolPartitioning(ConnectionPoolPartitioning connectionPoolPartitioning) {
         request.connectionPoolPartitioning = connectionPoolPartitioning;
+        return derived.cast(this);
+    }
+
+    public T setNameResolver(NameResolver nameResolver) {
+        request.nameResolver = nameResolver;
         return derived.cast(this);
     }
 
