@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -38,6 +38,7 @@ import org.glassfish.grizzly.utils.Futures;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
+import org.glassfish.grizzly.utils.Exceptions;
 import static org.glassfish.grizzly.utils.Exceptions.*;
 
 /**
@@ -215,6 +216,10 @@ public class FeedableBodyGenerator implements BodyGenerator {
             public void onStart(Connection connection) {
             }
 
+            public void onFailure(Connection connection, Throwable t) {
+                connection.closeWithReason(Exceptions.makeIOException(t));
+            }
+
             public void onComplete(Connection connection) {
                 if (c.equals(connection)) {
                     filter.removeHandshakeListener(this);
@@ -224,10 +229,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
                         HttpTransactionContext.get(c).abort(ioe);
                     }
                 }
-            }
-
-            public void onFailure(Connection connection, Throwable t) {
-                
             }
         });
         filter.handshake(context.getConnection(),  null);

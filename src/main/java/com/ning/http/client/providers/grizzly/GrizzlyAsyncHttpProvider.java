@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -658,6 +658,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             new GracefulCloseEvent(HttpTransactionContext.this), null);
                 } else if (CloseType.REMOTELY.equals(type)) {
                     abort(REMOTELY_CLOSED_EXCEPTION);
+                } else {
+                    try {
+                        closeable.assertOpen();
+                    } catch (IOException ioe) {
+                        abort(ioe);
+                    }
                 }
             }
         };
