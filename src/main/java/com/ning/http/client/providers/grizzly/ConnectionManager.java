@@ -18,22 +18,24 @@ import com.ning.http.client.Request;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.ProxyUtils;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.net.ssl.HostnameVerifier;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.Grizzly;
-import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.ConnectorHandler;
+import org.glassfish.grizzly.GrizzlyFuture;
+import org.glassfish.grizzly.connectionpool.Endpoint;
+import org.glassfish.grizzly.connectionpool.MultiEndpointPool;
 import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.utils.Futures;
-import org.glassfish.grizzly.utils.IdleTimeoutFilter;
+import org.glassfish.grizzly.utils.Exceptions;
 
 /**
  * Connection manager
@@ -41,184 +43,166 @@ import org.glassfish.grizzly.utils.IdleTimeoutFilter;
  * @author Grizzly team
  */
 class ConnectionManager {
-    private static final Attribute<Boolean> DO_NOT_CACHE =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(
-                    ConnectionManager.class.getName());
+    private final boolean poolingEnabled;
+    private final MultiEndpointPool<SocketAddress> pool;
     
-    private final ConnectionPool pool;
-    private final TCPNIOConnectorHandler connectionHandler;
-    private final ConnectionMonitor connectionMonitor;
+    private final TCPNIOTransport transport;
+    private final TCPNIOConnectorHandler defaultConnectionHandler;
     private final GrizzlyAsyncHttpProvider provider;
     private final AsyncHttpClientConfig config;
+    private final boolean poolingSSLConnections;
+    private final Map<String, Endpoint> endpointMap =
+            new ConcurrentHashMap<String, Endpoint>();
 
     // -------------------------------------------------------- Constructors
     ConnectionManager(final GrizzlyAsyncHttpProvider provider,
             final TCPNIOTransport transport,
             final GrizzlyAsyncHttpProviderConfig providerConfig) {
         
+        this.transport = transport;
         this.provider = provider;
         config = provider.getClientConfig();
+        this.poolingEnabled = config.isAllowPoolingConnections();
+        this.poolingSSLConnections = config.isAllowPoolingSslConnections();
         
-        ConnectionPool connectionPool;
-        if (config.isAllowPoolingConnections()) {
-            ConnectionPool providedPool = providerConfig != null 
-                    ? providerConfig.getConnectionPool()
-                    : null;
-            connectionPool = providedPool != null
-                    ? providedPool
-                    : new GrizzlyConnectionPool(config);
+        defaultConnectionHandler = TCPNIOConnectorHandler.builder(transport).build();
+        
+        if (providerConfig != null && providerConfig.getConnectionPool() != null) {
+            pool = providerConfig.getConnectionPool();
         } else {
-            connectionPool = new NonCachingPool();
+            if (poolingEnabled) {
+                final MultiEndpointPool.Builder<SocketAddress> builder
+                        = MultiEndpointPool.builder(SocketAddress.class)
+                        .connectTimeout(config.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                        .asyncPollTimeout(config.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                        .maxConnectionsTotal(config.getMaxConnections())
+                        .maxConnectionsPerEndpoint(config.getMaxConnectionsPerHost())
+                        .keepAliveTimeout(config.getPooledConnectionIdleTimeout(), TimeUnit.MILLISECONDS)
+                        .connectorHandler(defaultConnectionHandler)
+                        .connectionTTL(config.getConnectionTTL(), TimeUnit.MILLISECONDS)
+                        .failFastWhenMaxSizeReached(true);
+
+                if (!poolingSSLConnections) {
+                    builder.endpointPoolCustomizer(new NoSSLPoolCustomizer());
+                }
+
+                pool = builder.build();
+            } else {
+                pool = MultiEndpointPool.builder(SocketAddress.class)
+                        .connectTimeout(config.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                        .asyncPollTimeout(config.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                        .maxConnectionsTotal(config.getMaxConnections())
+                        .maxConnectionsPerEndpoint(config.getMaxConnectionsPerHost())
+                        .keepAliveTimeout(0, TimeUnit.MILLISECONDS) // no pool
+                        .connectorHandler(defaultConnectionHandler)
+                        .failFastWhenMaxSizeReached(true)
+                        .build();
+            }
         }
-        pool = connectionPool;
-        connectionHandler = TCPNIOConnectorHandler.builder(transport).build();
-        final int maxConns = config.getMaxConnections();
-        connectionMonitor = new ConnectionMonitor(maxConns);
     }
 
     // ----------------------------------------------------- Private Methods
-    static void markConnectionAsDoNotCache(final Connection c) {
-        DO_NOT_CACHE.set(c, Boolean.TRUE);
-    }
-
-    static boolean isConnectionCacheable(final Connection c) {
-        final Boolean canCache = DO_NOT_CACHE.get(c);
-        return (canCache != null) ? canCache : false;
-    }
-
-    void getConnectionAsync(final Request request,
-            final GrizzlyResponseFuture requestFuture,
-            final CompletionHandler<Connection> connectHandler)
-            throws IOException, ExecutionException, InterruptedException {
+    void openAsync(final Request request,
+            final CompletionHandler<Connection> completionHandler)
+            throws IOException {
         
         final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
         
-        Connection c = pool.poll(getPartitionId(request, proxy));
-        if (c == null) {
-            if (!connectionMonitor.acquire()) {
-                throw new IOException("Max connections exceeded");
-            }
-            openConnectionAsync(request, proxy, requestFuture, connectHandler);
+        final String scheme;
+        final String host;
+        final int port;
+        if (proxy != null) {
+            scheme = proxy.getProtocol().getProtocol();
+            host = proxy.getHost();
+            port = getPort(scheme, proxy.getPort());
         } else {
-//            provider.touchConnection(c, request);
-            connectHandler.completed(c);
+            final Uri uri = request.getUri();
+            scheme = uri.getScheme();
+            host = uri.getHost();
+            port = getPort(scheme, uri.getPort());
         }
+        
+        final boolean isSecure = Utils.isSecure(scheme);
+
+        final String partitionId = getPartitionId(request, proxy);
+        Endpoint endpoint = endpointMap.get(partitionId);
+        if (endpoint == null) {
+            endpoint = new AhcEndpoint(partitionId,
+                    isSecure, host, port, request.getLocalAddress(),
+                    createConnectorHandler(isSecure, host));
+
+            endpointMap.put(partitionId, endpoint);
+        }
+
+        pool.take(endpoint, completionHandler);
     }
 
-    Connection openConnectionSync(final Request request,
-            final GrizzlyResponseFuture requestFuture)
-            throws IOException, ExecutionException,
-            InterruptedException, TimeoutException {
+    Connection openSync(final Request request)
+            throws IOException {
         
-        final Connection c = openConnectionSync0(request,
-                ProxyUtils.getProxyServer(config, request), requestFuture);
-        DO_NOT_CACHE.set(c, Boolean.TRUE);
+        
+        final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
+        
+        final String scheme;
+        final String host;
+        final int port;
+        if (proxy != null) {
+            scheme = proxy.getProtocol().getProtocol();
+            host = proxy.getHost();
+            port = getPort(scheme, proxy.getPort());
+        } else {
+            final Uri uri = request.getUri();
+            scheme = uri.getScheme();
+            host = uri.getHost();
+            port = getPort(scheme, uri.getPort());
+        }
+        
+        final boolean isSecure = Utils.isSecure(scheme);
+        
+        final String partitionId = getPartitionId(request, proxy);
+        Endpoint endpoint = endpointMap.get(partitionId);
+        if (endpoint == null) {
+            endpoint = new AhcEndpoint(partitionId,
+                    isSecure, host, port, request.getLocalAddress(),
+                    createConnectorHandler(isSecure, host));
+
+            endpointMap.put(partitionId, endpoint);
+        }
+
+        Connection c = pool.poll(endpoint);
+        
+        if (c == null) {
+            final Future<Connection> future =
+                    createConnectorHandler(isSecure, host).connect(
+                    new InetSocketAddress(host, port),
+                    request.getLocalAddress() != null
+                            ? new InetSocketAddress(request.getLocalAddress(), 0)
+                            : null);
+
+            final int cTimeout = config.getConnectTimeout();
+            try {
+                c = cTimeout > 0
+                        ? future.get(cTimeout, TimeUnit.MILLISECONDS)
+                        : future.get();
+            } catch (ExecutionException ee) {
+                throw Exceptions.makeIOException(ee.getCause());
+            } catch (Exception e) {
+                throw Exceptions.makeIOException(e);
+            } finally {
+                future.cancel(false);
+            }
+        }
+
+        assert c != null; // either connection is not null or exception thrown
         return c;
     }
 
-    private void openConnectionAsync(final Request request,
-            final ProxyServer proxy,
-            final GrizzlyResponseFuture requestFuture,
-            final CompletionHandler<Connection> connectHandler)
-            throws IOException, ExecutionException, InterruptedException {
-        
-        final Uri uri = request.getUri();
-        String host = (proxy != null) ? proxy.getHost() : uri.getHost();
-        int port = (proxy != null) ? proxy.getPort() : uri.getPort();
-        CompletionHandler<Connection> completionHandler =
-                createConnectionCompletionHandler(request, requestFuture,
-                        connectHandler);
-        
-        final HostnameVerifier verifier = config.getHostnameVerifier();
-        if (Utils.isSecure(uri) && verifier != null) {
-            completionHandler =
-                    HostnameVerifierListener.wrapWithHostnameVerifierHandler(
-                            completionHandler, verifier, uri.getHost());
-        }
-        
-        connectionHandler.connect(
-                new InetSocketAddress(host, getPort(uri, port)),
-                new InetSocketAddress(request.getLocalAddress(), 0),
-                completionHandler);
-    }
-
-    private Connection openConnectionSync0(final Request request,
-            final ProxyServer proxy,
-            final GrizzlyResponseFuture requestFuture)
-            throws IOException, ExecutionException,
-            InterruptedException, TimeoutException {
-        
-        final Uri uri = request.getUri();
-        String host = (proxy != null) ? proxy.getHost() : uri.getHost();
-        int port = (proxy != null) ? proxy.getPort() : uri.getPort();
-        int cTimeout = config.getConnectTimeout();
-        FutureImpl<Connection> future = Futures.createSafeFuture();
-        CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
-                createConnectionCompletionHandler(request, requestFuture, null));
-
-        connectionHandler.connect(
-                new InetSocketAddress(host, getPort(uri, port)), ch);
-        
-        return cTimeout > 0
-                ? future.get(cTimeout, TimeUnit.MILLISECONDS)
-                : future.get();
-    }
-
-    boolean returnConnection(final Request request, final Connection c) {
-        final boolean result = DO_NOT_CACHE.get(c) == null &&
-                pool.offer(getPartitionId(request,
-                        ProxyUtils.getProxyServer(config, request)), c);
-        if (result) {
-            if (provider.resolver != null) {
-                provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
-            }
-        }
-        return result;
-    }
-
-    boolean canReturnConnection(final Connection c) {
-        return DO_NOT_CACHE.get(c) != null || pool.canCacheConnection();
+    boolean returnConnection(final Connection c) {
+        return pool.release(c);
     }
 
     void destroy() {
-        pool.destroy();
-    }
-
-    private CompletionHandler<Connection> createConnectionCompletionHandler(
-            final Request request, final GrizzlyResponseFuture future,
-            final CompletionHandler<Connection> wrappedHandler) {
-        
-        return new CompletionHandler<Connection>() {
-            public void cancelled() {
-                if (wrappedHandler != null) {
-                    wrappedHandler.cancelled();
-                } else {
-                    future.cancel(true);
-                }
-            }
-
-            public void failed(final Throwable throwable) {
-                if (wrappedHandler != null) {
-                    wrappedHandler.failed(throwable);
-                } else {
-                    future.abort(throwable);
-                }
-            }
-
-            public void completed(final Connection connection) {
-//                provider.touchConnection(connection, request);
-                if (wrappedHandler != null) {
-                    connection.addCloseListener(connectionMonitor);
-                    wrappedHandler.completed(connection);
-                }
-            }
-
-            public void updated(Connection result) {
-                if (wrappedHandler != null) {
-                    wrappedHandler.updated(result);
-                }
-            }
-        };
+        pool.close();
     }
 
     private static String getPartitionId(Request request,
@@ -227,10 +211,10 @@ class ConnectionManager {
                 .getPartitionId(request.getUri(), proxyServer);
     }
 
-    private static int getPort(final Uri uri, final int p) {
+    private static int getPort(final String scheme, final int p) {
         int port = p;
         if (port == -1) {
-            final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
+            final String protocol = scheme.toLowerCase(Locale.ENGLISH);
             if ("http".equals(protocol) || "ws".equals(protocol)) {
                 port = 80;
             } else if ("https".equals(protocol) || "wss".equals(protocol)) {
@@ -241,61 +225,80 @@ class ConnectionManager {
         }
         return port;
     }
-    
-    // ------------------------------------------------------ Nested Classes
-    private static class ConnectionMonitor implements Connection.CloseListener {
 
-        private final Semaphore connections;
-        // ------------------------------------------------------------ Constructors
+    private ConnectorHandler<SocketAddress> createConnectorHandler(
+            final boolean isSecure, final String host) {
+        
+        return isSecure && config.getHostnameVerifier() != null
+                ? new TCPNIOConnectorHandler(transport) {
 
-        ConnectionMonitor(final int maxConnections) {
-            if (maxConnections != -1) {
-                connections = new Semaphore(maxConnections);
-            } else {
-                connections = null;
-            }
+                    @Override
+                    protected void preConfigure(final Connection connection) {
+                        super.preConfigure(connection);
+                        
+                        HostnameVerifierListener.assignHostnameVerifyTask(
+                                connection, config.getHostnameVerifier(), host, null);
+                    }
+
+                }
+                : defaultConnectionHandler;
+
+    }
+
+    private class AhcEndpoint extends Endpoint<SocketAddress> {
+
+        private final String partitionId;
+        private final boolean isSecure;
+        private final String host;
+        private final int port;
+        private final InetAddress localAddress;
+        private final ConnectorHandler<SocketAddress> connectorHandler;
+        
+        private AhcEndpoint(final String partitionId,
+                final boolean isSecure,
+                final String host, final int port,
+                final InetAddress localAddress,
+                final ConnectorHandler<SocketAddress> connectorHandler) {
+            
+            this.partitionId = partitionId;
+            this.isSecure = isSecure;
+            this.host = host;
+            this.port = port;
+            this.localAddress = localAddress;
+            this.connectorHandler = connectorHandler;
         }
-        // ----------------------------------- Methods from Connection.CloseListener
 
-        public boolean acquire() {
-            return connections == null || connections.tryAcquire();
+        public boolean isSecure() {
+            return isSecure;
+        }
+        
+        @Override
+        public Object getId() {
+            return partitionId;
         }
 
         @Override
-        public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
-            if (connections != null) {
-                connections.release();
+        public GrizzlyFuture<Connection> connect() {
+            return (GrizzlyFuture<Connection>) connectorHandler.connect(
+                    new InetSocketAddress(host, port),
+                    localAddress != null
+                            ? new InetSocketAddress(localAddress, 0)
+                            : null);
+        }
+        
+    }
+    
+    private class NoSSLPoolCustomizer
+            implements MultiEndpointPool.EndpointPoolCustomizer<SocketAddress> {
+
+        @Override
+        public void customize(final Endpoint<SocketAddress> endpoint,
+                final MultiEndpointPool.EndpointPoolBuilder<SocketAddress> builder) {
+            final AhcEndpoint ahcEndpoint = (AhcEndpoint) endpoint;
+            if (ahcEndpoint.isSecure()) {
+                builder.keepAliveTimeout(0, TimeUnit.SECONDS); // don't pool
             }
         }
-    } // END ConnectionMonitor
-    
-    
-    private static final class NonCachingPool implements ConnectionPool {
-
-
-        // ---------------------------------------- Methods from ConnectionsPool
-
-
-        public boolean offer(String uri, Connection connection) {
-            return false;
-        }
-
-        public Connection poll(String uri) {
-            return null;
-        }
-
-        public boolean removeAll(Connection connection) {
-            return false;
-        }
-
-        public boolean canCacheConnection() {
-            return true;
-        }
-
-        public void destroy() {
-            // no-op
-        }
-
-    } // END NonCachingPool
-    
+        
+    }
 } // END ConnectionManager

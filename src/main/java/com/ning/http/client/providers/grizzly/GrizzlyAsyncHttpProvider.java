@@ -205,8 +205,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         };
 
         try {
-            connectionManager.getConnectionAsync(request,
-                    future, connectHandler);
+            connectionManager.openAsync(request, connectHandler);
         } catch (IOException ioe) {
             abort(future, ioe);
         } catch (RuntimeException re) {

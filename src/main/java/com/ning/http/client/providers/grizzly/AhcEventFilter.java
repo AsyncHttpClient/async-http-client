@@ -46,8 +46,6 @@ import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpHeader;
 import org.glassfish.grizzly.http.HttpResponsePacket;
-import org.glassfish.grizzly.http.Protocol;
-import org.glassfish.grizzly.http.util.DataChunk;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.utils.Exceptions;
@@ -70,36 +68,9 @@ final class AhcEventFilter extends HttpClientFilter {
     private static final Map<Integer, StatusHandler> HANDLER_MAP =
             new HashMap<Integer, StatusHandler>(8);
     
-    private static IOException maximumPooledConnectionExceededReason;
+    private static IOException notKeepAliveReason;
     
     private final GrizzlyAsyncHttpProvider provider;
-    
-
-    /**
-     * Close bytes.
-     */
-    private static final byte[] CLOSE_BYTES = {
-        (byte) 'c',
-        (byte) 'l',
-        (byte) 'o',
-        (byte) 's',
-        (byte) 'e'
-    };
-    /**
-     * Keep-alive bytes.
-     */
-    private static final byte[] KEEPALIVE_BYTES = {
-        (byte) 'k',
-        (byte) 'e',
-        (byte) 'e',
-        (byte) 'p',
-        (byte) '-',
-        (byte) 'a',
-        (byte) 'l',
-        (byte) 'i',
-        (byte) 'v',
-        (byte) 'e'
-    };
     
     // -------------------------------------------------------- Constructors
 
@@ -297,13 +268,6 @@ final class AhcEventFilter extends HttpClientFilter {
         super.onHttpHeaderParsed(httpHeader, buffer, ctx);
         LOGGER.debug("RESPONSE: {}", httpHeader);
         
-        final HttpResponsePacket responsePacket =
-                (HttpResponsePacket) httpHeader;
-        
-        // @TODO review this after Grizzly 2.3.20 is integrated
-        final boolean isKeepAlive = checkKeepAlive(responsePacket);
-        responsePacket.getProcessingState().setKeepAlive(isKeepAlive);
-        
         if (httpHeader.isSkipRemainder()) {
             return false;
         }
@@ -345,7 +309,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 try {
                     final GrizzlyResponseFuture responseFuture = context.future;
                     final ConnectionManager m = context.provider.getConnectionManager();
-                    final Connection c = m.openConnectionSync(newRequest, responseFuture);
+                    final Connection c = m.openSync(newRequest);
 
                     final HttpTransactionContext newContext =
                             context.cloneAndStartTransactionFor(c, newRequest);
@@ -483,14 +447,14 @@ final class AhcEventFilter extends HttpClientFilter {
         if (!context.isReuseConnection()) {
             final Connection c = (Connection) httpContext.getCloseable();
             final ConnectionManager cm = context.provider.getConnectionManager();
-            if (!httpContext.getRequest().getProcessingState().isStayAlive() ||
-                    !cm.canReturnConnection(c) || !cm.returnConnection(context.getAhcRequest(), c)) {
-                //                context.abort());
-                if (maximumPooledConnectionExceededReason == null) {
-                    maximumPooledConnectionExceededReason
-                            = new IOException("Maximum pooled connections exceeded");
+            if (!httpContext.getRequest().getProcessingState().isStayAlive()) {
+                if (notKeepAliveReason == null) {
+                    notKeepAliveReason =
+                            new IOException("HTTP keep-alive was disabled for this connection");
                 }
-                c.closeWithReason(maximumPooledConnectionExceededReason);
+                c.closeWithReason(notKeepAliveReason);
+            } else {
+                cm.returnConnection(c);
             }
         }
     }
@@ -507,49 +471,6 @@ final class AhcEventFilter extends HttpClientFilter {
                 || HttpStatus.PERMANENT_REDIRECT_308.statusMatches(status);
     }
 
-    private static boolean checkKeepAlive(final HttpResponsePacket response) {
-        final int statusCode = response.getStatus();
-        final boolean isExpectContent = response.isExpectContent();
-        
-        boolean keepAlive = !statusDropsConnection(statusCode) ||
-                (!isExpectContent || !response.isChunked() || response.getContentLength() == -1); // double-check the transfer encoding here
-        
-        if (keepAlive) {
-            // Check the Connection header
-            final DataChunk cVal =
-                    response.getHeaders().getValue(Header.Connection);
-            
-            if (response.getProtocol().compareTo(Protocol.HTTP_1_1) < 0) {
-                // HTTP 1.0 response
-                // "Connection: keep-alive" should be specified explicitly
-                keepAlive = cVal != null && cVal.equalsIgnoreCase(KEEPALIVE_BYTES);
-            } else {
-                // HTTP 1.1+
-                // keep-alive by default, if there's no "Connection: close"
-                keepAlive = cVal == null || !cVal.equalsIgnoreCase(CLOSE_BYTES);
-            }
-        }
-        
-        return keepAlive;
-    }
-    
-    /**
-     * Determine if we must drop the connection because of the HTTP status
-     * code. Use the same list of codes as Apache/httpd.
-     */
-    private static boolean statusDropsConnection(int status) {
-        return status == 400 /* SC_BAD_REQUEST */ ||
-               status == 408 /* SC_REQUEST_TIMEOUT */ ||
-               status == 411 /* SC_LENGTH_REQUIRED */ ||
-               status == 413 /* SC_REQUEST_ENTITY_TOO_LARGE */ ||
-               status == 414 /* SC_REQUEST_URI_TOO_LARGE */ ||
-               status == 417 /* FAILED EXPECTATION */ || 
-               status == 500 /* SC_INTERNAL_SERVER_ERROR */ ||
-               status == 503 /* SC_SERVICE_UNAVAILABLE */ ||
-               status == 501 /* SC_NOT_IMPLEMENTED */ ||
-               status == 505 /* SC_VERSION_NOT_SUPPORTED */;
-    }
-    
     // ------------------------------------------------------- Inner Classes
     private static final class AuthorizationHandler implements StatusHandler {
 
@@ -639,7 +560,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 } else {
                     // if it's not keep-alive - take new Connection from the pool
                     final ConnectionManager m = provider.getConnectionManager();
-                    c = m.openConnectionSync(req, httpTransactionContext.future);
+                    c = m.openSync(req);
                 }
                 
                 final Request nextRequest = new RequestBuilder(req)
@@ -778,7 +699,7 @@ final class AhcEventFilter extends HttpClientFilter {
             }
             final ConnectionManager m = provider.getConnectionManager();
             try {
-                final Connection c = m.openConnectionSync(requestToSend, httpTransactionContext.future);
+                final Connection c = m.openSync(requestToSend);
                 if (switchingSchemes(orig, uri)) {
                     try {
                         notifySchemeSwitch(ctx, c, uri);

@@ -15,6 +15,7 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.SSLEngineFactory;
+import java.net.SocketAddress;
 
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -22,6 +23,7 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.glassfish.grizzly.connectionpool.MultiEndpointPool;
 
 /**
  * {@link AsyncHttpProviderConfig} implementation that allows customization
@@ -93,7 +95,7 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
     
     private final Map<Property,Object> attributes = new HashMap<Property,Object>();
 
-    protected ConnectionPool connectionPool;
+    protected MultiEndpointPool<SocketAddress> connectionPool;
 
     private SSLEngineFactory sslEngineFactory;
     
@@ -152,11 +154,11 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
         return attributes.entrySet();
     }
 
-    public ConnectionPool getConnectionPool() {
+    public MultiEndpointPool<SocketAddress> getConnectionPool() {
         return connectionPool;
     }
 
-    public void setConnectionPool(ConnectionPool connectionPool) {
+    public void setConnectionPool(MultiEndpointPool<SocketAddress> connectionPool) {
         this.connectionPool = connectionPool;
     }
     

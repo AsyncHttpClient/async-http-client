@@ -100,7 +100,7 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
         };
     }
     
-    private static void assignHostnameVerifyTask(final Connection connection,
+    public static void assignHostnameVerifyTask(final Connection connection,
             final HostnameVerifier verifier, final String host,
             final CompletionHandler<Connection> delegate) {
         final HostnameVerifierTask task = new HostnameVerifierTask(
@@ -132,9 +132,13 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
             }
 
             if (!verifier.verify(host, session)) {
-                connection.terminateSilently();
-                IOException e = new ConnectException("Host name verification failed for host " + host);
-                delegate.failed(e);
+                final IOException e = new ConnectException(
+                        "Host name verification failed for host " + host);
+                connection.terminateWithReason(e);
+                
+                if (delegate != null) {
+                    delegate.failed(e);
+                }
             }
         }
     }
