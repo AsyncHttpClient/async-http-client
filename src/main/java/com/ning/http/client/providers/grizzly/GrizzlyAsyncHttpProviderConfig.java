@@ -69,8 +69,15 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          * invoked with the complete message.  If this functionality is not desired, set
          * this property to false.
          */
-        BUFFER_WEBSOCKET_FRAGMENTS(Boolean.class, true)
+        BUFFER_WEBSOCKET_FRAGMENTS(Boolean.class, true),
 
+        /**
+         * <tt>true</tt> (default), if an HTTP response has to be decompressed
+         * (if compressed by a server), or <tt>false</tt> if decompression
+         * has to be delegated to a user.
+         */
+        DECOMPRESS_RESPONSE(Boolean.class, true)
+        
         ;
         
         

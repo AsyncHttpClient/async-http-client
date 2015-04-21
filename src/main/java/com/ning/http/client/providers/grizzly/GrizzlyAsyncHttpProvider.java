@@ -80,15 +80,15 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.glassfish.grizzly.http.HttpContext;
+import java.util.concurrent.TimeoutException;
 
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import org.glassfish.grizzly.filterchain.FilterChainEvent;
+import org.glassfish.grizzly.http.HttpContext;
 import com.ning.http.client.providers.grizzly.events.ContinueEvent;
+
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.*;
 import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import java.util.concurrent.TimeoutException;
-import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -337,10 +337,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
         
-        eventFilter.addContentEncoding(
-                new GZipContentEncoding(512,
-                                        512,
-                                        new ClientEncodingFilter()));
+        if ((Boolean) providerConfig.getProperty(DECOMPRESS_RESPONSE)) {
+            eventFilter.addContentEncoding(
+                    new GZipContentEncoding(512,
+                            512,
+                            new ClientEncodingFilter()));
+        }
         
         fcb.add(eventFilter);
         fcb.add(clientFilter);
