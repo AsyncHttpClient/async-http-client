@@ -17,6 +17,7 @@ import static org.asynchttpclient.util.DateUtils.millisTime;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -189,10 +190,13 @@ public final class DefaultChannelPool implements ChannelPool {
                 return;
 
             try {
-                if (LOGGER.isDebugEnabled())
-                    for (String key : partitions.keySet()) {
-                        LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
-                    }
+                if (LOGGER.isDebugEnabled()) {
+                	Enumeration<String> keyEnum = partitions.keys();
+                	while (keyEnum.hasMoreElements()) {
+                		String key = keyEnum.nextElement();
+                		LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
+                	}
+                }
 
                 long start = millisTime();
                 int closedCount = 0;
