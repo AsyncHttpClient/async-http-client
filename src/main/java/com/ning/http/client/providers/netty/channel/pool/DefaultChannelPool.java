@@ -191,7 +191,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
             try {
                 if (LOGGER.isDebugEnabled())
-                    for (String key : partitions.keySet()) {
+                    for (String key : ((Map<String, ConcurrentLinkedQueue<IdleChannel>>) partitions).keySet()) {
                         LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
                     }
 
