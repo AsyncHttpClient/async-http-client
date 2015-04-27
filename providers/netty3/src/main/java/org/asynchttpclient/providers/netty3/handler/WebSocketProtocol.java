@@ -23,6 +23,7 @@ import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty3.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty3.channel.ChannelManager;
@@ -76,13 +77,14 @@ public final class WebSocketProtocol extends Protocol {
             HttpResponse response = (HttpResponse) e;
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
+            Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
                 return;
             }
 
             future.setHttpHeaders(response.headers());
-            if (exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().getCode()))
+            if (exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().getCode(), realm))
                 return;
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);

@@ -440,7 +440,7 @@ public final class HttpProtocol extends Protocol {
                 || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
                 exitAfterHandling407(channel, future, response, request, statusCode, realm, proxyServer) || //
                 exitAfterHandling100(channel, future, statusCode) || //
-                exitAfterHandlingRedirect(channel, future, response, request, statusCode) || //
+                exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm) || //
                 exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
                 exitAfterHandlingStatus(channel, future, response, handler, status) || //
                 exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders) || //

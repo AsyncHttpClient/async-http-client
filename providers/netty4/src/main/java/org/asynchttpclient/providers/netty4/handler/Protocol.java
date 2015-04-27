@@ -13,7 +13,11 @@
  */
 package org.asynchttpclient.providers.netty4.handler;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
@@ -35,6 +39,8 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.MaxRedirectException;
+import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.Cookie;
@@ -90,13 +96,17 @@ public abstract class Protocol {
 
     public abstract void onClose(NettyResponseFuture<?> future);
 
-    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, boolean switchToGet) {
+    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
         
         FluentCaseInsensitiveStringsMap originalHeaders = request.getHeaders();
         originalHeaders.remove(HOST);
         originalHeaders.remove(CONTENT_LENGTH);
         if (switchToGet)
             originalHeaders.remove(CONTENT_TYPE);
+        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+            originalHeaders.remove(AUTHORIZATION);
+            originalHeaders.remove(PROXY_AUTHORIZATION);
+        }
         return originalHeaders;
     }
 
@@ -105,7 +115,8 @@ public abstract class Protocol {
             NettyResponseFuture<?> future,//
             HttpResponse response,//
             Request request,//
-            int statusCode) throws Exception {
+            int statusCode,//
+            Realm realm) throws Exception {
 
         if (followRedirect(config, request) && REDIRECT_STATUSES.contains(statusCode)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
@@ -146,7 +157,7 @@ public abstract class Protocol {
                             requestBuilder.addOrReplaceCookie(c);
                     }
 
-                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), switchToGet));
+                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
                     final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
