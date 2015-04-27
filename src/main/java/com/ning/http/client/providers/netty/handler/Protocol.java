@@ -16,11 +16,8 @@ package com.ning.http.client.providers.netty.handler;
 import static com.ning.http.client.providers.netty.util.HttpUtils.HTTP;
 import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
 import static com.ning.http.util.AsyncHttpProviderUtils.followRedirect;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -34,6 +31,8 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.cookie.Cookie;
@@ -91,13 +90,17 @@ public abstract class Protocol {
 
     public abstract void onClose(NettyResponseFuture<?> future);
 
-    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, boolean switchToGet) {
-        
+    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
+
         FluentCaseInsensitiveStringsMap originalHeaders = request.getHeaders();
         originalHeaders.remove(HOST);
         originalHeaders.remove(CONTENT_LENGTH);
         if (switchToGet)
             originalHeaders.remove(CONTENT_TYPE);
+        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+            originalHeaders.remove(AUTHORIZATION);
+            originalHeaders.remove(PROXY_AUTHORIZATION);
+        }
         return originalHeaders;
     }
 
@@ -106,7 +109,8 @@ public abstract class Protocol {
             final NettyResponseFuture<?> future,//
             HttpResponse response,//
             Request request,//
-            int statusCode) throws Exception {
+            int statusCode,//
+            Realm realm) throws Exception {
 
         if (followRedirect(config, request) && REDIRECT_STATUSES.contains(statusCode)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
@@ -147,7 +151,7 @@ public abstract class Protocol {
                             requestBuilder.addOrReplaceCookie(c);
                     }
 
-                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), switchToGet));
+                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
                     final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
