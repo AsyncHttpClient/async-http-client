@@ -13,7 +13,7 @@
 package org.asynchttpclient.util;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -32,12 +32,8 @@ import org.asynchttpclient.uri.Uri;
  */
 public class AsyncHttpProviderUtils {
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
-    static {
-        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
-        CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
-    }
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = buildStaticIOException("Remotely closed");
+    public static final IOException CHANNEL_CLOSED_EXCEPTION = buildStaticIOException("Channel closed");
 
     private final static byte[] NO_BYTES = new byte[0];
 

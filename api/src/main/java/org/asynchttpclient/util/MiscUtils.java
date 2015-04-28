@@ -59,7 +59,7 @@ public class MiscUtils {
             }
     }
 
-    public static IOException buildStaticException(String message) {
+    public static IOException buildStaticIOException(String message) {
         IOException ioe = new IOException(message);
         ioe.setStackTrace(new StackTraceElement[] {});
         return ioe;
