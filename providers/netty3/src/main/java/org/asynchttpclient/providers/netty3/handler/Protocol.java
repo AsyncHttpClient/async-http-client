@@ -15,16 +15,9 @@ package org.asynchttpclient.providers.netty3.handler;
 
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.HTTP;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -165,7 +158,7 @@ public abstract class Protocol {
                         
                         boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
                                 && request.getUri().getHost().equals(nextRequest.getUri().getHost())
-                                && request.getUri().getPort() == nextRequest.getUri().getPort();
+                                && getDefaultPort(request.getUri()) == getDefaultPort(nextRequest.getUri());
 
                         if (redirectToSameHost) {
                             future.setReuseChannel(true);

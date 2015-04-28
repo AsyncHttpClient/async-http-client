@@ -13,18 +13,11 @@
  */
 package org.asynchttpclient.providers.netty4.handler;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.HTTP;
 import static org.asynchttpclient.providers.netty.commons.util.HttpUtils.WEBSOCKET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -166,7 +159,7 @@ public abstract class Protocol {
                         
                         boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
                                 && request.getUri().getHost().equals(nextRequest.getUri().getHost())
-                                && request.getUri().getPort() == nextRequest.getUri().getPort();
+                                && getDefaultPort(request.getUri()) == getDefaultPort(nextRequest.getUri());
 
                         if (redirectToSameHost) {
                             future.setReuseChannel(true);
