@@ -158,9 +158,7 @@ public abstract class Protocol {
 
                     if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
                         
-                        boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
-                                && request.getUri().getHost().equals(nextRequest.getUri().getHost())
-                                && getDefaultPort(request.getUri()) == getDefaultPort(nextRequest.getUri());
+                        boolean redirectToSameHost = isSameHostAndProtocol(request.getUri(), nextRequest.getUri());
 
                         if (redirectToSameHost) {
                             future.setReuseChannel(true);

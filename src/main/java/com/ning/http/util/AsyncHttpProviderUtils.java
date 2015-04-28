@@ -91,6 +91,12 @@ public class AsyncHttpProviderUtils {
         return bodyParts.isEmpty() ? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
 
+    public final static boolean isSameHostAndProtocol(Uri uri1, Uri uri2) {
+        return uri1.getScheme().equals(uri2.getScheme())
+                && uri1.getHost().equals(uri2.getHost())
+                && getDefaultPort(uri1) == getDefaultPort(uri2);
+    }
+
     public final static int getDefaultPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
