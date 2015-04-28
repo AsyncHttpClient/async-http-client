@@ -13,6 +13,8 @@
  */
 package com.ning.http.client.providers.netty.handler;
 
+import static com.ning.http.util.MiscUtils.buildStaticIOException;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -40,10 +42,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = new IOException("Channel closed");
-    static {
-        CHANNEL_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
-    }
+    public static final IOException CHANNEL_CLOSED_EXCEPTION = buildStaticIOException("Channel closed");
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;

@@ -81,7 +81,6 @@ public abstract class Protocol {
         hasResponseFilters = !config.getResponseFilters().isEmpty();
         hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
         maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
-        maxRedirectException.setStackTrace(new StackTraceElement[] {});
     }
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;

@@ -12,7 +12,7 @@
  */
 package com.ning.http.util;
 
-import static com.ning.http.util.MiscUtils.isNonEmpty;
+import static com.ning.http.util.MiscUtils.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -37,11 +37,7 @@ import java.util.List;
  */
 public class AsyncHttpProviderUtils {
 
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely closed");
-
-    static {
-        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
-    }
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = buildStaticIOException("Remotely closed");
 
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
