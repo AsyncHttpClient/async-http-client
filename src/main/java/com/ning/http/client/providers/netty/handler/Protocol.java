@@ -15,7 +15,7 @@ package com.ning.http.client.providers.netty.handler;
 
 import static com.ning.http.client.providers.netty.util.HttpUtils.HTTP;
 import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
-import static com.ning.http.util.AsyncHttpProviderUtils.followRedirect;
+import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
@@ -160,7 +160,7 @@ public abstract class Protocol {
                         
                         boolean redirectToSameHost = request.getUri().getScheme().equals(nextRequest.getUri().getScheme())
                                 && request.getUri().getHost().equals(nextRequest.getUri().getHost())
-                                && request.getUri().getPort() == nextRequest.getUri().getPort();
+                                && getDefaultPort(request.getUri()) == getDefaultPort(nextRequest.getUri());
 
                         if (redirectToSameHost) {
                             future.setReuseChannel(true);
