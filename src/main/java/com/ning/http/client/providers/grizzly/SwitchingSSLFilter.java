@@ -29,7 +29,8 @@ import org.glassfish.grizzly.ssl.SSLFilter;
  */
 final class SwitchingSSLFilter extends SSLFilter {
     private final boolean secureByDefault;
-    final Attribute<Boolean> CONNECTION_IS_SECURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
+    final Attribute<Boolean> CONNECTION_IS_SECURE =
+            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
     // -------------------------------------------------------- Constructors
 
     SwitchingSSLFilter(final SSLEngineConfigurator clientConfig, final boolean secureByDefault) {

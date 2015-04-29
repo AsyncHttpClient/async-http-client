@@ -19,6 +19,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Realm;
+import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.cookie.CookieDecoder;
@@ -55,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.ning.http.client.providers.netty.util.HttpUtils.getNTLM;
+import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 /**
  * AHC {@link HttpClientFilter} implementation.
@@ -152,7 +154,8 @@ final class AhcEventFilter extends HttpClientFilter {
         final AsyncHandler handler = context.getAsyncHandler();
         if (handler instanceof TransferCompletionHandler) {
             final int written = content.getContent().remaining();
-            final long total = context.totalBodyWritten.addAndGet(written);
+            context.totalBodyWritten += written;
+            final long total = context.totalBodyWritten;
             ((TransferCompletionHandler) handler).onContentWriteProgress(
                     written, total, content.getHttpHeader().getContentLength());
         }
@@ -203,15 +206,13 @@ final class AhcEventFilter extends HttpClientFilter {
                 if (context.statusHandler == null) {
                     context.statusHandler = RedirectHandler.INSTANCE;
                 }
-                context.redirectCount.incrementAndGet();
+                context.redirectCount++;
                 if (redirectCountExceeded(context)) {
                     httpHeader.setSkipRemainder(true);
                     context.abort(new MaxRedirectException());
                 }
             } else {
-                if (context.redirectCount.get() > 0) {
-                    context.redirectCount.set(0);
-                }
+                context.redirectCount = 0;
             }
         }
         final GrizzlyResponseStatus responseStatus =
@@ -460,7 +461,7 @@ final class AhcEventFilter extends HttpClientFilter {
     }
 
     private static boolean redirectCountExceeded(final HttpTransactionContext context) {
-        return context.redirectCount.get() > context.maxRedirectCount;
+        return context.redirectCount > context.maxRedirectCount;
     }
 
     private static boolean isRedirect(final int status) {
@@ -497,10 +498,8 @@ final class AhcEventFilter extends HttpClientFilter {
             final GrizzlyAsyncHttpProvider provider =
                     httpTransactionContext.provider;
                         
-            Realm realm = httpTransactionContext.getAhcRequest().getRealm();
-            if (realm == null) {
-                realm = provider.getClientConfig().getRealm();
-            }
+            Realm realm = getRealm(httpTransactionContext);
+            
             if (realm == null) {
                 httpTransactionContext.invocationStatus = InvocationStatus.STOP;
                 final AsyncHandler ah = httpTransactionContext.getAsyncHandler();
@@ -515,6 +514,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 }
                 return true;
             }
+            
             final Request req = httpTransactionContext.getAhcRequest();
 
             try {
@@ -526,11 +526,14 @@ final class AhcEventFilter extends HttpClientFilter {
                 if (ntlmAuthenticate != null) {
                     // NTLM
                     // Connection-based auth
-                    isContinueAuth = true;
-                    
-                    newRealm = ntlmChallenge(ctx.getConnection(),
+                    isContinueAuth = ntlmChallenge(ctx.getConnection(),
                             ntlmAuthenticate, req,
                             req.getHeaders(), realm);
+                    
+                    newRealm = new Realm.RealmBuilder().clone(realm)//
+                            .setUri(req.getUri())//
+                            .setMethodName(req.getMethod())//
+                            .build();
                 } else {
                     // Request-based auth
                     isContinueAuth = false;
@@ -539,7 +542,6 @@ final class AhcEventFilter extends HttpClientFilter {
 
                     newRealm = new Realm.RealmBuilder()
                             .clone(realm)
-                            .setScheme(realm.getScheme())
                             .setUri(req.getUri())
                             .setMethodName(req.getMethod())
                             .setUsePreemptiveAuth(true)
@@ -564,7 +566,6 @@ final class AhcEventFilter extends HttpClientFilter {
                 }
                 
                 final Request nextRequest = new RequestBuilder(req)
-                        .setHeaders(req.getHeaders())
                         .setRealm(newRealm)
                         .build();
                 
@@ -577,10 +578,8 @@ final class AhcEventFilter extends HttpClientFilter {
                 
                 try {
                     provider.execute(newContext);
-                    return false;
                 } catch (IOException ioe) {
                     newContext.abort(ioe);
-                    return false;
                 }
             } catch (Exception e) {
                 httpTransactionContext.abort(e);
@@ -589,7 +588,7 @@ final class AhcEventFilter extends HttpClientFilter {
             return false;
         }
 
-        private Realm ntlmChallenge(final Connection c,
+        private boolean ntlmChallenge(final Connection c,
                 final String wwwAuth, final Request request,
                 final FluentCaseInsensitiveStringsMap headers,
                 final Realm realm)
@@ -600,18 +599,16 @@ final class AhcEventFilter extends HttpClientFilter {
                 String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg();
 
                 addNTLMAuthorizationHeader(headers, challengeHeader, false);
+                return true;
             } else {
                 // probably receiving Type2Msg, so we issue Type3Msg
                 addType3NTLMAuthorizationHeader(wwwAuth, headers, realm, false);
                 // we mark NTLM as established for the Connection to
                 // avoid preemptive NTLM
                 Utils.setNtlmEstablished(c);
+                
+                return false;
             }
-
-            return new Realm.RealmBuilder().clone(realm)//
-                    .setUri(request.getUri())//
-                    .setMethodName(request.getMethod())//
-                    .build();
         }
     
         private void addNTLMAuthorizationHeader(
@@ -669,24 +666,18 @@ final class AhcEventFilter extends HttpClientFilter {
             if (redirectURL == null) {
                 throw new IllegalStateException("redirect received, but no location header was present");
             }
-            
-            
+                        
             final Request req = httpTransactionContext.getAhcRequest();
             final GrizzlyAsyncHttpProvider provider = httpTransactionContext.provider;
             
-            final Uri orig = httpTransactionContext.lastRedirectURI == null
+            final Uri origUri = httpTransactionContext.lastRedirectUri == null
                     ? req.getUri()
-                    : Uri.create(req.getUri(),
-                            httpTransactionContext.lastRedirectURI);
+                    : httpTransactionContext.lastRedirectUri;
             
-            httpTransactionContext.lastRedirectURI = redirectURL;
-            Request requestToSend;
-            Uri uri = Uri.create(orig, redirectURL);
-            if (!uri.toUrl().equalsIgnoreCase(orig.toUrl())) {
-                requestToSend = newRequest(uri, responsePacket,
-                        httpTransactionContext,
-                        sendAsGet(responsePacket, httpTransactionContext));
-            } else {
+            final Uri redirectUri = Uri.create(origUri, redirectURL);
+            httpTransactionContext.lastRedirectUri = redirectUri;
+            
+            if (redirectUri.equals(origUri)) {
                 httpTransactionContext.statusHandler = null;
                 httpTransactionContext.invocationStatus = InvocationStatus.CONTINUE;
                 try {
@@ -695,28 +686,49 @@ final class AhcEventFilter extends HttpClientFilter {
                 } catch (Exception e) {
                     httpTransactionContext.abort(e);
                 }
+                
                 return true;
             }
-            final ConnectionManager m = provider.getConnectionManager();
+
+            final Request nextRequest = newRequest(httpTransactionContext,
+                    redirectUri, responsePacket,
+                    getRealm(httpTransactionContext),
+                    sendAsGet(responsePacket, httpTransactionContext));
+            
             try {
-                final Connection c = m.openSync(requestToSend);
-                if (switchingSchemes(orig, uri)) {
-                    try {
-                        notifySchemeSwitch(ctx, c, uri);
-                    } catch (IOException ioe) {
-                        httpTransactionContext.abort(ioe);
-                    }
+                responsePacket.setSkipRemainder(true); // ignore the remainder of the response
+                
+                final Connection c;
+
+                // @TODO we may want to ditch the keep-alive connection if the response payload is too large
+                if (responsePacket.getProcessingState().isKeepAlive() &&
+                        isSameHostAndProtocol(origUri, redirectUri)) {
+                    // if it's HTTP keep-alive connection - reuse the
+                    // same Grizzly Connection
+                    c = ctx.getConnection();
+                    httpTransactionContext.reuseConnection();
+                } else {
+                    // if it's not keep-alive - take new Connection from the pool
+                    final ConnectionManager m = provider.getConnectionManager();
+                    c = m.openSync(nextRequest);
                 }
+                
                 final HttpTransactionContext newContext =
                         httpTransactionContext.cloneAndStartTransactionFor(
-                                c, requestToSend);
+                                c, nextRequest);
                 
                 newContext.invocationStatus = InvocationStatus.CONTINUE;
-                provider.execute(newContext);
+                try {
+                    provider.execute(newContext);
+                } catch (IOException ioe) {
+                    newContext.abort(ioe);
+                }
+                
                 return false;
             } catch (Exception e) {
                 httpTransactionContext.abort(e);
             }
+            
             httpTransactionContext.invocationStatus = InvocationStatus.CONTINUE;
             return true;
         }
@@ -734,24 +746,48 @@ final class AhcEventFilter extends HttpClientFilter {
         }
 
         private void notifySchemeSwitch(final FilterChainContext ctx,
-                final Connection c, final Uri uri) throws IOException {
+                final Connection c, final Uri uri) {
             ctx.notifyDownstream(new SSLSwitchingEvent("https".equals(uri.getScheme()), c));
         }
     } // END RedirectHandler
+        
 
     // ----------------------------------------------------- Private Methods
-    private static Request newRequest(final Uri uri,
-            final HttpResponsePacket response,
-            final HttpTransactionContext ctx, boolean asGet) {
-        final RequestBuilder builder = new RequestBuilder(ctx.getAhcRequest());
+    private static Request newRequest(final HttpTransactionContext ctx,
+            final Uri newUri, final HttpResponsePacket response,
+            final Realm realm, boolean asGet) {
+        final Request prototype = ctx.getAhcRequest();
+        final FluentCaseInsensitiveStringsMap prototypeHeaders =
+                prototype.getHeaders();
+        
+        prototypeHeaders.remove(Header.Host.toString());
+        prototypeHeaders.remove(Header.ContentLength.toString());
+        
+        if (asGet)
+            prototypeHeaders.remove(Header.ContentType.toString());
+        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+            prototypeHeaders.remove(Header.Authorization.toString());
+            prototypeHeaders.remove(Header.ProxyAuthorization.toString());
+        }
+        
+        final RequestBuilder builder = new RequestBuilder(prototype);
         if (asGet) {
             builder.setMethod("GET");
         }
-        builder.setUrl(uri.toString());
-        for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
+        builder.setUrl(newUri.toString());
+        for (String cookieStr : response.getHeaders().values(Header.SetCookie)) {
             builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
         }
+                
         return builder.build();
+    }
+    
+    private static Realm getRealm(final HttpTransactionContext httpTransactionContext) {
+        final Realm realm = httpTransactionContext.getAhcRequest().getRealm();
+        
+        return realm != null
+                ? realm
+                : httpTransactionContext.provider.getClientConfig().getRealm();
     }
     
 } // END AsyncHttpClientEventFilter

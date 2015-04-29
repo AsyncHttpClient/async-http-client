@@ -443,7 +443,8 @@ final class PayloadGenFactory {
                         final AsyncHandler ah = context.getAsyncHandler();
                         if (ah instanceof TransferCompletionHandler) {
                             final long written = result.getWrittenSize();
-                            final long total = context.totalBodyWritten.addAndGet(written);
+                            context.totalBodyWritten += written;
+                            final long total = context.totalBodyWritten;
                             ((TransferCompletionHandler) ah).onContentWriteProgress(
                                     written,
                                     total,
