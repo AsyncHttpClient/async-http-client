@@ -97,9 +97,7 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
 
-        // FIXME really useful? Why not do this check when building the request?
-        if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler))
-            throw new IOException("WebSocket method must be a GET");
+        validateWebSocketRequest(request, uri, asyncHandler);
 
         ProxyServer proxyServer = getProxyServer(config, request);
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
@@ -493,9 +491,15 @@ public final class NettyRequestSender {
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
-    // FIXME is this useful? Can't we do that when building the request?
-    private boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        return request.getMethod().equals(HttpMethod.GET.name()) && asyncHandler instanceof WebSocketUpgradeHandler;
+    private void validateWebSocketRequest(Request request, Uri uri, AsyncHandler<?> asyncHandler) {
+        if (asyncHandler instanceof WebSocketUpgradeHandler) {
+            if (!uri.getScheme().startsWith(WEBSOCKET))
+                throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());
+            else if (!request.getMethod().equals(HttpMethod.GET.name()))
+                throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET: " + request.getMethod());
+        } else if (uri.getScheme().startsWith(WEBSOCKET)) {
+            throw new IllegalArgumentException("No WebSocketUpgradeHandler but scheme is " + uri.getScheme());
+        }
     }
 
     private Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
