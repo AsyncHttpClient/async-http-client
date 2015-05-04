@@ -197,7 +197,12 @@ public final class HttpProtocol extends Protocol {
         else
             channelManager.tryToOfferChannelToPool(channel, keepAlive, future.getPartitionId());
 
-        markAsDone(future, channel);
+        try {
+            future.done();
+        } catch (Throwable t) {
+            // Never propagate exception once we know we are done.
+            logger.debug(t.getMessage(), t);
+        }
     }
 
     private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart)
@@ -206,21 +211,6 @@ public final class HttpProtocol extends Protocol {
         if (bodyPart.isUnderlyingConnectionToBeClosed())
             future.setKeepAlive(false);
         return interrupt;
-    }
-
-    private void markAsDone(NettyResponseFuture<?> future, final Channel channel) {
-        // We need to make sure everything is OK before adding the
-        // connection back to the pool.
-        try {
-            future.done();
-        } catch (Throwable t) {
-            // Never propagate exception once we know we are done.
-            logger.debug(t.getMessage(), t);
-        }
-
-        if (!future.isKeepAlive() || !channel.isConnected()) {
-            channelManager.closeChannel(channel);
-        }
     }
 
     private boolean exitAfterHandling401(//
