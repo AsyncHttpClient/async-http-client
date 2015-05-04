@@ -129,24 +129,24 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
         latch.await();
     }
 
-    @Test(timeOut = 60000)
+    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class } )
     public void wrongStatusCode() throws Throwable {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
                 public void onMessage(String message) {
                 }
 
                 @Override
-                public void onOpen(WebSocket websocket) {
+                public void onOpen(org.asynchttpclient.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(org.asynchttpclient.ws.WebSocket websocket) {
                 }
 
                 @Override
@@ -158,11 +158,11 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertNotNull(throwable.get());
-            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+            throw throwable.get();
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class } )
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -191,7 +191,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
             latch.await();
             assertNotNull(throwable.get());
-            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+            throw throwable.get();
         }
     }
 }

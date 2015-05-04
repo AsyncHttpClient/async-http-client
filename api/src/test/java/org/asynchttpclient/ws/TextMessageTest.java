@@ -17,6 +17,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -82,7 +83,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class })
+    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
     public void onFailureTest() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();

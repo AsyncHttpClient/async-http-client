@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.async;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.async.util.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
 import static org.asynchttpclient.util.DateUtils.millisTime;
@@ -24,6 +24,27 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.channels.UnresolvedAddressException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
@@ -41,26 +62,6 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.multipart.StringPart;
 import org.testng.annotations.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.channels.UnresolvedAddressException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
@@ -946,27 +947,27 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider", "async" })
-    public void asyncConnectInvalidHandlerHost() throws Exception {
+    @Test(groups = { "online", "default_provider", "async" }, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
+    public void asyncConnectInvalidHandlerHost() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+
+            final AtomicReference<Throwable> e = new AtomicReference<>();
             final CountDownLatch l = new CountDownLatch(1);
 
             client.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter() {
                 @Override
                 public void onThrowable(Throwable t) {
-                    if (t != null) {
-                        if (t.getClass().equals(ConnectException.class)) {
-                            l.countDown();
-                        } else if (t.getClass().equals(UnresolvedAddressException.class)) {
-                            l.countDown();
-                        }
-                    }
+                    e.set(t);
+                    l.countDown();
                 }
             });
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 fail("Timed out");
             }
+
+            assertNotNull(e.get());
+            throw e.get();
         }
     }
 
