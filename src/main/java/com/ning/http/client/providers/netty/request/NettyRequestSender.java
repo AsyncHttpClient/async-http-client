@@ -97,9 +97,7 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
 
-        // FIXME really useful? Why not do this check when building the request?
-        if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler))
-            throw new IOException("WebSocket method must be a GET");
+        validateWebSocketRequest(request, uri, asyncHandler);
 
         ProxyServer proxyServer = getProxyServer(config, request);
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null
@@ -492,12 +490,19 @@ public final class NettyRequestSender {
         return replayed;
     }
 
-    public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) throws IOException {
+    public <T> void sendNextRequest(Request request, NettyResponseFuture<T> future) throws IOException {
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
-    private boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        return request.getMethod().equals(HttpMethod.GET.getName()) && asyncHandler instanceof WebSocketUpgradeHandler;
+    private void validateWebSocketRequest(Request request, Uri uri, AsyncHandler<?> asyncHandler) {
+        if (asyncHandler instanceof WebSocketUpgradeHandler) {
+            if (!uri.getScheme().startsWith(WEBSOCKET))
+                throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());
+            else if (!request.getMethod().equals(HttpMethod.GET.getName()))
+                throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET: " + request.getMethod());
+        } else if (uri.getScheme().startsWith(WEBSOCKET)) {
+            throw new IllegalArgumentException("No WebSocketUpgradeHandler but scheme is " + uri.getScheme());
+        }
     }
 
     public Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
