@@ -1010,7 +1010,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             });
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timed out");
+                fail("Timed out");
             }
 
             assertNotNull(e.get());
