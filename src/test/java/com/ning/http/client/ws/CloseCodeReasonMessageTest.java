@@ -117,8 +117,9 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
         
         latch.await();
     }
-    
-    @Test(timeOut = 60000)
+
+    // Netty would throw IllegalArgumentException, other providers IllegalStateException
+    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class, IllegalArgumentException.class } )
     public void wrongStatusCode() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -147,11 +148,12 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
             latch.await();
             assertNotNull(throwable.get());
-            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+            throw throwable.get();
         }
     }
 
-    @Test(timeOut = 60000)
+    // Netty would throw IllegalArgumentException, other providers IllegalStateException
+    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class, IllegalArgumentException.class } )
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -180,7 +182,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
             latch.await();
             assertNotNull(throwable.get());
-            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+            throw throwable.get();
         }
     }
 }

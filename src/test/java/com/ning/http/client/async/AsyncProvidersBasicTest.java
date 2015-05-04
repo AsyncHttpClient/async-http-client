@@ -18,10 +18,7 @@ package com.ning.http.client.async;
 import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.DateUtils.millisTime;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -47,6 +44,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -996,27 +994,27 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider", "async" })
+    @Test(groups = { "online", "default_provider", "async" }, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
     public void asyncConnectInvalidHandlerHost() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+
+            final AtomicReference<Throwable> e = new AtomicReference<>();
             final CountDownLatch l = new CountDownLatch(1);
 
             client.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter() {
                 @Override
                 public void onThrowable(Throwable t) {
-                    if (t != null) {
-                        if (t.getClass().equals(ConnectException.class)) {
-                            l.countDown();
-                        } else if (t.getClass().equals(UnresolvedAddressException.class)) {
-                            l.countDown();
-                        }
-                    }
+                    e.set(t);
+                    l.countDown();
                 }
             });
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail("Timed out");
             }
+
+            assertNotNull(e.get());
+            throw e.get();
         }
     }
 
