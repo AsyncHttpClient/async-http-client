@@ -566,6 +566,16 @@ public class Realm {
                     .toString().getBytes("ISO-8859-1"));
             byte[] ha1 = md.digest();
 
+            if ("MD5-sess".equals(algorithm)) {
+                md.update(new StringBuilder(toBase16(ha1))
+                                  .append(":")
+                                  .append(nonce)
+                                  .append(":")
+                                  .append(cnonce)
+                                  .toString().getBytes("ISO-8859-1"));
+                ha1 = md.digest();
+            }
+
             md.reset();
 
             //HA2 if qop is auth-int is methodName:url:md5(entityBody)
