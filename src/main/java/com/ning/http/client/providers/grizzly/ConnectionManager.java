@@ -78,6 +78,7 @@ class ConnectionManager {
                         .maxConnectionsTotal(config.getMaxConnections())
                         .maxConnectionsPerEndpoint(config.getMaxConnectionsPerHost())
                         .keepAliveTimeout(config.getPooledConnectionIdleTimeout(), TimeUnit.MILLISECONDS)
+                        .keepAliveCheckInterval(1, TimeUnit.SECONDS)
                         .connectorHandler(defaultConnectionHandler)
                         .connectionTTL(config.getConnectionTTL(), TimeUnit.MILLISECONDS)
                         .failFastWhenMaxSizeReached(true);
