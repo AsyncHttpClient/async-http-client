@@ -137,8 +137,7 @@ public class CookieDecoder {
 
             } else {
                 // cookie attribute
-                String attrValue = valueBegin == -1 ? null : header.substring(valueBegin, valueEnd);
-                cookieBuilder.appendAttribute(header, nameBegin, nameEnd, attrValue);
+                cookieBuilder.appendAttribute(header, nameBegin, nameEnd, valueBegin, valueEnd);
             }
         }
         return cookieBuilder.cookie();
@@ -188,66 +187,69 @@ public class CookieDecoder {
          *            where the key starts in the header
          * @param keyEnd
          *            where the key ends in the header
-         * @param value
-         *            the decoded value
+         * @param valueBegin
+         *            where the value starts in the header
+         * @param valueEnd
+         *            where the value ends in the header
          */
-        public void appendAttribute(String header, int keyStart, int keyEnd, String value) {
-            setCookieAttribute(header, keyStart, keyEnd, value);
+        public void appendAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
+            setCookieAttribute(header, keyStart, keyEnd, valueBegin, valueEnd);
         }
 
-        private void setCookieAttribute(String header, int keyStart, int keyEnd, String value) {
+        private void setCookieAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
 
             int length = keyEnd - keyStart;
 
             if (length == 4) {
-                parse4(header, keyStart, value);
+                parse4(header, keyStart, valueBegin, valueEnd);
             } else if (length == 6) {
-                parse6(header, keyStart, value);
+                parse6(header, keyStart, valueBegin, valueEnd);
             } else if (length == 7) {
-                parse7(header, keyStart, value);
+                parse7(header, keyStart, valueBegin, valueEnd);
             } else if (length == 8) {
-                parse8(header, keyStart, value);
+                parse8(header, keyStart, valueBegin, valueEnd);
             }
         }
 
-        private void parse4(String header, int nameStart, String value) {
+        private void parse4(String header, int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, PATH, 0, 4)) {
-                path = value;
+                path = computeValue(header, valueBegin, valueEnd);
             }
         }
 
-        private void parse6(String header, int nameStart, String value) {
+        private void parse6(String header, int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, DOMAIN, 0, 5)) {
-                domain = value.length() > 0 ? value.toString() : null;
+                domain = computeValue(header, valueBegin, valueEnd);
             } else if (header.regionMatches(true, nameStart, SECURE, 0, 5)) {
                 secure = true;
             }
         }
 
-        private void setExpire(String value) {
-            expires = value;
-        }
-
-        private void setMaxAge(String value) {
-            try {
-                maxAge = Math.max(Integer.valueOf(value), 0);
-            } catch (NumberFormatException e1) {
-                // ignore failure to parse -> treat as session cookie
-            }
-        }
-
-        private void parse7(String header, int nameStart, String value) {
+        private void parse7(String header, int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, EXPIRES, 0, 7)) {
-                setExpire(value);
+                expires = computeValue(header, valueBegin, valueEnd);
             } else if (header.regionMatches(true, nameStart, MAX_AGE, 0, 7)) {
-                setMaxAge(value);
+                try {
+                    maxAge = Math.max(Integer.valueOf(computeValue(header, valueBegin, valueEnd)), 0);
+                } catch (NumberFormatException e1) {
+                    // ignore failure to parse -> treat as session cookie
+                }
             }
         }
 
-        private void parse8(String header, int nameStart, String value) {
+        private void parse8(String header, int nameStart, int valueBegin, int valueEnd) {
 
             if (header.regionMatches(true, nameStart, HTTPONLY, 0, 8)) {
                 httpOnly = true;
+            }
+        }
+
+        private String computeValue(String header, int valueBegin, int valueEnd) {
+            if (valueBegin == -1 || valueBegin == valueEnd) {
+                return null;
+            } else {
+                String trimmed = header.substring(valueBegin, valueEnd).trim();
+                return trimmed.isEmpty() ? null : trimmed;
             }
         }
     }
