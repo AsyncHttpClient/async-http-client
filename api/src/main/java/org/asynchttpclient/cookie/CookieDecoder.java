@@ -248,8 +248,13 @@ public class CookieDecoder {
             if (valueBegin == -1 || valueBegin == valueEnd) {
                 return null;
             } else {
-                String trimmed = header.substring(valueBegin, valueEnd).trim();
-                return trimmed.isEmpty() ? null : trimmed;
+                while (valueBegin < valueEnd && header.charAt(valueBegin) <= ' ') {
+                    valueBegin++;
+                }
+                while (valueBegin < valueEnd && (header.charAt(valueEnd - 1) <= ' ')) {
+                    valueEnd--;
+                }
+                return valueBegin == valueEnd ? null : header.substring(valueBegin, valueEnd);
             }
         }
     }
