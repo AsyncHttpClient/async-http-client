@@ -102,7 +102,7 @@ public class CookieUtil {
                 return expiresDate.getTime();
         }
         
-        return -1L;
+        return Long.MIN_VALUE;
     }
     
     private CookieUtil() {

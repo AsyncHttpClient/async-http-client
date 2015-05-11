@@ -64,7 +64,7 @@ public class CookieDecoder {
 
             int nameBegin = i;
             int nameEnd = i;
-            int valueBegin = -1;
+            int valueStart = -1;
             int valueEnd = -1;
 
             if (i != headerLen) {
@@ -74,7 +74,7 @@ public class CookieDecoder {
                     if (curChar == ';') {
                         // NAME; (no value till ';')
                         nameEnd = i;
-                        valueBegin = valueEnd = -1;
+                        valueStart = valueEnd = -1;
                         break keyValLoop;
 
                     } else if (curChar == '=') {
@@ -83,11 +83,11 @@ public class CookieDecoder {
                         i++;
                         if (i == headerLen) {
                             // NAME= (empty value, i.e. nothing after '=')
-                            valueBegin = valueEnd = 0;
+                            valueStart = valueEnd = 0;
                             break keyValLoop;
                         }
 
-                        valueBegin = i;
+                        valueStart = i;
                         // NAME=VALUE;
                         int semiPos = header.indexOf(';', i);
                         valueEnd = i = semiPos > 0 ? semiPos : headerLen;
@@ -99,7 +99,7 @@ public class CookieDecoder {
                     if (i == headerLen) {
                         // NAME (no value till the end of string)
                         nameEnd = headerLen;
-                        valueBegin = valueEnd = -1;
+                        valueStart = valueEnd = -1;
                         break;
                     }
                 }
@@ -117,12 +117,12 @@ public class CookieDecoder {
                     return null;
                 }
 
-                if (valueBegin == -1) {
+                if (valueStart == -1) {
                     LOGGER.debug("Skipping cookie with null value");
                     return null;
                 }
 
-                CharSequence wrappedValue = CharBuffer.wrap(header, valueBegin, valueEnd);
+                CharSequence wrappedValue = CharBuffer.wrap(header, valueStart, valueEnd);
                 CharSequence unwrappedValue = unwrapValue(wrappedValue);
                 if (unwrappedValue == null) {
                     LOGGER.debug("Skipping cookie because starting quotes are not properly balanced in '{}'", unwrappedValue);
@@ -131,13 +131,13 @@ public class CookieDecoder {
 
                 final String name = header.substring(nameBegin, nameEnd);
 
-                final boolean wrap = unwrappedValue.length() != valueEnd - valueBegin;
+                final boolean wrap = unwrappedValue.length() != valueEnd - valueStart;
 
-                cookieBuilder = new CookieBuilder(name, unwrappedValue.toString(), wrap);
+                cookieBuilder = new CookieBuilder(name, unwrappedValue.toString(), wrap, header);
 
             } else {
                 // cookie attribute
-                cookieBuilder.appendAttribute(header, nameBegin, nameEnd, valueBegin, valueEnd);
+                cookieBuilder.appendAttribute(nameBegin, nameEnd, valueStart, valueEnd);
             }
         }
         return cookieBuilder.cookie();
@@ -160,101 +160,119 @@ public class CookieDecoder {
         private final String name;
         private final String value;
         private final boolean wrap;
+        private final String header;
         private String domain;
         private String path;
-        private int maxAge = Integer.MIN_VALUE;
-        private String expires;
+        private long maxAge = Long.MIN_VALUE;
+        private int expiresStart;
+        private int expiresEnd;
         private boolean secure;
         private boolean httpOnly;
 
-        public CookieBuilder(String name, String value, boolean wrap) {
+        public CookieBuilder(String name, String value, boolean wrap, String header) {
             this.name = name;
             this.value = value;
             this.wrap = wrap;
+            this.header = header;
         }
 
         public Cookie cookie() {
-            return new Cookie(name, value, wrap, domain, path, computeExpires(expires), maxAge, secure, httpOnly);
+            return new Cookie(name, value, wrap, domain, path, mergeMaxAgeAndExpires(), secure, httpOnly);
         }
 
+        private long mergeMaxAgeAndExpires() {
+            // max age has precedence over expires
+            if (maxAge != Long.MIN_VALUE) {
+                return maxAge;
+            } else {
+                String expires = computeValue(expiresStart, expiresEnd);
+                if (expires != null) {
+                    long expiresMillis = computeExpires(expires);
+                    if (expiresMillis != Long.MIN_VALUE) {
+                        long maxAgeMillis = expiresMillis - System.currentTimeMillis();
+                        return maxAgeMillis / 1000 + (maxAgeMillis % 1000 != 0 ? 1 : 0);
+                    }
+                }
+            }
+            return Long.MIN_VALUE;
+        }
+        
         /**
          * Parse and store a key-value pair. First one is considered to be the
          * cookie name/value. Unknown attribute names are silently discarded.
          *
-         * @param header
-         *            the HTTP header
          * @param keyStart
          *            where the key starts in the header
          * @param keyEnd
          *            where the key ends in the header
-         * @param valueBegin
+         * @param valueStart
          *            where the value starts in the header
          * @param valueEnd
          *            where the value ends in the header
          */
-        public void appendAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
-            setCookieAttribute(header, keyStart, keyEnd, valueBegin, valueEnd);
+        public void appendAttribute(int keyStart, int keyEnd, int valueStart, int valueEnd) {
+            setCookieAttribute(keyStart, keyEnd, valueStart, valueEnd);
         }
 
-        private void setCookieAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
+        private void setCookieAttribute(int keyStart, int keyEnd, int valueStart, int valueEnd) {
 
             int length = keyEnd - keyStart;
 
             if (length == 4) {
-                parse4(header, keyStart, valueBegin, valueEnd);
+                parse4(keyStart, valueStart, valueEnd);
             } else if (length == 6) {
-                parse6(header, keyStart, valueBegin, valueEnd);
+                parse6(keyStart, valueStart, valueEnd);
             } else if (length == 7) {
-                parse7(header, keyStart, valueBegin, valueEnd);
+                parse7(keyStart, valueStart, valueEnd);
             } else if (length == 8) {
-                parse8(header, keyStart, valueBegin, valueEnd);
+                parse8(keyStart, valueStart, valueEnd);
             }
         }
 
-        private void parse4(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse4(int nameStart, int valueStart, int valueEnd) {
             if (header.regionMatches(true, nameStart, PATH, 0, 4)) {
-                path = computeValue(header, valueBegin, valueEnd);
+                path = computeValue(valueStart, valueEnd);
             }
         }
 
-        private void parse6(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse6(int nameStart, int valueStart, int valueEnd) {
             if (header.regionMatches(true, nameStart, DOMAIN, 0, 5)) {
-                domain = computeValue(header, valueBegin, valueEnd);
+                domain = computeValue(valueStart, valueEnd);
             } else if (header.regionMatches(true, nameStart, SECURE, 0, 5)) {
                 secure = true;
             }
         }
 
-        private void parse7(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse7(int nameStart, int valueStart, int valueEnd) {
             if (header.regionMatches(true, nameStart, EXPIRES, 0, 7)) {
-                expires = computeValue(header, valueBegin, valueEnd);
+                expiresStart = valueStart;
+                expiresEnd = valueEnd;
             } else if (header.regionMatches(true, nameStart, MAX_AGE, 0, 7)) {
                 try {
-                    maxAge = Math.max(Integer.valueOf(computeValue(header, valueBegin, valueEnd)), 0);
+                    maxAge = Math.max(Integer.valueOf(computeValue(valueStart, valueEnd)), 0);
                 } catch (NumberFormatException e1) {
                     // ignore failure to parse -> treat as session cookie
                 }
             }
         }
 
-        private void parse8(String header, int nameStart, int valueBegin, int valueEnd) {
-
+        private void parse8(int nameStart, int valueStart, int valueEnd) {
             if (header.regionMatches(true, nameStart, HTTPONLY, 0, 8)) {
                 httpOnly = true;
             }
         }
 
-        private String computeValue(String header, int valueBegin, int valueEnd) {
-            if (valueBegin == -1 || valueBegin == valueEnd) {
+        private String computeValue(int valueStart, int valueEnd) {
+            if (valueStart == -1 || valueStart == valueEnd) {
                 return null;
             } else {
-                while (valueBegin < valueEnd && header.charAt(valueBegin) <= ' ') {
-                    valueBegin++;
+                while (valueStart < valueEnd && header.charAt(valueStart) <= ' ') {
+                    valueStart++;
                 }
-                while (valueBegin < valueEnd && (header.charAt(valueEnd - 1) <= ' ')) {
+                while (valueStart < valueEnd && (header.charAt(valueEnd - 1) <= ' ')) {
                     valueEnd--;
                 }
-                return valueBegin == valueEnd ? null : header.substring(valueBegin, valueEnd);
+                return valueStart == valueEnd ? null : header.substring(valueStart, valueEnd);
             }
         }
     }
