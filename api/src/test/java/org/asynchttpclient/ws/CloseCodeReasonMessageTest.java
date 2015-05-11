@@ -162,7 +162,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class } )
+    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class } )
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             final CountDownLatch latch = new CountDownLatch(1);
