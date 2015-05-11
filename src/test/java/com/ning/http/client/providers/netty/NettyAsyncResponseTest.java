@@ -88,7 +88,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getExpires(), -1L);
+        assertEquals(cookie.getExpires(), Integer.MIN_VALUE);
     }
 
 }
