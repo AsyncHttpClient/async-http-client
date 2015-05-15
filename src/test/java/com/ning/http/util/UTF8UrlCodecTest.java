@@ -22,19 +22,19 @@ public class UTF8UrlCodecTest {
 
     @Test(groups = "fast")
     public void testBasics() {
-        Assert.assertEquals(UTF8UrlEncoder.encode("foobar"), "foobar");
-        Assert.assertEquals(UTF8UrlEncoder.encode("a&b"), "a%26b");
-        Assert.assertEquals(UTF8UrlEncoder.encode("a+b"), "a%2Bb");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("foobar"), "foobar");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
     }
 
     @Test(groups = "fast")
     public void testNonBmp() {
         // Plane 1
-        Assert.assertEquals(UTF8UrlEncoder.encode("\uD83D\uDCA9"), "%F0%9F%92%A9");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("\uD83D\uDCA9"), "%F0%9F%92%A9");
         // Plane 2
-        Assert.assertEquals(UTF8UrlEncoder.encode("\ud84c\uddc8 \ud84f\udfef"), "%F0%A3%87%88%20%F0%A3%BF%AF");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("\ud84c\uddc8 \ud84f\udfef"), "%F0%A3%87%88%20%F0%A3%BF%AF");
         // Plane 15
-        Assert.assertEquals(UTF8UrlEncoder.encode("\udb80\udc01"), "%F3%B0%80%81");
+        Assert.assertEquals(UTF8UrlEncoder.encodeQueryElement("\udb80\udc01"), "%F3%B0%80%81");
     }
 
     @Test(groups = "fast")

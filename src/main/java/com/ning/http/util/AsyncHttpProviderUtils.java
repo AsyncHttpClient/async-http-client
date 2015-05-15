@@ -86,7 +86,6 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    @SuppressWarnings("resource")
     public final static InputStream contentToInputStream(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
         return bodyParts.isEmpty() ? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
@@ -189,15 +188,6 @@ public class AsyncHttpProviderUtils {
         if (value != null) {
             sb.append('=');
             UTF8UrlEncoder.encodeAndAppendFormElement(sb, value);
-        }
-        sb.append('&');
-    }
-
-    public static void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, name);
-        if (value != null) {
-            sb.append('=');
-            UTF8UrlEncoder.encodeAndAppendQueryElement(sb, value);
         }
         sb.append('&');
     }

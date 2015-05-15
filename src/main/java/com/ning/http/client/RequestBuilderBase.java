@@ -24,7 +24,7 @@ import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.QueryComputer;
+import com.ning.http.util.UriEncoder;
 
 import java.io.File;
 import java.io.InputStream;
@@ -278,29 +278,29 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private final Class<T> derived;
     protected final RequestImpl request;
-    protected QueryComputer queryComputer;
+    protected UriEncoder uriEncoder;
     protected List<Param> queryParams;
     protected SignatureCalculator signatureCalculator;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
-        this(derived, method, QueryComputer.queryComputer(disableUrlEncoding));
+        this(derived, method, UriEncoder.uriEncoder(disableUrlEncoding));
     }
 
-    protected RequestBuilderBase(Class<T> derived, String method, QueryComputer queryComputer) {
+    protected RequestBuilderBase(Class<T> derived, String method, UriEncoder uriEncoder) {
         this.derived = derived;
         request = new RequestImpl();
         request.method = method;
-        this.queryComputer = queryComputer;
+        this.uriEncoder = uriEncoder;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
-        this(derived, prototype, QueryComputer.URL_ENCODING_ENABLED_QUERY_COMPUTER);
+        this(derived, prototype, UriEncoder.FIXING);
     }
 
-    protected RequestBuilderBase(Class<T> derived, Request prototype, QueryComputer queryComputer) {
+    protected RequestBuilderBase(Class<T> derived, Request prototype, UriEncoder uriEncoder) {
         this.derived = derived;
         request = new RequestImpl(prototype);
-        this.queryComputer = queryComputer;
+        this.uriEncoder = uriEncoder;
     }
     
     public T setUrl(String url) {
@@ -627,15 +627,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private void computeFinalUri() {
 
-        if (request.uri == null) {
+        Uri originalUri = request.uri;
+        if (originalUri == null) {
             logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             request.uri = DEFAULT_REQUEST_URL;
         }
 
-        AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
+        AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
-        String newQuery = queryComputer.computeFullQueryString(request.uri.getQuery(), queryParams);
-        request.uri = request.uri.withNewQuery(newQuery);
+        request.uri =  uriEncoder.encode(originalUri, queryParams);
     }
 
     public Request build() {

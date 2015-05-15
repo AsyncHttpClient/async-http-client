@@ -17,7 +17,7 @@ package com.ning.http.client;
 
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
-import com.ning.http.util.QueryComputer;
+import com.ning.http.util.UriEncoder;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -43,16 +43,16 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(RequestBuilder.class, method, disableUrlEncoding);
     }
 
-    public RequestBuilder(String method, QueryComputer queryComputer) {
-        super(RequestBuilder.class, method, queryComputer);
+    public RequestBuilder(String method, UriEncoder uriEncoder) {
+        super(RequestBuilder.class, method, uriEncoder);
     }
 
     public RequestBuilder(Request prototype) {
         super(RequestBuilder.class, prototype);
     }
 
-    public RequestBuilder(Request prototype, QueryComputer queryComputer) {
-        super(RequestBuilder.class, prototype, queryComputer);
+    public RequestBuilder(Request prototype, UriEncoder uriEncoder) {
+        super(RequestBuilder.class, prototype, uriEncoder);
     }
     
     // Note: For now we keep the delegates in place even though they are not needed

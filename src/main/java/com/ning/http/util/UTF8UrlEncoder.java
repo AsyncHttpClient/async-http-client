@@ -29,6 +29,8 @@ public final class UTF8UrlEncoder {
      */
     public final static BitSet RFC3986_UNRESERVED_CHARS = new BitSet(256);
     public final static BitSet RFC3986_RESERVED_CHARS = new BitSet(256);
+    public final static BitSet RFC3986_SUBDELIM_CHARS = new BitSet(256);
+    public final static BitSet BUILT_PATH_UNTOUCHED_CHARS = new BitSet(256);
     public final static BitSet BUILT_QUERY_UNTOUCHED_CHARS = new BitSet(256);
     // http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
     public final static BitSet FORM_URL_ENCODED_SAFE_CHARS = new BitSet(256);
@@ -51,6 +53,18 @@ public final class UTF8UrlEncoder {
         RFC3986_UNRESERVED_CHARS.set('_');
         RFC3986_UNRESERVED_CHARS.set('~');
 
+        RFC3986_SUBDELIM_CHARS.set('!');
+        RFC3986_SUBDELIM_CHARS.set('$');
+        RFC3986_SUBDELIM_CHARS.set('&');
+        RFC3986_SUBDELIM_CHARS.set('\'');
+        RFC3986_SUBDELIM_CHARS.set('(');
+        RFC3986_SUBDELIM_CHARS.set(')');
+        RFC3986_SUBDELIM_CHARS.set('*');
+        RFC3986_SUBDELIM_CHARS.set('+');
+        RFC3986_SUBDELIM_CHARS.set(',');
+        RFC3986_SUBDELIM_CHARS.set(';');
+        RFC3986_SUBDELIM_CHARS.set('=');
+        
         FORM_URL_ENCODED_SAFE_CHARS.set('-');
         FORM_URL_ENCODED_SAFE_CHARS.set('.');
         FORM_URL_ENCODED_SAFE_CHARS.set('_');
@@ -74,7 +88,14 @@ public final class UTF8UrlEncoder {
         RFC3986_RESERVED_CHARS.set('#');
         RFC3986_RESERVED_CHARS.set('[');
         RFC3986_RESERVED_CHARS.set(']');
-        
+
+        BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_UNRESERVED_CHARS);
+        BUILT_PATH_UNTOUCHED_CHARS.set('%');
+        BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_SUBDELIM_CHARS);
+        BUILT_PATH_UNTOUCHED_CHARS.set(':');
+        BUILT_PATH_UNTOUCHED_CHARS.set('@');
+        BUILT_PATH_UNTOUCHED_CHARS.set('/');
+
         BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_UNRESERVED_CHARS);
         BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_RESERVED_CHARS);
         BUILT_QUERY_UNTOUCHED_CHARS.set('%');
@@ -85,14 +106,20 @@ public final class UTF8UrlEncoder {
     private UTF8UrlEncoder() {
     }
 
-    public static String encode(String input) {
-        StringBuilder sb = new StringBuilder(input.length() + 16);
-        encodeAndAppendQueryElement(sb, input);
+    public static String encodePath(String input) {
+        StringBuilder sb = new StringBuilder(input.length() + 6);
+        appendEncoded(sb, input, BUILT_PATH_UNTOUCHED_CHARS, false);
         return sb.toString();
     }
-
+    
     public static StringBuilder encodeAndAppendQuery(StringBuilder sb, String query) {
         return appendEncoded(sb, query, BUILT_QUERY_UNTOUCHED_CHARS, false);
+    }
+
+    public static String encodeQueryElement(String input) {
+        StringBuilder sb = new StringBuilder(input.length() + 6);
+        encodeAndAppendQueryElement(sb, input);
+        return sb.toString();
     }
 
     public static StringBuilder encodeAndAppendQueryElement(StringBuilder sb, CharSequence input) {
