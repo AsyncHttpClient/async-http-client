@@ -12,24 +12,37 @@
  */
 package org.asynchttpclient.util;
 
-import java.util.List;
-
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.encodeAndAppendQueryParam;
 import static org.asynchttpclient.util.UTF8UrlEncoder.encodeAndAppendQuery;
 
 import org.asynchttpclient.Param;
+import org.asynchttpclient.uri.Uri;
 
-public enum QueryComputer {
+import java.util.List;
 
-    URL_ENCODING_ENABLED_QUERY_COMPUTER {
+public enum UriEncoder {
 
-        private final void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
+    FIXING {
+
+        public String encodePath(String path) {
+            return UTF8UrlEncoder.encodePath(path);
+        }
+
+        private void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+            UTF8UrlEncoder.encodeAndAppendQueryElement(sb, name);
+            if (value != null) {
+                sb.append('=');
+                UTF8UrlEncoder.encodeAndAppendQueryElement(sb, value);
+            }
+            sb.append('&');
+        }
+
+        private void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
             for (Param param : queryParams)
                 encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
         }
-        
-        protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
+
+        protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
             StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
@@ -39,14 +52,14 @@ public enum QueryComputer {
             return sb.toString();
         }
 
-        protected final String withQueryWithoutParams(final String query) {
+        protected String withQueryWithoutParams(final String query) {
             // encode query
             StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQuery(sb, query);
             return sb.toString();
         }
 
-        protected final String withoutQueryWithParams(final List<Param> queryParams) {
+        protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate encoded query params
             StringBuilder sb = StringUtils.stringBuilder();
             encodeAndAppendQueryParams(sb, queryParams);
@@ -55,21 +68,25 @@ public enum QueryComputer {
         }
     }, //
 
-    URL_ENCODING_DISABLED_QUERY_COMPUTER {
+    RAW {
 
-        private final void appendRawQueryParam(StringBuilder sb, String name, String value) {
+        public String encodePath(String path) {
+            return path;
+        }
+
+        private void appendRawQueryParam(StringBuilder sb, String name, String value) {
             sb.append(name);
             if (value != null)
                 sb.append('=').append(value);
             sb.append('&');
         }
-        
-        private final void appendRawQueryParams(final StringBuilder sb, final List<Param> queryParams) {
+
+        private void appendRawQueryParams(final StringBuilder sb, final List<Param> queryParams) {
             for (Param param : queryParams)
                 appendRawQueryParam(sb, param.getName(), param.getValue());
         }
-        
-        protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
+
+        protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
             StringBuilder sb = StringUtils.stringBuilder();
             sb.append(query);
@@ -78,12 +95,12 @@ public enum QueryComputer {
             return sb.toString();
         }
 
-        protected final String withQueryWithoutParams(final String query) {
+        protected String withQueryWithoutParams(final String query) {
             // return raw query as is
             return query;
         }
 
-        protected final String withoutQueryWithParams(final List<Param> queryParams) {
+        protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate raw queryParams
             StringBuilder sb = StringUtils.stringBuilder();
             appendRawQueryParams(sb, queryParams);
@@ -92,8 +109,8 @@ public enum QueryComputer {
         }
     };
 
-    public static QueryComputer queryComputer(boolean disableUrlEncoding) {
-        return disableUrlEncoding ? URL_ENCODING_DISABLED_QUERY_COMPUTER : URL_ENCODING_ENABLED_QUERY_COMPUTER;
+    public static UriEncoder uriEncoder(boolean disableUrlEncoding) {
+        return disableUrlEncoding ? RAW : FIXING;
     }
 
     protected abstract String withQueryWithParams(final String query, final List<Param> queryParams);
@@ -110,7 +127,20 @@ public enum QueryComputer {
         return isNonEmpty(queryParams) ? withoutQueryWithParams(queryParams) : null;
     }
 
-    public final String computeFullQueryString(final String query, final List<Param> queryParams) {
+    public Uri encode(Uri uri, List<Param> queryParams) {
+        String newPath = encodePath(uri.getPath());
+        String newQuery = encodeQuery(uri.getQuery(), queryParams);
+        return new Uri(uri.getScheme(),//
+                uri.getUserInfo(),//
+                uri.getHost(),//
+                uri.getPort(),//
+                newPath,//
+                newQuery);
+    }
+
+    protected abstract String encodePath(String path);
+
+    private final String encodeQuery(final String query, final List<Param> queryParams) {
         return isNonEmpty(query) ? withQuery(query, queryParams) : withoutQuery(queryParams);
     }
 }

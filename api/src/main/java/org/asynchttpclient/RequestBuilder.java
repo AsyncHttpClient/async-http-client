@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.util.QueryComputer;
+import org.asynchttpclient.util.UriEncoder;
 
 /**
  * Builder for a {@link Request}.
@@ -43,16 +43,16 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(RequestBuilder.class, method, disableUrlEncoding);
     }
 
-    public RequestBuilder(String method, QueryComputer queryComputer) {
-        super(RequestBuilder.class, method, queryComputer);
+    public RequestBuilder(String method, UriEncoder uriEncoder) {
+        super(RequestBuilder.class, method, uriEncoder);
     }
 
     public RequestBuilder(Request prototype) {
         super(RequestBuilder.class, prototype);
     }
 
-    public RequestBuilder(Request prototype, QueryComputer queryComputer) {
-        super(RequestBuilder.class, prototype, queryComputer);
+    public RequestBuilder(Request prototype, UriEncoder uriEncoder) {
+        super(RequestBuilder.class, prototype, uriEncoder);
     }
     
     // Note: For now we keep the delegates in place even though they are not needed

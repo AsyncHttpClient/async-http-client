@@ -230,7 +230,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         }
 
         public OAuthParameterSet add(String key, String value) {
-            Parameter p = new Parameter(UTF8UrlEncoder.encode(key), UTF8UrlEncoder.encode(value));
+            Parameter p = new Parameter(UTF8UrlEncoder.encodeQueryElement(key), UTF8UrlEncoder.encodeQueryElement(value));
             allParameters.add(p);
             return this;
         }

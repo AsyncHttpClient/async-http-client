@@ -170,13 +170,4 @@ public class AsyncHttpProviderUtils {
         }
         sb.append('&');
     }
-
-    public static void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, name);
-        if (value != null) {
-            sb.append('=');
-            UTF8UrlEncoder.encodeAndAppendQueryElement(sb, value);
-        }
-        sb.append('&');
-    }
 }
