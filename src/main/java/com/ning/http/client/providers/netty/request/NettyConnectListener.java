@@ -65,7 +65,10 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private void writeRequest(Channel channel) {
 
-        LOGGER.debug("Request using non cached Channel '{}':\n{}\n", channel, future.getNettyRequest().getHttpRequest());
+        LOGGER.debug("Using non-cached Channel {} for {} '{}'",
+                channel,
+                future.getNettyRequest().getHttpRequest().getMethod(),
+                future.getNettyRequest().getHttpRequest().getUri());
 
         Channels.setAttribute(channel, future);
 
