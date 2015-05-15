@@ -12,11 +12,15 @@
  */
 package org.asynchttpclient.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+
+import org.asynchttpclient.FluentStringsMap;
+import org.asynchttpclient.Param;
 
 public abstract class PartBase implements Part {
 
@@ -49,6 +53,11 @@ public abstract class PartBase implements Part {
      * The disposition type (part of Content-Disposition)
      */
     private String dispositionType;
+
+    /**
+     * Additional part headers
+     */
+    private FluentStringsMap customHeaders;
 
     /**
      * Constructor.
@@ -116,7 +125,17 @@ public abstract class PartBase implements Part {
         }
     }
 
-    protected void visitEndOfHeader(PartVisitor visitor) throws IOException {
+    protected void visitCustomHeaders(PartVisitor visitor) throws IOException {
+        if (isNonEmpty(customHeaders)) {
+            for (Param param: customHeaders.toParams()) {
+                visitor.withBytes(CRLF_BYTES);
+                visitor.withBytes(param.getName().getBytes(US_ASCII));
+                visitor.withBytes(param.getValue().getBytes(US_ASCII));
+            }
+        }
+    }
+
+    protected void visitEndOfHeaders(PartVisitor visitor) throws IOException {
         visitor.withBytes(CRLF_BYTES);
         visitor.withBytes(CRLF_BYTES);
     }
@@ -148,7 +167,8 @@ public abstract class PartBase implements Part {
         visitContentTypeHeader(visitor);
         visitTransferEncodingHeader(visitor);
         visitContentIdHeader(visitor);
-        visitEndOfHeader(visitor);
+        visitCustomHeaders(visitor);
+        visitEndOfHeaders(visitor);
         sendData(visitor.getOutputStream());
         visitEnd(visitor);
     }
@@ -172,7 +192,8 @@ public abstract class PartBase implements Part {
                 visitContentTypeHeader(visitor);
                 visitTransferEncodingHeader(visitor);
                 visitContentIdHeader(visitor);
-                visitEndOfHeader(visitor);
+                visitCustomHeaders(visitor);
+                visitEndOfHeaders(visitor);
                 visitEnd(visitor);
                 return dataLength + visitor.getCount();
             }
@@ -226,5 +247,12 @@ public abstract class PartBase implements Part {
 
     public void setDispositionType(String dispositionType) {
         this.dispositionType = dispositionType;
+    }
+
+    public void addCustomHeader(String name, String value) {
+        if (customHeaders == null) {
+            customHeaders = new FluentStringsMap();
+        }
+        customHeaders.add(name, value);
     }
 }
