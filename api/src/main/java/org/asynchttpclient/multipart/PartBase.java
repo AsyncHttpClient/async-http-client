@@ -18,8 +18,9 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.Param;
 
 public abstract class PartBase implements Part {
@@ -57,7 +58,7 @@ public abstract class PartBase implements Part {
     /**
      * Additional part headers
      */
-    private FluentStringsMap customHeaders;
+    private List<Param> customHeaders;
 
     /**
      * Constructor.
@@ -127,7 +128,7 @@ public abstract class PartBase implements Part {
 
     protected void visitCustomHeaders(PartVisitor visitor) throws IOException {
         if (isNonEmpty(customHeaders)) {
-            for (Param param: customHeaders.toParams()) {
+            for (Param param: customHeaders) {
                 visitor.withBytes(CRLF_BYTES);
                 visitor.withBytes(param.getName().getBytes(US_ASCII));
                 visitor.withBytes(param.getValue().getBytes(US_ASCII));
@@ -251,8 +252,8 @@ public abstract class PartBase implements Part {
 
     public void addCustomHeader(String name, String value) {
         if (customHeaders == null) {
-            customHeaders = new FluentStringsMap();
+            customHeaders = new ArrayList<Param>(2);
         }
-        customHeaders.add(name, value);
+        customHeaders.add(new Param(name, value));
     }
 }
