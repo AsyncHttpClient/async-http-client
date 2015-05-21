@@ -208,7 +208,7 @@ class ConnectionManager {
     private static String getPartitionId(Request request,
             ProxyServer proxyServer) {
         return request.getConnectionPoolPartitioning()
-                .getPartitionId(request.getUri(), proxyServer);
+                .getPartitionKey(request.getUri(), proxyServer).toString();
     }
 
     private static int getPort(final String scheme, final int p) {

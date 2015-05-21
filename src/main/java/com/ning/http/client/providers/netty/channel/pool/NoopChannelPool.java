@@ -18,12 +18,12 @@ import org.jboss.netty.channel.Channel;
 public class NoopChannelPool implements ChannelPool {
 
     @Override
-    public boolean offer(Channel connection, String partition) {
+    public boolean offer(Channel connection, Object partitionKey) {
         return false;
     }
 
     @Override
-    public Channel poll(String uri) {
+    public Channel poll(Object partitionKey) {
         return null;
     }
 
@@ -42,7 +42,7 @@ public class NoopChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartition(String partitionId) {
+    public void flushPartition(Object partitionKey) {
     }
 
     @Override

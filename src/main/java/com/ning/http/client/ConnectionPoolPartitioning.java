@@ -17,13 +17,13 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 
 public interface ConnectionPoolPartitioning {
 
-	String getPartitionId(Uri uri, ProxyServer proxyServer);
+	Object getPartitionKey(Uri uri, ProxyServer proxyServer);
 	
 	public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
 	    INSTANCE;
 	    
-	    public String getPartitionId(Uri uri, ProxyServer proxyServer) {
+	    public String getPartitionKey(Uri uri, ProxyServer proxyServer) {
 	        String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
 	        return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
 	    }

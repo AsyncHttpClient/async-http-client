@@ -15,5 +15,5 @@ package com.ning.http.client.providers.netty.channel.pool;
 
 public interface ChannelPoolPartitionSelector {
 
-   boolean select(String partitionId); 
+   boolean select(Object partitionKey); 
 }

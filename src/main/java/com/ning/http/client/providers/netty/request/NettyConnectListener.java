@@ -40,27 +40,27 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     private final NettyRequestSender requestSender;
     private final ChannelManager channelManager;
     private final boolean channelPreempted;
-    private final String partition;
+    private final Object partitionKey;
 
     public NettyConnectListener(NettyResponseFuture<T> future,//
             NettyRequestSender requestSender,//
             ChannelManager channelManager,//
             boolean channelPreempted,//
-            String partition) {
+            Object partitionKey) {
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
         this.channelPreempted = channelPreempted;
-        this.partition = partition;
+        this.partitionKey = partitionKey;
     }
 
     public NettyResponseFuture<T> future() {
         return future;
     }
 
-    private void abortChannelPreemption(String partition) {
+    private void abortChannelPreemption(Object partitionKey) {
         if (channelPreempted)
-            channelManager.abortChannelPreemption(partition);
+            channelManager.abortChannelPreemption(partitionKey);
     }
 
     private void writeRequest(Channel channel) {
@@ -73,14 +73,14 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         Channels.setAttribute(channel, future);
 
         if (future.isDone()) {
-            abortChannelPreemption(partition);
+            abortChannelPreemption(partitionKey);
             return;
         }
 
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpen();
 
-        channelManager.registerOpenChannel(channel, partition);
+        channelManager.registerOpenChannel(channel, partitionKey);
         future.attachChannel(channel, false);
         requestSender.writeRequest(future, channel);
     }
@@ -112,7 +112,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {
-        abortChannelPreemption(partition);
+        abortChannelPreemption(partitionKey);
 
         boolean canRetry = future.canRetry();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);

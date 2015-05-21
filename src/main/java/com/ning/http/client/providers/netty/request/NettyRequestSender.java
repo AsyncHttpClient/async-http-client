@@ -266,7 +266,7 @@ public final class NettyRequestSender {
         ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy, useSSl);
 
         boolean channelPreempted = false;
-        String partition = null;
+        Object partitionKey = null;
 
         try {
             // Do not throw an exception when we need an extra connection for a redirect.
@@ -274,8 +274,8 @@ public final class NettyRequestSender {
                 // only compute when maxConnectionPerHost is enabled
                 // FIXME clean up
                 if (config.getMaxConnectionsPerHost() > 0)
-                    partition = future.getPartition();
-                channelManager.preemptChannel(partition);
+                    partitionKey = future.getPartitionKey();
+                channelManager.preemptChannel(partitionKey);
                 channelPreempted = true;
             }
 
@@ -283,11 +283,11 @@ public final class NettyRequestSender {
                 AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
 
             ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
-            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partition));
+            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
 
         } catch (Throwable t) {
             if (channelPreempted)
-                channelManager.abortChannelPreemption(partition);
+                channelManager.abortChannelPreemption(partitionKey);
 
             abort(null, future, t.getCause() == null ? t : t.getCause());
         }
