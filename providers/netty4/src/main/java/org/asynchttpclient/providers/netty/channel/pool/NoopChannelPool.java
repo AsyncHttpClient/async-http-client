@@ -20,12 +20,12 @@ import io.netty.channel.Channel;
 public class NoopChannelPool implements ChannelPool {
 
     @Override
-    public boolean offer(Channel channel, String partition) {
+    public boolean offer(Channel channel, Object partitionKey) {
         return false;
     }
 
     @Override
-    public Channel poll(String partition) {
+    public Channel poll(Object partitionKey) {
         return null;
     }
 
@@ -44,7 +44,7 @@ public class NoopChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartition(String partitionId) {
+    public void flushPartition(Object partitionKey) {
     }
 
     @Override

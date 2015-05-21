@@ -22,19 +22,19 @@ public interface ChannelPool {
     /**
      * Add a channel to the pool
      * 
-     * @param partitionId a key used to retrieve the cached channel
+     * @param partitionKey a key used to retrieve the cached channel
      * @param channel an I/O channel
      * @return true if added.
      */
-    boolean offer(Channel channel, String partitionId);
+    boolean offer(Channel channel, Object partitionKey);
 
     /**
      * Remove the channel associated with the uri.
      * 
-     * @param partitionId the partition used when invoking offer
+     * @param partitionKey the partition used when invoking offer
      * @return the channel associated with the uri
      */
-    Channel poll(String partitionId);
+    Channel poll(Object partitionKey);
 
     /**
      * Remove all channels from the cache. A channel might have been associated with several uri.
@@ -60,9 +60,9 @@ public interface ChannelPool {
     /**
      * Flush a partition
      * 
-     * @param partitionId
+     * @param partitionKey
      */
-    void flushPartition(String partitionId);
+    void flushPartition(Object partitionKey);
 
     /**
      * Flush partitions based on a selector

@@ -45,14 +45,14 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
-    private static final ConcurrentHashMapV8.Fun<String, ConcurrentLinkedQueue<IdleChannel>> PARTITION_COMPUTER = new ConcurrentHashMapV8.Fun<String, ConcurrentLinkedQueue<IdleChannel>>() {
+    private static final ConcurrentHashMapV8.Fun<Object, ConcurrentLinkedQueue<IdleChannel>> PARTITION_COMPUTER = new ConcurrentHashMapV8.Fun<Object, ConcurrentLinkedQueue<IdleChannel>>() {
         @Override
-        public ConcurrentLinkedQueue<IdleChannel> apply(String partitionId) {
+        public ConcurrentLinkedQueue<IdleChannel> apply(Object partitionKey) {
             return new ConcurrentLinkedQueue<>();
         }
     };
 
-    private final ConcurrentHashMapV8<String, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMapV8<>();
+    private final ConcurrentHashMapV8<Object, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMapV8<>();
     private final ConcurrentHashMapV8<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMapV8<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
@@ -97,11 +97,11 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final class ChannelCreation {
         final long creationTime;
-        final String partition;
+        final Object partitionKey;
 
-        ChannelCreation(long creationTime, String partition) {
+        ChannelCreation(long creationTime, Object partitionKey) {
             this.creationTime = creationTime;
-            this.partition = partition;
+            this.partitionKey = partitionKey;
         }
     }
 
@@ -206,7 +206,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
             try {
                 if (LOGGER.isDebugEnabled())
-                    for (String key : ((Map<String, ConcurrentLinkedQueue<IdleChannel>>) partitions).keySet()) {
+                    for (Object key: partitions.keySet()) {
                         LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
                     }
 
@@ -247,7 +247,7 @@ public final class DefaultChannelPool implements ChannelPool {
     /**
      * {@inheritDoc}
      */
-    public boolean offer(Channel channel, String partitionId) {
+    public boolean offer(Channel channel, Object partitionKey) {
         if (isClosed.get() || (!sslConnectionPoolEnabled && channel.pipeline().get(SslHandler.class) != null))
             return false;
 
@@ -256,9 +256,9 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isTTLExpired(channel, now))
             return false;
 
-        boolean added = partitions.computeIfAbsent(partitionId, PARTITION_COMPUTER).add(new IdleChannel(channel, now));
+        boolean added = partitions.computeIfAbsent(partitionKey, PARTITION_COMPUTER).add(new IdleChannel(channel, now));
         if (added)
-            channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionId));
+            channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionKey));
 
         return added;
     }
@@ -266,12 +266,10 @@ public final class DefaultChannelPool implements ChannelPool {
     /**
      * {@inheritDoc}
      */
-    public Channel poll(String partitionId) {
-        if (!sslConnectionPoolEnabled && partitionId.startsWith("https"))
-            return null;
+    public Channel poll(Object partitionKey) {
 
         IdleChannel idleChannel = null;
-        ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionId);
+        ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionKey);
         if (partition != null) {
             while (idleChannel == null) {
                 idleChannel = partition.poll();
@@ -293,7 +291,7 @@ public final class DefaultChannelPool implements ChannelPool {
      */
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = channelId2Creation.remove(channelId(channel));
-        return !isClosed.get() && creation != null && partitions.get(creation.partition).remove(channel);
+        return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(channel);
     }
 
     /**
@@ -326,26 +324,26 @@ public final class DefaultChannelPool implements ChannelPool {
         Channels.silentlyCloseChannel(channel);
     }
 
-    private void flushPartition(String partitionId, ConcurrentLinkedQueue<IdleChannel> partition) {
+    private void flushPartition(Object partitionKey, ConcurrentLinkedQueue<IdleChannel> partition) {
         if (partition != null) {
-            partitions.remove(partitionId);
+            partitions.remove(partitionKey);
             for (IdleChannel idleChannel : partition)
                 close(idleChannel.channel);
         }
     }
 
     @Override
-    public void flushPartition(String partitionId) {
-        flushPartition(partitionId, partitions.get(partitionId));
+    public void flushPartition(Object partitionKey) {
+        flushPartition(partitionKey, partitions.get(partitionKey));
     }
 
     @Override
     public void flushPartitions(ChannelPoolPartitionSelector selector) {
 
-        for (Map.Entry<String, ConcurrentLinkedQueue<IdleChannel>> partitionsEntry : partitions.entrySet()) {
-            String partitionId = partitionsEntry.getKey();
-            if (selector.select(partitionId))
-                flushPartition(partitionId, partitionsEntry.getValue());
+        for (Map.Entry<Object, ConcurrentLinkedQueue<IdleChannel>> partitionsEntry : partitions.entrySet()) {
+            Object partitionKey = partitionsEntry.getKey();
+            if (selector.select(partitionKey))
+                flushPartition(partitionKey, partitionsEntry.getValue());
         }
     }
 }

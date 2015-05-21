@@ -155,6 +155,9 @@
                         <artifactId>java17</artifactId>
                         <version>1.0</version>
                     </signature>
+                    <ignores>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
                 </configuration>
                 <executions>
                     <execution>
@@ -286,7 +289,7 @@
                     <encoding>UTF-8</encoding>
                     <maxmemory>1g</maxmemory>
                     <links>
-                        <link>http://java.sun.com/javase/6/docs/api/</link>
+                        <link>http://java.sun.com/javase/7/docs/api/</link>
                     </links>
                     <bootclasspath>${sun.boot.class.path}</bootclasspath>
                     <doclet>com.google.doclava.Doclava</doclet>

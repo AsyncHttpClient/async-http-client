@@ -133,7 +133,7 @@ public abstract class Protocol {
 
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
-                    final String initialPartition = future.getPartitionId();
+                    final Object initialPartitionKey = future.getPartitionKey();
 
                     future.setUri(uri);
                     String newUrl = uri.toUrl();
@@ -162,7 +162,7 @@ public abstract class Protocol {
                             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
 
                         } else {
-                            channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartition);
+                            channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);
                             requestSender.sendNextRequest(nextRequest, future);
                         }
 

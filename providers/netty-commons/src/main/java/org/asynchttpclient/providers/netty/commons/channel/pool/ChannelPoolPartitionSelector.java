@@ -15,5 +15,5 @@ package org.asynchttpclient.providers.netty.commons.channel.pool;
 
 public interface ChannelPoolPartitionSelector {
 
-   boolean select(String partitionId); 
+   boolean select(Object partitionKey); 
 }

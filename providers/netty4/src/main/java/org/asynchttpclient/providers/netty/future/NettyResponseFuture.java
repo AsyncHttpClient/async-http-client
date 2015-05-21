@@ -425,8 +425,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return start;
     }
 
-    public String getPartitionId() {
-        return connectionPoolPartitioning.getPartitionId(uri, proxyServer);
+    public Object getPartitionKey() {
+        return connectionPoolPartitioning.getPartitionKey(uri, proxyServer);
     }
 
     @Override
