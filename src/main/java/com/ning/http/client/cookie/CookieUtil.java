@@ -95,14 +95,16 @@ public class CookieUtil {
         return cs;
     }
 
-    static long computeExpires(String expires) {
+    static long computeExpiresAsMaxAge(String expires) {
         if (expires != null) {
             Date expiresDate = RFC2616DateParser.get().parse(expires, new ParsePosition(0));
-            if (expiresDate != null)
-                return expiresDate.getTime();
+            if (expiresDate != null) {
+                long maxAgeMillis = expiresDate.getTime() - System.currentTimeMillis();
+                return maxAgeMillis / 1000 + (maxAgeMillis % 1000 != 0 ? 1 : 0);
+            }
         }
         
-        return -1L;
+        return Long.MIN_VALUE;
     }
     
     private CookieUtil() {

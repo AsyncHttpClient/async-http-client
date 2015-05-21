@@ -261,6 +261,9 @@
                         <artifactId>java17</artifactId>
                         <version>1.0</version>
                     </signature>
+                    <ignores>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
                 </configuration>
                 <executions>
                     <execution>
@@ -394,38 +397,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--             <plugin> -->
-<!--                 <groupId>org.apache.maven.plugins</groupId> -->
-<!--                 <artifactId>maven-shade-plugin</artifactId> -->
-<!--                 <version>1.2.1</version> -->
-<!--                 <executions> -->
-<!--                     <execution> -->
-<!--                         <phase>package</phase> -->
-<!--                         <goals> -->
-<!--                             <goal>shade</goal> -->
-<!--                         </goals> -->
-<!--                         <configuration> -->
-<!--                             <shadedArtifactAttached>true</shadedArtifactAttached> -->
-<!--                             <shadedClassifierName>shaded</shadedClassifierName> -->
-<!--                             <artifactSet> -->
-<!--                                 <excludes> -->
-<!--                                     <exclude>commons-codec:commons-codec</exclude> -->
-<!--                                     <exclude>commons-lang:commons-lang</exclude> -->
-<!--                                     <exclude>commons-logging:commons-logging</exclude> -->
-<!--                                     <exclude>junit:junit</exclude> -->
-<!--                                     <exclude>log4j:log4j</exclude> -->
-<!--                                     <exclude>commons-httpclient:commons-httpclient</exclude> -->
-<!--                                 </excludes> -->
-<!--                             </artifactSet> -->
-<!--                             <transformers> -->
-<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" /> -->
-<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" /> -->
-<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" /> -->
-<!--                             </transformers> -->
-<!--                         </configuration> -->
-<!--                     </execution> -->
-<!--                 </executions> -->
-<!--             </plugin> -->
         </plugins>
     </build>
     <reporting>
@@ -440,7 +411,7 @@
                 <encoding>UTF-8</encoding>
                 <maxmemory>1g</maxmemory>
                 <links>
-                    <link>http://java.sun.com/javase/6/docs/api/</link>
+                    <link>http://java.sun.com/javase/7/docs/api/</link>
                 </links>
                 <bootclasspath>${sun.boot.class.path}</bootclasspath>
                 <doclet>com.google.doclava.Doclava</doclet>

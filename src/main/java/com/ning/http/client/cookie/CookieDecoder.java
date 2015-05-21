@@ -12,12 +12,12 @@
  */
 package com.ning.http.client.cookie;
 
+import static com.ning.http.client.cookie.CookieUtil.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.CharBuffer;
-
-import static com.ning.http.client.cookie.CookieUtil.*;
 
 public class CookieDecoder {
 
@@ -133,7 +133,7 @@ public class CookieDecoder {
 
                 final boolean wrap = unwrappedValue.length() != valueEnd - valueBegin;
 
-                cookieBuilder = new CookieBuilder(name, unwrappedValue.toString(), wrap);
+                cookieBuilder = new CookieBuilder(header, name, unwrappedValue.toString(), wrap);
 
             } else {
                 // cookie attribute
@@ -157,32 +157,46 @@ public class CookieDecoder {
 
         private static final String HTTPONLY = "HTTPOnly";
 
+        private final String header;
         private final String name;
         private final String value;
         private final boolean wrap;
         private String domain;
         private String path;
-        private int maxAge = Integer.MIN_VALUE;
-        private String expires;
+        private long maxAge = Long.MIN_VALUE;
+        private int expiresStart;
+        private int expiresEnd;
         private boolean secure;
         private boolean httpOnly;
 
-        public CookieBuilder(String name, String value, boolean wrap) {
+        public CookieBuilder(String header, String name, String value, boolean wrap) {
+            this.header = header;
             this.name = name;
             this.value = value;
             this.wrap = wrap;
         }
 
         public Cookie cookie() {
-            return new Cookie(name, value, wrap, domain, path, computeExpires(expires), maxAge, secure, httpOnly);
+            return new Cookie(name, value, wrap, domain, path, mergeMaxAgeAndExpires(), secure, httpOnly);
+        }
+
+        private long mergeMaxAgeAndExpires() {
+            // max age has precedence over expires
+            if (maxAge != Long.MIN_VALUE) {
+                return maxAge;
+            } else {
+                String expires = computeValue(expiresStart, expiresEnd);
+                if (expires != null) {
+                    return computeExpiresAsMaxAge(expires);
+                }
+            }
+            return Long.MIN_VALUE;
         }
 
         /**
          * Parse and store a key-value pair. First one is considered to be the
          * cookie name/value. Unknown attribute names are silently discarded.
          *
-         * @param header
-         *            the HTTP header
          * @param keyStart
          *            where the key starts in the header
          * @param keyEnd
@@ -193,58 +207,59 @@ public class CookieDecoder {
          *            where the value ends in the header
          */
         public void appendAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
-            setCookieAttribute(header, keyStart, keyEnd, valueBegin, valueEnd);
+            setCookieAttribute(keyStart, keyEnd, valueBegin, valueEnd);
         }
 
-        private void setCookieAttribute(String header, int keyStart, int keyEnd, int valueBegin, int valueEnd) {
+        private void setCookieAttribute(int keyStart, int keyEnd, int valueBegin, int valueEnd) {
 
             int length = keyEnd - keyStart;
 
             if (length == 4) {
-                parse4(header, keyStart, valueBegin, valueEnd);
+                parse4(keyStart, valueBegin, valueEnd);
             } else if (length == 6) {
-                parse6(header, keyStart, valueBegin, valueEnd);
+                parse6(keyStart, valueBegin, valueEnd);
             } else if (length == 7) {
-                parse7(header, keyStart, valueBegin, valueEnd);
+                parse7(keyStart, valueBegin, valueEnd);
             } else if (length == 8) {
-                parse8(header, keyStart, valueBegin, valueEnd);
+                parse8(keyStart, valueBegin, valueEnd);
             }
         }
 
-        private void parse4(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse4(int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, PATH, 0, 4)) {
-                path = computeValue(header, valueBegin, valueEnd);
+                path = computeValue(valueBegin, valueEnd);
             }
         }
 
-        private void parse6(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse6(int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, DOMAIN, 0, 5)) {
-                domain = computeValue(header, valueBegin, valueEnd);
+                domain = computeValue(valueBegin, valueEnd);
             } else if (header.regionMatches(true, nameStart, SECURE, 0, 5)) {
                 secure = true;
             }
         }
 
-        private void parse7(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse7(int nameStart, int valueBegin, int valueEnd) {
             if (header.regionMatches(true, nameStart, EXPIRES, 0, 7)) {
-                expires = computeValue(header, valueBegin, valueEnd);
+                expiresStart = valueBegin;
+                expiresEnd = valueEnd;
             } else if (header.regionMatches(true, nameStart, MAX_AGE, 0, 7)) {
                 try {
-                    maxAge = Math.max(Integer.valueOf(computeValue(header, valueBegin, valueEnd)), 0);
+                    maxAge = Math.max(Integer.valueOf(computeValue(valueBegin, valueEnd)), 0);
                 } catch (NumberFormatException e1) {
                     // ignore failure to parse -> treat as session cookie
                 }
             }
         }
 
-        private void parse8(String header, int nameStart, int valueBegin, int valueEnd) {
+        private void parse8(int nameStart, int valueBegin, int valueEnd) {
 
             if (header.regionMatches(true, nameStart, HTTPONLY, 0, 8)) {
                 httpOnly = true;
             }
         }
 
-        private String computeValue(String header, int valueBegin, int valueEnd) {
+        private String computeValue(int valueBegin, int valueEnd) {
             if (valueBegin == -1 || valueBegin == valueEnd) {
                 return null;
             } else {

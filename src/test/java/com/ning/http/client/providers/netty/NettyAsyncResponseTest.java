@@ -13,7 +13,7 @@
 
 package com.ning.http.client.providers.netty;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -54,8 +54,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        long originalDateWith1SecPrecision = date.getTime() / 1000 * 1000;
-        assertEquals(cookie.getExpires(), originalDateWith1SecPrecision);
+        assertTrue(cookie.getMaxAge() - 60 <2);
     }
 
     @Test(groups = "standalone")
@@ -88,7 +87,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getExpires(), Integer.MIN_VALUE);
+        assertEquals(cookie.getMaxAge(), Long.MIN_VALUE);
     }
 
 }

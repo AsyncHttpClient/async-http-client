@@ -56,7 +56,7 @@ public class Cookie {
         domain = validateValue("domain", domain);
         path = validateValue("path", path);
 
-        return new Cookie(name, value, wrap, domain, path, expires, maxAge, secure, httpOnly);
+        return new Cookie(name, value, wrap, domain, path, maxAge, secure, httpOnly);
     }
 
     private static String validateValue(String name, String value) {
@@ -87,18 +87,16 @@ public class Cookie {
     private final boolean wrap;
     private final String domain;
     private final String path;
-    private long expires;
-    private final int maxAge;
+    private final long maxAge;
     private final boolean secure;
     private final boolean httpOnly;
 
-    public Cookie(String name, String value, boolean wrap, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public Cookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
         this.name = name;
         this.value = value;
         this.wrap = wrap;
         this.domain = domain;
         this.path = path;
-        this.expires = expires;
         this.maxAge = maxAge;
         this.secure = secure;
         this.httpOnly = httpOnly;
@@ -124,11 +122,12 @@ public class Cookie {
         return path;
     }
 
+    @Deprecated
     public long getExpires() {
-        return expires;
+        return Long.MIN_VALUE;
     }
     
-    public int getMaxAge() {
+    public long getMaxAge() {
         return maxAge;
     }
 
@@ -156,10 +155,6 @@ public class Cookie {
         if (path != null) {
             buf.append("; path=");
             buf.append(path);
-        }
-        if (expires >= 0) {
-            buf.append("; expires=");
-            buf.append(expires);
         }
         if (maxAge >= 0) {
             buf.append("; maxAge=");
