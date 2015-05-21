@@ -35,9 +35,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * provider is explicitly specified by the developer.
      */
     private static final String[] DEFAULT_PROVIDERS = {//
-    "org.asynchttpclient.providers.netty4.NettyAsyncHttpProvider",/**/
-    "org.asynchttpclient.providers.netty3.NettyAsyncHttpProvider",/**/
-    "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"//
+        "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider"
     };
 
     private final AsyncHttpProvider httpProvider;
@@ -55,13 +53,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     /**
      * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
      * default {@link AsyncHttpProvider} that will be used will be based on the classpath configuration.
-     *
-     * The default providers will be searched for in this order:
-     * <ul>
-     *     <li>netty4</li>
-     *     <li>netty3</li>
-     *     <li>grizzly</li>
-     * </ul>
      *
      * If none of those providers are found, then the engine will throw an IllegalStateException.
      */

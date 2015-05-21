@@ -630,7 +630,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         Uri originalUri = request.uri;
         if (originalUri == null) {
             logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
-            request.uri = DEFAULT_REQUEST_URL;
+            originalUri = request.uri = DEFAULT_REQUEST_URL;
         }
 
         AsyncHttpProviderUtils.validateSupportedScheme(originalUri);

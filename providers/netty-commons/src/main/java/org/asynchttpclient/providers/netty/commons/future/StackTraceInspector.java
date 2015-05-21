@@ -33,18 +33,12 @@ public class StackTraceInspector {
                 || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean recoverOnNetty3DisconnectException(Throwable t) {
+    public static boolean recoverOnNettyDisconnectException(Throwable t) {
         return t instanceof ClosedChannelException
                 || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
                 || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
     }
 
-    public static boolean recoverOnNetty4DisconnectException(Throwable t) {
-        return t instanceof ClosedChannelException
-                || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
-                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
-    }
-    
     public static boolean recoverOnReadOrWriteException(Throwable t) {
 
         if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage()))
