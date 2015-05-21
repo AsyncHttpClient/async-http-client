@@ -58,7 +58,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         return future;
     }
 
-    private void abortChannelPreemption(Object partitionKey) {
+    private void abortChannelPreemption() {
         if (channelPreempted)
             channelManager.abortChannelPreemption(partitionKey);
     }
@@ -73,7 +73,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         Channels.setAttribute(channel, future);
 
         if (future.isDone()) {
-            abortChannelPreemption(partitionKey);
+            abortChannelPreemption();
             return;
         }
 
@@ -112,7 +112,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     private void onFutureFailure(Channel channel, Throwable cause) {
-        abortChannelPreemption(partitionKey);
+        abortChannelPreemption();
 
         boolean canRetry = future.canRetry();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);

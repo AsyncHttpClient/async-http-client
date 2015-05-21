@@ -93,6 +93,7 @@ public class ChannelManager {
     private final boolean maxConnectionsPerHostEnabled;
     private final ConcurrentHashMapV8<Object, Semaphore> freeChannelsPerHost;
     private final ConcurrentHashMapV8<Integer, Object> channelId2PartitionKey;
+    private final ConcurrentHashMapV8.Fun<Object, Semaphore> semaphoreComputer;
     private final long handshakeTimeout;
     private final Timer nettyTimer;
     private final IOException tooManyConnections;
@@ -108,7 +109,7 @@ public class ChannelManager {
 
     private Processor wsProcessor;
 
-    public ChannelManager(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Timer nettyTimer) {
+    public ChannelManager(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Timer nettyTimer) {
 
         this.config = config;
         this.nettyConfig = nettyConfig;
@@ -157,9 +158,17 @@ public class ChannelManager {
         if (maxConnectionsPerHostEnabled) {
             freeChannelsPerHost = new ConcurrentHashMapV8<>();
             channelId2PartitionKey = new ConcurrentHashMapV8<>();
+            semaphoreComputer = new ConcurrentHashMapV8.Fun<Object, Semaphore>() {
+                @Override
+                public Semaphore apply(Object partitionKey) {
+                    return new Semaphore(config.getMaxConnectionsPerHost());
+                }
+            };
+
         } else {
             freeChannelsPerHost = null;
             channelId2PartitionKey = null;
+            semaphoreComputer = null;
         }
 
         handshakeTimeout = nettyConfig.getHandshakeTimeout();
@@ -308,13 +317,6 @@ public class ChannelManager {
         return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
     }
 
-    private final ConcurrentHashMapV8.Fun<Object, Semaphore> semaphoreComputer = new ConcurrentHashMapV8.Fun<Object, Semaphore>() {
-        @Override
-        public Semaphore apply(Object partitionKey) {
-            return new Semaphore(config.getMaxConnectionsPerHost());
-        }
-    };
-    
     private Semaphore getFreeConnectionsForHost(Object partitionKey) {
         return freeChannelsPerHost.computeIfAbsent(partitionKey, semaphoreComputer);
     }
