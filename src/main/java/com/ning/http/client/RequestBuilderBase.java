@@ -627,15 +627,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private void computeFinalUri() {
 
-        Uri originalUri = request.uri;
-        if (originalUri == null) {
+        if (request.uri == null) {
             logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             request.uri = DEFAULT_REQUEST_URL;
+        } else {
+            AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
         }
 
-        AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
-
-        request.uri =  uriEncoder.encode(originalUri, queryParams);
+        request.uri =  uriEncoder.encode(request.uri, queryParams);
     }
 
     public Request build() {
