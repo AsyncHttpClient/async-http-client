@@ -335,9 +335,7 @@ public final class NettyRequestSender {
                 channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
             }
 
-            // FIXME what happens to this second write if the first one failed? Should it be done in the ProgressListener?
-            if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT)
-                    && nettyRequest.getBody() != null)
+            if (nettyRequest.getBody() != null && !future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT))
                 nettyRequest.getBody().write(channel, future, config);
 
             // don't bother scheduling timeouts if channel became invalid
