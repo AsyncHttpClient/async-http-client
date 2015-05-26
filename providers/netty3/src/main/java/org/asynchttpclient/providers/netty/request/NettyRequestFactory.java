@@ -269,7 +269,7 @@ public final class NettyRequestFactory {
             throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
-        HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        HttpVersion httpVersion = method == HttpMethod.CONNECT && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, method);
 
         NettyBody body = body(request, method);

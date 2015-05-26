@@ -60,6 +60,7 @@ public class ProxyServer {
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
     private String ntlmHost;
     private AuthScheme scheme = AuthScheme.BASIC;
+    private boolean forceHttp10 = false;
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
@@ -161,6 +162,14 @@ public class ProxyServer {
 
     public void setNtlmHost(String ntlmHost) {
         this.ntlmHost = ntlmHost;
+    }
+    
+    public boolean isForceHttp10() {
+        return forceHttp10;
+    }
+
+    public void setForceHttp10(boolean forceHttp10) {
+        this.forceHttp10 = forceHttp10;
     }
 
     @Override
