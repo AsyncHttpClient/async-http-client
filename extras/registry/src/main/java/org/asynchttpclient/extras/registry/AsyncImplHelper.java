@@ -31,13 +31,12 @@ public class AsyncImplHelper {
      * the specified class couldn't be created.
      */
     public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
-        try {
-            String asyncHttpClientImplClassName = AsyncPropertiesHelper.getAsyncHttpClientConfig().getString(propertyName);
+        String asyncHttpClientImplClassName = AsyncPropertiesHelper.getAsyncHttpClientConfig().getString(propertyName);
+        if (asyncHttpClientImplClassName != null) {
             Class<AsyncHttpClient> asyncHttpClientImplClass = AsyncImplHelper.getClass(asyncHttpClientImplClassName);
             return asyncHttpClientImplClass;
-        } catch (Exception configException) {
-            return null;
         }
+        return null;
     }
 
     private static Class<AsyncHttpClient> getClass(final String asyncImplClassName) {
