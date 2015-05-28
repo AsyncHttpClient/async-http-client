@@ -12,11 +12,8 @@
  */
 package org.asynchttpclient.extras.registry;
 
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.util.AsyncPropertiesHelper;
-
-import com.typesafe.config.ConfigException;
 
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -26,7 +23,7 @@ public class AsyncImplHelper {
 
     public static final String ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY = "org.async.http.client.impl";
     public static final String ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY = "org.async.http.client.registry.impl";
-    
+
     /*
      * Returns the class specified by either a system property or a properties
      * file as the class to instantiated for the AsyncHttpClient. Returns null
@@ -38,7 +35,7 @@ public class AsyncImplHelper {
             String asyncHttpClientImplClassName = AsyncPropertiesHelper.getAsyncHttpClientConfig().getString(propertyName);
             Class<AsyncHttpClient> asyncHttpClientImplClass = AsyncImplHelper.getClass(asyncHttpClientImplClassName);
             return asyncHttpClientImplClass;
-        }catch(ConfigException configException) {
+        } catch (Exception configException) {
             return null;
         }
     }
@@ -53,8 +50,8 @@ public class AsyncImplHelper {
                         try {
                             return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
                         } catch (ClassNotFoundException e) {
-                            AsyncHttpClientFactory.logger.info("Couldn't find class : " + asyncImplClassName
-                                    + " in thread context classpath " + "checking system class path next", e);
+                            AsyncHttpClientFactory.logger.info("Couldn't find class : " + asyncImplClassName + " in thread context classpath " + "checking system class path next",
+                                    e);
                         }
 
                     cl = ClassLoader.getSystemClassLoader();
@@ -62,8 +59,7 @@ public class AsyncImplHelper {
                 }
             });
         } catch (PrivilegedActionException e) {
-            throw new AsyncHttpClientImplException("Class : " + asyncImplClassName + " couldn't be found in " + " the classpath due to : "
-                    + e.getMessage(), e);
+            throw new AsyncHttpClientImplException("Class : " + asyncImplClassName + " couldn't be found in " + " the classpath due to : " + e.getMessage(), e);
         }
     }
 }

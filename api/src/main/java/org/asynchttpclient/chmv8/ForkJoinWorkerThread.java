@@ -20,7 +20,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package org.asynchttpclient.providers.netty.chmv8;
+package org.asynchttpclient.chmv8;
 
 
 /**
