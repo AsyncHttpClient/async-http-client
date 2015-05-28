@@ -167,34 +167,37 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
         this.context = context;
         asyncTransferInitiated = true;
-        final Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (requestPacket.isSecure() &&
-                            (getSSLEngine(context.getConnection()) == null)) {
-                        flushOnSSLHandshakeComplete();
-                    } else {
-                        feeder.flush();
-                    }
-                } catch (IOException ioe) {
-                    HttpTransactionContext.currentTransaction(requestPacket).abort(ioe);
-                }
-            }
-        };
-
-        // If the current thread is a selector thread, we need to execute
-        // the remainder of the task on the worker thread to prevent
-        // it from being blocked.
-        if (isServiceThread()) {
-            c.getTransport().getWorkerThreadPool().execute(r);
+        
+        if (requestPacket.isSecure() &&
+                (getSSLEngine(context.getConnection()) == null)) {
+            flushOnSSLHandshakeComplete();
         } else {
-            r.run();
+            feederFlush(context.getConnection());
         }
     }
 
-
     // --------------------------------------------------------- Private Methods
+
+    private void feederFlush(final Connection c) {
+        if (isServiceThread()) {
+            c.getTransport().getWorkerThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    feederFlush0(c);
+                }
+            });
+        } else {
+            feederFlush0(c);
+        }
+    }
+
+    private void feederFlush0(final Connection c) {
+        try {
+            feeder.flush();
+        } catch (IOException ioe) {
+            c.closeWithReason(ioe);
+        }
+    }
 
 
     private boolean isServiceThread() {
@@ -220,11 +223,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             public void onComplete(Connection connection) {
                 if (c.equals(connection)) {
                     filter.removeHandshakeListener(this);
-                    try {
-                        feeder.flush();
-                    } catch (IOException ioe) {
-                        connection.closeWithReason(ioe);
-                    }
+                    feederFlush(c);
                 }
             }
         });
