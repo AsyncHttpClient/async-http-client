@@ -12,7 +12,7 @@
         The Async Http Client Registry Extras.
     </description>
 
-
+	<!-- broken, packages and classes are the same -->
 	<dependencies>
 		<dependency>
 			<groupId>org.asynchttpclient</groupId>
@@ -23,12 +23,6 @@
 		<dependency>
 			<groupId>org.asynchttpclient</groupId>
 			<artifactId>async-http-client-netty4-provider</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.asynchttpclient</groupId>
-			<artifactId>async-http-client-grizzly-provider</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
