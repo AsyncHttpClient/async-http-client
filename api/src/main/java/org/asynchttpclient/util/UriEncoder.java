@@ -13,9 +13,9 @@
 package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.asynchttpclient.util.UTF8UrlEncoder.encodeAndAppendQuery;
+import static org.asynchttpclient.util.Utf8UrlEncoder.encodeAndAppendQuery;
 
-import org.asynchttpclient.Param;
+import org.asynchttpclient.request.Param;
 import org.asynchttpclient.uri.Uri;
 
 import java.util.List;
@@ -25,14 +25,14 @@ public enum UriEncoder {
     FIXING {
 
         public String encodePath(String path) {
-            return UTF8UrlEncoder.encodePath(path);
+            return Utf8UrlEncoder.encodePath(path);
         }
 
         private void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-            UTF8UrlEncoder.encodeAndAppendQueryElement(sb, name);
+            Utf8UrlEncoder.encodeAndAppendQueryElement(sb, name);
             if (value != null) {
                 sb.append('=');
-                UTF8UrlEncoder.encodeAndAppendQueryElement(sb, value);
+                Utf8UrlEncoder.encodeAndAppendQueryElement(sb, value);
             }
             sb.append('&');
         }

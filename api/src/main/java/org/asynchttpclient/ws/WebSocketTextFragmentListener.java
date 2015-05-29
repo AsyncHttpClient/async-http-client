@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.ws;
 
-import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.response.HttpResponseBodyPart;
 
 /**
  * Invoked when WebSocket text fragments are received.

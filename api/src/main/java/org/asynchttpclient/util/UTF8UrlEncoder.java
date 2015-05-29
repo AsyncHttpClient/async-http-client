@@ -21,7 +21,7 @@ import java.util.BitSet;
  * Convenience class that encapsulates details of "percent encoding"
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
-public final class UTF8UrlEncoder {
+public final class Utf8UrlEncoder {
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
@@ -103,7 +103,7 @@ public final class UTF8UrlEncoder {
 
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
-    private UTF8UrlEncoder() {
+    private Utf8UrlEncoder() {
     }
 
     public static String encodePath(String input) {

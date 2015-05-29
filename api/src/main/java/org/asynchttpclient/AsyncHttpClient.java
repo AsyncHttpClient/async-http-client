@@ -19,6 +19,16 @@ package org.asynchttpclient;
 import java.io.Closeable;
 import java.util.concurrent.Future;
 
+import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.future.ListenableFuture;
+import org.asynchttpclient.handler.AsyncCompletionHandler;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.request.BoundRequestBuilder;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.request.RequestBuilder;
+import org.asynchttpclient.request.SignatureCalculator;
+import org.asynchttpclient.response.Response;
+
 /**
  * This class support asynchronous and synchronous HTTP request.
  * <p/>

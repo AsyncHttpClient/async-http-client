@@ -16,11 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.UpgradeHandler;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.response.HttpResponseBodyPart;
+import org.asynchttpclient.response.HttpResponseHeaders;
+import org.asynchttpclient.response.HttpResponseStatus;
 
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade. Use the Builder for configuring WebSocket options.

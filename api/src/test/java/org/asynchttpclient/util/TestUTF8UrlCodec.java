@@ -22,8 +22,8 @@ import org.testng.annotations.Test;
 public class TestUTF8UrlCodec {
     @Test(groups = "fast")
     public void testBasics() {
-        assertEquals(UTF8UrlEncoder.encodeQueryElement("foobar"), "foobar");
-        assertEquals(UTF8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
-        assertEquals(UTF8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
+        assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
+        assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
+        assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
     }
 }

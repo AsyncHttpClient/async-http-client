@@ -24,7 +24,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.asynchttpclient.util.StringUtils;
-import org.asynchttpclient.util.UTF8UrlEncoder;
+import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
  * Since cloning (of MAC instances)  is not necessarily supported on all platforms
@@ -42,9 +42,9 @@ public class ThreadSafeHMAC {
 
     public ThreadSafeHMAC(ConsumerKey consumerAuth, RequestToken userAuth) {
         StringBuilder sb = StringUtils.stringBuilder();
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
         sb.append('&');
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, userAuth.getSecret());
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, userAuth.getSecret());
         byte[] keyBytes = StringUtils.charSequence2Bytes(sb, UTF_8);
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 

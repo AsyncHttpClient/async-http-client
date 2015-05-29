@@ -18,8 +18,8 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.nio.charset.Charset;
 
-import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 
 public final class AuthenticatorUtils {

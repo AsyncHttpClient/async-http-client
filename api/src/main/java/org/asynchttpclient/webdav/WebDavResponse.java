@@ -19,9 +19,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.response.Response;
 import org.asynchttpclient.uri.Uri;
 import org.w3c.dom.Document;
 

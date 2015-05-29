@@ -12,14 +12,14 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.async.util.TestUtils.findFreePort;
-import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.test.TestUtils.findFreePort;
+import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
-public abstract class AbstractBasicTest extends org.asynchttpclient.async.AbstractBasicTest {
+public abstract class AbstractBasicTest extends org.asynchttpclient.AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {

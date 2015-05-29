@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.extras.jdeferred;
 
-import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.response.HttpResponseBodyPart;
 
 public class HttpResponseBodyPartProgress implements HttpProgress {
     private final HttpResponseBodyPart part;

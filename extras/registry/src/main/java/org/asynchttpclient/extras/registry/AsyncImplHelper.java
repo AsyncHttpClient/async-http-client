@@ -13,7 +13,7 @@
 package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.util.AsyncPropertiesHelper;
+import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -31,7 +31,7 @@ public class AsyncImplHelper {
      * the specified class couldn't be created.
      */
     public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
-        String asyncHttpClientImplClassName = AsyncPropertiesHelper.getAsyncHttpClientConfig().getString(propertyName);
+        String asyncHttpClientImplClassName = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(propertyName);
         if (asyncHttpClientImplClassName != null) {
             Class<AsyncHttpClient> asyncHttpClientImplClass = AsyncImplHelper.getClass(asyncHttpClientImplClassName);
             return asyncHttpClientImplClass;

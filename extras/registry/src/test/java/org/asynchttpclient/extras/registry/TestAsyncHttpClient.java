@@ -12,15 +12,15 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.SignatureCalculator;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.future.ListenableFuture;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.request.BoundRequestBuilder;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.request.SignatureCalculator;
+import org.asynchttpclient.response.Response;
 
 public class TestAsyncHttpClient implements AsyncHttpClient {
 

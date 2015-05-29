@@ -13,7 +13,6 @@ package org.asynchttpclient.simple;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import org.asynchttpclient.SimpleAsyncHttpClient;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -21,7 +20,7 @@ import org.asynchttpclient.uri.Uri;
  * <p/>
  * Note: This listener does not cover requests failing before a connection is
  * established. For error handling, see
- * {@link org.asynchttpclient.SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(org.asynchttpclient.ThrowableHandler)}
+ * {@link org.asynchttpclient.simple.SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(org.asynchttpclient.ThrowableHandler)}
  *
  * @author Benjamin Hanzelmann
  */

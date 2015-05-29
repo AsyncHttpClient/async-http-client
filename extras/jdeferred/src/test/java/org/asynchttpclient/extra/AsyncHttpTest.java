@@ -20,9 +20,9 @@ import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.extras.jdeferred.AsyncHttpDeferredObject;
 import org.asynchttpclient.extras.jdeferred.HttpProgress;
+import org.asynchttpclient.response.Response;
 import org.jdeferred.DoneCallback;
 import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;

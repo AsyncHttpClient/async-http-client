@@ -19,7 +19,7 @@ public interface IOExceptionFilter {
 
     /**
      * An {@link org.asynchttpclient.AsyncHttpProvider} will invoke {@link IOExceptionFilter#filter} and will
-     * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
+     * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.request.Request} or abort the processing.
      *
      * @param ctx a {@link FilterContext}
      * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.

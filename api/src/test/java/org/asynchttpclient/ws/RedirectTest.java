@@ -13,13 +13,13 @@
 
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.async.util.TestUtils.addHttpConnector;
-import static org.asynchttpclient.async.util.TestUtils.findFreePort;
-import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.findFreePort;
+import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;

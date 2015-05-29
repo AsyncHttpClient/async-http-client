@@ -21,10 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Param;
-import org.asynchttpclient.Request;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.request.Param;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.response.HttpResponseBodyPart;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -163,10 +163,10 @@ public class AsyncHttpProviderUtils {
     }
 
     private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-        UTF8UrlEncoder.encodeAndAppendFormElement(sb, name);
+        Utf8UrlEncoder.encodeAndAppendFormElement(sb, name);
         if (value != null) {
             sb.append('=');
-            UTF8UrlEncoder.encodeAndAppendFormElement(sb, value);
+            Utf8UrlEncoder.encodeAndAppendFormElement(sb, value);
         }
         sb.append('&');
     }

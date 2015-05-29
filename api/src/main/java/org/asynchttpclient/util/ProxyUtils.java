@@ -14,11 +14,11 @@ package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.ProxyServer.Protocol;
-import org.asynchttpclient.ProxyServerSelector;
-import org.asynchttpclient.Request;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyServerSelector;
+import org.asynchttpclient.proxy.ProxyServer.Protocol;
+import org.asynchttpclient.request.Request;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

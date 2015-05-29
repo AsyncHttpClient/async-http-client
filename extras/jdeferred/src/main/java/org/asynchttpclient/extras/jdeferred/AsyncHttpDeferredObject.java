@@ -15,11 +15,11 @@
  */
 package org.asynchttpclient.extras.jdeferred;
 
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Response;
+import org.asynchttpclient.handler.AsyncCompletionHandler;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.request.BoundRequestBuilder;
+import org.asynchttpclient.response.HttpResponseBodyPart;
+import org.asynchttpclient.response.Response;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DeferredObject;
 

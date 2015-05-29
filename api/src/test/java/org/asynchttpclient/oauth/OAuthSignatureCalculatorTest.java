@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.asynchttpclient.Param;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.request.Param;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.request.RequestBuilder;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 

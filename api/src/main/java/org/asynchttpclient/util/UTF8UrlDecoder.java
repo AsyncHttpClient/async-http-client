@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.util;
 
-public final class UTF8UrlDecoder {
+public final class Utf8UrlDecoder {
 
-    private UTF8UrlDecoder() {
+    private Utf8UrlDecoder() {
     }
 
     private static StringBuilder initSb(StringBuilder sb, String s, int i, int offset, int length) {

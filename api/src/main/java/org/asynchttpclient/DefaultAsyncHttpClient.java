@@ -16,27 +16,28 @@
  */
 package org.asynchttpclient;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
+import org.asynchttpclient.future.ListenableFuture;
+import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
+import org.asynchttpclient.netty.NettyAsyncHttpProvider;
+import org.asynchttpclient.request.BoundRequestBuilder;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.request.RequestBuilder;
+import org.asynchttpclient.request.SignatureCalculator;
+import org.asynchttpclient.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultAsyncHttpClient implements AsyncHttpClient {
-
-    /**
-     * Providers that will be searched for, on the classpath, in order when no
-     * provider is explicitly specified by the developer.
-     */
-    private static final String[] DEFAULT_PROVIDERS = {//
-        "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider"
-    };
 
     private final AsyncHttpProvider httpProvider;
     private final AsyncHttpClientConfig config;
@@ -75,29 +76,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * This configuration will be passed to the default {@link AsyncHttpProvider} that will be selected based on
      * the classpath configuration.
      *
-     * The default providers will be searched for in this order:
-     * <ul>
-     *     <li>netty</li>
-     *     <li>grizzly</li>
-     * </ul>
-     *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
-     *
      * @param config a {@link AsyncHttpClientConfig}
      */
     public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
-        this(loadDefaultProvider(DEFAULT_PROVIDERS, config), config);
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a AsyncHttpProvider class' name.
-     *
-     * @param config        a {@link AsyncHttpClientConfig}
-     * @param providerClass a {@link AsyncHttpProvider}
-     */
-    public DefaultAsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
-        this(loadProvider(providerClass, config), config);
+        this(new NettyAsyncHttpProvider(config), config);
     }
 
     /**
@@ -266,42 +248,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         }
         fc = new FilterContext.FilterContextBuilder<>(fc).request(request).build();
         return fc;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static AsyncHttpProvider loadProvider(final String className, final AsyncHttpClientConfig config) {
-        try {
-            Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread().getContextClassLoader()
-                    .loadClass(className);
-            return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class }).newInstance(config);
-        } catch (Throwable t) {
-            if (t instanceof InvocationTargetException) {
-                final InvocationTargetException ite = (InvocationTargetException) t;
-                if (logger.isErrorEnabled()) {
-                    logger.error("Unable to instantiate provider {}.  Trying other providers.", className);
-                    logger.error(ite.getCause().toString(), ite.getCause());
-                }
-            }
-            // Let's try with another classloader
-            try {
-                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) DefaultAsyncHttpClient.class.getClassLoader().loadClass(
-                        className);
-                return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class }).newInstance(config);
-            } catch (Throwable ignored) {
-            }
-        }
-        return null;
-    }
-
-    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames, AsyncHttpClientConfig config) {
-        AsyncHttpProvider provider;
-        for (final String className : providerClassNames) {
-            provider = loadProvider(className, config);
-            if (provider != null) {
-                return provider;
-            }
-        }
-        throw new IllegalStateException("No providers found on the classpath");
     }
 
     protected BoundRequestBuilder requestBuilder(String method, String url) {

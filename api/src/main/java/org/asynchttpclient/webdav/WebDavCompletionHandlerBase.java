@@ -25,14 +25,14 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
+import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.response.HttpResponseBodyPart;
+import org.asynchttpclient.response.HttpResponseHeaders;
+import org.asynchttpclient.response.HttpResponseStatus;
+import org.asynchttpclient.response.Response;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +109,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     /**
      * Invoked once the HTTP response has been fully read.
      *
-     * @param response The {@link org.asynchttpclient.Response}
+     * @param response The {@link org.asynchttpclient.response.Response}
      * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      */
     abstract public T onCompleted(WebDavResponse response) throws Exception;

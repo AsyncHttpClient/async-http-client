@@ -12,17 +12,17 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.async.util.TestUtils.findFreePort;
-import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
-import static org.asynchttpclient.async.util.TestUtils.newJettyHttpsServer;
+import static org.asynchttpclient.test.TestUtils.findFreePort;
+import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.test.TestUtils.newJettyHttpsServer;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketTextListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;

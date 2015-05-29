@@ -13,9 +13,9 @@
 package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,20 +99,6 @@ public class AsyncHttpClientFactory {
             }
         }
         return new DefaultAsyncHttpClient(provider, config);
-    }
-
-    public static AsyncHttpClient getAsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
-        if (attemptInstantiation()) {
-            try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(String.class,
-                        AsyncHttpClientConfig.class);
-                return constructor.newInstance(providerClass, config);
-            } catch (Exception e) {
-                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
-                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
-            }
-        }
-        return new DefaultAsyncHttpClient(providerClass, config);
     }
 
     private static boolean attemptInstantiation() {

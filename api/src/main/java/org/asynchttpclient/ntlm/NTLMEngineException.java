@@ -31,11 +31,11 @@ package org.asynchttpclient.ntlm;
  *
  * @since 4.0
  */
-public class NTLMEngineException extends Exception {
+public class NtlmEngineException extends Exception {
 
     private static final long serialVersionUID = 6027981323731768824L;
 
-    public NTLMEngineException() {
+    public NtlmEngineException() {
         super();
     }
 
@@ -44,7 +44,7 @@ public class NTLMEngineException extends Exception {
      *
      * @param message the exception detail message
      */
-    public NTLMEngineException(String message) {
+    public NtlmEngineException(String message) {
         super(message);
     }
 
@@ -55,7 +55,7 @@ public class NTLMEngineException extends Exception {
      * @param cause   the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
      *                if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
      */
-    public NTLMEngineException(String message, Throwable cause) {
+    public NtlmEngineException(String message, Throwable cause) {
         super(message, cause);
     }
 

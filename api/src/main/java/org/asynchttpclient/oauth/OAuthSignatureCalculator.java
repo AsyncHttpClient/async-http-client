@@ -25,14 +25,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.asynchttpclient.Param;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilderBase;
-import org.asynchttpclient.SignatureCalculator;
+import org.asynchttpclient.request.Param;
+import org.asynchttpclient.request.Request;
+import org.asynchttpclient.request.RequestBuilderBase;
+import org.asynchttpclient.request.SignatureCalculator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StringUtils;
-import org.asynchttpclient.util.UTF8UrlEncoder;
+import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
@@ -163,12 +163,12 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         StringBuilder sb = StringUtils.stringBuilder();
         sb.append(method); // POST / GET etc (nothing to URL encode)
         sb.append('&');
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, baseUrl);
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, baseUrl);
 
 
         // and all that needs to be URL encoded (... again!)
         sb.append('&');
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
 
         ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
@@ -190,12 +190,12 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         // careful: base64 has chars that need URL encoding:
         sb.append(KEY_OAUTH_SIGNATURE).append("=\"");
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, signature).append("\", ");
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, signature).append("\", ");
         sb.append(KEY_OAUTH_TIMESTAMP).append("=\"").append(oauthTimestamp).append("\", ");
 
         // also: nonce may contain things that need URL encoding (esp. when using base64):
         sb.append(KEY_OAUTH_NONCE).append("=\"");
-        UTF8UrlEncoder.encodeAndAppendQueryElement(sb, nonce);
+        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, nonce);
         sb.append("\", ");
 
         sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");
@@ -230,7 +230,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         }
 
         public OAuthParameterSet add(String key, String value) {
-            Parameter p = new Parameter(UTF8UrlEncoder.encodeQueryElement(key), UTF8UrlEncoder.encodeQueryElement(value));
+            Parameter p = new Parameter(Utf8UrlEncoder.encodeQueryElement(key), Utf8UrlEncoder.encodeQueryElement(value));
             allParameters.add(p);
             return this;
         }
