@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
  * resumable download will not works.
  */
-public class InputStreamBodyGenerator implements BodyGenerator {
+public final class InputStreamBodyGenerator implements BodyGenerator {
 
     private final static byte[] END_PADDING = "\r\n".getBytes();
     private final static byte[] ZERO = "0".getBytes();

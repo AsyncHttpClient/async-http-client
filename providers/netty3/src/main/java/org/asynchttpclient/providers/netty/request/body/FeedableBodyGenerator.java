@@ -28,7 +28,7 @@ import org.asynchttpclient.BodyGenerator;
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
  * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
  */
-public class FeedableBodyGenerator implements BodyGenerator {
+public final class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
     private final static byte[] ZERO = "0".getBytes(US_ASCII);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();

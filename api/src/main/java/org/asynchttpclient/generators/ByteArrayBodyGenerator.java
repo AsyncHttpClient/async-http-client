@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 /**
  * A {@link BodyGenerator} backed by a byte array.
  */
-public class ByteArrayBodyGenerator implements BodyGenerator {
+public final class ByteArrayBodyGenerator implements BodyGenerator {
 
     private final byte[] bytes;
 
