@@ -24,8 +24,10 @@ import java.nio.channels.WritableByteChannel;
 
 /**
  * Creates a request body from the contents of a file.
+ * Beware, Netty provider has its own way for uploading files and won't use the BodyGenerator API.
+ * If you want to use Netty and have a custom behavior while uploading a file through BodyGenerator,
+ * implement BodyGenerator instead of extending FileBodyGenerator.
  */
-// Not used by Netty
 public class FileBodyGenerator implements BodyGenerator {
 
     private final File file;
