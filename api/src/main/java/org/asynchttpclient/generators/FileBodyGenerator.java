@@ -12,21 +12,16 @@
  */
 package org.asynchttpclient.generators;
 
-import org.asynchttpclient.BodyGenerator;
-import org.asynchttpclient.RandomAccessBody;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
+
+import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.RandomAccessBody;
 
 /**
  * Creates a request body from the contents of a file.
  */
-//Not used by Netty
-public class FileBodyGenerator implements BodyGenerator {
+public final class FileBodyGenerator implements BodyGenerator {
 
     private final File file;
     private final long regionSeek;
@@ -62,40 +57,6 @@ public class FileBodyGenerator implements BodyGenerator {
      */
     @Override
     public RandomAccessBody createBody() throws IOException {
-        return new FileBody(file, regionSeek, regionLength);
-    }
-
-    private static class FileBody implements RandomAccessBody {
-
-        private final RandomAccessFile raf;
-
-        private final FileChannel channel;
-
-        private final long length;
-
-        private FileBody(File file, long regionSeek, long regionLength) throws IOException {
-            raf = new RandomAccessFile(file, "r");
-            channel = raf.getChannel();
-            length = regionLength;
-            if (regionSeek > 0) {
-                raf.seek(regionSeek);
-            }
-        }
-
-        public long getContentLength() {
-            return length;
-        }
-
-        public long read(ByteBuffer buffer) throws IOException {
-            return channel.read(buffer);
-        }
-
-        public long transferTo(long position, WritableByteChannel target) throws IOException {
-            return channel.transferTo(position, length, target);
-        }
-
-        public void close() throws IOException {
-            raf.close();
-        }
+        throw new UnsupportedOperationException("FileBodyGenerator.createBody isn't used, Netty direclt sends the file");
     }
 }
