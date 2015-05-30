@@ -44,7 +44,7 @@
     </build>
 
     <modules>
-		<module>netty-commons</module>
+		
         <module>netty3</module>
         <module>netty4</module>
     </modules>
