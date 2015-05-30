@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
 		<artifactId>oss-parent</artifactId>
-		<version>5</version>
+		<version>9</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.asynchttpclient</groupId>
