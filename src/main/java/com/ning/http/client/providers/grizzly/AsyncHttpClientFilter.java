@@ -362,7 +362,7 @@ final class AsyncHttpClientFilter extends BaseFilter {
         if (!headers.contains(header)) {
             if (requestPacket.getProcessingState().isKeepAlive()) {
                 headers.addValue(header).setBytes(KEEP_ALIVE_VALUE.getByteArray());
-            } else {
+            } else if (Protocol.HTTP_1_1.equals(requestPacket.getProtocol())) {
                 headers.addValue(header).setBytes(CLOSE_VALUE.getByteArray());
             }
 //            switch (requestPacket.getProtocol()) {
