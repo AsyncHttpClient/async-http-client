@@ -43,7 +43,6 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.cookie.CookieEncoder;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyBodyBody;
 import org.asynchttpclient.netty.request.body.NettyByteArrayBody;
@@ -67,11 +66,9 @@ public final class NettyRequestFactory {
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
 
-    public NettyRequestFactory(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig) {
+    public NettyRequestFactory(AsyncHttpClientConfig config) {
         this.config = config;
-        this.nettyConfig = nettyConfig;
     }
 
     private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
@@ -223,7 +220,7 @@ public final class NettyRequestFactory {
                 nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
             else if (request.getStreamData() != null)
-                nettyBody = new NettyInputStreamBody(request.getStreamData());
+                nettyBody = new NettyInputStreamBody(request.getStreamData(), config);
 
             else if (isNonEmpty(request.getFormParams())) {
 
@@ -234,20 +231,20 @@ public final class NettyRequestFactory {
                 nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
             } else if (isNonEmpty(request.getParts()))
-                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
+                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), config);
 
             else if (request.getFile() != null)
-                nettyBody = new NettyFileBody(request.getFile(), nettyConfig);
+                nettyBody = new NettyFileBody(request.getFile(), config);
 
             else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), nettyConfig);
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
-                nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
+                nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream(), config);
 
             else if (request.getBodyGenerator() != null)
-                nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), nettyConfig);
+                nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }
 
         return nettyBody;

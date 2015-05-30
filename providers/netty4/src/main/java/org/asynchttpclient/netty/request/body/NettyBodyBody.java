@@ -23,7 +23,6 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import java.io.IOException;
 
 import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
@@ -35,11 +34,11 @@ import org.asynchttpclient.request.body.generator.BodyGenerator;
 public class NettyBodyBody implements NettyBody {
 
     private final Body body;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
+    private final AsyncHttpClientConfig config;
 
-    public NettyBodyBody(Body body, NettyAsyncHttpProviderConfig nettyConfig) {
+    public NettyBodyBody(Body body, AsyncHttpClientConfig config) {
         this.body = body;
-        this.nettyConfig = nettyConfig;
+        this.config = config;
     }
 
     public Body getBody() {
@@ -57,10 +56,10 @@ public class NettyBodyBody implements NettyBody {
     };
 
     @Override
-    public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+    public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
 
         Object msg;
-        if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !nettyConfig.isDisableZeroCopy()) {
+        if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy()) {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {

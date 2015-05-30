@@ -113,7 +113,7 @@ public class ChannelManager {
         this.config = config;
         this.nettyConfig = nettyConfig;
         this.nettyTimer = nettyTimer;
-        this.sslEngineFactory = nettyConfig.getSslEngineFactory() != null ? nettyConfig.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
+        this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
         ChannelPool channelPool = nettyConfig.getChannelPool();
         if (channelPool == null && config.isAllowPoolingConnections()) {
@@ -169,7 +169,7 @@ public class ChannelManager {
             semaphoreComputer = null;
         }
 
-        handshakeTimeout = nettyConfig.getHandshakeTimeout();
+        handshakeTimeout = config.getHandshakeTimeout();
 
         if (nettyConfig.getSocketChannelFactory() != null) {
             socketChannelFactory = nettyConfig.getSocketChannelFactory();
@@ -278,7 +278,7 @@ public class ChannelManager {
     }
 
     private HttpContentDecompressor newHttpContentDecompressor() {
-        if (nettyConfig.isKeepEncodingHeader())
+        if (config.isKeepEncodingHeader())
             return new HttpContentDecompressor() {
                 @Override
                 protected String getTargetContentEncoding(String contentEncoding) throws Exception {
@@ -390,9 +390,9 @@ public class ChannelManager {
 
     private HttpClientCodec newHttpClientCodec() {
         return new HttpClientCodec(//
-                nettyConfig.getHttpClientCodecMaxInitialLineLength(),//
-                nettyConfig.getHttpClientCodecMaxHeaderSize(),//
-                nettyConfig.getHttpClientCodecMaxChunkSize());
+                config.getHttpClientCodecMaxInitialLineLength(),//
+                config.getHttpClientCodecMaxHeaderSize(),//
+                config.getHttpClientCodecMaxChunkSize());
     }
 
     public SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
@@ -450,8 +450,8 @@ public class ChannelManager {
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
         pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
         pipeline.remove(HTTP_HANDLER);
-        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, nettyConfig.getWebSocketMaxFrameSize()));
-        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(nettyConfig.getWebSocketMaxBufferSize()));
+        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, config.getWebSocketMaxFrameSize()));
+        pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(config.getWebSocketMaxBufferSize()));
     }
 
     public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final Object partitionKey) {

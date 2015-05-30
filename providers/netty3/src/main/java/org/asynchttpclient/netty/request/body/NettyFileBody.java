@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
@@ -34,20 +33,20 @@ public class NettyFileBody implements NettyBody {
     private final File file;
     private final long offset;
     private final long length;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
+    private final AsyncHttpClientConfig config;
 
-    public NettyFileBody(File file, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
-        this(file, 0, file.length(), nettyConfig);
+    public NettyFileBody(File file, AsyncHttpClientConfig config) throws IOException {
+        this(file, 0, file.length(), config);
     }
 
-    public NettyFileBody(File file, long offset, long length, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
+    public NettyFileBody(File file, long offset, long length, AsyncHttpClientConfig config) throws IOException {
         if (!file.isFile()) {
             throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
         }
         this.file = file;
         this.offset = offset;
         this.length = length;
-        this.nettyConfig = nettyConfig;
+        this.config = config;
     }
 
     public File getFile() {
@@ -69,13 +68,13 @@ public class NettyFileBody implements NettyBody {
     }
 
     @Override
-    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+    public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
         try {
             ChannelFuture writeFuture;
-            if (ChannelManager.isSslHandlerConfigured(channel.getPipeline()) || nettyConfig.isDisableZeroCopy()) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, raf.length(), nettyConfig.getChunkedFileChunkSize()));
+            if (ChannelManager.isSslHandlerConfigured(channel.getPipeline()) || config.isDisableZeroCopy()) {
+                writeFuture = channel.write(new ChunkedFile(raf, offset, raf.length(), config.getChunkedFileChunkSize()));
             } else {
                 final FileRegion region = new OptimizedFileRegion(raf, offset, raf.length());
                 writeFuture = channel.write(region);

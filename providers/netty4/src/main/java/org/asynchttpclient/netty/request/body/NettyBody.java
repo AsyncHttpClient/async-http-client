@@ -13,12 +13,11 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
-
 import io.netty.channel.Channel;
 
 import java.io.IOException;
+
+import org.asynchttpclient.netty.future.NettyResponseFuture;
 
 public interface NettyBody {
 
@@ -26,5 +25,5 @@ public interface NettyBody {
 
     String getContentType();
 
-    void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException;
+    void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
 }

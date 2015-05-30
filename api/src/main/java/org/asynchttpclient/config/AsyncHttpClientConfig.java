@@ -31,6 +31,7 @@ import javax.net.ssl.SSLContext;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -40,8 +41,8 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
- * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
- * object default behavior by doing:
+ * Configuration class to use with a {@link AsyncHttpClient}. System property
+ * can be also used to configure this object default behavior by doing:
  * <p/>
  * -Dorg.asynchttpclient.AsyncHttpClientConfig.nameOfTheProperty
  */
@@ -107,6 +108,16 @@ public class AsyncHttpClientConfig {
     protected String[] enabledCipherSuites;
     protected Integer sslSessionCacheSize;
     protected Integer sslSessionTimeout;
+    protected int httpClientCodecMaxInitialLineLength = 4096;
+    protected int httpClientCodecMaxHeaderSize = 8192;
+    protected int httpClientCodecMaxChunkSize = 8192;
+    protected boolean disableZeroCopy;
+    protected long handshakeTimeout = 10000L;
+    protected SSLEngineFactory sslEngineFactory;
+    protected int chunkedFileChunkSize = 8192;
+    protected int webSocketMaxBufferSize = 128000000;
+    protected int webSocketMaxFrameSize = 10 * 1024;
+    protected boolean keepEncodingHeader = false;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
 
     protected AsyncHttpClientConfig() {
@@ -143,6 +154,16 @@ public class AsyncHttpClientConfig {
             String[] enabledCipherSuites,//
             Integer sslSessionCacheSize,//
             Integer sslSessionTimeout,//
+            int httpClientCodecMaxInitialLineLength,//
+            int httpClientCodecMaxHeaderSize,//
+            int httpClientCodecMaxChunkSize,//
+            boolean disableZeroCopy,//
+            long handshakeTimeout,//
+            SSLEngineFactory sslEngineFactory,//
+            int chunkedFileChunkSize,//
+            int webSocketMaxBufferSize,//
+            int webSocketMaxFrameSize,//
+            boolean keepEncodingHeader,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
 
         this.connectTimeout = connectTimeout;
@@ -177,67 +198,92 @@ public class AsyncHttpClientConfig {
         this.sslSessionCacheSize = sslSessionCacheSize;
         this.sslSessionTimeout = sslSessionTimeout;
         this.providerConfig = providerConfig;
+        this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
+        this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
+        this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
+        this.disableZeroCopy = disableZeroCopy;
+        this.handshakeTimeout = handshakeTimeout;
+        this.sslEngineFactory = sslEngineFactory;
+        this.chunkedFileChunkSize = chunkedFileChunkSize;
+        this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+        this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+        this.keepEncodingHeader = keepEncodingHeader;
     }
 
     /**
-     * Return the maximum number of connections an {@link AsyncHttpClient} can handle.
+     * Return the maximum number of connections an {@link AsyncHttpClient} can
+     * handle.
      *
-     * @return the maximum number of connections an {@link AsyncHttpClient} can handle.
+     * @return the maximum number of connections an {@link AsyncHttpClient} can
+     *         handle.
      */
     public int getMaxConnections() {
         return maxConnections;
     }
 
     /**
-     * Return the maximum number of connections per hosts an {@link AsyncHttpClient} can handle.
+     * Return the maximum number of connections per hosts an
+     * {@link AsyncHttpClient} can handle.
      *
-     * @return the maximum number of connections per host an {@link AsyncHttpClient} can handle.
+     * @return the maximum number of connections per host an
+     *         {@link AsyncHttpClient} can handle.
      */
     public int getMaxConnectionsPerHost() {
         return maxConnectionsPerHost;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} can
+     * wait when connecting to a remote host
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} can
+     *         wait when connecting to a remote host
      */
     public int getConnectTimeout() {
         return connectTimeout;
     }
 
     /**
-     * Return the maximum time, in milliseconds, a {@link org.asynchttpclient.ws.WebSocket} may be idle before being timed out.
-     * @return the maximum time, in milliseconds, a {@link org.asynchttpclient.ws.WebSocket} may be idle before being timed out.
+     * Return the maximum time, in milliseconds, a
+     * {@link org.asynchttpclient.ws.WebSocket} may be idle before being timed
+     * out.
+     * 
+     * @return the maximum time, in milliseconds, a
+     *         {@link org.asynchttpclient.ws.WebSocket} may be idle before being
+     *         timed out.
      */
     public int getWebSocketTimeout() {
         return webSocketTimeout;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} can
+     * stay idle.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} can
+     *         stay idle.
      */
     public int getReadTimeout() {
         return readTimeout;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
-     * in pool.
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} will
+     * keep connection in pool.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
-     *         in pool.
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} will
+     *         keep connection in pool.
      */
     public int getPooledConnectionIdleTimeout() {
         return pooledConnectionIdleTimeout;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} waits
+     * until the response is completed.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} waits
+     *         until the response is completed.
      */
     public int getRequestTimeout() {
         return requestTimeout;
@@ -289,12 +335,13 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
-     * asynchronous response.
+     * Return the {@link java.util.concurrent.ExecutorService} an
+     * {@link AsyncHttpClient} use for handling asynchronous response.
      *
-     * @return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
-     *         asynchronous response.  If no {@link ExecutorService} has been explicitly provided,
-     *         this method will return <code>null</code>
+     * @return the {@link java.util.concurrent.ExecutorService} an
+     *         {@link AsyncHttpClient} use for handling asynchronous response.
+     *         If no {@link ExecutorService} has been explicitly provided, this
+     *         method will return <code>null</code>
      */
     public ExecutorService executorService() {
         return applicationThreadPool;
@@ -328,9 +375,9 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the current {@link Realm}}
+     * Return the current {@link Realm}
      *
-     * @return the current {@link Realm}}
+     * @return the current {@link Realm}
      */
     public Realm getRealm() {
         return realm;
@@ -381,9 +428,11 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     * Return the number of time the library will retry when an
+     * {@link java.io.IOException} is throw by the remote server
      *
-     * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     * @return the number of time the library will retry when an
+     *         {@link java.io.IOException} is throw by the remote server
      */
     public int getMaxRequestRetry() {
         return maxRequestRetry;
@@ -407,7 +456,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * @return <code>true</code> if both the application and reaper thread pools
-     * haven't yet been shutdown.
+     *         haven't yet been shutdown.
      * @since 1.7.21
      */
     public boolean isValid() {
@@ -423,7 +472,8 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
+     * @return number to multiply by availableProcessors() that will determine #
+     *         of NioWorkers to use
      */
     public int getIoThreadMultiplier() {
         return ioThreadMultiplier;
@@ -433,12 +483,12 @@ public class AsyncHttpClientConfig {
      * <p>
      * In the case of a POST/Redirect/Get scenario where the server uses a 302
      * for the redirect, should AHC respond to the redirect with a GET or
-     * whatever the original method was.  Unless configured otherwise,
-     * for a 302, AHC, will use a GET for this case.
+     * whatever the original method was. Unless configured otherwise, for a 302,
+     * AHC, will use a GET for this case.
      * </p>
      *
-     * @return <code>true</code> if string 302 handling is to be used,
-     *  otherwise <code>false</code>.
+     * @return <code>true</code> if string 302 handling is to be used, otherwise
+     *         <code>false</code>.
      *
      * @since 1.7.2
      */
@@ -447,19 +497,23 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy
-     * or WebSocket proxy, otherwise <code>false</code>.
-     *  
-     *  @since 1.8.13
+     * @return<code>true</code> if AHC should use relative URIs instead of
+     *                          absolute ones when talking with a SSL proxy or
+     *                          WebSocket proxy, otherwise <code>false</code>.
+     * 
+     * @since 1.8.13
      */
     public boolean isUseRelativeURIsWithConnectProxies() {
         return useRelativeURIsWithConnectProxies;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
+     * Return the maximum time in millisecond an {@link AsyncHttpClient} will
+     * keep connection in the pool, or -1 to keep connection while possible.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
+     * @return the maximum time in millisecond an {@link AsyncHttpClient} will
+     *         keep connection in the pool, or -1 to keep connection while
+     *         possible.
      */
     public int getConnectionTTL() {
         return connectionTTL;
@@ -495,6 +549,46 @@ public class AsyncHttpClientConfig {
      */
     public Integer getSslSessionTimeout() {
         return sslSessionTimeout;
+    }
+
+    public int getHttpClientCodecMaxInitialLineLength() {
+        return httpClientCodecMaxInitialLineLength;
+    }
+
+    public int getHttpClientCodecMaxHeaderSize() {
+        return httpClientCodecMaxHeaderSize;
+    }
+
+    public int getHttpClientCodecMaxChunkSize() {
+        return httpClientCodecMaxChunkSize;
+    }
+
+    public boolean isDisableZeroCopy() {
+        return disableZeroCopy;
+    }
+
+    public long getHandshakeTimeout() {
+        return handshakeTimeout;
+    }
+
+    public SSLEngineFactory getSslEngineFactory() {
+        return sslEngineFactory;
+    }
+
+    public int getChunkedFileChunkSize() {
+        return chunkedFileChunkSize;
+    }
+
+    public int getWebSocketMaxBufferSize() {
+        return webSocketMaxBufferSize;
+    }
+
+    public int getWebSocketMaxFrameSize() {
+        return webSocketMaxFrameSize;
+    }
+
+    public boolean isKeepEncodingHeader() {
+        return keepEncodingHeader;
     }
 
     /**
@@ -534,15 +628,27 @@ public class AsyncHttpClientConfig {
         private String[] enabledCipherSuites;
         private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
         private Integer sslSessionTimeout = defaultSslSessionTimeout();
+        protected int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
+        protected int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
+        protected int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
+        protected boolean disableZeroCopy = defaultDisableZeroCopy();
+        protected long handshakeTimeout = defaultHandshakeTimeout();
+        protected SSLEngineFactory sslEngineFactory;
+        protected int chunkedFileChunkSize = defaultChunkedFileChunkSize();
+        protected int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
+        protected int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
+        protected boolean keepEncodingHeader = defaultKeepEncodingHeader();
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
         }
 
         /**
-         * Set the maximum number of connections an {@link AsyncHttpClient} can handle.
+         * Set the maximum number of connections an {@link AsyncHttpClient} can
+         * handle.
          *
-         * @param maxConnections the maximum number of connections an {@link AsyncHttpClient} can handle.
+         * @param maxConnections the maximum number of connections an
+         *            {@link AsyncHttpClient} can handle.
          * @return a {@link Builder}
          */
         public Builder setMaxConnections(int maxConnections) {
@@ -551,9 +657,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum number of connections per (scheme, host, port) an {@link AsyncHttpClient} can handle.
+         * Set the maximum number of connections per (scheme, host, port) an
+         * {@link AsyncHttpClient} can handle.
          *
-         * @param maxConnectionsPerHost the maximum number of connections per (scheme, host, port) an {@link AsyncHttpClient} can handle.
+         * @param maxConnectionsPerHost the maximum number of connections per
+         *            (scheme, host, port) an {@link AsyncHttpClient} can
+         *            handle.
          * @return a {@link Builder}
          */
         public Builder setMaxConnectionsPerHost(int maxConnectionsPerHost) {
@@ -562,9 +671,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * Set the maximum time in millisecond an {@link AsyncHttpClient} can
+         * wait when connecting to a remote host
          *
-         * @param connectTimeout the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * @param connectTimeout the maximum time in millisecond an
+         *            {@link AsyncHttpClient} can wait when connecting to a
+         *            remote host
          * @return a {@link Builder}
          */
         public Builder setConnectTimeout(int connectTimeout) {
@@ -573,10 +685,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link org.asynchttpclient.ws.WebSocket} can stay idle.
+         * Set the maximum time in millisecond an
+         * {@link org.asynchttpclient.ws.WebSocket} can stay idle.
          *
-         * @param webSocketTimeout
-         *         the maximum time in millisecond an {@link org.asynchttpclient.ws.WebSocket} can stay idle.
+         * @param webSocketTimeout the maximum time in millisecond an
+         *            {@link org.asynchttpclient.ws.WebSocket} can stay idle.
          * @return a {@link Builder}
          */
         public Builder setWebSocketTimeout(int webSocketTimeout) {
@@ -585,10 +698,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+         * Set the maximum time in millisecond an {@link AsyncHttpClient} can
+         * stay idle.
          *
-         * @param readTimeout
-         *         the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+         * @param readTimeout the maximum time in millisecond an
+         *            {@link AsyncHttpClient} can stay idle.
          * @return a {@link Builder}
          */
         public Builder setReadTimeout(int readTimeout) {
@@ -597,12 +711,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
-         * idle in pool.
+         * Set the maximum time in millisecond an {@link AsyncHttpClient} will
+         * keep connection idle in pool.
          *
-         * @param pooledConnectionIdleTimeout
-         *         the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
-         *         idle in pool.
+         * @param pooledConnectionIdleTimeout the maximum time in millisecond an
+         *            {@link AsyncHttpClient} will keep connection idle in pool.
          * @return a {@link Builder}
          */
         public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
@@ -611,9 +724,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+         * Set the maximum time in millisecond an {@link AsyncHttpClient} waits
+         * until the response is completed.
          *
-         * @param requestTimeout the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+         * @param requestTimeout the maximum time in millisecond an
+         *            {@link AsyncHttpClient} waits until the response is
+         *            completed.
          * @return a {@link Builder}
          */
         public Builder setRequestTimeout(int requestTimeout) {
@@ -666,9 +782,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.
+         * Set true if connection can be pooled by a {@link ConnectionsPool}.
+         * Default is true.
          *
-         * @param allowPoolingConnections true if connection can be pooled by a {@link ConnectionsPool}
+         * @param allowPoolingConnections true if connection can be pooled by a
+         *            {@link ConnectionsPool}
          * @return a {@link Builder}
          */
         public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
@@ -677,11 +795,13 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
-         * asynchronous response.
+         * Set the {@link java.util.concurrent.ExecutorService} an
+         * {@link AsyncHttpClient} use for handling asynchronous response.
          *
-         * @param applicationThreadPool the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
-         *                              asynchronous response.
+         * @param applicationThreadPool the
+         *            {@link java.util.concurrent.ExecutorService} an
+         *            {@link AsyncHttpClient} use for handling asynchronous
+         *            response.
          * @return a {@link Builder}
          */
         public Builder setExecutorService(ExecutorService applicationThreadPool) {
@@ -690,7 +810,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set an instance of {@link ProxyServerSelector} used by an {@link AsyncHttpClient}
+         * Set an instance of {@link ProxyServerSelector} used by an
+         * {@link AsyncHttpClient}
          *
          * @param proxyServerSelector instance of {@link ProxyServerSelector}
          * @return a {@link Builder}
@@ -701,7 +822,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set an instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
+         * Set an instance of {@link ProxyServer} used by an
+         * {@link AsyncHttpClient}
          *
          * @param proxyServer instance of {@link ProxyServer}
          * @return a {@link Builder}
@@ -734,7 +856,7 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link Realm}  that will be used for all requests.
+         * Set the {@link Realm} that will be used for all requests.
          *
          * @param realm the {@link Realm}
          * @return a {@link Builder}
@@ -745,7 +867,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Add an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClient#executeRequest(Request)}
+         * Add an {@link org.asynchttpclient.filter.RequestFilter} that will be
+         * invoked before {@link AsyncHttpClient#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
          * @return this
@@ -756,7 +879,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Remove an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClient#executeRequest(Request)}
+         * Remove an {@link org.asynchttpclient.filter.RequestFilter} that will
+         * be invoked before {@link AsyncHttpClient#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
          * @return this
@@ -767,10 +891,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Add an {@link org.asynchttpclient.filter.ResponseFilter} that will be invoked as soon as the response is
-         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
+         * Add an {@link org.asynchttpclient.filter.ResponseFilter} that will be
+         * invoked as soon as the response is received, and before
+         * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
          *
-         * @param responseFilter an {@link org.asynchttpclient.filter.ResponseFilter}
+         * @param responseFilter an
+         *            {@link org.asynchttpclient.filter.ResponseFilter}
          * @return this
          */
         public Builder addResponseFilter(ResponseFilter responseFilter) {
@@ -779,10 +905,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Remove an {@link org.asynchttpclient.filter.ResponseFilter} that will be invoked as soon as the response is
-         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
+         * Remove an {@link org.asynchttpclient.filter.ResponseFilter} that will
+         * be invoked as soon as the response is received, and before
+         * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
          *
-         * @param responseFilter an {@link org.asynchttpclient.filter.ResponseFilter}
+         * @param responseFilter an
+         *            {@link org.asynchttpclient.filter.ResponseFilter}
          * @return this
          */
         public Builder removeResponseFilter(ResponseFilter responseFilter) {
@@ -791,10 +919,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Add an {@link org.asynchttpclient.filter.IOExceptionFilter} that will be invoked when an {@link java.io.IOException}
-         * occurs during the download/upload operations.
+         * Add an {@link org.asynchttpclient.filter.IOExceptionFilter} that will
+         * be invoked when an {@link java.io.IOException} occurs during the
+         * download/upload operations.
          *
-         * @param ioExceptionFilter an {@link org.asynchttpclient.filter.ResponseFilter}
+         * @param ioExceptionFilter an
+         *            {@link org.asynchttpclient.filter.ResponseFilter}
          * @return this
          */
         public Builder addIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
@@ -803,10 +933,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Remove an {@link org.asynchttpclient.filter.IOExceptionFilter} tthat will be invoked when an {@link java.io.IOException}
-         * occurs during the download/upload operations.
+         * Remove an {@link org.asynchttpclient.filter.IOExceptionFilter} tthat
+         * will be invoked when an {@link java.io.IOException} occurs during the
+         * download/upload operations.
          *
-         * @param ioExceptionFilter an {@link org.asynchttpclient.filter.ResponseFilter}
+         * @param ioExceptionFilter an
+         *            {@link org.asynchttpclient.filter.ResponseFilter}
          * @return this
          */
         public Builder removeIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
@@ -815,7 +947,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the number of times a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
+         * Set the number of times a request will be retried when an
+         * {@link java.io.IOException} occurs because of a Network exception.
          *
          * @param maxRequestRetry the number of times a request will be retried
          * @return this
@@ -837,8 +970,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Allows use unescaped URLs in requests
-         * useful for retrieving data from broken sites
+         * Allows use unescaped URLs in requests useful for retrieving data from
+         * broken sites
          *
          * @param disableUrlEncodingForBoundRequests
          * @return this
@@ -849,12 +982,15 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Sets whether AHC should use the default JDK ProxySelector to select a proxy server.
+         * Sets whether AHC should use the default JDK ProxySelector to select a
+         * proxy server.
          * <p/>
-         * If useProxySelector is set to <code>true</code> but {@link #setProxyServer(ProxyServer)}
-         * was used to explicitly set a proxy server, the latter is preferred.
+         * If useProxySelector is set to <code>true</code> but
+         * {@link #setProxyServer(ProxyServer)} was used to explicitly set a
+         * proxy server, the latter is preferred.
          * <p/>
-         * See http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.html
+         * See http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.
+         * html
          */
         public Builder setUseProxySelector(boolean useProxySelector) {
             this.useProxySelector = useProxySelector;
@@ -863,14 +999,18 @@ public class AsyncHttpClientConfig {
 
         /**
          * Sets whether AHC should use the default http.proxy* system properties
-         * to obtain proxy information.  This differs from {@link #setUseProxySelector(boolean)}
-         * in that AsyncHttpClient will use its own logic to handle the system properties,
-         * potentially supporting other protocols that the the JDK ProxySelector doesn't.
+         * to obtain proxy information. This differs from
+         * {@link #setUseProxySelector(boolean)} in that AsyncHttpClient will
+         * use its own logic to handle the system properties, potentially
+         * supporting other protocols that the the JDK ProxySelector doesn't.
          * <p/>
-         * If useProxyProperties is set to <code>true</code> but {@link #setUseProxySelector(boolean)}
-         * was also set to true, the latter is preferred.
+         * If useProxyProperties is set to <code>true</code> but
+         * {@link #setUseProxySelector(boolean)} was also set to true, the
+         * latter is preferred.
          * <p/>
-         * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+         * See
+         * http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.
+         * html
          */
         public Builder setUseProxyProperties(boolean useProxyProperties) {
             this.useProxyProperties = useProxyProperties;
@@ -883,8 +1023,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Configures this AHC instance to be strict in it's handling of 302 redirects
-         * in a POST/Redirect/GET situation.
+         * Configures this AHC instance to be strict in it's handling of 302
+         * redirects in a POST/Redirect/GET situation.
          *
          * @param strict302Handling strict handling
          *
@@ -898,9 +1038,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond connection can be added to the pool for further reuse
+         * Set the maximum time in millisecond connection can be added to the
+         * pool for further reuse
          *
-         * @param connectionTTL the maximum time in millisecond connection can be added to the pool for further reuse
+         * @param connectionTTL the maximum time in millisecond connection can
+         *            be added to the pool for further reuse
          * @return a {@link Builder}
          */
         public Builder setConnectionTTL(int connectionTTL) {
@@ -909,7 +1051,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL or WebSocket proxy.
+         * Configures this AHC instance to use relative URIs instead of absolute
+         * ones when talking with a SSL or WebSocket proxy.
          *
          * @param useRelativeURIsWithConnectProxies
          * @return this
@@ -940,20 +1083,20 @@ public class AsyncHttpClientConfig {
             this.sslSessionCacheSize = sslSessionCacheSize;
             return this;
         }
-        
+
         public Builder setSslSessionTimeout(Integer sslSessionTimeout) {
             this.sslSessionTimeout = sslSessionTimeout;
             return this;
         }
 
         /**
-         * Create a config builder with values taken from the given prototype configuration.
+         * Create a config builder with values taken from the given prototype
+         * configuration.
          *
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
             allowPoolingConnections = prototype.isAllowPoolingConnections();
-            providerConfig = prototype.getAsyncHttpProviderConfig();
             connectTimeout = prototype.getConnectTimeout();
             pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
             readTimeout = prototype.getReadTimeout();
@@ -988,6 +1131,18 @@ public class AsyncHttpClientConfig {
             enabledCipherSuites = prototype.enabledCipherSuites;
             sslSessionCacheSize = prototype.sslSessionCacheSize;
             sslSessionTimeout = prototype.sslSessionTimeout;
+            httpClientCodecMaxInitialLineLength = prototype.httpClientCodecMaxInitialLineLength;
+            httpClientCodecMaxHeaderSize = prototype.httpClientCodecMaxHeaderSize;
+            httpClientCodecMaxChunkSize = prototype.httpClientCodecMaxChunkSize;
+            disableZeroCopy = prototype.disableZeroCopy;
+            handshakeTimeout = prototype.handshakeTimeout;
+            sslEngineFactory = prototype.sslEngineFactory;
+            chunkedFileChunkSize = prototype.chunkedFileChunkSize;
+            webSocketMaxBufferSize = prototype.webSocketMaxBufferSize;
+            webSocketMaxFrameSize = prototype.webSocketMaxFrameSize;
+            keepEncodingHeader = prototype.keepEncodingHeader;
+
+            providerConfig = prototype.getAsyncHttpProviderConfig();
         }
 
         /**
@@ -1037,6 +1192,16 @@ public class AsyncHttpClientConfig {
                     enabledCipherSuites, //
                     sslSessionCacheSize, //
                     sslSessionTimeout, //
+                    httpClientCodecMaxInitialLineLength, //
+                    httpClientCodecMaxHeaderSize, //
+                    httpClientCodecMaxChunkSize, //
+                    disableZeroCopy, //
+                    handshakeTimeout, //
+                    sslEngineFactory, //
+                    chunkedFileChunkSize, //
+                    webSocketMaxBufferSize, //
+                    webSocketMaxFrameSize, //
+                    keepEncodingHeader, //
                     providerConfig);
         }
     }

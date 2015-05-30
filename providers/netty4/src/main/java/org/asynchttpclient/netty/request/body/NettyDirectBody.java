@@ -13,20 +13,19 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import java.io.IOException;
-
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+
+import java.io.IOException;
+
+import org.asynchttpclient.netty.future.NettyResponseFuture;
 
 public abstract class NettyDirectBody implements NettyBody {
 
     public abstract ByteBuf byteBuf();
 
     @Override
-    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+    public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
     }
 }

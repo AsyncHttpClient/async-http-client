@@ -38,7 +38,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final boolean allowStopNettyTimer;
     private final Timer nettyTimer;
 
@@ -47,7 +46,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         this.config = config;
-        nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
+        NettyAsyncHttpProviderConfig nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
         (NettyAsyncHttpProviderConfig) config.getAsyncHttpProviderConfig()
                 : new NettyAsyncHttpProviderConfig();
 
@@ -55,7 +54,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : nettyConfig.getNettyTimer();
 
         channelManager = new ChannelManager(config, nettyConfig, nettyTimer);
-        requestSender = new NettyRequestSender(config, nettyConfig, channelManager, nettyTimer, closed);
+        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, closed);
         channelManager.configureBootstraps(requestSender, closed);
     }
 

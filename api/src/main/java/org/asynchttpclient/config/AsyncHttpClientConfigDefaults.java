@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.config;
 
-
 public final class AsyncHttpClientConfigDefaults {
 
     private AsyncHttpClientConfigDefaults() {
@@ -109,10 +108,46 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static Integer defaultSslSessionCacheSize() {
-        return Integer.getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionCacheSize");
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionCacheSize");
     }
 
     public static Integer defaultSslSessionTimeout() {
-        return Integer.getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionTimeout");
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionTimeout");
+    }
+    
+    public static int defaultHttpClientCodecMaxInitialLineLength() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxInitialLineLength");
+    }
+    
+    public static int defaultHttpClientCodecMaxHeaderSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxHeaderSize");
+    }
+    
+    public static int defaultHttpClientCodecMaxChunkSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxChunkSize");
+    }
+    
+    public static boolean defaultDisableZeroCopy() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableZeroCopy");
+    }
+    
+    public static long defaultHandshakeTimeout() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getLong(ASYNC_CLIENT_CONFIG_ROOT + "handshakeTimeout");
+    }
+    
+    public static int defaultChunkedFileChunkSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "chunkedFileChunkSize");
+    }
+    
+    public static int defaultWebSocketMaxBufferSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "webSocketMaxBufferSize");
+    }
+    
+    public static int defaultWebSocketMaxFrameSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "webSocketMaxFrameSize");
+    }
+    
+    public static boolean defaultKeepEncodingHeader() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "keepEncodingHeader");
     }
 }

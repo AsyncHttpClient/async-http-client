@@ -17,7 +17,7 @@ import static org.asynchttpclient.request.body.multipart.MultipartUtils.newMulti
 
 import java.util.List;
 
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.request.body.multipart.MultipartBody;
 import org.asynchttpclient.request.body.multipart.Part;
@@ -26,12 +26,12 @@ public class NettyMultipartBody extends NettyBodyBody {
 
     private final String contentType;
 
-    public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers, NettyAsyncHttpProviderConfig nettyConfig) {
-        this(newMultipartBody(parts, headers), nettyConfig);
+    public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers, AsyncHttpClientConfig config) {
+        this(newMultipartBody(parts, headers), config);
     }
 
-    private NettyMultipartBody(MultipartBody body, NettyAsyncHttpProviderConfig nettyConfig) {
-        super(body, nettyConfig);
+    private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
+        super(body, config);
         contentType = body.getContentType();
     }
 

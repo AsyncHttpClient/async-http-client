@@ -33,7 +33,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
 
-    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
@@ -42,7 +41,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
-        nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
+        NettyAsyncHttpProviderConfig nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
         (NettyAsyncHttpProviderConfig) config.getAsyncHttpProviderConfig()
                 : new NettyAsyncHttpProviderConfig();
 
@@ -50,7 +49,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : nettyConfig.getNettyTimer();
 
         channelManager = new ChannelManager(config, nettyConfig, nettyTimer);
-        requestSender = new NettyRequestSender(config, nettyConfig, channelManager, nettyTimer, closed);
+        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, closed);
         channelManager.configureBootstraps(requestSender, closed);
     }
 

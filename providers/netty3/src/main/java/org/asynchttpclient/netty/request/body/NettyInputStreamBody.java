@@ -33,9 +33,11 @@ public class NettyInputStreamBody implements NettyBody {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
     private final InputStream inputStream;
+    private final AsyncHttpClientConfig config;
 
-    public NettyInputStreamBody(InputStream inputStream) {
+    public NettyInputStreamBody(InputStream inputStream, AsyncHttpClientConfig config) {
         this.inputStream = inputStream;
+        this.config = config;
     }
 
     public InputStream getInputStream() {
@@ -53,7 +55,7 @@ public class NettyInputStreamBody implements NettyBody {
     }
 
     @Override
-    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+    public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         final InputStream is = inputStream;
 
         if (future.isStreamWasAlreadyConsumed()) {

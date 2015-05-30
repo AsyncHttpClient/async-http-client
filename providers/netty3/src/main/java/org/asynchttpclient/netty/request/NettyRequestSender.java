@@ -39,7 +39,6 @@ import org.asynchttpclient.future.ListenableFuture;
 import org.asynchttpclient.handler.AsyncHandler;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.handler.TransferCompletionHandler;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.NettyResponseFuture;
@@ -74,7 +73,6 @@ public final class NettyRequestSender {
     private final NettyRequestFactory requestFactory;
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
-            NettyAsyncHttpProviderConfig nettyConfig,//
             ChannelManager channelManager,//
             Timer nettyTimer,//
             AtomicBoolean closed) {
@@ -82,7 +80,7 @@ public final class NettyRequestSender {
         this.channelManager = channelManager;
         this.nettyTimer = nettyTimer;
         this.closed = closed;
-        requestFactory = new NettyRequestFactory(config, nettyConfig);
+        requestFactory = new NettyRequestFactory(config);
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request,//
@@ -337,7 +335,7 @@ public final class NettyRequestSender {
 
             if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT)
                     && nettyRequest.getBody() != null)
-                nettyRequest.getBody().write(channel, future, config);
+                nettyRequest.getBody().write(channel, future);
 
             // don't bother scheduling timeouts if channel became invalid
             if (Channels.isChannelValid(channel))
