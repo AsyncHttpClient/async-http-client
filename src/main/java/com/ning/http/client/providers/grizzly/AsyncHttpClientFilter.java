@@ -70,11 +70,9 @@ final class AsyncHttpClientFilter extends BaseFilter {
     private static final HeaderValue CLOSE_VALUE = HeaderValue.newHeaderValue("close");
 
     private final AsyncHttpClientConfig config;
-    private final GrizzlyAsyncHttpProvider provider;
 
     // -------------------------------------------------------- Constructors
     AsyncHttpClientFilter(final GrizzlyAsyncHttpProvider provider) {
-        this.provider = provider;
         this.config = provider.getClientConfig();
     }
 
@@ -124,22 +122,15 @@ final class AsyncHttpClientFilter extends BaseFilter {
             return establishConnectTunnel(proxy, httpTxCtx, uri, ctx);
         }
         final HttpRequestPacket.Builder builder = HttpRequestPacket.builder().protocol(Protocol.HTTP_1_1).method(method);
-        if (useProxy) {
-            if (secure || httpTxCtx.isWSRequest) {
-                // Sending message over established CONNECT tunnel
-                if (config.isUseRelativeURIsWithConnectProxies()) {
-                    builder.uri(AsyncHttpProviderUtils.getNonEmptyPath(uri));
-                    builder.query(uri.getQuery());
-                } else {
-                    builder.uri(uri.toUrl());
-                }
-            } else {
-                builder.uri(uri.toUrl());
-            }
+
+        if (useProxy && !((secure || httpTxCtx.isWSRequest) &&
+                config.isUseRelativeURIsWithConnectProxies())) {
+            builder.uri(uri.toUrl());
         } else {
             builder.uri(AsyncHttpProviderUtils.getNonEmptyPath(uri));
             builder.query(uri.getQuery());
         }
+
         HttpRequestPacket requestPacket;
         final PayloadGenerator payloadGenerator = isPayloadAllowed(method) ? PayloadGenFactory.getPayloadGenerator(ahcRequest) : null;
         if (payloadGenerator != null) {
