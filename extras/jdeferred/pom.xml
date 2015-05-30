@@ -22,7 +22,7 @@
     <relativePath>..</relativePath>
   </parent>
   <artifactId>async-http-client-extras-jdeferred</artifactId>
-  <name>Async Http Client JDeferred Extras</name>
+  <name>Asynchronous Http Client JDeferred Extras</name>
   <description>The Async Http Client jDeffered Extras.</description>
   <dependencies>
         <dependency>
