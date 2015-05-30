@@ -243,74 +243,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.8.1</version>
-				<configuration>
-					<aggregate>true</aggregate>
-					<source>1.7</source>
-					<encoding>UTF-8</encoding>
-					<maxmemory>1g</maxmemory>
-					<links>
-						<link>http://java.sun.com/javase/6/docs/api/</link>
-					</links>
-				</configuration>
-				<executions>
-					<execution>
-						<id>attach-javadocs</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
-	<reporting>
-		<plugins>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.8.1</version>
-				<configuration>
-					<aggregate>true</aggregate>
-					<source>1.7</source>
-					<encoding>UTF-8</encoding>
-					<maxmemory>1g</maxmemory>
-					<links>
-						<link>http://java.sun.com/javase/7/docs/api/</link>
-					</links>
-					<bootclasspath>${sun.boot.class.path}</bootclasspath>
-					<doclet>com.google.doclava.Doclava</doclet>
-					<useStandardDocletOptions>false</useStandardDocletOptions>
-					<additionalJOption>-J-Xmx1024m</additionalJOption>
-					<docletArtifact>
-						<groupId>com.google.doclava</groupId>
-						<artifactId>doclava</artifactId>
-						<version>1.0.3</version>
-					</docletArtifact>
-					<additionalparam>
-						-hdf project.name "${project.name}
-						${project.version}"
-						-d
-						${project.reporting.outputDirectory}/apidocs
-					</additionalparam>
-				</configuration>
-				<reportSets>
-					<reportSet>
-						<id>default</id>
-						<reports>
-							<report>javadoc</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-report-plugin</artifactId>
-				<version>${surefire.version}</version>
-			</plugin>
-		</plugins>
-	</reporting>
 	<profiles>
 		<profile>
 			<id>release-sign-artifacts</id>
@@ -403,7 +337,6 @@
 		<module>api</module>
 		<module>providers</module>
 		<module>extras</module>
-		<!-- <module>site</module> -->
 	</modules>
 	<dependencies>
 		<dependency>
