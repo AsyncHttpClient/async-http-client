@@ -613,16 +613,16 @@ public class AsyncHttpClientConfig {
         private String[] enabledCipherSuites;
         private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
         private Integer sslSessionTimeout = defaultSslSessionTimeout();
-        protected int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
-        protected int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
-        protected int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
-        protected boolean disableZeroCopy = defaultDisableZeroCopy();
-        protected long handshakeTimeout = defaultHandshakeTimeout();
-        protected SSLEngineFactory sslEngineFactory;
-        protected int chunkedFileChunkSize = defaultChunkedFileChunkSize();
-        protected int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
-        protected int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
-        protected boolean keepEncodingHeader = defaultKeepEncodingHeader();
+        private int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
+        private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
+        private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
+        private boolean disableZeroCopy = defaultDisableZeroCopy();
+        private long handshakeTimeout = defaultHandshakeTimeout();
+        private SSLEngineFactory sslEngineFactory;
+        private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
+        private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
+        private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
+        private boolean keepEncodingHeader = defaultKeepEncodingHeader();
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
@@ -1057,6 +1057,56 @@ public class AsyncHttpClientConfig {
 
         public Builder setSslSessionTimeout(Integer sslSessionTimeout) {
             this.sslSessionTimeout = sslSessionTimeout;
+            return this;
+        }
+
+        public Builder setHttpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
+            this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
+            return this;
+        }
+
+        public Builder setHttpClientCodecMaxHeaderSize(int httpClientCodecMaxHeaderSize) {
+            this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
+            return this;
+        }
+
+        public Builder setHttpClientCodecMaxChunkSize(int httpClientCodecMaxChunkSize) {
+            this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
+            return this;
+        }
+
+        public Builder setDisableZeroCopy(boolean disableZeroCopy) {
+            this.disableZeroCopy = disableZeroCopy;
+            return this;
+        }
+
+        public Builder setHandshakeTimeout(long handshakeTimeout) {
+            this.handshakeTimeout = handshakeTimeout;
+            return this;
+        }
+
+        public Builder setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
+            this.sslEngineFactory = sslEngineFactory;
+            return this;
+        }
+
+        public Builder setChunkedFileChunkSize(int chunkedFileChunkSize) {
+            this.chunkedFileChunkSize = chunkedFileChunkSize;
+            return this;
+        }
+
+        public Builder setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
+            this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+            return this;
+        }
+
+        public Builder setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
+            this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+            return this;
+        }
+
+        public Builder setKeepEncodingHeader(boolean keepEncodingHeader) {
+            this.keepEncodingHeader = keepEncodingHeader;
             return this;
         }
 
