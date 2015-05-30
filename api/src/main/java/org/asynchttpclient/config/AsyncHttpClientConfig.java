@@ -92,7 +92,6 @@ public class AsyncHttpClientConfig {
     protected boolean strict302Handling;
 
     protected ProxyServerSelector proxyServerSelector;
-    protected boolean useRelativeURIsWithConnectProxies;
 
     protected boolean compressionEnforced;
     protected String userAgent;
@@ -140,7 +139,6 @@ public class AsyncHttpClientConfig {
             boolean strict302Handling, //
             ExecutorService applicationThreadPool,//
             ProxyServerSelector proxyServerSelector, //
-            boolean useRelativeURIsWithConnectProxies, //
             boolean compressionEnforced, //
             String userAgent,//
             Realm realm,//
@@ -182,7 +180,6 @@ public class AsyncHttpClientConfig {
         this.maxRedirects = maxRedirects;
         this.strict302Handling = strict302Handling;
         this.proxyServerSelector = proxyServerSelector;
-        this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
         this.compressionEnforced = compressionEnforced;
         this.userAgent = userAgent;
         this.applicationThreadPool = applicationThreadPool == null ? Executors.newCachedThreadPool() : applicationThreadPool;
@@ -497,17 +494,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return<code>true</code> if AHC should use relative URIs instead of
-     *                          absolute ones when talking with a SSL proxy or
-     *                          WebSocket proxy, otherwise <code>false</code>.
-     * 
-     * @since 1.8.13
-     */
-    public boolean isUseRelativeURIsWithConnectProxies() {
-        return useRelativeURIsWithConnectProxies;
-    }
-
-    /**
      * Return the maximum time in millisecond an {@link AsyncHttpClient} will
      * keep connection in the pool, or -1 to keep connection while possible.
      *
@@ -613,7 +599,6 @@ public class AsyncHttpClientConfig {
         private ProxyServerSelector proxyServerSelector = null;
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
-        private boolean useRelativeURIsWithConnectProxies = defaultUseRelativeURIsWithConnectProxies();
         private boolean compressionEnforced = defaultCompressionEnforced();
         private String userAgent = defaultUserAgent();
         private ExecutorService applicationThreadPool;
@@ -1050,20 +1035,6 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        /**
-         * Configures this AHC instance to use relative URIs instead of absolute
-         * ones when talking with a SSL or WebSocket proxy.
-         *
-         * @param useRelativeURIsWithConnectProxies
-         * @return this
-         *
-         * @since 1.7.2
-         */
-        public Builder setUseRelativeURIsWithConnectProxies(boolean useRelativeURIsWithConnectProxies) {
-            this.useRelativeURIsWithConnectProxies = useRelativeURIsWithConnectProxies;
-            return this;
-        }
-
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
@@ -1178,7 +1149,6 @@ public class AsyncHttpClientConfig {
                     strict302Handling, //
                     applicationThreadPool, //
                     proxyServerSelector, //
-                    useRelativeURIsWithConnectProxies, //
                     compressionEnforced, //
                     userAgent,//
                     realm,//

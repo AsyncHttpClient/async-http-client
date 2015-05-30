@@ -87,10 +87,6 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "allowPoolingConnections");
     }
 
-    public static boolean defaultUseRelativeURIsWithConnectProxies() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useRelativeURIsWithConnectProxies");
-    } 
-
     public static int defaultMaxRequestRetry() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "maxRequestRetry");
     }

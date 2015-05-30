@@ -97,11 +97,6 @@ public class AsyncHttpClientDefaultsTest {
        testBooleanSystemProperty("allowPoolingConnections", "defaultAllowPoolingConnections", "false");
     }
 
-    public void testDefaultUseRelativeURIsWithConnectProxies() {
-       Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultUseRelativeURIsWithConnectProxies());
-       testBooleanSystemProperty("useRelativeURIsWithConnectProxies", "defaultUseRelativeURIsWithConnectProxies", "false");
-    }
-
     public void testDefaultMaxRequestRetry() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRequestRetry(), 5);
         testIntegerSystemProperty("maxRequestRetry", "defaultMaxRequestRetry", "100");

@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AbstractBasicTest.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.future.ListenableFuture;
 import org.asynchttpclient.handler.AsyncCompletionHandler;

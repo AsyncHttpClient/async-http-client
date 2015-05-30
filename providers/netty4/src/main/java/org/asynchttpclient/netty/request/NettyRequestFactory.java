@@ -75,7 +75,7 @@ public final class NettyRequestFactory {
         if (method == HttpMethod.CONNECT)
             return getAuthority(uri);
 
-        else if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
+        else if (proxyServer != null && !useProxyConnect(uri))
             return uri.toUrl();
 
         else {
