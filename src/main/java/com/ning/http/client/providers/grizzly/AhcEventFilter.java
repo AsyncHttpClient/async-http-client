@@ -55,7 +55,6 @@ import org.glassfish.grizzly.websockets.WebSocketHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.ning.http.client.providers.netty.util.HttpUtils.getNTLM;
 import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 /**

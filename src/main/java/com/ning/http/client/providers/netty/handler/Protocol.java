@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2014-2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,8 +13,6 @@
  */
 package com.ning.http.client.providers.netty.handler;
 
-import static com.ning.http.client.providers.netty.util.HttpUtils.HTTP;
-import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
 import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;

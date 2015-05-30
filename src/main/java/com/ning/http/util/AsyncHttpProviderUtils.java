@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -41,6 +41,11 @@ public class AsyncHttpProviderUtils {
 
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
+    public static final String HTTP = "http";
+    public static final String HTTPS = "https";
+    public static final String WEBSOCKET = "ws";
+    public static final String WEBSOCKET_SSL = "wss";
+    
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
 
     public static final void validateSupportedScheme(Uri uri) {
@@ -191,4 +196,31 @@ public class AsyncHttpProviderUtils {
         }
         sb.append('&');
     }
+    
+    public static String getNTLM(List<String> authenticateHeaders) {
+        if (MiscUtils.isNonEmpty(authenticateHeaders)) {
+            for (String authenticateHeader: authenticateHeaders) {
+                if (authenticateHeader.startsWith("NTLM"))
+                    return authenticateHeader;
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isWebSocket(String scheme) {
+        return WEBSOCKET.equals(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
+    }
+
+    public static boolean isSecure(String scheme) {
+        return HTTPS.equals(scheme) || WEBSOCKET_SSL.equals(scheme);
+    }
+
+    public static boolean isSecure(Uri uri) {
+        return isSecure(uri.getScheme());
+    }
+
+    public static boolean useProxyConnect(Uri uri) {
+        return isSecure(uri) || isWebSocket(uri.getScheme());
+    }    
 }

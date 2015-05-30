@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2014-2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,9 +13,9 @@
  */
 package com.ning.http.client.providers.netty.channel;
 
-import static com.ning.http.client.providers.netty.util.HttpUtils.WEBSOCKET;
-import static com.ning.http.client.providers.netty.util.HttpUtils.isSecure;
-import static com.ning.http.client.providers.netty.util.HttpUtils.isWebSocket;
+import static com.ning.http.util.AsyncHttpProviderUtils.WEBSOCKET;
+import static com.ning.http.util.AsyncHttpProviderUtils.isSecure;
+import static com.ning.http.util.AsyncHttpProviderUtils.isWebSocket;
 import static com.ning.http.util.MiscUtils.buildStaticIOException;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
