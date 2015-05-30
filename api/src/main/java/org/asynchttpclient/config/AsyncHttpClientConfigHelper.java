@@ -81,7 +81,7 @@ public class AsyncHttpClientConfigHelper {
             return Long.parseLong(getString(key));
         }
         
-        public int getInteger(String key) {
+        public Integer getInteger(String key) {
             String s = getString(key);
             return s != null ? Integer.valueOf(s) : null;
         }
