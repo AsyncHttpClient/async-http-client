@@ -115,11 +115,6 @@
 				<artifactId>maven-scm-manager-plexus</artifactId>
 				<version>1.6</version>
 			</extension>
-			<extension>
-				<groupId>org.kathrynhuxtable.maven.wagon</groupId>
-				<artifactId>wagon-gitsite</artifactId>
-				<version>0.3.1</version>
-			</extension>
 		</extensions>
 		<defaultGoal>install</defaultGoal>
 		<plugins>
@@ -322,10 +317,6 @@
 			<name>sonatype-nexus-snapshots</name>
 			<url>${distMgmtSnapshotsUrl}</url>
 		</snapshotRepository>
-		<site>
-			<id>github</id>
-			<url>gitsite:git@github.com/AsyncHttpClient/async-http-client.git</url>
-		</site>
 	</distributionManagement>
 	<repositories>
 		<repository>
