@@ -27,7 +27,7 @@ package org.asynchttpclient;
  * <li>{@link #onCompleted()}, once the response has been fully read.</li>
  * </ol>
  * <p/>
- * Returning a {@link AsyncHandler.STATE#ABORT} from any of those callback methods will interrupt asynchronous response
+ * Returning a {@link AsyncHandler.State#ABORT} from any of those callback methods will interrupt asynchronous response
  * processing, after that only {@link #onCompleted()} is going to be called.
  * <p/>
  * <p/>
@@ -45,7 +45,7 @@ package org.asynchttpclient;
  */
 public interface AsyncHandler<T> {
 
-    public static enum STATE {
+    public static enum State {
 
         /**
          * Stop the processing.
@@ -74,29 +74,29 @@ public interface AsyncHandler<T> {
      * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
      *
      * @param bodyPart response's body part.
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
      * @throws Exception if something wrong happens
      */
-    STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
+    State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
     /**
      * Invoked as soon as the HTTP status line has been received
      *
      * @param responseStatus the status code and test of the response
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
      * @throws Exception if something wrong happens
      */
-    STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
+    State onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
      * Invoked as soon as the HTTP headers has been received. Can potentially be invoked more than once if a broken server
      * sent trailing headers.
      *
      * @param headers the HTTP headers.
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
      * @throws Exception if something wrong happens
      */
-    STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
+    State onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
      * Invoked once the HTTP response processing is finished.

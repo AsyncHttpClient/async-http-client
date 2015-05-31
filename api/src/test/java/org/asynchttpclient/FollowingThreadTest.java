@@ -52,19 +52,19 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
                                     t.printStackTrace();
                                 }
 
-                                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                                     System.out.println(new String(bodyPart.getBodyPartBytes()));
-                                    return STATE.CONTINUE;
+                                    return State.CONTINUE;
                                 }
 
-                                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                                public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                                     status = responseStatus.getStatusCode();
                                     System.out.println(responseStatus.getStatusText());
-                                    return STATE.CONTINUE;
+                                    return State.CONTINUE;
                                 }
 
-                                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                                    return STATE.CONTINUE;
+                                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                                    return State.CONTINUE;
                                 }
 
                                 public Integer onCompleted() throws Exception {

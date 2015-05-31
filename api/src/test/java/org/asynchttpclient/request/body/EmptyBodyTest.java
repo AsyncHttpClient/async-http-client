@@ -81,7 +81,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
                     err.set(true);
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                     byte[] bytes = e.getBodyPartBytes();
 
                     if (bytes.length != 0) {
@@ -90,19 +90,19 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
                         logger.warn("Sampling stacktrace.", new Throwable("trace that, we should not get called for empty body."));
                         queue.put(s);
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus e) throws Exception {
+                public State onStatusReceived(HttpResponseStatus e) throws Exception {
                     status.set(true);
-                    return AsyncHandler.STATE.CONTINUE;
+                    return AsyncHandler.State.CONTINUE;
                 }
 
-                public STATE onHeadersReceived(HttpResponseHeaders e) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders e) throws Exception {
                     if (headers.incrementAndGet() == 2) {
                         throw new Exception("Analyze this.");
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public Object onCompleted() throws Exception {

@@ -24,7 +24,7 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.AsyncHandler.STATE;
+import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -93,7 +93,7 @@ public final class WebSocketProtocol extends Protocol {
             if (connection == null)
                 connection = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
             boolean validConnection = HttpHeaders.Values.UPGRADE.equalsIgnoreCase(connection);
-            boolean statusReceived = handler.onStatusReceived(status) == STATE.UPGRADE;
+            boolean statusReceived = handler.onStatusReceived(status) == State.UPGRADE;
 
             if (!statusReceived) {
                 try {
@@ -104,7 +104,7 @@ public final class WebSocketProtocol extends Protocol {
                 return;
             }
 
-            final boolean headerOK = handler.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
+            final boolean headerOK = handler.onHeadersReceived(responseHeaders) == State.CONTINUE;
             if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
                 requestSender.abort(channel, future, new IOException("Invalid handshake response"));
                 return;

@@ -212,21 +212,21 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                    return STATE.CONTINUE;
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                     this.status = responseStatus;
 
                     if (status.getStatusCode() != 200) {
-                        return STATE.ABORT;
+                        return State.ABORT;
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                    return STATE.CONTINUE;
+                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    return State.CONTINUE;
                 }
 
                 public Integer onCompleted() throws Exception {

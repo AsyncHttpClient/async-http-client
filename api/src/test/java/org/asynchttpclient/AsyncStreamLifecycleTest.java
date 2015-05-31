@@ -112,25 +112,25 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
                     err.set(true);
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                     if (e.length() != 0) {
                         String s = new String(e.getBodyPartBytes());
                         logger.info("got part: {}", s);
                         queue.put(s);
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus e) throws Exception {
+                public State onStatusReceived(HttpResponseStatus e) throws Exception {
                     status.set(true);
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onHeadersReceived(HttpResponseHeaders e) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders e) throws Exception {
                     if (headers.incrementAndGet() == 2) {
                         throw new Exception("Analyze this.");
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public Object onCompleted() throws Exception {

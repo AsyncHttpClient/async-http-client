@@ -40,13 +40,13 @@ public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable,
             }
 
             @Override
-            public AsyncHandler.STATE onContentWriteProgress(long amount, long current, long total) {
+            public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {
                 AsyncHttpDeferredObject.this.notify(new ContentWriteProgress(amount, current, total));
                 return super.onContentWriteProgress(amount, current, total);
             }
 
             @Override
-            public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public AsyncHandler.State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 AsyncHttpDeferredObject.this.notify(new HttpResponseBodyPartProgress(content));
                 return super.onBodyPartReceived(content);
             }

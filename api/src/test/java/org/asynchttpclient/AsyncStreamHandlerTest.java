@@ -46,10 +46,10 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     try {
                         responseHeaders.set(content.getHeaders());
-                        return STATE.ABORT;
+                        return State.ABORT;
                     } finally {
                         l.countDown();
                     }
@@ -89,15 +89,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.append(new String(content.getBodyPartBytes()));
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -128,15 +128,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             .execute(new AsyncHandlerAdapter() {
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
-                public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
                     bodyReceived.set(true);
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
@@ -164,15 +164,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.append(new String(content.getBodyPartBytes()));
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -204,7 +204,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     throw new RuntimeException("FOO");
                 }
 
@@ -239,15 +239,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.append(new String(content.getBodyPartBytes()));
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -270,15 +270,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.append(new String(content.getBodyPartBytes()));
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -303,15 +303,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         try (AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
             Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
-                public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+                public State onStatusReceived(HttpResponseStatus status) throws Exception {
                     statusCode.set(status.getStatusCode());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -354,25 +354,25 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                     whatCalled[OTHER] = true;
                     latch.countDown();
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
-                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                     whatCalled[STATUS] = true;
                     status = responseStatus.getStatusCode();
                     latch.countDown();
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
                     whatCalled[OTHER] = true;
                     latch.countDown();
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
@@ -411,9 +411,9 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             Future<String> f = c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
                 @Override
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     responseHeaders.set(content.getHeaders());
-                    return STATE.ABORT;
+                    return State.ABORT;
                 }
 
                 @Override
@@ -440,27 +440,27 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
                 private Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
-                public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     builder.accumulate(content);
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public void onThrowable(Throwable t) {
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.accumulate(content);
 
                     if (content.isLast()) {
                         content.markUnderlyingConnectionAsToBeClosed();
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                     builder.accumulate(responseStatus);
 
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public Response onCompleted() throws Exception {

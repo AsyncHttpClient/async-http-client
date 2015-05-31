@@ -37,7 +37,7 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.AsyncHandler.STATE;
+import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.Callback;
@@ -207,7 +207,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart) throws Exception {
-        boolean interrupt = handler.onBodyPartReceived(bodyPart) != STATE.CONTINUE;
+        boolean interrupt = handler.onBodyPartReceived(bodyPart) != State.CONTINUE;
         if (bodyPart.isUnderlyingConnectionToBeClosed())
             future.setKeepAlive(false);
         return interrupt;
@@ -386,7 +386,7 @@ public final class HttpProtocol extends Protocol {
 
     private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status)
             throws IOException, Exception {
-        if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != STATE.CONTINUE) {
+        if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
         }
@@ -395,7 +395,7 @@ public final class HttpProtocol extends Protocol {
 
     private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders)
             throws IOException, Exception {
-        if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE) {
+        if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != State.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
         }
@@ -444,7 +444,7 @@ public final class HttpProtocol extends Protocol {
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
                 NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), trailingHeaders);
-                interrupt = handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE;
+                interrupt = handler.onHeadersReceived(responseHeaders) != State.CONTINUE;
             }
         }
 

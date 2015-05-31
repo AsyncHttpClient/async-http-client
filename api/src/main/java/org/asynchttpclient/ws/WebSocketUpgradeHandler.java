@@ -54,20 +54,20 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-        return STATE.CONTINUE;
+    public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+        return State.CONTINUE;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public final STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
         if (responseStatus.getStatusCode() == 101) {
-            return STATE.UPGRADE;
+            return State.UPGRADE;
         } else {
-            return STATE.ABORT;
+            return State.ABORT;
         }
     }
 
@@ -75,8 +75,8 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-        return STATE.CONTINUE;
+    public final State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        return State.CONTINUE;
     }
 
     /**

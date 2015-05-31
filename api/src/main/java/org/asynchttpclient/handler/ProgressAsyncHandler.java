@@ -25,17 +25,17 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
      * written on the I/O socket.
      *
-     * @return a {@link AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    STATE onHeaderWriteCompleted();
+    State onHeaderWriteCompleted();
 
     /**
      * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
      * written on the I/O socket.
      *
-     * @return a {@link AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    STATE onContentWriteCompleted();
+    State onContentWriteCompleted();
 
     /**
      * Invoked when the I/O operation associated with the {@link Request} body wasn't fully written in a single I/O write
@@ -44,7 +44,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      * @param amount  The amount of bytes to transfer.
      * @param current The amount of bytes transferred
      * @param total   The total number of bytes transferred
-     * @return a {@link AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    STATE onContentWriteProgress(long amount, long current, long total);
+    State onContentWriteProgress(long amount, long current, long total);
 }

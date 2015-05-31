@@ -46,25 +46,25 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+    public State onStatusReceived(HttpResponseStatus status) throws Exception {
         firedEvents.add("StatusReceived");
         return super.onStatusReceived(status);
     }
 
     @Override
-    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         firedEvents.add("HeadersReceived");
         return super.onHeadersReceived(headers);
     }
 
     @Override
-    public STATE onHeaderWriteCompleted() {
+    public State onHeaderWriteCompleted() {
         firedEvents.add("HeaderWriteCompleted");
         return super.onHeaderWriteCompleted();
     }
 
     @Override
-    public STATE onContentWriteCompleted() {
+    public State onContentWriteCompleted() {
         firedEvents.add("ContentWriteCompleted");
         return super.onContentWriteCompleted();
     }

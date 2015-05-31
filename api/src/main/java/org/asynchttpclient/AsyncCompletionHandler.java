@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
  * when the {@link Response} processing is finished.  This class also implement the {@link ProgressAsyncHandler} callback,
- * all doing nothing except returning {@link org.asynchttpclient.AsyncHandler.STATE#CONTINUE}
+ * all doing nothing except returning {@link org.asynchttpclient.AsyncHandler.State#CONTINUE}
  *
  * @param <T> Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
@@ -35,26 +35,26 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     /**
      * {@inheritDoc}
      */
-    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+    public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         builder.accumulate(content);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**
      * {@inheritDoc}
      */
-    public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+    public State onStatusReceived(final HttpResponseStatus status) throws Exception {
         builder.reset();
         builder.accumulate(status);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**
      * {@inheritDoc}
      */
-    public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         builder.accumulate(headers);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**
@@ -84,20 +84,20 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
      * written on the I/O socket.
      *
-     * @return a {@link org.asynchttpclient.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    public STATE onHeaderWriteCompleted() {
-        return STATE.CONTINUE;
+    public State onHeaderWriteCompleted() {
+        return State.CONTINUE;
     }
 
     /**
      * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
      * written on the I/O socket.
      *
-     * @return a {@link org.asynchttpclient.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    public STATE onContentWriteCompleted() {
-        return STATE.CONTINUE;
+    public State onContentWriteCompleted() {
+        return State.CONTINUE;
     }
 
     /**
@@ -106,9 +106,9 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * @param amount  The amount of bytes to transfer
      * @param current The amount of bytes transferred
      * @param total   The total number of bytes transferred
-     * @return a {@link org.asynchttpclient.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    public STATE onContentWriteProgress(long amount, long current, long total) {
-        return STATE.CONTINUE;
+    public State onContentWriteProgress(long amount, long current, long total) {
+        return State.CONTINUE;
     }
 }

@@ -129,14 +129,14 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     @Override
-    public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         fireOnHeaderReceived(headers.getHeaders());
         return super.onHeadersReceived(headers);
     }
 
     @Override
-    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-        STATE s = STATE.CONTINUE;
+    public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        State s = State.CONTINUE;
         if (accumulateResponseBytes) {
             s = super.onBodyPartReceived(content);
         }
@@ -158,20 +158,20 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     @Override
-    public STATE onHeaderWriteCompleted() {
+    public State onHeaderWriteCompleted() {
         if (headers != null) {
             fireOnHeadersSent(headers);
         }
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     @Override
-    public STATE onContentWriteProgress(long amount, long current, long total) {
+    public State onContentWriteProgress(long amount, long current, long total) {
         if (patchForNetty3) {
             seen += amount;
         }
         fireOnBytesSent(amount, current, total);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     @Override

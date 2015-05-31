@@ -707,15 +707,15 @@ public class SimpleAsyncHttpClient implements Closeable {
             this.delegate = delegate;
         }
 
-        public AsyncHandler.STATE onHeaderWriteCompleted() {
+        public AsyncHandler.State onHeaderWriteCompleted() {
             return delegate.onHeaderWriteCompleted();
         }
 
-        public AsyncHandler.STATE onContentWriteCompleted() {
+        public AsyncHandler.State onContentWriteCompleted() {
             return delegate.onContentWriteCompleted();
         }
 
-        public AsyncHandler.STATE onContentWriteProgress(long amount, long current, long total) {
+        public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {
             return delegate.onContentWriteProgress(amount, current, total);
         }
     }
@@ -758,10 +758,10 @@ public class SimpleAsyncHttpClient implements Closeable {
         /**
          * {@inheritDoc}
          */
-        public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             fireReceived(content);
             if (omitBody) {
-                return STATE.CONTINUE;
+                return State.CONTINUE;
             }
 
             if (!accumulateBody && bodyConsumer != null) {
@@ -769,7 +769,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             } else {
                 return super.onBodyPartReceived(content);
             }
-            return STATE.CONTINUE;
+            return State.CONTINUE;
         }
 
         /**
@@ -788,7 +788,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+        public State onStatusReceived(HttpResponseStatus status) throws Exception {
             fireStatus(status);
 
             if (isErrorStatus(status)) {
@@ -811,7 +811,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             calculateTotal(headers);
 
             fireHeaders(headers);
@@ -830,7 +830,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onContentWriteProgress(long amount, long current, long total) {
+        public State onContentWriteProgress(long amount, long current, long total) {
             fireSent(uri, amount, current, total);
             return super.onContentWriteProgress(amount, current, total);
         }

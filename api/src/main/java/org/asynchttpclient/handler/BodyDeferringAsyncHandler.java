@@ -121,18 +121,18 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
-    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         responseBuilder.reset();
         responseBuilder.accumulate(responseStatus);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
-    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         // body arrived, flush headers
         if (!responseSet) {
             response = responseBuilder.build();
@@ -141,7 +141,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
 
         bodyPart.writeTo(output);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     protected void closeOut() throws IOException {

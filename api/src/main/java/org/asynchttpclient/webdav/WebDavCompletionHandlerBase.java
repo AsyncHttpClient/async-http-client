@@ -58,27 +58,27 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      * {@inheritDoc}
      */
     @Override
-    public final STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+    public final State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         bodies.add(content);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+    public final State onStatusReceived(final HttpResponseStatus status) throws Exception {
         this.status = status;
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public final STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+    public final State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         this.headers = headers;
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     /**

@@ -45,7 +45,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     @Override
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         return asyncHandler.onBodyPartReceived(bodyPart);
     }
 
@@ -53,7 +53,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     @Override
-    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         return asyncHandler.onStatusReceived(responseStatus);
     }
 
@@ -61,7 +61,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     @Override
-    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         return asyncHandler.onHeadersReceived(headers);
     }
 

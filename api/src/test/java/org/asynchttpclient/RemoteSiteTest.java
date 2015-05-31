@@ -203,21 +203,21 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
                             t.printStackTrace();
                         }
 
-                        public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                             System.out.println(bodyPart.getBodyPartBytes().length);
                             builder.accumulate(bodyPart);
 
-                            return STATE.CONTINUE;
+                            return State.CONTINUE;
                         }
 
-                        public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                        public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                             builder.accumulate(responseStatus);
-                            return STATE.CONTINUE;
+                            return State.CONTINUE;
                         }
 
-                        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
                             builder.accumulate(headers);
-                            return STATE.CONTINUE;
+                            return State.CONTINUE;
                         }
 
                         public Response onCompleted() throws Exception {

@@ -94,18 +94,18 @@ public abstract class AbstractBasicTest {
         }
 
         @Override
-        public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-            return STATE.CONTINUE;
+        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+            return State.CONTINUE;
         }
 
         @Override
-        public STATE onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
-            return STATE.CONTINUE;
+        public State onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
+            return State.CONTINUE;
         }
 
         @Override
-        public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
-            return STATE.CONTINUE;
+        public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+            return State.CONTINUE;
         }
 
         @Override

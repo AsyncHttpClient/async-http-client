@@ -148,7 +148,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     times[0] = millisTime();
                     return super.onBodyPartReceived(content);
                 }

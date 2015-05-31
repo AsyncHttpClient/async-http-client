@@ -16,7 +16,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpProvider;
 
 /**
- * Invoked when an {@link AsyncHandler.STATE#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.ws.WebSocket}
+ * Invoked when an {@link AsyncHandler.State#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.ws.WebSocket}
  * as type.
  *
  * @param <T>

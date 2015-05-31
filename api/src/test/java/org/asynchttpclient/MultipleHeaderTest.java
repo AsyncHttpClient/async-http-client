@@ -101,21 +101,21 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                     t.printStackTrace(System.out);
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
-                    return STATE.CONTINUE;
+                public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
-                    return STATE.CONTINUE;
+                public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+                    return State.CONTINUE;
                 }
 
-                public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
                     int i = 0;
                     for (String header : response.getHeaders().get("X-Forwarded-For")) {
                         xffHeaders[i++] = header;
                     }
                     latch.countDown();
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public Void onCompleted() throws Exception {
@@ -150,15 +150,15 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                     t.printStackTrace(System.out);
                 }
 
-                public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
-                    return STATE.CONTINUE;
+                public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+                    return State.CONTINUE;
                 }
 
-                public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
-                    return STATE.CONTINUE;
+                public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+                    return State.CONTINUE;
                 }
 
-                public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
                     try {
                         int i = 0;
                         for (String header : response.getHeaders().get("Content-Length")) {
@@ -167,7 +167,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                     } finally {
                         latch.countDown();
                     }
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 public Void onCompleted() throws Exception {

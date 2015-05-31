@@ -76,14 +76,14 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
             Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
 
-                public STATE onHeaderWriteCompleted() {
+                public State onHeaderWriteCompleted() {
                     headerSent.set(true);
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
-                public STATE onContentWriteCompleted() {
+                public State onContentWriteCompleted() {
                     operationCompleted.set(true);
-                    return STATE.CONTINUE;
+                    return State.CONTINUE;
                 }
 
                 @Override
@@ -125,17 +125,17 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                     public void onThrowable(Throwable t) {
                     }
 
-                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                         bodyPart.writeTo(stream);
-                        return STATE.CONTINUE;
+                        return State.CONTINUE;
                     }
 
-                    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                        return STATE.CONTINUE;
+                    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                        return State.CONTINUE;
                     }
 
-                    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                        return STATE.CONTINUE;
+                    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                        return State.CONTINUE;
                     }
 
                     public Response onCompleted() throws Exception {
@@ -158,22 +158,22 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                     public void onThrowable(Throwable t) {
                     }
 
-                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                         bodyPart.writeTo(stream);
 
                         if (bodyPart.getBodyPartBytes().length == 0) {
-                            return STATE.ABORT;
+                            return State.ABORT;
                         }
 
-                        return STATE.CONTINUE;
+                        return State.CONTINUE;
                     }
 
-                    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                        return STATE.CONTINUE;
+                    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                        return State.CONTINUE;
                     }
 
-                    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                        return STATE.CONTINUE;
+                    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                        return State.CONTINUE;
                     }
 
                     public Response onCompleted() throws Exception {

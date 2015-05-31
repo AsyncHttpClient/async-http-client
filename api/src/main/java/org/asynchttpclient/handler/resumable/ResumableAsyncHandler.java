@@ -100,19 +100,19 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      * {@inheritDoc}
      */
     @Override
-    public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+    public AsyncHandler.State onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
             url = status.getUri().toUrl();
         } else {
-            return AsyncHandler.STATE.ABORT;
+            return AsyncHandler.State.ABORT;
         }
 
         if (decoratedAsyncHandler != null) {
             return decoratedAsyncHandler.onStatusReceived(status);
         }
 
-        return AsyncHandler.STATE.CONTINUE;
+        return AsyncHandler.State.CONTINUE;
     }
 
     /**
@@ -131,17 +131,17 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      * {@inheritDoc}
      */
     @Override
-    public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public AsyncHandler.State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 
         if (accumulateBody) {
             responseBuilder.accumulate(bodyPart);
         }
 
-        STATE state = STATE.CONTINUE;
+        State state = State.CONTINUE;
         try {
             resumableListener.onBytesReceived(bodyPart.getBodyByteBuffer());
         } catch (IOException ex) {
-            return AsyncHandler.STATE.ABORT;
+            return AsyncHandler.State.ABORT;
         }
 
         if (decoratedAsyncHandler != null) {
@@ -173,19 +173,19 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      * {@inheritDoc}
      */
     @Override
-    public AsyncHandler.STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public AsyncHandler.State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
         if (contentLengthHeader != null) {
             if (Long.parseLong(contentLengthHeader) == -1L) {
-                return AsyncHandler.STATE.ABORT;
+                return AsyncHandler.State.ABORT;
             }
         }
 
         if (decoratedAsyncHandler != null) {
             return decoratedAsyncHandler.onHeadersReceived(headers);
         }
-        return AsyncHandler.STATE.CONTINUE;
+        return AsyncHandler.State.CONTINUE;
     }
 
     /**
