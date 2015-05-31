@@ -26,14 +26,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.handler.ConnectionStrategy;
 import org.asynchttpclient.netty.handler.Http1Point1ConnectionStrategy;
-import org.asynchttpclient.netty.response.EagerNettyResponseBodyPart;
-import org.asynchttpclient.netty.response.LazyNettyResponseBodyPart;
-import org.asynchttpclient.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 
 /**

@@ -19,9 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;

@@ -25,10 +25,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.asynchttpclient.request.Param;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilderBase;
-import org.asynchttpclient.request.SignatureCalculator;
+import org.asynchttpclient.Param;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilderBase;
+import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StringUtils;

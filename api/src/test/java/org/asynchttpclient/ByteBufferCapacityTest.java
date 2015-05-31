@@ -18,8 +18,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;

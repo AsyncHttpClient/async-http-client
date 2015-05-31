@@ -20,20 +20,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
-import org.asynchttpclient.handler.AsyncHandler;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.netty.NettyAsyncHttpProvider;
-import org.asynchttpclient.request.BoundRequestBuilder;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.request.SignatureCalculator;
-import org.asynchttpclient.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

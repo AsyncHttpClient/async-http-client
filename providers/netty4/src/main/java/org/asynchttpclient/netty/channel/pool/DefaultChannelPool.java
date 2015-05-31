@@ -29,10 +29,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -13,7 +13,7 @@
 package org.asynchttpclient.netty.request.body;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyProviderUtil;
 import org.asynchttpclient.request.body.FastUnauthorizedUploadTest;
 import org.testng.annotations.Test;

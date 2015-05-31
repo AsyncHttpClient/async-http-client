@@ -24,11 +24,11 @@ import java.io.InputStream;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.response.Response;
 import org.testng.annotations.Test;
 
 /**

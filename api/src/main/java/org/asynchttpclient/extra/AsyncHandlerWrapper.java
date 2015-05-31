@@ -1,9 +1,9 @@
 package org.asynchttpclient.extra;
 
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

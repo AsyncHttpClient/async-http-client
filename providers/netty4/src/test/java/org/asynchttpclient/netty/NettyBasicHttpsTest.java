@@ -16,8 +16,8 @@ import static org.asynchttpclient.test.TestUtils.createSSLContext;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BasicHttpsTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 

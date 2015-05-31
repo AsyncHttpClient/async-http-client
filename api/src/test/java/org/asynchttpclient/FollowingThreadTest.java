@@ -16,11 +16,6 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
 import org.testng.annotations.Test;
 
 import java.io.IOException;

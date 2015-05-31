@@ -15,16 +15,16 @@ package org.asynchttpclient.netty;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.NettyAsyncHttpProvider;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.request.Request;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;

@@ -18,7 +18,7 @@ import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
-import org.asynchttpclient.netty.handler.ConnectionStrategy;
+import org.asynchttpclient.channel.pool.ConnectionStrategy;
 
 /**
  * Connection strategy implementing standard HTTP 1.1 behaviour.

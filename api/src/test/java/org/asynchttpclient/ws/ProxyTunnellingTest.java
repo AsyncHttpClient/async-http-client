@@ -21,7 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketTextListener;

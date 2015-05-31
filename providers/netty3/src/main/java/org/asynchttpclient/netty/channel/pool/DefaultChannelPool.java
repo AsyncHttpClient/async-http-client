@@ -23,11 +23,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.internal.chmv8.ConcurrentHashMapV8;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.util.Timeout;

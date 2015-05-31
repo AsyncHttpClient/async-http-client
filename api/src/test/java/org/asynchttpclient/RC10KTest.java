@@ -21,11 +21,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;

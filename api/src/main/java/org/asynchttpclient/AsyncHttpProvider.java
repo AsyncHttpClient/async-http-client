@@ -17,10 +17,6 @@ package org.asynchttpclient;
 
 import java.io.Closeable;
 
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.request.Request;
-
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
  */

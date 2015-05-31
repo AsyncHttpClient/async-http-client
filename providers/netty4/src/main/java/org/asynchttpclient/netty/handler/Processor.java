@@ -25,12 +25,12 @@ import io.netty.handler.codec.http.LastHttpContent;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.DiscardEvent;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;

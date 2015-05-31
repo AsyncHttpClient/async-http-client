@@ -48,19 +48,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.config.AsyncHttpClientConfigBean;
-import org.asynchttpclient.config.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.handler.AsyncCompletionHandler;
+import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
-import org.asynchttpclient.response.MaxRedirectException;
-import org.asynchttpclient.response.Response;
 import org.testng.annotations.Test;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {

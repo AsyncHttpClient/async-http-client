@@ -24,7 +24,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 
 /**
  * This class is a copy of http://github.com/sonatype/wagon-ning/raw/master/src/main/java/org/apache/maven/wagon/providers/http/SslUtils.java

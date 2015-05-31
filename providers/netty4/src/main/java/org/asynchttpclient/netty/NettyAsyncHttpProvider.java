@@ -18,14 +18,14 @@ import io.netty.util.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.handler.AsyncHandler;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
-import org.asynchttpclient.request.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

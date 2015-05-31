@@ -18,12 +18,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

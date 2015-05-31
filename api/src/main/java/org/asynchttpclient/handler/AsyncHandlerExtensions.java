@@ -14,6 +14,8 @@ package org.asynchttpclient.handler;
 
 import java.net.InetAddress;
 
+import org.asynchttpclient.AsyncHandler;
+
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
  * For now, those methods are in a dedicated interface in order not to break the

@@ -18,11 +18,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
-import org.asynchttpclient.response.Response;
 import org.testng.Assert;
 
 public class EventCollectingHandler extends AsyncCompletionHandlerBase implements AsyncHandlerExtensions {

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RC10KTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 
 public class NettyRC10KTest extends RC10KTest {
     @Override

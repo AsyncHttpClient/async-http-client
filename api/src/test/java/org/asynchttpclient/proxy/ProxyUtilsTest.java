@@ -15,9 +15,9 @@ package org.asynchttpclient.proxy;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
 import org.asynchttpclient.util.ProxyUtils;
 import org.testng.annotations.Test;
 

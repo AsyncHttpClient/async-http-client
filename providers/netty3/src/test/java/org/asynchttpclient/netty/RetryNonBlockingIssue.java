@@ -19,11 +19,11 @@ import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.response.Response;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;

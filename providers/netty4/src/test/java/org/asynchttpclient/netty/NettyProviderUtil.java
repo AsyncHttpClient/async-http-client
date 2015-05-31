@@ -16,8 +16,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyAsyncHttpProvider;
 
 public class NettyProviderUtil {

@@ -30,17 +30,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.internal.chmv8.ConcurrentHashMapV8;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.Processor;
 import org.asynchttpclient.netty.handler.Protocol;

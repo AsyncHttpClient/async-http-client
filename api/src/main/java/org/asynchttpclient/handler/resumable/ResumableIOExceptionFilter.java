@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient.handler.resumable;
 
+import org.asynchttpclient.Request;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
-import org.asynchttpclient.request.Request;
 
 /**
- * Simple {@link org.asynchttpclient.filter.IOExceptionFilter} that replay the current {@link org.asynchttpclient.request.Request} using a {@link ResumableAsyncHandler}
+ * Simple {@link org.asynchttpclient.filter.IOExceptionFilter} that replay the current {@link org.asynchttpclient.Request} using a {@link ResumableAsyncHandler}
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
     public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {

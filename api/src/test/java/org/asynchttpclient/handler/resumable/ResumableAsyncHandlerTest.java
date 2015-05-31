@@ -16,9 +16,9 @@ package org.asynchttpclient.handler.resumable;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
 import org.testng.annotations.Test;
 
 /**

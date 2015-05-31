@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.PerRequestRelative302Test;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 
 public class NettyPerRequestRelative302Test extends PerRequestRelative302Test {
     @Override

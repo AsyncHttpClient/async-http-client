@@ -21,13 +21,6 @@ import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncCompletionHandler;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
-import org.asynchttpclient.response.Response;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;

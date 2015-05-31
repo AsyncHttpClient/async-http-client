@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.ws;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.handler.AsyncHandler;
 
 /**
  * Invoked when an {@link AsyncHandler.STATE#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.ws.WebSocket}

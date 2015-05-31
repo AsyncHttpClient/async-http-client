@@ -15,8 +15,8 @@ package org.asynchttpclient.netty.request.body;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,8 +16,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RemoteSiteTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 
 public class NettyRemoteSiteTest extends RemoteSiteTest {
     @Override

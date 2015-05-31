@@ -18,7 +18,6 @@ package org.asynchttpclient;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.response.Response;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;

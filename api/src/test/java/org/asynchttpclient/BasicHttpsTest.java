@@ -21,8 +21,7 @@ import static org.asynchttpclient.test.TestUtils.createSSLContext;
 import static org.testng.Assert.*;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig.Builder;
-import org.asynchttpclient.response.Response;
+import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletResponse;

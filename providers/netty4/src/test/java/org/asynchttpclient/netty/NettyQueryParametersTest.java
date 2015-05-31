@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.request.QueryParametersTest;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.QueryParametersTest;
 
 public class NettyQueryParametersTest extends QueryParametersTest {
     @Override

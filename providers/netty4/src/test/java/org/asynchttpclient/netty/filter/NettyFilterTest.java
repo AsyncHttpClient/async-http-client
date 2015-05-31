@@ -13,7 +13,7 @@
 package org.asynchttpclient.netty.filter;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.filter.FilterTest;
 import org.asynchttpclient.netty.NettyProviderUtil;
 import org.testng.annotations.Test;

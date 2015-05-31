@@ -23,9 +23,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.response.NettyResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseBodyPart;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteFragmentListener;
 import org.asynchttpclient.ws.WebSocketByteListener;

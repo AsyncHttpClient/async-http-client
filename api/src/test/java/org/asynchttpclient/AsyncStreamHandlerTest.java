@@ -23,14 +23,6 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.request.BoundRequestBuilder;
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
-import org.asynchttpclient.response.Response;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;

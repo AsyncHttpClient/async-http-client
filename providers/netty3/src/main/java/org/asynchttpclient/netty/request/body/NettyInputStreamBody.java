@@ -18,8 +18,8 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;

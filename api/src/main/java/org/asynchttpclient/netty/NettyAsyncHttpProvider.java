@@ -1,10 +1,10 @@
 package org.asynchttpclient.netty;
 
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.future.ListenableFuture;
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.request.Request;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
 
 public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 

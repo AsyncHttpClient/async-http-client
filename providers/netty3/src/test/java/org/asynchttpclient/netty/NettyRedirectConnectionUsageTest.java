@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RedirectConnectionUsageTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 
 public class NettyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
     @Override

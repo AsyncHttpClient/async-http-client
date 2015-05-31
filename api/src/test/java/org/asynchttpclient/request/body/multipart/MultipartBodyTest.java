@@ -14,7 +14,7 @@ package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.*;
 
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.request.body.multipart.FilePart;

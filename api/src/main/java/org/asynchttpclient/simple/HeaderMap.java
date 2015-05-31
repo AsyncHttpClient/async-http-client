@@ -13,7 +13,7 @@ package org.asynchttpclient.simple;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 
 import java.util.Collection;
 import java.util.List;

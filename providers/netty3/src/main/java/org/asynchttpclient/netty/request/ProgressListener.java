@@ -15,12 +15,12 @@ package org.asynchttpclient.netty.request;
 
 import java.nio.channels.ClosedChannelException;
 
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncHandler;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;

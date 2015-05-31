@@ -16,14 +16,14 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.channel.pool.ConnectionPoolTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.response.Response;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 

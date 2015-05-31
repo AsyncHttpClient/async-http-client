@@ -18,10 +18,6 @@ package org.asynchttpclient;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.response.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 

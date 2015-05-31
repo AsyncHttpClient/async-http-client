@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import org.asynchttpclient.netty.handler.ConnectionStrategy;
+import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpRequest;

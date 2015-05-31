@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.extras.guava;
 
-import org.asynchttpclient.future.ListenableFuture;
+import org.asynchttpclient.ListenableFuture;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;

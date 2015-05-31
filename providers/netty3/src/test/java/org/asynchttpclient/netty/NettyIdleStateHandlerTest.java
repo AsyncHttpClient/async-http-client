@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.IdleStateHandlerTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 
 public class NettyIdleStateHandlerTest extends IdleStateHandlerTest {
     @Override

@@ -30,6 +30,8 @@ package org.asynchttpclient.future;
 
 import java.util.concurrent.Executor;
 
+import org.asynchttpclient.ListenableFuture;
+
 /**
  * <p>An abstract base implementation of the listener support provided by
  * {@link ListenableFuture}. This class uses an {@link ExecutionList} to

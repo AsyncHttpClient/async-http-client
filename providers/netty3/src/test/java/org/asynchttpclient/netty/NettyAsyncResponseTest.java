@@ -16,11 +16,9 @@ package org.asynchttpclient.netty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.netty.response.NettyResponse;
-import org.asynchttpclient.netty.response.NettyResponseStatus;
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.response.HttpResponseHeaders;
 import org.testng.annotations.Test;
 
 import java.text.SimpleDateFormat;

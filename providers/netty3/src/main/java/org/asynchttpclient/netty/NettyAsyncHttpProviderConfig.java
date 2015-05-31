@@ -18,10 +18,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.handler.ConnectionStrategy;
 import org.asynchttpclient.netty.handler.Http1Point1ConnectionStrategy;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 import org.jboss.netty.channel.Channel;

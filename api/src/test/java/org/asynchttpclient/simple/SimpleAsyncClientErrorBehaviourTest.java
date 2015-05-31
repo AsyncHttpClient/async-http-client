@@ -16,7 +16,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.response.Response;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 import org.asynchttpclient.simple.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
 import org.asynchttpclient.simple.consumer.OutputStreamBodyConsumer;

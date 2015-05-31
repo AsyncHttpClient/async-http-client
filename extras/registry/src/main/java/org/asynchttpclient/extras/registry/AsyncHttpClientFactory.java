@@ -13,9 +13,9 @@
 package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +35,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * throws an exception it thows a AsyncHttpClientImplException. By default if
  * neither the system property or the property file exists then it will return
  * the default instance of {@link DefaultAsyncHttpClient}
- * 
- * @author sasurendran
- * 
  */
 public class AsyncHttpClientFactory {
 

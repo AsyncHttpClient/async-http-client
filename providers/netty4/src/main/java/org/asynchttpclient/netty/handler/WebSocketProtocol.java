@@ -29,22 +29,22 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncHandler.STATE;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.netty.NettyResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.NettyResponseHeaders;
+import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
-import org.asynchttpclient.netty.response.NettyResponseBodyPart;
-import org.asynchttpclient.netty.response.NettyResponseHeaders;
-import org.asynchttpclient.netty.response.NettyResponseStatus;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class WebSocketProtocol extends Protocol {

@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.handler;
 
-import org.asynchttpclient.request.Request;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Request;
 
 /**
  * An extended {@link AsyncHandler} with two extra callback who get invoked during the content upload to a remote server.

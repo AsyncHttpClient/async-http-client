@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty.future;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.future.ListenableFutureTest;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ListenableFutureTest;
 import org.asynchttpclient.netty.NettyProviderUtil;
 
 public class NettyListenableFutureTest extends ListenableFutureTest {

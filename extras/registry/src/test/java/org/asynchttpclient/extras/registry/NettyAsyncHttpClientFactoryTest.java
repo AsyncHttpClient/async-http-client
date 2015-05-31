@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.extras.registry;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.extras.registry.AbstractAsyncHttpClientFactoryTest;
 import org.asynchttpclient.netty.NettyAsyncHttpProvider;
 import org.testng.annotations.Test;

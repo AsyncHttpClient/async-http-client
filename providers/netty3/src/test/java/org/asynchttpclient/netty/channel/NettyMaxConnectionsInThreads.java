@@ -12,8 +12,8 @@
 package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.MaxConnectionsInThreads;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyProviderUtil;
 
 public class NettyMaxConnectionsInThreads extends MaxConnectionsInThreads {

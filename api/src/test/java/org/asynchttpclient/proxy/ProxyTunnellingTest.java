@@ -18,12 +18,12 @@ import static org.asynchttpclient.test.TestUtils.newJettyHttpsServer;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.handler.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.request.RequestBuilder;
-import org.asynchttpclient.response.Response;
 import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;

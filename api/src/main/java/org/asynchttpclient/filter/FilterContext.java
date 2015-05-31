@@ -12,10 +12,10 @@
  */
 package org.asynchttpclient.filter;
 
-import org.asynchttpclient.handler.AsyncHandler;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.HttpResponseStatus;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Request;
 
 import java.io.IOException;
 

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.handler;
 
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 
 import java.io.IOException;
 

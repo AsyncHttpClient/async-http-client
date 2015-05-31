@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.MaxTotalConnectionTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyProviderUtil;
 
 public class NettyMaxTotalConnectionTest extends MaxTotalConnectionTest {

@@ -19,12 +19,12 @@ import static org.testng.Assert.assertNull;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.handler.TransferListener;
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
-import org.asynchttpclient.response.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 

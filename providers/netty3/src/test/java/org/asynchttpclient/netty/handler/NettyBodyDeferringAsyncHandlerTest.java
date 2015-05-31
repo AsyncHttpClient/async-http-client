@@ -13,7 +13,7 @@
 package org.asynchttpclient.netty.handler;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.handler.BodyDeferringAsyncHandlerTest;
 import org.asynchttpclient.netty.NettyProviderUtil;
 

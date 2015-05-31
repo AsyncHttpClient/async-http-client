@@ -13,14 +13,14 @@
 package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.extras.registry.AsyncHttpClientFactory;
 import org.asynchttpclient.extras.registry.AsyncHttpClientImplException;
 import org.asynchttpclient.extras.registry.AsyncImplHelper;
-import org.asynchttpclient.response.Response;
 import org.asynchttpclient.test.EchoHandler;
 import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Server;

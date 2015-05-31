@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.AsyncProvidersBasicTest;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.request.Request;
-import org.asynchttpclient.request.RequestBuilder;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 

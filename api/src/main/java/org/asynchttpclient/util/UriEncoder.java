@@ -15,7 +15,7 @@ package org.asynchttpclient.util;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.Utf8UrlEncoder.encodeAndAppendQuery;
 
-import org.asynchttpclient.request.Param;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.uri.Uri;
 
 import java.util.List;

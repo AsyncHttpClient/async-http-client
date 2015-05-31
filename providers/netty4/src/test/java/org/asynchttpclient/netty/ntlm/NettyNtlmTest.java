@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.ntlm;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyProviderUtil;
 import org.asynchttpclient.ntlm.NtlmTest;
 import org.testng.annotations.Test;

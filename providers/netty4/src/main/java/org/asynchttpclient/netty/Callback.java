@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.netty;
 
-import org.asynchttpclient.netty.future.NettyResponseFuture;
 
 public abstract class Callback {
 

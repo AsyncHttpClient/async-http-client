@@ -14,7 +14,7 @@ package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
 

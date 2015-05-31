@@ -12,17 +12,18 @@
  */
 package org.asynchttpclient.handler;
 
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.response.HttpResponseBodyPart;
-import org.asynchttpclient.response.HttpResponseHeaders;
-import org.asynchttpclient.response.Response;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * A {@link org.asynchttpclient.handler.AsyncHandler} that can be used to notify a set of {@link TransferListener}
+ * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}
  * <p/>
  * <blockquote>
  * 
@@ -66,15 +67,15 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private long seen;
 
     /**
-     * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.response.Response#getResponseBody()},
-     * {@link org.asynchttpclient.response.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will throw an IllegalStateException if called.
+     * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
+     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will throw an IllegalStateException if called.
      */
     public TransferCompletionHandler() {
         this(false);
     }
 
     /**
-     * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when {@link org.asynchttpclient.response.Response#getResponseBody()} get called. The
+     * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when {@link org.asynchttpclient.Response#getResponseBody()} get called. The
      * default is false.
      * 
      * @param accumulateResponseBytes

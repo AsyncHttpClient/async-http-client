@@ -21,7 +21,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.asynchttpclient.request.Param;
+import org.asynchttpclient.Param;
 
 public abstract class PartBase implements Part {
 

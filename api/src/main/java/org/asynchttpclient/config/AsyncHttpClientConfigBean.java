@@ -14,6 +14,7 @@ package org.asynchttpclient.config;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.filter.IOExceptionFilter;

@@ -19,9 +19,6 @@ package org.asynchttpclient;
 import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.request.BoundRequestBuilder;
-import org.asynchttpclient.response.Response;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;

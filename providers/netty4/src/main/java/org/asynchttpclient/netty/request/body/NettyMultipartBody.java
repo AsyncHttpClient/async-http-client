@@ -17,8 +17,8 @@ import static org.asynchttpclient.request.body.multipart.MultipartUtils.newMulti
 
 import java.util.List;
 
-import org.asynchttpclient.config.AsyncHttpClientConfig;
-import org.asynchttpclient.request.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.request.body.multipart.MultipartBody;
 import org.asynchttpclient.request.body.multipart.Part;
 
