@@ -13,11 +13,16 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.isSameHostAndProtocol;
 import static org.asynchttpclient.util.HttpUtils.HTTP;
 import static org.asynchttpclient.util.HttpUtils.WS;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -29,9 +34,9 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.filter.FilterContext;
@@ -70,8 +75,7 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.getCode());
     }
 
-    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
-            NettyRequestSender requestSender) {
+    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.nettyConfig = nettyConfig;
@@ -89,17 +93,17 @@ public abstract class Protocol {
     public abstract void onClose(NettyResponseFuture<?> future);
 
     private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
-        
-        FluentCaseInsensitiveStringsMap originalHeaders = request.getHeaders();
-        originalHeaders.remove(HOST);
-        originalHeaders.remove(CONTENT_LENGTH);
-        if (switchToGet)
-            originalHeaders.remove(CONTENT_TYPE);
+
+        FluentCaseInsensitiveStringsMap headers = request.getHeaders()//
+                .delete(HttpHeaders.Names.HOST)//
+                .delete(HttpHeaders.Names.CONTENT_LENGTH)//
+                .delete(HttpHeaders.Names.CONTENT_TYPE);
+
         if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
-            originalHeaders.remove(AUTHORIZATION);
-            originalHeaders.remove(PROXY_AUTHORIZATION);
+            headers.delete(AUTHORIZATION)//
+                    .delete(PROXY_AUTHORIZATION);
         }
-        return originalHeaders;
+        return headers;
     }
 
     protected boolean exitAfterHandlingRedirect(//
@@ -123,14 +127,25 @@ public abstract class Protocol {
                 Uri uri = Uri.create(future.getUri(), location);
 
                 if (!uri.equals(future.getUri())) {
-                    final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
 
-                    // if we are to strictly handle 302, we should keep the original method (which browsers don't)
+                    // if we are to strictly handle 302, we should keep the
+                    // original method (which browsers don't)
                     // 303 must force GET
-                    boolean switchToGet = !request.getMethod().equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
-                    if (switchToGet)
-                        requestBuilder.setMethod("GET");
-                    // in case of a redirect from HTTP to HTTPS, future attributes might change
+                    String originalMethod = request.getMethod();
+                    boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+
+                    final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                            .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
+                            .setInetAddress(request.getInetAddress())//
+                            .setLocalInetAddress(request.getLocalAddress())//
+                            .setVirtualHost(request.getVirtualHost())//
+                            .setProxyServer(request.getProxyServer())//
+                            .setRealm(request.getRealm());
+
+                    requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
+
+                    // in case of a redirect from HTTP to HTTPS, future
+                    // attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final Object initialPartitionKey = future.getPartitionKey();
 
@@ -184,8 +199,8 @@ public abstract class Protocol {
             HttpResponseHeaders responseHeaders) throws IOException {
 
         if (hasResponseFilters) {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest())
-                    .responseStatus(status).responseHeaders(responseHeaders).build();
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
+                    .build();
 
             for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                 try {

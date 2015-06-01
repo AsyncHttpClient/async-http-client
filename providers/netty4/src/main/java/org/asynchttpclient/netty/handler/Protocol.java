@@ -89,17 +89,17 @@ public abstract class Protocol {
     public abstract void onClose(NettyResponseFuture<?> future);
 
     private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
-        
-        FluentCaseInsensitiveStringsMap originalHeaders = request.getHeaders();
-        originalHeaders.remove(HOST);
-        originalHeaders.remove(CONTENT_LENGTH);
-        if (switchToGet)
-            originalHeaders.remove(CONTENT_TYPE);
+
+        FluentCaseInsensitiveStringsMap headers = request.getHeaders()//
+                .delete(HttpHeaders.Names.HOST)//
+                .delete(HttpHeaders.Names.CONTENT_LENGTH)//
+                .delete(HttpHeaders.Names.CONTENT_TYPE);
+
         if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
-            originalHeaders.remove(AUTHORIZATION);
-            originalHeaders.remove(PROXY_AUTHORIZATION);
+            headers.delete(AUTHORIZATION)//
+                    .delete(PROXY_AUTHORIZATION);
         }
-        return originalHeaders;
+        return headers;
     }
 
     protected boolean exitAfterHandlingRedirect(//
@@ -123,13 +123,18 @@ public abstract class Protocol {
                 Uri uri = Uri.create(future.getUri(), location);
 
                 if (!uri.equals(future.getUri())) {
-                    final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
+                    String originalMethod = request.getMethod();
+                    boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
 
-                    // if we are to strictly handle 302, we should keep the original method (which browsers don't)
-                    // 303 must force GET
-                    boolean switchToGet = !request.getMethod().equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
-                    if (switchToGet)
-                        requestBuilder.setMethod("GET");
+                    final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                            .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
+                            .setInetAddress(request.getInetAddress())//
+                            .setLocalInetAddress(request.getLocalAddress())//
+                            .setVirtualHost(request.getVirtualHost())//
+                            .setProxyServer(request.getProxyServer())//
+                            .setRealm(request.getRealm());
+
+                    requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
