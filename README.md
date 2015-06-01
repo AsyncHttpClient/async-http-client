@@ -1,5 +1,5 @@
-Async Http Client
------------------
+Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on twitter)
+---------------------------------------------------
 
 [Javadoc](http://www.javadoc.io/doc/com.ning/async-http-client/)
 
