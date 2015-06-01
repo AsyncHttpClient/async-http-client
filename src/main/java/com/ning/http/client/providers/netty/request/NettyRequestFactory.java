@@ -13,16 +13,8 @@
  */
 package com.ning.http.client.providers.netty.request;
 
-import static com.ning.http.util.AsyncHttpProviderUtils.getNTLM;
-import static com.ning.http.util.AsyncHttpProviderUtils.isSecure;
-import static com.ning.http.util.AsyncHttpProviderUtils.isWebSocket;
-import static com.ning.http.util.AsyncHttpProviderUtils.useProxyConnect;
 import static com.ning.http.client.providers.netty.ws.WebSocketUtils.getKey;
-import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static com.ning.http.util.AsyncHttpProviderUtils.getAuthority;
-import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
-import static com.ning.http.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
-import static com.ning.http.util.AsyncHttpProviderUtils.urlEncodeFormParams;
+import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
 import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
@@ -92,7 +84,8 @@ public final class NettyRequestFactory {
 
     private String hostHeader(Request request, Uri uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-        return request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
+        int port = uri.getPort();
+        return port == -1 || port == getDefaultPort(uri) ? host : host + ":" + port;
     }
 
     public String firstRequestOnlyAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
