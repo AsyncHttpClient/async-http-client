@@ -16,7 +16,7 @@ First, in order to add it to your Maven project, simply add this dependency:
 <dependency>
   <groupId>com.ning</groupId>
   <artifactId>async-http-client</artifactId>
-  <version>1.9.25</version>
+  <version>1.9.26</version>
 </dependency>
 ```
 
