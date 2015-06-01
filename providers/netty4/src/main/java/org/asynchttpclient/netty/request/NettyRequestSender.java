@@ -264,18 +264,12 @@ public final class NettyRequestSender {
         Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), useProxy, useSSl);
 
         boolean channelPreempted = false;
-        Object partitionKey = null;
+        Object partitionKey = future.getPartitionKey();
 
         try {
             // Do not throw an exception when we need an extra connection for a
             // redirect.
             if (!reclaimCache) {
-
-                // only compute when maxConnectionPerHost is enabled
-                // FIXME clean up
-                if (config.getMaxConnectionsPerHost() > 0)
-                    partitionKey = future.getPartitionKey();
-
                 channelManager.preemptChannel(partitionKey);
                 channelPreempted = true;
             }
