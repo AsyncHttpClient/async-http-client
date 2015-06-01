@@ -14,11 +14,7 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
@@ -34,8 +30,8 @@ import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.cookie.CookieEncoder;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyBodyBody;
@@ -88,7 +84,8 @@ public final class NettyRequestFactory {
 
     private String hostHeader(Request request, Uri uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
-        return request.getVirtualHost() != null || uri.getPort() == -1 ? host : host + ":" + uri.getPort();
+        int port = uri.getPort();
+        return port == -1 || port == getDefaultPort(uri) ? host : host + ":" + port;
     }
 
     public String firstRequestOnlyAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
