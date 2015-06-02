@@ -134,7 +134,7 @@ class ConnectionManager {
             final boolean isSecure = Utils.isSecure(scheme);
             endpoint = new AhcEndpoint(partitionId,
                     isSecure, host, port, request.getLocalAddress(),
-                    createConnectorHandler(isSecure, host));
+                    defaultConnectionHandler);
 
             endpointMap.put(partitionId, endpoint);
         }
@@ -168,7 +168,7 @@ class ConnectionManager {
         if (endpoint == null) {
             endpoint = new AhcEndpoint(partitionId,
                     isSecure, host, port, request.getLocalAddress(),
-                    createConnectorHandler(isSecure, host));
+                    defaultConnectionHandler);
 
             endpointMap.put(partitionId, endpoint);
         }
@@ -177,7 +177,7 @@ class ConnectionManager {
         
         if (c == null) {
             final Future<Connection> future =
-                    createConnectorHandler(isSecure, host).connect(
+                    defaultConnectionHandler.connect(
                     new InetSocketAddress(host, port),
                     request.getLocalAddress() != null
                             ? new InetSocketAddress(request.getLocalAddress(), 0)
@@ -232,25 +232,6 @@ class ConnectionManager {
             }
         }
         return port;
-    }
-
-    private ConnectorHandler<SocketAddress> createConnectorHandler(
-            final boolean isSecure, final String host) {
-        
-        return isSecure && config.getHostnameVerifier() != null
-                ? new TCPNIOConnectorHandler(transport) {
-
-                    @Override
-                    protected void preConfigure(final Connection connection) {
-                        super.preConfigure(connection);
-                        
-                        HostnameVerifierListener.assignHostnameVerifyTask(
-                                connection, config.getHostnameVerifier(), host, null);
-                    }
-
-                }
-                : defaultConnectionHandler;
-
     }
 
     private class AhcEndpoint extends Endpoint<SocketAddress> {

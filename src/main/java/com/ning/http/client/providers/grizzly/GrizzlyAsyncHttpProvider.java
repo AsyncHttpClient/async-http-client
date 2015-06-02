@@ -287,9 +287,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         
         final SwitchingSSLFilter sslFilter =
                 new SwitchingSSLFilter(configurator, defaultSecState);
-        if (clientConfig.getHostnameVerifier() != null) {
-            sslFilter.addHandshakeListener(new HostnameVerifierListener());
-        }
         fcb.add(sslFilter);
         
         final AhcEventFilter eventFilter = new
