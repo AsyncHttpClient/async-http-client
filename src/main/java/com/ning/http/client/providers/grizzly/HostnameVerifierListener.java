@@ -65,41 +65,6 @@ class HostnameVerifierListener implements SSLBaseFilter.HandshakeListener {
         }
     }
     
-    static CompletionHandler<Connection> wrapWithHostnameVerifierHandler(
-            final CompletionHandler<Connection> completionHandler,
-            final HostnameVerifier verifier, final String host) {
-
-        return new CompletionHandler<Connection>() {
-
-            public void cancelled() {
-                if (completionHandler != null) {
-                    completionHandler.cancelled();
-                }
-            }
-
-            public void failed(final Throwable throwable) {
-                if (completionHandler != null) {
-                    completionHandler.failed(throwable);
-                }
-            }
-
-            public void completed(final Connection connection) {
-                assignHostnameVerifyTask(connection, verifier, host,
-                        completionHandler);
-                
-                if (completionHandler != null) {
-                    completionHandler.completed(connection);
-                }
-            }
-
-            public void updated(final Connection connection) {
-                if (completionHandler != null) {
-                    completionHandler.updated(connection);
-                }
-            }
-        };
-    }
-    
     public static void assignHostnameVerifyTask(final Connection connection,
             final HostnameVerifier verifier, final String host,
             final CompletionHandler<Connection> delegate) {
