@@ -18,6 +18,7 @@ import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.buildStaticIOException;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -174,6 +175,12 @@ public class ChannelManager {
         secureBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
         webSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
         secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
+
+        // default to PooledByteBufAllocator
+        plainBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        secureBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        webSocketBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        secureWebSocketBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 
         if (config.getConnectTimeout() > 0)
             nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
