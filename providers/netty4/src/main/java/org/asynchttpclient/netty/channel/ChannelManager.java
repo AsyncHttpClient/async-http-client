@@ -25,6 +25,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -82,6 +83,7 @@ public class ChannelManager {
     private final SSLEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
+    private final Class<? extends Channel> socketChannelClass;
     private final Bootstrap plainBootstrap;
     private final Bootstrap secureBootstrap;
     private final Bootstrap webSocketBootstrap;
@@ -167,13 +169,16 @@ public class ChannelManager {
         // check if external EventLoopGroup is defined
         allowReleaseEventLoopGroup = nettyConfig.getEventLoopGroup() == null;
         eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyConfig.getEventLoopGroup();
-        if (!(eventLoopGroup instanceof NioEventLoopGroup))
-            throw new IllegalArgumentException("Only Nio is supported");
+        if (eventLoopGroup instanceof OioEventLoopGroup)
+            throw new IllegalArgumentException("Oio is not supported");
 
-        plainBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
-        secureBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
-        webSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
-        secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
+        // allow users to specify SocketChannel class and default to NioSocketChannel
+        socketChannelClass = nettyConfig.getSocketChannelClass() == null ? NioSocketChannel.class : nettyConfig.getSocketChannelClass();
+
+        plainBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        secureBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        webSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
 
         if (config.getConnectTimeout() > 0)
             nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());

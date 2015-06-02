@@ -132,6 +132,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
      */
     private EventLoopGroup eventLoopGroup;
 
+    private Class<? extends Channel> socketChannelClass;
+
     private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
     private AdditionalPipelineInitializer httpsAdditionalPipelineInitializer;
@@ -153,6 +155,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
+    }
+
+    public Class<? extends Channel> getSocketChannelClass() {
+        return socketChannelClass;
+    }
+
+    public void setSocketChannelClass(Class<? extends Channel> socketChannelClass) {
+        this.socketChannelClass = socketChannelClass;
     }
 
     public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
