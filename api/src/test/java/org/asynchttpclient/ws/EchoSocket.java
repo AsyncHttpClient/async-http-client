@@ -12,17 +12,11 @@ public class EchoSocket extends WebSocketAdapter {
     public void onWebSocketConnect(Session sess) {
         super.onWebSocketConnect(sess);
         sess.setIdleTimeout(10000);
-        sess.setMaximumMessageSize(1000);
     }
 
     @Override
     public void onWebSocketClose(int statusCode, String reason) {
-        try {
-            getSession().close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        getSession().close();
         super.onWebSocketClose(statusCode, reason);
     }
 

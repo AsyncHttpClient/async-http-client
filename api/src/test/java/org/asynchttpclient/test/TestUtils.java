@@ -134,15 +134,15 @@ public class TestUtils {
         server.addConnector(connector);
     }
 
-    public static void addBasicAuthHandler(Server server, boolean strict, Handler handler) {
-        addAuthHandler(server, Constraint.__BASIC_AUTH, new BasicAuthenticator(), strict, handler);
+    public static void addBasicAuthHandler(Server server, Handler handler) {
+        addAuthHandler(server, Constraint.__BASIC_AUTH, new BasicAuthenticator(), handler);
     }
 
-    public static void addDigestAuthHandler(Server server, boolean strict, Handler handler) {
-        addAuthHandler(server, Constraint.__DIGEST_AUTH, new DigestAuthenticator(), strict, handler);
+    public static void addDigestAuthHandler(Server server, Handler handler) {
+        addAuthHandler(server, Constraint.__DIGEST_AUTH, new DigestAuthenticator(), handler);
     }
 
-    private static void addAuthHandler(Server server, String auth, LoginAuthenticator authenticator, boolean strict, Handler handler) {
+    private static void addAuthHandler(Server server, String auth, LoginAuthenticator authenticator, Handler handler) {
 
         server.addBean(LOGIN_SERVICE);
 
@@ -166,7 +166,6 @@ public class TestUtils {
         security.setConstraintMappings(cm, knownRoles);
         security.setAuthenticator(authenticator);
         security.setLoginService(LOGIN_SERVICE);
-        security.setStrict(strict);
         security.setHandler(handler);
         server.setHandler(security);
     }

@@ -69,11 +69,11 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         portNoAuth = findFreePort();
 
         server = newJettyHttpServer(port1);
-        addBasicAuthHandler(server, false, configureHandler());
+        addBasicAuthHandler(server, configureHandler());
         server.start();
 
         server2 = newJettyHttpServer(port2);
-        addDigestAuthHandler(server2, true, new RedirectHandler());
+        addDigestAuthHandler(server2, new RedirectHandler());
         server2.start();
 
         // need noAuth server to verify the preemptive auth mode (see basicAuthTetPreemtiveTest) 

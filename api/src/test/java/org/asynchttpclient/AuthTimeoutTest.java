@@ -53,11 +53,11 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         port2 = findFreePort();
 
         server = newJettyHttpServer(port1);
-        addBasicAuthHandler(server, false, configureHandler());
+        addBasicAuthHandler(server, configureHandler());
         server.start();
 
         server2 = newJettyHttpServer(port2);
-        addDigestAuthHandler(server2, true, configureHandler());
+        addDigestAuthHandler(server2, configureHandler());
         server2.start();
 
         logger.info("Local HTTP server started successfully");

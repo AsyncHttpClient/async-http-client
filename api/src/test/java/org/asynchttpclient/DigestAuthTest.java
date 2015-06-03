@@ -45,7 +45,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         port1 = findFreePort();
 
         server = newJettyHttpServer(port1);
-        addDigestAuthHandler(server, false, configureHandler());
+        addDigestAuthHandler(server, configureHandler());
         server.start();
         logger.info("Local HTTP server started successfully");
     }
