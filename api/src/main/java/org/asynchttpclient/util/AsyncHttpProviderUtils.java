@@ -174,4 +174,15 @@ public class AsyncHttpProviderUtils {
         }
         sb.append('&');
     }
+    
+    public static String hostHeader(Request request, Uri uri) {
+        String virtualHost = request.getVirtualHost();
+        if (virtualHost != null)
+            return virtualHost;
+        else {
+            String host = uri.getHost();
+            int port = uri.getPort();
+            return port == -1 || port == getSchemeDefaultPort(uri.getScheme()) ? host : host + ":" + port;
+        }
+    }
 }
