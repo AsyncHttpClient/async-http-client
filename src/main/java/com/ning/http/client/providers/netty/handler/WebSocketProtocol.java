@@ -13,21 +13,6 @@
  */
 package com.ning.http.client.providers.netty.handler;
 
-import static com.ning.http.client.providers.netty.ws.WebSocketUtils.getAcceptKey;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
-
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseHeaders;
@@ -44,9 +29,23 @@ import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
 import com.ning.http.client.providers.netty.response.NettyResponseStatus;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
 import java.util.Locale;
+
+import static com.ning.http.client.providers.netty.ws.WebSocketUtils.getAcceptKey;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 
 public final class WebSocketProtocol extends Protocol {
 
@@ -179,12 +178,14 @@ public final class WebSocketProtocol extends Protocol {
     public void onError(NettyResponseFuture<?> future, Throwable e) {
         logger.warn("onError {}", e);
 
+        Throwable throwable = e == null ? new UnexpectedWebSocketException() : e.getCause() == null ? e : e.getCause();
+
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
 
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
             if (webSocket != null) {
-                webSocket.onError(e.getCause());
+                webSocket.onError(throwable);
                 webSocket.close();
             }
         } catch (Throwable t) {
@@ -206,5 +207,8 @@ public final class WebSocketProtocol extends Protocol {
         } catch (Throwable t) {
             logger.error("onError", t);
         }
+    }
+
+    private final static class UnexpectedWebSocketException extends Exception {
     }
 }
