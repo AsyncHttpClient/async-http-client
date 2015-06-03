@@ -86,7 +86,7 @@ public final class NettyRequestFactory {
     private String hostHeader(Request request, Uri uri) {
         String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
         int port = uri.getPort();
-        return port == -1 || port == getDefaultPort(uri) ? host : host + ":" + port;
+        return port == -1 || port == getSchemeDefaultPort(uri.getScheme()) ? host : host + ":" + port;
     }
 
     public String firstRequestOnlyAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
