@@ -20,11 +20,21 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 public final class SSLSwitchingEvent implements FilterChainEvent {
     private final boolean secure;
     private final Connection connection;
+    private final String host;
+    private final int port;
+    
     // ---------------------------------------------------- Constructors
 
-    public SSLSwitchingEvent(final boolean secure, final Connection c) {
+    public SSLSwitchingEvent(final Connection c, final boolean secure) {
+        this(c, secure, null, -1);
+    }
+    
+    public SSLSwitchingEvent(final Connection c, final boolean secure,
+            final String host, final int port) {
         this.secure = secure;
         connection = c;
+        this.host = host;
+        this.port = port;
     }
     // ----------------------------------- Methods from FilterChainEvent
 
@@ -40,5 +50,12 @@ public final class SSLSwitchingEvent implements FilterChainEvent {
     public Connection getConnection() {
         return connection;
     }
-    
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }        
 } // END SSLSwitchingEvent

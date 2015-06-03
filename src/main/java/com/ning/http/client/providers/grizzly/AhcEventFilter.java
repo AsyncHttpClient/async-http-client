@@ -12,7 +12,6 @@
  */
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.providers.grizzly.events.SSLSwitchingEvent;
 import com.ning.http.client.providers.grizzly.events.GracefulCloseEvent;
 import com.ning.http.client.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
 import com.ning.http.client.AsyncHandler;
@@ -738,15 +737,6 @@ final class AhcEventFilter extends HttpClientFilter {
             final int statusCode = response.getStatus();
             return !(statusCode < 302 || statusCode > 303) &&
                     !(statusCode == 302 && ctx.provider.getClientConfig().isStrict302Handling());
-        }
-
-        private boolean switchingSchemes(final Uri oldUri, final Uri newUri) {
-            return !oldUri.getScheme().equals(newUri.getScheme());
-        }
-
-        private void notifySchemeSwitch(final FilterChainContext ctx,
-                final Connection c, final Uri uri) {
-            ctx.notifyDownstream(new SSLSwitchingEvent("https".equals(uri.getScheme()), c));
         }
     } // END RedirectHandler
         

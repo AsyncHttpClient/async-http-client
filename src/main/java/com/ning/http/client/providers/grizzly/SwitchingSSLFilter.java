@@ -14,6 +14,7 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.providers.grizzly.events.SSLSwitchingEvent;
 import java.io.IOException;
+import javax.net.ssl.SSLEngine;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -23,6 +24,7 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
+import org.glassfish.grizzly.ssl.SSLUtils;
 
 /**
  * The {@link SSLFilter} implementation, which might be activated/deactivated at runtime.
@@ -40,10 +42,27 @@ final class SwitchingSSLFilter extends SSLFilter {
 
     // ---------------------------------------------- Methods from SSLFilter
     @Override
-    public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event) throws IOException {
+    public NextAction handleEvent(final FilterChainContext ctx,
+            final FilterChainEvent event) throws IOException {
+        
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-            CONNECTION_IS_SECURE.set(se.getConnection(), se.isSecure());
+            final boolean isSecure = se.isSecure();
+            CONNECTION_IS_SECURE.set(se.getConnection(), isSecure);
+            
+            // if enabling security - create SSLEngine here, because default
+            // Grizzly SSLFilter will use host/port info from the Connection, rather
+            // than request URL. Specifically this doesn't work with CONNECT tunnels.
+            if (isSecure &&
+                    SSLUtils.getSSLEngine(ctx.getConnection()) == null) {
+                // if SSLEngine is not yet set for the connection - initialize it
+                final SSLEngine sslEngine = getClientSSLEngineConfigurator()
+                        .createSSLEngine(se.getHost(),
+                                se.getPort() == -1 ? 443 : se.getPort()
+                        );
+                sslEngine.beginHandshake();
+                SSLUtils.setSSLEngine(ctx.getConnection(), sslEngine);
+            }
             return ctx.getStopAction();
         }
         return ctx.getInvokeAction();

@@ -159,7 +159,6 @@ final class AsyncHttpClientFilter extends BaseFilter {
         requestPacket.setSecure(secure);
         setupKeepAlive(requestPacket, connection);
         
-        ctx.notifyDownstream(new SSLSwitchingEvent(secure, connection));
         copyHeaders(ahcRequest, requestPacket);
         addCookies(ahcRequest, requestPacket);
         addHostHeaderIfNeeded(ahcRequest, uri, requestPacket);
@@ -169,6 +168,10 @@ final class AsyncHttpClientFilter extends BaseFilter {
         if (useProxy) {
             addProxyHeaders(proxy, requestPacket);
         }
+
+        ctx.notifyDownstream(new SSLSwitchingEvent(connection, secure,
+                uri.getHost(), uri.getPort()));
+
         return sendRequest(httpTxCtx, ctx, requestPacket, wrapWithExpectHandlerIfNeeded(payloadGenerator, requestPacket));
     }
 
@@ -186,13 +189,16 @@ final class AsyncHttpClientFilter extends BaseFilter {
         setupKeepAlive(requestPacket, connection);
         
         httpCtx.establishingTunnel = true;
-        // turn off SSL, because CONNECT will be sent in plain mode
-        ctx.notifyDownstream(new SSLSwitchingEvent(false, connection));
+
         final Request request = httpCtx.getAhcRequest();
         addHostHeaderIfNeeded(request, uri, requestPacket);
         addServiceHeaders(requestPacket);
         addAuthorizationHeader(connection, getRealm(request), requestPacket);
         addProxyHeaders(proxy, requestPacket);
+        
+        // turn off SSL, because CONNECT will be sent in plain mode
+        ctx.notifyDownstream(new SSLSwitchingEvent(connection, false));
+        
         return sendRequest(httpCtx, ctx, requestPacket, null);
     }
 
@@ -278,7 +284,8 @@ final class AsyncHttpClientFilter extends BaseFilter {
         }
     }
 
-    private void addHostHeaderIfNeeded(final Request request, final Uri uri, final HttpRequestPacket requestPacket) {
+    private void addHostHeaderIfNeeded(final Request request, final Uri uri,
+            final HttpRequestPacket requestPacket) {
         if (!requestPacket.containsHeader(Header.Host)) {
             String host = request.getVirtualHost();
             if (host != null) {
