@@ -126,12 +126,15 @@ public abstract class Protocol {
                     boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
 
                     final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                            .setCookies(request.getCookies())//
                             .setConnectionPoolKeyStrategy(request.getConnectionPoolPartitioning())//
-                            .setInetAddress(request.getInetAddress())//
+                            .setFollowRedirects(true)//
                             .setLocalInetAddress(request.getLocalAddress())//
-                            .setVirtualHost(request.getVirtualHost())//
+                            .setNameResolver(request.getNameResolver())//
                             .setProxyServer(request.getProxyServer())//
-                            .setRealm(request.getRealm());
+                            .setRealm(request.getRealm())//
+                            .setRequestTimeout(request.getRequestTimeout())//
+                            .setVirtualHost(request.getVirtualHost());
 
                     requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
