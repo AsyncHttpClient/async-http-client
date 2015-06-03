@@ -101,10 +101,14 @@ public class AsyncHttpProviderUtils {
                 && getDefaultPort(uri1) == getDefaultPort(uri2);
     }
 
-    public final static int getDefaultPort(Uri uri) {
+    public static final int getSchemeDefaultPort(String scheme) {
+        return scheme.equals("http") || scheme.equals("ws") ? 80 : 443;
+    }
+
+    public static final int getDefaultPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
-            port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
+            port = getSchemeDefaultPort(uri.getScheme());
         return port;
     }
 
