@@ -430,6 +430,7 @@
 		</dependency>
 	</dependencies>
 	<properties>
+		<additionalparam>-Xdoclint:none</additionalparam>
 		<distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
 		<surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
 		<source.property>1.7</source.property>
