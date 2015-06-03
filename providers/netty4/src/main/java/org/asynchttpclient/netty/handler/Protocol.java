@@ -70,8 +70,7 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.code());
     }
 
-    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
-            NettyRequestSender requestSender) {
+    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
@@ -127,16 +126,20 @@ public abstract class Protocol {
                     boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
 
                     final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                            .setCookies(request.getCookies())//
                             .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
-                            .setInetAddress(request.getInetAddress())//
+                            .setFollowRedirect(true)//
                             .setLocalInetAddress(request.getLocalAddress())//
-                            .setVirtualHost(request.getVirtualHost())//
+                            .setNameResolver(request.getNameResolver())//
                             .setProxyServer(request.getProxyServer())//
-                            .setRealm(request.getRealm());
+                            .setRealm(request.getRealm())//
+                            .setRequestTimeout(request.getRequestTimeout())//
+                            .setVirtualHost(request.getVirtualHost());
 
                     requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
-                    // in case of a redirect from HTTP to HTTPS, future attributes might change
+                    // in case of a redirect from HTTP to HTTPS, future
+                    // attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final Object initialPartitionKey = future.getPartitionKey();
 
@@ -176,7 +179,7 @@ public abstract class Protocol {
                         channelManager.closeChannel(channel);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
-                    
+
                     return true;
                 }
             }
@@ -193,8 +196,8 @@ public abstract class Protocol {
             HttpResponseHeaders responseHeaders) throws IOException {
 
         if (hasResponseFilters) {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest())
-                    .responseStatus(status).responseHeaders(responseHeaders).build();
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
+                    .build();
 
             for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                 try {
