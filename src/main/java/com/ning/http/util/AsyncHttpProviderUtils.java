@@ -45,7 +45,7 @@ public class AsyncHttpProviderUtils {
     public static final String HTTPS = "https";
     public static final String WEBSOCKET = "ws";
     public static final String WEBSOCKET_SSL = "wss";
-    
+
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
 
     public static final void validateSupportedScheme(Uri uri) {
@@ -96,8 +96,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static boolean isSameHostAndProtocol(Uri uri1, Uri uri2) {
-        return uri1.getScheme().equals(uri2.getScheme())
-                && uri1.getHost().equals(uri2.getHost())
+        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost())
                 && getDefaultPort(uri1) == getDefaultPort(uri2);
     }
 
@@ -187,7 +186,7 @@ public class AsyncHttpProviderUtils {
         sb.setLength(sb.length() - 1);
         return sb;
     }
-    
+
     public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
         return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params), charset);
     }
@@ -200,10 +199,10 @@ public class AsyncHttpProviderUtils {
         }
         sb.append('&');
     }
-    
+
     public static String getNTLM(List<String> authenticateHeaders) {
         if (MiscUtils.isNonEmpty(authenticateHeaders)) {
-            for (String authenticateHeader: authenticateHeaders) {
+            for (String authenticateHeader : authenticateHeaders) {
                 if (authenticateHeader.startsWith("NTLM"))
                     return authenticateHeader;
             }
@@ -226,5 +225,5 @@ public class AsyncHttpProviderUtils {
 
     public static boolean useProxyConnect(Uri uri) {
         return isSecure(uri) || isWebSocket(uri.getScheme());
-    }    
+    }
 }
