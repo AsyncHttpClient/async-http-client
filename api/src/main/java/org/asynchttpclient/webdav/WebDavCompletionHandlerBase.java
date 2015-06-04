@@ -161,18 +161,8 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
-                    return wrappedResponse.getResponseBodyExcerpt(maxLength, charset);
-                }
-
-                @Override
                 public String getResponseBody(Charset charset) throws IOException {
                     return wrappedResponse.getResponseBody(charset);
-                }
-
-                @Override
-                public String getResponseBodyExcerpt(int maxLength) throws IOException {
-                    return wrappedResponse.getResponseBodyExcerpt(maxLength);
                 }
 
                 @Override

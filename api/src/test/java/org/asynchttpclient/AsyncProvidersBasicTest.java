@@ -605,7 +605,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                         String xContentType = response.getHeader("X-Content-Type");
                         String boundary = xContentType.substring((xContentType.indexOf("boundary") + "boundary".length() + 1));
 
-                        String s = response.getResponseBodyExcerpt(boundary.length() + "--".length()).substring("--".length());
+                        String s = response.getResponseBody().substring(boundary.length());
                         assertEquals(boundary, s);
                     } finally {
                         l.countDown();
@@ -1005,21 +1005,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider", "async" })
-    public void asyncResponseBodyTooLarge() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
-            Response response = client.preparePost(getTargetUrl()).setBody("0123456789").execute(new AsyncCompletionHandlerAdapter() {
-
-                @Override
-                public void onThrowable(Throwable t) {
-                    fail("Unexpected exception", t);
-                }
-            }).get();
-
-            assertNotNull(response.getResponseBodyExcerpt(Integer.MAX_VALUE));
         }
     }
 

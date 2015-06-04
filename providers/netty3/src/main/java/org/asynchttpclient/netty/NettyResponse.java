@@ -88,16 +88,6 @@ public class NettyResponse extends ResponseBase {
     }
 
     @Override
-    public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength, null);
-    }
-
-    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
-        String response = getResponseBody(charset);
-        return response.length() <= maxLength ? response : response.substring(0, maxLength);
-    }
-
-    @Override
     protected List<Cookie> buildCookies() {
         List<Cookie> cookies = new ArrayList<>();
         for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {

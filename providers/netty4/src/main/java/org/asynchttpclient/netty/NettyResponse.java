@@ -13,7 +13,6 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.contentToBytes;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
 
@@ -42,17 +41,6 @@ public class NettyResponse extends ResponseBase {
             HttpResponseHeaders headers,//
             List<HttpResponseBodyPart> bodyParts) {
         super(status, headers, bodyParts);
-    }
-
-    @Override
-    public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength, null);
-    }
-
-    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
-        byte[] b = contentToBytes(bodyParts, maxLength);
-        // should be fine; except that it may split multi-byte chars (last char may become '?')
-        return new String(b, calculateCharset(charset));
     }
 
     protected List<Cookie> buildCookies() {

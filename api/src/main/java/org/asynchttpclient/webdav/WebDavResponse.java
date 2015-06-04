@@ -59,14 +59,6 @@ public class WebDavResponse implements Response {
         return response.getResponseBodyAsStream();
     }
 
-    public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return response.getResponseBodyExcerpt(maxLength);
-    }
-
-    public String getResponseBodyExcerpt(int maxLength, Charset charset) throws IOException {
-        return response.getResponseBodyExcerpt(maxLength, charset);
-    }
-
     public String getResponseBody() throws IOException {
         return response.getResponseBody();
     }

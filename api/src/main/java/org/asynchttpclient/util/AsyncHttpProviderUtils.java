@@ -16,13 +16,11 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.util.MiscUtils.*;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
@@ -35,8 +33,6 @@ public class AsyncHttpProviderUtils {
     public static final IOException REMOTELY_CLOSED_EXCEPTION = buildStaticIOException("Remotely closed");
     public static final IOException CHANNEL_CLOSED_EXCEPTION = buildStaticIOException("Channel closed");
 
-    private final static byte[] NO_BYTES = new byte[0];
-
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
     public static final void validateSupportedScheme(Uri uri) {
@@ -46,45 +42,6 @@ public class AsyncHttpProviderUtils {
             throw new IllegalArgumentException("The URI scheme, of the URI " + uri
                     + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
-    }
-
-    /**
-     * @param bodyParts NON EMPTY body part
-     * @param maxLen
-     * @return
-     * @throws UnsupportedEncodingException
-     */
-    public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts, int maxLen) throws UnsupportedEncodingException {
-        final int partCount = bodyParts.size();
-        if (partCount == 0) {
-            return NO_BYTES;
-        }
-        if (partCount == 1) {
-            byte[] chunk = bodyParts.get(0).getBodyPartBytes();
-            if (chunk.length <= maxLen) {
-                return chunk;
-            }
-            byte[] result = new byte[maxLen];
-            System.arraycopy(chunk, 0, result, 0, maxLen);
-            return result;
-        }
-        int size = 0;
-        byte[] result = new byte[maxLen];
-        for (HttpResponseBodyPart part : bodyParts) {
-            byte[] chunk = part.getBodyPartBytes();
-            int amount = Math.min(maxLen - size, chunk.length);
-            System.arraycopy(chunk, 0, result, size, amount);
-            size += amount;
-            if (size == maxLen) {
-                return result;
-            }
-        }
-        if (size < maxLen) {
-            byte[] old = result;
-            result = new byte[old.length];
-            System.arraycopy(old, 0, result, 0, old.length);
-        }
-        return result;
     }
 
     public final static String getBaseUrl(Uri uri) {
