@@ -66,8 +66,8 @@ public final class NettyRequestFactory {
         this.nettyConfig = nettyConfig;
     }
 
-    private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
-        if (method == HttpMethod.CONNECT)
+    private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
+        if (connect)
             return getAuthority(uri);
 
         else if (proxyServer != null && !(useProxyConnect(uri) && config.isUseRelativeURIsWithConnectProxies()))
@@ -154,10 +154,10 @@ public final class NettyRequestFactory {
         return authorizationHeader;
     }
 
-    public String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) throws IOException {
+    public String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, boolean connect) throws IOException {
         String proxyAuthorization = null;
 
-        if (method == HttpMethod.CONNECT) {
+        if (connect) {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
             String ntlmHeader = getNTLM(auth);
             if (ntlmHeader != null) {
@@ -175,11 +175,11 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
     
-    private String systematicProxyAuthorizationHeader(Request request, Realm realm, ProxyServer proxyServer, HttpMethod method) {
+    private String systematicProxyAuthorizationHeader(Request request, Realm realm, ProxyServer proxyServer, boolean connect) {
 
         String proxyAuthorization = null;
 
-        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null
+        if (!connect && proxyServer != null && proxyServer.getPrincipal() != null
                 && proxyServer.getScheme() == AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
 
@@ -207,9 +207,9 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
 
-    private NettyBody body(Request request, HttpMethod method) throws IOException {
+    private NettyBody body(Request request, boolean connect) throws IOException {
         NettyBody nettyBody = null;
-        if (method != HttpMethod.CONNECT) {
+        if (!connect) {
 
             Charset bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : Charset.forName(request.getBodyEncoding());
 
@@ -269,10 +269,12 @@ public final class NettyRequestFactory {
             throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
-        HttpVersion httpVersion = method == HttpMethod.CONNECT && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-        String requestUri = requestUri(uri, proxyServer, method);
+        boolean connect = method == HttpMethod.CONNECT;
+        
+        HttpVersion httpVersion = connect && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        String requestUri = requestUri(uri, proxyServer, connect);
 
-        NettyBody body = body(request, method);
+        NettyBody body = body(request, connect);
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
@@ -335,7 +337,7 @@ public final class NettyRequestFactory {
         // don't override authorization but append
         addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, realm));
 
-        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, realm, proxyServer, method));
+        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, realm, proxyServer, connect));
 
         // Add default accept headers
         if (!headers.contains(HttpHeaders.Names.ACCEPT))
