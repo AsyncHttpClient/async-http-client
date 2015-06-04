@@ -625,13 +625,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
     }
 
+    private void validateSupportedScheme(Uri uri) {
+        final String scheme = uri.getScheme();
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
+                && !scheme.equalsIgnoreCase("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
+                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        }
+    }
+    
     private void computeFinalUri() {
 
         if (request.uri == null) {
             logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             request.uri = DEFAULT_REQUEST_URL;
         } else {
-            AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
+            validateSupportedScheme(request.uri);
         }
 
         request.uri =  uriEncoder.encode(request.uri, queryParams);

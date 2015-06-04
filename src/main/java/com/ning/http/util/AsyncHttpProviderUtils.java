@@ -48,15 +48,6 @@ public class AsyncHttpProviderUtils {
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
 
-    public static final void validateSupportedScheme(Uri uri) {
-        final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
-                && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
-                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
-        }
-    }
-
     public final static String getBaseUrl(Uri uri) {
         return uri.getScheme() + "://" + getAuthority(uri);
     }
