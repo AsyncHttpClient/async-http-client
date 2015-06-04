@@ -22,7 +22,7 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.providers.netty.channel.pool.ChannelPool;
 import com.ning.http.client.providers.netty.handler.ConnectionStrategy;
-import com.ning.http.client.providers.netty.handler.Http1Point1ConnectionStrategy;
+import com.ning.http.client.providers.netty.handler.DefaultConnectionStrategy;
 import com.ning.http.client.providers.netty.ws.NettyWebSocket;
 
 import java.util.Map;
@@ -147,7 +147,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private boolean keepEncodingHeader = false;
 
-    private ConnectionStrategy connectionStrategy = new Http1Point1ConnectionStrategy();
+    private ConnectionStrategy connectionStrategy = new DefaultConnectionStrategy();
 
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
