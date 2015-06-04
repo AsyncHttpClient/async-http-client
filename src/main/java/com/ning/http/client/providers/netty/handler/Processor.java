@@ -125,7 +125,7 @@ public class Processor extends SimpleChannelUpstreamHandler {
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
-            protocol.onError(future, null);
+            protocol.onClose(future);
             requestSender.handleUnexpectedClosedChannel(channel, future);
         }
     }

@@ -178,7 +178,7 @@ public final class WebSocketProtocol extends Protocol {
     public void onError(NettyResponseFuture<?> future, Throwable e) {
         logger.warn("onError {}", e);
 
-        Throwable throwable = e == null ? new UnexpectedWebSocketException() : e.getCause() == null ? e : e.getCause();
+        Throwable throwable = e.getCause() == null ? e : e.getCause();
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
@@ -207,8 +207,5 @@ public final class WebSocketProtocol extends Protocol {
         } catch (Throwable t) {
             logger.error("onError", t);
         }
-    }
-
-    private final static class UnexpectedWebSocketException extends Exception {
     }
 }
