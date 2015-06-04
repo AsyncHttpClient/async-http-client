@@ -13,18 +13,12 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
-import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
 import io.netty.buffer.ByteBuf;
@@ -42,7 +36,6 @@ import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.cookie.CookieEncoder;
 import org.asynchttpclient.netty.request.body.NettyBody;
@@ -54,11 +47,11 @@ import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.request.body.NettyFileBody;
 import org.asynchttpclient.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.netty.request.body.NettyMultipartBody;
-import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.HttpUtils;
 import org.asynchttpclient.util.StringUtils;
 
 public final class NettyRequestFactory extends NettyRequestFactoryBase {
@@ -69,76 +62,13 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         super(config);
     }
 
-    private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
-        if (method == HttpMethod.CONNECT)
-            return getAuthority(uri);
-
-        else if (proxyServer != null && !useProxyConnect(uri))
-            return uri.toUrl();
-
-        else {
-            String path = getNonEmptyPath(uri);
-            if (isNonEmpty(uri.getQuery()))
-                return path + "?" + uri.getQuery();
-            else
-                return path;
-        }
+    protected List<String> getProxyAuthorizationHeader(Request request) {
+        return request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
     }
     
-    public String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) throws IOException {
-        String proxyAuthorization = null;
-
-        if (method == HttpMethod.CONNECT) {
-            List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            String ntlmHeader = getNTLM(auth);
-            if (ntlmHeader != null) {
-                proxyAuthorization = ntlmHeader;
-            }
-
-        } else if (proxyServer != null && proxyServer.getPrincipal() != null && isNonEmpty(proxyServer.getNtlmDomain())) {
-            List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            if (getNTLM(auth) == null) {
-                String msg = NtlmEngine.INSTANCE.generateType1Msg();
-                proxyAuthorization = "NTLM " + msg;
-            }
-        }
-
-        return proxyAuthorization;
-    }
-    
-    private String systematicProxyAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm, HttpMethod method) {
-
-        String proxyAuthorization = null;
-
-        if (method != HttpMethod.CONNECT && proxyServer != null && proxyServer.getPrincipal() != null && proxyServer.getScheme() == AuthScheme.BASIC) {
-            proxyAuthorization = computeBasicAuthentication(proxyServer);
-        } else if (realm != null && realm.getUsePreemptiveAuth() && realm.isTargetProxy()) {
-
-            switch (realm.getScheme()) {
-            case BASIC:
-                proxyAuthorization = computeBasicAuthentication(realm);
-                break;
-            case DIGEST:
-                if (isNonEmpty(realm.getNonce()))
-                    proxyAuthorization = computeDigestAuthentication(realm);
-                break;
-            case NTLM:
-            case KERBEROS:
-            case SPNEGO:
-                // NTLM, KERBEROS and SPNEGO are only set on the first request, see firstRequestOnlyAuthorizationHeader
-            case NONE:
-                break;
-            default:
-                throw new IllegalStateException("Invalid Authentication " + realm);
-            }
-        }
-
-        return proxyAuthorization;
-    }
-
-    private NettyBody body(Request request, HttpMethod method) throws IOException {
+    private NettyBody body(Request request, boolean connect) throws IOException {
         NettyBody nettyBody = null;
-        if (method != HttpMethod.CONNECT) {
+        if (!connect) {
 
             Charset bodyCharset = request.getBodyCharset() == null ? DEFAULT_CHARSET : request.getBodyCharset();
 
@@ -196,10 +126,14 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
     public NettyRequest newNettyRequest(Request request, Uri uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
-        HttpVersion httpVersion = method == HttpMethod.CONNECT && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-        String requestUri = requestUri(uri, proxyServer, method);
+        boolean connect = method == HttpMethod.CONNECT;
+        
+        boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!HttpUtils.isSecure(uri) || config.isAllowPoolingSslConnections());
+        
+        HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        String requestUri = requestUri(uri, proxyServer, connect);
 
-        NettyBody body = body(request, method);
+        NettyBody body = body(request, connect);
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
@@ -220,7 +154,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         HttpHeaders headers = httpRequest.headers();
 
-        if (method != HttpMethod.CONNECT) {
+        if (!connect) {
             // assign headers as configured on request
             for (Entry<String, List<String>> header : request.getHeaders()) {
                 headers.set(header.getKey(), header.getValue());
@@ -264,7 +198,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         // don't override authorization but append
         addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, realm));
 
-        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, method));
+        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, connect));
 
         // Add default accept headers
         if (!headers.contains(HttpHeaders.Names.ACCEPT))
