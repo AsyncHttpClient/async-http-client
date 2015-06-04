@@ -22,7 +22,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.handler.Http1Point1ConnectionStrategy;
+import org.asynchttpclient.netty.handler.DefaultConnectionStrategy;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -121,7 +121,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
 
-    private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new Http1Point1ConnectionStrategy();
+    private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new DefaultConnectionStrategy();
 
     public boolean isUseDeadLockChecker() {
         return useDeadLockChecker;
