@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
 
 import java.io.File;
 import java.io.InputStream;
@@ -34,7 +35,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.UriEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -601,7 +601,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             try {
                 final String contentType = request.headers.getFirstValue("Content-Type");
                 if (contentType != null) {
-                    final Charset charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                    final Charset charset = parseCharset(contentType);
                     if (charset != null) {
                         // ensure that if charset is provided with the Content-Type header,
                         // we propagate that down to the charset of the Request object
@@ -635,7 +635,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             request.uri = DEFAULT_REQUEST_URL;
         } else {
-            AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
+            validateSupportedScheme(request.uri);
         }
 
         request.uri =  uriEncoder.encode(request.uri, queryParams);

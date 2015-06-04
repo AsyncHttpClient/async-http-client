@@ -1,10 +1,10 @@
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
@@ -31,9 +31,9 @@ public abstract class ResponseBase implements Response {
         if (charset == null) {
             String contentType = getContentType();
             if (contentType != null)
-                charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
+                charset = parseCharset(contentType); // parseCharset can return null
         }
-        return charset != null ? charset : AsyncHttpProviderUtils.DEFAULT_CHARSET;
+        return charset != null ? charset : DEFAULT_CHARSET;
     }
 
     @Override
