@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
@@ -187,7 +186,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             .set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(HttpHeaders.Names.CONNECTION)) {
-            headers.set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
+            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
+            if (connectionHeaderValue != null)
+                headers.set(HttpHeaders.Names.CONNECTION, connectionHeaderValue);
         }
 
         if (!headers.contains(HttpHeaders.Names.HOST))

@@ -172,4 +172,13 @@ public abstract class NettyRequestFactoryBase {
 
         return authorizationHeader;
     }
+    
+    protected String connectionHeader(boolean allowConnectionPooling, boolean http11) {
+        if (allowConnectionPooling)
+            return "keep-alive";
+        else if (http11)
+            return "close";
+        else
+            return null;
+    }
 }

@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
@@ -44,6 +43,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.HttpUtils;
 import org.asynchttpclient.util.StringUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
@@ -127,8 +127,10 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
-        
-        HttpVersion httpVersion = connect && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+
+        boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!HttpUtils.isSecure(uri) || config.isAllowPoolingSslConnections());
+
+        HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
 
         NettyBody body = body(request, connect);
@@ -183,7 +185,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
                     .set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(HttpHeaders.Names.CONNECTION)) {
-            headers.set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
+            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
+            if (connectionHeaderValue != null)
+                headers.set(HttpHeaders.Names.CONNECTION, connectionHeaderValue);
         }
 
         if (!headers.contains(HttpHeaders.Names.HOST))

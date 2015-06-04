@@ -37,10 +37,8 @@ public class AsyncHttpProviderUtils {
 
     public static final void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
-                && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
-                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 
@@ -49,14 +47,12 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String getAuthority(Uri uri) {
-        int port = uri.getPort() != -1? uri.getPort() : getDefaultPort(uri);
+        int port = uri.getPort() != -1 ? uri.getPort() : getDefaultPort(uri);
         return uri.getHost() + ":" + port;
     }
 
     public final static boolean isSameHostAndProtocol(Uri uri1, Uri uri2) {
-        return uri1.getScheme().equals(uri2.getScheme())
-                && uri1.getHost().equals(uri2.getHost())
-                && getDefaultPort(uri1) == getDefaultPort(uri2);
+        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost()) && getDefaultPort(uri1) == getDefaultPort(uri2);
     }
 
     public static final int getSchemeDefaultPort(String scheme) {
@@ -98,16 +94,12 @@ public class AsyncHttpProviderUtils {
         return null;
     }
 
-    public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
-        return config.isAllowPoolingConnections() ? "keep-alive" : "close";
-    }
-
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
         return request.getRequestTimeout() != 0 ? request.getRequestTimeout() : config.getRequestTimeout();
     }
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
-        return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
+        return request.getFollowRedirect() != null ? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }
 
     private static StringBuilder urlEncodeFormParams0(List<Param> params) {
@@ -118,7 +110,7 @@ public class AsyncHttpProviderUtils {
         sb.setLength(sb.length() - 1);
         return sb;
     }
-    
+
     public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
         return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params), charset);
     }
@@ -131,7 +123,7 @@ public class AsyncHttpProviderUtils {
         }
         sb.append('&');
     }
-    
+
     public static String hostHeader(Request request, Uri uri) {
         String virtualHost = request.getVirtualHost();
         if (virtualHost != null)
