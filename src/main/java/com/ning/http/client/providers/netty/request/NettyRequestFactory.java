@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.netty.request;
 
 import static com.ning.http.client.providers.netty.ws.WebSocketUtils.getKey;
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.AsyncHttpProviderUtils.*;
 import static com.ning.http.util.AuthenticatorUtils.computeBasicAuthentication;
 import static com.ning.http.util.AuthenticatorUtils.computeDigestAuthentication;
@@ -271,7 +272,9 @@ public final class NettyRequestFactory {
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
         
-        HttpVersion httpVersion = connect && proxyServer.isForceHttp10() ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!isSecure(uri) || config.isAllowPoolingSslConnections());
+        
+        HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
 
         NettyBody body = body(request, connect);
@@ -326,7 +329,9 @@ public final class NettyRequestFactory {
                     .set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(HttpHeaders.Names.CONNECTION)) {
-            headers.set(HttpHeaders.Names.CONNECTION, keepAliveHeaderValue(config));
+            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
+            if (connectionHeaderValue != null)
+                headers.set(HttpHeaders.Names.CONNECTION, connectionHeaderValue);
         }
 
         if (!headers.contains(HttpHeaders.Names.HOST))
