@@ -14,7 +14,12 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.keepAliveHeaderValue;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
@@ -53,18 +58,15 @@ import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
-public final class NettyRequestFactory {
+public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
-    private final AsyncHttpClientConfig config;
-
     public NettyRequestFactory(AsyncHttpClientConfig config) {
-        this.config = config;
+        super(config);
     }
 
     private String requestUri(Uri uri, ProxyServer proxyServer, HttpMethod method) {
@@ -82,68 +84,7 @@ public final class NettyRequestFactory {
                 return path;
         }
     }
-
-    public String firstRequestOnlyAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
-        String authorizationHeader = null;
-
-        if (realm != null && realm.getUsePreemptiveAuth()) {
-            switch (realm.getScheme()) {
-            case NTLM:
-                String msg = NtlmEngine.INSTANCE.generateType1Msg();
-                authorizationHeader = "NTLM " + msg;
-                break;
-            case KERBEROS:
-            case SPNEGO:
-                String host;
-                if (proxyServer != null)
-                    host = proxyServer.getHost();
-                else if (request.getVirtualHost() != null)
-                    host = request.getVirtualHost();
-                else
-                    host = uri.getHost();
-
-                try {
-                    authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
-                } catch (Throwable e) {
-                    throw new IOException(e);
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        
-        return authorizationHeader;
-    }
     
-    private String systematicAuthorizationHeader(Request request, Uri uri, Realm realm) {
-
-        String authorizationHeader = null;
-
-        if (realm != null && realm.getUsePreemptiveAuth()) {
-
-            switch (realm.getScheme()) {
-            case BASIC:
-                authorizationHeader = computeBasicAuthentication(realm);
-                break;
-            case DIGEST:
-                if (isNonEmpty(realm.getNonce()))
-                    authorizationHeader = computeDigestAuthentication(realm);
-                break;
-            case NTLM:
-            case KERBEROS:
-            case SPNEGO:
-                // NTLM, KERBEROS and SPNEGO are only set on the first request, see firstRequestOnlyAuthorizationHeader
-            case NONE:
-                break;
-            default:
-                throw new IllegalStateException("Invalid Authentication " + realm);
-            }
-        }
-
-        return authorizationHeader;
-    }
-
     public String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) throws IOException {
         String proxyAuthorization = null;
 
