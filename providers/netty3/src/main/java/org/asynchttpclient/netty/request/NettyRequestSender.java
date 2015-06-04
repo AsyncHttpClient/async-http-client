@@ -329,7 +329,7 @@ public final class NettyRequestSender {
                     channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
             }
 
-            if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT)
+            if (!future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT
                     && nettyRequest.getBody() != null)
                 nettyRequest.getBody().write(channel, future);
 

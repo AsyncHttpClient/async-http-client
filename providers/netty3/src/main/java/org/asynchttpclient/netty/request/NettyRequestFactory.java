@@ -174,7 +174,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         // connection header and friends
         boolean webSocket = isWebSocket(uri.getScheme());
-        if (method != HttpMethod.CONNECT && webSocket) {
+        if (!connect && webSocket) {
             String origin = "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort());
             headers.set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET)//
                     .set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE)//
