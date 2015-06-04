@@ -20,6 +20,7 @@ import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -61,7 +62,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
     }
 
     protected List<String> getProxyAuthorizationHeader(Request request) {
-        return request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
+        return request.getHeaders().get(PROXY_AUTHORIZATION);
     }
     
     private NettyBody body(Request request, boolean connect) throws IOException {
@@ -85,7 +86,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             else if (isNonEmpty(request.getFormParams())) {
 
                 String contentType = null;
-                if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
+                if (!request.getHeaders().containsKey(CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
                 nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
@@ -114,12 +115,12 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
     public void addAuthorizationHeader(HttpHeaders headers, String authorizationHeader) {
         if (authorizationHeader != null)
             // don't override authorization but append
-            headers.add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
+            headers.add(AUTHORIZATION, authorizationHeader);
     }
     
     public void setProxyAuthorizationHeader(HttpHeaders headers, String proxyAuthorizationHeader) {
         if (proxyAuthorizationHeader != null)
-            headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, proxyAuthorizationHeader);
+            headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
     
     public NettyRequest newNettyRequest(Request request, Uri uri, boolean forceConnect, ProxyServer proxyServer)
@@ -158,40 +159,40 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             }
 
             if (isNonEmpty(request.getCookies()))
-                headers.set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
+                headers.set(COOKIE, CookieEncoder.encode(request.getCookies()));
 
-            if (config.isCompressionEnforced() && !headers.contains(HttpHeaders.Names.ACCEPT_ENCODING))
-                headers.set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
+            if (config.isCompressionEnforced() && !headers.contains(ACCEPT_ENCODING))
+                headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
         }
 
         if (body != null) {
             if (body.getContentLength() < 0)
-                headers.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                headers.set(TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
             else
-                headers.set(HttpHeaders.Names.CONTENT_LENGTH, body.getContentLength());
+                headers.set(CONTENT_LENGTH, body.getContentLength());
 
             if (body.getContentType() != null)
-                headers.set(HttpHeaders.Names.CONTENT_TYPE, body.getContentType());
+                headers.set(CONTENT_TYPE, body.getContentType());
         }
 
         // connection header and friends
         boolean webSocket = isWebSocket(uri.getScheme());
         if (!connect && webSocket) {
             String origin = "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort());
-            headers.set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET)//
-                    .set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE)//
-                    .set(HttpHeaders.Names.ORIGIN, origin)//
-                    .set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, getKey())//
-                    .set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
+            headers.set(UPGRADE, HttpHeaders.Values.WEBSOCKET)//
+                    .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
+                    .set(ORIGIN, origin)//
+                    .set(SEC_WEBSOCKET_KEY, getKey())//
+                    .set(SEC_WEBSOCKET_VERSION, "13");
 
-        } else if (!headers.contains(HttpHeaders.Names.CONNECTION)) {
+        } else if (!headers.contains(CONNECTION)) {
             String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
             if (connectionHeaderValue != null)
-                headers.set(HttpHeaders.Names.CONNECTION, connectionHeaderValue);
+                headers.set(CONNECTION, connectionHeaderValue);
         }
 
-        if (!headers.contains(HttpHeaders.Names.HOST))
-            headers.set(HttpHeaders.Names.HOST, hostHeader(request, uri));
+        if (!headers.contains(HOST))
+            headers.set(HOST, hostHeader(request, uri));
 
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
@@ -201,12 +202,12 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, connect));
 
         // Add default accept headers
-        if (!headers.contains(HttpHeaders.Names.ACCEPT))
-            headers.set(HttpHeaders.Names.ACCEPT, "*/*");
+        if (!headers.contains(ACCEPT))
+            headers.set(ACCEPT, "*/*");
 
         // Add default user agent
-        if (!headers.contains(HttpHeaders.Names.USER_AGENT) && config.getUserAgent() != null)
-            headers.set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
+        if (!headers.contains(USER_AGENT) && config.getUserAgent() != null)
+            headers.set(USER_AGENT, config.getUserAgent());
 
         return nettyRequest;
     }
