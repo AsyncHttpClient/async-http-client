@@ -331,7 +331,7 @@ public final class NettyRequestSender {
                 channel.write(httpRequest).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true));
             }
 
-            if (nettyRequest.getBody() != null && !future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT))
+            if (nettyRequest.getBody() != null && !future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT)
                 nettyRequest.getBody().write(channel, future, config);
 
             // don't bother scheduling timeouts if channel became invalid
