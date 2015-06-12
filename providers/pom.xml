@@ -42,7 +42,6 @@
     </build>
 
     <modules>
-		
         <module>netty3</module>
         <module>netty4</module>
     </modules>
