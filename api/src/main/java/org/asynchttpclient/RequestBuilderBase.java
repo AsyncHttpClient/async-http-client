@@ -15,12 +15,14 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.parseCharset;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.validateSupportedScheme;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
 
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +61,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private byte[] byteData;
         private List<byte[]> compositeByteData;
         private String stringData;
+        private ByteBuffer byteBufferData;
         private InputStream streamData;
         private BodyGenerator bodyGenerator;
         private List<Param> formParams;
@@ -90,6 +93,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.byteData = prototype.getByteData();
                 this.compositeByteData = prototype.getCompositeByteData();
                 this.stringData = prototype.getStringData();
+                this.byteBufferData = prototype.getByteBufferData();
                 this.streamData = prototype.getStreamData();
                 this.bodyGenerator = prototype.getBodyGenerator();
                 this.formParams = prototype.getFormParams() == null ? null : new ArrayList<>(prototype.getFormParams());
@@ -156,6 +160,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         @Override
         public String getStringData() {
             return stringData;
+        }
+
+        @Override
+        public ByteBuffer getByteBufferData() {
+            return byteBufferData;
         }
 
         @Override
@@ -414,6 +423,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public void resetNonMultipartData() {
         request.byteData = null;
         request.compositeByteData = null;
+        request.byteBufferData = null;
         request.stringData = null;
         request.streamData = null;
         request.bodyGenerator = null;
@@ -429,34 +439,38 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setBody(byte[] data) {
+    private void resetBody() {
         resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
+    }
+
+    public T setBody(byte[] data) {
+        resetBody();
         request.byteData = data;
         return derived.cast(this);
     }
 
     public T setBody(List<byte[]> data) {
-        resetFormParams();
-        resetNonMultipartData();
-        resetMultipartData();
+        resetBody();
         request.compositeByteData = data;
         return derived.cast(this);
     }
 
     public T setBody(String data) {
-        resetFormParams();
-        resetNonMultipartData();
-        resetMultipartData();
+        resetBody();
         request.stringData = data;
         return derived.cast(this);
     }
 
+    public T setBody(ByteBuffer data) {
+        resetBody();
+        request.byteBufferData = data;
+        return derived.cast(this);
+    }
+    
     public T setBody(InputStream stream) {
-        resetFormParams();
-        resetNonMultipartData();
-        resetMultipartData();
+        resetBody();
         request.streamData = stream;
         return derived.cast(this);
     }

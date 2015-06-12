@@ -80,6 +80,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             else if (request.getStringData() != null)
                 nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
+            else if (request.getByteBufferData() != null)
+                nettyBody = new NettyByteBufferBody(request.getByteBufferData());
+
             else if (request.getStreamData() != null)
                 nettyBody = new NettyInputStreamBody(request.getStreamData(), config);
 

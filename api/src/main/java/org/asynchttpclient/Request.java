@@ -19,6 +19,7 @@ package org.asynchttpclient;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
@@ -95,6 +96,13 @@ public interface Request {
      * @return an String representation of the current request's body.
      */
     String getStringData();
+
+    /**
+     * Return the current request's body as a ByteBuffer
+     * 
+     * @return a ByteBuffer
+     */
+    ByteBuffer getByteBufferData();
 
     /**
      * Return the current request's body as an InputStream
