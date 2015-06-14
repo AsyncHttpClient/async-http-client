@@ -26,6 +26,7 @@ import com.ning.http.client.SignatureCalculator;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.util.Base64;
 import com.ning.http.util.StringUtils;
+import com.ning.http.util.UTF8UrlDecoder;
 import com.ning.http.util.UTF8UrlEncoder;
 
 import java.nio.ByteBuffer;
@@ -139,12 +140,12 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         if (formParams != null) {
             for (Param param : formParams) {
-                allParameters.add(param.getName(), param.getValue());
+                allParameters.add(param.getName(), UTF8UrlDecoder.decode(param.getValue()).toString());
             }
         }
         if (queryParams != null) {
             for (Param param : queryParams) {
-                allParameters.add(param.getName(), param.getValue());
+                allParameters.add(param.getName(), UTF8UrlDecoder.decode(param.getValue()).toString());
             }
         }
         return allParameters.sortAndConcat();
