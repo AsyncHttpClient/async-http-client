@@ -117,71 +117,68 @@ public abstract class Protocol {
                 // We must allow 401 handling again.
                 future.getAndSetAuth(false);
 
+                String originalMethod = request.getMethod();
+                boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+
+                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                        .setCookies(request.getCookies())//
+                        .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
+                        .setFollowRedirect(true)//
+                        .setLocalInetAddress(request.getLocalAddress())//
+                        .setNameResolver(request.getNameResolver())//
+                        .setProxyServer(request.getProxyServer())//
+                        .setRealm(request.getRealm())//
+                        .setRequestTimeout(request.getRequestTimeout())//
+                        .setVirtualHost(request.getVirtualHost());
+
+                requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
+
+                // in case of a redirect from HTTP to HTTPS, future
+                // attributes might change
+                final boolean initialConnectionKeepAlive = future.isKeepAlive();
+                final Object initialPartitionKey = future.getPartitionKey();
+
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
+                future.setUri(uri);
+                String newUrl = uri.toUrl();
+                if (request.getUri().getScheme().startsWith(WS)) {
+                    newUrl = newUrl.replaceFirst(HTTP, WS);
+                }
 
-                //if (!uri.equals(future.getUri())) {
-                    String originalMethod = request.getMethod();
-                    boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                logger.debug("Redirecting to {}", newUrl);
 
-                    final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
-                            .setCookies(request.getCookies())//
-                            .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
-                            .setFollowRedirect(true)//
-                            .setLocalInetAddress(request.getLocalAddress())//
-                            .setNameResolver(request.getNameResolver())//
-                            .setProxyServer(request.getProxyServer())//
-                            .setRealm(request.getRealm())//
-                            .setRequestTimeout(request.getRequestTimeout())//
-                            .setVirtualHost(request.getVirtualHost());
+                for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
+                    Cookie c = CookieDecoder.decode(cookieStr);
+                    if (c != null)
+                        requestBuilder.addOrReplaceCookie(c);
+                }
 
-                    requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
+                requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
-                    // in case of a redirect from HTTP to HTTPS, future
-                    // attributes might change
-                    final boolean initialConnectionKeepAlive = future.isKeepAlive();
-                    final Object initialPartitionKey = future.getPartitionKey();
+                final Request nextRequest = requestBuilder.setUrl(newUrl).build();
 
-                    future.setUri(uri);
-                    String newUrl = uri.toUrl();
-                    if (request.getUri().getScheme().startsWith(WS)) {
-                        newUrl = newUrl.replaceFirst(HTTP, WS);
-                    }
+                logger.debug("Sending redirect to {}", request.getUri());
 
-                    logger.debug("Redirecting to {}", newUrl);
+                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
 
-                    for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
-                        Cookie c = CookieDecoder.decode(cookieStr);
-                        if (c != null)
-                            requestBuilder.addOrReplaceCookie(c);
-                    }
-
-                    requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
-
-                    final Request nextRequest = requestBuilder.setUrl(newUrl).build();
-
-                    logger.debug("Sending redirect to {}", request.getUri());
-
-                    if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
-
-                        if (isSameHostAndProtocol(request.getUri(), nextRequest.getUri())) {
-                            future.setReuseChannel(true);
-                            requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
-
-                        } else {
-                            channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);
-                            requestSender.sendNextRequest(nextRequest, future);
-                        }
+                    if (isSameHostAndProtocol(request.getUri(), nextRequest.getUri())) {
+                        future.setReuseChannel(true);
+                        requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
 
                     } else {
-                        // redirect + chunking = WAT
-                        channelManager.closeChannel(channel);
+                        channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
 
-                    return true;
-                //}
+                } else {
+                    // redirect + chunking = WAT
+                    channelManager.closeChannel(channel);
+                    requestSender.sendNextRequest(nextRequest, future);
+                }
+
+                return true;
             }
         }
         return false;
