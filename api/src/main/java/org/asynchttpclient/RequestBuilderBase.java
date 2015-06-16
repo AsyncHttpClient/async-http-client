@@ -292,7 +292,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     protected final RequestImpl request;
     protected UriEncoder uriEncoder;
-    protected List<Param> queryParams;
+    protected List<Param> rbQueryParams;
     protected SignatureCalculator signatureCalculator;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
@@ -412,7 +412,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
     
     public void resetQuery() {
-        queryParams = null;
+        rbQueryParams = null;
         request.uri = request.uri.withNewQuery(null);
     }
     
@@ -481,17 +481,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addQueryParam(String name, String value) {
-        if (queryParams == null)
-            queryParams = new ArrayList<>(1);
-        queryParams.add(new Param(name, value));
+        if (rbQueryParams == null)
+            rbQueryParams = new ArrayList<>(1);
+        rbQueryParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
     public T addQueryParams(List<Param> params) {
-        if (queryParams == null)
-            queryParams = params;
+        if (rbQueryParams == null)
+            rbQueryParams = params;
         else
-            queryParams.addAll(params);
+            rbQueryParams.addAll(params);
         return derived.cast(this);
     }
 
@@ -516,7 +516,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         // reset existing query
         if (isNonEmpty(request.uri.getQuery()))
             request.uri = request.uri.withNewQuery(null);
-        queryParams = params;
+        rbQueryParams = params;
         return derived.cast(this);
     }
     
@@ -604,7 +604,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
          */
         if (signatureCalculator != null) {
             RequestBuilder rb = new RequestBuilder(request).setSignatureCalculator(null);
-            rb.queryParams = this.queryParams;
+            rb.rbQueryParams = this.rbQueryParams;
             Request unsignedRequest = rb.build();
             signatureCalculator.calculateAndAddSignature(unsignedRequest, this);
         }
@@ -652,7 +652,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             validateSupportedScheme(request.uri);
         }
 
-        request.uri =  uriEncoder.encode(request.uri, queryParams);
+        request.uri =  uriEncoder.encode(request.uri, rbQueryParams);
     }
 
     public Request build() {
