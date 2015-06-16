@@ -126,8 +126,8 @@ public class ChannelManager {
         tooManyConnections = buildStaticIOException(String.format("Too many connections %s", config.getMaxConnections()));
         tooManyConnectionsPerHost = buildStaticIOException(String.format("Too many connections per host %s", config.getMaxConnectionsPerHost()));
         poolAlreadyClosed = buildStaticIOException("Pool is already closed");
-        maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
-        maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
+        maxTotalConnectionsEnabled = config.isAllowPoolingConnections() && config.getMaxConnections() > 0;
+        maxConnectionsPerHostEnabled = config.isAllowPoolingConnections() && config.getMaxConnectionsPerHost() > 0;
 
         if (maxTotalConnectionsEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
