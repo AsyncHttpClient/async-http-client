@@ -126,7 +126,7 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
 
-                if (!uri.equals(future.getUri())) {
+                //if (!uri.equals(future.getUri())) {
 
                     // if we are to strictly handle 302, we should keep the
                     // original method (which browsers don't)
@@ -187,7 +187,7 @@ public abstract class Protocol {
 
                     requestSender.sendNextRequest(nextRequest, future);
                     return true;
-                }
+                //}
             }
         }
         return false;

@@ -121,7 +121,7 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri uri = Uri.create(future.getUri(), location);
 
-                if (!uri.equals(future.getUri())) {
+                //if (!uri.equals(future.getUri())) {
                     String originalMethod = request.getMethod();
                     boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
 
@@ -181,7 +181,7 @@ public abstract class Protocol {
                     }
 
                     return true;
-                }
+                //}
             }
         }
         return false;
