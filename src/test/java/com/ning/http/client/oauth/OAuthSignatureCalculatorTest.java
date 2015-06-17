@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
  *
  */
 public class OAuthSignatureCalculatorTest {
+
     private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
 
     private static final String CONSUMER_SECRET = "kd94hf93k423kf44";
@@ -52,16 +53,16 @@ public class OAuthSignatureCalculatorTest {
     final static long TIMESTAMP = 1191242096;
 
     private static class StaticOAuthSignatureCalculator extends OAuthSignatureCalculator {
-        
+
         private final long timestamp;
         private final String nonce;
-        
+
         public StaticOAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth, long timestamp, String nonce) {
             super(consumerAuth, userAuth);
-            this.timestamp = timestamp;   
+            this.timestamp = timestamp;
             this.nonce = nonce;
         }
-        
+
         @Override
         protected long generateTimestamp() {
             return timestamp;
@@ -72,7 +73,62 @@ public class OAuthSignatureCalculatorTest {
             return nonce;
         }
     }
-    
+
+    // sample from RFC https://tools.ietf.org/html/rfc5849#section-3.4.1
+    private void testSignatureBaseString(Request request) {
+        ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);
+        RequestToken user = new RequestToken("kkk9d7dh3k39sjv7", TOKEN_SECRET);
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+
+        String signatureBaseString = calc.signatureBaseString(//
+                request.getMethod(),//
+                request.getUri(),//
+                137131201,//
+                "7d8f3e4a",//
+                request.getFormParams(),//
+                request.getQueryParams()).toString();
+
+        assertEquals(signatureBaseString, "POST&" //
+                + "http%3A%2F%2Fexample.com%2Frequest" //
+                + "&a2%3Dr%2520b%26"//
+                + "a3%3D2%2520q%26" + "a3%3Da%26"//
+                + "b5%3D%253D%25253D%26"//
+                + "c%2540%3D%26"//
+                + "c2%3D%26"//
+                + "oauth_consumer_key%3D9djdj82h48djs9d2%26"//
+                + "oauth_nonce%3D7d8f3e4a%26"//
+                + "oauth_signature_method%3DHMAC-SHA1%26"//
+                + "oauth_timestamp%3D137131201%26"//
+                + "oauth_token%3Dkkk9d7dh3k39sjv7%26"//
+                + "oauth_version%3D1.0");
+    }
+
+    @Test(groups = "fast")
+    public void testSignatureBaseStringWithProperlyEncodedUri() {
+
+        Request request = new RequestBuilder("POST")//
+                .setUrl("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")//
+                .addFormParam("c2", "")//
+                .addFormParam("a3", "2 q")//
+                .build();
+
+        testSignatureBaseString(request);
+    }
+
+    @Test(groups = "fast")
+    public void testSignatureBaseStringWithRawUri() {
+
+        // note: @ is legal so don't decode it into %40 because it won't be encoded back
+        // note: we don't know how to fix a = that should have been encoded as %3D but who would be stupid enough to do that?
+        Request request = new RequestBuilder("POST")//
+                .setUrl("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r b")//
+                .addFormParam("c2", "")//
+                .addFormParam("a3", "2 q")//
+                .build();
+
+        testSignatureBaseString(request);
+    }
+
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
     @Test(groups = "fast")
@@ -99,10 +155,11 @@ public class OAuthSignatureCalculatorTest {
         formParams.add(new Param("file", "vacation.jpg"));
         formParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
-        final Request req = new RequestBuilder("POST")
-                .setUri(Uri.create(url))
-                .setFormParams(formParams)
-                .setSignatureCalculator(calc).build();
+        final Request req = new RequestBuilder("POST")//
+                .setUri(Uri.create(url))//
+                .setFormParams(formParams)//
+                .setSignatureCalculator(calc)//
+                .build();
 
         // From the signature tester, POST should look like:
         // normalized parameters: file=vacation.jpg&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0&size=original
@@ -135,14 +192,15 @@ public class OAuthSignatureCalculatorTest {
         queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
 
-        final Request req = new RequestBuilder("GET")
-                .setUri(Uri.create(url))
-                .setQueryParams(queryParams)
-                .setSignatureCalculator(calc).build();
+        final Request req = new RequestBuilder("GET")//
+                .setUri(Uri.create(url))//
+                .setQueryParams(queryParams)//
+                .setSignatureCalculator(calc)//
+                .build();
 
         final List<Param> params = req.getQueryParams();
         assertEquals(params.size(), 2);
-        
+
         // From the signature tester, the URL should look like:
         //normalized parameters: file=vacation.jpg&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0&size=original
         //signature base string: GET&http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dkllo9940pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d00sl2jdk%26oauth_version%3D1.0%26size%3Doriginal

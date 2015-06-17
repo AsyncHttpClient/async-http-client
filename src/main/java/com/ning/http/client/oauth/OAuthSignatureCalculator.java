@@ -128,34 +128,33 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         OAuthParameterSet allParameters = new OAuthParameterSet(allParametersSize);
 
         // start with standard OAuth parameters we need
-        allParameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getKey());
+        allParameters.add(KEY_OAUTH_CONSUMER_KEY, UTF8UrlEncoder.encodeQueryElement(consumerAuth.getKey()));
         allParameters.add(KEY_OAUTH_NONCE, nonce);
         allParameters.add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD);
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         if (userAuth.getKey() != null) {
-            allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
+            allParameters.add(KEY_OAUTH_TOKEN, UTF8UrlEncoder.encodeQueryElement(userAuth.getKey()));
         }
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
             for (Param param : formParams) {
-                allParameters.add(param.getName(), param.getValue());
+                // formParams are not already encoded
+                allParameters.add(UTF8UrlEncoder.encodeQueryElement(param.getName()), UTF8UrlEncoder.encodeQueryElement(param.getValue()));
             }
         }
         if (queryParams != null) {
             for (Param param : queryParams) {
+             // queryParams are already encoded
                 allParameters.add(param.getName(), param.getValue());
             }
         }
         return allParameters.sortAndConcat();
     }
 
-    /**
-     * Method for calculating OAuth signature using HMAC/SHA-1 method.
-     */
-    public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
+    StringBuilder signatureBaseString(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
-
+        
         // beware: must generate first as we're using pooled StringBuilder
         String baseUrl = baseUrl(uri);
         String encodedParams = encodedParams(oauthTimestamp, nonce, formParams, queryParams);
@@ -169,6 +168,16 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         // and all that needs to be URL encoded (... again!)
         sb.append('&');
         UTF8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
+        return sb;
+    }
+    
+    /**
+     * Method for calculating OAuth signature using HMAC/SHA-1 method.
+     */
+    public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
+                                     List<Param> formParams, List<Param> queryParams) {
+
+        StringBuilder sb = signatureBaseString(method, uri, oauthTimestamp, nonce, formParams, queryParams);
 
         ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
@@ -230,7 +239,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         }
 
         public OAuthParameterSet add(String key, String value) {
-            Parameter p = new Parameter(UTF8UrlEncoder.encodeQueryElement(key), UTF8UrlEncoder.encodeQueryElement(value));
+            Parameter p = new Parameter(key, value);
             allParameters.add(p);
             return this;
         }
