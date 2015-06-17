@@ -130,13 +130,14 @@ public class ChannelManager {
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
-        if (maxTotalConnectionsEnabled) {
+        if (maxTotalConnectionsEnabled || maxConnectionsPerHostEnabled) {
             openChannels = new CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
                     if (removed) {
-                        freeChannels.release();
+                        if (maxTotalConnectionsEnabled)
+                            freeChannels.release();
                         if (maxConnectionsPerHostEnabled) {
                             Object partitionKey = channelId2PartitionKey.remove(Channel.class.cast(o).getId());
                             if (partitionKey != null) {
