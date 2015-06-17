@@ -239,8 +239,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         }
 
         public OAuthParameterSet add(String key, String value) {
-            Parameter p = new Parameter(key, value);
-            allParameters.add(p);
+            allParameters.add(new Parameter(key, value));
             return this;
         }
 
