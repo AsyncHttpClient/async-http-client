@@ -32,6 +32,7 @@ import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.Utf8UrlDecoder;
 import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
@@ -139,12 +140,12 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         if (formParams != null) {
             for (Param param : formParams) {
-                allParameters.add(param.getName(), param.getValue());
+                allParameters.add(param.getName(), Utf8UrlDecoder.decode(param.getValue()).toString());
             }
         }
         if (queryParams != null) {
             for (Param param : queryParams) {
-                allParameters.add(param.getName(), param.getValue());
+                allParameters.add(param.getName(), Utf8UrlDecoder.decode(param.getValue()).toString());
             }
         }
         return allParameters.sortAndConcat();
