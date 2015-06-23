@@ -129,7 +129,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         // start with standard OAuth parameters we need
         allParameters.add(KEY_OAUTH_CONSUMER_KEY, Utf8UrlEncoder.encodeQueryElement(consumerAuth.getKey()));
-        allParameters.add(KEY_OAUTH_NONCE, nonce);
+        allParameters.add(KEY_OAUTH_NONCE, Utf8UrlEncoder.encodeQueryElement(nonce));
         allParameters.add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD);
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         if (userAuth.getKey() != null) {
