@@ -84,7 +84,7 @@ public class OAuthSignatureCalculatorTest {
                 request.getMethod(),//
                 request.getUri(),//
                 137131201,//
-                "7d8f3e4a",//
+                "ZLc92RAkooZcIO/0cctl0Q==",//
                 request.getFormParams(),//
                 request.getQueryParams()).toString();
 
@@ -96,7 +96,7 @@ public class OAuthSignatureCalculatorTest {
                 + "c%2540%3D%26"//
                 + "c2%3D%26"//
                 + "oauth_consumer_key%3D9djdj82h48djs9d2%26"//
-                + "oauth_nonce%3D7d8f3e4a%26"//
+                + "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26"//
                 + "oauth_signature_method%3DHMAC-SHA1%26"//
                 + "oauth_timestamp%3D137131201%26"//
                 + "oauth_token%3Dkkk9d7dh3k39sjv7%26"//
