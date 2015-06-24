@@ -103,6 +103,35 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_version%3D1.0");
     }
 
+    // fork above test with an OAuth token that requires encoding
+    private void testSignatureBaseStringWithEncodableOAuthToken(Request request) {
+        ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);
+        RequestToken user = new RequestToken("kkk9d7dh3k39sjv7", TOKEN_SECRET);
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+
+        String signatureBaseString = calc.signatureBaseString(//
+                request.getMethod(),//
+                request.getUri(),//
+                137131201,//
+                "ZLc92RAkooZcIO/0cctl0Q==",//
+                request.getFormParams(),//
+                request.getQueryParams()).toString();
+
+        assertEquals(signatureBaseString, "POST&" //
+                + "http%3A%2F%2Fexample.com%2Frequest" //
+                + "&a2%3Dr%2520b%26"//
+                + "a3%3D2%2520q%26" + "a3%3Da%26"//
+                + "b5%3D%253D%25253D%26"//
+                + "c%2540%3D%26"//
+                + "c2%3D%26"//
+                + "oauth_consumer_key%3D9djdj82h48djs9d2%26"//
+                + "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26"//
+                + "oauth_signature_method%3DHMAC-SHA1%26"//
+                + "oauth_timestamp%3D137131201%26"//
+                + "oauth_token%3Dkkk9d7dh3k39sjv7%26"//
+                + "oauth_version%3D1.0");
+    }
+    
     @Test(groups = "fast")
     public void testSignatureBaseStringWithProperlyEncodedUri() {
 
@@ -113,6 +142,7 @@ public class OAuthSignatureCalculatorTest {
                 .build();
 
         testSignatureBaseString(request);
+        testSignatureBaseStringWithEncodableOAuthToken(request);
     }
 
     @Test(groups = "fast")
@@ -127,6 +157,7 @@ public class OAuthSignatureCalculatorTest {
                 .build();
 
         testSignatureBaseString(request);
+        testSignatureBaseStringWithEncodableOAuthToken(request);
     }
 
     // based on the reference test case from
