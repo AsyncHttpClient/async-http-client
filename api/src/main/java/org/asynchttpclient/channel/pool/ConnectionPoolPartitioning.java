@@ -18,16 +18,33 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 public interface ConnectionPoolPartitioning {
 
-    Object getPartitionKey(Uri uri, ProxyServer proxy);
+    public class ProxyPartitionKey {
+        private final String proxyUrl;
+        private final String targetHostBaseUrl;
+
+        public ProxyPartitionKey(String proxyUrl, String targetHostBaseUrl) {
+            this.proxyUrl = proxyUrl;
+            this.targetHostBaseUrl = targetHostBaseUrl;
+        }
+
+        @Override
+        public String toString() {
+            return new StringBuilder()//
+                    .append("ProxyPartitionKey(proxyUrl=").append(proxyUrl)//
+                    .append(", targetHostBaseUrl=").append(targetHostBaseUrl)//
+                    .toString();
+        }
+    }
+
+    Object getPartitionKey(Uri uri, ProxyServer proxyServer);
 
     public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
         INSTANCE;
 
-        @Override
-        public String getPartitionKey(Uri uri, ProxyServer proxyServer) {
-            String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
-            return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
+        public Object getPartitionKey(Uri uri, ProxyServer proxyServer) {
+            String targetHostBaseUrl = AsyncHttpProviderUtils.getBaseUrl(uri);
+            return proxyServer != null ? new ProxyPartitionKey(proxyServer.getUrl(), targetHostBaseUrl) : targetHostBaseUrl;
         }
     }
 }
