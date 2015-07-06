@@ -206,7 +206,7 @@ public final class WebSocketProtocol extends Protocol {
         logger.trace("onClose {}");
 
         try {
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
             logger.trace("Connection was closed abnormally (that is, with no close frame being sent).");
