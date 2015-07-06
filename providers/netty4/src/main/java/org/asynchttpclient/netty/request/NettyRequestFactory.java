@@ -126,8 +126,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
 
-    public NettyRequest newNettyRequest(Request request, Uri uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
+        Uri uri = request.getUri();
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
         
@@ -201,7 +202,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         // don't override authorization but append
-        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, uri, realm));
+        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, realm));
 
         setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, connect));
 

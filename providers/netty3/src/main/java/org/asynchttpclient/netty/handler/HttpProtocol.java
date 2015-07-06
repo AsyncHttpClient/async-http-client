@@ -102,14 +102,13 @@ public final class HttpProtocol extends Protocol {
             FluentCaseInsensitiveStringsMap headers,//
             NettyResponseFuture<?> future) throws NtlmEngineException {
 
-        Uri uri = request.getUri();
         try {
             String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
             return proxyServer.realmBuilder()//
-                    .setUri(uri)//
+                    .setUri(request.getUri())//
                     .setMethodName(request.getMethod())//
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
@@ -138,8 +137,6 @@ public final class HttpProtocol extends Protocol {
             Realm realm,//
             NettyResponseFuture<?> future) throws NtlmEngineException {
 
-        Uri uri = request.getUri();
-
         if (authenticateHeader.equals("NTLM")) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
@@ -153,7 +150,7 @@ public final class HttpProtocol extends Protocol {
         }
 
         return new Realm.RealmBuilder().clone(realm)//
-                .setUri(uri)//
+                .setUri(request.getUri())//
                 .setMethodName(request.getMethod())//
                 .build();
     }

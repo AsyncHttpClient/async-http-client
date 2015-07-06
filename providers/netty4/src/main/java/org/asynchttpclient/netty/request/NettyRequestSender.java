@@ -45,7 +45,6 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -94,23 +93,21 @@ public final class NettyRequestSender {
         if (closed.get())
             throw new IOException("Closed");
 
-        Uri uri = request.getUri();
-
-        validateWebSocketRequest(request, uri, asyncHandler);
+        validateWebSocketRequest(request, asyncHandler);
 
         ProxyServer proxyServer = getProxyServer(config, request);
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && useProxyConnect(uri))
+        if (useProxy && useProxyConnect(request.getUri()))
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced
-                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, true, true);
+                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, proxyServer, true, true);
             else
-                return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, uri, proxyServer);
+                return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, proxyServer);
         else
-            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, useProxy, false);
+            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, proxyServer, useProxy, false);
     }
 
     /**
@@ -123,19 +120,18 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            Uri uri,//
             ProxyServer proxyServer,//
             boolean useProxy,//
             boolean forceConnect) throws IOException {
 
-        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
+        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, forceConnect);
 
-        Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
+        Channel channel = getCachedChannel(future, request, proxyServer, asyncHandler);
 
         if (Channels.isChannelValid(channel))
-            return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
+            return sendRequestWithCachedChannel(request, proxyServer, newFuture, asyncHandler, channel);
         else
-            return sendRequestWithNewChannel(request, uri, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
+            return sendRequestWithNewChannel(request, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
     }
 
     /**
@@ -149,35 +145,34 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
             boolean reclaimCache,//
-            Uri uri,//
             ProxyServer proxyServer) throws IOException {
 
         NettyResponseFuture<T> newFuture = null;
         for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, uri, request.getConnectionPoolPartitioning(), proxyServer, asyncHandler);
+            Channel channel = getCachedChannel(future, request, proxyServer, asyncHandler);
             if (Channels.isChannelValid(channel))
                 if (newFuture == null)
-                    newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
+                    newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false);
 
             if (Channels.isChannelValid(channel))
                 // if the channel is still active, we can use it, otherwise try gain
-                return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
+                return sendRequestWithCachedChannel(request, proxyServer, newFuture, asyncHandler, channel);
             else
                 // pool is empty
                 break;
         }
 
-        newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, true);
-        return sendRequestWithNewChannel(request, uri, proxyServer, true, newFuture, asyncHandler, reclaimCache);
+        newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, true);
+        return sendRequestWithNewChannel(request, proxyServer, true, newFuture, asyncHandler, reclaimCache);
     }
 
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture,
-            Uri uri, ProxyServer proxy, boolean forceConnect) throws IOException {
+            ProxyServer proxy, boolean forceConnect) throws IOException {
 
-        NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
+        NettyRequest nettyRequest = requestFactory.newNettyRequest(request, forceConnect, proxy);
 
         if (originalFuture == null) {
-            return newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, proxy);
+            return newNettyResponseFuture(request, asyncHandler, nettyRequest, proxy);
         } else {
             originalFuture.setNettyRequest(nettyRequest);
             originalFuture.setRequest(request);
@@ -185,15 +180,15 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, Uri uri, ConnectionPoolPartitioning partitioning, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
+    private Channel getCachedChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return pollAndVerifyCachedChannel(uri, proxyServer, partitioning, asyncHandler);
+            return pollAndVerifyCachedChannel(request, proxyServer, asyncHandler);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, Uri uri, ProxyServer proxy, NettyResponseFuture<T> future,
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
             AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
@@ -242,20 +237,19 @@ public final class NettyRequestSender {
 
     private <T> ListenableFuture<T> sendRequestWithNewChannel(//
             Request request,//
-            Uri uri,//
             ProxyServer proxy,//
             boolean useProxy,//
             NettyResponseFuture<T> future,//
             AsyncHandler<T> asyncHandler,//
             boolean reclaimCache) throws IOException {
 
-        boolean useSSl = isSecure(uri) && !useProxy;
+        boolean useSSl = isSecure(request.getUri()) && !useProxy;
 
         // some headers are only set when performing the first request
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         boolean connect = future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
-        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, uri, proxy, realm));
+        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, proxy, realm));
         requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, connect));
 
         // Do not throw an exception when we need an extra connection for a
@@ -277,7 +271,7 @@ public final class NettyRequestSender {
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOpen();
 
-            ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
+            ChannelFuture channelFuture = connect(request, proxy, useProxy, bootstrap, asyncHandler);
             channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
 
         } catch (Throwable t) {
@@ -290,10 +284,9 @@ public final class NettyRequestSender {
         return future;
     }
 
-    private <T> NettyResponseFuture<T> newNettyResponseFuture(Uri uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
+    private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
 
         NettyResponseFuture<T> future = new NettyResponseFuture<>(//
-                uri,//
                 request,//
                 asyncHandler,//
                 nettyRequest,//
@@ -343,9 +336,10 @@ public final class NettyRequestSender {
         }
     }
 
-    private InetSocketAddress remoteAddress(Request request, Uri uri, ProxyServer proxy, boolean useProxy) throws UnknownHostException {
+    private InetSocketAddress remoteAddress(Request request, ProxyServer proxy, boolean useProxy) throws UnknownHostException {
 
         InetAddress address;
+        Uri uri = request.getUri();
         int port = getDefaultPort(uri);
 
         if (request.getInetAddress() != null) {
@@ -362,8 +356,8 @@ public final class NettyRequestSender {
         return new InetSocketAddress(address, port);
     }
 
-    private ChannelFuture connect(Request request, Uri uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
-        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
+    private ChannelFuture connect(Request request, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
+        InetSocketAddress remoteAddress = remoteAddress(request, proxy, useProxy);
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
@@ -487,23 +481,26 @@ public final class NettyRequestSender {
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
-    private void validateWebSocketRequest(Request request, Uri uri, AsyncHandler<?> asyncHandler) {
+    private void validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
+        Uri uri = request.getUri();
+        boolean isWs = uri.getScheme().startsWith(WS);
         if (asyncHandler instanceof WebSocketUpgradeHandler) {
-            if (!uri.getScheme().startsWith(WS))
+            if (!isWs)
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());
             else if (!request.getMethod().equals(HttpMethod.GET.name()))
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET: " + request.getMethod());
-        } else if (uri.getScheme().startsWith(WS)) {
+        } else if (isWs) {
             throw new IllegalArgumentException("No WebSocketUpgradeHandler but scheme is " + uri.getScheme());
         }
     }
 
-    private Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
+    private Channel pollAndVerifyCachedChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPool();
 
-        final Channel channel = channelManager.poll(uri, proxy, connectionPoolPartitioning);
+        Uri uri = request.getUri();
+        final Channel channel = channelManager.poll(uri, proxy, request.getConnectionPoolPartitioning());
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);

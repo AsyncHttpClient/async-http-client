@@ -111,7 +111,7 @@ public abstract class NettyRequestFactoryBase {
         return proxyAuthorization;
     }
 
-    protected String firstRequestOnlyAuthorizationHeader(Request request, Uri uri, ProxyServer proxyServer, Realm realm) throws IOException {
+    protected String firstRequestOnlyAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm) throws IOException {
         String authorizationHeader = null;
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
@@ -128,7 +128,7 @@ public abstract class NettyRequestFactoryBase {
                 else if (request.getVirtualHost() != null)
                     host = request.getVirtualHost();
                 else
-                    host = uri.getHost();
+                    host = request.getUri().getHost();
 
                 try {
                     authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
@@ -144,7 +144,7 @@ public abstract class NettyRequestFactoryBase {
         return authorizationHeader;
     }
 
-    protected String systematicAuthorizationHeader(Request request, Uri uri, Realm realm) {
+    protected String systematicAuthorizationHeader(Request request, Realm realm) {
 
         String authorizationHeader = null;
 

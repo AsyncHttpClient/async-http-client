@@ -90,8 +90,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
-    public NettyResponseFuture(Uri uri,//
-            Request request,//
+    public NettyResponseFuture(Request request,//
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
             int maxRetry,//
@@ -101,7 +100,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.asyncHandler = asyncHandler;
         this.request = request;
         this.nettyRequest = nettyRequest;
-        this.uri = uri;
+        this.uri = request.getUri();
         this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
