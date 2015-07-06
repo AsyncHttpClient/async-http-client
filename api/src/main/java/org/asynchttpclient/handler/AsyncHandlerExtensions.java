@@ -31,8 +31,10 @@ public interface AsyncHandlerExtensions {
 
     /**
      * Notify the callback when a new connection was successfully opened.
+     * 
+     * @param connection the connection
      */
-    void onConnectionOpened();
+    void onConnectionOpened(Object connection);
 
     /**
      * Notify the callback when trying to fetch a connection from the pool.
@@ -42,8 +44,17 @@ public interface AsyncHandlerExtensions {
     /**
      * Notify the callback when a new connection was successfully fetched from
      * the pool.
+     * 
+     * @param connection the connection
      */
-    void onConnectionPooled();
+    void onConnectionPooled(Object connection);
+
+    /**
+     * Notify the callback when trying to offer a connection to the pool.
+     * 
+     * @param connection the connection
+     */
+    void onConnectionOffer(Object connection);
 
     /**
      * Notify the callback when a request is being written on the wire. If the

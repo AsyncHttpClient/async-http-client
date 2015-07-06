@@ -46,9 +46,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
+import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -277,10 +279,13 @@ public class ChannelManager {
             return new HttpContentDecompressor();
     }
 
-    public final void tryToOfferChannelToPool(Channel channel, boolean keepAlive, Object partitionKey) {
+    public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> handler, boolean keepAlive, Object partitionKey) {
         if (channel.isActive() && keepAlive && channel.isActive()) {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
+            if (handler instanceof AsyncHandlerExtensions) {
+                AsyncHandlerExtensions.class.cast(handler).onConnectionOffer(channel);
+            }
             channelPool.offer(channel, partitionKey);
             if (maxConnectionsPerHostEnabled)
                 channelId2PartitionKey.putIfAbsent(channel, partitionKey);
@@ -441,7 +446,7 @@ public class ChannelManager {
 
         return new Callback(future) {
             public void call() {
-                tryToOfferChannelToPool(channel, keepAlive, partitionKey);
+                tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, partitionKey);
             }
         };
     }

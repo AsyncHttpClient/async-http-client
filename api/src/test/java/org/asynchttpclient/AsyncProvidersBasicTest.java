@@ -60,8 +60,6 @@ import org.testng.annotations.Test;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
-  protected abstract String acceptEncodingHeader();
-
   protected abstract AsyncHttpProviderConfig<?, ?> getProviderConfig();
 
     @Test(groups = { "standalone", "default_provider", "async" })
@@ -606,8 +604,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                         String xContentType = response.getHeader("X-Content-Type");
                         String boundary = xContentType.substring((xContentType.indexOf("boundary") + "boundary".length() + 1));
 
-                        String s = response.getResponseBody().substring(boundary.length());
-                        assertEquals(boundary, s);
+                        assertTrue(response.getResponseBody().regionMatches(false, "--".length(), boundary, 0, boundary.length()));
                     } finally {
                         l.countDown();
                     }
@@ -639,7 +636,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getHeader("X-Accept-Encoding"), acceptEncodingHeader());
+                        assertEquals(response.getHeader("X-Accept-Encoding"), "gzip,deflate");
                     } finally {
                         l.countDown();
                     }
@@ -1419,9 +1416,10 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                     "DnsResolved",
                     "ConnectionOpened",
                     "RequestSend",
-                    "HeadersWriten",
+                    "HeadersWritten",
                     "StatusReceived",
                     "HeadersReceived",
+                    "ConnectionOffer",
                     "Completed");
 
             assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));

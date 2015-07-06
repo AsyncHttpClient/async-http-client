@@ -75,7 +75,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionOpened() {
+    public void onConnectionOpened(Object connection) {
         firedEvents.add("ConnectionOpened");
     }
 
@@ -85,10 +85,15 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionPooled() {
+    public void onConnectionPooled(Object connection) {
         firedEvents.add("ConnectionPooled");
     }
 
+    @Override
+    public void onConnectionOffer(Object connection) {
+        firedEvents.add("ConnectionOffer");
+    }
+    
     @Override
     public void onRequestSend(Object request) {
         firedEvents.add("RequestSend");

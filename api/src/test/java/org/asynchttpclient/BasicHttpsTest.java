@@ -135,6 +135,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
                     "HeadersWritten",
                     "StatusReceived",
                     "HeadersReceived",
+                    "ConnectionOffer",
                     "Completed");
 
             assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));

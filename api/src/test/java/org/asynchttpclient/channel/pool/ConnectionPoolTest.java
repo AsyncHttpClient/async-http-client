@@ -292,6 +292,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                     "HeadersWritten",
                     "StatusReceived",
                     "HeadersReceived",
+                    "ConnectionOffer",
                     "Completed");
 
             assertEquals(secondHandler.firedEvents, expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));

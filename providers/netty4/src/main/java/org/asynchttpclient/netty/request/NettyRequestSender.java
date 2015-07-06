@@ -197,7 +197,7 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled();
+            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
 
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
