@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
+    // FIXME super NOT threadsafe!!!
     private final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
@@ -142,7 +143,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 302);
+            assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getUri().toString(), getTargetUrl());
         }
     }

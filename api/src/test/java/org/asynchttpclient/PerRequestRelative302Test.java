@@ -41,6 +41,7 @@ import org.testng.annotations.Test;
 
 public abstract class PerRequestRelative302Test extends AbstractBasicTest {
 
+ // FIXME super NOT threadsafe!!!
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
@@ -152,7 +153,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         try (AsyncHttpClient c = getAsyncHttpClient(null)) {
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 302);
+            assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getUri().toString(), getTargetUrl());
         }
     }
