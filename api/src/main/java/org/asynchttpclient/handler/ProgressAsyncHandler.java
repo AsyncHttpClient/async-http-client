@@ -27,7 +27,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    State onHeaderWriteCompleted();
+    State onHeadersWritten();
 
     /**
      * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
@@ -35,7 +35,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    State onContentWriteCompleted();
+    State onContentWriten();
 
     /**
      * Invoked when the I/O operation associated with the {@link Request} body wasn't fully written in a single I/O write

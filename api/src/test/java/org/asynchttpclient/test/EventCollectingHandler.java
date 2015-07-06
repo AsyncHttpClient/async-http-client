@@ -58,20 +58,15 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public State onHeaderWriteCompleted() {
-        firedEvents.add("HeaderWriteCompleted");
-        return super.onHeaderWriteCompleted();
+    public State onHeadersWritten() {
+        firedEvents.add("HeadersWritten");
+        return super.onHeadersWritten();
     }
 
     @Override
-    public State onContentWriteCompleted() {
-        firedEvents.add("ContentWriteCompleted");
-        return super.onContentWriteCompleted();
-    }
-
-    @Override
-    public void onOpenConnection() {
-        firedEvents.add("OpenConnection");
+    public State onContentWriten() {
+        firedEvents.add("ContentWritten");
+        return super.onContentWriten();
     }
 
     @Override
@@ -80,8 +75,13 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onPoolConnection() {
-        firedEvents.add("PoolConnection");
+    public void onConnectionOpened() {
+        firedEvents.add("ConnectionOpened");
+    }
+
+    @Override
+    public void onConnectionPool() {
+        firedEvents.add("ConnectionPool");
     }
 
     @Override
@@ -90,8 +90,8 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onSendRequest(Object request) {
-        firedEvents.add("SendRequest");
+    public void onRequestSend(Object request) {
+        firedEvents.add("RequestSend");
     }
 
     @Override

@@ -21,29 +21,23 @@ import org.asynchttpclient.AsyncHandler;
  * For now, those methods are in a dedicated interface in order not to break the
  * existing API, but could be merged into one of the existing ones in AHC 2.
  * 
- * More additional hooks might come, such as:
- * <ul>
- * <li>onConnectionClosed()</li>
- * <li>onBytesSent(long numberOfBytes)</li>
- * <li>onBytesReceived(long numberOfBytes)</li>
- * </ul>
  */
 public interface AsyncHandlerExtensions {
 
     /**
      * Notify the callback when trying to open a new connection.
      */
-    void onOpenConnection();
+    void onConnectionOpen();
 
     /**
      * Notify the callback when a new connection was successfully opened.
      */
-    void onConnectionOpen();
+    void onConnectionOpened();
 
     /**
      * Notify the callback when trying to fetch a connection from the pool.
      */
-    void onPoolConnection();
+    void onConnectionPool();
 
     /**
      * Notify the callback when a new connection was successfully fetched from
@@ -58,7 +52,7 @@ public interface AsyncHandlerExtensions {
      * 
      * @param request the real request object as passed to the provider
      */
-    void onSendRequest(Object request);
+    void onRequestSend(Object request);
 
     /**
      * Notify the callback every time a request is being retried.

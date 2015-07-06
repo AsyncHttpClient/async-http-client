@@ -22,6 +22,7 @@ import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +40,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.test.EventCollectingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -267,6 +269,32 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request).get();
             Thread.sleep(1000);
             client.executeRequest(request).get();
+        }
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testPooledEventsFired() throws Exception {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler firstHandler = new EventCollectingHandler();
+            client.executeRequest(request, firstHandler).get(3, TimeUnit.SECONDS);
+            firstHandler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            EventCollectingHandler secondHandler = new EventCollectingHandler();
+            client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
+            secondHandler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            List<String> expectedEvents = Arrays.asList(
+                    "ConnectionPool",
+                    "ConnectionPooled",
+                    "RequestSend",
+                    "HeadersWritten",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(secondHandler.firedEvents, expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
         }
     }
 }

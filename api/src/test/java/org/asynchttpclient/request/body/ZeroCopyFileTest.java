@@ -76,12 +76,12 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
             Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
 
-                public State onHeaderWriteCompleted() {
+                public State onHeadersWritten() {
                     headerSent.set(true);
                     return State.CONTINUE;
                 }
 
-                public State onContentWriteCompleted() {
+                public State onContentWriten() {
                     operationCompleted.set(true);
                     return State.CONTINUE;
                 }

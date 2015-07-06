@@ -158,7 +158,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     @Override
-    public State onHeaderWriteCompleted() {
+    public State onHeadersWritten() {
         if (headers != null) {
             fireOnHeadersSent(headers);
         }

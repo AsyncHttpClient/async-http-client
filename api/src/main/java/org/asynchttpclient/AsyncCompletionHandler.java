@@ -86,7 +86,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      *
      * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    public State onHeaderWriteCompleted() {
+    public State onHeadersWritten() {
         return State.CONTINUE;
     }
 
@@ -96,7 +96,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      *
      * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    public State onContentWriteCompleted() {
+    public State onContentWriten() {
         return State.CONTINUE;
     }
 

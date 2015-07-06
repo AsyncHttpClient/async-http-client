@@ -22,12 +22,16 @@ import static org.testng.Assert.*;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
+import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
@@ -111,6 +115,29 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             } catch (ExecutionException e) {
                 throw e.getCause() != null ? e.getCause() : e;
             }
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testNormalEventsFired() throws InterruptedException, TimeoutException, ExecutionException {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
+            EventCollectingHandler handler = new EventCollectingHandler();
+            client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
+            handler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            List<String> expectedEvents = Arrays.asList(
+                    "ConnectionPool",
+                    "ConnectionOpen",
+                    "DnsResolved",
+                    "SslHandshakeCompleted",
+                    "ConnectionOpened",
+                    "RequestSend",
+                    "HeadersWritten",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }
     }
 }

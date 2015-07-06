@@ -55,6 +55,7 @@ import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
+import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
@@ -1400,6 +1401,30 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(new String(response.getResponseBodyAsBytes(), UTF_8), "MIRROR");
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider", "async" })
+    public void testNewConnectionEventsFired() throws Exception {
+        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            EventCollectingHandler handler = new EventCollectingHandler();
+            client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
+            handler.waitForCompletion(3, TimeUnit.SECONDS);
+
+            List<String> expectedEvents = Arrays.asList(
+                    "ConnectionPool",
+                    "ConnectionOpen",
+                    "DnsResolved",
+                    "ConnectionOpened",
+                    "RequestSend",
+                    "HeadersWriten",
+                    "StatusReceived",
+                    "HeadersReceived",
+                    "Completed");
+
+            assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }
     }
 }

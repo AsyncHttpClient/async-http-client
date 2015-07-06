@@ -275,7 +275,7 @@ public final class NettyRequestSender {
             }
 
             if (asyncHandler instanceof AsyncHandlerExtensions)
-                AsyncHandlerExtensions.class.cast(asyncHandler).onOpenConnection();
+                AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOpen();
 
             ChannelFuture channelFuture = connect(request, uri, proxy, useProxy, bootstrap, asyncHandler);
             channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
@@ -325,7 +325,7 @@ public final class NettyRequestSender {
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onSendRequest(nettyRequest);
+                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSend(nettyRequest);
 
                 channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
             }
@@ -501,7 +501,7 @@ public final class NettyRequestSender {
     private Channel pollAndVerifyCachedChannel(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning, AsyncHandler<?> asyncHandler) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onPoolConnection();
+            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPool();
 
         final Channel channel = channelManager.poll(uri, proxy, connectionPoolPartitioning);
 
