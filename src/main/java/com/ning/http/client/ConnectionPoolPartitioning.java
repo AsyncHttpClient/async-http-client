@@ -17,16 +17,33 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 
 public interface ConnectionPoolPartitioning {
 
-	Object getPartitionKey(Uri uri, ProxyServer proxyServer);
-	
-	public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
+    public class ProxyPartitionKey {
+        private final String proxyUrl;
+        private final String targetHostBaseUrl;
 
-	    INSTANCE;
-	    
-	    public String getPartitionKey(Uri uri, ProxyServer proxyServer) {
-	        String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
-	        return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
-	    }
-	}
+        public ProxyPartitionKey(String proxyUrl, String targetHostBaseUrl) {
+            this.proxyUrl = proxyUrl;
+            this.targetHostBaseUrl = targetHostBaseUrl;
+        }
 
+        @Override
+        public String toString() {
+            return new StringBuilder()//
+                    .append("ProxyPartitionKey(proxyUrl=").append(proxyUrl)//
+                    .append(", targetHostBaseUrl=").append(targetHostBaseUrl)//
+                    .toString();
+        }
+    }
+
+    Object getPartitionKey(Uri uri, ProxyServer proxyServer);
+
+    public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
+
+        INSTANCE;
+
+        public Object getPartitionKey(Uri uri, ProxyServer proxyServer) {
+            String targetHostBaseUrl = AsyncHttpProviderUtils.getBaseUrl(uri);
+            return proxyServer != null ? new ProxyPartitionKey(proxyServer.getUrl(), targetHostBaseUrl) : targetHostBaseUrl;
+        }
+    }
 }
