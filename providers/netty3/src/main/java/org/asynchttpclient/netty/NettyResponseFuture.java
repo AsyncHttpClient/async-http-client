@@ -78,7 +78,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     // state mutated only inside the event loop
     private Channel channel;
-    private Uri uri;
     private boolean keepAlive = true;
     private Request request;
     private NettyRequest nettyRequest;
@@ -100,7 +99,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.asyncHandler = asyncHandler;
         this.request = request;
         this.nettyRequest = nettyRequest;
-        this.uri = request.getUri();
         this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
@@ -252,11 +250,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /*********************************************/
 
     public Uri getUri() {
-        return uri;
-    }
-
-    public void setUri(Uri uri) {
-        this.uri = uri;
+        return request.getUri();
     }
 
     public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
@@ -417,7 +411,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     public boolean canBeReplayed() {
         return !isDone() && canRetry()
-                && !(Channels.isChannelValid(channel) && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
+                && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !isInAuth();
     }
 
     public long getStart() {
@@ -425,7 +419,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public Object getPartitionKey() {
-        return connectionPoolPartitioning.getPartitionKey(uri, proxyServer);
+        return connectionPoolPartitioning.getPartitionKey(getUri(), proxyServer);
     }
 
     @Override
@@ -437,7 +431,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\tasyncHandler=" + asyncHandler + //
                 ",\n\tnettyRequest=" + nettyRequest + //
                 ",\n\tcontent=" + content + //
-                ",\n\turi=" + uri + //
+                ",\n\turi=" + getUri() + //
                 ",\n\tkeepAlive=" + keepAlive + //
                 ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //

@@ -15,8 +15,6 @@ package org.asynchttpclient.netty.handler;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.isSameHostAndProtocol;
-import static org.asynchttpclient.util.HttpUtils.HTTP;
-import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
@@ -148,14 +146,9 @@ public abstract class Protocol {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
-                Uri uri = Uri.create(future.getUri(), location);
-                future.setUri(uri);
-                String newUrl = uri.toUrl();
-                if (request.getUri().getScheme().startsWith(WS)) {
-                    newUrl = newUrl.replaceFirst(HTTP, WS);
-                }
+                Uri newUri = Uri.create(future.getUri(), location);
 
-                logger.debug("Redirecting to {}", newUrl);
+                logger.debug("Redirecting to {}", newUri);
 
                 for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
                     Cookie c = CookieDecoder.decode(cookieStr);
@@ -165,13 +158,13 @@ public abstract class Protocol {
 
                 requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
-                final Request nextRequest = requestBuilder.setUrl(newUrl).build();
+                final Request nextRequest = requestBuilder.setUri(newUri).build();
 
-                logger.debug("Sending redirect to {}", request.getUri());
+                logger.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
 
-                    if (isSameHostAndProtocol(request.getUri(), nextRequest.getUri())) {
+                    if (isSameHostAndProtocol(request.getUri(), newUri)) {
                         future.setReuseChannel(true);
                     } else {
                         channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);

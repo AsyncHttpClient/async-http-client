@@ -16,8 +16,6 @@ package org.asynchttpclient.netty.handler;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
-import static org.asynchttpclient.util.HttpUtils.HTTP;
-import static org.asynchttpclient.util.HttpUtils.WS;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -140,14 +138,9 @@ public abstract class Protocol {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
-                Uri uri = Uri.create(future.getUri(), location);
-                future.setUri(uri);
-                String newUrl = uri.toUrl();
-                if (request.getUri().getScheme().startsWith(WS)) {
-                    newUrl = newUrl.replaceFirst(HTTP, WS);
-                }
+                Uri newUri = Uri.create(future.getUri(), location);
 
-                logger.debug("Redirecting to {}", newUrl);
+                logger.debug("Redirecting to {}", newUri);
 
                 for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
                     Cookie c = CookieDecoder.decode(cookieStr);
@@ -157,16 +150,16 @@ public abstract class Protocol {
 
                 requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
-                final Request nextRequest = requestBuilder.setUrl(newUrl).build();
+                final Request nextRequest = requestBuilder.setUri(newUri).build();
 
-                logger.debug("Sending redirect to {}", request.getUri());
+                logger.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
 
-                    if (isSameHostAndProtocol(request.getUri(), nextRequest.getUri())) {
+                    if (isSameHostAndProtocol(request.getUri(), newUri)) {
                         future.setReuseChannel(true);
+                        // we can't directly send the next request because we still have to received LastContent
                         requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
-
                     } else {
                         channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);
                         requestSender.sendNextRequest(nextRequest, future);
