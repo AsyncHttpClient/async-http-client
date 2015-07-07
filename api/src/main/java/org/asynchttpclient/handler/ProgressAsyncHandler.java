@@ -35,7 +35,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
-    State onContentWriten();
+    State onContentWritten();
 
     /**
      * Invoked when the I/O operation associated with the {@link Request} body wasn't fully written in a single I/O write

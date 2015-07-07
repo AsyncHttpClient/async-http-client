@@ -64,9 +64,9 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public State onContentWriten() {
+    public State onContentWritten() {
         firedEvents.add("ContentWritten");
-        return super.onContentWriten();
+        return super.onContentWritten();
     }
 
     @Override

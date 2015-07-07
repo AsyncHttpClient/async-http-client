@@ -90,7 +90,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
                 if (notifyHeaders) {
                     progressAsyncHandler.onHeadersWritten();
                 } else {
-                    progressAsyncHandler.onContentWriten();
+                    progressAsyncHandler.onContentWritten();
                 }
             }
         }

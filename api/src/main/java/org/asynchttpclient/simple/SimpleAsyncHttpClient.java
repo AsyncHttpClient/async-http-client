@@ -711,8 +711,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return delegate.onHeadersWritten();
         }
 
-        public AsyncHandler.State onContentWriten() {
-            return delegate.onContentWriten();
+        public AsyncHandler.State onContentWritten() {
+            return delegate.onContentWritten();
         }
 
         public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {

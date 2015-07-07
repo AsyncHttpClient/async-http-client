@@ -81,7 +81,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onContentWriten() {
+                public State onContentWritten() {
                     operationCompleted.set(true);
                     return State.CONTINUE;
                 }
