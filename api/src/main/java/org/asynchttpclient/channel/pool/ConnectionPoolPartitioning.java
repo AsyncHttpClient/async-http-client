@@ -36,14 +36,14 @@ public interface ConnectionPoolPartitioning {
         }
     }
 
-    Object getPartitionKey(Uri uri, ProxyServer proxyServer);
+    Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer);
 
     public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
         INSTANCE;
 
-        public Object getPartitionKey(Uri uri, ProxyServer proxyServer) {
-            String targetHostBaseUrl = AsyncHttpProviderUtils.getBaseUrl(uri);
+        public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
+            String targetHostBaseUrl = virtualHost != null ? virtualHost : AsyncHttpProviderUtils.getBaseUrl(uri);
             return proxyServer != null ? new ProxyPartitionKey(proxyServer.getUrl(), targetHostBaseUrl) : targetHostBaseUrl;
         }
     }

@@ -14,10 +14,9 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.HttpUtils.WS;
-import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -243,8 +242,6 @@ public final class NettyRequestSender {
             AsyncHandler<T> asyncHandler,//
             boolean reclaimCache) throws IOException {
 
-        boolean useSSl = isSecure(request.getUri()) && !useProxy;
-
         // some headers are only set when performing the first request
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
@@ -255,7 +252,7 @@ public final class NettyRequestSender {
         // Do not throw an exception when we need an extra connection for a
         // redirect
         // FIXME why? This violate the max connection per host handling, right?
-        Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), useProxy, useSSl);
+        Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), useProxy);
 
         boolean channelPreempted = false;
         Object partitionKey = future.getPartitionKey();
@@ -340,7 +337,7 @@ public final class NettyRequestSender {
 
         InetAddress address;
         Uri uri = request.getUri();
-        int port = getDefaultPort(uri);
+        int port = getExplicitPort(uri);
 
         if (request.getInetAddress() != null) {
             address = request.getInetAddress();
@@ -358,7 +355,7 @@ public final class NettyRequestSender {
 
     private ChannelFuture connect(Request request, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
         InetSocketAddress remoteAddress = remoteAddress(request, proxy, useProxy);
-
+        
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
 
@@ -500,13 +497,14 @@ public final class NettyRequestSender {
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPool();
 
         Uri uri = request.getUri();
-        final Channel channel = channelManager.poll(uri, proxy, request.getConnectionPoolPartitioning());
+        String virtualHost = request.getVirtualHost();
+        final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getConnectionPoolPartitioning());
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
 
             try {
-                channelManager.verifyChannelPipeline(channel.pipeline(), uri.getScheme());
+                channelManager.verifyChannelPipeline(channel.pipeline(), uri, virtualHost);
             } catch (Exception ex) {
                 LOGGER.debug(ex.getMessage(), ex);
             }

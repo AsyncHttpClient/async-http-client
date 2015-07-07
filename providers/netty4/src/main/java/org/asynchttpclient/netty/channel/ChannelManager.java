@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getSchemeDefaultPort;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
@@ -87,10 +89,8 @@ public class ChannelManager {
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
     private final Class<? extends Channel> socketChannelClass;
-    private final Bootstrap plainBootstrap;
-    private final Bootstrap secureBootstrap;
-    private final Bootstrap webSocketBootstrap;
-    private final Bootstrap secureWebSocketBootstrap;
+    private final Bootstrap httpBootstrap;
+    private final Bootstrap wsBootstrap;
     private final long handshakeTimeout;
     private final IOException tooManyConnections;
     private final IOException tooManyConnectionsPerHost;
@@ -179,26 +179,20 @@ public class ChannelManager {
         // allow users to specify SocketChannel class and default to NioSocketChannel
         socketChannelClass = nettyConfig.getSocketChannelClass() == null ? NioSocketChannel.class : nettyConfig.getSocketChannelClass();
 
-        plainBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        secureBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        webSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        httpBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        wsBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
 
         // default to PooledByteBufAllocator
-        plainBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        secureBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        webSocketBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        secureWebSocketBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        httpBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        wsBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 
         if (config.getConnectTimeout() > 0)
             nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
         for (Entry<ChannelOption<Object>, Object> entry : nettyConfig.propertiesSet()) {
             ChannelOption<Object> key = entry.getKey();
             Object value = entry.getValue();
-            plainBootstrap.option(key, value);
-            webSocketBootstrap.option(key, value);
-            secureBootstrap.option(key, value);
-            secureWebSocketBootstrap.option(key, value);
+            httpBootstrap.option(key, value);
+            wsBootstrap.option(key, value);
         }
     }
 
@@ -210,7 +204,7 @@ public class ChannelManager {
         WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, nettyConfig, requestSender);
         wsProcessor = new Processor(config, this, requestSender, wsProtocol);
 
-        plainBootstrap.handler(new ChannelInitializer<Channel>() {
+        httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
@@ -224,7 +218,7 @@ public class ChannelManager {
             }
         });
 
-        webSocketBootstrap.handler(new ChannelInitializer<Channel>() {
+        wsBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
@@ -233,36 +227,6 @@ public class ChannelManager {
 
                 if (nettyConfig.getWsAdditionalPipelineInitializer() != null)
                     nettyConfig.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
-            }
-        });
-
-        secureBootstrap.handler(new ChannelInitializer<Channel>() {
-
-            @Override
-            protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this))//
-                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
-                        .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(HTTP_PROCESSOR, httpProcessor);
-
-                if (nettyConfig.getHttpsAdditionalPipelineInitializer() != null)
-                    nettyConfig.getHttpsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
-            }
-        });
-
-        secureWebSocketBootstrap.handler(new ChannelInitializer<Channel>() {
-
-            @Override
-            protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this))//
-                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(WS_PROCESSOR, wsProcessor);
-
-                if (nettyConfig.getWssAdditionalPipelineInitializer() != null)
-                    nettyConfig.getWssAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
     }
@@ -295,8 +259,8 @@ public class ChannelManager {
         }
     }
 
-    public Channel poll(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning) {
-        Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, proxy);
+    public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning) {
+        Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
         return channelPool.poll(partitionKey);
     }
 
@@ -413,26 +377,49 @@ public class ChannelManager {
         }
     }
 
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException, IOException {
+        String peerHost;
+        int peerPort;
+        
+        if (virtualHost != null) {
+            int i = virtualHost.indexOf(':');
+            if (i == -1) {
+                peerHost = virtualHost;
+                peerPort = getSchemeDefaultPort(uri.getScheme());
+            } else {
+                peerHost = virtualHost.substring(0, i);
+                peerPort = Integer.valueOf(virtualHost.substring(i + 1));
+            }
+            
+        } else {
+            peerHost = uri.getHost();
+            peerPort = getExplicitPort(uri);
+        }
+
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort);
+        pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
+        return sslHandler;
+    }
+
     /**
      * Always make sure the channel who got cached support the proper protocol.
      * It could only occurs when a HttpMethod. CONNECT is used against a proxy
      * that requires upgrading from http to https.
      */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
+    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws IOException, GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 
-        if (isSecure(scheme)) {
+        if (isSecure(uri)) {
             if (!sslHandlerConfigured)
-                pipeline.addFirst(SSL_HANDLER, new SslInitializer(this));
+                addSslHandler(pipeline, uri, virtualHost);
 
         } else if (sslHandlerConfigured)
             pipeline.remove(SSL_HANDLER);
     }
 
-    public Bootstrap getBootstrap(Uri uri, boolean useProxy, boolean useSSl) {
-        return uri.getScheme().startsWith(WS) && !useProxy ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : //
-                (useSSl ? secureBootstrap : plainBootstrap);
+    public Bootstrap getBootstrap(Uri uri, boolean useProxy) {
+        return uri.getScheme().startsWith(WS) && !useProxy ? wsBootstrap : httpBootstrap;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

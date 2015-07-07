@@ -47,19 +47,19 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String getAuthority(Uri uri) {
-        int port = uri.getPort() != -1 ? uri.getPort() : getDefaultPort(uri);
+        int port = uri.getPort() != -1 ? uri.getPort() : getExplicitPort(uri);
         return uri.getHost() + ":" + port;
     }
 
-    public final static boolean isSameHostAndProtocol(Uri uri1, Uri uri2) {
-        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost()) && getDefaultPort(uri1) == getDefaultPort(uri2);
+    public final static boolean isSameBase(Uri uri1, Uri uri2) {
+        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost()) && getExplicitPort(uri1) == getExplicitPort(uri2);
     }
 
     public static final int getSchemeDefaultPort(String scheme) {
         return scheme.equals("http") || scheme.equals("ws") ? 80 : 443;
     }
 
-    public static final int getDefaultPort(Uri uri) {
+    public static final int getExplicitPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1)
             port = getSchemeDefaultPort(uri.getScheme());

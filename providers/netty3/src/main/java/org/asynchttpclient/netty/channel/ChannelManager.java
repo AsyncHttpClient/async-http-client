@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getSchemeDefaultPort;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
@@ -102,10 +104,8 @@ public class ChannelManager {
 
     private final ClientSocketChannelFactory socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
-    private final ClientBootstrap plainBootstrap;
-    private final ClientBootstrap secureBootstrap;
-    private final ClientBootstrap webSocketBootstrap;
-    private final ClientBootstrap secureWebSocketBootstrap;
+    private final ClientBootstrap httpBootstrap;
+    private final ClientBootstrap wsBootstrap;
     private final ConcurrentHashMapV8.Fun<Object, Semaphore> semaphoreComputer;
 
     private Processor wsProcessor;
@@ -189,10 +189,8 @@ public class ChannelManager {
             allowReleaseSocketChannelFactory = true;
         }
 
-        plainBootstrap = new ClientBootstrap(socketChannelFactory);
-        secureBootstrap = new ClientBootstrap(socketChannelFactory);
-        webSocketBootstrap = new ClientBootstrap(socketChannelFactory);
-        secureWebSocketBootstrap = new ClientBootstrap(socketChannelFactory);
+        httpBootstrap = new ClientBootstrap(socketChannelFactory);
+        wsBootstrap = new ClientBootstrap(socketChannelFactory);
 
         DefaultChannelFuture.setUseDeadLockChecker(nettyConfig.isUseDeadLockChecker());
 
@@ -202,10 +200,8 @@ public class ChannelManager {
         for (Entry<String, Object> entry : nettyConfig.propertiesSet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            plainBootstrap.setOption(key, value);
-            webSocketBootstrap.setOption(key, value);
-            secureBootstrap.setOption(key, value);
-            secureWebSocketBootstrap.setOption(key, value);
+            httpBootstrap.setOption(key, value);
+            wsBootstrap.setOption(key, value);
         }
     }
 
@@ -217,7 +213,7 @@ public class ChannelManager {
         Protocol wsProtocol = new WebSocketProtocol(this, config, nettyConfig, requestSender);
         wsProcessor = new Processor(config, this, requestSender, wsProtocol);
 
-        plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        httpBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
@@ -233,7 +229,7 @@ public class ChannelManager {
             }
         });
 
-        webSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        wsBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
@@ -242,38 +238,6 @@ public class ChannelManager {
 
                 if (nettyConfig.getWsAdditionalPipelineInitializer() != null)
                     nettyConfig.getWsAdditionalPipelineInitializer().initPipeline(pipeline);
-
-                return pipeline;
-            }
-        });
-
-        secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-
-            public ChannelPipeline getPipeline() throws Exception {
-                ChannelPipeline pipeline = pipeline();
-                pipeline.addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this));
-                pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                pipeline.addLast(INFLATER_HANDLER, newHttpContentDecompressor());
-                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler());
-                pipeline.addLast(HTTP_PROCESSOR, httpProcessor);
-
-                if (nettyConfig.getHttpsAdditionalPipelineInitializer() != null)
-                    nettyConfig.getHttpsAdditionalPipelineInitializer().initPipeline(pipeline);
-
-                return pipeline;
-            }
-        });
-
-        secureWebSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-
-            public ChannelPipeline getPipeline() throws Exception {
-                ChannelPipeline pipeline = pipeline();
-                pipeline.addLast(SSL_HANDLER, new SslInitializer(ChannelManager.this));
-                pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
-                pipeline.addLast(WS_PROCESSOR, wsProcessor);
-
-                if (nettyConfig.getWssAdditionalPipelineInitializer() != null)
-                    nettyConfig.getWssAdditionalPipelineInitializer().initPipeline(pipeline);
 
                 return pipeline;
             }
@@ -308,8 +272,8 @@ public class ChannelManager {
         }
     }
 
-    public Channel poll(Uri uri, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning) {
-        Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, proxy);
+    public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ConnectionPoolPartitioning connectionPoolPartitioning) {
+        Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
         return channelPool.poll(partitionKey);
     }
 
@@ -358,10 +322,8 @@ public class ChannelManager {
         config.executorService().shutdown();
         if (allowReleaseSocketChannelFactory) {
             socketChannelFactory.releaseExternalResources();
-            plainBootstrap.releaseExternalResources();
-            secureBootstrap.releaseExternalResources();
-            webSocketBootstrap.releaseExternalResources();
-            secureWebSocketBootstrap.releaseExternalResources();
+            httpBootstrap.releaseExternalResources();
+            wsBootstrap.releaseExternalResources();
         }
     }
 
@@ -436,21 +398,45 @@ public class ChannelManager {
         }
     }
 
-    public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException, IOException {
+        String peerHost;
+        int peerPort;
+        
+        if (virtualHost != null) {
+            int i = virtualHost.indexOf(':');
+            if (i == -1) {
+                peerHost = virtualHost;
+                peerPort = getSchemeDefaultPort(uri.getScheme());
+            } else {
+                peerHost = virtualHost.substring(0, i);
+                peerPort = Integer.valueOf(virtualHost.substring(i + 1));
+            }
+            
+        } else {
+            peerHost = uri.getHost();
+            peerPort = getExplicitPort(uri);
+        }
+
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort);
+        pipeline.addFirst(SSL_HANDLER, sslHandler);
+        return sslHandler;
+    }
+
+    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws IOException, GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 
-        if (isSecure(scheme)) {
-            if (!sslHandlerConfigured)
-                pipeline.addFirst(SSL_HANDLER, new SslInitializer(this));
+        if (isSecure(uri.getScheme())) {
+            if (!sslHandlerConfigured) {
+                addSslHandler(pipeline, uri, virtualHost);
+            }
 
         } else if (sslHandlerConfigured)
             pipeline.remove(SSL_HANDLER);
     }
 
-    public ClientBootstrap getBootstrap(String scheme, boolean useProxy, boolean useSSl) {
-        return scheme.startsWith(WS) && !useProxy ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : //
-                (useSSl ? secureBootstrap : plainBootstrap);
+    public ClientBootstrap getBootstrap(String scheme, boolean useProxy) {
+        return scheme.startsWith(WS) && !useProxy ? wsBootstrap : httpBootstrap;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

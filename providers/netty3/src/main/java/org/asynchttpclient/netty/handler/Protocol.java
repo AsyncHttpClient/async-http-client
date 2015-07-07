@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.handler;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.isSameHostAndProtocol;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.isSameBase;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FOUND;
@@ -134,8 +134,7 @@ public abstract class Protocol {
                         .setNameResolver(request.getNameResolver())//
                         .setProxyServer(request.getProxyServer())//
                         .setRealm(request.getRealm())//
-                        .setRequestTimeout(request.getRequestTimeout())//
-                        .setVirtualHost(request.getVirtualHost());
+                        .setRequestTimeout(request.getRequestTimeout());
 
                 requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
@@ -158,13 +157,20 @@ public abstract class Protocol {
 
                 requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
+                boolean sameBase = isSameBase(request.getUri(), newUri);
+
+                if (sameBase) {
+                    // we can only assume the virtual host is still valid if the baseUrl is the same
+                    requestBuilder.setVirtualHost(request.getVirtualHost());
+                }
+
                 final Request nextRequest = requestBuilder.setUri(newUri).build();
 
                 logger.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response) && !response.isChunked()) {
 
-                    if (isSameHostAndProtocol(request.getUri(), newUri)) {
+                    if (sameBase) {
                         future.setReuseChannel(true);
                     } else {
                         channelManager.drainChannelAndOffer(channel, future, initialConnectionKeepAlive, initialPartitionKey);

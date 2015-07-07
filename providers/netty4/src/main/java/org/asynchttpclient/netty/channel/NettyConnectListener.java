@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.channel;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
+import static org.asynchttpclient.util.HttpUtils.isSecure;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -24,10 +25,12 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.net.ConnectException;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,11 +86,14 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         requestSender.writeRequest(future, channel);
     }
 
-    private void onFutureSuccess(final Channel channel) throws ConnectException {
+    private void onFutureSuccess(final Channel channel) throws Exception {
+        
+        Request request = future.getRequest();
+        Uri uri = request.getUri();
 
-        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
-
-        if (sslHandler != null) {
+        // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
+        if (future.getProxyServer() == null && isSecure(uri)) {
+            SslHandler sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
             sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> handshakeFuture) throws Exception {

@@ -17,7 +17,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getDefaultPort;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -362,7 +362,7 @@ public final class HttpProtocol extends Protocol {
                 Uri requestUri = request.getUri();
                 String scheme = requestUri.getScheme();
                 String host = requestUri.getHost();
-                int port = getDefaultPort(requestUri);
+                int port = getExplicitPort(requestUri);
 
                 logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 channelManager.upgradeProtocol(channel.pipeline(), scheme, host, port);

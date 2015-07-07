@@ -107,8 +107,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-    private AdditionalPipelineInitializer httpsAdditionalPipelineInitializer;
-    private AdditionalPipelineInitializer wssAdditionalPipelineInitializer;
 
     /**
      * Allow configuring the Netty's socket channel factory.
@@ -153,22 +151,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
         this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
-    }
-
-    public AdditionalPipelineInitializer getHttpsAdditionalPipelineInitializer() {
-        return httpsAdditionalPipelineInitializer;
-    }
-
-    public void setHttpsAdditionalPipelineInitializer(AdditionalPipelineInitializer httpsAdditionalPipelineInitializer) {
-        this.httpsAdditionalPipelineInitializer = httpsAdditionalPipelineInitializer;
-    }
-
-    public AdditionalPipelineInitializer getWssAdditionalPipelineInitializer() {
-        return wssAdditionalPipelineInitializer;
-    }
-
-    public void setWssAdditionalPipelineInitializer(AdditionalPipelineInitializer wssAdditionalPipelineInitializer) {
-        this.wssAdditionalPipelineInitializer = wssAdditionalPipelineInitializer;
     }
 
     public NioClientSocketChannelFactory getSocketChannelFactory() {

@@ -126,8 +126,7 @@ public abstract class Protocol {
                         .setNameResolver(request.getNameResolver())//
                         .setProxyServer(request.getProxyServer())//
                         .setRealm(request.getRealm())//
-                        .setRequestTimeout(request.getRequestTimeout())//
-                        .setVirtualHost(request.getVirtualHost());
+                        .setRequestTimeout(request.getRequestTimeout());
 
                 requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
@@ -150,13 +149,20 @@ public abstract class Protocol {
 
                 requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
 
+                boolean sameBase = isSameBase(request.getUri(), newUri);
+
+                if (sameBase) {
+                    // we can only assume the virtual host is still valid if the baseUrl is the same
+                    requestBuilder.setVirtualHost(request.getVirtualHost());
+                }
+
                 final Request nextRequest = requestBuilder.setUri(newUri).build();
 
                 logger.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
 
-                    if (isSameHostAndProtocol(request.getUri(), newUri)) {
+                    if (sameBase) {
                         future.setReuseChannel(true);
                         // we can't directly send the next request because we still have to received LastContent
                         requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
