@@ -340,16 +340,12 @@ public class ChannelManager {
                 false);
     }
 
-    public SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
+    private SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
         return sslHandler;
-    }
-
-    public static SslHandler getSslHandler(ChannelPipeline pipeline) {
-        return (SslHandler) pipeline.get(SSL_HANDLER);
     }
 
     public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
