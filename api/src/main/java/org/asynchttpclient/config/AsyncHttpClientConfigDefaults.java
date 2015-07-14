@@ -70,6 +70,10 @@ public final class AsyncHttpClientConfigDefaults {
     public static int defaultIoThreadMultiplier() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "ioThreadMultiplier");
     }
+    
+    public static String[] defaultEnabledProtocols() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + "enabledProtocols");
+    }
 
     public static boolean defaultUseProxySelector() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useProxySelector");

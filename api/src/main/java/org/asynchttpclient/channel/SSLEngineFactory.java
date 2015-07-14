@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.channel;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
 import java.security.GeneralSecurityException;
 
 import javax.net.ssl.SSLContext;
@@ -55,10 +57,10 @@ public interface SSLEngineFactory {
             }
             sslEngine.setUseClientMode(true);
 
-            if (config.getEnabledProtocols() != null)
+            if (isNonEmpty(config.getEnabledProtocols()))
                 sslEngine.setEnabledProtocols(config.getEnabledProtocols());
 
-            if (config.getEnabledCipherSuites() != null)
+            if (isNonEmpty(config.getEnabledCipherSuites()))
                 sslEngine.setEnabledCipherSuites(config.getEnabledCipherSuites());
 
             return sslEngine;

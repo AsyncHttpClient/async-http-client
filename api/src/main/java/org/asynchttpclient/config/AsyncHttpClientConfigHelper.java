@@ -73,6 +73,15 @@ public class AsyncHttpClientConfigHelper {
             });
         }
 
+        public String[] getStringArray(String key) {
+            String s = getString(key);
+            String[] rawArray = s.split(",");
+            String[] array = new String[rawArray.length];
+            for (int i = 0; i < rawArray.length; i++)
+                array[i] = rawArray[i].trim();
+            return array;
+        }
+        
         public int getInt(String key) {
             return Integer.parseInt(getString(key));
         }

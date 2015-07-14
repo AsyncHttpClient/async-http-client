@@ -605,7 +605,7 @@ public class AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
-        private String[] enabledProtocols;
+        private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites;
         private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
         private Integer sslSessionTimeout = defaultSslSessionTimeout();
