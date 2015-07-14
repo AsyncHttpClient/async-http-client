@@ -13,6 +13,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtils.isNonEmpty;
+
 import com.ning.http.util.SslUtils;
 
 import javax.net.ssl.SSLContext;
@@ -54,10 +56,10 @@ public interface SSLEngineFactory {
             }
             sslEngine.setUseClientMode(true);
 
-            if (config.getEnabledProtocols() != null)
+            if (isNonEmpty(config.getEnabledProtocols()))
                 sslEngine.setEnabledProtocols(config.getEnabledProtocols());
 
-            if (config.getEnabledCipherSuites() != null)
+            if (isNonEmpty(config.getEnabledCipherSuites()))
                 sslEngine.setEnabledCipherSuites(config.getEnabledCipherSuites());
 
             return sslEngine;
