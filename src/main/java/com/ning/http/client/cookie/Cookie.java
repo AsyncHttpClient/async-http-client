@@ -14,7 +14,18 @@ package com.ning.http.client.cookie;
 
 public class Cookie {
 
-    public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    /**
+     * @param expires parameter will be ignored.
+     * Use the other factory that don't take an expires.
+     * 
+     * @deprecated
+     */
+    @Deprecated
+    public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, int expires, long maxAge, boolean secure, boolean httpOnly) {
+        return newValidCookie(name, value, wrap, domain, path, maxAge, secure, httpOnly);
+    }
+
+    public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
 
         if (name == null) {
             throw new NullPointerException("name");
