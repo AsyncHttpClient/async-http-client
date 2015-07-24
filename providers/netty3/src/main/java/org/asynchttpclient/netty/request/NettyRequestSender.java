@@ -401,10 +401,12 @@ public final class NettyRequestSender {
 
         if (future.canBeReplayed()) {
             future.setState(NettyResponseFuture.STATE.RECONNECTED);
+            future.getAndSetStatusReceived(false);
 
             LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
-            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
                 AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+            }
 
             try {
                 sendNextRequest(future.getRequest(), future);
@@ -414,7 +416,6 @@ public final class NettyRequestSender {
                 abort(future.channel(), future, e);
                 return false;
             }
-
         } else {
             LOGGER.debug("Unable to recover future {}\n", future);
             return false;

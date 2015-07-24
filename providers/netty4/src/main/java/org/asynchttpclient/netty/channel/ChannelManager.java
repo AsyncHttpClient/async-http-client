@@ -340,7 +340,7 @@ public class ChannelManager {
                 false);
     }
 
-    private SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
+    private SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException {
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
@@ -352,7 +352,7 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws IOException, GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws GeneralSecurityException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
@@ -373,7 +373,7 @@ public class ChannelManager {
         }
     }
 
-    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException, IOException {
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
         String peerHost;
         int peerPort;
         
@@ -402,7 +402,7 @@ public class ChannelManager {
      * It could only occurs when a HttpMethod. CONNECT is used against a proxy
      * that requires upgrading from http to https.
      */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws IOException, GeneralSecurityException {
+    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 

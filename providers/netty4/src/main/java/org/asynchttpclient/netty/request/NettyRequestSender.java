@@ -383,6 +383,7 @@ public final class NettyRequestSender {
             channelManager.closeChannel(channel);
 
         if (!future.isDone()) {
+            future.setState(NettyResponseFuture.STATE.CLOSED);
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
             future.abort(t);

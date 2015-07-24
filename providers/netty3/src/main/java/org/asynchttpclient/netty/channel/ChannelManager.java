@@ -363,7 +363,7 @@ public class ChannelManager {
                 config.getHttpClientCodecMaxChunkSize());
     }
 
-    private SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException, IOException {
+    private SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException {
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
         SslHandler sslHandler = handshakeTimeout > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, nettyTimer, handshakeTimeout) : new SslHandler(sslEngine);
         sslHandler.setCloseOnSSLException(true);
@@ -374,7 +374,7 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws IOException, GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws GeneralSecurityException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
@@ -394,7 +394,7 @@ public class ChannelManager {
         }
     }
 
-    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException, IOException {
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
         String peerHost;
         int peerPort;
         
@@ -418,7 +418,7 @@ public class ChannelManager {
         return sslHandler;
     }
 
-    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws IOException, GeneralSecurityException {
+    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 

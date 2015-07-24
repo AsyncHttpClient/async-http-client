@@ -17,8 +17,8 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpContent;
@@ -29,16 +29,17 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.AsyncHandler.State;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
@@ -52,6 +53,7 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
+import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
@@ -85,7 +87,7 @@ public final class HttpProtocol extends Protocol {
                     .build();
 
 
-        } catch (Throwable throwable) {
+        } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(authHeaders);
             if (ntlmAuthenticate != null) {
                 return ntlmChallenge(ntlmAuthenticate, request, headers, realm, future);
@@ -113,7 +115,7 @@ public final class HttpProtocol extends Protocol {
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
 
-        } catch (Throwable throwable) {
+        } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(proxyAuth);
             if (ntlmAuthenticate != null) {
                 return ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, headers, future);
@@ -196,7 +198,7 @@ public final class HttpProtocol extends Protocol {
 
         try {
             future.done();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             // Never propagate exception once we know we are done.
             logger.debug(t.getMessage(), t);
         }
@@ -356,24 +358,24 @@ public final class HttpProtocol extends Protocol {
 
             if (future.isKeepAlive())
                 future.attachChannel(channel, true);
+            
+            Uri requestUri = request.getUri();
+            String scheme = requestUri.getScheme();
+            String host = requestUri.getHost();
+            int port = getExplicitPort(requestUri);
 
+            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+                
             try {
-                Uri requestUri = request.getUri();
-                String scheme = requestUri.getScheme();
-                String host = requestUri.getHost();
-                int port = getExplicitPort(requestUri);
-
-                logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 channelManager.upgradeProtocol(channel.pipeline(), scheme, host, port);
+                future.setReuseChannel(true);
+                future.setConnectAllowed(false);
+                requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getRequest()).build());
 
-            } catch (Throwable ex) {
+            } catch (GeneralSecurityException ex) {
                 requestSender.abort(channel, future, ex);
             }
 
-            future.setReuseChannel(true);
-            future.setConnectAllowed(false);
-
-            requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getRequest()).build());
             return true;
         }
 

@@ -22,6 +22,7 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHEN
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
@@ -43,6 +44,7 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
+import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -84,7 +86,7 @@ public final class HttpProtocol extends Protocol {
                     .build();
 
 
-        } catch (Throwable throwable) {
+        } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(authHeaders);
             if (ntlmAuthenticate != null) {
                 return ntlmChallenge(ntlmAuthenticate, request, headers, realm, future);
@@ -112,7 +114,7 @@ public final class HttpProtocol extends Protocol {
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
 
-        } catch (Throwable throwable) {
+        } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(proxyAuth);
             if (ntlmAuthenticate != null) {
                 return ntlmProxyChallenge(ntlmAuthenticate, request, proxyServer, headers, future);
@@ -195,7 +197,7 @@ public final class HttpProtocol extends Protocol {
 
         try {
             future.done();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             // Never propagate exception once we know we are done.
             logger.debug(t.getMessage(), t);
         }
@@ -347,20 +349,20 @@ public final class HttpProtocol extends Protocol {
             if (future.isKeepAlive())
                 future.attachChannel(channel, true);
 
+            Uri requestUri = request.getUri();
+            String scheme = requestUri.getScheme();
+            String host = requestUri.getHost();
+            int port = getExplicitPort(requestUri);
+
+            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+
             try {
-                Uri requestUri = request.getUri();
-                String scheme = requestUri.getScheme();
-                String host = requestUri.getHost();
-                int port = getExplicitPort(requestUri);
-
-                logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 channelManager.upgradeProtocol(channel.getPipeline(), scheme, host, port);
-
                 future.setReuseChannel(true);
                 future.setConnectAllowed(false);
                 requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);
-                
-            } catch (Exception ex) {
+
+            } catch (GeneralSecurityException ex) {
                 requestSender.abort(channel, future, ex);
             }
 
