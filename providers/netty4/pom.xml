@@ -15,7 +15,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-codec-http</artifactId>
-			<version>4.0.29.Final</version>
+			<version>4.0.30.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>
