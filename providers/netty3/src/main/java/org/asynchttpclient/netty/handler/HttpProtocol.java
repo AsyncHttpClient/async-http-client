@@ -393,9 +393,10 @@ public final class HttpProtocol extends Protocol {
             AsyncHandler<?> handler) throws Exception {
         if (!response.isChunked()) {
             // no chunks expected, exiting
-            if (response.getContent().readableBytes() > 0)
-                // FIXME no need to notify an empty bodypart?
+            if (response.getContent().readableBytes() > 0) {
+                // no need to notify an empty bodypart
                 updateBodyAndInterrupt(future, handler, new NettyResponseBodyPart(response, null, true));
+            }
             finishUpdate(future, channel, false);
             return true;
         }
