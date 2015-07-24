@@ -47,7 +47,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
      * {@inheritDoc}
      */
     @Override
-    public Body createBody() throws IOException {
+    public Body createBody() {
         return new InputStreamBody(inputStream);
     }
 

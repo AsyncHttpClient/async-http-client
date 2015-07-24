@@ -13,7 +13,6 @@
 package org.asynchttpclient.request.body.generator;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.asynchttpclient.request.body.RandomAccessBody;
 
@@ -55,7 +54,7 @@ public final class FileBodyGenerator implements BodyGenerator {
      * {@inheritDoc}
      */
     @Override
-    public RandomAccessBody createBody() throws IOException {
+    public RandomAccessBody createBody() {
         throw new UnsupportedOperationException("FileBodyGenerator.createBody isn't used, Netty direclt sends the file");
     }
 }

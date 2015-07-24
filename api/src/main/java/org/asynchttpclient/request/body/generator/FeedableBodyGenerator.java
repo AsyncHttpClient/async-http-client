@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.request.body;
+package org.asynchttpclient.request.body.generator;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.generator.BodyGenerator;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
@@ -36,7 +35,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
     private FeedListener listener;
 
     @Override
-    public Body createBody() throws IOException {
+    public Body createBody() {
         return new PushBody();
     }
 

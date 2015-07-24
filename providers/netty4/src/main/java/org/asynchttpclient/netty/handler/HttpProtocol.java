@@ -50,7 +50,6 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
-import org.asynchttpclient.ntlm.NtlmEngineException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
@@ -70,7 +69,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             FluentCaseInsensitiveStringsMap headers,//
             Realm realm,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         Uri uri = request.getUri();
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
@@ -101,7 +100,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             ProxyServer proxyServer,//
             FluentCaseInsensitiveStringsMap headers,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         try {
             String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
@@ -136,7 +135,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             FluentCaseInsensitiveStringsMap headers,//
             Realm realm,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         if (authenticateHeader.equals("NTLM")) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
@@ -159,7 +158,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             ProxyServer proxyServer,//
             FluentCaseInsensitiveStringsMap headers,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
@@ -175,7 +174,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private void addType3NTLMAuthorizationHeader(String authenticateHeader, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            boolean proxyInd) throws NtlmEngineException {
+            boolean proxyInd) {
         headers.remove(authorizationHeaderName(proxyInd));
 
         if (authenticateHeader.startsWith("NTLM ")) {

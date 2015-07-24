@@ -22,7 +22,6 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map.Entry;
@@ -65,7 +64,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         return request.getHeaders().get(PROXY_AUTHORIZATION);
     }
     
-    private NettyBody body(Request request, boolean connect) throws IOException {
+    private NettyBody body(Request request, boolean connect) {
         NettyBody nettyBody = null;
         if (!connect) {
 
@@ -126,7 +125,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
     
-    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) {
 
         Uri uri = request.getUri();
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());

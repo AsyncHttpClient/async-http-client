@@ -13,7 +13,21 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
+import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY;
+import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_VERSION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
@@ -29,7 +43,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map.Entry;
@@ -66,7 +79,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         return request.getHeaders().get(PROXY_AUTHORIZATION);
     }
     
-    private NettyBody body(Request request, boolean connect) throws IOException {
+    private NettyBody body(Request request, boolean connect) {
         NettyBody nettyBody = null;
         if (!connect) {
 
@@ -126,7 +139,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
 
-    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) {
 
         Uri uri = request.getUri();
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());

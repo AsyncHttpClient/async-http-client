@@ -13,8 +13,6 @@
 
 package org.asynchttpclient.request.body.generator;
 
-import java.io.IOException;
-
 import org.asynchttpclient.request.body.Body;
 
 /**
@@ -28,7 +26,6 @@ public interface BodyGenerator {
      * needs to be resend after an authentication challenge of a redirect.
      *
      * @return The request body, never {@code null}.
-     * @throws IOException If the body could not be created.
      */
-    Body createBody() throws IOException;
+    Body createBody();
 }

@@ -38,13 +38,13 @@ public class NettyFileBody implements NettyBody {
     private final long length;
     private final AsyncHttpClientConfig config;
 
-    public NettyFileBody(File file, AsyncHttpClientConfig config) throws IOException {
+    public NettyFileBody(File file, AsyncHttpClientConfig config) {
         this(file, 0, file.length(), config);
     }
 
-    public NettyFileBody(File file, long offset, long length, AsyncHttpClientConfig config) throws IOException {
+    public NettyFileBody(File file, long offset, long length, AsyncHttpClientConfig config) {
         if (!file.isFile()) {
-            throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
+            throw new IllegalArgumentException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
         }
         this.file = file;
         this.offset = offset;

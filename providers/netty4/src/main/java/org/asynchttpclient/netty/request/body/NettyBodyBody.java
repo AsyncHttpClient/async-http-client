@@ -26,10 +26,11 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.ProgressListener;
-import org.asynchttpclient.netty.request.body.FeedableBodyGenerator.FeedListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
+import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
+import org.asynchttpclient.request.body.generator.FeedableBodyGenerator.FeedListener;
 
 public class NettyBodyBody implements NettyBody {
 

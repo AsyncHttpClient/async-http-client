@@ -13,14 +13,18 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
+import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
+import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
+import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.followRedirect;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.isSameBase;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,9 +34,9 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.filter.FilterContext;
@@ -189,7 +193,7 @@ public abstract class Protocol {
             NettyResponseFuture<?> future,//
             AsyncHandler<?> handler, //
             HttpResponseStatus status,//
-            HttpResponseHeaders responseHeaders) throws IOException {
+            HttpResponseHeaders responseHeaders) {
 
         if (hasResponseFilters) {
             FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)

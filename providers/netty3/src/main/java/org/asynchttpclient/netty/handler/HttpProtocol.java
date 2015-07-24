@@ -25,13 +25,13 @@ import java.io.IOException;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.AsyncHandler.State;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
@@ -41,7 +41,6 @@ import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
-import org.asynchttpclient.ntlm.NtlmEngineException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.uri.Uri;
@@ -69,7 +68,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             FluentCaseInsensitiveStringsMap headers,//
             Realm realm,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         Uri uri = request.getUri();
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
@@ -100,7 +99,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             ProxyServer proxyServer,//
             FluentCaseInsensitiveStringsMap headers,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         try {
             String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
@@ -135,7 +134,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             FluentCaseInsensitiveStringsMap headers,//
             Realm realm,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         if (authenticateHeader.equals("NTLM")) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
@@ -159,7 +158,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             ProxyServer proxyServer,//
             FluentCaseInsensitiveStringsMap headers,//
-            NettyResponseFuture<?> future) throws NtlmEngineException {
+            NettyResponseFuture<?> future) {
 
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
@@ -174,7 +173,7 @@ public final class HttpProtocol extends Protocol {
         return realm;
     }
 
-    private void addType3NTLMAuthorizationHeader(String auth, FluentCaseInsensitiveStringsMap headers, Realm realm, boolean proxyInd) throws NtlmEngineException {
+    private void addType3NTLMAuthorizationHeader(String auth, FluentCaseInsensitiveStringsMap headers, Realm realm, boolean proxyInd) {
         headers.remove(authorizationHeaderName(proxyInd));
 
         if (isNonEmpty(auth) && auth.startsWith("NTLM ")) {
@@ -184,7 +183,7 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
+    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) {
 
         future.cancelTimeouts();
 
@@ -217,7 +216,7 @@ public final class HttpProtocol extends Protocol {
             final Request request,//
             int statusCode,//
             Realm realm,//
-            ProxyServer proxyServer) throws Exception {
+            ProxyServer proxyServer) {
 
         if (statusCode == UNAUTHORIZED.getCode() && realm != null && !future.getAndSetAuth(true)) {
 
@@ -284,7 +283,7 @@ public final class HttpProtocol extends Protocol {
             Request request,//
             int statusCode,//
             Realm realm,//
-            ProxyServer proxyServer) throws Exception {
+            ProxyServer proxyServer) {
 
         if (statusCode == PROXY_AUTHENTICATION_REQUIRED.getCode() && realm != null && !future.getAndSetAuth(true)) {
 
@@ -341,7 +340,7 @@ public final class HttpProtocol extends Protocol {
             final Request request,//
             ProxyServer proxyServer,//
             int statusCode,//
-            HttpRequest httpRequest) throws IOException {
+            HttpRequest httpRequest) {
 
         if (statusCode == OK.getCode() && httpRequest.getMethod() == HttpMethod.CONNECT) {
 
@@ -357,13 +356,14 @@ public final class HttpProtocol extends Protocol {
                 logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 channelManager.upgradeProtocol(channel.getPipeline(), scheme, host, port);
 
-            } catch (Throwable ex) {
+                future.setReuseChannel(true);
+                future.setConnectAllowed(false);
+                requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);
+                
+            } catch (Exception ex) {
                 requestSender.abort(channel, future, ex);
             }
 
-            future.setReuseChannel(true);
-            future.setConnectAllowed(false);
-            requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);
             return true;
         }
 
@@ -371,7 +371,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
-            AsyncHandler<?> handler, NettyResponseStatus status) throws IOException, Exception {
+            AsyncHandler<?> handler, NettyResponseStatus status) throws Exception {
         if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
@@ -380,7 +380,7 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
-            AsyncHandler<?> handler, NettyResponseHeaders responseHeaders) throws IOException, Exception {
+            AsyncHandler<?> handler, NettyResponseHeaders responseHeaders) throws Exception {
         if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != State.CONTINUE) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
@@ -437,7 +437,7 @@ public final class HttpProtocol extends Protocol {
     private void handleChunk(HttpChunk chunk,//
             final Channel channel,//
             final NettyResponseFuture<?> future,//
-            AsyncHandler<?> handler) throws IOException, Exception {
+            AsyncHandler<?> handler) throws Exception {
 
         boolean last = chunk.isLast();
         // we don't notify updateBodyAndInterrupt with the last chunk as it's empty

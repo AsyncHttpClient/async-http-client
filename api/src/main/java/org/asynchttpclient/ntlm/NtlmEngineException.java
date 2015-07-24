@@ -26,18 +26,13 @@
 
 package org.asynchttpclient.ntlm;
 
+
 /**
  * Signals NTLM protocol failure.
- *
- * @since 4.0
  */
-public class NtlmEngineException extends Exception {
+public class NtlmEngineException extends RuntimeException {
 
     private static final long serialVersionUID = 6027981323731768824L;
-
-    public NtlmEngineException() {
-        super();
-    }
 
     /**
      * Creates a new NTLMEngineException with the specified message.

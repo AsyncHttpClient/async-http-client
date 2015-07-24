@@ -78,7 +78,7 @@ public class SpnegoEngine {
         return instance;
     }
 
-    public String generateToken(String server) throws Throwable {
+    public String generateToken(String server) throws SpnegoEngineException {
         GSSContext gssContext = null;
         byte[] token = null; // base64 decoded challenge
         Oid negotiationOid = null;
@@ -140,7 +140,7 @@ public class SpnegoEngine {
 
             token = gssContext.initSecContext(token, 0, token.length);
             if (token == null) {
-                throw new Exception("GSS security context initialization failed");
+                throw new SpnegoEngineException("GSS security context initialization failed");
             }
 
             /*
@@ -159,16 +159,16 @@ public class SpnegoEngine {
         } catch (GSSException gsse) {
             log.error("generateToken", gsse);
             if (gsse.getMajor() == GSSException.DEFECTIVE_CREDENTIAL || gsse.getMajor() == GSSException.CREDENTIALS_EXPIRED)
-                throw new Exception(gsse.getMessage(), gsse);
+                throw new SpnegoEngineException(gsse.getMessage(), gsse);
             if (gsse.getMajor() == GSSException.NO_CRED)
-                throw new Exception(gsse.getMessage(), gsse);
+                throw new SpnegoEngineException(gsse.getMessage(), gsse);
             if (gsse.getMajor() == GSSException.DEFECTIVE_TOKEN || gsse.getMajor() == GSSException.DUPLICATE_TOKEN
                     || gsse.getMajor() == GSSException.OLD_TOKEN)
-                throw new Exception(gsse.getMessage(), gsse);
+                throw new SpnegoEngineException(gsse.getMessage(), gsse);
             // other error
-            throw new Exception(gsse.getMessage());
+            throw new SpnegoEngineException(gsse.getMessage());
         } catch (IOException ex) {
-            throw new Exception(ex.getMessage());
+            throw new SpnegoEngineException(ex.getMessage());
         }
     }
 }

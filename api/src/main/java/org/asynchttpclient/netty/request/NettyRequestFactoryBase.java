@@ -21,13 +21,12 @@ import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentic
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
@@ -43,7 +42,7 @@ public abstract class NettyRequestFactoryBase {
 
     protected abstract List<String> getProxyAuthorizationHeader(Request request);
     
-    protected String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, boolean connect) throws IOException {
+    protected String firstRequestOnlyProxyAuthorizationHeader(Request request, ProxyServer proxyServer, boolean connect) {
         String proxyAuthorization = null;
 
         if (connect) {
@@ -111,7 +110,7 @@ public abstract class NettyRequestFactoryBase {
         return proxyAuthorization;
     }
 
-    protected String firstRequestOnlyAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm) throws IOException {
+    protected String firstRequestOnlyAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm) {
         String authorizationHeader = null;
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
@@ -130,11 +129,7 @@ public abstract class NettyRequestFactoryBase {
                 else
                     host = request.getUri().getHost();
 
-                try {
-                    authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
-                } catch (Throwable e) {
-                    throw new IOException(e);
-                }
+                authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
                 break;
             default:
                 break;

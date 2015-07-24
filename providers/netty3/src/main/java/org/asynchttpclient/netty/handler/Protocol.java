@@ -22,7 +22,6 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMAN
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -194,7 +193,7 @@ public abstract class Protocol {
             NettyResponseFuture<?> future,//
             AsyncHandler<?> handler, //
             HttpResponseStatus status,//
-            HttpResponseHeaders responseHeaders) throws IOException {
+            HttpResponseHeaders responseHeaders) {
 
         if (hasResponseFilters) {
             FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)

@@ -22,7 +22,6 @@ import static org.testng.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -287,8 +286,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
-    public void testCloseMasterInvalidDerived() throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { IllegalStateException.class })
+    public void testCloseMasterInvalidDerived() throws Throwable {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
 
@@ -298,7 +297,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             derived.get().get();
             fail("Expected closed AHC");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof IOException);
+            throw e.getCause();
         }
     }
 
