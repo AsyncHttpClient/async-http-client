@@ -136,11 +136,11 @@ public abstract class Protocol {
                     requestBuilder.setBodyEncoding(request.getBodyEncoding());
                     if (MiscUtils.isNonEmpty(request.getFormParams()))
                         requestBuilder.setFormParams(request.getFormParams());
-                    if (request.getStringData() != null)
+                    else if (request.getStringData() != null)
                         requestBuilder.setBody(request.getStringData());
-                    if (request.getByteData() != null)
+                    else if (request.getByteData() != null)
                         requestBuilder.setBody(request.getByteData());
-                    if (request.getBodyGenerator() != null)
+                    else if (request.getBodyGenerator() != null)
                         requestBuilder.setBody(request.getBodyGenerator());
                 }
 
