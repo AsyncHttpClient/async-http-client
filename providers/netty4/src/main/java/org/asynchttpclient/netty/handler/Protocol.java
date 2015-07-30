@@ -48,6 +48,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.MiscUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +122,7 @@ public abstract class Protocol {
 
                 String originalMethod = request.getMethod();
                 boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                boolean keepBody = statusCode == 307 || (statusCode == 302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
                         .setCookies(request.getCookies())//
@@ -131,6 +133,20 @@ public abstract class Protocol {
                         .setProxyServer(request.getProxyServer())//
                         .setRealm(request.getRealm())//
                         .setRequestTimeout(request.getRequestTimeout());
+
+                if (keepBody) {
+                    requestBuilder.setBodyCharset(request.getBodyCharset());
+                    if (MiscUtils.isNonEmpty(request.getFormParams()))
+                        requestBuilder.setFormParams(request.getFormParams());
+                    if (request.getStringData() != null)
+                        requestBuilder.setBody(request.getStringData());
+                    if (request.getByteData() != null)
+                        requestBuilder.setBody(request.getByteData());
+                    if (request.getByteBufferData() != null)
+                        requestBuilder.setBody(request.getByteBufferData());
+                    if (request.getBodyGenerator() != null)
+                        requestBuilder.setBody(request.getBodyGenerator());
+                }
 
                 requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
