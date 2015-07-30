@@ -43,6 +43,7 @@ import com.ning.http.client.providers.netty.channel.ChannelManager;
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.client.uri.Uri;
+import com.ning.http.util.MiscUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -118,8 +119,8 @@ public abstract class Protocol {
                 future.getAndSetAuth(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals("GET")
-                        && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                boolean keepBody = statusCode == 307 || (statusCode == 302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
                         .setCookies(request.getCookies())//
@@ -131,6 +132,17 @@ public abstract class Protocol {
                         .setRealm(request.getRealm())//
                         .setRequestTimeout(request.getRequestTimeout())//
                         .setVirtualHost(request.getVirtualHost());
+                if (keepBody) {
+                    requestBuilder.setBodyEncoding(request.getBodyEncoding());
+                    if (MiscUtils.isNonEmpty(request.getFormParams()))
+                        requestBuilder.setFormParams(request.getFormParams());
+                    if (request.getStringData() != null)
+                        requestBuilder.setBody(request.getStringData());
+                    if (request.getByteData() != null)
+                        requestBuilder.setBody(request.getByteData());
+                    if (request.getBodyGenerator() != null)
+                        requestBuilder.setBody(request.getBodyGenerator());
+                }
 
                 requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
 
