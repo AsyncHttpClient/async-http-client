@@ -30,6 +30,7 @@ public final class Utf8UrlEncoder {
     public final static BitSet RFC3986_UNRESERVED_CHARS = new BitSet(256);
     public final static BitSet RFC3986_RESERVED_CHARS = new BitSet(256);
     public final static BitSet RFC3986_SUBDELIM_CHARS = new BitSet(256);
+    public final static BitSet RFC3986_PCHARS = new BitSet(256);
     public final static BitSet BUILT_PATH_UNTOUCHED_CHARS = new BitSet(256);
     public final static BitSet BUILT_QUERY_UNTOUCHED_CHARS = new BitSet(256);
     // http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
@@ -89,16 +90,19 @@ public final class Utf8UrlEncoder {
         RFC3986_RESERVED_CHARS.set('[');
         RFC3986_RESERVED_CHARS.set(']');
 
-        BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_UNRESERVED_CHARS);
+        RFC3986_PCHARS.or(RFC3986_UNRESERVED_CHARS);
+        RFC3986_PCHARS.or(RFC3986_SUBDELIM_CHARS);
+        RFC3986_PCHARS.set(':');
+        RFC3986_PCHARS.set('@');
+
+        BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_PCHARS);
         BUILT_PATH_UNTOUCHED_CHARS.set('%');
-        BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_SUBDELIM_CHARS);
-        BUILT_PATH_UNTOUCHED_CHARS.set(':');
-        BUILT_PATH_UNTOUCHED_CHARS.set('@');
         BUILT_PATH_UNTOUCHED_CHARS.set('/');
 
-        BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_UNRESERVED_CHARS);
-        BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_RESERVED_CHARS);
+        BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_PCHARS);
         BUILT_QUERY_UNTOUCHED_CHARS.set('%');
+        BUILT_QUERY_UNTOUCHED_CHARS.set('/');
+        BUILT_QUERY_UNTOUCHED_CHARS.set('?');
     }
 
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
