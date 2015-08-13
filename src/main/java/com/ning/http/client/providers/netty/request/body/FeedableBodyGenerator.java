@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
@@ -32,7 +31,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
     private final static byte[] ZERO = "0".getBytes(US_ASCII);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
-    private final AtomicInteger queueSize = new AtomicInteger();
     private FeedListener listener;
 
     @Override
@@ -42,7 +40,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     public void feed(final ByteBuffer buffer, final boolean isLast) throws IOException {
         queue.offer(new BodyPart(buffer, isLast));
-        queueSize.incrementAndGet();
         if (listener != null) {
             listener.onContentAdded();
         }
@@ -56,12 +53,13 @@ public class FeedableBodyGenerator implements BodyGenerator {
         this.listener = listener;
     }
 
+    private static enum PushBodyState {
+        ONGOING, CLOSING, FINISHED;
+    }
+    
     private final class PushBody implements Body {
-        private final int ONGOING = 0;
-        private final int CLOSING = 1;
-        private final int FINISHED = 2;
 
-        private int finishState = 0;
+        private PushBodyState state = PushBodyState.ONGOING;
 
         @Override
         public long getContentLength() {
@@ -73,14 +71,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
             BodyPart nextPart = queue.peek();
             if (nextPart == null) {
                 // Nothing in the queue
-                switch (finishState) {
+                switch (state) {
                 case ONGOING:
                     return 0;
                 case CLOSING:
                     buffer.put(ZERO);
                     buffer.put(END_PADDING);
                     buffer.put(END_PADDING);
-                    finishState = FINISHED;
+                    state = PushBodyState.FINISHED;
                     return buffer.position();
                 case FINISHED:
                     return -1;
@@ -98,7 +96,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
             if (!nextPart.buffer.hasRemaining()) {
                 if (nextPart.isLast) {
-                    finishState = CLOSING;
+                    state = PushBodyState.CLOSING;
                 }
                 queue.remove();
             }
