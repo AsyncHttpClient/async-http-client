@@ -150,7 +150,7 @@ public class AsyncHttpClientConfig {
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
         this.sslSessionCacheSize = sslSessionCacheSize;
-        this.sslSessionTimeout = sslSessionCacheSize;
+        this.sslSessionTimeout = sslSessionTimeout;
         this.providerConfig = providerConfig;
     }
 
