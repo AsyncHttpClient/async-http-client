@@ -78,10 +78,10 @@ public final class FeedableBodyGenerator implements BodyGenerator {
                 case CLOSING:
                     buffer.put(ZERO);
                     buffer.put(END_PADDING);
+                    buffer.put(END_PADDING);
                     finishState = FINISHED;
                     return buffer.position();
                 case FINISHED:
-                    buffer.put(END_PADDING);
                     return -1;
                 }
             }
