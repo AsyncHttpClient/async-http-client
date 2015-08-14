@@ -56,7 +56,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         ONGOING, CLOSING, FINISHED;
     }
     
-    private final class PushBody implements Body {
+    public final class PushBody implements Body {
 
         private PushBodyState state = PushBodyState.ONGOING;
 
