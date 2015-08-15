@@ -32,7 +32,8 @@ public final class FeedableBodyGenerator implements BodyGenerator {
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
     private FeedListener listener;
 
-    private boolean writeChunkBoundaries = true;
+    // must be set to true when using Netty 3 where native chunking is broken
+    private boolean writeChunkBoundaries = false;
 
     @Override
     public Body createBody() {
@@ -54,8 +55,8 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         this.listener = listener;
     }
 
-    public void setWriteChunkBoundaries(boolean writeChunkBoundaries) {
-        this.writeChunkBoundaries = writeChunkBoundaries;
+    public void writeChunkBoundaries() {
+        this.writeChunkBoundaries = true;
     }
 
     private static enum PushBodyState {
@@ -89,7 +90,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
                     return -1;
                 }
             }
-            if(nextPart.buffer.remaining() == 0) {
+            if (nextPart.buffer.remaining() == 0) {
                 // skip empty buffers
                 // if we return 0 here it would suspend the stream - we don't want that
                 queue.remove();
