@@ -33,6 +33,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
     private FeedListener listener;
 
+    // must be set to true when using Netty 3 where native chunking is broken
+    private boolean writeChunkBoundaries = false;
+
     @Override
     public Body createBody() throws IOException {
         return new PushBody();
@@ -53,11 +56,15 @@ public class FeedableBodyGenerator implements BodyGenerator {
         this.listener = listener;
     }
 
+    public void writeChunkBoundaries() {
+        this.writeChunkBoundaries = true;
+    }
+
     private static enum PushBodyState {
         ONGOING, CLOSING, FINISHED;
     }
     
-    private final class PushBody implements Body {
+    public final class PushBody implements Body {
 
         private PushBodyState state = PushBodyState.ONGOING;
 
@@ -84,19 +91,31 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     return -1;
                 }
             }
+            if (nextPart.buffer.remaining() == 0) {
+                // skip empty buffers
+                // if we return 0 here it would suspend the stream - we don't want that
+                queue.remove();
+                if (nextPart.isLast) {
+                    state = writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
+                }
+                return read(buffer);
+            }
             int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
             int size = Math.min(nextPart.buffer.remaining(), capacity);
             if (size != 0) {
-                buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
-                buffer.put(END_PADDING);
+                if (writeChunkBoundaries) {
+                    buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
+                    buffer.put(END_PADDING);
+                }
                 for (int i = 0; i < size; i++) {
                     buffer.put(nextPart.buffer.get());
                 }
-                buffer.put(END_PADDING);
+                if (writeChunkBoundaries)
+                    buffer.put(END_PADDING);
             }
             if (!nextPart.buffer.hasRemaining()) {
                 if (nextPart.isLast) {
-                    state = PushBodyState.CLOSING;
+                    state = writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
                 }
                 queue.remove();
             }

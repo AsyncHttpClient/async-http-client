@@ -12,27 +12,29 @@
  */
 package com.ning.http.client.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.FileAssert.fail;
+
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 
-import org.testng.annotations.Test;
-
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Random;
-
-import static org.testng.Assert.*;
-import static org.testng.FileAssert.fail;
 
 /**
  * Test that the url fetcher is able to communicate via a proxy
@@ -66,77 +68,62 @@ abstract public class ChunkingTest extends AbstractBasicTest {
         }
     }
 
-    /**
-     * Tests that the custom chunked stream result in success and content returned that is unchunked
-     */
+    // So we can just test the returned data is the image,
+    // and doesn't contain the chunked delimeters.
     @Test()
-    public void testBufferLargerThanFile() throws Throwable {
-        doTest(new BufferedInputStream(new FileInputStream(getTestFile()), 400000));
+    public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
+        doTestWithInputStreamBodyGenerator(new BufferedInputStream(new ByteArrayInputStream(LARGE_IMAGE_BYTES), 400000));
     }
 
     @Test()
-    public void testBufferSmallThanFile() throws Throwable {
-        doTest(new BufferedInputStream(new FileInputStream(getTestFile())));
+    public void testBufferSmallThanFileWithStreamBodyGenerator() throws Throwable {
+        doTestWithInputStreamBodyGenerator(new BufferedInputStream(new ByteArrayInputStream(LARGE_IMAGE_BYTES)));
     }
 
     @Test()
-    public void testDirectFile() throws Throwable {
-        doTest(new FileInputStream(getTestFile()));
+    public void testDirectFileWithStreamBodyGenerator() throws Throwable {
+        doTestWithInputStreamBodyGenerator(new ByteArrayInputStream(LARGE_IMAGE_BYTES));
     }
 
-    public void doTest(InputStream is) throws Throwable {
-        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder()//
+    private void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
+        AsyncHttpClientConfig.Builder bc = httpClientBuilder();
+
+        try (AsyncHttpClient c = getAsyncHttpClient(bc.build())) {
+
+            RequestBuilder builder = new RequestBuilder("POST");
+            builder.setUrl(getTargetUrl());
+            builder.setBody(new InputStreamBodyGenerator(is));
+
+            Request r = builder.build();
+
+            final ListenableFuture<Response> responseFuture = c.executeRequest(r);
+            waitForAndAssertResponse(responseFuture);
+        }
+    }
+
+    protected AsyncHttpClientConfig.Builder httpClientBuilder() {
+        return new AsyncHttpClientConfig.Builder()//
                 .setAllowPoolingConnections(true)//
                 .setMaxConnectionsPerHost(1)//
                 .setMaxConnections(1)//
                 .setConnectTimeout(1000)//
-                .setRequestTimeout(1000)//
-                .setFollowRedirect(true);
-
-        try (AsyncHttpClient client = getAsyncHttpClient(bc.build())) {
-            RequestBuilder builder = new RequestBuilder("POST");
-            builder.setUrl(getTargetUrl());
-            // made buff in stream big enough to mark.
-            builder.setBody(new InputStreamBodyGenerator(is));
-
-            ListenableFuture<Response> response = client.executeRequest(builder.build());
-            Response res = response.get();
-            assertNotNull(res.getResponseBodyAsStream());
-            if (500 == res.getStatusCode()) {
-                assertEquals(res.getStatusCode(), 500, "Should have 500 status code");
-                assertTrue(res.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
-                fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + res.getHeader("X-Exception"));
-            } else {
-                assertEquals(readInputStreamToBytes(res.getResponseBodyAsStream()), LARGE_IMAGE_BYTES);
-            }
-        }
-    }
-    
-    
-    private byte[] readInputStreamToBytes(InputStream stream) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try {
-            int nRead;
-            byte[] tmp = new byte[8192];
-
-            while ((nRead = stream.read(tmp, 0, tmp.length)) != -1) {
-                buffer.write(tmp, 0, nRead);
-            }
-
-            buffer.flush();
-            return buffer.toByteArray();
-
-        } finally {
-            try {
-                stream.close();
-            } catch (Exception e2) {
-            }
-        }
+                .setRequestTimeout(1000).setFollowRedirect(true);
     }
 
-    private static File getTestFile() throws URISyntaxException {
-        String testResource1 = "300k.png";
-        URL url = ChunkingTest.class.getClassLoader().getResource(testResource1);
-        return new File(url.toURI());
+    protected void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, java.util.concurrent.ExecutionException, IOException {
+        Response response = responseFuture.get();
+        if (500 == response.getStatusCode()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("==============\n");
+            sb.append("500 response from call\n");
+            sb.append("Headers:" + response.getHeaders() + "\n");
+            sb.append("==============\n");
+            log.debug(sb.toString());
+            assertEquals(response.getStatusCode(), 500, "Should have 500 status code");
+            assertTrue(response.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
+            fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + response.getHeader("X-Exception"));
+        } else {
+            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+        }
     }
 }

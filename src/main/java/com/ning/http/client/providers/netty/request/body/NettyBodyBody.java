@@ -67,7 +67,9 @@ public class NettyBodyBody implements NettyBody {
             
             BodyGenerator bg = future.getRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator) {
-                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+                final FeedableBodyGenerator feedableBodyGenerator = (FeedableBodyGenerator) bg;
+                feedableBodyGenerator.writeChunkBoundaries();
+                feedableBodyGenerator.setListener(new FeedListener() {
                     @Override
                     public void onContentAdded() {
                         channel.getPipeline().get(ChunkedWriteHandler.class).resumeTransfer();

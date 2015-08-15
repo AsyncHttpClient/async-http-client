@@ -57,6 +57,9 @@ public class BodyChunkedInput implements ChunkedInput {
             if (r < 0L) {
                 endOfInput = true;
                 return null;
+            } else if (r == 0 && body instanceof FeedableBodyGenerator.PushBody) {
+                //this will suspend the stream in ChunkedWriteHandler
+                return null;
             } else {
                 endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
                 buffer.flip();
