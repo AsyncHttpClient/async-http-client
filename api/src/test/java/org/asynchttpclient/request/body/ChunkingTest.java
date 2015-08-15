@@ -100,9 +100,9 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     }
 
     private void feed(FeedableBodyGenerator feedableBodyGenerator, InputStream is) throws IOException {
-        try(InputStream inputStream = is) {
+        try (InputStream inputStream = is) {
             byte[] buffer = new byte[512];
-            for(int i =0; (i = inputStream.read(buffer)) > -1;) {
+            for (int i = 0; (i = inputStream.read(buffer)) > -1;) {
                 byte[] chunk = new byte[i];
                 System.arraycopy(buffer, 0, chunk, 0, i);
                 feedableBodyGenerator.feed(ByteBuffer.wrap(chunk), false);
@@ -114,12 +114,11 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
     private AsyncHttpClientConfig.Builder httpClientBuilder() {
         return new AsyncHttpClientConfig.Builder()//
-            .setAllowPoolingConnections(true)//
-            .setMaxConnectionsPerHost(1)//
-            .setMaxConnections(1)//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(1000)
-            .setFollowRedirect(true);
+                .setAllowPoolingConnections(true)//
+                .setMaxConnectionsPerHost(1)//
+                .setMaxConnections(1)//
+                .setConnectTimeout(1000)//
+                .setRequestTimeout(1000).setFollowRedirect(true);
     }
 
     private void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, java.util.concurrent.ExecutionException, IOException {

@@ -65,7 +65,7 @@ public class FeedableBodyGeneratorTest {
 
   private byte[] readFromBody(Body body) throws IOException {
     ByteBuffer byteBuffer = ByteBuffer.allocate(512);
-    long read = body.read(byteBuffer);
+    body.read(byteBuffer);
     byteBuffer.flip();
     byte[] readBytes = new byte[byteBuffer.remaining()];
     byteBuffer.get(readBytes);

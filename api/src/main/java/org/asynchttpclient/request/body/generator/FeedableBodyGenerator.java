@@ -93,22 +93,23 @@ public final class FeedableBodyGenerator implements BodyGenerator {
                 // skip empty buffers
                 // if we return 0 here it would suspend the stream - we don't want that
                 queue.remove();
-                if(nextPart.isLast) {
-                    state =  writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
+                if (nextPart.isLast) {
+                    state = writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
                 }
                 return read(buffer);
             }
             int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
             int size = Math.min(nextPart.buffer.remaining(), capacity);
             if (size != 0) {
-                if(writeChunkBoundaries) {
+                if (writeChunkBoundaries) {
                     buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
                     buffer.put(END_PADDING);
                 }
                 for (int i = 0; i < size; i++) {
                     buffer.put(nextPart.buffer.get());
                 }
-                if(writeChunkBoundaries) buffer.put(END_PADDING);
+                if (writeChunkBoundaries)
+                    buffer.put(END_PADDING);
             }
             if (!nextPart.buffer.hasRemaining()) {
                 if (nextPart.isLast) {
