@@ -47,12 +47,22 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.writeChunkBoundaries();
         byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), false);
-        feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
+        feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         assertEquals(readFromBody(body), "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
         assertEquals(body.read(ByteBuffer.allocate(1)), -1);
+    }
 
+    @Test(groups = "standalone")
+    public void readingBytesReturnsFedContentWithEmptyLastBufferWhenChunkBoundariesEnabledAllContentAvailable() throws Exception {
+        feedableBodyGenerator.writeChunkBoundaries();
+        byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
+        feedableBodyGenerator.feed(ByteBuffer.wrap(content), false);
+        feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
+        Body body = feedableBodyGenerator.createBody();
+        assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+        assertEquals(body.read(ByteBuffer.allocate(1)), -1);
     }
 
     @Test(groups = "standalone")
@@ -61,8 +71,7 @@ public class FeedableBodyGeneratorTest {
         byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
-        assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(readFromBody(body), "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+        assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
         assertEquals(body.read(ByteBuffer.allocate(1)), -1);
 
     }
@@ -74,6 +83,18 @@ public class FeedableBodyGeneratorTest {
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
         assertEquals(body.read(ByteBuffer.allocate(1)), -1);
+    }
+
+
+    @Test(groups = "standalone")
+    public void returnZeroToSuspendStreamWhenNothingIsInQueue() throws Exception {
+        feedableBodyGenerator.writeChunkBoundaries();
+        byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
+        feedableBodyGenerator.feed(ByteBuffer.wrap(content), false);
+
+        Body body = feedableBodyGenerator.createBody();
+        assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
+        assertEquals(body.read(ByteBuffer.allocate(1)), 0);
     }
 
     private byte[] readFromBody(Body body) throws IOException {

@@ -29,6 +29,7 @@ import org.asynchttpclient.request.body.Body;
 public final class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
     private final static byte[] ZERO = "0".getBytes(US_ASCII);
+    private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
     private FeedListener listener;
 
@@ -60,7 +61,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
     }
 
     private enum PushBodyState {
-        ONGOING, CLOSING, FINISHED;
+        ONGOING, FINISHED;
     }
     
     public final class PushBody implements Body {
@@ -74,51 +75,46 @@ public final class FeedableBodyGenerator implements BodyGenerator {
 
         @Override
         public long read(final ByteBuffer buffer) throws IOException {
-            BodyPart nextPart = queue.peek();
-            if (nextPart == null) {
-                // Nothing in the queue
-                switch (state) {
+            switch (state) {
                 case ONGOING:
-                    return 0;
-                case CLOSING:
-                    buffer.put(ZERO);
-                    buffer.put(END_PADDING);
-                    buffer.put(END_PADDING);
-                    state = PushBodyState.FINISHED;
-                    return buffer.position();
+                    return readNextPart(buffer);
                 case FINISHED:
                     return -1;
+                default:
+                    throw new IllegalStateException("Illegal process state.");
+            }
+        }
+
+        private long readNextPart(ByteBuffer buffer) throws IOException {
+            int reads = 0;
+            while (buffer.hasRemaining() && state != PushBodyState.FINISHED) {
+                BodyPart nextPart = queue.peek();
+                if (nextPart == null) {
+                    // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
+                    return reads;
+                } else if (!nextPart.buffer.hasRemaining() && !nextPart.isLast) {
+                    // skip empty buffers
+                    queue.remove();
+                } else {
+                    readBodyPart(buffer, nextPart);
+                    reads++;
                 }
             }
-            if (nextPart.buffer.remaining() == 0) {
-                // skip empty buffers
-                // if we return 0 here it would suspend the stream - we don't want that
+            return reads;
+        }
+
+        private void readBodyPart(ByteBuffer buffer, BodyPart part) {
+            part.initBoundaries();
+            move(buffer, part.size);
+            move(buffer, part.buffer);
+            move(buffer, part.endPadding);
+
+            if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
+                if (part.isLast) {
+                    state = PushBodyState.FINISHED;
+                }
                 queue.remove();
-                if (nextPart.isLast) {
-                    state = writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
-                }
-                return read(buffer);
             }
-            int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
-            int size = Math.min(nextPart.buffer.remaining(), capacity);
-            if (size != 0) {
-                if (writeChunkBoundaries) {
-                    buffer.put(Integer.toHexString(size).getBytes(US_ASCII));
-                    buffer.put(END_PADDING);
-                }
-                for (int i = 0; i < size; i++) {
-                    buffer.put(nextPart.buffer.get());
-                }
-                if (writeChunkBoundaries)
-                    buffer.put(END_PADDING);
-            }
-            if (!nextPart.buffer.hasRemaining()) {
-                if (nextPart.isLast) {
-                    state = writeChunkBoundaries ? PushBodyState.CLOSING : PushBodyState.FINISHED;
-                }
-                queue.remove();
-            }
-            return size;
         }
 
         @Override
@@ -127,13 +123,56 @@ public final class FeedableBodyGenerator implements BodyGenerator {
 
     }
 
-    private final static class BodyPart {
+
+    private void move(ByteBuffer destination, ByteBuffer source) {
+        while(destination.hasRemaining() && source.hasRemaining()) {
+            destination.put(source.get());
+        }
+    }
+
+    private final class BodyPart {
         private final boolean isLast;
+        private ByteBuffer size = null;
         private final ByteBuffer buffer;
+        private ByteBuffer endPadding = null;
 
         public BodyPart(final ByteBuffer buffer, final boolean isLast) {
             this.buffer = buffer;
             this.isLast = isLast;
+        }
+
+        private void initBoundaries() {
+            if(size == null && endPadding == null) {
+                if (FeedableBodyGenerator.this.writeChunkBoundaries) {
+                    if(buffer.hasRemaining()) {
+                        final byte[] sizeAsHex = Integer.toHexString(buffer.remaining()).getBytes(US_ASCII);
+                        size = ByteBuffer.allocate(sizeAsHex.length + END_PADDING.length);
+                        size.put(sizeAsHex);
+                        size.put(END_PADDING);
+                        size.flip();
+                    } else {
+                        size = EMPTY_BUFFER;
+                    }
+
+                    if(isLast) {
+                        endPadding = ByteBuffer.allocate(END_PADDING.length * 3 + ZERO.length);
+                        if(buffer.hasRemaining()) {
+                            endPadding.put(END_PADDING);
+                        }
+
+                        //add last empty
+                        endPadding.put(ZERO);
+                        endPadding.put(END_PADDING);
+                        endPadding.put(END_PADDING);
+                        endPadding.flip();
+                    } else {
+                        endPadding = ByteBuffer.wrap(END_PADDING);
+                    }
+                } else {
+                    size = EMPTY_BUFFER;
+                    endPadding = EMPTY_BUFFER;
+                }
+            }
         }
     }
 }
