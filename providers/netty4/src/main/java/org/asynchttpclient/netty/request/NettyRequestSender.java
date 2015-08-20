@@ -16,6 +16,8 @@ package org.asynchttpclient.netty.request;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
@@ -136,8 +138,7 @@ public final class NettyRequestSender {
     /**
      * Using CONNECT depends on wither we can fetch a valid channel or not Loop
      * until we get a valid channel from the pool and it's still valid once the
-     * request is built
-     * @
+     * request is built @
      */
     @SuppressWarnings("unused")
     private <T> ListenableFuture<T> sendRequestThroughSslProxy(//
@@ -155,7 +156,8 @@ public final class NettyRequestSender {
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false);
 
             if (Channels.isChannelValid(channel))
-                // if the channel is still active, we can use it, otherwise try gain
+                // if the channel is still active, we can use it, otherwise try
+                // gain
                 return sendRequestWithCachedChannel(request, proxyServer, newFuture, asyncHandler, channel);
             else
                 // pool is empty
@@ -188,8 +190,7 @@ public final class NettyRequestSender {
             return pollAndVerifyCachedChannel(request, proxyServer, asyncHandler);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
-            AsyncHandler<T> asyncHandler, Channel channel) {
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
@@ -197,17 +198,15 @@ public final class NettyRequestSender {
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
 
-        LOGGER.debug("Using cached Channel {} for {} '{}'",
-                channel,
-                future.getNettyRequest().getHttpRequest().getMethod(),
-                future.getNettyRequest().getHttpRequest().getUri());
+        LOGGER.debug("Using cached Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
 
         if (Channels.isChannelValid(channel)) {
             Channels.setAttribute(channel, future);
             writeRequest(future, channel);
         } else {
             // bad luck, the channel was closed in-between
-            // there's a very good chance onClose was already notified but the future wasn't already registered
+            // there's a very good chance onClose was already notified but the
+            // future wasn't already registered
             handleUnexpectedClosedChannel(channel, future);
         }
 
@@ -226,8 +225,8 @@ public final class NettyRequestSender {
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         boolean connect = future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
-        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, proxy, realm));
-        requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, connect));
+        requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
+        requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxy, connect));
 
         // Do not throw an exception when we need an extra connection for a
         // redirect
@@ -335,7 +334,7 @@ public final class NettyRequestSender {
 
     private ChannelFuture connect(Request request, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
         InetSocketAddress remoteAddress = remoteAddress(request, proxy, useProxy);
-        
+
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
 
@@ -443,7 +442,7 @@ public final class NettyRequestSender {
             }
         }
 
-        if (fc.replayRequest()  && future.canBeReplayed()) {
+        if (fc.replayRequest() && future.canBeReplayed()) {
             replayRequest(future, fc, channel);
             replayed = true;
         }
@@ -517,7 +516,7 @@ public final class NettyRequestSender {
             }
         };
     }
-    
+
     public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
         Channels.setAttribute(channel, newExecuteNextRequestCallback(future, nextRequest));
     }

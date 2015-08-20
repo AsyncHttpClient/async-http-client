@@ -16,11 +16,27 @@ package org.asynchttpclient.netty.request;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_VERSION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 
 import java.nio.charset.Charset;
 import java.util.List;
@@ -60,10 +76,6 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         super(config);
     }
 
-    protected List<String> getProxyAuthorizationHeader(Request request) {
-        return request.getHeaders().get(PROXY_AUTHORIZATION);
-    }
-    
     private NettyBody body(Request request, boolean connect) {
         NettyBody nettyBody = null;
         if (!connect) {
@@ -75,7 +87,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
             else if (request.getCompositeByteData() != null)
                 nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
-                
+
             else if (request.getStringData() != null)
                 nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
@@ -101,8 +113,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
             else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(),
-                        fileBodyGenerator.getRegionLength(), config);
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream(), config);
@@ -119,12 +130,12 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             // don't override authorization but append
             headers.add(AUTHORIZATION, authorizationHeader);
     }
-    
+
     public void setProxyAuthorizationHeader(HttpHeaders headers, String proxyAuthorizationHeader) {
         if (proxyAuthorizationHeader != null)
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
-    
+
     public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) {
 
         Uri uri = request.getUri();
@@ -199,9 +210,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         // don't override authorization but append
-        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, realm));
+        addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
 
-        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, connect));
+        setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyServer, realm, connect));
 
         // Add default accept headers
         if (!headers.contains(ACCEPT))

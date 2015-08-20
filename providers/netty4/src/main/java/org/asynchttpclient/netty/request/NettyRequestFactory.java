@@ -31,6 +31,8 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.isSecure;
 import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -75,10 +77,6 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         super(config);
     }
 
-    protected List<String> getProxyAuthorizationHeader(Request request) {
-        return request.getHeaders().get(PROXY_AUTHORIZATION);
-    }
-    
     private NettyBody body(Request request, boolean connect) {
         NettyBody nettyBody = null;
         if (!connect) {
@@ -90,7 +88,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
             else if (request.getCompositeByteData() != null)
                 nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
-                
+
             else if (request.getStringData() != null)
                 nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
@@ -133,7 +131,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             // don't override authorization but append
             headers.add(AUTHORIZATION, authorizationHeader);
     }
-    
+
     public void setProxyAuthorizationHeader(HttpHeaders headers, String proxyAuthorizationHeader) {
         if (proxyAuthorizationHeader != null)
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
@@ -144,9 +142,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         Uri uri = request.getUri();
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
-        
+
         boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!HttpUtils.isSecure(uri) || config.isAllowPoolingSslConnections());
-        
+
         HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
 
@@ -198,10 +196,10 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         boolean webSocket = isWebSocket(uri.getScheme());
         if (!connect && webSocket) {
             headers.set(UPGRADE, HttpHeaders.Values.WEBSOCKET)//
-            .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
-            .set(ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()))//
-            .set(SEC_WEBSOCKET_KEY, getKey())//
-            .set(SEC_WEBSOCKET_VERSION, "13");
+                    .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
+                    .set(ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()))//
+                    .set(SEC_WEBSOCKET_KEY, getKey())//
+                    .set(SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(CONNECTION)) {
             String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
@@ -210,14 +208,14 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         }
 
         if (!headers.contains(HOST))
-            headers.set(HOST,  hostHeader(request, uri));
+            headers.set(HOST, hostHeader(request, uri));
 
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         // don't override authorization but append
-        addAuthorizationHeader(headers, systematicAuthorizationHeader(request, realm));
+        addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
 
-        setProxyAuthorizationHeader(headers, systematicProxyAuthorizationHeader(request, proxyServer, realm, connect));
+        setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyServer, realm, connect));
 
         // Add default accept headers
         if (!headers.contains(ACCEPT))

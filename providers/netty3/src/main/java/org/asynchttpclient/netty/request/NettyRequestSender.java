@@ -15,6 +15,8 @@ package org.asynchttpclient.netty.request;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
@@ -221,8 +223,8 @@ public final class NettyRequestSender {
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         boolean connect = future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
-        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, proxy, realm));
-        requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, connect));
+        requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
+        requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxy, connect));
 
         // Do not throw an exception when we need an extra connection for a
         // redirect
