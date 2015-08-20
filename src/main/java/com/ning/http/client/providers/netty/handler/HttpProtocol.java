@@ -47,7 +47,7 @@ import com.ning.http.client.providers.netty.request.NettyRequestSender;
 import com.ning.http.client.providers.netty.response.NettyResponseBodyPart;
 import com.ning.http.client.providers.netty.response.NettyResponseHeaders;
 import com.ning.http.client.providers.netty.response.NettyResponseStatus;
-import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
+import com.ning.http.client.spnego.SpnegoEngine;
 import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;

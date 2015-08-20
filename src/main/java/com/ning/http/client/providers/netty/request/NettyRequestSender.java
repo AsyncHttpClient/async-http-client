@@ -18,6 +18,8 @@ import static com.ning.http.util.AsyncHttpProviderUtils.useProxyConnect;
 import static com.ning.http.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
 import static com.ning.http.util.AsyncHttpProviderUtils.getDefaultPort;
 import static com.ning.http.util.AsyncHttpProviderUtils.requestTimeout;
+import static com.ning.http.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
+import static com.ning.http.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static com.ning.http.util.ProxyUtils.avoidProxy;
 import static com.ning.http.util.ProxyUtils.getProxyServer;
 
@@ -257,8 +259,8 @@ public final class NettyRequestSender {
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         boolean connect = future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
-        requestFactory.addAuthorizationHeader(headers, requestFactory.firstRequestOnlyAuthorizationHeader(request, uri, proxy, realm));
-        requestFactory.setProxyAuthorizationHeader(headers, requestFactory.firstRequestOnlyProxyAuthorizationHeader(request, proxy, connect));
+        requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, uri, proxy, realm));
+        requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxy, connect));
 
         // Do not throw an exception when we need an extra connection for a
         // redirect

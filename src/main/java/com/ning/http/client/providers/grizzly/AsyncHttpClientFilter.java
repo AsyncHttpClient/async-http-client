@@ -36,6 +36,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
@@ -60,6 +62,10 @@ import org.slf4j.LoggerFactory;
  */
 final class AsyncHttpClientFilter extends BaseFilter {
     private final static Logger LOGGER = LoggerFactory.getLogger(AsyncHttpClientFilter.class);
+    
+    private final static Attribute<Boolean> USED_CONNECTION =
+            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(
+                    AsyncHttpClientFilter.class.getName() + ".used-connection");
     
     // Lazy NTLM instance holder
     private static class NTLM_INSTANCE_HOLDER {
@@ -104,6 +110,13 @@ final class AsyncHttpClientFilter extends BaseFilter {
 
     private boolean sendAsGrizzlyRequest(final HttpTransactionContext httpTxCtx, final FilterChainContext ctx) throws IOException {
         final Connection connection = ctx.getConnection();
+        
+        final boolean isUsedConnection = Boolean.TRUE.equals(USED_CONNECTION.get(connection));
+        if (!isUsedConnection) {
+            USED_CONNECTION.set(connection, Boolean.TRUE);
+        }
+
+        
         final Request ahcRequest = httpTxCtx.getAhcRequest();
         if (isUpgradeRequest(httpTxCtx.getAsyncHandler()) && isWSRequest(httpTxCtx.requestUri)) {
             httpTxCtx.isWSRequest = true;
@@ -120,7 +133,7 @@ final class AsyncHttpClientFilter extends BaseFilter {
             // once the tunnel is established, sendAsGrizzlyRequest will
             // be called again and we'll finally send the request over the tunnel
             return establishConnectTunnel(proxy, httpTxCtx, uri, ctx);
-        }
+        }        
         final HttpRequestPacket.Builder builder = HttpRequestPacket.builder().protocol(Protocol.HTTP_1_1).method(method);
 
         if (useProxy && !((secure || httpTxCtx.isWSRequest) &&
@@ -164,9 +177,14 @@ final class AsyncHttpClientFilter extends BaseFilter {
         addHostHeaderIfNeeded(ahcRequest, uri, requestPacket);
         addServiceHeaders(requestPacket);
         addAcceptHeaders(requestPacket);
-        addAuthorizationHeader(connection, getRealm(ahcRequest), requestPacket);
+        
+        final Realm realm = getRealm(ahcRequest);
+        addAuthorizationHeader(ahcRequest, requestPacket, realm,
+                uri, proxy, isUsedConnection);
+        
         if (useProxy) {
-            addProxyHeaders(proxy, requestPacket);
+            addProxyHeaders(ahcRequest, requestPacket, realm, proxy,
+                    isUsedConnection, false);
         }
 
         ctx.notifyDownstream(new SSLSwitchingEvent(connection, secure,
@@ -193,8 +211,10 @@ final class AsyncHttpClientFilter extends BaseFilter {
         final Request request = httpCtx.getAhcRequest();
         addHostHeaderIfNeeded(request, uri, requestPacket);
         addServiceHeaders(requestPacket);
-        addAuthorizationHeader(connection, getRealm(request), requestPacket);
-        addProxyHeaders(proxy, requestPacket);
+        
+        final Realm realm = getRealm(request);
+        addAuthorizationHeader(request, requestPacket, realm, uri, proxy, false);
+        addProxyHeaders(request, requestPacket, realm, proxy, false, true);
         
         // turn off SSL, because CONNECT will be sent in plain mode
         ctx.notifyDownstream(new SSLSwitchingEvent(connection, false));
@@ -265,22 +285,57 @@ final class AsyncHttpClientFilter extends BaseFilter {
         return method.getPayloadExpectation() != Method.PayloadExpectation.NOT_ALLOWED;
     }
 
-    private void addAuthorizationHeader(final Connection c, final Realm realm, final HttpRequestPacket requestPacket) {
-        if (realm != null && realm.getUsePreemptiveAuth()) {
-            final String authHeaderValue = generateAuthHeader(c, realm);
-            if (authHeaderValue != null) {
-                requestPacket.addHeader(Header.Authorization, authHeaderValue);
+    private void addAuthorizationHeader(final Request req,
+            final HttpRequestPacket requestPacket,
+            final Realm realm,
+            final Uri uri, ProxyServer proxy,
+            final boolean isUsedConnection) throws IOException {
+        
+        if (!isUsedConnection) {
+            final String conAuth =
+                    AuthenticatorUtils.perConnectionAuthorizationHeader(
+                            req, uri, proxy, realm);
+            if (conAuth != null) {
+                requestPacket.addHeader(Header.Authorization, conAuth);
             }
+        }
+        
+        final String reqAuth = AuthenticatorUtils.perRequestAuthorizationHeader(
+                req, uri, realm);
+        if (reqAuth != null) {
+            requestPacket.addHeader(Header.Authorization, reqAuth);
         }
     }
 
-    private void addProxyHeaders(final ProxyServer proxy,
-            final HttpRequestPacket requestPacket) {
+    private void addProxyHeaders(
+            final Request req,
+            final HttpRequestPacket requestPacket,
+            final Realm realm,
+            final ProxyServer proxy,
+            final boolean isUsedConnection,
+            final boolean isConnect) throws IOException {
         
         setKeepAliveForHeader(Header.ProxyConnection, requestPacket);
+        setProxyAuthorizationHeader(req, requestPacket, proxy, realm,
+                isUsedConnection, isConnect);
+    }
+
+    private void setProxyAuthorizationHeader(final Request req, final HttpRequestPacket requestPacket, final ProxyServer proxy, final Realm realm, final boolean isUsedConnection, final boolean isConnect) throws IOException {
+        final String reqAuth = AuthenticatorUtils.perRequestProxyAuthorizationHeader(
+                req, realm, proxy, isConnect);
         
-        if (proxy.getPrincipal() != null) {
-            requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
+        if (reqAuth != null) {
+            requestPacket.setHeader(Header.ProxyAuthorization, reqAuth);
+            return;
+        }
+        
+        if (!isUsedConnection) {
+            final String conAuth =
+                    AuthenticatorUtils.perConnectionProxyAuthorizationHeader(
+                            req, proxy, isConnect);
+            if (conAuth != null) {
+                requestPacket.setHeader(Header.ProxyAuthorization, conAuth);
+            }
         }
     }
 
