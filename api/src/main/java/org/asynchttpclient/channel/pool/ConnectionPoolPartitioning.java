@@ -18,7 +18,7 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 public interface ConnectionPoolPartitioning {
 
-    public class ProxyPartitionKey {
+    class ProxyPartitionKey {
         private final String proxyUrl;
         private final String targetHostBaseUrl;
 
@@ -38,7 +38,7 @@ public interface ConnectionPoolPartitioning {
 
     Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer);
 
-    public enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
+    enum PerHostConnectionPoolPartitioning implements ConnectionPoolPartitioning {
 
         INSTANCE;
 

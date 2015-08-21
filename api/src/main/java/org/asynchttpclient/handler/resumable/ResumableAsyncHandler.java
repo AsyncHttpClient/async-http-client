@@ -247,7 +247,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * An interface to implement in order to manage the way the incomplete file management are handled.
      */
-    public static interface ResumableProcessor {
+    public interface ResumableProcessor {
 
         /**
          * Associate a key with the number of bytes successfully transferred.

@@ -37,7 +37,7 @@ public interface SSLEngineFactory {
      */
     SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException;
 
-    public static class DefaultSSLEngineFactory implements SSLEngineFactory {
+    class DefaultSSLEngineFactory implements SSLEngineFactory {
 
         private final AsyncHttpClientConfig config;
 
