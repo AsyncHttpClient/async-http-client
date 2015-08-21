@@ -47,7 +47,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         }
     }
 
-    public static interface FeedListener {
+    public interface FeedListener {
         void onContentAdded();
     }
 
@@ -59,7 +59,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         this.writeChunkBoundaries = true;
     }
 
-    private static enum PushBodyState {
+    private enum PushBodyState {
         ONGOING, CLOSING, FINISHED;
     }
     

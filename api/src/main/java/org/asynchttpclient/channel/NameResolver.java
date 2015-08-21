@@ -19,7 +19,7 @@ public interface NameResolver {
 
     InetAddress resolve(String name) throws UnknownHostException;
 
-    public enum JdkNameResolver implements NameResolver {
+    enum JdkNameResolver implements NameResolver {
 
         INSTANCE;
 

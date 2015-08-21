@@ -83,7 +83,7 @@ public interface ListenableFuture<V> extends Future<V> {
      */
     ListenableFuture<V> addListener(Runnable listener, Executor exec);
 
-    public class CompletedFailure<T> implements ListenableFuture<T>{
+    class CompletedFailure<T> implements ListenableFuture<T>{
 
         private final ExecutionException e;
 

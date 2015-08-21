@@ -36,7 +36,7 @@ public class ProxyServer {
 
         private final String protocol;
 
-        private Protocol(final String protocol) {
+        Protocol(final String protocol) {
             this.protocol = protocol;
         }
 

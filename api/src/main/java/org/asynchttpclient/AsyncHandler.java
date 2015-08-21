@@ -45,7 +45,7 @@ package org.asynchttpclient;
  */
 public interface AsyncHandler<T> {
 
-    public static enum State {
+    enum State {
 
         /**
          * Stop the processing.
