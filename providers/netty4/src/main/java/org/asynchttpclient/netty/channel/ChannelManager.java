@@ -38,6 +38,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.io.IOException;
@@ -172,7 +173,12 @@ public class ChannelManager {
 
         // check if external EventLoopGroup is defined
         allowReleaseEventLoopGroup = nettyConfig.getEventLoopGroup() == null;
-        eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyConfig.getEventLoopGroup();
+        if (allowReleaseEventLoopGroup) {
+            DefaultThreadFactory threadFactory = new DefaultThreadFactory(config.getNameOrDefault());
+            eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
+        } else {
+            eventLoopGroup = nettyConfig.getEventLoopGroup();
+        }
         if (eventLoopGroup instanceof OioEventLoopGroup)
             throw new IllegalArgumentException("Oio is not supported");
 

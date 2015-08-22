@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
@@ -52,6 +53,7 @@ import org.asynchttpclient.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.PrefixIncrementThreadFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -59,7 +61,9 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioClientBossPool;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioWorkerPool;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -67,6 +71,8 @@ import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.ThreadNameDeterminer;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,11 +187,16 @@ public class ChannelManager {
 
         } else {
             ExecutorService e = nettyConfig.getBossExecutorService();
-            if (e == null)
-                e = Executors.newCachedThreadPool();
+            if (e == null) {
+                ThreadFactory threadFactory = new PrefixIncrementThreadFactory(
+                        config.getNameOrDefault() + "-boss-");
+                e = Executors.newCachedThreadPool(threadFactory);
+            }
             int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
             LOGGER.trace("Number of application's worker threads is {}", numWorkers);
-            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
+            NioClientBossPool nioClientBossPool = new NioClientBossPool(e, 1, new HashedWheelTimer(), ThreadNameDeterminer.CURRENT);
+            NioWorkerPool nioWorkerPool = new NioWorkerPool(config.executorService(), numWorkers, ThreadNameDeterminer.CURRENT);
+            socketChannelFactory = new NioClientSocketChannelFactory(nioClientBossPool, nioWorkerPool);
             allowReleaseSocketChannelFactory = true;
         }
 

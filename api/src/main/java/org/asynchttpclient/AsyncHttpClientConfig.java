@@ -34,6 +34,7 @@ import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
+import org.asynchttpclient.util.PrefixIncrementThreadFactory;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
@@ -65,6 +66,8 @@ public class AsyncHttpClientConfig {
         }
         AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
+
+    protected String name;
 
     protected int connectTimeout;
 
@@ -118,7 +121,8 @@ public class AsyncHttpClientConfig {
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(int connectTimeout,//
+    private AsyncHttpClientConfig(String name,//
+            int connectTimeout,//
             int maxConnections,//
             int maxConnectionsPerHost,//
             int requestTimeout,//
@@ -160,6 +164,7 @@ public class AsyncHttpClientConfig {
             boolean keepEncodingHeader,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
 
+        this.name = name;
         this.connectTimeout = connectTimeout;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
@@ -178,7 +183,15 @@ public class AsyncHttpClientConfig {
         this.proxyServerSelector = proxyServerSelector;
         this.compressionEnforced = compressionEnforced;
         this.userAgent = userAgent;
-        this.applicationThreadPool = applicationThreadPool == null ? Executors.newCachedThreadPool() : applicationThreadPool;
+
+        if (applicationThreadPool != null) {
+            this.applicationThreadPool = applicationThreadPool;
+        } else {
+            PrefixIncrementThreadFactory threadFactory = new PrefixIncrementThreadFactory(
+                    getNameOrDefault() + "-");
+            this.applicationThreadPool = Executors.newCachedThreadPool(threadFactory);
+        }
+
         this.realm = realm;
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
@@ -201,6 +214,32 @@ public class AsyncHttpClientConfig {
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
         this.keepEncodingHeader = keepEncodingHeader;
+    }
+
+    /**
+     * Return the name of {@link AsyncHttpClient}, which is used for thread naming
+     * and debugging.
+     *
+     * @return the name.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Return the name of {@link AsyncHttpClient}, or default string if name is null or empty.
+     *
+     * @return the name.
+     */
+    public String getNameOrDefault() {
+        String r = name;
+        if (r == null || r.isEmpty()) {
+            r = defaultName();
+        }
+        if (r == null || r.isEmpty()) {
+            r = "AsyncHttpClient";
+        }
+        return r;
     }
 
     /**
@@ -577,6 +616,7 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
+        private String name = defaultName();
         private int connectTimeout = defaultConnectTimeout();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
@@ -622,6 +662,16 @@ public class AsyncHttpClientConfig {
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
+        }
+
+        /**
+         * Set the name of {@link AsyncHttpClient}. That name is used for thread
+         * naming and can be used for debugging multiple {@link AsyncHttpClient}
+         * instance.
+         */
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
         }
 
         /**
@@ -1113,6 +1163,7 @@ public class AsyncHttpClientConfig {
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
+            name = prototype.getName();
             allowPoolingConnections = prototype.isAllowPoolingConnections();
             connectTimeout = prototype.getConnectTimeout();
             pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
@@ -1178,7 +1229,8 @@ public class AsyncHttpClientConfig {
             if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
 
-            return new AsyncHttpClientConfig(connectTimeout,//
+            return new AsyncHttpClientConfig(name,//
+                    connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//
                     requestTimeout,//
