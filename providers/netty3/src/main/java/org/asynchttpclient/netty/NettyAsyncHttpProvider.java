@@ -70,7 +70,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 channelManager.close();
 
                 // FIXME shouldn't close if not allowed
-                config.executorService().shutdown();
+                config.getExecutorService().shutdown();
 
                 if (allowStopNettyTimer)
                     nettyTimer.stop();

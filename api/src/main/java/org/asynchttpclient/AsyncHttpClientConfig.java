@@ -94,7 +94,7 @@ public class AsyncHttpClientConfig {
 
     protected boolean compressionEnforced;
     protected String userAgent;
-    protected ExecutorService applicationThreadPool;
+    protected ExecutorService executorService;
     protected Realm realm;
     protected List<RequestFilter> requestFilters;
     protected List<ResponseFilter> responseFilters;
@@ -137,7 +137,7 @@ public class AsyncHttpClientConfig {
             boolean followRedirect, //
             int maxRedirects, //
             boolean strict302Handling, //
-            ExecutorService applicationThreadPool,//
+            ExecutorService executorService,//
             ProxyServerSelector proxyServerSelector, //
             boolean compressionEnforced, //
             String userAgent,//
@@ -184,12 +184,12 @@ public class AsyncHttpClientConfig {
         this.compressionEnforced = compressionEnforced;
         this.userAgent = userAgent;
 
-        if (applicationThreadPool != null) {
-            this.applicationThreadPool = applicationThreadPool;
+        if (executorService != null) {
+            this.executorService = executorService;
         } else {
             PrefixIncrementThreadFactory threadFactory = new PrefixIncrementThreadFactory(
                     getNameOrDefault() + "-");
-            this.applicationThreadPool = Executors.newCachedThreadPool(threadFactory);
+            this.executorService = Executors.newCachedThreadPool(threadFactory);
         }
 
         this.realm = realm;
@@ -375,8 +375,8 @@ public class AsyncHttpClientConfig {
      *         If no {@link ExecutorService} has been explicitly provided, this
      *         method will return <code>null</code>
      */
-    public ExecutorService executorService() {
-        return applicationThreadPool;
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     /**
@@ -494,7 +494,7 @@ public class AsyncHttpClientConfig {
     public boolean isValid() {
         boolean atpRunning = true;
         try {
-            atpRunning = applicationThreadPool.isShutdown();
+            atpRunning = executorService.isShutdown();
         } catch (Exception ignore) {
             // isShutdown() will thrown an exception in an EE7 environment
             // when using a ManagedExecutorService.
@@ -1179,7 +1179,7 @@ public class AsyncHttpClientConfig {
             userAgent = prototype.getUserAgent();
             followRedirect = prototype.isFollowRedirect();
             compressionEnforced = prototype.isCompressionEnforced();
-            applicationThreadPool = prototype.executorService();
+            applicationThreadPool = prototype.getExecutorService();
 
             requestFilters.clear();
             responseFilters.clear();

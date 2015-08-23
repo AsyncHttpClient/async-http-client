@@ -80,7 +80,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureExecutors() {
-        applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory() {
+        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "AsyncHttpClient-Callback");
                 t.setDaemon(true);
@@ -160,10 +160,10 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setApplicationThreadPool(ExecutorService applicationThreadPool) {
-        if (this.applicationThreadPool != null) {
-            this.applicationThreadPool.shutdownNow();
+        if (this.executorService != null) {
+            this.executorService.shutdownNow();
         }
-        this.applicationThreadPool = applicationThreadPool;
+        this.executorService = applicationThreadPool;
         return this;
     }
 

@@ -195,7 +195,7 @@ public class ChannelManager {
             int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
             LOGGER.trace("Number of application's worker threads is {}", numWorkers);
             NioClientBossPool nioClientBossPool = new NioClientBossPool(e, 1, new HashedWheelTimer(), ThreadNameDeterminer.CURRENT);
-            NioWorkerPool nioWorkerPool = new NioWorkerPool(config.executorService(), numWorkers, ThreadNameDeterminer.CURRENT);
+            NioWorkerPool nioWorkerPool = new NioWorkerPool(config.getExecutorService(), numWorkers, ThreadNameDeterminer.CURRENT);
             socketChannelFactory = new NioClientSocketChannelFactory(nioClientBossPool, nioWorkerPool);
             allowReleaseSocketChannelFactory = true;
         }
@@ -330,7 +330,7 @@ public class ChannelManager {
         }
 
         // FIXME also shutdown in provider
-        config.executorService().shutdown();
+        config.getExecutorService().shutdown();
         if (allowReleaseSocketChannelFactory) {
             socketChannelFactory.releaseExternalResources();
             httpBootstrap.releaseExternalResources();
