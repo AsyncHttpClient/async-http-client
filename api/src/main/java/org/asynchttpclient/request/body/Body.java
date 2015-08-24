@@ -22,6 +22,24 @@ import java.nio.ByteBuffer;
  */
 public interface Body extends Closeable {
 
+    enum State {
+
+        /**
+         * There's something to read
+         */
+        Continue,
+
+        /**
+         * There's nothing to read and input has to suspend
+         */
+        Suspend,
+
+        /**
+         * There's nothing to read and input has to stop
+         */
+        Stop;
+    }
+
     /**
      * Gets the length of the body.
      *
@@ -37,5 +55,5 @@ public interface Body extends Closeable {
      * @throws IOException If the chunk could not be read.
      */
     // FIXME introduce a visitor pattern so that Netty can pass a pooled buffer
-    long read(ByteBuffer buffer) throws IOException;
+    State read(ByteBuffer buffer) throws IOException;
 }

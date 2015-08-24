@@ -36,22 +36,21 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
             return bytes.length;
         }
 
-        public long read(ByteBuffer byteBuffer) throws IOException {
+        public State read(ByteBuffer byteBuffer) throws IOException {
 
             if (eof) {
-                return -1;
+                return State.Stop;
             }
 
             final int remaining = bytes.length - lastPosition;
             if (remaining <= byteBuffer.capacity()) {
                 byteBuffer.put(bytes, lastPosition, remaining);
                 eof = true;
-                return remaining;
             } else {
                 byteBuffer.put(bytes, lastPosition, byteBuffer.capacity());
                 lastPosition = lastPosition + byteBuffer.capacity();
-                return byteBuffer.capacity();
             }
+            return State.Continue;
         }
 
         public void close() throws IOException {

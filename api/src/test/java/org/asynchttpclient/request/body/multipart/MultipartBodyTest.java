@@ -16,6 +16,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.request.body.Body;
+import org.asynchttpclient.request.body.Body.State;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.request.body.multipart.FilePart;
 import org.asynchttpclient.request.body.multipart.MultipartUtils;
@@ -35,7 +36,7 @@ import java.util.List;
 public class MultipartBodyTest {
 
     @Test(groups = "fast")
-    public void testBasics() {
+    public void testBasics() throws IOException {
         final List<Part> parts = new ArrayList<>();
 
         // add a file
@@ -64,7 +65,7 @@ public class MultipartBodyTest {
         return file;
     }
 
-    private static void compareContentLength(final List<Part> parts) {
+    private static void compareContentLength(final List<Part> parts) throws IOException {
         Assert.assertNotNull(parts);
         // get expected values
         final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
@@ -72,22 +73,12 @@ public class MultipartBodyTest {
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;
-            long totalBytes = 0;
             while (!last) {
-                long readBytes = 0;
-                try {
-                    readBytes = multipartBody.read(buffer);
-                } catch (IOException ie) {
-                    Assert.fail("read failure");
-                }
-                if (readBytes > 0) {
-                    totalBytes += readBytes;
-                } else {
+                if (multipartBody.read(buffer) == State.Stop) {
                     last = true;
                 }
-                buffer.clear();
             }
-            Assert.assertEquals(totalBytes, expectedContentLength);
+            Assert.assertEquals(buffer.position(), expectedContentLength);
         } finally {
             try {
                 multipartBody.close();

@@ -16,7 +16,6 @@ package org.asynchttpclient.netty.request.body;
 import java.nio.ByteBuffer;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.stream.ChunkedInput;
 
@@ -54,17 +53,19 @@ public class BodyChunkedInput implements ChunkedInput {
             return null;
         } else {
             ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-            long r = body.read(buffer);
-            if (r < 0L) {
-                endOfInput = true;
-                return null;
-            } else if (r == 0 && body instanceof FeedableBodyGenerator.PushBody) {
-                //this will suspend the stream in ChunkedWriteHandler
-                return null;
-            } else {
-                endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
-                buffer.flip();
-                return ChannelBuffers.wrappedBuffer(buffer);
+            Body.State state = body.read(buffer);
+            switch (state) {
+                case Stop:
+                    endOfInput = true;
+                    return null;
+                case Suspend:
+                    //this will suspend the stream in ChunkedWriteHandler
+                    return null;
+                case Continue:
+                    buffer.flip();
+                    return ChannelBuffers.wrappedBuffer(buffer);
+                default:
+                    throw new IllegalStateException("Unknown state: " + state);
             }
         }
     }

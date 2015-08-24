@@ -60,13 +60,9 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         this.writeChunkBoundaries = true;
     }
 
-    private enum PushBodyState {
-        ONGOING, FINISHED;
-    }
-    
     public final class PushBody implements Body {
 
-        private PushBodyState state = PushBodyState.ONGOING;
+        private State state = State.Continue;
 
         @Override
         public long getContentLength() {
@@ -74,33 +70,33 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         }
 
         @Override
-        public long read(final ByteBuffer buffer) throws IOException {
+        public State read(final ByteBuffer buffer) throws IOException {
             switch (state) {
-                case ONGOING:
+                case Continue:
                     return readNextPart(buffer);
-                case FINISHED:
-                    return -1;
+                case Stop:
+                    return State.Stop;
                 default:
                     throw new IllegalStateException("Illegal process state.");
             }
         }
 
-        private long readNextPart(ByteBuffer buffer) throws IOException {
-            int reads = 0;
-            while (buffer.hasRemaining() && state != PushBodyState.FINISHED) {
+        private State readNextPart(ByteBuffer buffer) throws IOException {
+            State res = State.Suspend;
+            while (buffer.hasRemaining() && state != State.Stop) {
                 BodyPart nextPart = queue.peek();
                 if (nextPart == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
-                    return reads;
+                    return res;
                 } else if (!nextPart.buffer.hasRemaining() && !nextPart.isLast) {
                     // skip empty buffers
                     queue.remove();
                 } else {
+                    res = State.Continue;
                     readBodyPart(buffer, nextPart);
-                    reads++;
                 }
             }
-            return reads;
+            return res;
         }
 
         private void readBodyPart(ByteBuffer buffer, BodyPart part) {
@@ -111,7 +107,7 @@ public final class FeedableBodyGenerator implements BodyGenerator {
 
             if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
                 if (part.isLast) {
-                    state = PushBodyState.FINISHED;
+                    state = State.Stop;
                 }
                 queue.remove();
             }

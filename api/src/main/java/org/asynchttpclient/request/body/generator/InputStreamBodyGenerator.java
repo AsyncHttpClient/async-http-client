@@ -66,7 +66,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             return -1L;
         }
 
-        public long read(ByteBuffer buffer) throws IOException {
+        public State read(ByteBuffer buffer) throws IOException {
 
             // To be safe.
             chunk = new byte[buffer.remaining() - 10];
@@ -86,35 +86,27 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                     // - Then a separate packet of "\r\n".getBytes()
                     if (!eof) {
                         endDataCount++;
-                        if (endDataCount == 2)
-                            eof = true;
 
                         if (endDataCount == 1)
                             buffer.put(ZERO);
+                        else if (endDataCount == 2)
+                            eof = true;
 
                         buffer.put(END_PADDING);
-
-                        return buffer.position();
-                    } else {
-                        eof = false;
                     }
-                    return -1;
+                } else {
+                    // Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
+                    buffer.put(Integer.toHexString(read).getBytes());
+                    // Chunking is separated by "<bytesreads>\r\n"
+                    buffer.put(END_PADDING);
+                    buffer.put(chunk, 0, read);
+                    // Was missing the final chunk \r\n.
+                    buffer.put(END_PADDING);
                 }
-
-                /**
-                 * Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
-                 */
-
-                buffer.put(Integer.toHexString(read).getBytes());
-                // Chunking is separated by "<bytesreads>\r\n"
-                buffer.put(END_PADDING);
-                buffer.put(chunk, 0, read);
-                // Was missing the final chunk \r\n.
-                buffer.put(END_PADDING);
             } else if (read > 0) {
                 buffer.put(chunk, 0, read);
             }
-            return read;
+            return read < 0 ? State.Stop : State.Continue;
         }
 
         public void close() throws IOException {
