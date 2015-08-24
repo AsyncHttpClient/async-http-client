@@ -120,13 +120,15 @@ public final class FeedableBodyGenerator implements BodyGenerator {
         @Override
         public void close() {
         }
-
     }
 
-
     private void move(ByteBuffer destination, ByteBuffer source) {
-        while(destination.hasRemaining() && source.hasRemaining()) {
-            destination.put(source.get());
+        int size = Math.min(destination.remaining(), source.remaining());
+        if (size > 0) {
+            ByteBuffer slice = source.slice();
+            slice.limit(size);
+            destination.put(slice);
+            source.position(source.position() + size);
         }
     }
 
