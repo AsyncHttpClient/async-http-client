@@ -32,7 +32,8 @@ public abstract class ResponseBase implements Response {
         if (charset == null) {
             String contentType = getContentType();
             if (contentType != null)
-                charset = parseCharset(contentType); // parseCharset can return null
+                charset = parseCharset(contentType); // parseCharset can return
+                                                     // null
         }
         return charset != null ? charset : DEFAULT_CHARSET;
     }
@@ -128,11 +129,12 @@ public abstract class ResponseBase implements Response {
     @Override
     public String toString() {
         try {
-            return "ResponseBase{" +
-                    "statusCode=" + getStatusCode() +
-                    ", headers=" + getHeaders() +
-                    ", body='" + getResponseBody() + '\'' +
-                    '}';
+            return new StringBuilder()//
+                    .append(getClass().getSimpleName()).append(" {\n")//
+                    .append("\tstatusCode=").append(getStatusCode()).append("\n")//
+                    .append("\theaders=").append(getHeaders()).append("\n")//
+                    .append("\tbody=\n").append(getResponseBody()).append("\n")//
+                    .append("}").toString();
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred while trying to print response body", e);
         }
