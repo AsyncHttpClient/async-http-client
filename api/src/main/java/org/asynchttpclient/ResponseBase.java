@@ -6,6 +6,7 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -122,5 +123,18 @@ public abstract class ResponseBase implements Response {
     @Override
     public boolean hasResponseBody() {
         return isNonEmpty(bodyParts);
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return "ResponseBase{" +
+                    "statusCode=" + getStatusCode() +
+                    ", headers=" + getHeaders() +
+                    ", body='" + getResponseBody() + '\'' +
+                    '}';
+        } catch (IOException e) {
+            throw new RuntimeException("IOException occurred while trying to print response body", e);
+        }
     }
 }
