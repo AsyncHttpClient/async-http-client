@@ -17,6 +17,7 @@ import com.ning.http.client.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Request;
@@ -80,6 +81,7 @@ final class AhcEventFilter extends HttpClientFilter {
         super(maxHerdersSizeProperty);
         this.provider = provider;
         HANDLER_MAP.put(HttpStatus.UNAUTHORIZED_401.getStatusCode(), AuthorizationHandler.INSTANCE);
+        HANDLER_MAP.put(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.getStatusCode(), ProxyAuthorizationHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(), RedirectHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(), RedirectHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.SEE_OTHER_303.getStatusCode(), RedirectHandler.INSTANCE);
@@ -522,16 +524,13 @@ final class AhcEventFilter extends HttpClientFilter {
 
                 final Realm newRealm;
                 if (ntlmAuthenticate != null) {
+                    final Connection connection = ctx.getConnection();
                     // NTLM
                     // Connection-based auth
-                    isContinueAuth = ntlmChallenge(ctx.getConnection(),
-                            ntlmAuthenticate, req,
-                            req.getHeaders(), realm);
-                    
-                    newRealm = new Realm.RealmBuilder().clone(realm)//
-                            .setUri(req.getUri())//
-                            .setMethodName(req.getMethod())//
-                            .build();
+                    newRealm = ntlmChallenge(connection,
+                            ntlmAuthenticate,
+                            req, realm, false);
+                    isContinueAuth = !Utils.isNtlmEstablished(connection);
                 } else {
                     // Request-based auth
                     isContinueAuth = false;
@@ -585,66 +584,115 @@ final class AhcEventFilter extends HttpClientFilter {
             
             return false;
         }
-
-        private boolean ntlmChallenge(final Connection c,
-                final String wwwAuth, final Request request,
-                final FluentCaseInsensitiveStringsMap headers,
-                final Realm realm)
-                throws NTLMEngineException {
-
-            if (wwwAuth.equals("NTLM")) {
-                // server replied bare NTLM => we didn't preemptively sent Type1Msg
-                String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg();
-
-                addNTLMAuthorizationHeader(headers, challengeHeader, false);
-                return true;
-            } else {
-                // probably receiving Type2Msg, so we issue Type3Msg
-                addType3NTLMAuthorizationHeader(wwwAuth, headers, realm, false);
-                // we mark NTLM as established for the Connection to
-                // avoid preemptive NTLM
-                Utils.setNtlmEstablished(c);
-                
-                return false;
-            }
-        }
-    
-        private void addNTLMAuthorizationHeader(
-                FluentCaseInsensitiveStringsMap headers,
-                String challengeHeader, boolean proxyInd) {
-            headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
-        }
-
-        private void addType3NTLMAuthorizationHeader(String auth,
-                FluentCaseInsensitiveStringsMap headers, Realm realm,
-                boolean proxyInd) throws NTLMEngineException {
-            headers.remove(authorizationHeaderName(proxyInd));
-
-            if (isNonEmpty(auth) && auth.startsWith("NTLM ")) {
-                String serverChallenge = auth.substring("NTLM ".length()).trim();
-                String challengeHeader = NTLMEngine.INSTANCE.generateType3Msg(
-                        realm.getPrincipal(), realm.getPassword(),
-                        realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
-                addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
-            }
-        }
-        
-        private String authorizationHeaderName(boolean proxyInd) {
-            return proxyInd
-                    ? Header.ProxyAuthorization.toString()
-                    : Header.Authorization.toString();
-        }
-        
-        private static List<String> listOf(final Iterable<String> values) {
-            final List<String> list = new ArrayList<String>(2);
-            for (String value : values) {
-                list.add(value);
-            }
-            
-            return list;
-        }
     } // END AuthorizationHandler
 
+    private static final class ProxyAuthorizationHandler implements StatusHandler {
+
+        static final ProxyAuthorizationHandler INSTANCE = new ProxyAuthorizationHandler();
+        // -------------------------------------- Methods from StatusHandler
+
+        @Override
+        public boolean handlesStatus(int statusCode) {
+            return HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.statusMatches(statusCode);
+        }
+
+        @SuppressWarnings(value = {"unchecked"})
+        @Override
+        public boolean handleStatus(final HttpResponsePacket responsePacket,
+                final HttpTransactionContext httpTransactionContext,
+                final FilterChainContext ctx) {
+            final List<String> proxyAuthHeaders =
+                    listOf(responsePacket.getHeaders()
+                            .values(Header.ProxyAuthenticate));
+            
+            if (proxyAuthHeaders.isEmpty()) {
+                throw new IllegalStateException("407 response received, but no "
+                        + "Proxy-Authenticate header was present");
+            }
+            
+            final GrizzlyAsyncHttpProvider provider =
+                    httpTransactionContext.provider;
+                        
+            final ProxyServer proxyServer = httpTransactionContext.getProxyServer();
+            
+            if (proxyServer == null) {
+                httpTransactionContext.invocationStatus = InvocationStatus.STOP;
+                final AsyncHandler ah = httpTransactionContext.getAsyncHandler();
+                
+                if (ah != null) {
+                    try {
+                        ah.onStatusReceived(
+                                httpTransactionContext.responseStatus);
+                    } catch (Exception e) {
+                        httpTransactionContext.abort(e);
+                    }
+                }
+                return true;
+            }
+            
+            final Request req = httpTransactionContext.getAhcRequest();
+
+            try {
+                String ntlmAuthenticate = getNTLM(proxyAuthHeaders);
+
+                final Realm newRealm;
+                if (ntlmAuthenticate != null) {
+                    // NTLM
+                    // Connection-based auth
+                    newRealm = ntlmProxyChallenge(ctx.getConnection(),
+                            ntlmAuthenticate,
+                            req, proxyServer);
+                } else {
+                    final String firstAuthHeader = proxyAuthHeaders.get(0);
+                    
+                     // BASIC or DIGEST
+                    newRealm = proxyServer.realmBuilder()
+                            .setUri(req.getUri())//
+                            .setOmitQuery(true)//
+                            .setMethodName(req.getMethod())//
+                            .setUsePreemptiveAuth(true)//
+                            .parseProxyAuthenticateHeader(firstAuthHeader)//
+                            .build();
+                }
+
+                responsePacket.setSkipRemainder(true); // ignore the remainder of the response
+                
+                final Connection c;
+                
+                // @TODO we may want to ditch the keep-alive connection if the response payload is too large
+                if (responsePacket.getProcessingState().isKeepAlive()) {
+                    // if it's HTTP keep-alive connection - reuse the
+                    // same Grizzly Connection
+                    c = ctx.getConnection();
+                    httpTransactionContext.reuseConnection();
+                } else {
+                    // if it's not keep-alive - take new Connection from the pool
+                    final ConnectionManager m = provider.getConnectionManager();
+                    c = m.openSync(req);
+                }
+                
+                final Request nextRequest = new RequestBuilder(req)
+                        .setRealm(newRealm)
+                        .build();
+                
+                final HttpTransactionContext newContext
+                        = httpTransactionContext.cloneAndStartTransactionFor(
+                                c, nextRequest);
+                newContext.invocationStatus = InvocationStatus.STOP;
+                
+                try {
+                    provider.execute(newContext);
+                } catch (IOException ioe) {
+                    newContext.abort(ioe);
+                }
+            } catch (Exception e) {
+                httpTransactionContext.abort(e);
+            }
+            
+            return false;
+        }
+    } // END ProxyAuthorizationHandler
+    
     private static final class RedirectHandler implements StatusHandler {
 
         static final RedirectHandler INSTANCE = new RedirectHandler();
@@ -778,5 +826,88 @@ final class AhcEventFilter extends HttpClientFilter {
                 ? realm
                 : httpTransactionContext.provider.getClientConfig().getRealm();
     }
+ 
+    private static Realm ntlmChallenge(final Connection c,
+            final String wwwAuth,
+            final Request request,
+            final Realm realm,
+            final boolean proxyInd)
+            throws NTLMEngineException {
+
+        final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
+        if (wwwAuth.equals("NTLM")) {
+            // server replied bare NTLM => we didn't preemptively sent Type1Msg
+            String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg();
+
+            addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
+        } else {
+            // probably receiving Type2Msg, so we issue Type3Msg
+            addType3NTLMAuthorizationHeader(wwwAuth, headers, realm, proxyInd);
+            // we mark NTLM as established for the Connection to
+            // avoid preemptive NTLM
+            Utils.setNtlmEstablished(c);
+        }
+        
+        return new Realm.RealmBuilder().clone(realm)//
+                            .setUri(request.getUri())//
+                            .setMethodName(request.getMethod())//
+                            .build();
+    }
+
+    private static Realm ntlmProxyChallenge(final Connection c,
+            final String wwwAuth, final Request request,
+            final ProxyServer proxyServer)
+            throws NTLMEngineException {
+        
+        final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
+        headers.remove(Header.ProxyAuthorization.toString());
+
+        Realm realm = proxyServer.realmBuilder()//
+                .setScheme(AuthScheme.NTLM)//
+                .setUri(request.getUri())//
+                .setMethodName(request.getMethod()).build();
+        
+        addType3NTLMAuthorizationHeader(wwwAuth, headers, realm, true);
+        // we mark NTLM as established for the Connection to
+        // avoid preemptive NTLM
+        Utils.setNtlmEstablished(c);
+
+        return realm;
+    }
+    
+    private static void addNTLMAuthorizationHeader(
+            FluentCaseInsensitiveStringsMap headers,
+            String challengeHeader, boolean proxyInd) {
+        headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
+    }
+
+    private static void addType3NTLMAuthorizationHeader(String auth,
+            FluentCaseInsensitiveStringsMap headers, Realm realm,
+            boolean proxyInd) throws NTLMEngineException {
+        headers.remove(authorizationHeaderName(proxyInd));
+
+        if (isNonEmpty(auth) && auth.startsWith("NTLM ")) {
+            String serverChallenge = auth.substring("NTLM ".length()).trim();
+            String challengeHeader = NTLMEngine.INSTANCE.generateType3Msg(
+                    realm.getPrincipal(), realm.getPassword(),
+                    realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+            addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
+        }
+    }
+
+    private static String authorizationHeaderName(final boolean proxyInd) {
+        return proxyInd
+                ? Header.ProxyAuthorization.toString()
+                : Header.Authorization.toString();
+    }
+
+    private static List<String> listOf(final Iterable<String> values) {
+        final List<String> list = new ArrayList<String>(2);
+        for (String value : values) {
+            list.add(value);
+        }
+
+        return list;
+    }    
     
 } // END AsyncHttpClientEventFilter

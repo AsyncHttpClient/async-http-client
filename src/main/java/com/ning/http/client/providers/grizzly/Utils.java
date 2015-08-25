@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -45,6 +45,10 @@ public class Utils {
         NTLM_HOLDER.IS_NTLM_DONE.set(c, Boolean.TRUE);
     }
 
+    public static boolean isNtlmEstablished(final Connection c) {
+        return Boolean.TRUE.equals(NTLM_HOLDER.IS_NTLM_DONE.get(c));
+    }
+    
     public static boolean isSecure(final String uri) {
         return (uri.startsWith("https") || uri.startsWith("wss"));
     }

@@ -28,7 +28,6 @@ import com.ning.http.client.uri.Uri;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.MiscUtils;
-import com.ning.http.util.ProxyUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -108,17 +107,19 @@ final class AsyncHttpClientFilter extends BaseFilter {
     }
     // ----------------------------------------------------- Private Methods
 
-    private boolean sendAsGrizzlyRequest(final HttpTransactionContext httpTxCtx, final FilterChainContext ctx) throws IOException {
+    private boolean sendAsGrizzlyRequest(final HttpTransactionContext httpTxCtx,
+            final FilterChainContext ctx) throws IOException {
+        
         final Connection connection = ctx.getConnection();
         
         final boolean isUsedConnection = Boolean.TRUE.equals(USED_CONNECTION.get(connection));
         if (!isUsedConnection) {
             USED_CONNECTION.set(connection, Boolean.TRUE);
         }
-
         
         final Request ahcRequest = httpTxCtx.getAhcRequest();
-        if (isUpgradeRequest(httpTxCtx.getAsyncHandler()) && isWSRequest(httpTxCtx.requestUri)) {
+        if (isUpgradeRequest(httpTxCtx.getAsyncHandler()) &&
+                isWSRequest(httpTxCtx.requestUri)) {
             httpTxCtx.isWSRequest = true;
             convertToUpgradeRequest(httpTxCtx);
         }
@@ -126,22 +127,27 @@ final class AsyncHttpClientFilter extends BaseFilter {
         final Method method = Method.valueOf(ahcRequest.getMethod());
         final Uri uri = req.getUri();
         boolean secure = "https".equals(uri.getScheme());
-        final ProxyServer proxy = ProxyUtils.getProxyServer(config, ahcRequest);
+        final ProxyServer proxy = httpTxCtx.getProxyServer();
         final boolean useProxy = proxy != null;
-        final boolean isEstablishingConnectTunnel = useProxy && (secure || httpTxCtx.isWSRequest) && !httpTxCtx.isTunnelEstablished(connection);
+        final boolean isEstablishingConnectTunnel = useProxy &&
+                (secure || httpTxCtx.isWSRequest) &&
+                !httpTxCtx.isTunnelEstablished(connection);
+        
         if (isEstablishingConnectTunnel) {
             // once the tunnel is established, sendAsGrizzlyRequest will
             // be called again and we'll finally send the request over the tunnel
             return establishConnectTunnel(proxy, httpTxCtx, uri, ctx);
         }        
-        final HttpRequestPacket.Builder builder = HttpRequestPacket.builder().protocol(Protocol.HTTP_1_1).method(method);
+        final HttpRequestPacket.Builder builder = HttpRequestPacket.builder()
+                .protocol(Protocol.HTTP_1_1)
+                .method(method);
 
         if (useProxy && !((secure || httpTxCtx.isWSRequest) &&
                 config.isUseRelativeURIsWithConnectProxies())) {
             builder.uri(uri.toUrl());
         } else {
-            builder.uri(AsyncHttpProviderUtils.getNonEmptyPath(uri));
-            builder.query(uri.getQuery());
+            builder.uri(AsyncHttpProviderUtils.getNonEmptyPath(uri))
+                   .query(uri.getQuery());
         }
 
         HttpRequestPacket requestPacket;
@@ -149,8 +155,8 @@ final class AsyncHttpClientFilter extends BaseFilter {
         if (payloadGenerator != null) {
             final long contentLength = ahcRequest.getContentLength();
             if (contentLength >= 0) {
-                builder.contentLength(contentLength);
-                builder.chunked(false);
+                builder.contentLength(contentLength)
+                       .chunked(false);
             } else {
                 builder.chunked(true);
             }
@@ -320,7 +326,10 @@ final class AsyncHttpClientFilter extends BaseFilter {
                 isUsedConnection, isConnect);
     }
 
-    private void setProxyAuthorizationHeader(final Request req, final HttpRequestPacket requestPacket, final ProxyServer proxy, final Realm realm, final boolean isUsedConnection, final boolean isConnect) throws IOException {
+    private void setProxyAuthorizationHeader(final Request req,
+            final HttpRequestPacket requestPacket, final ProxyServer proxy,
+            final Realm realm, final boolean isUsedConnection,
+            final boolean isConnect) throws IOException {
         final String reqAuth = AuthenticatorUtils.perRequestProxyAuthorizationHeader(
                 req, realm, proxy, isConnect);
         
