@@ -723,19 +723,6 @@ final class AhcEventFilter extends HttpClientFilter {
             final Uri redirectUri = Uri.create(origUri, redirectURL);
             httpTransactionContext.lastRedirectUri = redirectUri;
             
-            if (redirectUri.equals(origUri)) {
-                httpTransactionContext.statusHandler = null;
-                httpTransactionContext.invocationStatus = InvocationStatus.CONTINUE;
-                try {
-                    httpTransactionContext.getAsyncHandler().onStatusReceived(
-                            httpTransactionContext.responseStatus);
-                } catch (Exception e) {
-                    httpTransactionContext.abort(e);
-                }
-                
-                return true;
-            }
-
             final Request nextRequest = newRequest(httpTransactionContext,
                     redirectUri, responsePacket,
                     getRealm(httpTransactionContext),
