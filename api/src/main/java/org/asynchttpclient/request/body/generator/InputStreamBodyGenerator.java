@@ -72,6 +72,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             chunk = new byte[buffer.remaining() - 10];
 
             int read = -1;
+            boolean write = false;
             try {
                 read = inputStream.read(chunk);
             } catch (IOException ex) {
@@ -79,22 +80,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             }
 
             if (patchNetty3ChunkingIssue) {
-                if (read == -1) {
-                    // Since we are chunked, we must output extra bytes before considering the input stream closed.
-                    // chunking requires to end the chunking:
-                    // - A Terminating chunk of  "0\r\n".getBytes(),
-                    // - Then a separate packet of "\r\n".getBytes()
-                    if (!eof) {
-                        endDataCount++;
-
-                        if (endDataCount == 1)
-                            buffer.put(ZERO);
-                        else if (endDataCount == 2)
-                            eof = true;
-
-                        buffer.put(END_PADDING);
-                    }
-                } else {
+                if (read >= 0) {
                     // Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
                     buffer.put(Integer.toHexString(read).getBytes());
                     // Chunking is separated by "<bytesreads>\r\n"
@@ -102,11 +88,29 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                     buffer.put(chunk, 0, read);
                     // Was missing the final chunk \r\n.
                     buffer.put(END_PADDING);
+                    write = true;
+
+                } else if (!eof) {
+                    // read == -1)
+                    // Since we are chunked, we must output extra bytes before considering the input stream closed.
+                    // chunking requires to end the chunking:
+                    // - A Terminating chunk of  "0\r\n".getBytes(),
+                    // - Then a separate packet of "\r\n".getBytes()
+                    endDataCount++;
+    
+                    if (endDataCount == 1)
+                        buffer.put(ZERO);
+                    else if (endDataCount == 2)
+                        eof = true;
+    
+                    buffer.put(END_PADDING);
+                    write = true;
                 }
             } else if (read > 0) {
                 buffer.put(chunk, 0, read);
+                write = true;
             }
-            return read < 0 ? State.Stop : State.Continue;
+            return write ? State.Continue : State.Stop;
         }
 
         public void close() throws IOException {
