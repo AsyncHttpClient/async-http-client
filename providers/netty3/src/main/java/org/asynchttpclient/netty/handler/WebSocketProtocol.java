@@ -193,7 +193,7 @@ public final class WebSocketProtocol extends Protocol {
 
     @Override
     public void onClose(NettyResponseFuture<?> future) {
-        logger.trace("onClose {}");
+        logger.trace("onClose");
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
