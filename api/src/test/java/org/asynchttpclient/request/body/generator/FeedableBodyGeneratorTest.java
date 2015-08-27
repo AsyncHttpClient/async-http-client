@@ -26,12 +26,12 @@ import static org.testng.Assert.*;
 
 public class FeedableBodyGeneratorTest {
 
-    private FeedableBodyGenerator feedableBodyGenerator;
+    private SimpleFeedableBodyGenerator feedableBodyGenerator;
     private TestFeedListener listener;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        feedableBodyGenerator = new FeedableBodyGenerator();
+        feedableBodyGenerator = new SimpleFeedableBodyGenerator();
         listener = new TestFeedListener();
         feedableBodyGenerator.setListener(listener);
     }
@@ -107,7 +107,7 @@ public class FeedableBodyGeneratorTest {
         return readBytes;
     }
 
-    private static class TestFeedListener implements FeedableBodyGenerator.FeedListener {
+    private static class TestFeedListener implements SimpleFeedableBodyGenerator.FeedListener {
 
         private int calls;
 
@@ -115,6 +115,9 @@ public class FeedableBodyGeneratorTest {
         public void onContentAdded() {
             calls++;
         }
+
+        @Override
+        public void onError(Throwable t) {}
 
         public int getCalls() {
             return calls;

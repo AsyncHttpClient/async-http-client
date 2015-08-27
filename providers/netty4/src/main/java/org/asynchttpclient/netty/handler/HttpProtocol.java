@@ -41,6 +41,7 @@ import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
+import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
@@ -400,6 +401,20 @@ public final class HttpProtocol extends Protocol {
         return false;
     }
 
+    private boolean exitAfterHandlingReactiveStreams(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler) throws IOException {
+        if (handler instanceof StreamedAsyncHandler) {
+            StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
+            StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
+            channel.pipeline().addLast(channel.eventLoop(), "streamedAsyncHandler", publisher);
+            Channels.setAttribute(channel, publisher);
+            if (streamedAsyncHandler.onStream(publisher) != State.CONTINUE) {
+                finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
@@ -425,7 +440,8 @@ public final class HttpProtocol extends Protocol {
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm) || //
                 exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
                 exitAfterHandlingStatus(channel, future, response, handler, status) || //
-                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders);
+                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders) ||
+                exitAfterHandlingReactiveStreams(channel, future, response, handler);
     }
 
     private void handleChunk(HttpContent chunk,//
@@ -448,7 +464,7 @@ public final class HttpProtocol extends Protocol {
 
         ByteBuf buf = chunk.content();
         try {
-            if (!interrupt && (buf.readableBytes() > 0 || last)) {
+            if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
                 NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
                 interrupt = updateBodyAndInterrupt(future, handler, part);
             }

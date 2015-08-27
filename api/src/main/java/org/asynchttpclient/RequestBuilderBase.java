@@ -35,9 +35,11 @@ import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
+import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UriEncoder;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -473,6 +475,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetBody();
         request.streamData = stream;
         return derived.cast(this);
+    }
+
+    public T setBody(Publisher<ByteBuffer> publisher) {
+        return setBody(new ReactiveStreamsBodyGenerator(publisher));
     }
 
     public T setBody(BodyGenerator bodyGenerator) {

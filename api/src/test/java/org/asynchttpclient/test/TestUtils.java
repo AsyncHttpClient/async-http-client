@@ -20,6 +20,10 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.reactivestreams.Publisher;
+
+import rx.Observable;
+import rx.RxReactiveStreams;
 
 import javax.net.ssl.*;
 
@@ -32,12 +36,15 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -52,7 +59,8 @@ public class TestUtils {
     private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
     public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
     public static final File LARGE_IMAGE_FILE;
-    public static byte[] LARGE_IMAGE_BYTES;
+    public static final byte[] LARGE_IMAGE_BYTES;
+    public static final Publisher<ByteBuffer> LARGE_IMAGE_PUBLISHER;
     public static final File SIMPLE_TEXT_FILE;
     public static final String SIMPLE_TEXT_FILE_STRING;
     private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
@@ -63,6 +71,7 @@ public class TestUtils {
             TMP_DIR.deleteOnExit();
             LARGE_IMAGE_FILE = new File(TestUtils.class.getClassLoader().getResource("300k.png").toURI());
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
+            LARGE_IMAGE_PUBLISHER = createPublisher(LARGE_IMAGE_BYTES, /*chunkSize*/ 1000);
             SIMPLE_TEXT_FILE = new File(TestUtils.class.getClassLoader().getResource("SimpleTextFile.txt").toURI());
             SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, UTF_8);
         } catch (Exception e) {
@@ -89,6 +98,46 @@ public class TestUtils {
             assertEquals(tmpFile.length(), expectedFileSize, "Invalid file length");
 
             return tmpFile;
+        }
+    }
+
+    public static Publisher<ByteBuffer> createPublisher(final byte[] bytes, final int chunkSize) {
+        Observable<ByteBuffer> observable = Observable.from(new ByteBufferIterable(bytes, chunkSize));
+        return RxReactiveStreams.toPublisher(observable);
+    }
+
+    public static class ByteBufferIterable implements Iterable<ByteBuffer> {
+        private final byte[] payload;
+        private final int chunkSize;
+
+        public ByteBufferIterable(byte[] payload, int chunkSize) {
+            this.payload = payload;
+            this.chunkSize = chunkSize;
+        }
+
+
+        @Override
+        public Iterator<ByteBuffer> iterator() {
+            return new Iterator<ByteBuffer>() {
+                private int currentIndex = 0;
+                @Override
+                public boolean hasNext() {
+                    return currentIndex != payload.length;
+                }
+
+                @Override
+                public ByteBuffer next() {
+                    int newIndex = Math.min(currentIndex + chunkSize, payload.length);
+                    byte[] bytesInElement = Arrays.copyOfRange(payload, currentIndex, newIndex);
+                    currentIndex = newIndex;
+                    return ByteBuffer.wrap(bytesInElement);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException("ByteBufferIterable's iterator does not support remove.");
+                }
+            };
         }
     }
 

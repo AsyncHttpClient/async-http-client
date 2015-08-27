@@ -13,164 +13,21 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.asynchttpclient.request.body.Body;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
  * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
  */
-public final class FeedableBodyGenerator implements BodyGenerator {
-    private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
-    private final static byte[] ZERO = "0".getBytes(US_ASCII);
-    private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-    private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
-    private FeedListener listener;
+public interface FeedableBodyGenerator extends BodyGenerator {
+    void feed(ByteBuffer buffer, boolean isLast);
 
-    // must be set to true when using Netty 3 where native chunking is broken
-    private boolean writeChunkBoundaries = false;
+    void writeChunkBoundaries();
 
-    @Override
-    public Body createBody() {
-        return new PushBody();
-    }
+    void setListener(FeedListener listener);
 
-    public void feed(final ByteBuffer buffer, final boolean isLast) throws IOException {
-        queue.offer(new BodyPart(buffer, isLast));
-        if (listener != null) {
-            listener.onContentAdded();
-        }
-    }
-
-    public interface FeedListener {
+    interface FeedListener {
         void onContentAdded();
-    }
-
-    public void setListener(FeedListener listener) {
-        this.listener = listener;
-    }
-
-    public void writeChunkBoundaries() {
-        this.writeChunkBoundaries = true;
-    }
-
-    public final class PushBody implements Body {
-
-        private State state = State.Continue;
-
-        @Override
-        public long getContentLength() {
-            return -1;
-        }
-
-        @Override
-        public State read(final ByteBuffer buffer) throws IOException {
-            switch (state) {
-                case Continue:
-                    return readNextPart(buffer);
-                case Stop:
-                    return State.Stop;
-                default:
-                    throw new IllegalStateException("Illegal process state.");
-            }
-        }
-
-        private State readNextPart(ByteBuffer buffer) throws IOException {
-            State res = State.Suspend;
-            while (buffer.hasRemaining() && state != State.Stop) {
-                BodyPart nextPart = queue.peek();
-                if (nextPart == null) {
-                    // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
-                    return res;
-                } else if (!nextPart.buffer.hasRemaining() && !nextPart.isLast) {
-                    // skip empty buffers
-                    queue.remove();
-                } else {
-                    res = State.Continue;
-                    readBodyPart(buffer, nextPart);
-                }
-            }
-            return res;
-        }
-
-        private void readBodyPart(ByteBuffer buffer, BodyPart part) {
-            part.initBoundaries();
-            move(buffer, part.size);
-            move(buffer, part.buffer);
-            move(buffer, part.endPadding);
-
-            if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
-                if (part.isLast) {
-                    state = State.Stop;
-                }
-                queue.remove();
-            }
-        }
-
-        @Override
-        public void close() {
-        }
-    }
-
-    private void move(ByteBuffer destination, ByteBuffer source) {
-        int size = Math.min(destination.remaining(), source.remaining());
-        if (size > 0) {
-            ByteBuffer slice = source.slice();
-            slice.limit(size);
-            destination.put(slice);
-            source.position(source.position() + size);
-        }
-    }
-
-    private final class BodyPart {
-        private final boolean isLast;
-        private ByteBuffer size = null;
-        private final ByteBuffer buffer;
-        private ByteBuffer endPadding = null;
-
-        public BodyPart(final ByteBuffer buffer, final boolean isLast) {
-            this.buffer = buffer;
-            this.isLast = isLast;
-        }
-
-        private void initBoundaries() {
-            if(size == null && endPadding == null) {
-                if (FeedableBodyGenerator.this.writeChunkBoundaries) {
-                    if(buffer.hasRemaining()) {
-                        final byte[] sizeAsHex = Integer.toHexString(buffer.remaining()).getBytes(US_ASCII);
-                        size = ByteBuffer.allocate(sizeAsHex.length + END_PADDING.length);
-                        size.put(sizeAsHex);
-                        size.put(END_PADDING);
-                        size.flip();
-                    } else {
-                        size = EMPTY_BUFFER;
-                    }
-
-                    if(isLast) {
-                        endPadding = ByteBuffer.allocate(END_PADDING.length * 3 + ZERO.length);
-                        if(buffer.hasRemaining()) {
-                            endPadding.put(END_PADDING);
-                        }
-
-                        //add last empty
-                        endPadding.put(ZERO);
-                        endPadding.put(END_PADDING);
-                        endPadding.put(END_PADDING);
-                        endPadding.flip();
-                    } else {
-                        endPadding = ByteBuffer.wrap(END_PADDING);
-                    }
-                } else {
-                    size = EMPTY_BUFFER;
-                    endPadding = EMPTY_BUFFER;
-                }
-            }
-        }
+        void onError(Throwable t);
     }
 }

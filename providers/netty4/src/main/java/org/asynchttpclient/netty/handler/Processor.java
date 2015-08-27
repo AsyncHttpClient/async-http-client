@@ -14,6 +14,8 @@
 package org.asynchttpclient.netty.handler;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,10 +27,9 @@ import io.netty.handler.codec.http.LastHttpContent;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
+import io.netty.util.ReferenceCountUtil;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.Callback;
-import org.asynchttpclient.netty.DiscardEvent;
-import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.*;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.StackTraceInspector;
@@ -42,15 +43,18 @@ public class Processor extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
     private final AsyncHttpClientConfig config;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
-    public Processor(AsyncHttpClientConfig config,//
-            ChannelManager channelManager,//
-            NettyRequestSender requestSender,//
+    public Processor(AsyncHttpClientConfig config,
+            NettyAsyncHttpProviderConfig nettyConfig,
+            ChannelManager channelManager,
+            NettyRequestSender requestSender,
             Protocol protocol) {
         this.config = config;
+        this.nettyConfig = nettyConfig;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
         this.protocol = protocol;
@@ -71,10 +75,40 @@ public class Processor extends ChannelInboundHandlerAdapter {
                 ac.call();
                 Channels.setDiscard(channel);
             }
+            ReferenceCountUtil.release(msg);
+
 
         } else if (attribute instanceof NettyResponseFuture) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
             protocol.handle(channel, future, msg);
+
+        } else if (attribute instanceof StreamedResponsePublisher) {
+
+            StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
+
+            if (msg instanceof LastHttpContent) {
+                // Remove the handler from the pipeline, this will trigger it to finish
+                ctx.pipeline().remove(publisher);
+                // Trigger a read, just in case the last read complete triggered no new read
+                ctx.read();
+                // Send the last content on to the protocol, so that it can conclude the cleanup
+                protocol.handle(channel, publisher.future(), msg);
+            } else if (msg instanceof HttpContent) {
+
+                ByteBuf content = ((HttpContent) msg).content();
+
+                // Republish as a HttpResponseBodyPart
+                if (content.readableBytes() > 0) {
+                    NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(content, false);
+                    ctx.fireChannelRead(part);
+                }
+
+                ReferenceCountUtil.release(msg);
+            } else {
+                LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
+                ctx.pipeline().remove((StreamedResponsePublisher) attribute);
+                Channels.setDiscard(channel);
+            }
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             // unhandled message
@@ -99,7 +133,10 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
         Object attribute = Channels.getAttribute(channel);
         LOGGER.debug("Channel Closed: {} with attribute {}", channel, attribute);
-
+        if (attribute instanceof StreamedResponsePublisher) {
+            // setting `attribute` to be the underlying future so that the retry logic can kick-in 
+            attribute = ((StreamedResponsePublisher) attribute).future();
+        }
         if (attribute instanceof Callback) {
             Callback callback = (Callback) attribute;
             Channels.setAttribute(channel, callback.future());
@@ -131,6 +168,11 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
         try {
             Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof StreamedResponsePublisher) {
+                ctx.fireExceptionCaught(e);
+                // setting `attribute` to be the underlying future so that the retry logic can kick-in
+                attribute = ((StreamedResponsePublisher) attribute).future();
+            }
             if (attribute instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attribute;
                 future.attachChannel(null, false);
@@ -171,5 +213,23 @@ public class Processor extends ChannelInboundHandlerAdapter {
         // FIXME not really sure
         // ctx.fireChannelRead(e);
         Channels.silentlyCloseChannel(channel);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ctx.read();
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (!isHandledByReactiveStreams(ctx)) {
+            ctx.read();
+        } else {
+            ctx.fireChannelReadComplete();
+        }
+    }
+
+    private boolean isHandledByReactiveStreams(ChannelHandlerContext ctx) {
+        return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
     }
 }
