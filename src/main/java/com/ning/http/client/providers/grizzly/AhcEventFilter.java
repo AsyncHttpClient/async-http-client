@@ -490,17 +490,10 @@ final class AhcEventFilter extends HttpClientFilter {
                 final FilterChainContext ctx) {
             final List<String> authHeaders = listOf(responsePacket.getHeaders()
                     .values(Header.WWWAuthenticate));
-            
-            if (authHeaders.isEmpty()) {
-                throw new IllegalStateException("401 response received, but no WWW-Authenticate header was present");
-            }
-            
-            final GrizzlyAsyncHttpProvider provider =
-                    httpTransactionContext.provider;
-                        
+
             Realm realm = getRealm(httpTransactionContext);
             
-            if (realm == null) {
+            if (authHeaders.isEmpty() || realm == null) {
                 httpTransactionContext.invocationStatus = InvocationStatus.STOP;
                 final AsyncHandler ah = httpTransactionContext.getAsyncHandler();
                 
@@ -515,6 +508,8 @@ final class AhcEventFilter extends HttpClientFilter {
                 return true;
             }
             
+            final GrizzlyAsyncHttpProvider provider =
+                    httpTransactionContext.provider;
             final Request req = httpTransactionContext.getAhcRequest();
 
             try {
@@ -605,17 +600,9 @@ final class AhcEventFilter extends HttpClientFilter {
                     listOf(responsePacket.getHeaders()
                             .values(Header.ProxyAuthenticate));
             
-            if (proxyAuthHeaders.isEmpty()) {
-                throw new IllegalStateException("407 response received, but no "
-                        + "Proxy-Authenticate header was present");
-            }
-            
-            final GrizzlyAsyncHttpProvider provider =
-                    httpTransactionContext.provider;
-                        
             final ProxyServer proxyServer = httpTransactionContext.getProxyServer();
             
-            if (proxyServer == null) {
+            if (proxyAuthHeaders.isEmpty() || proxyServer == null) {
                 httpTransactionContext.invocationStatus = InvocationStatus.STOP;
                 final AsyncHandler ah = httpTransactionContext.getAsyncHandler();
                 
@@ -630,6 +617,9 @@ final class AhcEventFilter extends HttpClientFilter {
                 return true;
             }
             
+            final GrizzlyAsyncHttpProvider provider =
+                    httpTransactionContext.provider;
+                        
             final Request req = httpTransactionContext.getAhcRequest();
 
             try {

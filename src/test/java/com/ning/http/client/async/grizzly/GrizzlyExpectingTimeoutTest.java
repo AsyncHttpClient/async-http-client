@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -35,16 +35,16 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
+public class GrizzlyExpectingTimeoutTest extends AbstractBasicTest {
 
     private static final String MSG = "Unauthorized without WWW-Authenticate header";
 
     protected String getExpectedTimeoutMessage() {
-        return "401 response received, but no WWW-Authenticate header was present";
+        return "Timeout exceeded";
     }
 
     @Override
@@ -80,7 +80,7 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "default_provider"})
-    public void unexpectedTimeoutTest() throws IOException {
+    public void expectedTimeoutTest() throws IOException {
         final AtomicInteger counts = new AtomicInteger();
         final int timeout = 100;
 
@@ -107,7 +107,7 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
             } catch (InterruptedException e) {
                 fail("Interrupted.", e);
             } catch (ExecutionException e) {
-                assertFalse(e.getCause() instanceof TimeoutException);
+                assertTrue(e.getCause() instanceof TimeoutException);
                 assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
             }
             // wait for timeout again.
