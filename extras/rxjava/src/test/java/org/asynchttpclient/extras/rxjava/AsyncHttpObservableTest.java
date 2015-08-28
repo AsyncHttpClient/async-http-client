@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2015 Target, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient.extras.rxjava;
 
 import org.asynchttpclient.AsyncHttpClient;
@@ -59,6 +71,7 @@ public class AsyncHttpObservableTest {
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
             tester.assertCompleted();
+            tester.assertNoErrors();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -106,6 +119,7 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
+            tester.assertNotCompleted();
             tester.assertError(AsyncHttpClientErrorException.class);
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
@@ -155,6 +169,7 @@ public class AsyncHttpObservableTest {
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
             tester.assertCompleted();
+            tester.assertNoErrors();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -202,6 +217,7 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
+            tester.assertNotCompleted();
             tester.assertError(AsyncHttpClientErrorException.class);
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
