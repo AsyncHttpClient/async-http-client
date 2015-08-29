@@ -148,7 +148,7 @@ public interface Response {
     boolean isRedirected();
 
     /**
-     * Subclasses SHOULD implement toString() in a way that identifies the request for logging.
+     * Subclasses SHOULD implement toString() in a way that identifies the response for logging.
      * 
      * @return The textual representation
      */
