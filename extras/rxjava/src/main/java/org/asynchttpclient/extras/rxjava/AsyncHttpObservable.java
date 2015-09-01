@@ -45,10 +45,6 @@ public class AsyncHttpObservable {
             public void call(final Subscriber<? super Response> subscriber) {
                 try {
                     AsyncCompletionHandler<Void> handler = new AsyncCompletionHandler<Void>() {
-                        @Override
-                        public State onStatusReceived(HttpResponseStatus status) throws Exception {
-                            return super.onStatusReceived(status);
-                        }
 
                         @Override
                         public Void onCompleted(Response response) throws Exception {
@@ -61,6 +57,7 @@ public class AsyncHttpObservable {
                         public void onThrowable(Throwable t) {
                             subscriber.onError(t);
                         }
+
                     };
                     //execute the request
                     builder.execute(handler);
