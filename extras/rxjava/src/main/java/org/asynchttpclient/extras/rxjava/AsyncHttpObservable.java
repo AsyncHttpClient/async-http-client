@@ -28,23 +28,12 @@ import rx.subjects.ReplaySubject;
 public class AsyncHttpObservable {
 
     /**
-     * Observe a request execution and emit the full response no matter what.
+     * Observe a request execution and emit the response to the observer.
      *
      * @param supplier
      * @return The cold observable (must be subscribed to in order to execute).
      */
     public static Observable<Response> toObservable(final Func0<BoundRequestBuilder> supplier) {
-        return toObservable(false, supplier);
-    }
-
-    /**
-     * Observe a request execution and emit an error for http status error codes >= 400.
-     *
-     * @param abortOnErrorStatus
-     * @param supplier
-     * @return The cold observable (must be subscribed to in order to execute).
-     */
-    public static Observable<Response> toObservable(final Boolean abortOnErrorStatus, final Func0<BoundRequestBuilder> supplier) {
 
         //Get the builder from the function
         final BoundRequestBuilder builder = supplier.call();
@@ -58,23 +47,13 @@ public class AsyncHttpObservable {
                     AsyncCompletionHandler<Void> handler = new AsyncCompletionHandler<Void>() {
                         @Override
                         public State onStatusReceived(HttpResponseStatus status) throws Exception {
-                            State state = super.onStatusReceived(status);
-                            if (abortOnErrorStatus) {
-                                int code = status.getStatusCode();
-                                if (code >= 400) {
-                                    state = State.ABORT;
-                                    subscriber.onError(new AsyncHttpClientErrorException(String.format("Client error status code: %s", code)));
-                                }
-                            }
-                            return state;
+                            return super.onStatusReceived(status);
                         }
 
                         @Override
                         public Void onCompleted(Response response) throws Exception {
-                            if (!(abortOnErrorStatus && response.getStatusCode() >= 400)) {
-                                subscriber.onNext(response);
-                                subscriber.onCompleted();
-                            }
+                            subscriber.onNext(response);
+                            subscriber.onCompleted();
                             return null;
                         }
 
@@ -95,27 +74,16 @@ public class AsyncHttpObservable {
     }
 
     /**
-     * Observe a request execution and emit the full response no matter what.
+     * Observe a request execution and emit the response to the observer.
      *
      * @param supplier
      * @return The hot observable (eagerly executes).
      */
     public static Observable<Response> observe(final Func0<BoundRequestBuilder> supplier) {
-        return observe(false, supplier);
-    }
-
-    /**
-     * Observe a request execution and emit an error for http status error codes >= 400.
-     *
-     * @param abortOnErrorStatus
-     * @param supplier
-     * @return The hot observable (eagerly executes).
-     */
-    public static Observable<Response> observe(final Boolean abortOnErrorStatus, final Func0<BoundRequestBuilder> supplier) {
         //use a ReplaySubject to buffer the eagerly subscribed-to Observable
         ReplaySubject<Response> subject = ReplaySubject.create();
         //eagerly kick off subscription
-        toObservable(abortOnErrorStatus, supplier).subscribe(subject);
+        toObservable(supplier).subscribe(subject);
         //return the subject that can be subscribed to later while the execution has already started
         return subject;
     }

@@ -32,7 +32,7 @@ import static org.testng.Assert.assertNotNull;
 public class AsyncHttpObservableTest {
 
     @Test(groups = "fast")
-    public void testToObservableNoAbortNoError() {
+    public void testToObservableNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
@@ -57,7 +57,7 @@ public class AsyncHttpObservableTest {
     }
 
     @Test(groups = "fast")
-    public void testToObservableNoAbortError() {
+    public void testToObservableError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
@@ -82,55 +82,7 @@ public class AsyncHttpObservableTest {
     }
 
     @Test(groups = "fast")
-    public void testToObservableAbortNoError() {
-        final TestSubscriber<Response> tester = new TestSubscriber<>();
-
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.toObservable(true, new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com");
-                }
-            });
-            o1.subscribe(tester);
-            tester.awaitTerminalEvent();
-            tester.assertTerminalEvent();
-            tester.assertCompleted();
-            List<Response> responses = tester.getOnNextEvents();
-            assertNotNull(responses);
-            assertEquals(responses.size(), 1);
-            assertEquals(responses.get(1).getStatusCode(), 200);
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    @Test(groups = "fast")
-    public void testToObservableAbortError() {
-        final TestSubscriber<Response> tester = new TestSubscriber<>();
-
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.toObservable(true, new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com/ttfn");
-                }
-            });
-            o1.subscribe(tester);
-            tester.awaitTerminalEvent();
-            tester.assertTerminalEvent();
-            tester.assertNotCompleted();
-            tester.assertError(AsyncHttpClientErrorException.class);
-            List<Response> responses = tester.getOnNextEvents();
-            assertNotNull(responses);
-            assertEquals(responses.size(), 0);
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    @Test(groups = "fast")
-    public void testObserveNoAbortNoError() {
+    public void testObserveNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
@@ -155,7 +107,7 @@ public class AsyncHttpObservableTest {
     }
 
     @Test(groups = "fast")
-    public void testObserveNoAbortError() {
+    public void testObserveError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
@@ -174,54 +126,6 @@ public class AsyncHttpObservableTest {
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
             assertEquals(responses.get(0).getStatusCode(), 404);
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    @Test(groups = "fast")
-    public void testObserveAbortNoError() {
-        final TestSubscriber<Response> tester = new TestSubscriber<>();
-
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.observe(true, new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com");
-                }
-            });
-            o1.subscribe(tester);
-            tester.awaitTerminalEvent();
-            tester.assertTerminalEvent();
-            tester.assertCompleted();
-            List<Response> responses = tester.getOnNextEvents();
-            assertNotNull(responses);
-            assertEquals(responses.size(), 1);
-            assertEquals(responses.get(1).getStatusCode(), 200);
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    @Test(groups = "fast")
-    public void testObserveAbortError() {
-        final TestSubscriber<Response> tester = new TestSubscriber<>();
-
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.observe(true, new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com/ttfn");
-                }
-            });
-            o1.subscribe(tester);
-            tester.awaitTerminalEvent();
-            tester.assertTerminalEvent();
-            tester.assertNotCompleted();
-            tester.assertError(AsyncHttpClientErrorException.class);
-            List<Response> responses = tester.getOnNextEvents();
-            assertNotNull(responses);
-            assertEquals(responses.size(), 0);
         } catch (Exception e) {
             Thread.currentThread().interrupt();
         }
