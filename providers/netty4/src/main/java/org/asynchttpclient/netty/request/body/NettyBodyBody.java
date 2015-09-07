@@ -29,7 +29,7 @@ import org.asynchttpclient.netty.request.ProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
-import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
+import org.asynchttpclient.request.body.generator.SimpleFeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator.FeedListener;
 
 public class NettyBodyBody implements NettyBody {
@@ -67,12 +67,14 @@ public class NettyBodyBody implements NettyBody {
             msg = new BodyChunkedInput(body);
 
             BodyGenerator bg = future.getRequest().getBodyGenerator();
-            if (bg instanceof FeedableBodyGenerator) {
-                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+            if (bg instanceof SimpleFeedableBodyGenerator) {
+                SimpleFeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
                     @Override
                     public void onContentAdded() {
                         channel.pipeline().get(ChunkedWriteHandler.class).resumeTransfer();
                     }
+                    @Override
+                    public void onError(Throwable t) {}
                 });
             }
         }

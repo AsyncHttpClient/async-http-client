@@ -24,8 +24,8 @@ import org.asynchttpclient.netty.request.ProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
-import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator.FeedListener;
+import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
@@ -55,7 +55,7 @@ public class NettyBodyBody implements NettyBody {
     }
 
     @Override
-    public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
+    public void write(final Channel channel, final NettyResponseFuture<?> future) throws IOException {
 
         Object msg;
         if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.getPipeline()) && !config.isDisableZeroCopy()) {
@@ -72,6 +72,10 @@ public class NettyBodyBody implements NettyBody {
                     @Override
                     public void onContentAdded() {
                         channel.getPipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                    }
+                    @Override
+                    public void onError(Throwable t) {
+                        future.abort(t);
                     }
                 });
             }

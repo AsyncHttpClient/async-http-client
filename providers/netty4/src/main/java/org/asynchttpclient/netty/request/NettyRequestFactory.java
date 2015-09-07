@@ -62,9 +62,11 @@ import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.request.body.NettyFileBody;
 import org.asynchttpclient.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.netty.request.body.NettyMultipartBody;
+import org.asynchttpclient.netty.request.body.NettyReactiveStreamsBody;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.HttpUtils;
 import org.asynchttpclient.util.StringUtils;
@@ -118,7 +120,8 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream(), config);
-
+            else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator)
+                nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher());
             else if (request.getBodyGenerator() != null)
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }

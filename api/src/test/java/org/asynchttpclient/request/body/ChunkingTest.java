@@ -33,6 +33,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.asynchttpclient.request.body.generator.SimpleFeedableBodyGenerator;
 import org.testng.annotations.Test;
 
 /**
@@ -86,7 +87,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
-            final FeedableBodyGenerator feedableBodyGenerator = new FeedableBodyGenerator();
+            final FeedableBodyGenerator feedableBodyGenerator = new SimpleFeedableBodyGenerator();
             builder.setBody(feedableBodyGenerator);
 
             Request r = builder.build();

@@ -205,10 +205,10 @@ public class ChannelManager {
     public void configureBootstraps(NettyRequestSender requestSender, AtomicBoolean closed) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, nettyConfig, requestSender);
-        final Processor httpProcessor = new Processor(config, this, requestSender, httpProtocol);
+        final Processor httpProcessor = new Processor(config, nettyConfig, this, requestSender, httpProtocol);
 
         WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, nettyConfig, requestSender);
-        wsProcessor = new Processor(config, this, requestSender, wsProtocol);
+        wsProcessor = new Processor(config, nettyConfig, this, requestSender, wsProtocol);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -218,6 +218,8 @@ public class ChannelManager {
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(HTTP_PROCESSOR, httpProcessor);
+
+                ch.config().setOption(ChannelOption.AUTO_READ, false);
 
                 if (nettyConfig.getHttpAdditionalPipelineInitializer() != null)
                     nettyConfig.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
