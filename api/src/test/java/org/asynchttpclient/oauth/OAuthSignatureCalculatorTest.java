@@ -297,4 +297,33 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
     }
+
+    @Test(groups = "fast")
+    public void testWithNullRequestToken() {
+      String url = "http://photos.example.net/photos?file=vacation.jpg&size=original";
+      ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);
+      RequestToken user = new RequestToken(null, null);
+      OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+
+      final Request request = new RequestBuilder("GET")//
+          .setUri(Uri.create(url))//
+          .setSignatureCalculator(calc)//
+          .build();
+
+      String signatureBaseString = calc.signatureBaseString(//
+          request.getMethod(),//
+          request.getUri(),//
+          137131201,//
+          "ZLc92RAkooZcIO/0cctl0Q==",//
+          request.getFormParams(),//
+          request.getQueryParams()).toString();
+
+      assertEquals(signatureBaseString, "GET&" + //
+          "http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26" + //
+          "oauth_consumer_key%3D9djdj82h48djs9d2%26" + //
+          "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" + //
+          "oauth_signature_method%3DHMAC-SHA1%26" + //
+          "oauth_timestamp%3D137131201%26" + //
+          "oauth_version%3D1.0%26size%3Doriginal");
+    }
 }
