@@ -383,6 +383,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 } catch (Throwable t2) {
                     logger.error(t2.getMessage(), t2);
                 }
+                asyncHandler.onThrowable(t);
             } finally {
                 if (terminate) {
                     if (config.getMaxConnections() != -1) {
