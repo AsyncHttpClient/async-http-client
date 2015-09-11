@@ -326,7 +326,7 @@ public final class NettyRequestSender {
 
         int readTimeoutValue = config.getReadTimeout();
         if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
-            // no need for a readTimeout that's less than the requestTimeout
+            // use readTimeout if it is less than the requestTimeout
             Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeoutValue), readTimeoutValue);
             timeoutsHolder.readTimeout = readTimeout;
         }
