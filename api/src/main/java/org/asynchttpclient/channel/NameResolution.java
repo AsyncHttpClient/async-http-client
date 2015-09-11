@@ -13,23 +13,20 @@
 package org.asynchttpclient.channel;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
-public interface NameResolver {
+public class NameResolution {
 
-    NameResolution[] resolve(String name) throws UnknownHostException;
-
-    enum JdkNameResolver implements NameResolver {
-
-        INSTANCE;
-
-        @Override
-        public NameResolution[] resolve(String name) throws UnknownHostException {
-            InetAddress[] addresses = InetAddress.getAllByName(name);
-            NameResolution[] resolutions = new NameResolution[addresses.length];
-            for (int i = 0; i < addresses.length; i++)
-                resolutions[i] = new NameResolution(addresses[i]);
-            return resolutions;
-        }
+    public static final long UNKNOWN_EXPIRATION = 0;
+    
+    public final InetAddress address;
+    public final long expiration;
+    
+    public NameResolution(InetAddress address) {
+        this(address, UNKNOWN_EXPIRATION);
+       }
+    
+    public NameResolution(InetAddress address, long expiration) {
+     this.address = address;
+     this.expiration = expiration;
     }
 }

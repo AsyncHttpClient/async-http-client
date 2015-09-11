@@ -79,10 +79,6 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         }
 
         future.attachChannel(channel, false);
-
-        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onConnectionOpened(channel);
-
         channelManager.registerOpenChannel(channel, partitionKey);
         requestSender.writeRequest(future, channel);
     }

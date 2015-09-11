@@ -13,19 +13,14 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
-import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,7 +48,6 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -244,9 +238,9 @@ public final class NettyRequestSender {
 
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOpen();
-
-            ChannelFuture channelFuture = connect(request, proxy, useProxy, bootstrap, asyncHandler);
-            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
+            
+            new NettyChannelConnector(request, proxy, useProxy, asyncHandler)
+                .connect(bootstrap, new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
 
         } catch (Throwable t) {
             if (channelPreempted)
@@ -307,38 +301,6 @@ public final class NettyRequestSender {
             LOGGER.error("Can't write request", e);
             abort(channel, future, e);
         }
-    }
-
-    private InetSocketAddress remoteAddress(Request request, ProxyServer proxy, boolean useProxy) throws UnknownHostException {
-
-        InetAddress address;
-        Uri uri = request.getUri();
-        int port = getExplicitPort(uri);
-
-        if (request.getInetAddress() != null) {
-            address = request.getInetAddress();
-
-        } else if (!useProxy || avoidProxy(proxy, uri.getHost())) {
-            address = request.getNameResolver().resolve(uri.getHost());
-
-        } else {
-            address = request.getNameResolver().resolve(proxy.getHost());
-            port = proxy.getPort();
-        }
-
-        return new InetSocketAddress(address, port);
-    }
-
-    private ChannelFuture connect(Request request, ProxyServer proxy, boolean useProxy, ClientBootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
-        InetSocketAddress remoteAddress = remoteAddress(request, proxy, useProxy);
-
-        if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
-
-        if (request.getLocalAddress() != null)
-            return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
-        else
-            return bootstrap.connect(remoteAddress);
     }
 
     private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {

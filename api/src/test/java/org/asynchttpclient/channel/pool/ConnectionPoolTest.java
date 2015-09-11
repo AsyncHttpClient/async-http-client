@@ -19,6 +19,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
+import static org.asynchttpclient.test.EventCollectingHandler.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -285,17 +286,17 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
             secondHandler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            List<String> expectedEvents = Arrays.asList(
-                    "ConnectionPool",
-                    "ConnectionPooled",
-                    "RequestSend",
-                    "HeadersWritten",
-                    "StatusReceived",
-                    "HeadersReceived",
-                    "ConnectionOffer",
-                    "Completed");
+            Object[] expectedEvents = new Object[] {
+                    CONNECTION_POOL_EVENT,
+                    CONNECTION_POOLED_EVENT,
+                    REQUEST_SEND_EVENT,
+                    HEADERS_WRITTEN_EVENT,
+                    STATUS_RECEIVED_EVENT,
+                    HEADERS_RECEIVED_EVENT,
+                    CONNECTION_OFFER_EVENT,
+                    COMPLETED_EVENT};
 
-            assertEquals(secondHandler.firedEvents, expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
+            assertEquals(secondHandler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
         }
     }
 }

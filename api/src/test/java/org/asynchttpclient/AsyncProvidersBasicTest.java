@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.test.EventCollectingHandler.*;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.asynchttpclient.util.DateUtils.millisTime;
@@ -46,8 +47,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.config.AsyncHttpClientConfigBean;
 import org.asynchttpclient.cookie.Cookie;
@@ -1410,19 +1409,20 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            List<String> expectedEvents = Arrays.asList(
-                    "ConnectionPool",
-                    "ConnectionOpen",
-                    "DnsResolved",
-                    "ConnectionOpened",
-                    "RequestSend",
-                    "HeadersWritten",
-                    "StatusReceived",
-                    "HeadersReceived",
-                    "ConnectionOffer",
-                    "Completed");
+            Object[] expectedEvents = new Object[] {
+                    CONNECTION_POOL_EVENT,
+                    CONNECTION_OPEN_EVENT,
+                    DNS_RESOLVED_EVENT,
+                    CONNECTION_SUCCESS_EVENT,
+                    REQUEST_SEND_EVENT,
+                    HEADERS_WRITTEN_EVENT,
+                    STATUS_RECEIVED_EVENT,
+                    HEADERS_RECEIVED_EVENT,
+                    CONNECTION_OFFER_EVENT,
+                    COMPLETED_EVENT
+            };
 
-            assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+            assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }
     }
 }

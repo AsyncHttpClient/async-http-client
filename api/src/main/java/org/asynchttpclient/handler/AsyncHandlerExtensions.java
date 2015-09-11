@@ -15,6 +15,7 @@ package org.asynchttpclient.handler;
 import java.net.InetAddress;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.channel.NameResolution;
 
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
@@ -30,11 +31,28 @@ public interface AsyncHandlerExtensions {
     void onConnectionOpen();
 
     /**
-     * Notify the callback when a new connection was successfully opened.
+     * Notify the callback after DNS resolution has completed.
+     * 
+     * @param addresses the resolved addresses
+     */
+    void onDnsResolved(NameResolution[] addresses);
+
+    /**
+     * Notify the callback after a successful connect
      * 
      * @param connection the connection
+     * @param address the connected addresses
      */
-    void onConnectionOpened(Object connection);
+    void onConnectionSuccess(Object connection, InetAddress address);
+    
+    /**
+     * Notify the callback after a failed connect.
+     * Might be called several times, or be followed by onConnectionSuccess
+     * when the name was resolved to multiple addresses.
+     * 
+     * @param address the tentative addresses
+     */
+    void onConnectionFailure(InetAddress address);
 
     /**
      * Notify the callback when trying to fetch a connection from the pool.
@@ -69,13 +87,6 @@ public interface AsyncHandlerExtensions {
      * Notify the callback every time a request is being retried.
      */
     void onRetry();
-
-    /**
-     * Notify the callback after DNS resolution has completed.
-     * 
-     * @param address the resolved address
-     */
-    void onDnsResolved(InetAddress address);
 
     /**
      * Notify the callback when the SSL handshake performed to establish an

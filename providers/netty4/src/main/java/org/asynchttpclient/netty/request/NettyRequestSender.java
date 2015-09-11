@@ -14,17 +14,14 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.WS;
 import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
-import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -33,9 +30,6 @@ import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -247,8 +241,8 @@ public final class NettyRequestSender {
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOpen();
 
-            ChannelFuture channelFuture = connect(request, proxy, useProxy, bootstrap, asyncHandler);
-            channelFuture.addListener(new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
+            new NettyChannelConnector(request, proxy, useProxy, asyncHandler)
+                .connect(bootstrap, new NettyConnectListener<T>(future, this, channelManager, channelPreempted, partitionKey));
 
         } catch (Throwable t) {
             if (channelPreempted)
@@ -310,38 +304,6 @@ public final class NettyRequestSender {
             LOGGER.error("Can't write request", e);
             abort(channel, future, e);
         }
-    }
-
-    private InetSocketAddress remoteAddress(Request request, ProxyServer proxy, boolean useProxy) throws UnknownHostException {
-
-        InetAddress address;
-        Uri uri = request.getUri();
-        int port = getExplicitPort(uri);
-
-        if (request.getInetAddress() != null) {
-            address = request.getInetAddress();
-
-        } else if (!useProxy || avoidProxy(proxy, uri.getHost())) {
-            address = request.getNameResolver().resolve(uri.getHost());
-
-        } else {
-            address = request.getNameResolver().resolve(proxy.getHost());
-            port = proxy.getPort();
-        }
-
-        return new InetSocketAddress(address, port);
-    }
-
-    private ChannelFuture connect(Request request, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap, AsyncHandler<?> asyncHandler) throws UnknownHostException {
-        InetSocketAddress remoteAddress = remoteAddress(request, proxy, useProxy);
-
-        if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onDnsResolved(remoteAddress.getAddress());
-
-        if (request.getLocalAddress() != null)
-            return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
-        else
-            return bootstrap.connect(remoteAddress);
     }
 
     private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {

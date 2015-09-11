@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyProviderUtil;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
@@ -136,7 +137,9 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
         @Override
         public void onConnectionOpen() {}
         @Override
-        public void onConnectionOpened(Object connection) {}
+        public void onConnectionSuccess(Object connection, InetAddress address) {}
+        @Override
+        public void onConnectionFailure(InetAddress address) {}
         @Override
         public void onConnectionPool() {}
         @Override
@@ -146,11 +149,9 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
         @Override
         public void onRequestSend(Object request) {}
         @Override
-        public void onRetry() {
-            replaying.countDown();
-        }
+        public void onRetry() { replaying.countDown(); }
         @Override
-        public void onDnsResolved(InetAddress address) {}
+        public void onDnsResolved(NameResolution[] resolutions) {}
         @Override
         public void onSslHandshakeCompleted() {}
     }

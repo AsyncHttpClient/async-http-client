@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.test.EventCollectingHandler.*;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
 import static org.asynchttpclient.test.TestUtils.createSSLContext;
@@ -28,7 +29,6 @@ import org.testng.annotations.Test;
 import javax.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -125,20 +125,20 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            List<String> expectedEvents = Arrays.asList(
-                    "ConnectionPool",
-                    "ConnectionOpen",
-                    "DnsResolved",
-                    "SslHandshakeCompleted",
-                    "ConnectionOpened",
-                    "RequestSend",
-                    "HeadersWritten",
-                    "StatusReceived",
-                    "HeadersReceived",
-                    "ConnectionOffer",
-                    "Completed");
+            Object[] expectedEvents = new Object[] {
+                    CONNECTION_POOL_EVENT,
+                    CONNECTION_OPEN_EVENT,
+                    DNS_RESOLVED_EVENT,
+                    SSL_HANDSHAKE_COMPLETED_EVENT,
+                    CONNECTION_SUCCESS_EVENT,
+                    REQUEST_SEND_EVENT,
+                    HEADERS_WRITTEN_EVENT,
+                    STATUS_RECEIVED_EVENT,
+                    HEADERS_RECEIVED_EVENT,
+                    CONNECTION_OFFER_EVENT,
+                    COMPLETED_EVENT};
 
-            assertEquals(handler.firedEvents, expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+            assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }
     }
 }
