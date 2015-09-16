@@ -50,7 +50,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
         channelManager = new ChannelManager(config, nettyConfig, nettyTimer);
         requestSender = new NettyRequestSender(config, channelManager, nettyTimer, closed);
-        channelManager.configureBootstraps(requestSender, closed);
+        channelManager.configureBootstraps(requestSender);
     }
 
     private Timer newNettyTimer() {

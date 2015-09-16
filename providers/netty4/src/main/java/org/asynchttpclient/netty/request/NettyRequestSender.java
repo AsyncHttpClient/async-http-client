@@ -85,7 +85,7 @@ public final class NettyRequestSender {
             NettyResponseFuture<T> future,//
             boolean reclaimCache) {
 
-        if (closed.get())
+        if (isClosed())
             throw new IllegalStateException("Closed");
 
         validateWebSocketRequest(request, asyncHandler);

@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
@@ -202,7 +201,7 @@ public class ChannelManager {
         }
     }
 
-    public void configureBootstraps(NettyRequestSender requestSender, AtomicBoolean closed) {
+    public void configureBootstraps(NettyRequestSender requestSender) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, nettyConfig, requestSender);
         final Processor httpProcessor = new Processor(config, nettyConfig, this, requestSender, httpProtocol);

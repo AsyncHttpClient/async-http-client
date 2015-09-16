@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
@@ -216,7 +215,7 @@ public class ChannelManager {
         }
     }
 
-    public void configureBootstraps(NettyRequestSender requestSender, AtomicBoolean closed) {
+    public void configureBootstraps(NettyRequestSender requestSender) {
 
         Protocol httpProtocol = new HttpProtocol(this, config, nettyConfig, requestSender);
         final Processor httpProcessor = new Processor(config, this, requestSender, httpProtocol);
