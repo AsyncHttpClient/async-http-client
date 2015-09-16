@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import org.asynchttpclient.internal.chmv8.ConcurrentHashMapV8;
+import org.asynchttpclient.internal.jsr166.ConcurrentHashMapV8;
 
 public class AsyncHttpClientConfigHelper {
 

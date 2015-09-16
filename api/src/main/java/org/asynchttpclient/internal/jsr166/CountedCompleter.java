@@ -1,28 +1,10 @@
 /*
- * Copyright 2013 The Netty Project
- *
- * The Netty Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
-/*
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package org.asynchttpclient.internal.chmv8;
-
-import java.util.concurrent.RecursiveAction;
+package org.asynchttpclient.internal.jsr166;
 
 /**
  * A {@link ForkJoinTask} with a completion action performed when
@@ -397,7 +379,6 @@ import java.util.concurrent.RecursiveAction;
  * @since 1.8
  * @author Doug Lea
  */
-@SuppressWarnings("all")
 public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     private static final long serialVersionUID = 5232453752276485070L;
 
@@ -538,7 +519,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     public final int decrementPendingCountUnlessZero() {
         int c;
         do {} while ((c = pending) != 0 &&
-                !U.compareAndSwapInt(this, PENDING, c, c - 1));
+                     !U.compareAndSwapInt(this, PENDING, c, c - 1));
         return c;
     }
 
@@ -691,8 +672,8 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     void internalPropagateException(Throwable ex) {
         CountedCompleter<?> a = this, s = a;
         while (a.onExceptionalCompletion(ex, s) &&
-                (a = (s = a).completer) != null && a.status >= 0 &&
-                a.recordExceptionalCompletion(ex) == EXCEPTIONAL)
+               (a = (s = a).completer) != null && a.status >= 0 &&
+               a.recordExceptionalCompletion(ex) == EXCEPTIONAL)
             ;
     }
 
@@ -705,7 +686,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     }
 
     /**
-     * Returns the result of the computation. By default
+     * Returns the result of the computation.  By default,
      * returns {@code null}, which is appropriate for {@code Void}
      * actions, but in other cases should be overridden, almost
      * always to return a field or function of a field that
@@ -731,7 +712,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         try {
             U = getUnsafe();
             PENDING = U.objectFieldOffset
-                    (CountedCompleter.class.getDeclaredField("pending"));
+                (CountedCompleter.class.getDeclaredField("pending"));
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -750,20 +731,20 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         } catch (SecurityException tryReflectionInstead) {}
         try {
             return java.security.AccessController.doPrivileged
-                    (new java.security.PrivilegedExceptionAction<sun.misc.Unsafe>() {
-                        public sun.misc.Unsafe run() throws Exception {
-                            Class<sun.misc.Unsafe> k = sun.misc.Unsafe.class;
-                            for (java.lang.reflect.Field f : k.getDeclaredFields()) {
-                                f.setAccessible(true);
-                                Object x = f.get(null);
-                                if (k.isInstance(x))
-                                    return k.cast(x);
-                            }
-                            throw new NoSuchFieldError("the Unsafe");
-                        }});
+            (new java.security.PrivilegedExceptionAction<sun.misc.Unsafe>() {
+                public sun.misc.Unsafe run() throws Exception {
+                    Class<sun.misc.Unsafe> k = sun.misc.Unsafe.class;
+                    for (java.lang.reflect.Field f : k.getDeclaredFields()) {
+                        f.setAccessible(true);
+                        Object x = f.get(null);
+                        if (k.isInstance(x))
+                            return k.cast(x);
+                    }
+                    throw new NoSuchFieldError("the Unsafe");
+                }});
         } catch (java.security.PrivilegedActionException e) {
             throw new RuntimeException("Could not initialize intrinsics",
-                    e.getCause());
+                                       e.getCause());
         }
     }
 }

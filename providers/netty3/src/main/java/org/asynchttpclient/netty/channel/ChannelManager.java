@@ -37,7 +37,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.internal.chmv8.ConcurrentHashMapV8;
+import org.asynchttpclient.internal.jsr166.ConcurrentHashMapV8;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
