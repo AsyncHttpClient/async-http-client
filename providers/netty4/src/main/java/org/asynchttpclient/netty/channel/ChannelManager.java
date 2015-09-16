@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
 
@@ -313,7 +314,7 @@ public class ChannelManager {
         }
 
         if (allowReleaseEventLoopGroup)
-            eventLoopGroup.shutdownGracefully();
+            eventLoopGroup.shutdownGracefully(config.getShutdownQuiet(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
     }
 
     public void closeChannel(Channel channel) {

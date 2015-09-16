@@ -116,6 +116,8 @@ public class AsyncHttpClientConfig {
     protected int webSocketMaxBufferSize = 128000000;
     protected int webSocketMaxFrameSize = 10 * 1024;
     protected boolean keepEncodingHeader = false;
+    protected int shutdownQuiet = 2000;
+    protected int shutdownTimeout = 15000;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
 
     protected AsyncHttpClientConfig() {
@@ -162,6 +164,8 @@ public class AsyncHttpClientConfig {
             int webSocketMaxBufferSize,//
             int webSocketMaxFrameSize,//
             boolean keepEncodingHeader,//
+            int shutdownQuiet,//
+            int shutdownTimeout,//
             AsyncHttpProviderConfig<?, ?> providerConfig) {
 
         this.name = name;
@@ -214,6 +218,8 @@ public class AsyncHttpClientConfig {
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
         this.keepEncodingHeader = keepEncodingHeader;
+        this.shutdownQuiet = shutdownQuiet;
+        this.shutdownTimeout = shutdownTimeout;
     }
 
     /**
@@ -612,6 +618,14 @@ public class AsyncHttpClientConfig {
         return keepEncodingHeader;
     }
 
+    public int getShutdownQuiet() {
+        return shutdownQuiet;
+    }
+
+    public int getShutdownTimeout() {
+        return shutdownTimeout;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -659,6 +673,8 @@ public class AsyncHttpClientConfig {
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
         private boolean keepEncodingHeader = defaultKeepEncodingHeader();
+        private int shutdownQuiet = defaultShutdownQuiet();
+        private int shutdownTimeout = defaultShutdownTimeout();
         private AsyncHttpProviderConfig<?, ?> providerConfig;
 
         public Builder() {
@@ -1157,6 +1173,24 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * @param shutdownQuiet the quiet period in ms before actually shutting down
+         * @return the quiet period
+         */
+        public Builder setShutdownQuiet(int shutdownQuiet) {
+            this.shutdownQuiet = shutdownQuiet;
+            return this;
+        }
+
+        /**
+         * @param shutdownTimeout the shutdown timeout in ms
+         * @return the shutdown timeout
+         */
+        public Builder setShutdownTimeout(int shutdownTimeout) {
+            this.shutdownTimeout = shutdownTimeout;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype
          * configuration.
          *
@@ -1209,6 +1243,8 @@ public class AsyncHttpClientConfig {
             webSocketMaxBufferSize = prototype.webSocketMaxBufferSize;
             webSocketMaxFrameSize = prototype.webSocketMaxFrameSize;
             keepEncodingHeader = prototype.keepEncodingHeader;
+            shutdownQuiet = prototype.shutdownQuiet;
+            shutdownTimeout = prototype.shutdownTimeout;
 
             providerConfig = prototype.getAsyncHttpProviderConfig();
         }
@@ -1270,6 +1306,8 @@ public class AsyncHttpClientConfig {
                     webSocketMaxBufferSize, //
                     webSocketMaxFrameSize, //
                     keepEncodingHeader, //
+                    shutdownQuiet,//
+                    shutdownTimeout,//
                     providerConfig);
         }
     }
