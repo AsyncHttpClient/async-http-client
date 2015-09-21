@@ -60,7 +60,7 @@ public class ProxyServer {
     private Charset charset = UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
     private String ntlmHost;
-    private AuthScheme scheme = AuthScheme.BASIC;
+    private AuthScheme scheme;
     private boolean forceHttp10 = false;
 
     public ProxyServer(Protocol protocol, String host, int port, int securedPort, String principal, String password) {
@@ -70,6 +70,7 @@ public class ProxyServer {
         this.securedPort = securedPort;
         this.principal = principal;
         this.password = password;
+        this.scheme = principal == null ? AuthScheme.NONE : AuthScheme.BASIC;
     }
     
     public ProxyServer(Protocol protocol, String host, int port, String principal, String password) {
@@ -154,6 +155,10 @@ public class ProxyServer {
     }
 
     public void setScheme(AuthScheme scheme) {
+        if (principal == null)
+            throw new NullPointerException("principal");
+        if (password == null)
+            throw new NullPointerException("password");
         this.scheme = scheme;
     }
 

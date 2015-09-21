@@ -124,7 +124,7 @@ public final class AuthenticatorUtils {
 
         String proxyAuthorization = null;
 
-        if (!connect && proxyServer != null && proxyServer.getPrincipal() != null && proxyServer.getScheme() == AuthScheme.BASIC) {
+        if (!connect && proxyServer != null && proxyServer.getScheme() == AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
         } else if (realm != null && realm.getUsePreemptiveAuth() && realm.isTargetProxy()) {
 
