@@ -59,7 +59,18 @@ public class Realm {
     private final boolean targetProxy;
 
     public enum AuthScheme {
-        DIGEST, BASIC, NTLM, SPNEGO, KERBEROS, NONE
+
+        DIGEST(false), BASIC(false), NTLM(true), SPNEGO(true), KERBEROS(true), NONE(false);
+
+        private boolean likeNtlm;
+
+        private AuthScheme(boolean likeNtlm) {
+            this.likeNtlm = likeNtlm;
+        }
+
+        public boolean isLikeNtlm() {
+            return likeNtlm; 
+        }
     }
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,

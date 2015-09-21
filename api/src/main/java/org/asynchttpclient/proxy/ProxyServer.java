@@ -149,20 +149,12 @@ public class ProxyServer {
         return this;
     }
 
-    public String getNtlmDomain() {
-        return ntlmDomain;
-    }
-
     public AuthScheme getScheme() {
         return scheme;
     }
 
     public void setScheme(AuthScheme scheme) {
         this.scheme = scheme;
-    }
-
-    public String getNtlmHost() {
-        return ntlmHost;
     }
 
     public void setNtlmHost(String ntlmHost) {
