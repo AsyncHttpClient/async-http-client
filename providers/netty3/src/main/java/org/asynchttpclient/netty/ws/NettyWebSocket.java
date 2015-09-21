@@ -134,7 +134,7 @@ public class NettyWebSocket implements WebSocket {
     @Override
     public void close() {
         if (channel.isOpen()) {
-            onClose();
+            onClose(1000, "Normal closure; the connection successfully completed whatever purpose for which it was created.");
             listeners.clear();
             channel.write(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
         }
@@ -153,10 +153,6 @@ public class NettyWebSocket implements WebSocket {
                 LOGGER.error("", t2);
             }
         }
-    }
-
-    protected void onClose() {
-        onClose(1000, "Normal closure; the connection successfully completed whatever purpose for which it was created.");
     }
 
     public void onClose(int code, String reason) {
