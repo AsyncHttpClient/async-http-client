@@ -32,7 +32,7 @@ import org.asynchttpclient.Realm.AuthScheme;
 public class ProxyServer {
 
     public enum Protocol {
-        HTTP("http"), HTTPS("https"), NTLM("NTLM"), KERBEROS("KERBEROS"), SPNEGO("SPNEGO");
+        HTTP("HTTP"), NTLM("NTLM"), KERBEROS("KERBEROS"), SPNEGO("SPNEGO");
 
         private final String protocol;
 
@@ -56,23 +56,27 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private final int port;
-    private final String url;
+    private final int securedPort;
     private Charset charset = UTF_8;
-    private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
+    private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
     private String ntlmHost;
     private AuthScheme scheme = AuthScheme.BASIC;
     private boolean forceHttp10 = false;
 
-    public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
+    public ProxyServer(Protocol protocol, String host, int port, int securedPort, String principal, String password) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
+        this.securedPort = securedPort;
         this.principal = principal;
         this.password = password;
-        url = protocol + "://" + host + ":" + port;
+    }
+    
+    public ProxyServer(Protocol protocol, String host, int port, String principal, String password) {
+        this(protocol, host, port, port, principal, password);
     }
 
-    public ProxyServer(final String host, final int port, String principal, String password) {
+    public ProxyServer(String host, int port, String principal, String password) {
         this(Protocol.HTTP, host, port, principal, password);
     }
 
@@ -105,6 +109,10 @@ public class ProxyServer {
         return port;
     }
 
+    public int getSecuredPort() {
+        return securedPort;
+    }
+
     public String getPrincipal() {
         return principal;
     }
@@ -120,10 +128,6 @@ public class ProxyServer {
 
     public Charset getCharset() {
         return charset;
-    }
-
-    public String getUrl() {
-        return url;
     }
 
     public ProxyServer addNonProxyHost(String uri) {
@@ -171,10 +175,5 @@ public class ProxyServer {
 
     public void setForceHttp10(boolean forceHttp10) {
         this.forceHttp10 = forceHttp10;
-    }
-
-    @Override
-    public String toString() {
-        return url;
     }
 }

@@ -92,10 +92,10 @@ public final class ProxyUtils {
     }
     
     /**
-     * @see #avoidProxy(ProxyServer, String)
+     * @see #ignoreProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, request.getUri().getHost());
+        return ignoreProxy(proxyServer, request.getUri().getHost());
     }
 
     private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
@@ -119,9 +119,9 @@ public final class ProxyUtils {
      *
      * @param proxyServer
      * @param hostname      the hostname
-     * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
+     * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
      */
-    public static boolean avoidProxy(final ProxyServer proxyServer, final String hostname) {
+    public static boolean ignoreProxy(final ProxyServer proxyServer, final String hostname) {
         if (proxyServer != null) {
             if (hostname == null)
                 throw new NullPointerException("hostname");

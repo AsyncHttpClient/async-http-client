@@ -15,22 +15,29 @@ package org.asynchttpclient.channel.pool;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.HttpUtils;
 
 public interface ConnectionPoolPartitioning {
 
     class ProxyPartitionKey {
-        private final String proxyUrl;
+        private final String proxyHost;
+        private final int proxyPort;
+        private final boolean secured;
         private final String targetHostBaseUrl;
 
-        public ProxyPartitionKey(String proxyUrl, String targetHostBaseUrl) {
-            this.proxyUrl = proxyUrl;
+        public ProxyPartitionKey(String proxyHost, int proxyPort, boolean secured, String targetHostBaseUrl) {
+            this.proxyHost = proxyHost;
+            this.proxyPort = proxyPort;
+            this.secured = secured;
             this.targetHostBaseUrl = targetHostBaseUrl;
         }
 
         @Override
         public String toString() {
             return new StringBuilder()//
-                    .append("ProxyPartitionKey(proxyUrl=").append(proxyUrl)//
+                    .append("ProxyPartitionKey(proxyHost=").append(proxyHost)//
+                    .append(", proxyPort=").append(proxyPort)//
+                    .append(", secured=").append(secured)//
                     .append(", targetHostBaseUrl=").append(targetHostBaseUrl)//
                     .toString();
         }
@@ -44,7 +51,13 @@ public interface ConnectionPoolPartitioning {
 
         public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
             String targetHostBaseUrl = virtualHost != null ? virtualHost : AsyncHttpProviderUtils.getBaseUrl(uri);
-            return proxyServer != null ? new ProxyPartitionKey(proxyServer.getUrl(), targetHostBaseUrl) : targetHostBaseUrl;
+            if (proxyServer != null) {
+                return HttpUtils.isSecure(uri) ? //
+                new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getSecuredPort(), true, targetHostBaseUrl)
+                        : new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getPort(), false, targetHostBaseUrl);
+            } else {
+                return targetHostBaseUrl;
+            }
         }
     }
 }

@@ -13,7 +13,7 @@
 package org.asynchttpclient.channel;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
-import static org.asynchttpclient.util.ProxyUtils.avoidProxy;
+import static org.asynchttpclient.util.ProxyUtils.ignoreProxy;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -23,6 +23,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.HttpUtils;
 
 public abstract class ChannelConnector {
 
@@ -41,12 +42,12 @@ public abstract class ChannelConnector {
         if (request.getInetAddress() != null) {
             resolutions = new NameResolution[] { new NameResolution(request.getInetAddress()) };
 
-        } else if (!useProxy || avoidProxy(proxy, uri.getHost())) {
+        } else if (!useProxy || ignoreProxy(proxy, uri.getHost())) {
             resolutions = request.getNameResolver().resolve(uri.getHost());
 
         } else {
             resolutions = request.getNameResolver().resolve(proxy.getHost());
-            port = proxy.getPort();
+            port = HttpUtils.isSecure(uri) ? proxy.getSecuredPort(): proxy.getPort();
         }
 
         if (asyncHandlerExtensions != null)

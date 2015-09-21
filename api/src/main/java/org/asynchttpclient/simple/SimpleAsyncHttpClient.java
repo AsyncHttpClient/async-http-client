@@ -420,7 +420,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
         private Realm.RealmBuilder realmBuilder = null;
-        private ProxyServer.Protocol proxyProtocol = null;
+        private ProxyServer.Protocol proxyProtocol = ProxyServer.Protocol.HTTP;
         private String proxyHost = null;
         private String proxyPrincipal = null;
         private String proxyPassword = null;
