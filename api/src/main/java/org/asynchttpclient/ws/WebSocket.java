@@ -123,9 +123,4 @@ public interface WebSocket extends Closeable {
      * @return <code>true</code> if the WebSocket is open/connected.
      */
     boolean isOpen();
-
-    /**
-     * Close the WebSocket.
-     */
-    void close();
 }
