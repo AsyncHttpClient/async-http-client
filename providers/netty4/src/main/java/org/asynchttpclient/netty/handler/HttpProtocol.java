@@ -18,7 +18,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpContent;
@@ -361,14 +360,10 @@ public final class HttpProtocol extends Protocol {
                 future.attachChannel(channel, true);
             
             Uri requestUri = request.getUri();
-            String scheme = requestUri.getScheme();
-            String host = requestUri.getHost();
-            int port = getExplicitPort(requestUri);
-
-            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
                 
             try {
-                channelManager.upgradeProtocol(channel.pipeline(), scheme, host, port);
+                channelManager.upgradeProtocol(channel.pipeline(), requestUri);
                 future.setReuseChannel(true);
                 future.setConnectAllowed(false);
                 requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getRequest()).build());

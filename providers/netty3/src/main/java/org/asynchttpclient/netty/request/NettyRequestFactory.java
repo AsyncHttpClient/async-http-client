@@ -18,8 +18,6 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
-import static org.asynchttpclient.util.HttpUtils.isSecure;
-import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
@@ -59,7 +57,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.HttpUtils;
 import org.asynchttpclient.util.StringUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
@@ -142,7 +139,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
 
-        boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!HttpUtils.isSecure(uri) || config.isAllowPoolingSslConnections());
+        boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!uri.isSecured() || config.isAllowPoolingSslConnections());
 
         HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
@@ -189,9 +186,8 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         }
 
         // connection header and friends
-        boolean webSocket = isWebSocket(uri.getScheme());
-        if (!connect && webSocket) {
-            String origin = "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort());
+        if (!connect && uri.isWebSocket()) {
+            String origin = "http://" + uri.getHost() + ":" + uri.getExplicitPort();
             headers.set(UPGRADE, HttpHeaders.Values.WEBSOCKET)//
                     .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
                     .set(ORIGIN, origin)//

@@ -13,11 +13,6 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getSchemeDefaultPort;
-import static org.asynchttpclient.util.HttpUtils.WS;
-import static org.asynchttpclient.util.HttpUtils.isSecure;
-import static org.asynchttpclient.util.HttpUtils.isWebSocket;
 import static org.asynchttpclient.util.MiscUtils.buildStaticIOException;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
@@ -384,21 +379,21 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    public void upgradeProtocol(ChannelPipeline pipeline, String scheme, String host, int port) throws GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws GeneralSecurityException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
-        if (isSecure(scheme))
+        if (requestUri.isSecured())
             if (isSslHandlerConfigured(pipeline)) {
                 pipeline.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             } else {
                 pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
-                pipeline.addFirst(SSL_HANDLER, createSslHandler(host, port));
+                pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
             }
         else
             pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
 
-        if (isWebSocket(scheme)) {
+        if (requestUri.isWebSocket()) {
             pipeline.addAfter(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
             pipeline.remove(HTTP_PROCESSOR);
         }
@@ -412,7 +407,7 @@ public class ChannelManager {
             int i = virtualHost.indexOf(':');
             if (i == -1) {
                 peerHost = virtualHost;
-                peerPort = getSchemeDefaultPort(uri.getScheme());
+                peerPort = uri.getSchemeDefaultPort();
             } else {
                 peerHost = virtualHost.substring(0, i);
                 peerPort = Integer.valueOf(virtualHost.substring(i + 1));
@@ -420,7 +415,7 @@ public class ChannelManager {
             
         } else {
             peerHost = uri.getHost();
-            peerPort = getExplicitPort(uri);
+            peerPort = uri.getExplicitPort();
         }
 
         SslHandler sslHandler = createSslHandler(peerHost, peerPort);
@@ -432,7 +427,7 @@ public class ChannelManager {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 
-        if (isSecure(uri.getScheme())) {
+        if (uri.isSecured()) {
             if (!sslHandlerConfigured) {
                 addSslHandler(pipeline, uri, virtualHost);
             }
@@ -441,8 +436,8 @@ public class ChannelManager {
             pipeline.remove(SSL_HANDLER);
     }
 
-    public ClientBootstrap getBootstrap(String scheme, boolean useProxy) {
-        return scheme.startsWith(WS) && !useProxy ? wsBootstrap : httpBootstrap;
+    public ClientBootstrap getBootstrap(Uri uri, boolean useProxy) {
+        return uri.isWebSocket() && !useProxy ? wsBootstrap : httpBootstrap;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

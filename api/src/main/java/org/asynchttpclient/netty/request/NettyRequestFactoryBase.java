@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
-import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -34,7 +33,7 @@ public abstract class NettyRequestFactoryBase {
         if (connect)
             return getAuthority(uri);
 
-        else if (proxyServer != null && !useProxyConnect(uri))
+        else if (proxyServer != null && !uri.useProxyConnect())
             return uri.toUrl();
 
         else {

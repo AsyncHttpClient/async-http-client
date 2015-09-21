@@ -17,8 +17,6 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EX
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
-import static org.asynchttpclient.util.HttpUtils.WS;
-import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -94,7 +92,7 @@ public final class NettyRequestSender {
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && useProxyConnect(request.getUri()))
+        if (useProxy && request.getUri().useProxyConnect())
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced
@@ -417,7 +415,7 @@ public final class NettyRequestSender {
 
     private void validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
         Uri uri = request.getUri();
-        boolean isWs = uri.getScheme().startsWith(WS);
+        boolean isWs = uri.isWebSocket();
         if (asyncHandler instanceof WebSocketUpgradeHandler) {
             if (!isWs)
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());

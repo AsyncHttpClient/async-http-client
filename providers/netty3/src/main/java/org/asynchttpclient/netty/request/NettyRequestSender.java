@@ -16,8 +16,6 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EX
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
-import static org.asynchttpclient.util.HttpUtils.WS;
-import static org.asynchttpclient.util.HttpUtils.useProxyConnect;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
 import java.io.IOException;
@@ -92,7 +90,7 @@ public final class NettyRequestSender {
         boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && useProxyConnect(request.getUri()))
+        if (useProxy && request.getUri().useProxyConnect())
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced
@@ -223,7 +221,7 @@ public final class NettyRequestSender {
         // Do not throw an exception when we need an extra connection for a
         // redirect
         // FIXME why? This violate the max connection per host handling, right?
-        ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri().getScheme(), useProxy);
+        ClientBootstrap bootstrap = channelManager.getBootstrap(request.getUri(), useProxy);
 
         boolean channelPreempted = false;
         Object partitionKey = future.getPartitionKey();
@@ -416,7 +414,7 @@ public final class NettyRequestSender {
 
     private void validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
         Uri uri = request.getUri();
-        boolean isWs = uri.getScheme().startsWith(WS);
+        boolean isWs = uri.isWebSocket();
         if (asyncHandler instanceof WebSocketUpgradeHandler) {
             if (!isWs)
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());

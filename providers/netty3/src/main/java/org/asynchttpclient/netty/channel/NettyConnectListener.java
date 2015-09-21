@@ -14,7 +14,6 @@
 package org.asynchttpclient.netty.channel;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
-import static org.asynchttpclient.util.HttpUtils.isSecure;
 
 import java.net.ConnectException;
 
@@ -89,7 +88,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         Uri uri = request.getUri();
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
-        if (future.getProxyServer() == null && isSecure(uri)) {
+        if (future.getProxyServer() == null && uri.isSecured()) {
             SslHandler sslHandler = channelManager.addSslHandler(channel.getPipeline(), uri, request.getVirtualHost());
             sslHandler.handshake().addListener(new ChannelFutureListener() {
                 

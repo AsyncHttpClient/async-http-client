@@ -14,7 +14,6 @@
 package org.asynchttpclient.netty.handler;
 
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getExplicitPort;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -350,14 +349,10 @@ public final class HttpProtocol extends Protocol {
                 future.attachChannel(channel, true);
 
             Uri requestUri = request.getUri();
-            String scheme = requestUri.getScheme();
-            String host = requestUri.getHost();
-            int port = getExplicitPort(requestUri);
-
-            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
             try {
-                channelManager.upgradeProtocol(channel.getPipeline(), scheme, host, port);
+                channelManager.upgradeProtocol(channel.getPipeline(), requestUri);
                 future.setReuseChannel(true);
                 future.setConnectAllowed(false);
                 requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).build(), future);

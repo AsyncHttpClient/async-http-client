@@ -20,6 +20,11 @@ import org.asynchttpclient.util.StringUtils;
 
 public class Uri {
     
+    public static final String HTTP = "http";
+    public static final String HTTPS = "https";
+    public static final String WS = "ws";
+    public static final String WSS = "wss";
+    
     public static Uri create(String originalUrl) {
         return create(null, originalUrl);
     }
@@ -43,6 +48,8 @@ public class Uri {
     private final String query;
     private final String path;
     private String url;
+    private boolean secured;
+    private boolean webSocket;
 
     public Uri(String scheme,//
             String userInfo,//
@@ -62,6 +69,8 @@ public class Uri {
         this.port = port;
         this.path = path;
         this.query = query;
+        this.secured = HTTPS.equals(scheme) || WSS.equals(scheme);
+        this.webSocket = WS.equals(scheme) || WSS.equalsIgnoreCase(scheme);
     }
 
     public String getQuery() {
@@ -88,10 +97,30 @@ public class Uri {
         return host;
     }
 
+    public boolean isSecured() {
+        return secured;
+    }
+
+    public boolean isWebSocket() {
+        return webSocket;
+    }
+    
     public URI toJavaNetURI() throws URISyntaxException {
         return new URI(toUrl());
     }
 
+    public int getExplicitPort() {
+        return port == -1 ? getSchemeDefaultPort() : port;
+    }
+
+    public int getSchemeDefaultPort() {
+        return isSecured() ? 443 : 80;
+    }
+
+    public boolean useProxyConnect() {
+        return isSecured() || isWebSocket();
+    }
+    
     public String toUrl() {
         if (url == null) {
             StringBuilder sb = StringUtils.stringBuilder();
