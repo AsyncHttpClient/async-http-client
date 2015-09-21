@@ -150,7 +150,7 @@ public class NettyWebSocket implements WebSocket {
             try {
                 listener.onError(t);
             } catch (Throwable t2) {
-                LOGGER.error("", t2);
+                LOGGER.error("WebSocketListener.onError crash", t2);
             }
         }
     }
