@@ -116,7 +116,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         // small optimization: resync only when size is different, hopefully may reduce unnecessary loops
         if (keyLookup.size() != values.size()) {
             for (Iterator<String> iterator = keyLookup.values().iterator(); iterator.hasNext(); ) {
-                // remove if exists in keyLoopup but not in values
+                // remove if exists in keyLookup but not in values
                 if (!values.containsKey(iterator.next())) {
                     iterator.remove();
                 }
