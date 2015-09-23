@@ -86,7 +86,6 @@ public final class HttpProtocol extends Protocol {
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
 
-
         } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(authHeaders);
             if (ntlmAuthenticate != null) {
@@ -149,7 +148,7 @@ public final class HttpProtocol extends Protocol {
         } else {
             addType3NTLMAuthorizationHeader(authenticateHeader, headers, realm, false);
         }
- 
+
         return new Realm.RealmBuilder().clone(realm)//
                 .setUri(request.getUri())//
                 .setMethodName(request.getMethod())//
@@ -169,14 +168,13 @@ public final class HttpProtocol extends Protocol {
                 .setScheme(AuthScheme.NTLM)//
                 .setUri(request.getUri())//
                 .setMethodName(request.getMethod()).build();
-        
+
         addType3NTLMAuthorizationHeader(authenticateHeader, headers, realm, true);
 
         return realm;
     }
 
-    private void addType3NTLMAuthorizationHeader(String authenticateHeader, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            boolean proxyInd) {
+    private void addType3NTLMAuthorizationHeader(String authenticateHeader, FluentCaseInsensitiveStringsMap headers, Realm realm, boolean proxyInd) {
         headers.remove(authorizationHeaderName(proxyInd));
 
         if (authenticateHeader.startsWith("NTLM ")) {
@@ -358,10 +356,10 @@ public final class HttpProtocol extends Protocol {
 
             if (future.isKeepAlive())
                 future.attachChannel(channel, true);
-            
+
             Uri requestUri = request.getUri();
             logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
-                
+
             try {
                 channelManager.upgradeProtocol(channel.pipeline(), requestUri);
                 future.setReuseChannel(true);
@@ -435,8 +433,7 @@ public final class HttpProtocol extends Protocol {
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm) || //
                 exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
                 exitAfterHandlingStatus(channel, future, response, handler, status) || //
-                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders) ||
-                exitAfterHandlingReactiveStreams(channel, future, response, handler);
+                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders) || exitAfterHandlingReactiveStreams(channel, future, response, handler);
     }
 
     private void handleChunk(HttpContent chunk,//
@@ -446,7 +443,7 @@ public final class HttpProtocol extends Protocol {
 
         boolean interrupt = false;
         boolean last = chunk instanceof LastHttpContent;
-        
+
         // Netty 4: the last chunk is not empty
         if (last) {
             LastHttpContent lastChunk = (LastHttpContent) chunk;
@@ -458,19 +455,15 @@ public final class HttpProtocol extends Protocol {
         }
 
         ByteBuf buf = chunk.content();
-        try {
-            if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-                NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
-                interrupt = updateBodyAndInterrupt(future, handler, part);
-            }
-        } finally {
-            buf.release();
+        if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
+            NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
+            interrupt = updateBodyAndInterrupt(future, handler, part);
         }
 
         if (interrupt || last)
             finishUpdate(future, channel, !last);
     }
-    
+
     @Override
     public void handle(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
 
@@ -493,7 +486,8 @@ public final class HttpProtocol extends Protocol {
                 handleChunk((HttpContent) e, channel, future, handler);
             }
         } catch (Exception t) {
-            // e.g. an IOException when trying to open a connection and send the next request
+            // e.g. an IOException when trying to open a connection and send the
+            // next request
             if (hasIOExceptionFilters//
                     && t instanceof IOException//
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {

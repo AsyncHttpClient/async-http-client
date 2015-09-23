@@ -37,6 +37,11 @@ public class LazyNettyResponseBodyPart extends NettyResponseBodyPart {
         return buf;
     }
 
+    @Override
+    public int length() {
+        return buf.readableBytes();
+    }
+    
     /**
      * Return the response body's part bytes received.
      * 
@@ -49,11 +54,6 @@ public class LazyNettyResponseBodyPart extends NettyResponseBodyPart {
 
     @Override
     public InputStream readBodyPartBytes() {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
-    }
-
-    @Override
-    public int length() {
         throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 

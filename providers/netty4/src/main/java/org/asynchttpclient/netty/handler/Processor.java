@@ -48,10 +48,10 @@ public class Processor extends ChannelInboundHandlerAdapter {
     private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
-    public Processor(AsyncHttpClientConfig config,
-            NettyAsyncHttpProviderConfig nettyConfig,
-            ChannelManager channelManager,
-            NettyRequestSender requestSender,
+    public Processor(AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            ChannelManager channelManager,//
+            NettyRequestSender requestSender,//
             Protocol protocol) {
         this.config = config;
         this.nettyConfig = nettyConfig;
@@ -66,54 +66,58 @@ public class Processor extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
         Object attribute = Channels.getAttribute(channel);
 
-        if (attribute instanceof Callback) {
-            Callback ac = (Callback) attribute;
-            if (msg instanceof LastHttpContent) {
-                ac.call();
-            } else if (!(msg instanceof HttpContent)) {
-                LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
-                ac.call();
-                Channels.setDiscard(channel);
-            }
-            ReferenceCountUtil.release(msg);
-
-
-        } else if (attribute instanceof NettyResponseFuture) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-            protocol.handle(channel, future, msg);
-
-        } else if (attribute instanceof StreamedResponsePublisher) {
-
-            StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
-
-            if (msg instanceof LastHttpContent) {
-                // Remove the handler from the pipeline, this will trigger it to finish
-                ctx.pipeline().remove(publisher);
-                // Trigger a read, just in case the last read complete triggered no new read
-                ctx.read();
-                // Send the last content on to the protocol, so that it can conclude the cleanup
-                protocol.handle(channel, publisher.future(), msg);
-            } else if (msg instanceof HttpContent) {
-
-                ByteBuf content = ((HttpContent) msg).content();
-
-                // Republish as a HttpResponseBodyPart
-                if (content.readableBytes() > 0) {
-                    NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(content, false);
-                    ctx.fireChannelRead(part);
+        try {
+            if (attribute instanceof Callback) {
+                Callback ac = (Callback) attribute;
+                if (msg instanceof LastHttpContent) {
+                    ac.call();
+                } else if (!(msg instanceof HttpContent)) {
+                    LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
+                    ac.call();
+                    Channels.setDiscard(channel);
                 }
 
-                ReferenceCountUtil.release(msg);
-            } else {
-                LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
-                ctx.pipeline().remove((StreamedResponsePublisher) attribute);
-                Channels.setDiscard(channel);
-            }
+            } else if (attribute instanceof NettyResponseFuture) {
+                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
+                protocol.handle(channel, future, msg);
 
-        } else if (attribute != DiscardEvent.INSTANCE) {
-            // unhandled message
-            LOGGER.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
-            Channels.silentlyCloseChannel(channel);
+            } else if (attribute instanceof StreamedResponsePublisher) {
+
+                StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
+
+                if (msg instanceof LastHttpContent) {
+                    // Remove the handler from the pipeline, this will trigger
+                    // it to finish
+                    ctx.pipeline().remove(publisher);
+                    // Trigger a read, just in case the last read complete
+                    // triggered no new read
+                    ctx.read();
+                    // Send the last content on to the protocol, so that it can
+                    // conclude the cleanup
+                    protocol.handle(channel, publisher.future(), msg);
+                } else if (msg instanceof HttpContent) {
+
+                    ByteBuf content = ((HttpContent) msg).content();
+
+                    // Republish as a HttpResponseBodyPart
+                    if (content.readableBytes() > 0) {
+                        NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(content, false);
+                        ctx.fireChannelRead(part);
+                    }
+
+                } else {
+                    LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
+                    ctx.pipeline().remove((StreamedResponsePublisher) attribute);
+                    Channels.setDiscard(channel);
+                }
+
+            } else if (attribute != DiscardEvent.INSTANCE) {
+                // unhandled message
+                LOGGER.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
+                Channels.silentlyCloseChannel(channel);
+            }
+        } finally {
+            ReferenceCountUtil.release(msg);
         }
     }
 
@@ -134,7 +138,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
         Object attribute = Channels.getAttribute(channel);
         LOGGER.debug("Channel Closed: {} with attribute {}", channel, attribute);
         if (attribute instanceof StreamedResponsePublisher) {
-            // setting `attribute` to be the underlying future so that the retry logic can kick-in 
+            // setting `attribute` to be the underlying future so that the retry
+            // logic can kick-in
             attribute = ((StreamedResponsePublisher) attribute).future();
         }
         if (attribute instanceof Callback) {
@@ -170,7 +175,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
             Object attribute = Channels.getAttribute(channel);
             if (attribute instanceof StreamedResponsePublisher) {
                 ctx.fireExceptionCaught(e);
-                // setting `attribute` to be the underlying future so that the retry logic can kick-in
+                // setting `attribute` to be the underlying future so that the
+                // retry logic can kick-in
                 attribute = ((StreamedResponsePublisher) attribute).future();
             }
             if (attribute instanceof NettyResponseFuture<?>) {
@@ -180,7 +186,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                 if (cause instanceof IOException) {
 
-                    // FIXME why drop the original exception and throw a new one?
+                    // FIXME why drop the original exception and throw a new
+                    // one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
                         if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.

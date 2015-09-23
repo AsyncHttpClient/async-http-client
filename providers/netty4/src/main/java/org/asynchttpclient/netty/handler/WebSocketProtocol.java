@@ -158,21 +158,17 @@ public final class WebSocketProtocol extends Protocol {
                 } else {
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
-                        try {
-                            NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                            handler.onBodyPartReceived(part);
+                        NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                        handler.onBodyPartReceived(part);
 
-                            if (frame instanceof BinaryWebSocketFrame) {
-                                webSocket.onBinaryFragment(part);
-                            } else if (frame instanceof TextWebSocketFrame) {
-                                webSocket.onTextFragment(part);
-                            } else if (frame instanceof PingWebSocketFrame) {
-                                webSocket.onPing(part);
-                            } else if (frame instanceof PongWebSocketFrame) {
-                                webSocket.onPong(part);
-                            }
-                        } finally {
-                            buf.release();
+                        if (frame instanceof BinaryWebSocketFrame) {
+                            webSocket.onBinaryFragment(part);
+                        } else if (frame instanceof TextWebSocketFrame) {
+                            webSocket.onTextFragment(part);
+                        } else if (frame instanceof PingWebSocketFrame) {
+                            webSocket.onPing(part);
+                        } else if (frame instanceof PongWebSocketFrame) {
+                            webSocket.onPong(part);
                         }
                     }
                 }
