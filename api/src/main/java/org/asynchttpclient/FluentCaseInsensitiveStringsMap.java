@@ -347,7 +347,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     @Override
-    public Iterator<Map.Entry<String, List<String>>> iterator() {
+    public Iterator<Entry<String, List<String>>> iterator() {
         return Collections.unmodifiableSet(values.entrySet()).iterator();
     }
 
