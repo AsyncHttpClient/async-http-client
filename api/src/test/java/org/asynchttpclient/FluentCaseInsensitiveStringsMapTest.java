@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.testng.annotations.Test;
@@ -25,8 +26,10 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 public class FluentCaseInsensitiveStringsMapTest {
@@ -621,5 +624,23 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.getFirstValue("baz"), "foo");
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
+    }
+
+    @Test
+    public void keySetInSyncAfterIterateRemoveTest() {
+        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
+        map.add("foo", "FOO");
+        map.add("bar", "BAR");
+        map.add("baz", "BAZ");
+
+        for (Iterator<Map.Entry<String, List<String>>> iter = map.entrySet().iterator(); iter.hasNext(); ) {
+            if (iter.next().getKey().equalsIgnoreCase("foo")) {
+                iter.remove();
+            }
+        }
+
+        assertEquals(map.keySet(), new LinkedHashSet<>(Arrays.asList("bar", "baz")));
+        assertFalse(map.containsKey("foo"));
+        assertEquals(map.get("foo"), Collections.<String> emptyList());
     }
 }

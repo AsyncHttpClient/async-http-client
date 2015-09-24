@@ -112,6 +112,18 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         return result;
     }
 
+    private void resyncKeyLookupWithValues() {
+        // small optimization: resync only when size is different, hopefully may reduce unnecessary loops
+        if (keyLookup.size() != values.size()) {
+            for (Iterator<String> iterator = keyLookup.values().iterator(); iterator.hasNext(); ) {
+                // remove if exists in keyLookup but not in values
+                if (!values.containsKey(iterator.next())) {
+                    iterator.remove();
+                }
+            }
+        }
+    }
+
     /**
      * Adds the specified values and returns this object.
      *
@@ -356,6 +368,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     @Override
     public Set<String> keySet() {
+        resyncKeyLookupWithValues();
         return new LinkedHashSet<>(keyLookup.values());
     }
 
@@ -388,7 +401,11 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     @Override
     public boolean containsKey(Object key) {
-        return key == null ? false : keyLookup.containsKey(key.toString().toLowerCase(Locale.ENGLISH));
+        if (key != null) {
+            resyncKeyLookupWithValues();
+            return keyLookup.containsKey(key.toString().toLowerCase(Locale.US));
+        }
+        return false;
     }
 
     /**
