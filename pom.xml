@@ -321,7 +321,7 @@
 		</repository>
 	</repositories>
 	<modules>
-		<module>api</module>
+		<module>client</module>
 		<module>providers</module>
 		<module>extras</module>
 	</modules>
