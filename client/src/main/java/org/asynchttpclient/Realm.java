@@ -16,15 +16,14 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ThreadLocalRandom;
 
-import org.asynchttpclient.internal.jsr166.ThreadLocalRandom;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.StringUtils;

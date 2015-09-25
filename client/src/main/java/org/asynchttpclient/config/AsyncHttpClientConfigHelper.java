@@ -3,8 +3,7 @@ package org.asynchttpclient.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import org.asynchttpclient.internal.jsr166.ConcurrentHashMapV8;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AsyncHttpClientConfigHelper {
 
@@ -34,7 +33,7 @@ public class AsyncHttpClientConfigHelper {
         public static final String DEFAULT_AHC_PROPERTIES = "ahc-default.properties";
         public static final String CUSTOM_AHC_PROPERTIES = "ahc.properties";
 
-        private final ConcurrentHashMapV8<String, String> propsCache = new ConcurrentHashMapV8<String, String>();
+        private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<String, String>();
         private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES);
         private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES);
 
@@ -56,20 +55,13 @@ public class AsyncHttpClientConfigHelper {
         }
 
         public String getString(String key) {
-            return propsCache.computeIfAbsent(key, new ConcurrentHashMapV8.Fun<String, String>() {
-
-                @Override
-                public String apply(String key) {
-                    String value = System.getProperty(key);
-                    if (value == null) {
-                        value = (String) customProperties.getProperty(key);
-                    }
-                    if (value == null) {
-                        value = (String) defaultProperties.getProperty(key);
-                    }
-
-                    return value;
-                }
+            return propsCache.computeIfAbsent(key, k -> {
+                String value = System.getProperty(k);
+                if (value == null)
+                    value = (String) customProperties.getProperty(k);
+                if (value == null)
+                    value = (String) defaultProperties.getProperty(k);
+                return value;
             });
         }
 
@@ -81,7 +73,7 @@ public class AsyncHttpClientConfigHelper {
                 array[i] = rawArray[i].trim();
             return array;
         }
-        
+
         public int getInt(String key) {
             return Integer.parseInt(getString(key));
         }
@@ -89,12 +81,12 @@ public class AsyncHttpClientConfigHelper {
         public long getLong(String key) {
             return Long.parseLong(getString(key));
         }
-        
+
         public Integer getInteger(String key) {
             String s = getString(key);
             return s != null ? Integer.valueOf(s) : null;
         }
-        
+
         public boolean getBoolean(String key) {
             return Boolean.parseBoolean(getString(key));
         }

@@ -23,12 +23,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
-import org.asynchttpclient.internal.jsr166.ThreadLocalRandom;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StringUtils;
