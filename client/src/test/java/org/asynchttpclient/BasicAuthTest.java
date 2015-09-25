@@ -53,7 +53,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public abstract class BasicAuthTest extends AbstractBasicTest {
+public class BasicAuthTest extends AbstractBasicTest {
 
     protected static final String MY_MESSAGE = "my message";
 
@@ -173,7 +173,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build())//
                     .execute();
@@ -186,7 +186,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaxRedirects(10).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaxRedirects(10).build())) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build())//
                     .execute();
@@ -199,7 +199,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basic401Test() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl())//
                     .setHeader("X-401", "401")//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
@@ -241,7 +241,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
         	// send the request to the no-auth endpoint to be able to verify the auth header is
         	// really sent preemptively for the initial call.
             Future<Response> f = client.prepareGet(getTargetUrlNoAuth())//
@@ -257,7 +257,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(ADMIN).build())//
                     .execute();
@@ -270,7 +270,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(new ByteArrayInputStream("test".getBytes()))//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build())//
@@ -286,7 +286,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthFileTest() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE)//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build())//
@@ -302,7 +302,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthAsyncConfigTest() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build()).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build()).build())) {
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE_STRING)//
                     .execute();
@@ -317,7 +317,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthFileNoKeepAliveTest() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(false).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnections(false).build())) {
 
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE)//
@@ -350,7 +350,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();

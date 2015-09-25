@@ -15,7 +15,6 @@ package org.asynchttpclient.extras.registry;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -28,25 +27,12 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
         throw new BadAsyncHttpClientException("Because I am bad!!");
     }
 
-    public BadAsyncHttpClient(AsyncHttpProvider provider) {
-        throw new BadAsyncHttpClientException("Because I am bad!!");
-    }
-
     public BadAsyncHttpClient(AsyncHttpClientConfig config) {
         throw new BadAsyncHttpClientException("Because I am bad!!");
     }
 
     public BadAsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
         throw new BadAsyncHttpClientException("Because I am bad!!");
-    }
-
-    public BadAsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
-        throw new BadAsyncHttpClientException("Because I am bad!!");
-    }
-
-    @Override
-    public AsyncHttpProvider getProvider() {
-        return null;
     }
 
     @Override
@@ -62,11 +48,6 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     @Override
     public boolean isClosed() {
         return false;
-    }
-
-    @Override
-    public AsyncHttpClientConfig getConfig() {
-        return null;
     }
 
     @Override

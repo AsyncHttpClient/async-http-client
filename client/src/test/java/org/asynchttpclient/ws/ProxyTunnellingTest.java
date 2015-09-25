@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketTextListener;
@@ -36,7 +37,7 @@ import org.testng.annotations.Test;
 /**
  * Proxy usage tests.
  */
-public abstract class ProxyTunnellingTest extends AbstractBasicTest {
+public class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
@@ -90,7 +91,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         // CONNECT happens over HTTP, not HTTPS
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTP, "127.0.0.1", port1);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
-        try (AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 

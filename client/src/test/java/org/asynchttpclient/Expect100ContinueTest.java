@@ -35,7 +35,7 @@ import java.util.concurrent.Future;
 /**
  * Test the Expect: 100-Continue.
  */
-public abstract class Expect100ContinueTest extends AbstractBasicTest {
+public class Expect100ContinueTest extends AbstractBasicTest {
 
     private static class ZeroCopyHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
@@ -62,7 +62,7 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void Expect100Continue() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);

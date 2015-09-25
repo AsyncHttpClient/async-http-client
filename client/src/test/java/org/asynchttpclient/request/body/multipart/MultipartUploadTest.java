@@ -31,6 +31,7 @@ import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -67,7 +68,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * @author dominict
  */
-public abstract class MultipartUploadTest extends AbstractBasicTest {
+public class MultipartUploadTest extends AbstractBasicTest {
     public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48,
             58, 54, 6, 0, 0, 0 };
 
@@ -162,7 +163,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         bc.setFollowRedirect(true);
 
-        try (AsyncHttpClient c = getAsyncHttpClient(bc.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");

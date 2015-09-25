@@ -27,6 +27,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
+public class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test(groups = { "standalone", "default_provider" })
@@ -45,7 +46,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
                 .build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < urls.length; i++) {
                 futures.add(client.prepareGet(urls[i]).execute());
@@ -69,7 +70,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     }
 
     @Test
-    public void testMaxTotalConnections() throws InterruptedException {
+    public void testMaxTotalConnections() throws Exception {
         String[] urls = new String[] { "http://google.com", "http://lenta.ru" };
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -79,7 +80,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
                 .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             for (String url : urls) {
                 final String thisUrl = url;
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {

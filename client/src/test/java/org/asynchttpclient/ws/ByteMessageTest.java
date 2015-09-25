@@ -14,18 +14,16 @@ package org.asynchttpclient.ws;
 
 import static org.testng.Assert.assertEquals;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketByteListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
-public abstract class ByteMessageTest extends AbstractBasicTest {
+public class ByteMessageTest extends AbstractBasicTest {
 
     @Override
     public WebSocketHandler getWebSocketHandler() {
@@ -39,7 +37,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(new byte[0]);
 
@@ -77,7 +75,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
@@ -122,7 +120,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoOnOpenMessagesTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
@@ -165,7 +163,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 

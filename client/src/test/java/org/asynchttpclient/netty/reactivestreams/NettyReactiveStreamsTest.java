@@ -20,11 +20,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.netty.NettyProviderUtil;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest;
 import org.reactivestreams.Publisher;
@@ -40,15 +39,9 @@ import java.lang.reflect.*;
 
 public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
 
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return NettyProviderUtil.nettyProvider(config);
-    }
-
-
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testRetryingOnFailingStream() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch streamStarted = new CountDownLatch(1); // allows us to wait until subscriber has received the first body chunk
             final CountDownLatch streamOnHold = new CountDownLatch(1); // allows us to hold the subscriber from processing further body chunks
             final CountDownLatch replayingRequest = new CountDownLatch(1); // allows us to block until the request is being replayed ( this is what we want to test here!)

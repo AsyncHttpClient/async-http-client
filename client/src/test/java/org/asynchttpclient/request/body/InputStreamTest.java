@@ -20,6 +20,7 @@ import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -36,7 +37,7 @@ import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public abstract class InputStreamTest extends AbstractBasicTest {
+public class InputStreamTest extends AbstractBasicTest {
 
     private static class InputStreamHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -69,7 +70,7 @@ public abstract class InputStreamTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 

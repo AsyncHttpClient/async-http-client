@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
+public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     // FIXME super NOT threadsafe!!!
     private final AtomicBoolean redirectDone = new AtomicBoolean(false);
@@ -100,7 +100,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -117,7 +117,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -140,7 +140,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

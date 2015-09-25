@@ -21,6 +21,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -41,7 +42,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Proxy usage tests.
  */
-public abstract class ProxyTunnellingTest extends AbstractBasicTest {
+public class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
@@ -81,7 +82,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         .setAcceptAnyCertificate(true)//
         .build();
 
-        try (AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
@@ -108,7 +109,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setProxyServer(new ProxyServer("127.0.0.1", port1))//
                 .setAcceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {

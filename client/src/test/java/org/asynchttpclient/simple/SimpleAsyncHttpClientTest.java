@@ -29,8 +29,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
@@ -43,21 +41,10 @@ import org.asynchttpclient.simple.consumer.OutputStreamBodyConsumer;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
-public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
+public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     private final static String MY_MESSAGE = "my message";
 
-    /**
-     * Not Used
-     * 
-     * @param config
-     * @return
-     */
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        throw new UnsupportedOperationException();
-    }
-    
     @Test(groups = { "standalone", "default_provider" })
     public void inputStreamBodyConsumerTest() throws Exception {
 

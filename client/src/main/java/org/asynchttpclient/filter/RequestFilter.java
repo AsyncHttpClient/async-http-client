@@ -18,7 +18,7 @@ package org.asynchttpclient.filter;
 public interface RequestFilter {
 
     /**
-     * An {@link org.asynchttpclient.AsyncHttpProvider} will invoke {@link RequestFilter#filter} and will use the
+     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link RequestFilter#filter} and will use the
      * returned {@link FilterContext#getRequest()} and {@link FilterContext#getAsyncHandler()} to continue the request
      * processing.
      *

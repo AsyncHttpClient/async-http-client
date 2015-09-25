@@ -29,7 +29,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-public abstract class NoNullResponseTest extends AbstractBasicTest {
+public class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
 
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
@@ -38,7 +38,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setSSLContext(getSSLContext()).setAllowPoolingConnections(true).setConnectTimeout(10000)
                 .setPooledConnectionIdleTimeout(60000).setRequestTimeout(10000).setMaxConnectionsPerHost(-1).setMaxConnections(-1).build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
             Thread.sleep(4000);

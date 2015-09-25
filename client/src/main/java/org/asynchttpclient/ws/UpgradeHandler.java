@@ -13,19 +13,18 @@
 package org.asynchttpclient.ws;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpProvider;
 
 /**
- * Invoked when an {@link AsyncHandler.State#UPGRADE} is returned. Currently the library only support {@link org.asynchttpclient.ws.WebSocket}
- * as type.
+ * Invoked when an {@link AsyncHandler.State#UPGRADE} is returned. Currently the
+ * library only support {@link org.asynchttpclient.ws.WebSocket} as type.
  *
  * @param <T>
  */
 public interface UpgradeHandler<T> {
 
     /**
-     * If the HTTP Upgrade succeed (response's status code equals 101), the {@link AsyncHttpProvider} will invoke that
-     * method
+     * If the HTTP Upgrade succeed (response's status code equals 101), the
+     * {@link AsyncHttpClient} will invoke that method.
      *
      * @param t an Upgradable entity
      */
@@ -33,6 +32,7 @@ public interface UpgradeHandler<T> {
 
     /**
      * If the upgrade fail.
+     * 
      * @param t a {@link Throwable}
      */
     void onFailure(Throwable t);

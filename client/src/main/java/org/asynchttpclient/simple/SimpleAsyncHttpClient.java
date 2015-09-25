@@ -328,7 +328,7 @@ public class SimpleAsyncHttpClient implements Closeable {
      * @see #derive()
      * @see AsyncHttpClient#close()
      */
-    public void close() {
+    public void close() throws IOException {
         if (!derived && asyncHttpClient != null) {
             asyncHttpClient.close();
         }

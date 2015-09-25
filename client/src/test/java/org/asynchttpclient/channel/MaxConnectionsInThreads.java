@@ -36,6 +36,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -44,13 +45,13 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
+public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     // FIXME weird
     private static URI servletEndpointUri;
 
     @Test(groups = { "online", "default_provider" })
-    public void testMaxConnectionsWithinThreads() throws InterruptedException {
+    public void testMaxConnectionsWithinThreads() throws Exception {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
@@ -60,7 +61,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
         final AtomicInteger failedCount = new AtomicInteger();
         
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
                 Thread t = new Thread() {

@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class PostRedirectGetTest extends AbstractBasicTest {
+public class PostRedirectGetTest extends AbstractBasicTest {
 
     // ------------------------------------------------------ Test Configuration
 
@@ -83,7 +83,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = new DefaultAsyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
@@ -118,7 +118,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = new DefaultAsyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 

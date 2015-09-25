@@ -29,17 +29,15 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.extra.ThrottleRequestFilter;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-public abstract class FilterTest extends AbstractBasicTest {
+public class FilterTest extends AbstractBasicTest {
 
     private static class BasicHandler extends AbstractHandler {
 
@@ -72,7 +70,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -84,7 +82,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             List<Future<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 200; i++) {
                 futures.add(c.preparePost(getTargetUrl()).execute());
@@ -103,7 +101,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (ExecutionException ex) {
@@ -123,7 +121,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         });
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -148,7 +146,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         });
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -174,7 +172,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         });
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -201,7 +199,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         });
 
-        try (AsyncHttpClient c = getAsyncHttpClient(b.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
             Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

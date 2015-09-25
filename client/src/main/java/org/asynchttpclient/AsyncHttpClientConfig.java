@@ -118,7 +118,7 @@ public class AsyncHttpClientConfig {
     protected boolean keepEncodingHeader = false;
     protected int shutdownQuiet = 2000;
     protected int shutdownTimeout = 15000;
-    protected AsyncHttpProviderConfig<?, ?> providerConfig;
+    protected AdvancedConfig advancedConfig;
 
     protected AsyncHttpClientConfig() {
     }
@@ -166,7 +166,7 @@ public class AsyncHttpClientConfig {
             boolean keepEncodingHeader,//
             int shutdownQuiet,//
             int shutdownTimeout,//
-            AsyncHttpProviderConfig<?, ?> providerConfig) {
+            AdvancedConfig advancedConfig) {
 
         this.name = name;
         this.connectTimeout = connectTimeout;
@@ -207,7 +207,7 @@ public class AsyncHttpClientConfig {
         this.enabledCipherSuites = enabledCipherSuites;
         this.sslSessionCacheSize = sslSessionCacheSize;
         this.sslSessionTimeout = sslSessionTimeout;
-        this.providerConfig = providerConfig;
+        this.advancedConfig = advancedConfig;
         this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
         this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
         this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
@@ -404,12 +404,12 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the {@link AsyncHttpProviderConfig}
+     * Return the {@link AdvancedConfig}
      *
-     * @return the {@link AsyncHttpProviderConfig}
+     * @return the {@link AdvancedConfig}
      */
-    public AsyncHttpProviderConfig<?, ?> getAsyncHttpProviderConfig() {
-        return providerConfig;
+    public AdvancedConfig getAdvancedConfig() {
+        return advancedConfig;
     }
 
     /**
@@ -675,7 +675,7 @@ public class AsyncHttpClientConfig {
         private boolean keepEncodingHeader = defaultKeepEncodingHeader();
         private int shutdownQuiet = defaultShutdownQuiet();
         private int shutdownTimeout = defaultShutdownTimeout();
-        private AsyncHttpProviderConfig<?, ?> providerConfig;
+        private AdvancedConfig advancedConfig;
 
         public Builder() {
         }
@@ -892,13 +892,13 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link AsyncHttpProviderConfig}
+         * Set the {@link AdvancedConfig}
          *
-         * @param providerConfig the {@link AsyncHttpProviderConfig}
+         * @param advancedConfig the {@link AdvancedConfig}
          * @return a {@link Builder}
          */
-        public Builder setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
-            this.providerConfig = providerConfig;
+        public Builder setAdvancedConfig(AdvancedConfig advancedConfig) {
+            this.advancedConfig = advancedConfig;
             return this;
         }
 
@@ -1246,7 +1246,7 @@ public class AsyncHttpClientConfig {
             shutdownQuiet = prototype.shutdownQuiet;
             shutdownTimeout = prototype.shutdownTimeout;
 
-            providerConfig = prototype.getAsyncHttpProviderConfig();
+            advancedConfig = prototype.advancedConfig;
         }
 
         /**
@@ -1308,7 +1308,7 @@ public class AsyncHttpClientConfig {
                     keepEncodingHeader, //
                     shutdownQuiet,//
                     shutdownTimeout,//
-                    providerConfig);
+                    advancedConfig);
         }
     }
 }

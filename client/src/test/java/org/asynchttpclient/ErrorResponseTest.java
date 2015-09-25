@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * 
  * @author Tatu Saloranta
  */
-public abstract class ErrorResponseTest extends AbstractBasicTest {
+public class ErrorResponseTest extends AbstractBasicTest {
     final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
     private static class ErrorHandler extends AbstractHandler {
@@ -63,7 +63,7 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);

@@ -13,19 +13,7 @@
 
 package org.asynchttpclient.netty;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer;
-import org.testng.annotations.Test;
-
+import static org.testng.Assert.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -34,25 +22,31 @@ import io.netty.handler.codec.http.HttpMessage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AdvancedConfig;
+import org.asynchttpclient.AdvancedConfig.AdditionalPipelineInitializer;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.testng.annotations.Test;
 
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return NettyProviderUtil.nettyProvider(config);
-    }
+public class EventPipelineTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Exception {
 
-        NettyAsyncHttpProviderConfig nettyConfig = new NettyAsyncHttpProviderConfig();
-        nettyConfig.setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
+        AdvancedConfig advancedConfig = new AdvancedConfig();
+        advancedConfig.setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
             public void initPipeline(ChannelPipeline pipeline) throws Exception {
                 pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         });
 
-        try (AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAsyncHttpClientProviderConfig(nettyConfig).build())) {
+        try (AsyncHttpClient p = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder()
+                .setAdvancedConfig(advancedConfig).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {

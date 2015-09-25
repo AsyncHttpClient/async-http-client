@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getBaseUrl;
+import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;

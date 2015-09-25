@@ -12,25 +12,19 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
-import org.asynchttpclient.ws.WebSocketListener;
-import org.asynchttpclient.ws.WebSocketTextListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.testng.annotations.Test;
+
+public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Override
     public WebSocketHandler getWebSocketHandler() {
@@ -41,10 +35,10 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
             }
         };
     }
-    
+
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -59,7 +53,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -104,7 +98,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     @Test(timeOut = 60000, expectedExceptions = { ExecutionException.class })
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
@@ -125,13 +119,13 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
         }
-        
+
         latch.await();
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class } )
+    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class })
     public void wrongStatusCode() throws Throwable {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
@@ -162,9 +156,9 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class } )
+    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class })
     public void wrongProtocolCode() throws Throwable {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 

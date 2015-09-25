@@ -24,6 +24,7 @@ import static org.testng.Assert.fail;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -49,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  * @author Hubert Iwaniuk
  */
-public abstract class EmptyBodyTest extends AbstractBasicTest {
+public class EmptyBodyTest extends AbstractBasicTest {
     private class NoBodyResponseHandler extends AbstractHandler {
         public void handle(String s, Request request, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 
@@ -69,7 +70,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testEmptyBody() throws IOException {
-        try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);
@@ -124,7 +125,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testPutEmptyBody() throws Exception {
-        try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
 
             assertNotNull(response);

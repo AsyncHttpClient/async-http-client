@@ -14,7 +14,6 @@ package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,19 +57,6 @@ public class AsyncHttpClientFactory {
         return new DefaultAsyncHttpClient();
     }
 
-    public static AsyncHttpClient getAsyncHttpClient(AsyncHttpProvider provider) {
-        if (attemptInstantiation()) {
-            try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpProvider.class);
-                return constructor.newInstance(provider);
-            } catch (Exception e) {
-                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
-                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
-            }
-        }
-        return new DefaultAsyncHttpClient(provider);
-    }
-
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         if (attemptInstantiation()) {
             try {
@@ -82,20 +68,6 @@ public class AsyncHttpClientFactory {
             }
         }
         return new DefaultAsyncHttpClient(config);
-    }
-
-    public static AsyncHttpClient getAsyncHttpClient(AsyncHttpProvider provider, AsyncHttpClientConfig config) {
-        if (attemptInstantiation()) {
-            try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpProvider.class,
-                        AsyncHttpClientConfig.class);
-                return constructor.newInstance(provider, config);
-            } catch (Exception e) {
-                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
-                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
-            }
-        }
-        return new DefaultAsyncHttpClient(provider, config);
     }
 
     private static boolean attemptInstantiation() {

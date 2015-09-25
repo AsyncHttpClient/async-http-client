@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
+public class NonAsciiContentLengthTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
@@ -70,7 +70,7 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyCharset(UTF_8);
             Future<Response> f = r.execute();
             Response resp = f.get();

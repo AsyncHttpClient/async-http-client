@@ -28,7 +28,7 @@ import java.io.IOException;
  * <p/>
  * Invoking {@link FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
  * that can be used to decide if the response processing should continue or not. You can stop the current response processing
- * and replay the request but creating a {@link FilterContext}. The {@link org.asynchttpclient.AsyncHttpProvider}
+ * and replay the request but creating a {@link FilterContext}. The {@link org.asynchttpclient.AsyncHttpClient}
  * will interrupt the processing and "replay" the associated {@link Request} instance.
  */
 public class FilterContext<T> {

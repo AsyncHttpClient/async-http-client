@@ -18,7 +18,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-public abstract class RedirectBodyTest extends AbstractBasicTest {
+public class RedirectBodyTest extends AbstractBasicTest {
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -58,7 +58,7 @@ public abstract class RedirectBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void regular301LosesBody() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
             String body = "hello there";
 
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("X-REDIRECT", "301").execute().get(TIMEOUT, TimeUnit.SECONDS);
@@ -68,7 +68,7 @@ public abstract class RedirectBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void regular302LosesBody() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
             String body = "hello there";
 
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
@@ -78,7 +78,7 @@ public abstract class RedirectBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void regular302StrictKeepsBody() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setFollowRedirect(true).setStrict302Handling(true).addResponseFilter(redirectOnce).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setFollowRedirect(true).setStrict302Handling(true).addResponseFilter(redirectOnce).build())) {
             String body = "hello there";
 
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
@@ -88,7 +88,7 @@ public abstract class RedirectBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void regular307KeepsBody() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setFollowRedirect(true).addResponseFilter(redirectOnce).build())) {
             String body = "hello there";
 
             Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("X-REDIRECT", "307").execute().get(TIMEOUT, TimeUnit.SECONDS);

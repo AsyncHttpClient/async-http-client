@@ -128,19 +128,7 @@ import java.util.concurrent.Future;
 public interface AsyncHttpClient extends Closeable {
 
     /**
-     * Return the asynchronous {@link AsyncHttpProvider}
-     *
-     * @return an {@link AsyncHttpProvider}
-     */
-    AsyncHttpProvider getProvider();
-
-    /**
-     * Close the underlying connections.
-     */
-    void close();
-
-    /**
-     * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
+     * Asynchronous close the {@link AsyncHttpClient} by spawning a thread and avoid blocking.
      */
     void closeAsynchronously();
 
@@ -150,13 +138,6 @@ public interface AsyncHttpClient extends Closeable {
      * @return true if closed
      */
     boolean isClosed();
-
-    /**
-     * Return the {@link AsyncHttpClientConfig}
-     *
-     * @return {@link AsyncHttpClientConfig}
-     */
-    AsyncHttpClientConfig getConfig();
 
     /**
      * Set default signature calculator to use for requests build by this client instance

@@ -20,7 +20,7 @@ package org.asynchttpclient.filter;
 public interface ResponseFilter {
 
     /**
-     * An {@link org.asynchttpclient.AsyncHttpProvider} will invoke {@link ResponseFilter#filter} and will use the
+     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link ResponseFilter#filter} and will use the
      * returned {@link FilterContext#replayRequest()} and {@link FilterContext#getAsyncHandler()} to decide if the response
      * processing can continue. If {@link FilterContext#replayRequest()} return true, a new request will be made
      * using {@link FilterContext#getRequest()} and the current response processing will be ignored.

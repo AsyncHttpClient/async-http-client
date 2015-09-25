@@ -33,7 +33,7 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
+public class ByteBufferCapacityTest extends AbstractBasicTest {
 
     private class BasicHandler extends AbstractHandler {
 
@@ -73,7 +73,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 

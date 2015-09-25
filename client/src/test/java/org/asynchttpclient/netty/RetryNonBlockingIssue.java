@@ -20,6 +20,7 @@ import static org.testng.Assert.assertTrue;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -45,10 +46,6 @@ import java.util.concurrent.ExecutionException;
 //FIXME there's no retry actually
 public class RetryNonBlockingIssue extends AbstractBasicTest {
 
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return NettyProviderUtil.nettyProvider(config);
-    }
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
@@ -94,7 +91,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setRequestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -126,7 +123,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setRequestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));

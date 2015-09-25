@@ -15,8 +15,8 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.parseCharset;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.validateSupportedScheme;
+import static org.asynchttpclient.util.HttpUtils.parseCharset;
+import static org.asynchttpclient.util.HttpUtils.validateSupportedScheme;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.File;

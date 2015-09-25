@@ -13,10 +13,7 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
-import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -31,6 +28,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
+import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -42,7 +40,6 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseHeaders;
@@ -60,10 +57,10 @@ public final class HttpProtocol extends Protocol {
 
     private final ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy;
 
-    public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
-        super(channelManager, config, nettyConfig, requestSender);
+    public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, AdvancedConfig advancedConfig, NettyRequestSender requestSender) {
+        super(channelManager, config, advancedConfig, requestSender);
 
-        connectionStrategy = nettyConfig.getConnectionStrategy();
+        connectionStrategy = advancedConfig.getConnectionStrategy();
     }
 
     private Realm kerberosChallenge(Channel channel,//
@@ -456,7 +453,7 @@ public final class HttpProtocol extends Protocol {
 
         ByteBuf buf = chunk.content();
         if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-            NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
+            NettyResponseBodyPart part = advancedConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
             interrupt = updateBodyAndInterrupt(future, handler, part);
         }
 

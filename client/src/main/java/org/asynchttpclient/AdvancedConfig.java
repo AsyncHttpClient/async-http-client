@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty;
+package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -24,128 +24,42 @@ import io.netty.util.Timer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
+import org.asynchttpclient.netty.EagerNettyResponseBodyPart;
+import org.asynchttpclient.netty.LazyNettyResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.handler.DefaultConnectionStrategy;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 
-/**
- * This class can be used to pass Netty's internal configuration options. See
- * Netty documentation for more information.
- */
-public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<ChannelOption<Object>, Object> {
+public class AdvancedConfig {
 
-    private final Map<ChannelOption<Object>, Object> properties = new HashMap<>();
-
-    /**
-     * Add a property that will be used when the AsyncHttpClient initialize its
-     * {@link org.asynchttpclient.AsyncHttpProvider}
-     * 
-     * @param name the name of the property
-     * @param value the value of the property
-     * @return this instance of AsyncHttpProviderConfig
-     */
-    public NettyAsyncHttpProviderConfig addProperty(ChannelOption<Object> name, Object value) {
-        properties.put(name, value);
-        return this;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> NettyAsyncHttpProviderConfig addChannelOption(ChannelOption<T> name, T value) {
-        properties.put((ChannelOption<Object>) name, value);
-        return this;
-    }
-
-    /**
-     * Return the value associated with the property's name
-     * 
-     * @param name
-     * @return this instance of AsyncHttpProviderConfig
-     */
-    public Object getProperty(ChannelOption<Object> name) {
-        return properties.get(name);
-    }
-
-    /**
-     * Remove the value associated with the property's name
-     * 
-     * @param name
-     * @return true if removed
-     */
-    public Object removeProperty(ChannelOption<Object> name) {
-        return properties.remove(name);
-    }
-
-    /**
-     * Return the curent entry set.
-     * 
-     * @return a the curent entry set.
-     */
-    public Set<Map.Entry<ChannelOption<Object>, Object>> propertiesSet() {
-        return properties.entrySet();
-    }
-
-    public static interface AdditionalPipelineInitializer {
-
-        void initPipeline(ChannelPipeline pipeline) throws Exception;
-    }
-
-    public static interface ResponseBodyPartFactory {
-
-        NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
-    }
-
-    public static class EagerResponseBodyPartFactory implements ResponseBodyPartFactory {
-
-        @Override
-        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new EagerNettyResponseBodyPart(buf, last);
-        }
-    }
-
-    public static class LazyResponseBodyPartFactory implements ResponseBodyPartFactory {
-
-        @Override
-        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new LazyNettyResponseBodyPart(buf, last);
-        }
-    }
-
-    public static interface NettyWebSocketFactory {
-        NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
-    }
-
-    public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
-
-        @Override
-        public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
-            return new NettyWebSocket(channel, config);
-        }
-    }
-
-    /**
-     * Allow configuring the Netty's event loop.
-     */
+    private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
     private EventLoopGroup eventLoopGroup;
-
     private Class<? extends Channel> socketChannelClass;
-
     private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-
     private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
-
     private ChannelPool channelPool;
-
     private Timer nettyTimer;
-
     private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
-
     private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new DefaultConnectionStrategy();
+
+    /**
+     * @param name the name of the ChannelOption
+     * @param value the value of the ChannelOption
+     * @return this instance of AdvancedConfig
+     */
+    @SuppressWarnings("unchecked")
+    public <T> AdvancedConfig addChannelOption(ChannelOption<T> name, T value) {
+        channelOptions.put((ChannelOption<Object>) name, value);
+        return this;
+    }
+
+    public Map<ChannelOption<Object>, Object> getChannelOptions() {
+        return channelOptions;
+    }
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -217,5 +131,43 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Cha
 
     public void setConnectionStrategy(ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy) {
         this.connectionStrategy = connectionStrategy;
+    }
+    
+    public static interface AdditionalPipelineInitializer {
+
+        void initPipeline(ChannelPipeline pipeline) throws Exception;
+    }
+
+    public static interface ResponseBodyPartFactory {
+
+        NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
+    }
+
+    public static class EagerResponseBodyPartFactory implements ResponseBodyPartFactory {
+
+        @Override
+        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+            return new EagerNettyResponseBodyPart(buf, last);
+        }
+    }
+
+    public static class LazyResponseBodyPartFactory implements ResponseBodyPartFactory {
+
+        @Override
+        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+            return new LazyNettyResponseBodyPart(buf, last);
+        }
+    }
+
+    public static interface NettyWebSocketFactory {
+        NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
+    }
+
+    public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+
+        @Override
+        public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
+            return new NettyWebSocket(channel, config);
+        }
     }
 }

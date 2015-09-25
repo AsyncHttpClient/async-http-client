@@ -28,9 +28,9 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_VERSIO
 import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.hostHeader;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.HttpUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.HttpUtils.hostHeader;
+import static org.asynchttpclient.util.HttpUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;

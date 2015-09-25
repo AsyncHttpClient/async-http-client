@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Simple stress test for exercising the follow redirect.
  */
-public abstract class FollowingThreadTest extends AbstractBasicTest {
+public class FollowingThreadTest extends AbstractBasicTest {
 
     private static final int COUNT = 10;
 
@@ -45,7 +45,7 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
 
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
-                        try (AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
+                        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
                             ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
 
                                 public void onThrowable(Throwable t) {

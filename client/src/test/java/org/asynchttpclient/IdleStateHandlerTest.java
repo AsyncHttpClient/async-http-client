@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public abstract class IdleStateHandlerTest extends AbstractBasicTest {
+public class IdleStateHandlerTest extends AbstractBasicTest {
 
     private class IdleStateHandler extends AbstractHandler {
 
@@ -62,7 +62,7 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     public void idleStateTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(10 * 1000).build();
 
-        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);

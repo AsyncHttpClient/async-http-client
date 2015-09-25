@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -34,7 +35,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public abstract class NtlmTest extends AbstractBasicTest {
+public class NtlmTest extends AbstractBasicTest {
 
     public static class NTLMHandler extends AbstractHandler {
 
@@ -82,7 +83,7 @@ public abstract class NtlmTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRealm(realmBuilder.build()).build();
 
-        try (AsyncHttpClient client = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();

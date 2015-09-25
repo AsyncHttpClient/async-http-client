@@ -18,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -33,7 +34,7 @@ import java.io.IOException;
 /**
  * @author Benjamin Hanzelmann
  */
-public abstract class PutLargeFileTest extends AbstractBasicTest {
+public class PutLargeFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutLargeFile() throws Exception {
@@ -42,7 +43,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -53,7 +54,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         File file = createTempFile(1024);
 
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

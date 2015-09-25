@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public abstract class DigestAuthTest extends AbstractBasicTest {
+public class DigestAuthTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     @Override
@@ -67,7 +67,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
                     .setRealm(new Realm.RealmBuilder().setPrincipal(USER).setPassword(ADMIN).setRealmName("MyRealm").setScheme(Realm.AuthScheme.DIGEST).build())//
                     .execute();
@@ -80,7 +80,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
                     .setRealm(new Realm.RealmBuilder().setPrincipal(USER).setPassword(ADMIN).setRealmName("MyRealm").build())//
                     .execute();
@@ -93,7 +93,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
                     .setRealm(new Realm.RealmBuilder().setPrincipal("fake").setPassword(ADMIN).setScheme(Realm.AuthScheme.DIGEST).build())//
                     .execute();

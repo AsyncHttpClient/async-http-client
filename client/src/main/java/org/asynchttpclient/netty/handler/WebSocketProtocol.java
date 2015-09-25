@@ -29,14 +29,14 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.asynchttpclient.AdvancedConfig;
+import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.netty.Callback;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseHeaders;
@@ -51,9 +51,9 @@ public final class WebSocketProtocol extends Protocol {
 
     public WebSocketProtocol(ChannelManager channelManager,//
             AsyncHttpClientConfig config,//
-            NettyAsyncHttpProviderConfig nettyConfig,//
+            AdvancedConfig advancedConfig,//
             NettyRequestSender requestSender) {
-        super(channelManager, config, nettyConfig, requestSender);
+        super(channelManager, config, advancedConfig, requestSender);
     }
 
     // We don't need to synchronize as replacing the "ws-decoder" will
@@ -61,7 +61,7 @@ public final class WebSocketProtocol extends Protocol {
     private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
         if (!h.touchSuccess()) {
             try {
-                h.onSuccess(nettyConfig.getNettyWebSocketFactory().newNettyWebSocket(channel, config));
+                h.onSuccess(advancedConfig.getNettyWebSocketFactory().newNettyWebSocket(channel, config));
             } catch (Exception ex) {
                 logger.warn("onSuccess unexpected exception", ex);
             }
@@ -158,7 +158,7 @@ public final class WebSocketProtocol extends Protocol {
                 } else {
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
-                        NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                        NettyResponseBodyPart part = advancedConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
                         handler.onBodyPartReceived(part);
 
                         if (frame instanceof BinaryWebSocketFrame) {

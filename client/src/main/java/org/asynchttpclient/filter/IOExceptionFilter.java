@@ -18,7 +18,7 @@ package org.asynchttpclient.filter;
 public interface IOExceptionFilter {
 
     /**
-     * An {@link org.asynchttpclient.AsyncHttpProvider} will invoke {@link IOExceptionFilter#filter} and will
+     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
      * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
      *
      * @param ctx a {@link FilterContext}

@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import static org.asynchttpclient.util.HttpUtils.getAuthority;
+import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHttpClientConfig;

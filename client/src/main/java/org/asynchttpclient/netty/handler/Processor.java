@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.CHANNEL_CLOSED_EXCEPTION;
+import static org.asynchttpclient.util.HttpUtils.CHANNEL_CLOSED_EXCEPTION;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -22,14 +22,17 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
-import io.netty.util.ReferenceCountUtil;
-
+import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.*;
+import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.DiscardEvent;
+import org.asynchttpclient.netty.NettyResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.StackTraceInspector;
@@ -43,18 +46,18 @@ public class Processor extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
+    private final AdvancedConfig advancedConfig;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
     public Processor(AsyncHttpClientConfig config,//
-            NettyAsyncHttpProviderConfig nettyConfig,//
+            AdvancedConfig advancedConfig,//
             ChannelManager channelManager,//
             NettyRequestSender requestSender,//
             Protocol protocol) {
         this.config = config;
-        this.nettyConfig = nettyConfig;
+        this.advancedConfig = advancedConfig;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
         this.protocol = protocol;
@@ -101,7 +104,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                     // Republish as a HttpResponseBodyPart
                     if (content.readableBytes() > 0) {
-                        NettyResponseBodyPart part = nettyConfig.getBodyPartFactory().newResponseBodyPart(content, false);
+                        NettyResponseBodyPart part = advancedConfig.getBodyPartFactory().newResponseBodyPart(content, false);
                         ctx.fireChannelRead(part);
                     }
 

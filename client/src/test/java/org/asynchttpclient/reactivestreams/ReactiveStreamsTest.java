@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -33,11 +34,11 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.testng.annotations.Test;
 
-public abstract class ReactiveStreamsTest extends AbstractBasicTest {
+public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void streamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
 
             ListenableFuture<SimpleStreamedAsyncHandler> future = c.preparePost(getTargetUrl())
                     .setBody(LARGE_IMAGE_BYTES)
@@ -62,7 +63,7 @@ public abstract class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void cancelStreamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
 
             // Cancel immediately
             c.preparePost(getTargetUrl())

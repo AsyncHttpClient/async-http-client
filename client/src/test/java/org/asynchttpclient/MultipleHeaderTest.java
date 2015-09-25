@@ -41,7 +41,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Hubert Iwaniuk
  */
-public abstract class MultipleHeaderTest extends AbstractBasicTest {
+public class MultipleHeaderTest extends AbstractBasicTest {
     private ExecutorService executorService;
     private ServerSocket serverSocket;
     private Future<?> voidFuture;
@@ -93,7 +93,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {
@@ -142,7 +142,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {

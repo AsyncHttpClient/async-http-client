@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  * @author Hubert Iwaniuk
  */
-public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
+public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     @AfterClass
@@ -100,7 +100,7 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testStream() throws IOException {
-        try (AsyncHttpClient ahc = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);

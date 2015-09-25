@@ -14,8 +14,15 @@ package org.asynchttpclient.config;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
+import java.util.LinkedList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
+import javax.net.ssl.SSLContext;
+
+import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -23,13 +30,6 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
-
-import javax.net.ssl.SSLContext;
-
-import java.util.LinkedList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Simple JavaBean version of {@link AsyncHttpClientConfig}
@@ -182,8 +182,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
-        this.providerConfig = providerConfig;
+    public AsyncHttpClientConfigBean setAdvancedConfig(AdvancedConfig advancedConfig) {
+        this.advancedConfig = advancedConfig;
         return this;
     }
 

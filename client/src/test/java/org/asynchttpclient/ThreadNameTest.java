@@ -26,7 +26,7 @@ import org.testng.annotations.Test;
  *
  * @author Stepan Koltsov
  */
-public abstract class ThreadNameTest extends AbstractBasicTest {
+public class ThreadNameTest extends AbstractBasicTest {
 
     private static Thread[] getThreads() {
         int count = Thread.activeCount() + 1;
@@ -46,7 +46,7 @@ public abstract class ThreadNameTest extends AbstractBasicTest {
         String name = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         AsyncHttpClientConfig.Builder config = new AsyncHttpClientConfig.Builder();
         config.setName(name);
-        try (AsyncHttpClient client = getAsyncHttpClient(config.build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config.build())) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/").execute();
             f.get(3, TimeUnit.SECONDS);
 

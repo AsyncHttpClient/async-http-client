@@ -20,6 +20,7 @@ import static org.testng.Assert.assertEquals;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
@@ -28,7 +29,7 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
 
-public abstract class BodyChunkTest extends AbstractBasicTest {
+public class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
 
@@ -41,7 +42,7 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
         confbuilder = confbuilder.setRequestTimeout(5 * 60 * 1000); // 5 minutes
 
         // Create client
-        try (AsyncHttpClient client = getAsyncHttpClient(confbuilder.build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(confbuilder.build())) {
             RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
 
             requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));

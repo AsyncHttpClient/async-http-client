@@ -14,7 +14,7 @@ package org.asynchttpclient.channel.pool;
 
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.HttpUtils;
 
 public interface ConnectionPoolPartitioning {
 
@@ -49,7 +49,7 @@ public interface ConnectionPoolPartitioning {
         INSTANCE;
 
         public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
-            String targetHostBaseUrl = virtualHost != null ? virtualHost : AsyncHttpProviderUtils.getBaseUrl(uri);
+            String targetHostBaseUrl = virtualHost != null ? virtualHost : HttpUtils.getBaseUrl(uri);
             if (proxyServer != null) {
                 return uri.isSecured() ? //
                 new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getSecuredPort(), true, targetHostBaseUrl)

@@ -25,7 +25,7 @@ import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.HttpUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -42,7 +42,7 @@ import java.io.OutputStream;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AuthTimeoutTest extends AbstractBasicTest {
+public class AuthTimeoutTest extends AbstractBasicTest {
 
     private Server server2;
 
@@ -178,13 +178,13 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     protected void inspectException(Throwable t) {
         assertNotNull(t.getCause());
         assertEquals(t.getCause().getClass(), IOException.class);
-        if (t.getCause() != AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION) {
+        if (t.getCause() != HttpUtils.REMOTELY_CLOSED_EXCEPTION) {
             fail();
         }
     }
 
     private AsyncHttpClient newClient() {
-        return getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        return new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {

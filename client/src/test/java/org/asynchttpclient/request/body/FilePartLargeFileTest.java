@@ -20,6 +20,7 @@ import static org.testng.Assert.assertEquals;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.multipart.FilePart;
 import org.eclipse.jetty.server.Request;
@@ -34,7 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 
-public abstract class FilePartLargeFileTest extends AbstractBasicTest {
+public class FilePartLargeFileTest extends AbstractBasicTest {
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -63,7 +64,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -73,7 +74,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

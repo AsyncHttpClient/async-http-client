@@ -44,17 +44,15 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
 
+import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.SSLEngineFactory;
-import org.asynchttpclient.channel.SSLEngineFactory.DefaultSSLEngineFactory;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
-import org.asynchttpclient.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
 import org.asynchttpclient.netty.handler.HttpProtocol;
@@ -81,7 +79,7 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
+    private final AdvancedConfig advancedConfig;
     private final SSLEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
@@ -104,13 +102,13 @@ public class ChannelManager {
 
     private Processor wsProcessor;
 
-    public ChannelManager(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Timer nettyTimer) {
+    public ChannelManager(final AsyncHttpClientConfig config, AdvancedConfig advancedConfig, Timer nettyTimer) {
 
         this.config = config;
-        this.nettyConfig = nettyConfig;
+        this.advancedConfig = advancedConfig;
         this.sslEngineFactory = config.getSslEngineFactory() != null? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
-        ChannelPool channelPool = nettyConfig.getChannelPool();
+        ChannelPool channelPool = advancedConfig.getChannelPool();
         if (channelPool == null && config.isAllowPoolingConnections()) {
             channelPool = new DefaultChannelPool(config, nettyTimer);
         } else if (channelPool == null) {
@@ -168,18 +166,18 @@ public class ChannelManager {
         handshakeTimeout = config.getHandshakeTimeout();
 
         // check if external EventLoopGroup is defined
-        allowReleaseEventLoopGroup = nettyConfig.getEventLoopGroup() == null;
+        allowReleaseEventLoopGroup = advancedConfig.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
             DefaultThreadFactory threadFactory = new DefaultThreadFactory(config.getNameOrDefault());
             eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
         } else {
-            eventLoopGroup = nettyConfig.getEventLoopGroup();
+            eventLoopGroup = advancedConfig.getEventLoopGroup();
         }
         if (eventLoopGroup instanceof OioEventLoopGroup)
             throw new IllegalArgumentException("Oio is not supported");
 
         // allow users to specify SocketChannel class and default to NioSocketChannel
-        socketChannelClass = nettyConfig.getSocketChannelClass() == null ? NioSocketChannel.class : nettyConfig.getSocketChannelClass();
+        socketChannelClass = advancedConfig.getSocketChannelClass() == null ? NioSocketChannel.class : advancedConfig.getSocketChannelClass();
 
         httpBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
         wsBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
@@ -189,8 +187,8 @@ public class ChannelManager {
         wsBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 
         if (config.getConnectTimeout() > 0)
-            nettyConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
-        for (Entry<ChannelOption<Object>, Object> entry : nettyConfig.propertiesSet()) {
+            advancedConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        for (Entry<ChannelOption<Object>, Object> entry : advancedConfig.getChannelOptions().entrySet()) {
             ChannelOption<Object> key = entry.getKey();
             Object value = entry.getValue();
             httpBootstrap.option(key, value);
@@ -200,11 +198,11 @@ public class ChannelManager {
 
     public void configureBootstraps(NettyRequestSender requestSender) {
 
-        HttpProtocol httpProtocol = new HttpProtocol(this, config, nettyConfig, requestSender);
-        final Processor httpProcessor = new Processor(config, nettyConfig, this, requestSender, httpProtocol);
+        HttpProtocol httpProtocol = new HttpProtocol(this, config, advancedConfig, requestSender);
+        final Processor httpProcessor = new Processor(config, advancedConfig, this, requestSender, httpProtocol);
 
-        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, nettyConfig, requestSender);
-        wsProcessor = new Processor(config, nettyConfig, this, requestSender, wsProtocol);
+        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, advancedConfig, requestSender);
+        wsProcessor = new Processor(config, advancedConfig, this, requestSender, wsProtocol);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -217,8 +215,8 @@ public class ChannelManager {
 
                 ch.config().setOption(ChannelOption.AUTO_READ, false);
 
-                if (nettyConfig.getHttpAdditionalPipelineInitializer() != null)
-                    nettyConfig.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (advancedConfig.getHttpAdditionalPipelineInitializer() != null)
+                    advancedConfig.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
 
@@ -229,8 +227,8 @@ public class ChannelManager {
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
-                if (nettyConfig.getWsAdditionalPipelineInitializer() != null)
-                    nettyConfig.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (advancedConfig.getWsAdditionalPipelineInitializer() != null)
+                    advancedConfig.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
     }
@@ -446,11 +444,7 @@ public class ChannelManager {
         Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, partitionKey));
     }
 
-    public void flushPartition(String partitionId) {
-        channelPool.flushPartition(partitionId);
-    } 
-
-    public void flushPartitions(ChannelPoolPartitionSelector selector) {
-        channelPool.flushPartitions(selector);
+    public ChannelPool getChannelPool() {
+        return channelPool;
     }
 }

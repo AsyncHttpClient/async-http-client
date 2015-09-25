@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  * @author Hubert Iwaniuk
  */
-public abstract class RC10KTest extends AbstractBasicTest {
+public class RC10KTest extends AbstractBasicTest {
     private static final int C10K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;
@@ -94,7 +94,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(C10K).setAllowPoolingConnections(true).build())) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(C10K).setAllowPoolingConnections(true).build())) {
             List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {

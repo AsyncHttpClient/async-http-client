@@ -22,11 +22,11 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class ComplexClientTest extends AbstractBasicTest {
+public class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleRequestsTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             String body = "hello there";
 
             // once
@@ -43,7 +43,7 @@ public abstract class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithoutSlashTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             String body = "hello there";
             Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);

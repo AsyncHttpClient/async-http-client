@@ -20,6 +20,7 @@ import static org.testng.Assert.assertNull;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.TransferCompletionHandler;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class TransferListenerTest extends AbstractBasicTest {
+public class TransferListenerTest extends AbstractBasicTest {
 
     private class BasicHandler extends AbstractHandler {
 
@@ -81,7 +82,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
@@ -141,7 +142,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
         int timeout = (int) (file.length() / 1000);
 
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
@@ -183,7 +184,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutFileBodyGeneratorTest() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();

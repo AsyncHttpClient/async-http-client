@@ -19,6 +19,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
@@ -42,11 +43,6 @@ import java.util.concurrent.TimeUnit;
 public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
     private static final int SLEEPTIME_MS = 1000;
-
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return NettyProviderUtil.nettyProvider(config);
-    }
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -83,7 +79,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         int samples = 10;
 
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnections(1).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(samples);
             final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
 

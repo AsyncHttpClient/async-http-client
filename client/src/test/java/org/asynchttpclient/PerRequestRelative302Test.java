@@ -39,7 +39,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public abstract class PerRequestRelative302Test extends AbstractBasicTest {
+public class PerRequestRelative302Test extends AbstractBasicTest {
 
  // FIXME super NOT threadsafe!!!
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -91,7 +91,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
 
             assertNotNull(response);
@@ -108,7 +108,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        try (AsyncHttpClient c = getAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(false).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
@@ -135,7 +135,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
@@ -150,7 +150,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

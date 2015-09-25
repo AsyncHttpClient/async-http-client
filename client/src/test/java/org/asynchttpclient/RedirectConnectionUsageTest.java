@@ -41,7 +41,7 @@ import java.util.Date;
  * 
  * @author dominict
  */
-public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
+public class RedirectConnectionUsageTest extends AbstractBasicTest {
     private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
@@ -77,7 +77,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .setFollowRedirect(true)//
                 .build();
 
-        try (AsyncHttpClient c = getAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(config)) {
             Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
 
             ListenableFuture<Response> response = c.executeRequest(r);

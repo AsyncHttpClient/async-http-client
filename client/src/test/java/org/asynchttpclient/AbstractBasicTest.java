@@ -20,7 +20,6 @@ import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.fail;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -113,6 +112,4 @@ public abstract class AbstractBasicTest {
             return "";
         }
     }
-
-    public abstract AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config);
 }

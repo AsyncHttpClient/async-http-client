@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.requestTimeout;
+import static org.asynchttpclient.util.HttpUtils.REMOTELY_CLOSED_EXCEPTION;
+import static org.asynchttpclient.util.HttpUtils.requestTimeout;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;

@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -41,7 +42,7 @@ import org.testng.annotations.Test;
  * 
  * @author dominict
  */
-abstract public class ChunkingTest extends AbstractBasicTest {
+public class ChunkingTest extends AbstractBasicTest {
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimeters.
     @Test()
@@ -67,7 +68,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
         AsyncHttpClientConfig.Builder bc = httpClientBuilder();
 
-        try (AsyncHttpClient c = getAsyncHttpClient(bc.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -83,7 +84,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
         AsyncHttpClientConfig.Builder bc = httpClientBuilder();
 
-        try (AsyncHttpClient c = getAsyncHttpClient(bc.build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());

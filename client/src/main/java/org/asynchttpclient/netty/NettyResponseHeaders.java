@@ -29,7 +29,6 @@ public class NettyResponseHeaders extends HttpResponseHeaders {
     private final HttpHeaders trailingHeaders;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    // FIXME unused AsyncHttpProvider provider
     public NettyResponseHeaders(HttpHeaders responseHeaders) {
         this(responseHeaders, null);
     }

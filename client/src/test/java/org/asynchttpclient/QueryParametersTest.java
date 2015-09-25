@@ -44,7 +44,7 @@ import java.util.concurrent.TimeoutException;
  * 
  * @author Hubert Iwaniuk
  */
-public abstract class QueryParametersTest extends AbstractBasicTest {
+public class QueryParametersTest extends AbstractBasicTest {
     private class QueryStringHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
@@ -72,7 +72,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -87,7 +87,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
             LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
@@ -98,7 +98,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithColonTest() throws Exception {
-        try (AsyncHttpClient c = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 

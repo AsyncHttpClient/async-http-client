@@ -1,6 +1,6 @@
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.cookie.Cookie;

@@ -14,7 +14,7 @@ package org.asynchttpclient.util;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.ntlm.NtlmUtils.getNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
+import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.nio.charset.Charset;

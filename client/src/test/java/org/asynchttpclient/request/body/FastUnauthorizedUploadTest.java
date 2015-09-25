@@ -18,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.multipart.FilePart;
 import org.eclipse.jetty.server.Request;
@@ -31,7 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 
-public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
+public class FastUnauthorizedUploadTest extends AbstractBasicTest {
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -52,7 +53,7 @@ public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
     public void testUnauthorizedWhileUploading() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute()
                     .get();
             assertEquals(response.getStatusCode(), 401);

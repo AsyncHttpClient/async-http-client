@@ -35,7 +35,7 @@ import java.util.concurrent.Future;
  * @author Benjamin Hanzelmann
  * 
  */
-public abstract class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
+public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
     
     @Test(groups = { "standalone", "default_provider" })
     public void testAccumulateErrorBody() throws Exception {

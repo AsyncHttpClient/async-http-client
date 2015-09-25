@@ -44,10 +44,14 @@ import java.util.concurrent.TimeoutException;
  * 
  * @author Hubert Iwaniuk
  */
-public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
+public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
-    protected abstract void checkTimeoutMessage(String message);
+    private void checkTimeoutMessage(String message) {
+        assertTrue(message.startsWith("Request timed out"), "error message indicates reason of error");
+        assertTrue(message.contains("127.0.0.1"), "error message contains remote ip address");
+        assertTrue(message.contains("of 100 ms"), "error message contains timeout configuration value");
+    }
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -92,7 +96,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testRequestTimeout() throws IOException {
-        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(100).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
@@ -108,7 +112,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100).build())) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
             Response response = responseFuture.get();
             assertNotNull(response);
@@ -122,7 +126,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalRequestTimeout() throws IOException {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100).build())) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
@@ -140,7 +144,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalIdleTimeout() throws IOException {
         final long times[] = new long[] { -1, -1 };
 
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).build())) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {

@@ -26,9 +26,9 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
 
 /**
- * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
+ * {@link org.asynchttpclient.AsyncHttpClient} common utilities.
  */
-public class AsyncHttpProviderUtils {
+public class HttpUtils {
 
     public static final IOException REMOTELY_CLOSED_EXCEPTION = buildStaticIOException("Remotely closed");
     public static final IOException CHANNEL_CLOSED_EXCEPTION = buildStaticIOException("Channel closed");
