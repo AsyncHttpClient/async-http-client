@@ -322,7 +322,6 @@
 	</repositories>
 	<modules>
 		<module>client</module>
-		<module>providers</module>
 		<module>extras</module>
 	</modules>
 	<dependencies>
