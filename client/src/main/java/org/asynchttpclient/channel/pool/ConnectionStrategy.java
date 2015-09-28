@@ -13,10 +13,13 @@
  */
 package org.asynchttpclient.channel.pool;
 
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+
 /**
  * Provides an interface for decisions about HTTP connections.
  */
-public interface ConnectionStrategy<REQUEST, RESPONSE> {
+public interface ConnectionStrategy {
 
     /**
      * Determines whether the connection should be kept alive after this HTTP message exchange.
@@ -24,5 +27,5 @@ public interface ConnectionStrategy<REQUEST, RESPONSE> {
      * @param response the HTTP response
      * @return true if the connection should be kept alive, false if it should be closed.
      */
-    boolean keepAlive(REQUEST request, RESPONSE response);
+    boolean keepAlive(HttpRequest request, HttpResponse response);
 }

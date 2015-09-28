@@ -26,7 +26,7 @@ import org.asynchttpclient.channel.pool.ConnectionStrategy;
 /**
  * Connection strategy implementing standard HTTP 1.0/1.1 behaviour.
  */
-public class DefaultConnectionStrategy implements ConnectionStrategy<HttpRequest, HttpResponse> {
+public class DefaultConnectionStrategy implements ConnectionStrategy {
 
     /**
      * Implemented in accordance with RFC 7230 section 6.1

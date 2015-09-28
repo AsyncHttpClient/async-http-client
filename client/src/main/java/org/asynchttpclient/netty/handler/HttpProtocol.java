@@ -55,7 +55,7 @@ import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
 
-    private final ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy;
+    private final ConnectionStrategy connectionStrategy;
 
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, AdvancedConfig advancedConfig, NettyRequestSender requestSender) {
         super(channelManager, config, advancedConfig, requestSender);

@@ -18,8 +18,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.util.Timer;
 
 import java.util.HashMap;
@@ -44,7 +42,7 @@ public class AdvancedConfig {
     private ChannelPool channelPool;
     private Timer nettyTimer;
     private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
-    private ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy = new DefaultConnectionStrategy();
+    private ConnectionStrategy connectionStrategy = new DefaultConnectionStrategy();
 
     /**
      * @param name the name of the ChannelOption
@@ -125,11 +123,11 @@ public class AdvancedConfig {
         this.nettyWebSocketFactory = nettyWebSocketFactory;
     }
 
-    public ConnectionStrategy<HttpRequest, HttpResponse> getConnectionStrategy() {
+    public ConnectionStrategy getConnectionStrategy() {
         return connectionStrategy;
     }
 
-    public void setConnectionStrategy(ConnectionStrategy<HttpRequest, HttpResponse> connectionStrategy) {
+    public void setConnectionStrategy(ConnectionStrategy connectionStrategy) {
         this.connectionStrategy = connectionStrategy;
     }
     
