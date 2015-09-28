@@ -12,10 +12,13 @@
  */
 package org.asynchttpclient.handler;
 
+import io.netty.channel.Channel;
+
 import java.net.InetAddress;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.channel.NameResolution;
+import org.asynchttpclient.netty.request.NettyRequest;
 
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
@@ -43,7 +46,7 @@ public interface AsyncHandlerExtensions {
      * @param connection the connection
      * @param address the connected addresses
      */
-    void onConnectionSuccess(Object connection, InetAddress address);
+    void onConnectionSuccess(Channel connection, InetAddress address);
     
     /**
      * Notify the callback after a failed connect.
@@ -65,14 +68,14 @@ public interface AsyncHandlerExtensions {
      * 
      * @param connection the connection
      */
-    void onConnectionPooled(Object connection);
+    void onConnectionPooled(Channel connection);
 
     /**
      * Notify the callback when trying to offer a connection to the pool.
      * 
      * @param connection the connection
      */
-    void onConnectionOffer(Object connection);
+    void onConnectionOffer(Channel connection);
 
     /**
      * Notify the callback when a request is being written on the wire. If the
@@ -81,7 +84,7 @@ public interface AsyncHandlerExtensions {
      * 
      * @param request the real request object as passed to the provider
      */
-    void onRequestSend(Object request);
+    void onRequestSend(NettyRequest request);
 
     /**
      * Notify the callback every time a request is being retried.

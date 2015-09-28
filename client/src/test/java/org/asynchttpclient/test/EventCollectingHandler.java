@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.test;
 
+import io.netty.channel.Channel;
+
 import java.net.InetAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -24,6 +26,7 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
 
 public class EventCollectingHandler extends AsyncCompletionHandlerBase implements AsyncHandlerExtensions {
@@ -98,7 +101,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionSuccess(Object connection, InetAddress address) {
+    public void onConnectionSuccess(Channel connection, InetAddress address) {
         firedEvents.add(CONNECTION_SUCCESS_EVENT);
     }
 
@@ -118,17 +121,17 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionPooled(Object connection) {
+    public void onConnectionPooled(Channel connection) {
         firedEvents.add(CONNECTION_POOLED_EVENT);
     }
 
     @Override
-    public void onConnectionOffer(Object connection) {
+    public void onConnectionOffer(Channel connection) {
         firedEvents.add(CONNECTION_OFFER_EVENT);
     }
 
     @Override
-    public void onRequestSend(Object request) {
+    public void onRequestSend(NettyRequest request) {
         firedEvents.add(REQUEST_SEND_EVENT);
     }
 

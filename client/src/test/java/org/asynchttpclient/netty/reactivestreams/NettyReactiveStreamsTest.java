@@ -14,7 +14,11 @@ package org.asynchttpclient.netty.reactivestreams;
 
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertTrue;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,17 +29,12 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-
-import java.lang.reflect.*;
 
 public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
 
@@ -130,17 +129,17 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
         @Override
         public void onConnectionOpen() {}
         @Override
-        public void onConnectionSuccess(Object connection, InetAddress address) {}
+        public void onConnectionSuccess(Channel connection, InetAddress address) {}
         @Override
         public void onConnectionFailure(InetAddress address) {}
         @Override
         public void onConnectionPool() {}
         @Override
-        public void onConnectionPooled(Object connection) {}
+        public void onConnectionPooled(Channel connection) {}
         @Override
-        public void onConnectionOffer(Object connection) {}
+        public void onConnectionOffer(Channel connection) {}
         @Override
-        public void onRequestSend(Object request) {}
+        public void onRequestSend(NettyRequest request) {}
         @Override
         public void onRetry() { replaying.countDown(); }
         @Override
