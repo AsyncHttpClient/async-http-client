@@ -168,7 +168,7 @@ public class ChannelManager {
         // check if external EventLoopGroup is defined
         allowReleaseEventLoopGroup = advancedConfig.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
-            DefaultThreadFactory threadFactory = new DefaultThreadFactory(config.getNameOrDefault());
+            DefaultThreadFactory threadFactory = new DefaultThreadFactory(config.getThreadPoolNameOrDefault());
             eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
         } else {
             eventLoopGroup = advancedConfig.getEventLoopGroup();

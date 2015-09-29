@@ -42,10 +42,10 @@ public class ThreadNameTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testQueryParameters() throws Exception {
-        String name = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
+    public void testThreadName() throws Exception {
+        String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         AsyncHttpClientConfig.Builder config = new AsyncHttpClientConfig.Builder();
-        config.setName(name);
+        config.setThreadPoolName(threadPoolName);
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config.build())) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/").execute();
             f.get(3, TimeUnit.SECONDS);
@@ -54,13 +54,13 @@ public class ThreadNameTest extends AbstractBasicTest {
             // so we checking that at least one thread is.
             boolean found = false;
             for (Thread thread : getThreads()) {
-                if (thread.getName().startsWith(name)) {
+                if (thread.getName().startsWith(threadPoolName)) {
                     found = true;
                     break;
                 }
             }
 
-            Assert.assertTrue(found, "must found threads starting with random string " + name);
+            Assert.assertTrue(found, "must found threads starting with random string " + threadPoolName);
         }
     }
 }

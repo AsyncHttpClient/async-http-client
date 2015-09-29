@@ -67,7 +67,7 @@ public class AsyncHttpClientConfig {
         AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
 
-    protected String name;
+    protected String threadPoolName;
 
     protected int connectTimeout;
 
@@ -123,7 +123,7 @@ public class AsyncHttpClientConfig {
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(String name,//
+    private AsyncHttpClientConfig(String threadPoolName,//
             int connectTimeout,//
             int maxConnections,//
             int maxConnectionsPerHost,//
@@ -168,7 +168,7 @@ public class AsyncHttpClientConfig {
             int shutdownTimeout,//
             AdvancedConfig advancedConfig) {
 
-        this.name = name;
+        this.threadPoolName = threadPoolName;
         this.connectTimeout = connectTimeout;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
@@ -192,7 +192,7 @@ public class AsyncHttpClientConfig {
             this.executorService = executorService;
         } else {
             PrefixIncrementThreadFactory threadFactory = new PrefixIncrementThreadFactory(
-                    getNameOrDefault() + "-");
+                    getThreadPoolNameOrDefault() + "-");
             this.executorService = Executors.newCachedThreadPool(threadFactory);
         }
 
@@ -228,8 +228,8 @@ public class AsyncHttpClientConfig {
      *
      * @return the name.
      */
-    public String getName() {
-        return name;
+    public String getThreadPoolName() {
+        return threadPoolName;
     }
 
     /**
@@ -237,10 +237,10 @@ public class AsyncHttpClientConfig {
      *
      * @return the name.
      */
-    public String getNameOrDefault() {
-        String r = name;
+    public String getThreadPoolNameOrDefault() {
+        String r = threadPoolName;
         if (r == null || r.isEmpty()) {
-            r = defaultName();
+            r = defaultThreadPoolName();
         }
         if (r == null || r.isEmpty()) {
             r = "AsyncHttpClient";
@@ -630,7 +630,7 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
-        private String name = defaultName();
+        private String threadPoolName = defaultThreadPoolName();
         private int connectTimeout = defaultConnectTimeout();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
@@ -685,8 +685,8 @@ public class AsyncHttpClientConfig {
          * naming and can be used for debugging multiple {@link AsyncHttpClient}
          * instance.
          */
-        public Builder setName(String name) {
-            this.name = name;
+        public Builder setThreadPoolName(String threadPoolName) {
+            this.threadPoolName = threadPoolName;
             return this;
         }
 
@@ -1197,7 +1197,7 @@ public class AsyncHttpClientConfig {
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
-            name = prototype.getName();
+            threadPoolName = prototype.getThreadPoolName();
             allowPoolingConnections = prototype.isAllowPoolingConnections();
             connectTimeout = prototype.getConnectTimeout();
             pooledConnectionIdleTimeout = prototype.getPooledConnectionIdleTimeout();
@@ -1265,7 +1265,7 @@ public class AsyncHttpClientConfig {
             if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
 
-            return new AsyncHttpClientConfig(name,//
+            return new AsyncHttpClientConfig(threadPoolName,//
                     connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//

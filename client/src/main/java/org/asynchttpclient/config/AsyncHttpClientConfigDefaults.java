@@ -19,8 +19,8 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static final String ASYNC_CLIENT_CONFIG_ROOT = "org.asynchttpclient.";
 
-    public static String defaultName() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + "name");
+    public static String defaultThreadPoolName() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + "threadPoolName");
     }
 
     public static int defaultMaxConnections() {

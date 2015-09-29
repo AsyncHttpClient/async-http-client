@@ -51,7 +51,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     void configureDefaults() {
         maxConnections = defaultMaxConnections();
         maxConnectionsPerHost = defaultMaxConnectionsPerHost();
-        name = defaultName();
+        threadPoolName = defaultThreadPoolName();
         connectTimeout = defaultConnectTimeout();
         webSocketTimeout = defaultWebSocketTimeout();
         pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
@@ -90,7 +90,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setName(String name) {
-        this.name = name;
+        this.threadPoolName = name;
         return this;
     }
 
