@@ -14,7 +14,6 @@ package org.asynchttpclient.extras.rxjava;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import rx.Observable;
 import rx.Subscriber;
@@ -84,5 +83,4 @@ public class AsyncHttpObservable {
         //return the subject that can be subscribed to later while the execution has already started
         return subject;
     }
-
 }
