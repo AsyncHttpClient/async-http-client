@@ -20,8 +20,8 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLContext;
 
@@ -554,8 +554,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setExecutorService(ExecutorService applicationThreadPool) {
-            configBuilder.setExecutorService(applicationThreadPool);
+        public Builder setThreadFactory(ThreadFactory threadFactory) {
+            configBuilder.setThreadFactory(threadFactory);
             return this;
         }
 

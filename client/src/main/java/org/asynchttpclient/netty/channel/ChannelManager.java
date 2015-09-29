@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
@@ -166,9 +167,9 @@ public class ChannelManager {
         handshakeTimeout = config.getHandshakeTimeout();
 
         // check if external EventLoopGroup is defined
+        ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolNameOrDefault());
         allowReleaseEventLoopGroup = advancedConfig.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
-            DefaultThreadFactory threadFactory = new DefaultThreadFactory(config.getThreadPoolNameOrDefault());
             eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
         } else {
             eventLoopGroup = advancedConfig.getEventLoopGroup();

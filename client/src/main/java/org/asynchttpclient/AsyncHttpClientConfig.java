@@ -23,8 +23,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLContext;
 
@@ -34,7 +33,6 @@ import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
-import org.asynchttpclient.util.PrefixIncrementThreadFactory;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
@@ -67,8 +65,6 @@ public class AsyncHttpClientConfig {
         AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
 
-    protected String threadPoolName;
-
     protected int connectTimeout;
 
     protected int maxConnections;
@@ -94,7 +90,8 @@ public class AsyncHttpClientConfig {
 
     protected boolean compressionEnforced;
     protected String userAgent;
-    protected ExecutorService executorService;
+    protected String threadPoolName;
+    protected ThreadFactory threadFactory;
     protected Realm realm;
     protected List<RequestFilter> requestFilters;
     protected List<ResponseFilter> responseFilters;
@@ -123,8 +120,7 @@ public class AsyncHttpClientConfig {
     protected AsyncHttpClientConfig() {
     }
 
-    private AsyncHttpClientConfig(String threadPoolName,//
-            int connectTimeout,//
+    private AsyncHttpClientConfig(int connectTimeout,//
             int maxConnections,//
             int maxConnectionsPerHost,//
             int requestTimeout,//
@@ -139,7 +135,8 @@ public class AsyncHttpClientConfig {
             boolean followRedirect, //
             int maxRedirects, //
             boolean strict302Handling, //
-            ExecutorService executorService,//
+            String threadPoolName,//
+            ThreadFactory threadFactory,//
             ProxyServerSelector proxyServerSelector, //
             boolean compressionEnforced, //
             String userAgent,//
@@ -168,7 +165,6 @@ public class AsyncHttpClientConfig {
             int shutdownTimeout,//
             AdvancedConfig advancedConfig) {
 
-        this.threadPoolName = threadPoolName;
         this.connectTimeout = connectTimeout;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
@@ -187,14 +183,8 @@ public class AsyncHttpClientConfig {
         this.proxyServerSelector = proxyServerSelector;
         this.compressionEnforced = compressionEnforced;
         this.userAgent = userAgent;
-
-        if (executorService != null) {
-            this.executorService = executorService;
-        } else {
-            PrefixIncrementThreadFactory threadFactory = new PrefixIncrementThreadFactory(
-                    getThreadPoolNameOrDefault() + "-");
-            this.executorService = Executors.newCachedThreadPool(threadFactory);
-        }
+        this.threadPoolName = threadPoolName;
+        this.threadFactory = threadFactory;
 
         this.realm = realm;
         this.requestFilters = requestFilters;
@@ -373,16 +363,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the {@link java.util.concurrent.ExecutorService} an
+     * Return the {@link java.util.concurrent.ThreadFactory} an
      * {@link AsyncHttpClient} use for handling asynchronous response.
      *
-     * @return the {@link java.util.concurrent.ExecutorService} an
+     * @return the {@link java.util.concurrent.ThreadFactory} an
      *         {@link AsyncHttpClient} use for handling asynchronous response.
-     *         If no {@link ExecutorService} has been explicitly provided, this
+     *         If no {@link ThreadFactory} has been explicitly provided, this
      *         method will return <code>null</code>
      */
-    public ExecutorService getExecutorService() {
-        return executorService;
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
     }
 
     /**
@@ -490,23 +480,6 @@ public class AsyncHttpClientConfig {
      */
     public boolean isDisableUrlEncodingForBoundRequests() {
         return disableUrlEncodingForBoundRequests;
-    }
-
-    /**
-     * @return <code>true</code> if both the application and reaper thread pools
-     *         haven't yet been shutdown.
-     * @since 1.7.21
-     */
-    public boolean isValid() {
-        boolean atpRunning = true;
-        try {
-            atpRunning = executorService.isShutdown();
-        } catch (Exception ignore) {
-            // isShutdown() will thrown an exception in an EE7 environment
-            // when using a ManagedExecutorService.
-            // When this is the case, we assume it's running.
-        }
-        return atpRunning;
     }
 
     /**
@@ -630,7 +603,6 @@ public class AsyncHttpClientConfig {
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
-        private String threadPoolName = defaultThreadPoolName();
         private int connectTimeout = defaultConnectTimeout();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
@@ -651,7 +623,8 @@ public class AsyncHttpClientConfig {
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean compressionEnforced = defaultCompressionEnforced();
         private String userAgent = defaultUserAgent();
-        private ExecutorService applicationThreadPool;
+        private String threadPoolName = defaultThreadPoolName();
+        private ThreadFactory threadFactory;
         private Realm realm;
         private final List<RequestFilter> requestFilters = new LinkedList<>();
         private final List<ResponseFilter> responseFilters = new LinkedList<>();
@@ -842,17 +815,17 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link java.util.concurrent.ExecutorService} an
+         * Set the {@link java.util.concurrent.ThreadFactory} an
          * {@link AsyncHttpClient} use for handling asynchronous response.
          *
          * @param applicationThreadPool the
-         *            {@link java.util.concurrent.ExecutorService} an
+         *            {@link java.util.concurrent.ThreadFactory} an
          *            {@link AsyncHttpClient} use for handling asynchronous
          *            response.
          * @return a {@link Builder}
          */
-        public Builder setExecutorService(ExecutorService applicationThreadPool) {
-            this.applicationThreadPool = applicationThreadPool;
+        public Builder setThreadFactory(ThreadFactory threadFactory) {
+            this.threadFactory = threadFactory;
             return this;
         }
 
@@ -1213,7 +1186,7 @@ public class AsyncHttpClientConfig {
             userAgent = prototype.getUserAgent();
             followRedirect = prototype.isFollowRedirect();
             compressionEnforced = prototype.isCompressionEnforced();
-            applicationThreadPool = prototype.getExecutorService();
+            threadFactory = prototype.getThreadFactory();
 
             requestFilters.clear();
             responseFilters.clear();
@@ -1265,8 +1238,7 @@ public class AsyncHttpClientConfig {
             if (proxyServerSelector == null)
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
 
-            return new AsyncHttpClientConfig(threadPoolName,//
-                    connectTimeout,//
+            return new AsyncHttpClientConfig(connectTimeout,//
                     maxConnections,//
                     maxConnectionsPerHost,//
                     requestTimeout,//
@@ -1281,7 +1253,8 @@ public class AsyncHttpClientConfig {
                     followRedirect, //
                     maxRedirects, //
                     strict302Handling, //
-                    applicationThreadPool, //
+                    threadPoolName,//
+                    threadFactory, //
                     proxyServerSelector, //
                     compressionEnforced, //
                     userAgent,//

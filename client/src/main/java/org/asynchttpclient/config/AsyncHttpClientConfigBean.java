@@ -15,8 +15,6 @@ package org.asynchttpclient.config;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 import java.util.LinkedList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLContext;
@@ -37,7 +35,6 @@ import org.asynchttpclient.util.ProxyUtils;
 public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean() {
-        configureExecutors();
         configureDefaults();
         configureFilters();
     }
@@ -79,21 +76,16 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         }
     }
 
-    void configureExecutors() {
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "AsyncHttpClient-Callback");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-    }
-
-    public AsyncHttpClientConfigBean setName(String name) {
-        this.threadPoolName = name;
+    public AsyncHttpClientConfigBean setThreadPoolName(String threadPoolName) {
+        this.threadPoolName = threadPoolName;
         return this;
     }
 
+    public AsyncHttpClientConfigBean setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+        return this;
+    }
+    
     public AsyncHttpClientConfigBean setMaxTotalConnections(int maxConnections) {
         this.maxConnections = maxConnections;
         return this;
@@ -156,14 +148,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setAllowPoolingConnections(boolean allowPoolingConnections) {
         this.allowPoolingConnections = allowPoolingConnections;
-        return this;
-    }
-
-    public AsyncHttpClientConfigBean setApplicationThreadPool(ExecutorService applicationThreadPool) {
-        if (this.executorService != null) {
-            this.executorService.shutdownNow();
-        }
-        this.executorService = applicationThreadPool;
         return this;
     }
 
