@@ -18,12 +18,9 @@
     </description>
 	<url>http://github.com/AsyncHttpClient/async-http-client</url>
 	<scm>
-		<connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git
-        </connection>
 		<url>https://github.com/AsyncHttpClient/async-http-client</url>
-		<developerConnection>
-            scm:git:git@github.com:AsyncHttpClient/async-http-client.git
-        </developerConnection>
+		<connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
+		<developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
 	</scm>
 	<issueManagement>
 		<system>jira</system>
@@ -32,14 +29,9 @@
 	<mailingLists>
 		<mailingList>
 			<name>asynchttpclient</name>
-			<archive>http://groups.google.com/group/asynchttpclient/topics
-            </archive>
-			<subscribe>
-                http://groups.google.com/group/asynchttpclient/subscribe
-            </subscribe>
-			<unsubscribe>
-                http://groups.google.com/group/asynchttpclient/subscribe
-            </unsubscribe>
+			<archive>http://groups.google.com/group/asynchttpclient/topics</archive>
+			<subscribe>http://groups.google.com/group/asynchttpclient/subscribe</subscribe>
+			<unsubscribe>http://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
 			<post>asynchttpclient@googlegroups.com</post>
 		</mailingList>
 	</mailingLists>
@@ -145,9 +137,7 @@
 				<configuration>
 					<manifestLocation>META-INF</manifestLocation>
 					<instructions>
-						<Bundle-Version>
-							$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))
-						</Bundle-Version>
+						<Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
 						<Bundle-Vendor>Sonatype</Bundle-Vendor>
 					</instructions>
 				</configuration>
@@ -163,7 +153,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>1.4</version>
+				<version>1.4.1</version>
 				<executions>
 					<execution>
 						<id>enforce-versions</id>
@@ -176,7 +166,7 @@
 									<version>2.0.9</version>
 								</requireMavenVersion>
 								<requireJavaVersion>
-									<version>1.5</version>
+									<version>${source.property}</version>
 								</requireJavaVersion>
 							</rules>
 						</configuration>
@@ -192,6 +182,9 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-release-plugin</artifactId>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
