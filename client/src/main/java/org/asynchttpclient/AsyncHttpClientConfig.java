@@ -98,7 +98,6 @@ public class AsyncHttpClientConfig {
     protected List<IOExceptionFilter> ioExceptionFilters;
     protected int maxRequestRetry;
     protected boolean disableUrlEncodingForBoundRequests;
-    protected int ioThreadMultiplier;
     protected String[] enabledProtocols;
     protected String[] enabledCipherSuites;
     protected Integer sslSessionCacheSize;
@@ -146,7 +145,6 @@ public class AsyncHttpClientConfig {
             List<IOExceptionFilter> ioExceptionFilters,//
             int maxRequestRetry, //
             boolean disableUrlEncodingForBoundRequests, //
-            int ioThreadMultiplier, //
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
             Integer sslSessionCacheSize,//
@@ -192,7 +190,6 @@ public class AsyncHttpClientConfig {
         this.ioExceptionFilters = ioExceptionFilters;
         this.maxRequestRetry = maxRequestRetry;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
-        this.ioThreadMultiplier = ioThreadMultiplier;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
         this.sslSessionCacheSize = sslSessionCacheSize;
@@ -483,14 +480,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return number to multiply by availableProcessors() that will determine #
-     *         of NioWorkers to use
-     */
-    public int getIoThreadMultiplier() {
-        return ioThreadMultiplier;
-    }
-
-    /**
      * <p>
      * In the case of a POST/Redirect/Get scenario where the server uses a 302
      * for the redirect, should AHC respond to the redirect with a GET or
@@ -631,7 +620,6 @@ public class AsyncHttpClientConfig {
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<>();
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
-        private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites;
         private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
@@ -1037,11 +1025,6 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setIOThreadMultiplier(int multiplier) {
-            this.ioThreadMultiplier = multiplier;
-            return this;
-        }
-
         /**
          * Configures this AHC instance to be strict in it's handling of 302
          * redirects in a POST/Redirect/GET situation.
@@ -1197,7 +1180,6 @@ public class AsyncHttpClientConfig {
             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
 
             disableUrlEncodingForBoundRequests = prototype.isDisableUrlEncodingForBoundRequests();
-            ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowPoolingSslConnections = prototype.isAllowPoolingConnections();
             strict302Handling = prototype.isStrict302Handling();
@@ -1264,7 +1246,6 @@ public class AsyncHttpClientConfig {
                     ioExceptionFilters,//
                     maxRequestRetry, //
                     disableUrlEncodingForBoundRequests, //
-                    ioThreadMultiplier, //
                     enabledProtocols, //
                     enabledCipherSuites, //
                     sslSessionCacheSize, //

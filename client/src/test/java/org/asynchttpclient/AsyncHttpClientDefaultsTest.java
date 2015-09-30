@@ -72,11 +72,6 @@ public class AsyncHttpClientDefaultsTest {
         testStringSystemProperty("userAgent", "defaultUserAgent", "MyAHC");
     }
 
-    public void testDefaultIoThreadMultiplier() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultIoThreadMultiplier(), 2);
-        testIntegerSystemProperty("ioThreadMultiplier", "defaultIoThreadMultiplier", "100");
-    }
-
     public void testDefaultUseProxySelector() {
         Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxySelector());
         testBooleanSystemProperty("useProxySelector", "defaultUseProxySelector", "true");

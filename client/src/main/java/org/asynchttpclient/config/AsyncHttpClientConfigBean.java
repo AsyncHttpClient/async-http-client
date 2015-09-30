@@ -61,7 +61,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         userAgent = defaultUserAgent();
         allowPoolingConnections = defaultAllowPoolingConnections();
         maxRequestRetry = defaultMaxRequestRetry();
-        ioThreadMultiplier = defaultIoThreadMultiplier();
         allowPoolingSslConnections = defaultAllowPoolingSslConnections();
         disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         strict302Handling = defaultStrict302Handling();
@@ -203,11 +202,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
-        return this;
-    }
-
-    public AsyncHttpClientConfigBean setIoThreadMultiplier(int ioThreadMultiplier) {
-        this.ioThreadMultiplier = ioThreadMultiplier;
         return this;
     }
 
