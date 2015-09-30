@@ -409,29 +409,12 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return <code>true</code> if {@link RequestFilter}s have been defined.
-     *
-     * @since 2.0.0
-     */
-    public boolean hasRequestFilters() {
-        return !requestFilters.isEmpty();
-    }
-
-    /**
      * Return the list of {@link RequestFilter}
      *
      * @return Unmodifiable list of {@link ResponseFilter}
      */
     public List<RequestFilter> getRequestFilters() {
-        return Collections.unmodifiableList(requestFilters);
-    }
-
-    /**
-     * @return <code>true</code> if {@link ResponseFilter}s have been defined.
-     * @since 2.0.0
-     */
-    public boolean hasResponseFilters() {
-        return !responseFilters.isEmpty();
+        return requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters);
     }
 
     /**
@@ -440,7 +423,7 @@ public class AsyncHttpClientConfig {
      * @return Unmodifiable list of {@link ResponseFilter}
      */
     public List<ResponseFilter> getResponseFilters() {
-        return Collections.unmodifiableList(responseFilters);
+        return responseFilters.isEmpty() ? Collections.emptyList() :  Collections.unmodifiableList(responseFilters);
     }
 
     /**
