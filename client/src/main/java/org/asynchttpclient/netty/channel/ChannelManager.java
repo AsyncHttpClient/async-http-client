@@ -171,16 +171,26 @@ public class ChannelManager {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolNameOrDefault());
         allowReleaseEventLoopGroup = advancedConfig.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
-            eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
+            if (advancedConfig.isPreferNative()) {
+                eventLoopGroup = newEpollEventLoopGroup(threadFactory);
+                socketChannelClass = getEpollSocketChannelClass();
+
+            } else {
+                eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
+                socketChannelClass = NioSocketChannel.class;
+            }
+
         } else {
             eventLoopGroup = advancedConfig.getEventLoopGroup();
-        }
-        if (eventLoopGroup instanceof OioEventLoopGroup)
-            throw new IllegalArgumentException("Oio is not supported");
+            if (eventLoopGroup instanceof OioEventLoopGroup)
+                throw new IllegalArgumentException("Oio is not supported");
 
-        // allow users to specify SocketChannel class and default to
-        // NioSocketChannel
-        socketChannelClass = advancedConfig.getSocketChannelClass() == null ? NioSocketChannel.class : advancedConfig.getSocketChannelClass();
+            if (eventLoopGroup instanceof NioEventLoopGroup) {
+                socketChannelClass = NioSocketChannel.class;
+            } else {
+                socketChannelClass = getEpollSocketChannelClass();
+            }
+        }
 
         httpBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
         wsBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
@@ -199,6 +209,24 @@ public class ChannelManager {
         }
     }
 
+    private EventLoopGroup newEpollEventLoopGroup(ThreadFactory threadFactory) {
+        try {
+            Class<?> epollEventLoopGroupClass = Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
+            return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(0, threadFactory);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<? extends Channel> getEpollSocketChannelClass() {
+        try {
+            return (Class<? extends Channel>) Class.forName("io.netty.channel.epoll.EpollSocketChannel");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+    
     public void configureBootstraps(NettyRequestSender requestSender) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, advancedConfig, requestSender);

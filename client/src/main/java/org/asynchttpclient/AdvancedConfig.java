@@ -35,7 +35,7 @@ public class AdvancedConfig {
 
     private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
     private EventLoopGroup eventLoopGroup;
-    private Class<? extends Channel> socketChannelClass;
+    private boolean preferNative;
     private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
     private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
@@ -67,12 +67,12 @@ public class AdvancedConfig {
         this.eventLoopGroup = eventLoopGroup;
     }
 
-    public Class<? extends Channel> getSocketChannelClass() {
-        return socketChannelClass;
+    public void setPreferNative(boolean preferNative) {
+        this.preferNative = preferNative;
     }
-
-    public void setSocketChannelClass(Class<? extends Channel> socketChannelClass) {
-        this.socketChannelClass = socketChannelClass;
+    
+    public boolean isPreferNative() {
+        return preferNative;
     }
 
     public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
