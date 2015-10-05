@@ -19,8 +19,6 @@ package org.asynchttpclient;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.filter.FilterContext;
@@ -101,22 +99,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
                 LOGGER.warn("Unexpected error on close", t);
             }
         }
-    }
-
-    @Override
-    public void closeAsynchronously() {
-        final ExecutorService e = Executors.newSingleThreadExecutor();
-        e.submit(new Runnable() {
-            public void run() {
-                try {
-                    close();
-                } catch (Throwable t) {
-                    LOGGER.warn("", t);
-                } finally {
-                    e.shutdown();
-                }
-            }
-        });
     }
 
     @Override

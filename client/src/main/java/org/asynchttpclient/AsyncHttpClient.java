@@ -128,11 +128,6 @@ import java.util.concurrent.Future;
 public interface AsyncHttpClient extends Closeable {
 
     /**
-     * Asynchronous close the {@link AsyncHttpClient} by spawning a thread and avoid blocking.
-     */
-    void closeAsynchronously();
-
-    /**
      * Return true if closed
      *
      * @return true if closed

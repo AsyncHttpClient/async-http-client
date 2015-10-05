@@ -41,11 +41,6 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
-    public void closeAsynchronously() {
-
-    }
-
-    @Override
     public boolean isClosed() {
         return false;
     }
