@@ -34,6 +34,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.io.IOException;
@@ -107,7 +108,7 @@ public class ChannelManager {
 
         this.config = config;
         this.advancedConfig = advancedConfig;
-        this.sslEngineFactory = config.getSslEngineFactory() != null? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
+        this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
         ChannelPool channelPool = advancedConfig.getChannelPool();
         if (channelPool == null && config.isAllowPoolingConnections()) {
@@ -177,7 +178,8 @@ public class ChannelManager {
         if (eventLoopGroup instanceof OioEventLoopGroup)
             throw new IllegalArgumentException("Oio is not supported");
 
-        // allow users to specify SocketChannel class and default to NioSocketChannel
+        // allow users to specify SocketChannel class and default to
+        // NioSocketChannel
         socketChannelClass = advancedConfig.getSocketChannelClass() == null ? NioSocketChannel.class : advancedConfig.getSocketChannelClass();
 
         httpBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
@@ -296,20 +298,32 @@ public class ChannelManager {
         }
     }
 
-    public void close() {
+    private void doClose() {
         channelPool.destroy();
         openChannels.close();
 
         for (Channel channel : openChannels) {
             Object attribute = Channels.getAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
-                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-                future.cancelTimeouts();
+                NettyResponseFuture<?> nettyFuture = (NettyResponseFuture<?>) attribute;
+                nettyFuture.cancelTimeouts();
             }
         }
+    }
 
-        if (allowReleaseEventLoopGroup)
-            eventLoopGroup.shutdownGracefully(config.getShutdownQuiet(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void close() {
+        if (allowReleaseEventLoopGroup) {
+            io.netty.util.concurrent.Future whenEventLoopGroupClosed = eventLoopGroup.shutdownGracefully(config.getShutdownQuiet(), config.getShutdownTimeout(),
+                    TimeUnit.MILLISECONDS);
+
+            whenEventLoopGroupClosed.addListener((GenericFutureListener<?>) new GenericFutureListener<io.netty.util.concurrent.Future<?>>() {
+                public void operationComplete(io.netty.util.concurrent.Future<?> future) throws Exception {
+                    doClose();
+                };
+            });
+        } else
+            doClose();
     }
 
     public void closeChannel(Channel channel) {
@@ -379,7 +393,7 @@ public class ChannelManager {
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
         String peerHost;
         int peerPort;
-        
+
         if (virtualHost != null) {
             int i = virtualHost.indexOf(':');
             if (i == -1) {
@@ -389,7 +403,7 @@ public class ChannelManager {
                 peerHost = virtualHost.substring(0, i);
                 peerPort = Integer.valueOf(virtualHost.substring(i + 1));
             }
-            
+
         } else {
             peerHost = uri.getHost();
             peerPort = uri.getExplicitPort();
