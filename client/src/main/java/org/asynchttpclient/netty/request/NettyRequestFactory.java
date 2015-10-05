@@ -44,7 +44,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 
 import java.nio.charset.Charset;
-import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
@@ -170,9 +169,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         if (!connect) {
             // assign headers as configured on request
-            for (Entry<String, String> header : request.getHeaders()) {
-                headers.set(header.getKey(), header.getValue());
-            }
+            headers.set(request.getHeaders());
 
             if (isNonEmpty(request.getCookies()))
                 headers.set(COOKIE, CookieEncoder.encode(request.getCookies()));
