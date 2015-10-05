@@ -19,6 +19,8 @@ package org.asynchttpclient;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -109,7 +111,7 @@ public interface Response {
      */
     List<String> getHeaders(String name);
 
-    FluentCaseInsensitiveStringsMap getHeaders();
+    HttpHeaders getHeaders();
 
     /**
      * Return true if the response redirects to another object.

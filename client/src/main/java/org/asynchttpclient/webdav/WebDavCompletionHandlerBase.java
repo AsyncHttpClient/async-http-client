@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.webdav;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -27,7 +29,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -192,7 +193,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public FluentCaseInsensitiveStringsMap getHeaders() {
+                public HttpHeaders getHeaders() {
                     return wrappedResponse.getHeaders();
                 }
 

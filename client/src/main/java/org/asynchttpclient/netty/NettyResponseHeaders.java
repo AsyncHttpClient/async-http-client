@@ -13,11 +13,11 @@
  */
 package org.asynchttpclient.netty;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.util.Map;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 
 /**
@@ -27,7 +27,7 @@ public class NettyResponseHeaders extends HttpResponseHeaders {
 
     private final HttpHeaders responseHeaders;
     private final HttpHeaders trailingHeaders;
-    private final FluentCaseInsensitiveStringsMap headers;
+    private final HttpHeaders headers;
 
     public NettyResponseHeaders(HttpHeaders responseHeaders) {
         this(responseHeaders, null);
@@ -40,8 +40,8 @@ public class NettyResponseHeaders extends HttpResponseHeaders {
         headers = computerHeaders();
     }
 
-    private FluentCaseInsensitiveStringsMap computerHeaders() {
-        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+    private HttpHeaders computerHeaders() {
+        HttpHeaders h = new DefaultHttpHeaders();
         for (Map.Entry<String, String> header : responseHeaders) {
             h.add(header.getKey(), header.getValue());
         }
@@ -61,7 +61,7 @@ public class NettyResponseHeaders extends HttpResponseHeaders {
      * @return an {@link org.asynchttpclient.FluentCaseInsensitiveStringsMap}
      */
     @Override
-    public FluentCaseInsensitiveStringsMap getHeaders() {
+    public HttpHeaders getHeaders() {
         return headers;
     }
 }

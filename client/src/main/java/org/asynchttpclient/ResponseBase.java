@@ -2,14 +2,15 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.uri.Uri;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.uri.Uri;
 
 public abstract class ResponseBase implements Response {
 
@@ -69,17 +70,17 @@ public abstract class ResponseBase implements Response {
 
     @Override
     public final String getHeader(String name) {
-        return headers != null ? getHeaders().getFirstValue(name) : null;
+        return headers != null ? getHeaders().get(name) : null;
     }
 
     @Override
     public final List<String> getHeaders(String name) {
-        return headers != null ? getHeaders().get(name) : Collections.<String> emptyList();
+        return headers != null ? getHeaders().getAll(name) : Collections.<String> emptyList();
     }
 
     @Override
-    public final FluentCaseInsensitiveStringsMap getHeaders() {
-        return headers != null ? headers.getHeaders() : new FluentCaseInsensitiveStringsMap();
+    public final HttpHeaders getHeaders() {
+        return headers != null ? headers.getHeaders() : HttpHeaders.EMPTY_HEADERS;
     }
 
     @Override
@@ -117,7 +118,7 @@ public abstract class ResponseBase implements Response {
 
     @Override
     public boolean hasResponseHeaders() {
-        return headers != null && isNonEmpty(headers.getHeaders());
+        return headers != null && !headers.getHeaders().isEmpty();
     }
 
     @Override

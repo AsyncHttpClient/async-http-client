@@ -44,10 +44,10 @@ public class NettyResponse extends ResponseBase {
 
     protected List<Cookie> buildCookies() {
 
-        List<String> setCookieHeaders = headers.getHeaders().get(HttpHeaders.Names.SET_COOKIE2);
+        List<String> setCookieHeaders = headers.getHeaders().getAll(HttpHeaders.Names.SET_COOKIE2);
 
         if (!isNonEmpty(setCookieHeaders)) {
-            setCookieHeaders = headers.getHeaders().get(HttpHeaders.Names.SET_COOKIE);
+            setCookieHeaders = headers.getHeaders().getAll(HttpHeaders.Names.SET_COOKIE);
         }
 
         if (isNonEmpty(setCookieHeaders)) {

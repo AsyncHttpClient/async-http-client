@@ -12,18 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.Body.State;
-import org.asynchttpclient.request.body.multipart.ByteArrayPart;
-import org.asynchttpclient.request.body.multipart.FilePart;
-import org.asynchttpclient.request.body.multipart.MultipartUtils;
-import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.request.body.multipart.StringPart;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +22,11 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.asynchttpclient.request.body.Body;
+import org.asynchttpclient.request.body.Body.State;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
 
@@ -68,7 +63,7 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) throws IOException {
         Assert.assertNotNull(parts);
         // get expected values
-        final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
+        final Body multipartBody = MultipartUtils.newMultipartBody(parts, HttpHeaders.EMPTY_HEADERS);
         final long expectedContentLength = multipartBody.getContentLength();
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);

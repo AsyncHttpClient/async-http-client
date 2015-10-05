@@ -26,7 +26,6 @@ import java.util.Set;
 import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
@@ -85,16 +84,16 @@ public abstract class Protocol {
 
     public abstract void onClose(NettyResponseFuture<?> future);
 
-    private FluentCaseInsensitiveStringsMap propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
+    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
 
-        FluentCaseInsensitiveStringsMap headers = request.getHeaders()//
-                .delete(HttpHeaders.Names.HOST)//
-                .delete(HttpHeaders.Names.CONTENT_LENGTH)//
-                .delete(HttpHeaders.Names.CONTENT_TYPE);
+        HttpHeaders headers = request.getHeaders()//
+                .remove(HttpHeaders.Names.HOST)//
+                .remove(HttpHeaders.Names.CONTENT_LENGTH)//
+                .remove(HttpHeaders.Names.CONTENT_TYPE);
 
         if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
-            headers.delete(AUTHORIZATION)//
-                    .delete(PROXY_AUTHORIZATION);
+            headers.remove(AUTHORIZATION)//
+                    .remove(PROXY_AUTHORIZATION);
         }
         return headers;
     }

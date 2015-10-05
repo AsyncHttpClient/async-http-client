@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 
 /**
  * A class that represent the HTTP headers.
@@ -34,9 +36,9 @@ public abstract class HttpResponseHeaders {
     /**
      * Return the HTTP header
      *
-     * @return an {@link FluentCaseInsensitiveStringsMap}
+     * @return an {@link HttpHeaders}
      */
-    abstract public FluentCaseInsensitiveStringsMap getHeaders();
+    abstract public HttpHeaders getHeaders();
 
     /**
      * Return true is headers has been received after the response body.

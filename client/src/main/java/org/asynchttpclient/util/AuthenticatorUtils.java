@@ -96,7 +96,7 @@ public final class AuthenticatorUtils {
     }
 
     private static List<String> getProxyAuthorizationHeader(Request request) {
-        return request.getHeaders().get(PROXY_AUTHORIZATION_HEADER);
+        return request.getHeaders().getAll(PROXY_AUTHORIZATION_HEADER);
     }
 
     public static String perConnectionProxyAuthorizationHeader(Request request, ProxyServer proxyServer, boolean connect) {

@@ -15,9 +15,10 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.HttpUtils.parseCharset;
-import static org.asynchttpclient.util.HttpUtils.validateSupportedScheme;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.InputStream;
@@ -58,7 +59,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private Uri uri;
         private InetAddress address;
         private InetAddress localAddress;
-        private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+        private HttpHeaders headers = new DefaultHttpHeaders();
         private ArrayList<Cookie> cookies;
         private byte[] byteData;
         private List<byte[]> compositeByteData;
@@ -90,7 +91,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.uri = prototype.getUri();
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
-                this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
+                this.headers = new DefaultHttpHeaders().add(prototype.getHeaders());
                 this.cookies = new ArrayList<>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
                 this.compositeByteData = prototype.getCompositeByteData();
@@ -140,7 +141,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public FluentCaseInsensitiveStringsMap getHeaders() {
+        public HttpHeaders getHeaders() {
             return headers;
         }
 
@@ -269,12 +270,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             sb.append("\t");
             sb.append(method);
             sb.append("\theaders:");
-            if (isNonEmpty(headers)) {
-                for (String name : headers.keySet()) {
+            if (!headers.isEmpty()) {
+                for (Map.Entry<String, String> header : headers) {
                     sb.append("\t");
-                    sb.append(name);
+                    sb.append(header.getKey());
                     sb.append(":");
-                    sb.append(headers.getJoinedValue(name, ", "));
+                    sb.append(header.getValue());
                 }
             }
             if (isNonEmpty(formParams)) {
@@ -342,12 +343,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setHeader(String name, String value) {
-        request.headers.replaceWith(name, value);
+    public T setHeader(CharSequence name, String value) {
+        request.headers.set(name, value);
         return derived.cast(this);
     }
 
-    public T addHeader(String name, String value) {
+    public T addHeader(CharSequence name, String value) {
         if (value == null) {
             logger.warn("Value was null, set to \"\"");
             value = "";
@@ -357,13 +358,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setHeaders(FluentCaseInsensitiveStringsMap headers) {
-        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
+    public T setHeaders(HttpHeaders headers) {
+        request.headers = headers == null ? new DefaultHttpHeaders() : headers;
         return derived.cast(this);
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
+        request.headers = new DefaultHttpHeaders();
+        if (headers != null) {
+            for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
+                String headerName = entry.getKey();
+                request.headers.add(headerName, entry.getValue());
+            }
+        }
         return derived.cast(this);
     }
 
@@ -619,7 +626,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private void computeRequestCharset() {
         if (request.charset == null) {
             try {
-                final String contentType = request.headers.getFirstValue("Content-Type");
+                final String contentType = request.headers.get(HttpHeaders.Names.CONTENT_TYPE);
                 if (contentType != null) {
                     final Charset charset = parseCharset(contentType);
                     if (charset != null) {
@@ -637,7 +644,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private void computeRequestLength() {
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
-            final String contentLength = request.headers.getFirstValue("Content-Length");
+            final String contentLength = request.headers.get(HttpHeaders.Names.CONTENT_LENGTH);
 
             if (contentLength != null) {
                 try {

@@ -13,25 +13,8 @@
 package org.asynchttpclient.request.body;
 
 import static org.asynchttpclient.test.TestUtils.createTempFile;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.handler.TransferCompletionHandler;
-import org.asynchttpclient.handler.TransferListener;
-import org.asynchttpclient.request.body.generator.FileBodyGenerator;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +23,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.handler.TransferCompletionHandler;
+import org.asynchttpclient.handler.TransferListener;
+import org.asynchttpclient.request.body.generator.FileBodyGenerator;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class TransferListenerTest extends AbstractBasicTest {
 
@@ -84,19 +82,19 @@ public class TransferListenerTest extends AbstractBasicTest {
     public void basicGetTest() throws Exception {
         try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
             final AtomicReference<byte[]> bb = new AtomicReference<>();
             final AtomicBoolean completed = new AtomicBoolean(false);
 
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
-                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                public void onRequestHeadersSent(HttpHeaders headers) {
                     hSent.set(headers);
                 }
 
-                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                public void onResponseHeadersReceived(HttpHeaders headers) {
                     hRead.set(headers);
                 }
 
@@ -131,8 +129,8 @@ public class TransferListenerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutFileTest() throws Exception {
         final AtomicReference<Throwable> throwable = new AtomicReference<>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
+        final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+        final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
         final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
         final AtomicLong bbSentLenght = new AtomicLong(0L);
 
@@ -146,11 +144,11 @@ public class TransferListenerTest extends AbstractBasicTest {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
-                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                public void onRequestHeadersSent(HttpHeaders headers) {
                     hSent.set(headers);
                 }
 
-                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                public void onResponseHeadersReceived(HttpHeaders headers) {
                     hRead.set(headers);
                 }
 
@@ -186,8 +184,8 @@ public class TransferListenerTest extends AbstractBasicTest {
     public void basicPutFileBodyGeneratorTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
             final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
             final AtomicLong bbSentLenght = new AtomicLong(0L);
 
@@ -198,11 +196,11 @@ public class TransferListenerTest extends AbstractBasicTest {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
-                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                public void onRequestHeadersSent(HttpHeaders headers) {
                     hSent.set(headers);
                 }
 
-                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                public void onResponseHeadersReceived(HttpHeaders headers) {
                     hRead.set(headers);
                 }
 

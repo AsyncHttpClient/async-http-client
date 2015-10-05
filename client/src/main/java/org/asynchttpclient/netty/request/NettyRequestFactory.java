@@ -44,7 +44,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -100,7 +99,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             else if (isNonEmpty(request.getFormParams())) {
 
                 String contentType = null;
-                if (!request.getHeaders().containsKey(CONTENT_TYPE))
+                if (!request.getHeaders().contains(CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
                 nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
@@ -171,7 +170,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         if (!connect) {
             // assign headers as configured on request
-            for (Entry<String, List<String>> header : request.getHeaders()) {
+            for (Entry<String, String> header : request.getHeaders()) {
                 headers.set(header.getKey(), header.getValue());
             }
 

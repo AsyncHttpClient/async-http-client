@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.handler;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import io.netty.handler.codec.http.HttpHeaders;
 
 /**
  * A simple interface an application can implements in order to received byte transfer information.
@@ -24,14 +24,14 @@ public interface TransferListener {
      * 
      * @param headers the headers
      */
-    void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers);
+    void onRequestHeadersSent(HttpHeaders headers);
 
     /**
      * Invoked when the response bytes are starting to get received.
      * 
      * @param headers the headers
      */
-    void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers);
+    void onResponseHeadersReceived(HttpHeaders headers);
 
     /**
      * Invoked every time response's chunk are received.

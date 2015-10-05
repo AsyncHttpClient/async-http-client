@@ -13,13 +13,12 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static org.asynchttpclient.util.HttpUtils.REMOTELY_CLOSED_EXCEPTION;
-import static org.asynchttpclient.util.HttpUtils.requestTimeout;
-import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
-import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.*;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -28,13 +27,11 @@ import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -262,7 +259,7 @@ public final class NettyRequestSender {
                 request.getConnectionPoolPartitioning(),//
                 proxyServer);
 
-        String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
+        String expectHeader = request.getHeaders().get(HttpHeaders.Names.EXPECT);
         if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE))
             future.setDontWriteBodyBecauseExpectContinue(true);
         return future;
@@ -305,11 +302,7 @@ public final class NettyRequestSender {
     }
 
     private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
-        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, String> entries : httpRequest.headers()) {
-            h.add(entries.getKey(), entries.getValue());
-        }
-
+        HttpHeaders h = new DefaultHttpHeaders().set(httpRequest.headers());
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 

@@ -22,6 +22,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,7 +113,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
 
                 public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
                     int i = 0;
-                    for (String header : response.getHeaders().get("X-Forwarded-For")) {
+                    for (String header : response.getHeaders().getAll("X-Forwarded-For")) {
                         xffHeaders[i++] = header;
                     }
                     latch.countDown();
@@ -161,7 +163,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                 public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
                     try {
                         int i = 0;
-                        for (String header : response.getHeaders().get("Content-Length")) {
+                        for (String header : response.getHeaders().getAll(HttpHeaders.Names.CONTENT_LENGTH)) {
                             clHeaders[i++] = header;
                         }
                     } finally {

@@ -13,6 +13,8 @@ package org.asynchttpclient.simple;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -41,7 +43,7 @@ public interface SimpleAHCTransferListener {
      * @param uri     the uri
      * @param headers the received headers, never {@code null}.
      */
-    void onHeaders(Uri uri, HeaderMap headers);
+    void onHeaders(Uri uri, HttpHeaders headers);
 
     /**
      * This method is called when bytes of the responses body are received.

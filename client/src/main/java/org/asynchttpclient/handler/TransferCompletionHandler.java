@@ -12,15 +12,16 @@
  */
 package org.asynchttpclient.handler;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}
@@ -60,11 +61,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<>();
     private final boolean accumulateResponseBytes;
-    private FluentCaseInsensitiveStringsMap headers;
-    // Netty 3 bug hack: last chunk is not notified, fixed in Netty 4
-    private boolean patchForNetty3;
-    private long expectedTotal;
-    private long seen;
+    private HttpHeaders headers;
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
@@ -83,10 +80,6 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public TransferCompletionHandler(boolean accumulateResponseBytes) {
         this.accumulateResponseBytes = accumulateResponseBytes;
-    }
-
-    public void patchForNetty3() {
-        this.patchForNetty3 = true;
     }
 
     /**
@@ -119,13 +112,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      * @param headers
      *            {@link FluentCaseInsensitiveStringsMap}
      */
-    public void headers(FluentCaseInsensitiveStringsMap headers) {
+    public void headers(HttpHeaders headers) {
         this.headers = headers;
-        if (patchForNetty3) {
-            String contentLength = headers.getFirstValue("Content-Length");
-            if (contentLength != null)
-                expectedTotal = Long.valueOf(contentLength);
-        }
     }
 
     @Override
@@ -146,13 +134,6 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public Response onCompleted(Response response) throws Exception {
-        if (patchForNetty3) {
-            // some chunks weren't notified, probably the last one
-            if (seen < expectedTotal) {
-                // do once
-                fireOnBytesSent(expectedTotal - seen, expectedTotal, expectedTotal);
-            }
-        }
         fireOnEnd();
         return response;
     }
@@ -167,9 +148,6 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public State onContentWriteProgress(long amount, long current, long total) {
-        if (patchForNetty3) {
-            seen += amount;
-        }
         fireOnBytesSent(amount, current, total);
         return State.CONTINUE;
     }
@@ -179,7 +157,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         fireOnThrowable(t);
     }
 
-    private void fireOnHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+    private void fireOnHeadersSent(HttpHeaders headers) {
         for (TransferListener l : listeners) {
             try {
                 l.onRequestHeadersSent(headers);
@@ -189,7 +167,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnHeaderReceived(FluentCaseInsensitiveStringsMap headers) {
+    private void fireOnHeaderReceived(HttpHeaders headers) {
         for (TransferListener l : listeners) {
             try {
                 l.onResponseHeadersReceived(headers);

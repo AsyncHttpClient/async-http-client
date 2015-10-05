@@ -32,7 +32,6 @@ import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
@@ -66,7 +65,7 @@ public final class HttpProtocol extends Protocol {
     private Realm kerberosChallenge(Channel channel,//
             List<String> authHeaders,//
             Request request,//
-            FluentCaseInsensitiveStringsMap headers,//
+            HttpHeaders headers,//
             Realm realm,//
             NettyResponseFuture<?> future) {
 
@@ -97,7 +96,7 @@ public final class HttpProtocol extends Protocol {
             List<String> proxyAuth,//
             Request request,//
             ProxyServer proxyServer,//
-            FluentCaseInsensitiveStringsMap headers,//
+            HttpHeaders headers,//
             NettyResponseFuture<?> future) {
 
         try {
@@ -125,13 +124,13 @@ public final class HttpProtocol extends Protocol {
         return proxyInd ? HttpHeaders.Names.PROXY_AUTHORIZATION : HttpHeaders.Names.AUTHORIZATION;
     }
 
-    private void addNTLMAuthorizationHeader(FluentCaseInsensitiveStringsMap headers, String challengeHeader, boolean proxyInd) {
+    private void addNTLMAuthorizationHeader(HttpHeaders headers, String challengeHeader, boolean proxyInd) {
         headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
     }
 
     private Realm ntlmChallenge(String authenticateHeader,//
             Request request,//
-            FluentCaseInsensitiveStringsMap headers,//
+            HttpHeaders headers,//
             Realm realm,//
             NettyResponseFuture<?> future) {
 
@@ -155,7 +154,7 @@ public final class HttpProtocol extends Protocol {
     private Realm ntlmProxyChallenge(String authenticateHeader,//
             Request request,//
             ProxyServer proxyServer,//
-            FluentCaseInsensitiveStringsMap headers,//
+            HttpHeaders headers,//
             NettyResponseFuture<?> future) {
 
         future.getAndSetAuth(false);
@@ -171,7 +170,7 @@ public final class HttpProtocol extends Protocol {
         return realm;
     }
 
-    private void addType3NTLMAuthorizationHeader(String authenticateHeader, FluentCaseInsensitiveStringsMap headers, Realm realm, boolean proxyInd) {
+    private void addType3NTLMAuthorizationHeader(String authenticateHeader, HttpHeaders headers, Realm realm, boolean proxyInd) {
         headers.remove(authorizationHeaderName(proxyInd));
 
         if (authenticateHeader.startsWith("NTLM ")) {
@@ -298,7 +297,7 @@ public final class HttpProtocol extends Protocol {
 
                 future.setState(NettyResponseFuture.STATE.NEW);
                 Realm newRealm = null;
-                FluentCaseInsensitiveStringsMap requestHeaders = request.getHeaders();
+                HttpHeaders requestHeaders = request.getHeaders();
 
                 boolean negociate = proxyAuthHeaders.contains("Negotiate");
                 String ntlmAuthenticate = getNTLM(proxyAuthHeaders);

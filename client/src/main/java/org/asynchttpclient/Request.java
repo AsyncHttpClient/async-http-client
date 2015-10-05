@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -67,9 +69,9 @@ public interface Request {
     /**
      * Return the current set of Headers.
      *
-     * @return a {@link FluentCaseInsensitiveStringsMap} contains headers.
+     * @return a {@link HttpHeaders} contains headers.
      */
-    FluentCaseInsensitiveStringsMap getHeaders();
+    HttpHeaders getHeaders();
 
     /**
      * Return Coookie.

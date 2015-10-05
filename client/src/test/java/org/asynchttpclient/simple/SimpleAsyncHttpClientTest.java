@@ -13,11 +13,8 @@
 package org.asynchttpclient.simple;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,9 +30,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
-import org.asynchttpclient.simple.HeaderMap;
-import org.asynchttpclient.simple.SimpleAHCTransferListener;
-import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 import org.asynchttpclient.simple.consumer.AppendableBodyConsumer;
 import org.asynchttpclient.simple.consumer.OutputStreamBodyConsumer;
 import org.asynchttpclient.uri.Uri;
@@ -182,12 +176,12 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onHeaders(Uri uri, HeaderMap headers) {
+            public void onHeaders(Uri uri, HttpHeaders headers) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
                     assertNotNull(headers);
                     assertTrue(!headers.isEmpty());
-                    assertEquals(headers.getFirstValue("X-Custom"), "custom");
+                    assertEquals(headers.get("X-Custom"), "custom");
                 } catch (Error e) {
                     errors.add(e);
                     throw e;

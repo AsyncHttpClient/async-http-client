@@ -17,15 +17,12 @@ package org.asynchttpclient;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.test.EventCollectingHandler.*;
-import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.asynchttpclient.util.DateUtils.millisTime;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 import io.netty.channel.ChannelOption;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -224,7 +221,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncHeaderPOSTTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            HttpHeaders h = new DefaultHttpHeaders();
             h.add("Test1", "Test1");
             h.add("Test2", "Test2");
             h.add("Test3", "Test3");
@@ -258,8 +255,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncParamPOSTTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
 
             Map<String, List<String>> m = new HashMap<>();
             for (int i = 0; i < 5; i++) {
@@ -387,7 +384,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoGetHeadersTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            HttpHeaders h = new DefaultHttpHeaders();
             h.add("Test1", "Test1");
             h.add("Test2", "Test2");
             h.add("Test3", "Test3");
@@ -418,7 +415,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoGetCookieTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            HttpHeaders h = new DefaultHttpHeaders();
             h.add("Test1", "Test1");
             h.add("Test2", "Test2");
             h.add("Test3", "Test3");
@@ -458,8 +455,8 @@ public class BasicHttpTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        FluentCaseInsensitiveStringsMap h = response.getHeaders();
-                        assertEquals(h.getJoinedValue("X-Content-Type", ", "), "application/x-www-form-urlencoded");
+                        HttpHeaders h = response.getHeaders();
+                        assertEquals(h.get("X-Content-Type"), HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
                     } finally {
                         l.countDown();
                     }
@@ -485,8 +482,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoPostBytesTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -521,8 +518,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoPostInputStreamTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -557,8 +554,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoPutInputStreamTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -619,8 +616,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoPostBasicGZIPTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnforced(true).build())) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -650,8 +647,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostProxyTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port2)).build())) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -677,8 +674,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncRequestVirtualServerPOSTTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
 
             Map<String, List<String>> m = new HashMap<>();
             for (int i = 0; i < 5; i++) {
@@ -700,8 +697,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPutTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -718,8 +715,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncDoPostLatchBytesTest() throws Exception {
         try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -751,8 +748,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" }, expectedExceptions = { CancellationException.class })
     public void asyncDoPostDelayCancelTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             h.add("LockThread", "true");
             StringBuilder sb = new StringBuilder();
             sb.append("LockThread=true");
@@ -770,8 +767,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostDelayBytesTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             h.add("LockThread", "true");
             StringBuilder sb = new StringBuilder();
             sb.append("LockThread=true");
@@ -800,8 +797,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostNullBytesTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -819,8 +816,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostListenerBytesTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 5; i++) {
                 sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -1080,7 +1077,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoGetDelayHandlerTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(5 * 1000).build())) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            HttpHeaders h = new DefaultHttpHeaders();
             h.add("LockThread", "true");
 
             // Use a l in case the assert fail
@@ -1311,8 +1308,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void idleRequestTimeoutTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(5000).setRequestTimeout(10000).build())) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             h.add("LockThread", "true");
 
             long t1 = millisTime();
@@ -1331,8 +1328,8 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostCancelTest() throws Exception {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             h.add("LockThread", "true");
             StringBuilder sb = new StringBuilder();
             sb.append("LockThread=true");

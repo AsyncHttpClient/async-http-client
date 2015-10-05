@@ -15,27 +15,27 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.*;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class InputStreamTest extends AbstractBasicTest {
 
@@ -71,8 +71,7 @@ public class InputStreamTest extends AbstractBasicTest {
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
+            HttpHeaders h = new DefaultHttpHeaders().add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
 
             InputStream is = new InputStream() {
 

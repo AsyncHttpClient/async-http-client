@@ -16,9 +16,9 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.request.body.multipart.Part.CRLF_BYTES;
-import static org.asynchttpclient.request.body.multipart.Part.EXTRA_BYTES;
+import static org.asynchttpclient.request.body.multipart.Part.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,7 @@ public class MultipartUtils {
      * @param requestHeaders the request headers
      * @return a MultipartBody
      */
-    public static MultipartBody newMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
+    public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
         if (parts == null) {
             throw new NullPointerException("parts");
         }
@@ -69,7 +68,7 @@ public class MultipartUtils {
         byte[] multipartBoundary;
         String contentType;
 
-        String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
+        String contentTypeHeader = requestHeaders.get(HttpHeaders.Names.CONTENT_TYPE);
         if (isNonEmpty(contentTypeHeader)) {
             int boundaryLocation = contentTypeHeader.indexOf("boundary=");
             if (boundaryLocation != -1) {

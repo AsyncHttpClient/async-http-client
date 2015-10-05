@@ -24,6 +24,8 @@ import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -175,7 +177,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     @Override
     public AsyncHandler.State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
-        String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
+        String contentLengthHeader = headers.getHeaders().get(HttpHeaders.Names.CONTENT_LENGTH);
         if (contentLengthHeader != null) {
             if (Long.parseLong(contentLengthHeader) == -1L) {
                 return AsyncHandler.State.ABORT;
@@ -208,8 +210,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         }
 
         RequestBuilder builder = new RequestBuilder(request);
-        if (request.getHeaders().get("Range").isEmpty() && byteTransferred.get() != 0) {
-            builder.setHeader("Range", "bytes=" + byteTransferred.get() + "-");
+        if (request.getHeaders().get(HttpHeaders.Names.RANGE) == null && byteTransferred.get() != 0) {
+            builder.setHeader(HttpHeaders.Names.RANGE, "bytes=" + byteTransferred.get() + "-");
         }
         return builder.build();
     }

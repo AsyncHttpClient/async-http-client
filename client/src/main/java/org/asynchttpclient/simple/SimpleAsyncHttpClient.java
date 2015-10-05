@@ -13,6 +13,7 @@
 package org.asynchttpclient.simple;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -394,7 +394,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
-        DerivedBuilder setHeaders(FluentCaseInsensitiveStringsMap headers);
+        DerivedBuilder setHeaders(HttpHeaders headers);
 
         DerivedBuilder setHeader(String name, String value);
 
@@ -472,7 +472,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setHeaders(FluentCaseInsensitiveStringsMap headers) {
+        public Builder setHeaders(HttpHeaders headers) {
             requestBuilder.setHeaders(headers);
             return this;
         }
@@ -825,7 +825,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         private void calculateTotal(HttpResponseHeaders headers) {
-            String length = headers.getHeaders().getFirstValue("Content-Length");
+            String length = headers.getHeaders().get(HttpHeaders.Names.CONTENT_LENGTH);
 
             try {
                 total = Integer.valueOf(length);
@@ -858,7 +858,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         private void fireHeaders(HttpResponseHeaders headers) {
             if (listener != null) {
-                listener.onHeaders(uri, new HeaderMap(headers.getHeaders()));
+                listener.onHeaders(uri, headers.getHeaders());
             }
         }
 

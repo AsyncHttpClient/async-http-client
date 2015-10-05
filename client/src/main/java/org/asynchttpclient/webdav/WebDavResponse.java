@@ -12,13 +12,14 @@
  */
 package org.asynchttpclient.webdav;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
@@ -82,7 +83,7 @@ public class WebDavResponse implements Response {
         return response.getHeaders(name);
     }
 
-    public FluentCaseInsensitiveStringsMap getHeaders() {
+    public HttpHeaders getHeaders() {
         return response.getHeaders();
     }
 

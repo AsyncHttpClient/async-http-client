@@ -12,10 +12,22 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import io.netty.handler.codec.http.HttpHeaders;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
@@ -30,22 +42,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-
 //FIXME there's no retry actually
 public class RetryNonBlockingIssue extends AbstractBasicTest {
-
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
@@ -103,10 +101,9 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 assertEquals(200, theres.getStatusCode());
                 b.append("==============\r\n");
                 b.append("Response Headers\r\n");
-                Map<String, List<String>> heads = theres.getHeaders();
+                HttpHeaders heads = theres.getHeaders();
                 b.append(heads + "\r\n");
                 b.append("==============\r\n");
-                assertTrue(heads.size() > 0);
             }
             System.out.println(b.toString());
             System.out.flush();
@@ -135,10 +132,9 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 assertEquals(theres.getStatusCode(), 200);
                 b.append("==============\r\n");
                 b.append("Response Headers\r\n");
-                Map<String, List<String>> heads = theres.getHeaders();
+                HttpHeaders heads = theres.getHeaders();
                 b.append(heads + "\r\n");
                 b.append("==============\r\n");
-                assertTrue(heads.size() > 0);
             }
             System.out.println(b.toString());
             System.out.flush();

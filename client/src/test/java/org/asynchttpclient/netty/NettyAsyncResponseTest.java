@@ -14,17 +14,18 @@
 package org.asynchttpclient.netty;
 
 import static org.testng.Assert.*;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.cookie.Cookie;
-import org.testng.annotations.Test;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.cookie.Cookie;
+import org.testng.annotations.Test;
 
 /**
  * @author Benjamin Hanzelmann
@@ -42,8 +43,8 @@ public class NettyAsyncResponseTest {
 
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), new HttpResponseHeaders() {
             @Override
-            public FluentCaseInsensitiveStringsMap getHeaders() {
-                return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
+            public HttpHeaders getHeaders() {
+                return new DefaultHttpHeaders().add(HttpHeaders.Names.SET_COOKIE, cookieDef);
             }
         }, null);
 
@@ -59,8 +60,8 @@ public class NettyAsyncResponseTest {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), new HttpResponseHeaders() {
             @Override
-            public FluentCaseInsensitiveStringsMap getHeaders() {
-                return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
+            public HttpHeaders getHeaders() {
+                return new DefaultHttpHeaders().add(HttpHeaders.Names.SET_COOKIE, cookieDef);
             }
         }, null);
         List<Cookie> cookies = response.getCookies();
@@ -75,8 +76,8 @@ public class NettyAsyncResponseTest {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), new HttpResponseHeaders() {
             @Override
-            public FluentCaseInsensitiveStringsMap getHeaders() {
-                return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
+            public HttpHeaders getHeaders() {
+                return new DefaultHttpHeaders().add(HttpHeaders.Names.SET_COOKIE, cookieDef);
             }
         }, null);
 
