@@ -88,13 +88,17 @@ public final class ProxyUtils {
                 proxyServer = selector.select(request.getUri());
             }
         }
-        return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
+        return ProxyUtils.ignoreProxy(proxyServer, request) ? null : proxyServer;
     }
     
     /**
      * @see #ignoreProxy(ProxyServer, String)
+     * 
+     * @param proxyServer a proxy
+     * @param request a request
+     * @return if this request should ignore the proxy
      */
-    public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
+    public static boolean ignoreProxy(final ProxyServer proxyServer, final Request request) {
         return ignoreProxy(proxyServer, request.getUri().getHost());
     }
 
@@ -117,11 +121,11 @@ public final class ProxyUtils {
      * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
      * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      *
-     * @param proxyServer
-     * @param hostname      the hostname
+     * @param proxyServer the proxy
+     * @param hostname the hostname
      * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
      */
-    public static boolean ignoreProxy(final ProxyServer proxyServer, final String hostname) {
+    public static boolean ignoreProxy(final ProxyServer proxyServer, String hostname) {
         if (proxyServer != null) {
             if (hostname == null)
                 throw new NullPointerException("hostname");

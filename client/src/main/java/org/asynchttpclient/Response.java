@@ -19,7 +19,6 @@ package org.asynchttpclient;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -49,25 +48,22 @@ public interface Response {
      * Return the entire response body as a byte[].
      * 
      * @return the entire response body as a byte[].
-     * @throws IOException
      */
-    byte[] getResponseBodyAsBytes() throws IOException;
+    byte[] getResponseBodyAsBytes();
 
     /**
      * Return the entire response body as a ByteBuffer.
      * 
      * @return the entire response body as a ByteBuffer.
-     * @throws IOException
      */
-    ByteBuffer getResponseBodyAsByteBuffer() throws IOException;
+    ByteBuffer getResponseBodyAsByteBuffer();
 
     /**
      * Returns an input stream for the response body. Note that you should not try to get this more than once, and that you should not close the stream.
      * 
      * @return The input stream
-     * @throws java.io.IOException
      */
-    InputStream getResponseBodyAsStream() throws IOException;
+    InputStream getResponseBodyAsStream();
 
     /**
      * Return the entire response body as a String.
@@ -75,17 +71,15 @@ public interface Response {
      * @param charset
      *            the charset to use when decoding the stream
      * @return the entire response body as a String.
-     * @throws IOException
      */
-    String getResponseBody(Charset charset) throws IOException;
+    String getResponseBody(Charset charset);
 
     /**
      * Return the entire response body as a String.
      * 
      * @return the entire response body as a String.
-     * @throws IOException
      */
-    String getResponseBody() throws IOException;
+    String getResponseBody();
 
     /**
      * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link Uri} will be the last valid redirect url.
@@ -102,16 +96,16 @@ public interface Response {
     String getContentType();
 
     /**
-     * Return the response header
-     * 
-     * @return the response header
+     * @param name the header name
+     * @return the first response header value
      */
     String getHeader(String name);
 
     /**
      * Return a {@link List} of the response header value.
      * 
-     * @return the response header
+     * @param name the header name
+     * @return the response header value
      */
     List<String> getHeaders(String name);
 
@@ -127,12 +121,12 @@ public interface Response {
     /**
      * Subclasses SHOULD implement toString() in a way that identifies the response for logging.
      * 
-     * @return The textual representation
+     * @return the textual representation
      */
     String toString();
 
     /**
-     * Return the list of {@link Cookie}.
+     * @return the list of {@link Cookie}.
      */
     List<Cookie> getCookies();
 

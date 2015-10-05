@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.webdav;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -47,23 +46,23 @@ public class WebDavResponse implements Response {
     }
 
     @Override
-    public byte[] getResponseBodyAsBytes() throws IOException {
+    public byte[] getResponseBodyAsBytes() {
         return response.getResponseBodyAsBytes();
     }
 
-    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+    public ByteBuffer getResponseBodyAsByteBuffer() {
         return response.getResponseBodyAsByteBuffer();
     }
 
-    public InputStream getResponseBodyAsStream() throws IOException {
+    public InputStream getResponseBodyAsStream() {
         return response.getResponseBodyAsStream();
     }
 
-    public String getResponseBody() throws IOException {
+    public String getResponseBody() {
         return response.getResponseBody();
     }
 
-    public String getResponseBody(Charset charset) throws IOException {
+    public String getResponseBody(Charset charset) {
         return response.getResponseBody(charset);
     }
 

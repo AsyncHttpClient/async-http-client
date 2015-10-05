@@ -21,107 +21,109 @@ import java.util.concurrent.Future;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
- * <p/>
+ * <br>
  * To execute synchronous HTTP request, you just need to do
  * <blockquote><pre>
  *    AsyncHttpClient c = new AsyncHttpClient();
- *    Future<Response> f = c.prepareGet("http://www.ning.com/").execute();
- * </pre></blockquote
- * <p/>
+ *    Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
+ * </pre></blockquote>
+ * <br>
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
  * create an {@link AsyncHandler} or its abstract implementation, {@link AsyncCompletionHandler}
- * <p/>
+ * <br>
  * <blockquote><pre>
  *       AsyncHttpClient c = new AsyncHttpClient();
- *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
- * <p/>
+ *       Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandler&lt;Response&gt;() &#123;
+ * 
  *          &#64;Override
  *          public Response onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response;
  *          &#125;
- * <p/>
+ * 
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
  *      Response response = f.get();
- * <p/>
+ * 
  *      // We are just interested to retrieve the status code.
- *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>() &#123;
- * <p/>
+ *     Future&lt;Integer&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandler&lt;Integer&gt;() &#123;
+ * 
  *          &#64;Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response.getStatusCode();
  *          &#125;
- * <p/>
+ * 
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
  *      Integer statusCode = f.get();
- * </pre></blockquote
+ * </pre></blockquote>
  * The {@link AsyncCompletionHandler#onCompleted(Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
- * <p/>
+ * <br>
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
+ *      Future&lt;String&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncHandler&lt;String&gt;() &#123;
  *          private StringBuilder builder = new StringBuilder();
- * <p/>
+ * 
  *          &#64;Override
  *          public STATE onStatusReceived(HttpResponseStatus s) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          }
- * <p/>
+ * 
  *          &#64;Override
  *          public STATE onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
- * <p/>
+ * 
  *          }
  *          &#64;Override
- * <p/>
+ * 
  *          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          &#125;
- * <p/>
+ * 
  *          &#64;Override
  *          public String onCompleted() throws Exception &#123;
  *               // Will be invoked once the response has been fully read or a ResponseComplete exception
  *               // has been thrown.
  *               return builder.toString();
  *          &#125;
- * <p/>
+ * 
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
- * <p/>
+ * 
  *      String bodyResponse = f.get();
- * </pre></blockquote
- * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
- * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
- * <p/>
- * This class can also be used without the need of {@link AsyncHandler}</p>
+ * </pre></blockquote>
+ * You can asynchronously process the response status,headers and body and decide when to
+ * stop the processing the response by returning a new {@link AsyncHandler.State#ABORT} at any moment.
+ * 
+ * This class can also be used without the need of {@link AsyncHandler}.
+ * <br>
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
+ *      Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
- * <p/>
- * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
+ * 
+ * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance.
+ * <br>
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
- *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
+ *      Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
- * <p/>
+ * <br>
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getReadTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
@@ -136,6 +138,8 @@ public interface AsyncHttpClient extends Closeable {
 
     /**
      * Set default signature calculator to use for requests build by this client instance
+     * @param signatureCalculator a signature calculator
+     * @return {@link RequestBuilder}
      */
     AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator);
 

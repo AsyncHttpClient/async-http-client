@@ -19,17 +19,10 @@ package org.asynchttpclient.filter;
 @SuppressWarnings("serial")
 public class FilterException extends Exception {
 
-    /**
-     * @param message
-     */
     public FilterException(final String message) {
         super(message);
     }
 
-    /**
-     * @param message
-     * @param cause
-     */
     public FilterException(final String message, final Throwable cause) {
         super(message, cause);
     }

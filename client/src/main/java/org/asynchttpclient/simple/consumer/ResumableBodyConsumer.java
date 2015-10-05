@@ -23,14 +23,15 @@ public interface ResumableBodyConsumer extends BodyConsumer {
     /**
      * Prepare this consumer to resume a download, for example by seeking to the end of the underlying file.
      *
-     * @throws IOException
+     * @throws IOException IO exception
      */
     void resume() throws IOException;
 
     /**
      * Get the previously transferred bytes, for example the current file size.
      *
-     * @throws IOException
+     *@return the number of tranferred bytes
+     * @throws IOException IO exception
      */
     long getTransferredBytes() throws IOException;
 }

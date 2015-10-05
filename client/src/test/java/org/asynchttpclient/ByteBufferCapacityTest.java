@@ -15,7 +15,6 @@ package org.asynchttpclient;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.eclipse.jetty.server.Request;
@@ -77,24 +76,19 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 
-            try {
-                Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-                        byteReceived.addAndGet(content.getBodyByteBuffer().capacity());
-                        return super.onBodyPartReceived(content);
-                    }
+            Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(new AsyncCompletionHandlerAdapter() {
+                @Override
+                public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+                    byteReceived.addAndGet(content.getBodyByteBuffer().capacity());
+                    return super.onBodyPartReceived(content);
+                }
 
-                }).get();
+            }).get();
 
-                assertNotNull(response);
-                assertEquals(response.getStatusCode(), 200);
-                assertEquals(byteReceived.get(), largeFile.length());
-                assertEquals(response.getResponseBody().length(), largeFile.length());
-
-            } catch (IOException ex) {
-                fail("Should have timed out");
-            }
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(byteReceived.get(), largeFile.length());
+            assertEquals(response.getResponseBody().length(), largeFile.length());
         }
     }
 

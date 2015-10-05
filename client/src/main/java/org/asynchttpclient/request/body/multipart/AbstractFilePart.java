@@ -20,8 +20,6 @@ import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class AbstractFilePart extends PartBase {
 
@@ -47,14 +45,11 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name
-     *            the name for this part
-     * @param partSource
-     *            the source for this part
-     * @param contentType
-     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset
-     *            the charset encoding for this part
+     * @param name the name for this part
+     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset the charset encoding for this part
+     * @param contentId the content id
+     * @param transfertEncoding the transfer encoding
      */
     public AbstractFilePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
         super(name,//

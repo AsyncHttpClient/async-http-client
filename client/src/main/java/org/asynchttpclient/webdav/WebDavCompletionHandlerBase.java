@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
  *
- * @param <T>
+ * @param <T> the result type
  */
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
@@ -111,6 +111,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      *
      * @param response The {@link org.asynchttpclient.Response}
      * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @throws Exception if something wrong happens
      */
     abstract public T onCompleted(WebDavResponse response) throws Exception;
 
@@ -146,27 +147,27 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
                 }
 
                 @Override
-                public byte[] getResponseBodyAsBytes() throws IOException {
+                public byte[] getResponseBodyAsBytes() {
                     return wrappedResponse.getResponseBodyAsBytes();
                 }
 
                 @Override
-                public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+                public ByteBuffer getResponseBodyAsByteBuffer() {
                     return wrappedResponse.getResponseBodyAsByteBuffer();
                 }
 
                 @Override
-                public InputStream getResponseBodyAsStream() throws IOException {
+                public InputStream getResponseBodyAsStream() {
                     return wrappedResponse.getResponseBodyAsStream();
                 }
 
                 @Override
-                public String getResponseBody(Charset charset) throws IOException {
+                public String getResponseBody(Charset charset) {
                     return wrappedResponse.getResponseBody(charset);
                 }
 
                 @Override
-                public String getResponseBody() throws IOException {
+                public String getResponseBody() {
                     return wrappedResponse.getResponseBody();
                 }
 

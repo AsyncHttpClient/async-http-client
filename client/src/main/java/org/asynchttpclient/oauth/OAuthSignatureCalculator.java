@@ -37,7 +37,7 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
  * for accessing services that use OAuth for authorization.
- * <p/>
+ * <br>
  * Supports most common signature inclusion and calculation methods: HMAC-SHA1 for
  * calculation, and Header inclusion as inclusion method. Nonce generation uses
  * simple random numbers with base64 encoding.
@@ -173,6 +173,14 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
+     * 
+     * @param method the request methode
+     * @param uri the request Uri
+     * @param oauthTimestamp the timestamp
+     * @param nonce the nonce
+     * @param formParams the formParams
+     * @param queryParams the query params
+     * @return the signature
      */
     public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
                                      List<Param> formParams, List<Param> queryParams) {
@@ -185,9 +193,6 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return Base64.encode(rawSignature);
     }
 
-    /**
-     * Method used for constructing
-     */
     private String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
         StringBuilder sb = StringUtils.stringBuilder();
         sb.append("OAuth ");

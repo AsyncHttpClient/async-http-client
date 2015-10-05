@@ -35,7 +35,7 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
      * resumable file download.
      *
      * @param buffer a {@link ByteBuffer}
-     * @throws IOException
+     * @throws IOException exception while writing into the file
      */
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
         file.seek(file.length());

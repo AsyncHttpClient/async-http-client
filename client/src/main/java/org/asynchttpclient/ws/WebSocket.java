@@ -50,7 +50,7 @@ public interface WebSocket extends Closeable {
      * @param fragment binary fragment.
      * @param last flag indicating whether or not this is the last fragment.
      * 
-     * @return this.
+     * @return this
      */
     WebSocket stream(byte[] fragment, boolean last);
 
@@ -61,7 +61,7 @@ public interface WebSocket extends Closeable {
      * @param offset starting offset.
      * @param len length.
      * @param last flag indicating whether or not this is the last fragment.
-     * @return this.
+     * @return this
      */
     WebSocket stream(byte[] fragment, int offset, int len, boolean last);
 
@@ -69,7 +69,7 @@ public interface WebSocket extends Closeable {
      * Send a text message
      * 
      * @param message a text message
-     * @return this.
+     * @return this
      */
     WebSocket sendMessage(String message);
 
@@ -78,26 +78,25 @@ public interface WebSocket extends Closeable {
      * 
      * @param fragment text fragment.
      * @param last flag indicating whether or not this is the last fragment.
-     * @return this.
+     * @return this
      */
     WebSocket stream(String fragment, boolean last);
 
     /**
-     * Send a <code>ping</ping> with an optional payload
+     * Send a <code>ping</code> with an optional payload
      * (limited to 125 bytes or less).
      * 
      * @param payload the ping payload.
-     * 
-     * @return this.
+     * @return this
      */
     WebSocket sendPing(byte[] payload);
 
     /**
-     * Send a <code>ping</ping> with an optional payload
+     * Send a <code>ping</code> with an optional payload
      * (limited to 125 bytes or less).
      * 
      * @param payload the pong payload.
-     * @return this.
+     * @return this
      */
     WebSocket sendPong(byte[] payload);
 
@@ -110,7 +109,7 @@ public interface WebSocket extends Closeable {
     WebSocket addWebSocketListener(WebSocketListener l);
 
     /**
-     * Add a {@link WebSocketListener}
+     * Remove a {@link WebSocketListener}
      * 
      * @param l a {@link WebSocketListener}
      * @return this
@@ -118,8 +117,6 @@ public interface WebSocket extends Closeable {
     WebSocket removeWebSocketListener(WebSocketListener l);
 
     /**
-     * Returns <code>true</code> if the WebSocket is open/connected.
-     * 
      * @return <code>true</code> if the WebSocket is open/connected.
      */
     boolean isOpen();

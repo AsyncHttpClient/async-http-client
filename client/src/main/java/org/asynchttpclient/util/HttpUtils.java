@@ -56,8 +56,7 @@ public class HttpUtils {
     }
 
     /**
-     * Convenient for HTTP layer when targeting server root
-     * 
+     * @param uri the uri
      * @return the raw path or "/" if it's null
      */
     public final static String getNonEmptyPath(Uri uri) {

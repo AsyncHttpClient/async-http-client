@@ -28,7 +28,7 @@ public interface BodyConsumer extends Closeable {
      * Consume the received bytes.
      *
      * @param byteBuffer a {@link ByteBuffer} representation of the response's chunk.
-     * @throws IOException
+     * @throws IOException IO exception
      */
     void consume(ByteBuffer byteBuffer) throws IOException;
 }

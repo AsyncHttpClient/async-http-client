@@ -22,14 +22,15 @@ import rx.subjects.ReplaySubject;
 
 /**
  * Provide RxJava support for executing requests. Request can be subscribed to and manipulated as needed.
- * @See <a href="https://github.com/ReactiveX/RxJava" />
+ * 
+ * @see <a href="https://github.com/ReactiveX/RxJava">https://github.com/ReactiveX/RxJava</a>
  */
 public class AsyncHttpObservable {
 
     /**
      * Observe a request execution and emit the response to the observer.
      *
-     * @param supplier
+     * @param supplier the supplier
      * @return The cold observable (must be subscribed to in order to execute).
      */
     public static Observable<Response> toObservable(final Func0<BoundRequestBuilder> supplier) {
@@ -72,7 +73,7 @@ public class AsyncHttpObservable {
     /**
      * Observe a request execution and emit the response to the observer.
      *
-     * @param supplier
+     * @param supplier teh supplier
      * @return The hot observable (eagerly executes).
      */
     public static Observable<Response> observe(final Func0<BoundRequestBuilder> supplier) {

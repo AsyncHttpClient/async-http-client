@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Unit tests for remote site.
- * <p/>
+ * <br>
  * see http://github.com/MSch/ning-async-http-client-bug/tree/master
  * 
  * @author Martin Schurrer

@@ -21,7 +21,9 @@ public interface WebSocketCloseCodeReasonListener {
     /**
      * Invoked when the {@link WebSocket} is close.
      *
-     * @param websocket
+     * @param websocket the WebSocket
+     * @param code the status code
+     * @param reason the reason message
      */
     void onClose(WebSocket websocket, int code, String reason);
 }

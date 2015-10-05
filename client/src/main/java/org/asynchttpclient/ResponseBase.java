@@ -6,7 +6,6 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
-import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -128,15 +127,11 @@ public abstract class ResponseBase implements Response {
 
     @Override
     public String toString() {
-        try {
-            return new StringBuilder()//
-                    .append(getClass().getSimpleName()).append(" {\n")//
-                    .append("\tstatusCode=").append(getStatusCode()).append("\n")//
-                    .append("\theaders=").append(getHeaders()).append("\n")//
-                    .append("\tbody=\n").append(getResponseBody()).append("\n")//
-                    .append("}").toString();
-        } catch (IOException e) {
-            throw new RuntimeException("IOException occurred while trying to print response body", e);
-        }
+        return new StringBuilder()//
+                .append(getClass().getSimpleName()).append(" {\n")//
+                .append("\tstatusCode=").append(getStatusCode()).append("\n")//
+                .append("\theaders=").append(getHeaders()).append("\n")//
+                .append("\tbody=\n").append(getResponseBody()).append("\n")//
+                .append("}").toString();
     }
 }

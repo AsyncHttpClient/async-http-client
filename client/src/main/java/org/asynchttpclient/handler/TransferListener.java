@@ -14,8 +14,6 @@ package org.asynchttpclient.handler;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 
-import java.io.IOException;
-
 /**
  * A simple interface an application can implements in order to received byte transfer information.
  */
@@ -23,11 +21,15 @@ public interface TransferListener {
 
     /**
      * Invoked when the request bytes are starting to get send.
+     * 
+     * @param headers the headers
      */
     void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers);
 
     /**
      * Invoked when the response bytes are starting to get received.
+     * 
+     * @param headers the headers
      */
     void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers);
 
@@ -36,7 +38,7 @@ public interface TransferListener {
      *
      * @param bytes a {@link byte[]}
      */
-    void onBytesReceived(byte[] bytes) throws IOException;
+    void onBytesReceived(byte[] bytes);
 
     /**
      * Invoked every time request's chunk are sent.

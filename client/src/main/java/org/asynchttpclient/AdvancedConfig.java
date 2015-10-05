@@ -47,6 +47,7 @@ public class AdvancedConfig {
     /**
      * @param name the name of the ChannelOption
      * @param value the value of the ChannelOption
+     * @param <T> the type of value
      * @return this instance of AdvancedConfig
      */
     @SuppressWarnings("unchecked")

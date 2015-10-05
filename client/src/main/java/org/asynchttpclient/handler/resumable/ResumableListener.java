@@ -24,7 +24,7 @@ public interface ResumableListener {
      * Invoked when some bytes are available to digest.
      *
      * @param byteBuffer the current bytes
-     * @throws IOException
+     * @throws IOException exception while writing the byteBuffer
      */
     void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
 

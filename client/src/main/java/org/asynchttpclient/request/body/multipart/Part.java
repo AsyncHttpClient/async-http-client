@@ -128,6 +128,7 @@ public interface Part {
     /**
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
      * 
+     * @param boundary the multipart boundary
      * @return long The length.
      */
     long length(byte[] boundary);

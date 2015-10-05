@@ -54,7 +54,7 @@ import org.asynchttpclient.uri.Uri;
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
  * {@link Realm}, {@link ProxyServer} and {@link AsyncHandler}. You can
  * build powerful application by just using this class.
- * <p/>
+ * <br>
  * This class rely on {@link BodyGenerator} and {@link BodyConsumer} for handling the request and response body. No
  * {@link AsyncHandler} are required. As simple as:
  * <blockquote><pre>
@@ -64,20 +64,20 @@ import org.asynchttpclient.uri.Uri;
  * .setRequestTimeout(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
- * <p/>
+ * 
  * StringBuilder s = new StringBuilder();
- * Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
+ * Future&lt;Response&gt; future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
  * </pre></blockquote>
  * or
  * <blockquote><pre>
  * public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
- * <p/>
+ * 
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
  * .setUrl(getTargetUrl())
  * .build();
- * <p/>
+ * 
  * ByteArrayOutputStream o = new ByteArrayOutputStream(10);
- * Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
+ * Future&lt;Response&gt; future = client.post(new FileBodyGenerator(myFile), new OutputStreamBodyConsumer(o));
  * </pre></blockquote>
  */
 public class SimpleAsyncHttpClient implements Closeable {
@@ -320,7 +320,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
     /**
      * Close the underlying AsyncHttpClient for this instance.
-     * <p/>
+     * <br>
      * If this instance is derived from another instance, this method does
      * nothing as the client instance is managed by the original
      * SimpleAsyncHttpClient.
@@ -337,9 +337,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     /**
      * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
      * instance of {@link AsyncHttpClient} to execute requests.
-     * <p/>
-     * <p/>
-     * <p/>
+     * <br>
      * The original SimpleAsyncHttpClient is responsible for managing the
      * underlying AsyncHttpClient. For the derived instance, {@link #close()} is
      * a NOOP. If the original SimpleAsyncHttpClient is closed, all derived
@@ -633,6 +631,9 @@ public class SimpleAsyncHttpClient implements Closeable {
          * This setting controls whether an error document should be written via
          * the {@link BodyConsumer} after an error status code was received (e.g.
          * 404). Default is {@link ErrorDocumentBehaviour#WRITE}.
+         * 
+         * @param behaviour the behaviour
+         * @return this
          */
         public Builder setErrorDocumentBehaviour(ErrorDocumentBehaviour behaviour) {
             this.errorDocumentBehaviour = behaviour;
@@ -643,6 +644,7 @@ public class SimpleAsyncHttpClient implements Closeable {
          * Enable resumable downloads for the SimpleAHC. Resuming downloads will only work for GET requests
          * with an instance of {@link ResumableBodyConsumer}.
          */
+        @Override
         public Builder setResumableDownload(boolean enableResumableDownload) {
             this.enableResumableDownload = enableResumableDownload;
             return this;
@@ -657,6 +659,9 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         /**
          * Set the listener to notify about connection progress.
+         * 
+         * @param listener a listener
+         * @return this
          */
         public Builder setListener(SimpleAHCTransferListener listener) {
             this.listener = listener;

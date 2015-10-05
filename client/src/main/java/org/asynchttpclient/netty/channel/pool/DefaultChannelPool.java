@@ -19,12 +19,12 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
-import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,22 +38,15 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A simple implementation of
- * {@link com.ning.http.client.providers.netty.pool.ChannelPool} based on a
+ * {@link ChannelPool} based on a
  * {@link java.util.concurrent.ConcurrentHashMap}
  */
 public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
-    private static final ConcurrentHashMapV8.Fun<Object, ConcurrentLinkedQueue<IdleChannel>> PARTITION_COMPUTER = new ConcurrentHashMapV8.Fun<Object, ConcurrentLinkedQueue<IdleChannel>>() {
-        @Override
-        public ConcurrentLinkedQueue<IdleChannel> apply(Object partitionKey) {
-            return new ConcurrentLinkedQueue<>();
-        }
-    };
-
-    private final ConcurrentHashMapV8<Object, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMapV8<>();
-    private final ConcurrentHashMapV8<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMapV8<>();
+    private final ConcurrentHashMap<Object, ConcurrentLinkedQueue<IdleChannel>> partitions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
@@ -256,7 +249,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isTTLExpired(channel, now))
             return false;
 
-        boolean added = partitions.computeIfAbsent(partitionKey, PARTITION_COMPUTER).add(new IdleChannel(channel, now));
+        boolean added = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedQueue<>()).add(new IdleChannel(channel, now));
         if (added)
             channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionKey));
 

@@ -18,21 +18,21 @@ package org.asynchttpclient;
 
 /**
  * An asynchronous handler or callback which gets invoked as soon as some data is available when
- * processing an asynchronous response.<br/>
+ * processing an asynchronous response.
+ * <br>
  * Callback methods get invoked in the following order:
  * <ol>
- * <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
- * <li>{@link #onHeadersReceived(HttpResponseHeaders)},</li>
- * <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
- * <li>{@link #onCompleted()}, once the response has been fully read.</li>
+ *  <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
+ *  <li>{@link #onHeadersReceived(HttpResponseHeaders)},</li>
+ *  <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
+ *  <li>{@link #onCompleted()}, once the response has been fully read.</li>
  * </ol>
- * <p/>
+ * <br>
  * Returning a {@link AsyncHandler.State#ABORT} from any of those callback methods will interrupt asynchronous response
  * processing, after that only {@link #onCompleted()} is going to be called.
- * <p/>
- * <p/>
+ * <br>
  * AsyncHandler aren't thread safe, hence you should avoid re-using the same instance when doing concurrent requests.
- * As an exmaple, the following may produce unexpected results:
+ * As an example, the following may produce unexpected results:
  * <blockquote><pre>
  *   AsyncHandler ah = new AsyncHandler() {....};
  *   AsyncHttpClient client = new AsyncHttpClient();
@@ -100,8 +100,7 @@ public interface AsyncHandler<T> {
 
     /**
      * Invoked once the HTTP response processing is finished.
-     * <p/>
-     * <p/>
+     * <br>
      * Gets always invoked as last callback method.
      *
      * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}

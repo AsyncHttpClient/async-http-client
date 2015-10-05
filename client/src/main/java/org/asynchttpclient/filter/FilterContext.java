@@ -25,11 +25,13 @@ import java.io.IOException;
  * received, a {@link FilterContext} is then passed to the list of {@link ResponseFilter}. {@link ResponseFilter}
  * gets invoked before the response gets processed, e.g. before authorization, redirection and invocation of {@link AsyncHandler}
  * gets processed.
- * <p/>
+ * <br>
  * Invoking {@link FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
  * that can be used to decide if the response processing should continue or not. You can stop the current response processing
  * and replay the request but creating a {@link FilterContext}. The {@link org.asynchttpclient.AsyncHttpClient}
  * will interrupt the processing and "replay" the associated {@link Request} instance.
+ * 
+ * @param <T> the handler result type
  */
 public class FilterContext<T> {
 
@@ -45,8 +47,6 @@ public class FilterContext<T> {
     }
 
     /**
-     * Return the original or decorated {@link AsyncHandler}
-     *
      * @return the original or decorated {@link AsyncHandler}
      */
     public AsyncHandler<T> getAsyncHandler() {
@@ -54,8 +54,6 @@ public class FilterContext<T> {
     }
 
     /**
-     * Return the original or decorated {@link Request}
-     *
      * @return the original or decorated {@link Request}
      */
     public Request getRequest() {
@@ -63,8 +61,6 @@ public class FilterContext<T> {
     }
 
     /**
-     * Return the unprocessed response's {@link HttpResponseStatus}
-     *
      * @return the unprocessed response's {@link HttpResponseStatus}
      */
     public HttpResponseStatus getResponseStatus() {
@@ -72,15 +68,13 @@ public class FilterContext<T> {
     }
 
     /**
-     * Return the response {@link HttpResponseHeaders}
+     * @return the response {@link HttpResponseHeaders}
      */
     public HttpResponseHeaders getResponseHeaders() {
         return b.headers;
     }
 
     /**
-     * Return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
-     *
      * @return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
      */
     public boolean replayRequest() {
@@ -88,8 +82,6 @@ public class FilterContext<T> {
     }
 
     /**
-     * Return the {@link IOException}
-     *
      * @return the {@link IOException}
      */
     public IOException getIOException() {

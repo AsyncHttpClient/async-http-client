@@ -26,6 +26,7 @@ public class CookieDecoder {
     /**
      * Decodes the specified HTTP header value into {@link Cookie}.
      * 
+     * @param header the Set-Cookie header
      * @return the decoded {@link Cookie}
      */
     public static Cookie decode(String header) {

@@ -24,33 +24,33 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}
- * <p/>
+ * <br>
  * <blockquote>
  * 
  * <pre>
  * AsyncHttpClient client = new AsyncHttpClient();
  * TransferCompletionHandler tl = new TransferCompletionHandler();
  * tl.addTransferListener(new TransferListener() {
- * <p/>
+ * 
  * public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
  * }
- * <p/>
+ * 
  * public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
  * }
- * <p/>
+ * 
  * public void onBytesReceived(ByteBuffer buffer) {
  * }
- * <p/>
+ * 
  * public void onBytesSent(long amount, long current, long total) {
  * }
- * <p/>
+ * 
  * public void onRequestResponseCompleted() {
  * }
- * <p/>
+ * 
  * public void onThrowable(Throwable t) {
  * }
  * });
- * <p/>
+ * 
  * Response response = httpClient.prepareGet("http://...").execute(tl).get();
  * </pre>
  * 
@@ -68,7 +68,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
-     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will throw an IllegalStateException if called.
+     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} will throw an IllegalStateException if called.
      */
     public TransferCompletionHandler() {
         this(false);

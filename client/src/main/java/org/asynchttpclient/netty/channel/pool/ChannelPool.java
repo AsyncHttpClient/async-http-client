@@ -22,8 +22,8 @@ public interface ChannelPool {
     /**
      * Add a channel to the pool
      * 
-     * @param partitionKey a key used to retrieve the cached channel
      * @param channel an I/O channel
+     * @param partitionKey a key used to retrieve the cached channel
      * @return true if added.
      */
     boolean offer(Channel channel, Object partitionKey);
@@ -46,7 +46,7 @@ public interface ChannelPool {
 
     /**
      * Return true if a channel can be cached. A implementation can decide based on some rules to allow caching
-     * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Object, Object)}
+     * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Channel, Object)}
      * 
      * @return true if a channel can be cached.
      */
@@ -59,15 +59,14 @@ public interface ChannelPool {
 
     /**
      * Flush a partition
-     * 
-     * @param partitionKey
+     * @param partitionKey the partition
      */
     void flushPartition(Object partitionKey);
 
     /**
      * Flush partitions based on a selector
      * 
-     * @param selector
+     * @param selector the selector
      */
     void flushPartitions(ChannelPoolPartitionSelector selector);
 }

@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Builder for {@link Request}
  * 
- * @param <T>
+ * @param <T> the builder type
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);

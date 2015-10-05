@@ -17,7 +17,6 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -65,12 +64,12 @@ public class NettyResponse extends ResponseBase {
     }
 
     @Override
-    public byte[] getResponseBodyAsBytes() throws IOException {
+    public byte[] getResponseBodyAsBytes() {
         return getResponseBodyAsByteBuffer().array();
     }
 
     @Override
-    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+    public ByteBuffer getResponseBodyAsByteBuffer() {
 
         int length = 0;
         for (HttpResponseBodyPart part : bodyParts)
@@ -84,17 +83,17 @@ public class NettyResponse extends ResponseBase {
     }
 
     @Override
-    public String getResponseBody() throws IOException {
+    public String getResponseBody() {
         return getResponseBody(null);
     }
 
     @Override
-    public String getResponseBody(Charset charset) throws IOException {
+    public String getResponseBody(Charset charset) {
         return new String(getResponseBodyAsBytes(), calculateCharset(charset));
     }
 
     @Override
-    public InputStream getResponseBodyAsStream() throws IOException {
+    public InputStream getResponseBodyAsStream() {
         return new ByteArrayInputStream(getResponseBodyAsBytes());
     }
 }

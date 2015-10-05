@@ -35,7 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p>A list of ({@code Runnable}, {@code Executor}) pairs that guarantees
+ * A list of ({@code Runnable}, {@code Executor}) pairs that guarantees
  * that every {@code Runnable} that is added using the add method will be
  * executed in its associated {@code Executor} after {@link #run()} is called.
  * {@code Runnable}s added after {@code run} is called are still guaranteed to
@@ -60,6 +60,9 @@ public final class ExecutionList implements Runnable {
     /**
      * Add the runnable/executor pair to the list of pairs to execute.  Executes
      * the pair immediately if we've already started execution.
+     * 
+     * @param runnable the runnable to be executed on complete
+     * @param executor teh executor to run the runnable
      */
     public void add(Runnable runnable, Executor executor) {
 

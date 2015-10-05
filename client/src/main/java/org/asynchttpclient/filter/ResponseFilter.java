@@ -26,6 +26,7 @@ public interface ResponseFilter {
      * using {@link FilterContext#getRequest()} and the current response processing will be ignored.
      *
      * @param ctx a {@link FilterContext}
+     * @param <T> the handler result type
      * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
      * @throws FilterException to interrupt the filter processing.
      */

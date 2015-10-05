@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.
  * 
- * @param <V>
+ * @param <V> the result type
  */
 public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
@@ -106,9 +106,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.maxRetry = maxRetry;
     }
 
-    /*********************************************/
-    /**       java.util.concurrent.Future       **/
-    /*********************************************/
+    // java.util.concurrent.Future
 
     @Override
     public boolean isDone() {
@@ -192,9 +190,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return update;
     }
 
-    /*********************************************/
-    /**   org.asynchttpclient.ListenableFuture  **/
-    /*********************************************/
+    // org.asynchttpclient.ListenableFuture
 
     private boolean terminateAndExit() {
         cancelTimeouts();
@@ -270,9 +266,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return completable;
     }
     
-    /*********************************************/
-    /**                 INTERNAL                **/
-    /*********************************************/
+    // INTERNAL
 
     public Uri getUri() {
         return request.getUri();

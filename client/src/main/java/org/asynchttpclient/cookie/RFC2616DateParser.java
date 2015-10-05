@@ -42,8 +42,10 @@ public class RFC2616DateParser extends SimpleDateFormat {
     }
 
     /**
-     * Standard date format<p>
-     * Sun, 06 Nov 1994 08:49:37 GMT -> E, d MMM yyyy HH:mm:ss z
+     * Standard date format
+     * <br>
+     * E, d MMM yyyy HH:mm:ss z
+     * e.g. Sun, 06 Nov 1994 08:49:37 GMT
      */
     private RFC2616DateParser() {
         super("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
@@ -63,8 +65,10 @@ public class RFC2616DateParser extends SimpleDateFormat {
     }
 
     /**
-     * First obsolete format<p>
-     * Sunday, 06-Nov-94 08:49:37 GMT -> E, d-MMM-y HH:mm:ss z
+     * First obsolete format
+     * <br>
+     * E, d-MMM-y HH:mm:ss z
+     * e.g. Sunday, 06-Nov-94 08:49:37 GMT
      */
     private static final class RFC2616DateParserObsolete1 extends SimpleDateFormat {
         private static final long serialVersionUID = -3178072504225114298L;
@@ -77,8 +81,9 @@ public class RFC2616DateParser extends SimpleDateFormat {
 
     /**
      * Second obsolete format
-     * <p>
-     * Sun Nov 6 08:49:37 1994 -> EEE, MMM d HH:mm:ss yyyy
+     * <br>
+     * EEE, MMM d HH:mm:ss yyyy
+     * e.g. Sun Nov 6 08:49:37 1994
      */
     private static final class RFC2616DateParserObsolete2 extends SimpleDateFormat {
         private static final long serialVersionUID = 3010674519968303714L;

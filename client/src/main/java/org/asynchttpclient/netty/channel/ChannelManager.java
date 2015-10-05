@@ -447,6 +447,12 @@ public class ChannelManager {
      * It could only occurs when a HttpMethod. CONNECT is used against a proxy
      * that requires upgrading from http to https.
      */
+    /**
+     * @param pipeline the pipeline
+     * @param uri the uri
+     * @param virtualHost the virtual host
+     * @throws GeneralSecurityException if creating the SslHandler crashed
+     */
     public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);

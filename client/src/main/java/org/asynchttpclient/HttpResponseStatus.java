@@ -48,7 +48,6 @@ public abstract class HttpResponseStatus {
      * 
      * @param headers {@link HttpResponseHeaders}
      * @param bodyParts list of {@link HttpResponseBodyPart}
-     * @param config the client config
      * @return a {@link Response}
      */
     public abstract Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts);

@@ -31,7 +31,7 @@ import org.asynchttpclient.Response;
  * An AsyncHandler that returns Response (without body, so status code and
  * headers only) as fast as possible for inspection, but leaves you the option
  * to defer body consumption.
- * <p/>
+ * <br>
  * This class introduces new call: getResponse(), that blocks caller thread as
  * long as headers are received, and return Response as soon as possible, but
  * still pouring response body into supplied output stream. This handler is
@@ -41,10 +41,10 @@ import org.asynchttpclient.Response;
  * be GETted, but you need headers first, or you don't know yet (depending on
  * some logic, maybe coming from headers) where to save the body, or you just
  * want to leave body stream to some other component to consume it.
- * <p/>
+ * <br>
  * All these above means that this AsyncHandler needs a bit of different
  * handling than "recommended" way. Some examples:
- * <p/>
+ * <br>
  * <pre>
  *     FileOutputStream fos = ...
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(fos);
@@ -59,7 +59,7 @@ import org.asynchttpclient.Response;
  *     // finally &quot;join&quot; the download
  *     fr.get();
  * </pre>
- * <p/>
+ * <br>
  * <pre>
  *     PipedOutputStream pout = new PipedOutputStream();
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pout);
@@ -187,13 +187,13 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     /**
-     * This method -- unlike Future<Reponse>.get() -- will block only as long,
+     * This method -- unlike Future&lt;Reponse&gt;.get() -- will block only as long,
      * as headers arrive. This is useful for large transfers, to examine headers
      * ASAP, and defer body streaming to it's fine destination and prevent
      * unneeded bandwidth consumption. The response here will contain the very
      * 1st response from server, so status code and headers, but it might be
      * incomplete in case of broken servers sending trailing headers. In that
-     * case, the "usual" Future<Response>.get() method will return complete
+     * case, the "usual" Future&lt;Response&gt;.get() method will return complete
      * headers, but multiple invocations of getResponse() will always return the
      * 1st cached, probably incomplete one. Note: the response returned by this
      * method will contain everything <em>except</em> the response body itself,
@@ -202,7 +202,8 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * in case of some errors.
      *
      * @return a {@link Response}
-     * @throws InterruptedException
+     * @throws InterruptedException if the latch is interrupted
+     * @throws IOException if the handler completed with an exception
      */
     public Response getResponse() throws InterruptedException, IOException {
         // block here as long as headers arrive
@@ -211,9 +212,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         try {
             semaphore.acquire();
             if (throwable != null) {
-                IOException ioe = new IOException(throwable.getMessage());
-                ioe.initCause(throwable);
-                throw ioe;
+                throw new IOException(throwable.getMessage(), throwable);
             } else {
                 return response;
             }
@@ -263,19 +262,20 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
          *
          * @return a {@link Response}
-         * @throws InterruptedException
+         * @throws InterruptedException if the latch is interrupted
+         * @throws IOException if the handler completed with an exception
          */
         public Response getAsapResponse() throws InterruptedException, IOException {
             return bdah.getResponse();
         }
 
         /**
-         * Delegates to <code>Future<Response>#get()</code> method. Will block
+         * Delegates to <code>Future$lt;Response&gt;#get()</code> method. Will block
          * as long as complete response arrives.
          *
          * @return a {@link Response}
-         * @throws InterruptedException
-         * @throws ExecutionException
+         * @throws ExecutionException if the computation threw an exception
+         * @throws InterruptedException if the current thread was interrupted
          */
         public Response getLastResponse() throws InterruptedException, ExecutionException {
             return future.get();

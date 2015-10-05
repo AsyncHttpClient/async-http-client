@@ -203,14 +203,9 @@ public class MultipartUploadTest extends AbstractBasicTest {
      * @param deflate
      */
     private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r, List<Boolean> deflate) {
-        String content = null;
-        try {
-            content = r.getResponseBody();
-            assertNotNull("===>" + content);
-            logger.debug(content);
-        } catch (IOException e) {
-            fail("Unable to obtain content");
-        }
+        String content = r.getResponseBody();
+        assertNotNull("===>" + content);
+        logger.debug(content);
 
         String[] contentArray = content.split("\\|\\|");
         // TODO: this fail on win32

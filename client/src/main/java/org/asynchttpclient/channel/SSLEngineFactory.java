@@ -32,6 +32,8 @@ public interface SSLEngineFactory {
     /**
      * Creates new {@link SSLEngine}.
      *
+     * @param peerHost the peer hostname
+     * @param peerPort the peer port
      * @return new engine
      * @throws GeneralSecurityException if the SSLEngine cannot be created
      */

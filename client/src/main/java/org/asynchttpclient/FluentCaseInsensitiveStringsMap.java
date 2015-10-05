@@ -420,6 +420,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * Returns the values for the given key joined into a single string using the given delimiter.
      *
      * @param key The key
+     * @param delimiter The delimiter for joining the values
      * @return The value as a single string
      */
     public String getJoinedValue(String key, String delimiter) {

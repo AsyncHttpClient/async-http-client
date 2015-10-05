@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * this handler can resume the download operation at the point it was before the interruption occurred. This prevent having to
  * download the entire file again. It's the responsibility of the {@link org.asynchttpclient.handler.resumable.ResumableAsyncHandler}
  * to track how many bytes has been transferred and to properly adjust the file's write position.
- * <p/>
+ * <br>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.
  */
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
@@ -268,14 +268,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
          * Save the current {@link Map} instance which contains information about the current transfer state.
          * This method *only* invoked when the JVM is shutting down.
          *
-         * @param map
+         * @param map the current transfer state
          */
         void save(Map<String, Long> map);
 
         /**
          * Load the {@link Map} in memory, contains information about the transferred bytes.
          *
-         * @return {@link Map}
+         * @return {@link Map} current transfer state
          */
         Map<String, Long> load();
 

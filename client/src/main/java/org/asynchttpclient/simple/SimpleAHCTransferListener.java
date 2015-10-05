@@ -17,10 +17,10 @@ import org.asynchttpclient.uri.Uri;
 
 /**
  * A simple transfer listener for use with the {@link SimpleAsyncHttpClient}.
- * <p/>
+ * <br>
  * Note: This listener does not cover requests failing before a connection is
  * established. For error handling, see
- * {@link org.asynchttpclient.simple.SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(org.asynchttpclient.ThrowableHandler)}
+ * {@link SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(ThrowableHandler)}
  *
  * @author Benjamin Hanzelmann
  */

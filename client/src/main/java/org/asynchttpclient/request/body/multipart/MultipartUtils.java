@@ -57,8 +57,9 @@ public class MultipartUtils {
     /**
      * Creates a new multipart entity containing the given parts.
      * 
-     * @param parts
-     *            The parts to include.
+     * @param parts the parts to include.
+     * @param requestHeaders the request headers
+     * @return a MultipartBody
      */
     public static MultipartBody newMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {

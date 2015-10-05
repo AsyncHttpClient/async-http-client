@@ -128,7 +128,7 @@ public interface Request {
     /**
      * Return the current form parameters.
      *
-     * @return a {@link List<Param>} of parameters.
+     * @return the form parameters.
      */
     List<Param> getFormParams();
 
@@ -149,7 +149,7 @@ public interface Request {
     /**
      * Return the query params.
      *
-     * @return {@link List<Param>} of query string
+     * @return the query parameters
      */
     List<Param> getQueryParams();
 
@@ -177,8 +177,7 @@ public interface Request {
     /**
      * Return follow redirect
      *
-     * @return the <tt>TRUE></tt> to follow redirect, FALSE, if NOT to follow, whatever the client config.
-     * Return null if not set.
+     * @return {@link Boolean#TRUE} to follow redirect, {@link Boolean#FALSE} if NOT to follow whatever the client config, null otherwise.
      */
     Boolean getFollowRedirect();
 

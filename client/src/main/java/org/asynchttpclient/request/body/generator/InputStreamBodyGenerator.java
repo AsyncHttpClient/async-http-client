@@ -23,17 +23,14 @@ import java.nio.ByteBuffer;
 
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
- * <p/>
+ * <br>
  * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
  * resumable download will not works.
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
-    private final static byte[] END_PADDING = "\r\n".getBytes();
-    private final static byte[] ZERO = "0".getBytes();
     private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
-    private boolean patchNetty3ChunkingIssue = false;
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this.inputStream = inputStream;
@@ -54,8 +51,6 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
     private class InputStreamBody implements Body {
 
         private final InputStream inputStream;
-        private boolean eof = false;
-        private int endDataCount = 0;
         private byte[] chunk;
 
         private InputStreamBody(InputStream inputStream) {
@@ -79,34 +74,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                 LOGGER.warn("Unable to read", ex);
             }
 
-            if (patchNetty3ChunkingIssue) {
-                if (read >= 0) {
-                    // Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
-                    buffer.put(Integer.toHexString(read).getBytes());
-                    // Chunking is separated by "<bytesreads>\r\n"
-                    buffer.put(END_PADDING);
-                    buffer.put(chunk, 0, read);
-                    // Was missing the final chunk \r\n.
-                    buffer.put(END_PADDING);
-                    write = true;
-
-                } else if (!eof) {
-                    // read == -1)
-                    // Since we are chunked, we must output extra bytes before considering the input stream closed.
-                    // chunking requires to end the chunking:
-                    // - A Terminating chunk of  "0\r\n".getBytes(),
-                    // - Then a separate packet of "\r\n".getBytes()
-                    endDataCount++;
-    
-                    if (endDataCount == 1)
-                        buffer.put(ZERO);
-                    else if (endDataCount == 2)
-                        eof = true;
-    
-                    buffer.put(END_PADDING);
-                    write = true;
-                }
-            } else if (read > 0) {
+            if (read > 0) {
                 buffer.put(chunk, 0, read);
                 write = true;
             }
@@ -117,13 +85,5 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             inputStream.close();
         }
     }
-
-    /**
-     * HACK: This is required because Netty has issues with chunking.
-     *
-     * @param patchNettyChunkingIssue
-     */
-    public void patchNetty3ChunkingIssue(boolean patchNetty3ChunkingIssue) {
-        this.patchNetty3ChunkingIssue = patchNetty3ChunkingIssue;
-    }
 }
+

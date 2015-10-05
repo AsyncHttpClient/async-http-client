@@ -17,10 +17,11 @@ import org.asynchttpclient.HttpResponseBodyPart;
 
 /**
  * Invoked when WebSocket text fragments are received.
- * 
- * @param fragment text fragment
  */
 public interface WebSocketTextFragmentListener extends WebSocketListener {
 
+    /**
+     * @param fragment a text fragment
+     */
     void onFragment(HttpResponseBodyPart fragment);
 }

@@ -33,7 +33,7 @@ import java.util.concurrent.Executor;
 import org.asynchttpclient.ListenableFuture;
 
 /**
- * <p>An abstract base implementation of the listener support provided by
+ * An abstract base implementation of the listener support provided by
  * {@link ListenableFuture}. This class uses an {@link ExecutionList} to
  * guarantee that all registered listeners will be executed. Listener/Executor
  * pairs are stored in the execution list and executed in the order in which

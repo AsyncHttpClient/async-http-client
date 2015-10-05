@@ -358,6 +358,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * Returns the values for the given key joined into a single string using the given delimiter.
      *
      * @param key The key
+     * @param delimiter the delimiter to join the values
      * @return The value as a single string
      */
     public String getJoinedValue(String key, String delimiter) {

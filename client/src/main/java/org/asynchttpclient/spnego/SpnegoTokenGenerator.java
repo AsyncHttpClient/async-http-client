@@ -43,7 +43,7 @@ import java.io.IOException;
 /**
  * Abstract SPNEGO token generator. Implementations should take an Kerberos ticket and transform
  * into a SPNEGO token.
- * <p/>
+ * <br>
  * Implementations of this interface are expected to be thread-safe.
  *
  * @since 4.1

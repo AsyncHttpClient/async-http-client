@@ -46,15 +46,13 @@ public interface ListenableFuture<V> extends Future<V> {
 
     /**
      * Terminate and if there is no exception, mark this Future as done and release the internal lock.
-     *
-     * @param callable
      */
     void done();
 
     /**
      * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}
      *
-     * @param t
+     * @param t the exception
      */
     void abort(Throwable t);
 
@@ -64,12 +62,12 @@ public interface ListenableFuture<V> extends Future<V> {
     void touch();
 
     /**
-     * <p>Adds a listener and executor to the ListenableFuture.
+     * Adds a listener and executor to the ListenableFuture.
      * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
      * to the executor} for execution when the {@code Future}'s computation is
      * {@linkplain Future#isDone() complete}.
-     * <p/>
-     * <p>There is no guaranteed ordering of execution of listeners, they may get
+     * <br>
+     * There is no guaranteed ordering of execution of listeners, they may get
      * called in the order they were added and they may get called out of order,
      * but any listener added through this method is guaranteed to be called once
      * the computation is complete.
@@ -77,10 +75,6 @@ public interface ListenableFuture<V> extends Future<V> {
      * @param listener the listener to run when the computation is complete.
      * @param exec     the executor to run the listener in.
      * @return this Future
-     * @throws NullPointerException if the executor or listener was null.
-     * @throws java.util.concurrent.RejectedExecutionException
-     *                              if we tried to execute the listener
-     *                              immediately but the executor rejected it.
      */
     ListenableFuture<V> addListener(Runnable listener, Executor exec);
 

@@ -22,7 +22,7 @@ import java.util.Set;
 
 /**
  * A map containing headers with the sole purpose of being given to
- * {@link SimpleAHCTransferListener#onHeaders(String, HeaderMap)}.
+ * {@link SimpleAHCTransferListener#onHeaders(org.asynchttpclient.uri.Uri, HeaderMap)}.
  *
  * @author Benjamin Hanzelmann
  */
@@ -60,6 +60,8 @@ public class HeaderMap implements Map<String, List<String>> {
 
     /**
      * @see FluentCaseInsensitiveStringsMap#getFirstValue(String)
+     * @param key The key
+     * @return The first value
      */
     public String getFirstValue(String key) {
         return headers.getFirstValue(key);
@@ -67,32 +69,46 @@ public class HeaderMap implements Map<String, List<String>> {
 
     /**
      * @see FluentCaseInsensitiveStringsMap#getJoinedValue(String, String)
+     * 
+     * @param key The key
+     * @param delimiter The delimiter for joining the values
+     * @return The value as a single string
      */
     public String getJoinedValue(String key, String delimiter) {
         return headers.getJoinedValue(key, delimiter);
     }
 
+    @Override
     public List<String> get(Object key) {
         return headers.get(key);
     }
 
     /**
      * Only read access is supported.
+     * 
+     * {@inheritDoc}
      */
+    @Override
     public List<String> put(String key, List<String> value) {
         throw new UnsupportedOperationException("Only read access is supported.");
     }
 
     /**
      * Only read access is supported.
+     * 
+     * {@inheritDoc}
      */
+    @Override
     public List<String> remove(Object key) {
         throw new UnsupportedOperationException("Only read access is supported.");
     }
 
     /**
      * Only read access is supported.
+     * 
+     * {@inheritDoc}
      */
+    @Override
     public void putAll(Map<? extends String, ? extends List<String>> t) {
         throw new UnsupportedOperationException("Only read access is supported.");
 
@@ -100,16 +116,21 @@ public class HeaderMap implements Map<String, List<String>> {
 
     /**
      * Only read access is supported.
+     * 
+     * {@inheritDoc}
      */
+    @Override
     public void clear() {
         throw new UnsupportedOperationException("Only read access is supported.");
     }
 
     /**
      * Only read access is supported.
+     * 
+     * {@inheritDoc}
      */
+    @Override
     public Collection<List<String>> values() {
         return headers.values();
     }
-
 }

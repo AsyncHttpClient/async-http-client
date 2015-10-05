@@ -15,7 +15,7 @@ package org.asynchttpclient.util;
 /**
  * Implements the "base64" binary encoding scheme as defined by
  * <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a>.
- * <p/>
+ * <br>
  * Portions of code here are taken from Apache Pivot
  */
 public final class Base64 {
@@ -73,6 +73,7 @@ public final class Base64 {
      * Encodes the specified data into a base64 string.
      *
      * @param bytes The unencoded raw data.
+     * @return the encoded data
      */
     public static String encode(byte[] bytes) {
         // always sequence of 4 characters for each 3 bytes; padded with '='s as necessary:
@@ -110,6 +111,7 @@ public final class Base64 {
      * Decodes the specified base64 string back into its raw data.
      *
      * @param encoded The base64 encoded string.
+     * @return the decoded data
      */
     public static byte[] decode(String encoded) {
         int padding = 0;

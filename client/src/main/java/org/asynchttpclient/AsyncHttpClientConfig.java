@@ -31,6 +31,7 @@ import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
@@ -38,8 +39,8 @@ import org.asynchttpclient.util.ProxyUtils;
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property
  * can be also used to configure this object default behavior by doing:
- * <p/>
- * -Dorg.asynchttpclient.AsyncHttpClientConfig.nameOfTheProperty
+ * <br>
+ * -Dorg.asynchttpclient.nameOfTheProperty
  */
 public class AsyncHttpClientConfig {
 
@@ -333,7 +334,7 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Is the {@link ConnectionsPool} support enabled.
+     * Is the {@link ChannelPool} support enabled.
      *
      * @return true if keep-alive is enabled
      */
@@ -463,12 +464,10 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * <p>
      * In the case of a POST/Redirect/Get scenario where the server uses a 302
      * for the redirect, should AHC respond to the redirect with a GET or
      * whatever the original method was. Unless configured otherwise, for a 302,
      * AHC, will use a GET for this case.
-     * </p>
      *
      * @return <code>true</code> if string 302 handling is to be used, otherwise
      *         <code>false</code>.
@@ -496,28 +495,28 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * since 1.9.0
+     * @return the array of enabled protocols
      */
     public String[] getEnabledProtocols() {
         return enabledProtocols;
     }
 
     /**
-     * since 1.9.0
+     * @return the array of enabled cipher suites
      */
     public String[] getEnabledCipherSuites() {
         return enabledCipherSuites;
     }
 
     /**
-     * since 1.9.13
+     * @return the size of the SSL session cache
      */
     public Integer getSslSessionCacheSize() {
         return sslSessionCacheSize;
     }
 
     /**
-     * since 1.9.13
+     * @return the SSL session timeout in seconds (optional)
      */
     public Integer getSslSessionTimeout() {
         return sslSessionTimeout;
@@ -628,6 +627,8 @@ public class AsyncHttpClientConfig {
          * Set the name of {@link AsyncHttpClient}. That name is used for thread
          * naming and can be used for debugging multiple {@link AsyncHttpClient}
          * instance.
+         * @param threadPoolName the pool name
+         * @return a {@link Builder}
          */
         public Builder setThreadPoolName(String threadPoolName) {
             this.threadPoolName = threadPoolName;
@@ -731,7 +732,7 @@ public class AsyncHttpClientConfig {
         /**
          * Set to true to enable HTTP redirect
          *
-         * @param redirectEnabled true if enabled.
+         * @param followRedirect true if enabled.
          * @return a {@link Builder}
          */
         public Builder setFollowRedirect(boolean followRedirect) {
@@ -751,9 +752,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Enforce HTTP compression.
+         * Enforce HTTP compression, if no Accept-Encoding request header was set.
          *
-         * @param compressionEnabled true if compression is enforced
+         * @param compressionEnforced true if compression is enforced
          * @return a {@link Builder}
          */
         public Builder setCompressionEnforced(boolean compressionEnforced) {
@@ -764,7 +765,7 @@ public class AsyncHttpClientConfig {
         /**
          * Set the USER_AGENT header value
          *
-         * @param userAgent the USER_AGENT header value
+         * @param userAgent the User-Agent header value
          * @return a {@link Builder}
          */
         public Builder setUserAgent(String userAgent) {
@@ -773,11 +774,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set true if connection can be pooled by a {@link ConnectionsPool}.
+         * Set true if connection can be pooled by a {@link ChannelPool}.
          * Default is true.
          *
          * @param allowPoolingConnections true if connection can be pooled by a
-         *            {@link ConnectionsPool}
+         *            {@link ChannelPool}
          * @return a {@link Builder}
          */
         public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
@@ -786,11 +787,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link java.util.concurrent.ThreadFactory} an
+         * Set the {@link ThreadFactory} an
          * {@link AsyncHttpClient} use for handling asynchronous response.
          *
-         * @param applicationThreadPool the
-         *            {@link java.util.concurrent.ThreadFactory} an
+         * @param threadFactory the
+         *            {@link ThreadFactory} an
          *            {@link AsyncHttpClient} use for handling asynchronous
          *            response.
          * @return a {@link Builder}
@@ -862,7 +863,7 @@ public class AsyncHttpClientConfig {
          * invoked before {@link AsyncHttpClient#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder addRequestFilter(RequestFilter requestFilter) {
             requestFilters.add(requestFilter);
@@ -874,7 +875,7 @@ public class AsyncHttpClientConfig {
          * be invoked before {@link AsyncHttpClient#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder removeRequestFilter(RequestFilter requestFilter) {
             requestFilters.remove(requestFilter);
@@ -888,7 +889,7 @@ public class AsyncHttpClientConfig {
          *
          * @param responseFilter an
          *            {@link org.asynchttpclient.filter.ResponseFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder addResponseFilter(ResponseFilter responseFilter) {
             responseFilters.add(responseFilter);
@@ -902,7 +903,7 @@ public class AsyncHttpClientConfig {
          *
          * @param responseFilter an
          *            {@link org.asynchttpclient.filter.ResponseFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder removeResponseFilter(ResponseFilter responseFilter) {
             responseFilters.remove(responseFilter);
@@ -916,7 +917,7 @@ public class AsyncHttpClientConfig {
          *
          * @param ioExceptionFilter an
          *            {@link org.asynchttpclient.filter.ResponseFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder addIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
             ioExceptionFilters.add(ioExceptionFilter);
@@ -930,7 +931,7 @@ public class AsyncHttpClientConfig {
          *
          * @param ioExceptionFilter an
          *            {@link org.asynchttpclient.filter.ResponseFilter}
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder removeIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
             ioExceptionFilters.remove(ioExceptionFilter);
@@ -942,7 +943,7 @@ public class AsyncHttpClientConfig {
          * {@link java.io.IOException} occurs because of a Network exception.
          *
          * @param maxRequestRetry the number of times a request will be retried
-         * @return this
+         * @return a {@link Builder}
          */
         public Builder setMaxRequestRetry(int maxRequestRetry) {
             this.maxRequestRetry = maxRequestRetry;
@@ -950,10 +951,10 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Return true is if connections pooling is enabled.
+         * Return true if pooling SSL connections is enabled.
          *
-         * @param pooledConnectionIdleTimeout true if enabled
-         * @return this
+         * @param allowPoolingSslConnections true if enabled
+         * @return a {@link Builder}
          */
         public Builder setAllowPoolingSslConnections(boolean allowPoolingSslConnections) {
             this.allowPoolingSslConnections = allowPoolingSslConnections;
@@ -964,8 +965,8 @@ public class AsyncHttpClientConfig {
          * Allows use unescaped URLs in requests useful for retrieving data from
          * broken sites
          *
-         * @param disableUrlEncodingForBoundRequests
-         * @return this
+         * @param disableUrlEncodingForBoundRequests true is disabled
+         * @return a {@link Builder}
          */
         public Builder setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
             this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
@@ -973,15 +974,18 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Sets whether AHC should use the default JDK ProxySelector to select a
+         * Sets whether AHC should use the default JDK {@link java.net.ProxySelector} to select a
          * proxy server.
-         * <p/>
+         * <br>
          * If useProxySelector is set to <code>true</code> but
          * {@link #setProxyServer(ProxyServer)} was used to explicitly set a
          * proxy server, the latter is preferred.
-         * <p/>
+         * <br>
          * See http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.
          * html
+         * 
+         * @param useProxySelector true is use a {@link java.net.ProxySelector}
+         * @return a {@link Builder}
          */
         public Builder setUseProxySelector(boolean useProxySelector) {
             this.useProxySelector = useProxySelector;
@@ -993,15 +997,16 @@ public class AsyncHttpClientConfig {
          * to obtain proxy information. This differs from
          * {@link #setUseProxySelector(boolean)} in that AsyncHttpClient will
          * use its own logic to handle the system properties, potentially
-         * supporting other protocols that the the JDK ProxySelector doesn't.
-         * <p/>
+         * supporting other protocols that the the JDK {@link java.net.ProxySelector} doesn't.
+         * <br>
          * If useProxyProperties is set to <code>true</code> but
          * {@link #setUseProxySelector(boolean)} was also set to true, the
          * latter is preferred.
-         * <p/>
-         * See
-         * http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.
-         * html
+         * <br>
+         * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+         * 
+         * @param useProxyProperties true if use JDK proxy system props
+         * @return a {@link Builder}
          */
         public Builder setUseProxyProperties(boolean useProxyProperties) {
             this.useProxyProperties = useProxyProperties;
@@ -1014,9 +1019,7 @@ public class AsyncHttpClientConfig {
          *
          * @param strict302Handling strict handling
          *
-         * @return this
-         *
-         * @since 1.7.2
+         * @return  a {@link Builder}
          */
         public Builder setStrict302Handling(final boolean strict302Handling) {
             this.strict302Handling = strict302Handling;
