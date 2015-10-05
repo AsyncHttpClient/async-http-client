@@ -19,8 +19,10 @@ import io.netty.handler.codec.http.HttpHeaders;
 
 import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -245,6 +247,29 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         touch.set(millisTime());
     }
 
+    @Override
+    public CompletableFuture<V> toCompletableFuture() {
+        CompletableFuture<V> completable = new CompletableFuture<>();
+        addListener(new Runnable() {
+            @Override
+            public void run() {
+                ExecutionException e = exEx.get();
+                if (e != null)
+                    completable.completeExceptionally(e);
+                else
+                    completable.complete(content.get());
+            }
+
+        }, new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                command.run();
+            }
+        });
+
+        return completable;
+    }
+    
     /*********************************************/
     /**                 INTERNAL                **/
     /*********************************************/
