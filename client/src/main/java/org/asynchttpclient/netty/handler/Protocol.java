@@ -115,7 +115,7 @@ public abstract class Protocol {
                 future.getAndSetAuth(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 301 || statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
                 boolean keepBody = statusCode == 307 || (statusCode == 302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
