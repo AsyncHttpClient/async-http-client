@@ -52,12 +52,12 @@ public interface SSLEngineFactory {
             SSLContext sslContext = SslUtils.getInstance().getSSLContext(config);
 
             SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+            sslEngine.setUseClientMode(true);
             if (!config.isAcceptAnyCertificate()) {
                 SSLParameters params = sslEngine.getSSLParameters();
                 params.setEndpointIdentificationAlgorithm("HTTPS");
                 sslEngine.setSSLParameters(params);
             }
-            sslEngine.setUseClientMode(true);
 
             if (isNonEmpty(config.getEnabledProtocols()))
                 sslEngine.setEnabledProtocols(config.getEnabledProtocols());
