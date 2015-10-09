@@ -287,7 +287,7 @@ public final class HttpProtocol extends Protocol {
             int statusCode,//
             ProxyServer proxyServer) throws Exception {
 
-        if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && !future.getAndSetAuth(true)) {
+        if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && proxyServer != null && !future.getAndSetAuth(true)) {
 
             List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
