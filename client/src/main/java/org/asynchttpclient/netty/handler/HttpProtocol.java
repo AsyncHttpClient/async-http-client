@@ -285,10 +285,9 @@ public final class HttpProtocol extends Protocol {
             HttpResponse response,//
             Request request,//
             int statusCode,//
-            Realm realm,//
             ProxyServer proxyServer) throws Exception {
 
-        if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && realm != null && !future.getAndSetAuth(true)) {
+        if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && !future.getAndSetAuth(true)) {
 
             List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
@@ -313,7 +312,9 @@ public final class HttpProtocol extends Protocol {
 
                 } else {
                     // BASIC or DIGEST
-                    newRealm = new Realm.RealmBuilder().clone(realm)//
+                    newRealm = new Realm.RealmBuilder()//
+                            .setPrincipal(proxyServer.getPrincipal())
+                            .setPassword(proxyServer.getPassword())
                             .setUri(request.getUri())//
                             .setOmitQuery(true)//
                             .setMethodName(request.getMethod())//
@@ -424,7 +425,7 @@ public final class HttpProtocol extends Protocol {
 
         return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)
                 || exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer) || //
-                exitAfterHandling407(channel, future, response, request, statusCode, realm, proxyServer) || //
+                exitAfterHandling407(channel, future, response, request, statusCode, proxyServer) || //
                 exitAfterHandling100(channel, future, statusCode) || //
                 exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm) || //
                 exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
