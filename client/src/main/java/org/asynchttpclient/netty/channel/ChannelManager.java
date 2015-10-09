@@ -277,7 +277,7 @@ public class ChannelManager {
     }
 
     public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> handler, boolean keepAlive, Object partitionKey) {
-        if (channel.isActive() && keepAlive && channel.isActive()) {
+        if (channel.isActive() && keepAlive) {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
             if (handler instanceof AsyncHandlerExtensions) {
