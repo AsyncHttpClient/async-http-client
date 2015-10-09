@@ -312,9 +312,7 @@ public final class HttpProtocol extends Protocol {
 
                 } else {
                     // BASIC or DIGEST
-                    newRealm = new Realm.RealmBuilder()//
-                            .setPrincipal(proxyServer.getPrincipal())
-                            .setPassword(proxyServer.getPassword())
+                    newRealm = proxyServer.realmBuilder()
                             .setUri(request.getUri())//
                             .setOmitQuery(true)//
                             .setMethodName(request.getMethod())//
