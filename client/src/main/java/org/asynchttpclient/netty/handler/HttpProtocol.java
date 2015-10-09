@@ -160,6 +160,7 @@ public final class HttpProtocol extends Protocol {
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
 
+        // FIXME we should probably check that the scheme is NTLM
         Realm realm = proxyServer.realmBuilder()//
                 .setScheme(AuthScheme.NTLM)//
                 .setUri(request.getUri())//
