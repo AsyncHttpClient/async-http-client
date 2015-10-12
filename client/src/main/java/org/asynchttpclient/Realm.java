@@ -29,9 +29,51 @@ import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.StringUtils;
 
 /**
- * This class is required when authentication is needed. The class support DIGEST and BASIC.
+ * This class is required when authentication is needed. The class support
+ * DIGEST and BASIC.
  */
 public class Realm {
+
+    public static RealmBuilder newRealm(Realm prototype) {
+        return new RealmBuilder()//
+                .realmName(prototype.getRealmName())//
+                .algorithm(prototype.getAlgorithm())//
+                .methodName(prototype.getMethodName())//
+                .nc(prototype.getNc())//
+                .nonce(prototype.getNonce())//
+                .password(prototype.getPassword())//
+                .principal(prototype.getPrincipal())//
+                .charset(prototype.getCharset())//
+                .opaque(prototype.getOpaque())//
+                .qop(prototype.getQop())//
+                .scheme(prototype.getScheme())//
+                .uri(prototype.getUri())//
+                .usePreemptiveAuth(prototype.getUsePreemptiveAuth())//
+                .ntlmDomain(prototype.getNtlmDomain())//
+                .ntlmHost(prototype.getNtlmHost())//
+                .useAbsoluteURI(prototype.isUseAbsoluteURI())//
+                .omitQuery(prototype.isOmitQuery())//
+                .targetProxy(prototype.isTargetProxy());
+    }
+
+    public static RealmBuilder newRealm(AuthScheme scheme, String principal, String password) {
+        return new RealmBuilder()//
+        .scheme(scheme)//
+        .principal(principal)//
+        .password(password);
+    }
+    
+    public static RealmBuilder newBasicAuth(String principal, String password) {
+        return newRealm(AuthScheme.BASIC, principal, password);
+    }
+    
+    public static RealmBuilder newDigestAuth(String principal, String password) {
+        return newRealm(AuthScheme.DIGEST, principal, password);
+    }
+    
+    public static RealmBuilder newNtlmAuth(String principal, String password) {
+        return newRealm(AuthScheme.NTLM, principal, password);
+    }
 
     private static final String DEFAULT_NC = "00000001";
     private static final String EMPTY_ENTITY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
@@ -68,13 +110,13 @@ public class Realm {
         }
 
         public boolean isLikeNtlm() {
-            return likeNtlm; 
+            return likeNtlm;
         }
     }
 
-    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
-            String qop, String nc, String cnonce, Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset,
-            String host, String opaque, boolean useAbsoluteURI, boolean omitQuery, boolean targetProxy) {
+    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
+            Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset, String host, String opaque, boolean useAbsoluteURI, boolean omitQuery,
+            boolean targetProxy) {
 
         this.principal = principal;
         this.password = password;
@@ -195,73 +237,27 @@ public class Realm {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-
-        Realm realm = (Realm) o;
-
-        if (algorithm != null ? !algorithm.equals(realm.algorithm) : realm.algorithm != null)
-            return false;
-        if (cnonce != null ? !cnonce.equals(realm.cnonce) : realm.cnonce != null)
-            return false;
-        if (nc != null ? !nc.equals(realm.nc) : realm.nc != null)
-            return false;
-        if (nonce != null ? !nonce.equals(realm.nonce) : realm.nonce != null)
-            return false;
-        if (password != null ? !password.equals(realm.password) : realm.password != null)
-            return false;
-        if (principal != null ? !principal.equals(realm.principal) : realm.principal != null)
-            return false;
-        if (qop != null ? !qop.equals(realm.qop) : realm.qop != null)
-            return false;
-        if (realmName != null ? !realmName.equals(realm.realmName) : realm.realmName != null)
-            return false;
-        if (response != null ? !response.equals(realm.response) : realm.response != null)
-            return false;
-        if (scheme != realm.scheme)
-            return false;
-        if (uri != null ? !uri.equals(realm.uri) : realm.uri != null)
-            return false;
-        if (useAbsoluteURI != !realm.useAbsoluteURI) return false;
-        if (omitQuery != !realm.omitQuery) return false;
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='"
-                + nonce + '\'' + ", algorithm='" + algorithm + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='"
-                + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + ", useAbsoluteURI='" + useAbsoluteURI + '\''
-                + ", omitQuery='" + omitQuery + '\'' +'}';
-    }
-
-    @Override
-    public int hashCode() {
-        int result = principal != null ? principal.hashCode() : 0;
-        result = 31 * result + (password != null ? password.hashCode() : 0);
-        result = 31 * result + (scheme != null ? scheme.hashCode() : 0);
-        result = 31 * result + (realmName != null ? realmName.hashCode() : 0);
-        result = 31 * result + (nonce != null ? nonce.hashCode() : 0);
-        result = 31 * result + (algorithm != null ? algorithm.hashCode() : 0);
-        result = 31 * result + (response != null ? response.hashCode() : 0);
-        result = 31 * result + (qop != null ? qop.hashCode() : 0);
-        result = 31 * result + (nc != null ? nc.hashCode() : 0);
-        result = 31 * result + (cnonce != null ? cnonce.hashCode() : 0);
-        result = 31 * result + (uri != null ? uri.hashCode() : 0);
-        return result;
+        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm
+                + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
+                + ", methodName='" + methodName + '\'' + ", useAbsoluteURI='" + useAbsoluteURI + '\'' + ", omitQuery='" + omitQuery + '\'' + '}';
     }
 
     /**
      * A builder for {@link Realm}
      */
     public static class RealmBuilder {
-        //
-        // Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
-        // This code is already Apache licenced.
-        //
+
+        private static final ThreadLocal<MessageDigest> DIGEST_TL = new ThreadLocal<MessageDigest>() {
+            @Override
+            protected MessageDigest initialValue() {
+                try {
+                    return MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
 
         private String principal;
         private String password;
@@ -284,260 +280,154 @@ public class Realm {
         private boolean omitQuery;
         private boolean targetProxy;
 
-        private static final ThreadLocal<MessageDigest> digestThreadLocal = new ThreadLocal<MessageDigest>() {
-            @Override
-            protected MessageDigest initialValue() {
-                try {
-                    return MessageDigest.getInstance("MD5");
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-
-        public String getNtlmDomain() {
-            return ntlmDomain;
-        }
-
-        public RealmBuilder setNtlmDomain(String ntlmDomain) {
+        public RealmBuilder ntlmDomain(String ntlmDomain) {
             this.ntlmDomain = ntlmDomain;
             return this;
         }
 
-        public String getNtlmHost() {
-            return ntlmHost;
-        }
-
-        public RealmBuilder setNtlmHost(String host) {
+        public RealmBuilder ntlmHost(String host) {
             this.ntlmHost = host;
             return this;
         }
 
-        public String getPrincipal() {
-            return principal;
-        }
-
-        public RealmBuilder setPrincipal(String principal) {
+        public RealmBuilder principal(String principal) {
             this.principal = principal;
             return this;
         }
 
-        public String getPassword() {
-            return password;
-        }
-
-        public RealmBuilder setPassword(String password) {
+        public RealmBuilder password(String password) {
             this.password = password;
             return this;
         }
 
-        public AuthScheme getScheme() {
-            return scheme;
-        }
-
-        public RealmBuilder setScheme(AuthScheme scheme) {
+        public RealmBuilder scheme(AuthScheme scheme) {
             this.scheme = scheme;
             return this;
         }
 
-        public String getRealmName() {
-            return realmName;
-        }
-
-        public RealmBuilder setRealmName(String realmName) {
+        public RealmBuilder realmName(String realmName) {
             this.realmName = realmName;
             return this;
         }
 
-        public String getNonce() {
-            return nonce;
-        }
-
-        public RealmBuilder setNonce(String nonce) {
+        public RealmBuilder nonce(String nonce) {
             this.nonce = nonce;
             return this;
         }
 
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public RealmBuilder setAlgorithm(String algorithm) {
+        public RealmBuilder algorithm(String algorithm) {
             this.algorithm = algorithm;
             return this;
         }
 
-        public String getResponse() {
-            return response;
-        }
-
-        public RealmBuilder setResponse(String response) {
+        public RealmBuilder response(String response) {
             this.response = response;
             return this;
         }
 
-        public String getOpaque() {
-            return this.opaque;
-        }
-
-        public RealmBuilder setOpaque(String opaque) {
+        public RealmBuilder opaque(String opaque) {
             this.opaque = opaque;
             return this;
         }
 
-        public String getQop() {
-            return qop;
-        }
-
-        public RealmBuilder setQop(String qop) {
+        public RealmBuilder qop(String qop) {
             if (isNonEmpty(qop)) {
                 this.qop = qop;
             }
             return this;
         }
 
-        public String getNc() {
-            return nc;
-        }
-
-        public RealmBuilder setNc(String nc) {
+        public RealmBuilder nc(String nc) {
             this.nc = nc;
             return this;
         }
 
-        public Uri getUri() {
-            return uri;
-        }
-
-        public RealmBuilder setUri(Uri uri) {
+        public RealmBuilder uri(Uri uri) {
             this.uri = uri;
             return this;
         }
 
-        public String getMethodName() {
-            return methodName;
-        }
-
-        public RealmBuilder setMethodName(String methodName) {
+        public RealmBuilder methodName(String methodName) {
             this.methodName = methodName;
             return this;
         }
 
-        public boolean getUsePreemptiveAuth() {
-            return usePreemptive;
-        }
-
-        public RealmBuilder setUsePreemptiveAuth(boolean usePreemptiveAuth) {
+        public RealmBuilder usePreemptiveAuth(boolean usePreemptiveAuth) {
             this.usePreemptive = usePreemptiveAuth;
             return this;
         }
 
-        public boolean isUseAbsoluteURI() {
-            return useAbsoluteURI;
-        }
-        
-        public RealmBuilder setUseAbsoluteURI(boolean useAbsoluteURI) {
+        public RealmBuilder useAbsoluteURI(boolean useAbsoluteURI) {
             this.useAbsoluteURI = useAbsoluteURI;
             return this;
         }
-        
-        public boolean isOmitQuery() {
-            return omitQuery;
-        }
-        
-        public RealmBuilder setOmitQuery(boolean omitQuery) {
+
+        public RealmBuilder omitQuery(boolean omitQuery) {
             this.omitQuery = omitQuery;
             return this;
         }
 
-        public boolean isTargetProxy() {
-            return targetProxy;
-        }
-        
-        public RealmBuilder setTargetProxy(boolean targetProxy) {
+        public RealmBuilder targetProxy(boolean targetProxy) {
             this.targetProxy = targetProxy;
             return this;
         }
+
+        public RealmBuilder charset(Charset charset) {
+            this.charset = charset;
+            return this;
+        }
+        
         private String parseRawQop(String rawQop) {
             String[] rawServerSupportedQops = rawQop.split(",");
             String[] serverSupportedQops = new String[rawServerSupportedQops.length];
             for (int i = 0; i < rawServerSupportedQops.length; i++) {
                 serverSupportedQops[i] = rawServerSupportedQops[i].trim();
             }
-            
+
             // prefer auth over auth-int
-            for (String rawServerSupportedQop: serverSupportedQops) {
+            for (String rawServerSupportedQop : serverSupportedQops) {
                 if (rawServerSupportedQop.equals("auth"))
                     return rawServerSupportedQop;
             }
-            
-            for (String rawServerSupportedQop: serverSupportedQops) {
+
+            for (String rawServerSupportedQop : serverSupportedQops) {
                 if (rawServerSupportedQop.equals("auth-int"))
                     return rawServerSupportedQop;
             }
-            
+
             return null;
         }
 
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
-            setRealmName(match(headerLine, "realm"));
-            setNonce(match(headerLine, "nonce"));
+            realmName(match(headerLine, "realm"))
+            .nonce(match(headerLine, "nonce"));
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
-                setAlgorithm(algorithm);
+                algorithm(algorithm);
             }
-            setOpaque(match(headerLine, "opaque"));
+            opaque(match(headerLine, "opaque"));
 
             String rawQop = match(headerLine, "qop");
             if (rawQop != null) {
-                setQop(parseRawQop(rawQop));
+                qop(parseRawQop(rawQop));
             }
 
-            if (isNonEmpty(getNonce())) {
-                setScheme(AuthScheme.DIGEST);
-            } else {
-                setScheme(AuthScheme.BASIC);
-            }
+            scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             return this;
         }
 
         public RealmBuilder parseProxyAuthenticateHeader(String headerLine) {
-            setRealmName(match(headerLine, "realm"));
-            setNonce(match(headerLine, "nonce"));
-            setOpaque(match(headerLine, "opaque"));
+            realmName(match(headerLine, "realm"))
+                .nonce(match(headerLine, "nonce"))
+                .opaque(match(headerLine, "opaque"));
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
-                setAlgorithm(algorithm);
+                algorithm(algorithm);
             }
-            setQop(match(headerLine, "qop"));
-            if (isNonEmpty(getNonce())) {
-                setScheme(AuthScheme.DIGEST);
-            } else {
-                setScheme(AuthScheme.BASIC);
-            }
-            setTargetProxy(true);
+            qop(match(headerLine, "qop"));
+            scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+            targetProxy(true);
             return this;
-        }
-
-        public RealmBuilder clone(Realm clone) {
-            return setRealmName(clone.getRealmName())//
-                    .setAlgorithm(clone.getAlgorithm())//
-                    .setMethodName(clone.getMethodName())//
-                    .setNc(clone.getNc())//
-                    .setNonce(clone.getNonce())//
-                    .setPassword(clone.getPassword())//
-                    .setPrincipal(clone.getPrincipal())//
-                    .setCharset(clone.getCharset())//
-                    .setOpaque(clone.getOpaque())//
-                    .setQop(clone.getQop())//
-                    .setScheme(clone.getScheme())//
-                    .setUri(clone.getUri())//
-                    .setUsePreemptiveAuth(clone.getUsePreemptiveAuth())//
-                    .setNtlmDomain(clone.getNtlmDomain())//
-                    .setNtlmHost(clone.getNtlmHost())//
-                    .setUseAbsoluteURI(clone.isUseAbsoluteURI())//
-                    .setOmitQuery(clone.isOmitQuery())//
-                    .setTargetProxy(clone.isTargetProxy());
         }
 
         private void newCnonce(MessageDigest md) {
@@ -567,23 +457,14 @@ public class Realm {
             return value.charAt(0) == '"' ? value.substring(1) : value;
         }
 
-        public Charset getCharset() {
-            return charset;
-        }
-
-        public RealmBuilder setCharset(Charset charset) {
-            this.charset = charset;
-            return this;
-        }
-
         private byte[] md5FromRecycledStringBuilder(StringBuilder sb, MessageDigest md) {
             md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
             return md.digest();
         }
-        
+
         private byte[] secretDigest(StringBuilder sb, MessageDigest md) {
-            
+
             sb.append(principal).append(':').append(realmName).append(':').append(password);
             byte[] ha1 = md5FromRecycledStringBuilder(sb, md);
 
@@ -599,7 +480,7 @@ public class Realm {
         }
 
         private byte[] dataDigest(StringBuilder sb, String digestUri, MessageDigest md) {
-            
+
             sb.append(methodName).append(':').append(digestUri);
             if ("auth-int".equals(qop)) {
                 sb.append(':').append(EMPTY_ENTITY_MD5);
@@ -607,31 +488,31 @@ public class Realm {
             } else if (qop != null && !qop.equals("auth")) {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
             }
-            
+
             return md5FromRecycledStringBuilder(sb, md);
         }
-        
+
         private void appendDataBase(StringBuilder sb) {
             sb.append(':').append(nonce).append(':');
             if ("auth".equals(qop) || "auth-int".equals(qop)) {
                 sb.append(nc).append(':').append(cnonce).append(':').append(qop).append(':');
             }
         }
-        
+
         private void newResponse(MessageDigest md) {
             // BEWARE: compute first as it used the cached StringBuilder
             String digestUri = AuthenticatorUtils.computeRealmURI(uri, useAbsoluteURI, omitQuery);
-            
+
             StringBuilder sb = StringUtils.stringBuilder();
-            
+
             // WARNING: DON'T MOVE, BUFFER IS RECYCLED!!!!
             byte[] secretDigest = secretDigest(sb, md);
             byte[] dataDigest = dataDigest(sb, digestUri, md);
-            
+
             appendBase16(sb, secretDigest);
             appendDataBase(sb);
             appendBase16(sb, dataDigest);
-            
+
             byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
             response = toHexString(responseDigest);
         }
@@ -669,13 +550,13 @@ public class Realm {
 
             // Avoid generating
             if (isNonEmpty(nonce)) {
-                MessageDigest md = digestThreadLocal.get();
+                MessageDigest md = DIGEST_TL.get();
                 newCnonce(md);
                 newResponse(md);
             }
 
-            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
-                    usePreemptive, ntlmDomain, charset, ntlmHost, opaque, useAbsoluteURI, omitQuery, targetProxy);
+            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName, usePreemptive, ntlmDomain, charset, ntlmHost,
+                    opaque, useAbsoluteURI, omitQuery, targetProxy);
         }
     }
 }

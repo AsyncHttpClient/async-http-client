@@ -15,7 +15,6 @@ package org.asynchttpclient;
 import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
@@ -26,14 +25,13 @@ import java.security.MessageDigest;
 public class RealmTest {
     @Test(groups = "fast")
     public void testClone() {
-        RealmBuilder builder = new RealmBuilder();
-        builder.setPrincipal("user").setPassword("pass");
-        builder.setCharset(UTF_16).setUsePreemptiveAuth(true);
-        builder.setRealmName("realm").setAlgorithm("algo");
-        builder.setScheme(AuthScheme.BASIC);
+        RealmBuilder builder = Realm.newBasicAuth("user", "pass").charset(UTF_16)//
+                .usePreemptiveAuth(true)//
+                .realmName("realm")//
+                .algorithm("algo");
         Realm orig = builder.build();
 
-        Realm clone = new RealmBuilder().clone(orig).build();
+        Realm clone = Realm.newRealm(orig).build();
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
         assertEquals(clone.getPassword(), orig.getPassword());
         assertEquals(clone.getCharset(), orig.getCharset());
@@ -62,14 +60,12 @@ public class RealmTest {
         String nonce = "nonce";
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
-        RealmBuilder builder = new RealmBuilder();
-        builder.setPrincipal(user).setPassword(pass);
-        builder.setNonce(nonce);
-        builder.setUri(uri);
-        builder.setMethodName(method);
-        builder.setRealmName(realm);
-        builder.setQop(qop);
-        builder.setScheme(AuthScheme.DIGEST);
+        RealmBuilder builder = Realm.newDigestAuth(user, pass)//
+                .nonce(nonce)//
+                .uri(uri)//
+                .methodName(method)//
+                .realmName(realm)//
+                .qop(qop);
         Realm orig = builder.build();
 
         String ha1 = getMd5(user + ":" + realm + ":" + pass);
@@ -88,14 +84,12 @@ public class RealmTest {
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
         String qop = "auth";
-        RealmBuilder builder = new RealmBuilder();
-        builder.setPrincipal(user).setPassword(pass);
-        builder.setNonce(nonce);
-        builder.setUri(uri);
-        builder.setMethodName(method);
-        builder.setRealmName(realm);
-        builder.setQop(qop);
-        builder.setScheme(AuthScheme.DIGEST);
+        RealmBuilder builder = Realm.newDigestAuth(user, pass)//
+                .nonce(nonce)//
+                .uri(uri)//
+                .methodName(method)//
+                .realmName(realm)//
+                .qop(qop);
         Realm orig = builder.build();
 
         String nc = orig.getNc();

@@ -29,7 +29,6 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
@@ -71,12 +70,9 @@ public class NtlmTest extends AbstractBasicTest {
     }
 
     private RealmBuilder realmBuilderBase() {
-        return new Realm.RealmBuilder()//
-                .setScheme(AuthScheme.NTLM)//
-                .setNtlmDomain("Ursa-Minor")//
-                .setNtlmHost("LightCity")//
-                .setPrincipal("Zaphod")//
-                .setPassword("Beeblebrox");
+        return Realm.newNtlmAuth("Zaphod", "Beeblebrox")//
+                .ntlmDomain("Ursa-Minor")//
+                .ntlmHost("LightCity");
     }
 
     private void ntlmAuthTest(RealmBuilder realmBuilder) throws IOException, InterruptedException, ExecutionException {
@@ -98,7 +94,7 @@ public class NtlmTest extends AbstractBasicTest {
 
     @Test
     public void preemptiveNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
-        ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
+        ntlmAuthTest(realmBuilderBase().usePreemptiveAuth(true));
     }
 }
 

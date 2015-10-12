@@ -27,8 +27,8 @@ import org.asynchttpclient.Realm;
  */
 public class ProxyServer {
 
-    public static Builder newProxyServer(String host, int port) {
-        return new Builder(host, port);
+    public static ProxyBuilder newProxyServer(String host, int port) {
+        return new ProxyBuilder(host, port);
     }
 
     private final String host;
@@ -71,7 +71,7 @@ public class ProxyServer {
         return realm;
     }
 
-    public static class Builder {
+    public static class ProxyBuilder {
 
         private String host;
         private int port;
@@ -80,43 +80,43 @@ public class ProxyServer {
         private List<String> nonProxyHosts;
         private boolean forceHttp10;
 
-        public Builder(String host, int port) {
+        public ProxyBuilder(String host, int port) {
             this.host = host;
             this.port = port;
             this.securedPort = port;
         }
 
-        public Builder securedPort(int securedPort) {
+        public ProxyBuilder securedPort(int securedPort) {
             this.securedPort = securedPort;
             return this;
         }
 
-        public Builder realm(Realm realm) {
+        public ProxyBuilder realm(Realm realm) {
             this.realm = realm;
             return this;
         }
 
-        public Builder nonProxyHost(String nonProxyHost) {
+        public ProxyBuilder nonProxyHost(String nonProxyHost) {
             if (nonProxyHosts == null)
                 nonProxyHosts = new ArrayList<String>(1);
             nonProxyHosts.add(nonProxyHost);
             return this;
         }
         
-        public Builder nonProxyHosts(List<String> nonProxyHosts) {
+        public ProxyBuilder nonProxyHosts(List<String> nonProxyHosts) {
             this.nonProxyHosts = nonProxyHosts;
             return this;
         }
 
-        public Builder forceHttp10() {
-            this.forceHttp10 = true;
+        public ProxyBuilder forceHttp10(boolean forceHttp10) {
+            this.forceHttp10 = forceHttp10;
             return this;
         }
 
         public ProxyServer build() {
             List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
             // FIXME!!!!!!!!!!!!!!!!!!!!!!!!
-            Realm realm = this.realm != null && !this.realm.isTargetProxy() ? new Realm.RealmBuilder().clone(this.realm).setTargetProxy(true).build() : this.realm;
+            Realm realm = this.realm != null && !this.realm.isTargetProxy() ? Realm.newRealm(this.realm).targetProxy(true).build() : this.realm;
 
             return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, forceHttp10);
         }

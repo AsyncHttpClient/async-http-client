@@ -564,37 +564,37 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setRealmNtlmDomain(String domain) {
-            realm().setNtlmDomain(domain);
+            realm().ntlmDomain(domain);
             return this;
         }
 
         public Builder setRealmPrincipal(String principal) {
-            realm().setPrincipal(principal);
+            realm().principal(principal);
             return this;
         }
 
         public Builder setRealmPassword(String password) {
-            realm().setPassword(password);
+            realm().password(password);
             return this;
         }
 
         public Builder setRealmScheme(Realm.AuthScheme scheme) {
-            realm().setScheme(scheme);
+            realm().scheme(scheme);
             return this;
         }
 
         public Builder setRealmName(String realmName) {
-            realm().setRealmName(realmName);
+            realm().realmName(realmName);
             return this;
         }
 
         public Builder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
-            realm().setUsePreemptiveAuth(usePreemptiveAuth);
+            realm().usePreemptiveAuth(usePreemptiveAuth);
             return this;
         }
 
         public Builder setRealmCharset(Charset charset) {
-            realm().setCharset(charset);
+            realm().charset(charset);
             return this;
         }
 
@@ -695,7 +695,7 @@ public class SimpleAsyncHttpClient implements Closeable {
                 Realm realm = null;
                 if (proxyPrincipal != null) {
                     AuthScheme proxyAuthScheme = this.proxyAuthScheme == AuthScheme.NONE ? AuthScheme.BASIC : this.proxyAuthScheme;
-                    realm = new Realm.RealmBuilder().setScheme(proxyAuthScheme).setPrincipal(proxyPrincipal).setPassword(proxyPassword).build();
+                    realm = Realm.newRealm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 
                 configBuilder.setProxyServer(ProxyServer.newProxyServer(proxyHost, proxyPort).realm(realm).build());

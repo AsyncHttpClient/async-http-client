@@ -646,7 +646,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostProxyTest() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer.Builder("127.0.0.1", port2).build()).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer.ProxyBuilder("127.0.0.1", port2).build()).build())) {
             HttpHeaders h = new DefaultHttpHeaders();
             h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();

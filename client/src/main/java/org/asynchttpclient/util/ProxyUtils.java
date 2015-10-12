@@ -26,7 +26,6 @@ import java.util.Properties;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
@@ -168,10 +167,10 @@ public final class ProxyUtils {
             
             Realm realm = null;
             if (principal != null) {
-                realm = new Realm.RealmBuilder().setScheme(AuthScheme.BASIC).setPrincipal(principal).setPassword(password).build();
+                realm = Realm.newBasicAuth(principal, password).build();
             }
             
-            ProxyServer.Builder proxyServer = ProxyServer.newProxyServer(host, port).realm(realm);
+            ProxyServer.ProxyBuilder proxyServer = ProxyServer.newProxyServer(host, port).realm(realm);
 
             String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {

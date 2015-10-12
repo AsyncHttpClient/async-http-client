@@ -194,7 +194,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private Realm realm(boolean preemptive) {
-        return (new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setUsePreemptiveAuth(preemptive).build();
+        return Realm.newBasicAuth(USER, ADMIN).usePreemptiveAuth(preemptive).build();
     }
 
     @Override

@@ -75,10 +75,10 @@ public final class HttpProtocol extends Protocol {
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
-            return new Realm.RealmBuilder().clone(realm)//
-                    .setUri(uri)//
-                    .setMethodName(request.getMethod())//
-                    .setScheme(Realm.AuthScheme.KERBEROS)//
+            return Realm.newRealm(realm)//
+                    .uri(uri)//
+                    .methodName(request.getMethod())//
+                    .scheme(Realm.AuthScheme.KERBEROS)//
                     .build();
 
         } catch (SpnegoEngineException throwable) {
@@ -139,9 +139,9 @@ public final class HttpProtocol extends Protocol {
             addType3NTLMAuthorizationHeader(authenticateHeader, headers, realm, false);
         }
 
-        return new Realm.RealmBuilder().clone(realm)//
-                .setUri(request.getUri())//
-                .setMethodName(request.getMethod())//
+        return Realm.newRealm(realm)//
+                .uri(request.getUri())//
+                .methodName(request.getMethod())//
                 .build();
     }
 
@@ -227,11 +227,10 @@ public final class HttpProtocol extends Protocol {
 
                 } else {
                     // BASIC or DIGEST
-                    newRealm = new Realm.RealmBuilder()//
-                            .clone(realm)//
-                            .setUri(request.getUri())//
-                            .setMethodName(request.getMethod())//
-                            .setUsePreemptiveAuth(true)//
+                    newRealm = Realm.newRealm(realm)//
+                            .uri(request.getUri())//
+                            .methodName(request.getMethod())//
+                            .usePreemptiveAuth(true)//
                             .parseWWWAuthenticateHeader(wwwAuthHeaders.get(0))//
                             .build();
                 }
@@ -304,11 +303,11 @@ public final class HttpProtocol extends Protocol {
 
                 } else {
                     // BASIC or DIGEST
-                    newRealm = new Realm.RealmBuilder().clone(proxyServer.getRealm())
-                            .setUri(request.getUri())//
-                            .setOmitQuery(true)//
-                            .setMethodName(request.getMethod())//
-                            .setUsePreemptiveAuth(true)//
+                    newRealm = Realm.newRealm(proxyServer.getRealm())
+                            .uri(request.getUri())//
+                            .omitQuery(true)//
+                            .methodName(request.getMethod())//
+                            .usePreemptiveAuth(true)//
                             .parseProxyAuthenticateHeader(proxyAuthHeaders.get(0))//
                             .build();
                 }
