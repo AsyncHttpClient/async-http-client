@@ -89,7 +89,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
         String targetUrl = String.format("%s://127.0.0.1:%d/", secure ? "wss" : "ws", port2);
 
         // CONNECT happens over HTTP, not HTTPS
-        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTP, "127.0.0.1", port1);
+        ProxyServer ps = new ProxyServer("127.0.0.1", port1);
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
         try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             final CountDownLatch latch = new CountDownLatch(1);

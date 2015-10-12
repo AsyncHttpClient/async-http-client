@@ -15,10 +15,10 @@ package org.asynchttpclient.util;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
-import org.asynchttpclient.proxy.ProxyServer.Protocol;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,27 +40,25 @@ public final class ProxyUtils {
 
     private final static Logger log = LoggerFactory.getLogger(ProxyUtils.class);
 
-    private static final String PROPERTY_PREFIX = "org.asynchttpclient.AsyncHttpClientConfig.proxy.";
-
     /**
      * The host to use as proxy.
+     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public static final String PROXY_HOST = "http.proxyHost";
 
     /**
      * The port to use for the proxy.
+     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public static final String PROXY_PORT = "http.proxyPort";
 
     /**
-     * The protocol to use. Is mapped to the {@link Protocol} enum.
-     */
-    public static final String PROXY_PROTOCOL = PROPERTY_PREFIX + "protocol";
-
-    /**
-     * A specification of non-proxy hosts. See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+     * A specification of non-proxy hosts.
+     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public static final String PROXY_NONPROXYHOSTS = "http.nonProxyHosts";
+
+    private static final String PROPERTY_PREFIX = "org.asynchttpclient.AsyncHttpClientConfig.proxy.";
 
     /**
      * The username to use for authentication for the proxy server.
@@ -119,11 +117,11 @@ public final class ProxyUtils {
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
      * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
-     *
+     * 
      * @param proxyServer the proxy
      * @param hostname the hostname
      * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
+     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public static boolean ignoreProxy(final ProxyServer proxyServer, String hostname) {
         if (proxyServer != null) {
@@ -151,10 +149,9 @@ public final class ProxyUtils {
      *
      * @param properties the properties to evaluate. Must not be null.
      * @return a ProxyServer instance or null, if no valid properties were set.
-     * @see <a href="http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html">Networking Properties</a>
+     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      * @see #PROXY_HOST
      * @see #PROXY_PORT
-     * @see #PROXY_PROTOCOL
      * @see #PROXY_NONPROXYHOSTS
      */
     public static ProxyServerSelector createProxyServerSelector(Properties properties) {
@@ -163,15 +160,10 @@ public final class ProxyUtils {
         if (host != null) {
             int port = Integer.valueOf(properties.getProperty(PROXY_PORT, "80"));
 
-            Protocol protocol;
-            try {
-                protocol = Protocol.valueOf(properties.getProperty(PROXY_PROTOCOL, "HTTP"));
-            } catch (IllegalArgumentException e) {
-                protocol = Protocol.HTTP;
-            }
-
-            ProxyServer proxyServer = new ProxyServer(protocol, host, port, properties.getProperty(PROXY_USER),
-                    properties.getProperty(PROXY_PASSWORD));
+            String user = properties.getProperty(PROXY_USER);
+            String password = properties.getProperty(PROXY_PASSWORD);
+            
+            ProxyServer proxyServer = new ProxyServer(user != null ? AuthScheme.BASIC : AuthScheme.NONE, host, port, user, password);
 
             String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {
@@ -218,7 +210,7 @@ public final class ProxyUtils {
                                     return null;
                                 } else {
                                     InetSocketAddress address = (InetSocketAddress) proxy.address();
-                                    return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());
+                                    return new ProxyServer(address.getHostName(), address.getPort());
                                 }
                             case DIRECT:
                                 return null;

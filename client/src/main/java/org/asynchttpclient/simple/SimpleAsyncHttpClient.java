@@ -36,6 +36,7 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -418,7 +419,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
         private Realm.RealmBuilder realmBuilder = null;
-        private ProxyServer.Protocol proxyProtocol = ProxyServer.Protocol.HTTP;
+        private Realm.AuthScheme proxyAuthScheme = Realm.AuthScheme.NONE;
         private String proxyHost = null;
         private String proxyPrincipal = null;
         private String proxyPassword = null;
@@ -597,8 +598,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setProxyProtocol(ProxyServer.Protocol protocol) {
-            this.proxyProtocol = protocol;
+        public Builder setProxyAuthScheme(Realm.AuthScheme proxyAuthScheme) {
+            this.proxyAuthScheme = proxyAuthScheme;
             return this;
         }
 
@@ -691,7 +692,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             }
 
             if (proxyHost != null) {
-                configBuilder.setProxyServer(new ProxyServer(proxyProtocol, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
+                AuthScheme proxyAuthScheme = proxyPrincipal != null && this.proxyAuthScheme == AuthScheme.NONE ? AuthScheme.BASIC : this.proxyAuthScheme;
+                configBuilder.setProxyServer(new ProxyServer(proxyAuthScheme, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());

@@ -31,27 +31,7 @@ import org.asynchttpclient.Realm.AuthScheme;
  */
 public class ProxyServer {
 
-    public enum Protocol {
-        HTTP("HTTP"), NTLM("NTLM"), KERBEROS("KERBEROS"), SPNEGO("SPNEGO");
-
-        private final String protocol;
-
-        Protocol(final String protocol) {
-            this.protocol = protocol;
-        }
-
-        public String getProtocol() {
-            return protocol;
-        }
-
-        @Override
-        public String toString() {
-            return getProtocol();
-        }
-    }
-
     private final List<String> nonProxyHosts = new ArrayList<>();
-    private final Protocol protocol;
     private final String host;
     private final String principal;
     private final String password;
@@ -63,30 +43,25 @@ public class ProxyServer {
     private AuthScheme scheme;
     private boolean forceHttp10 = false;
 
-    public ProxyServer(Protocol protocol, String host, int port, int securedPort, String principal, String password) {
-        this.protocol = protocol;
+    public ProxyServer(AuthScheme scheme, String host, int port, int securedPort, String principal, String password) {
+        this.scheme = scheme;
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
         this.principal = principal;
         this.password = password;
-        this.scheme = principal == null ? AuthScheme.NONE : AuthScheme.BASIC;
     }
     
-    public ProxyServer(Protocol protocol, String host, int port, String principal, String password) {
-        this(protocol, host, port, port, principal, password);
+    public ProxyServer(AuthScheme scheme, String host, int port, String principal, String password) {
+        this(scheme, host, port, port, principal, password);
     }
 
     public ProxyServer(String host, int port, String principal, String password) {
-        this(Protocol.HTTP, host, port, principal, password);
-    }
-
-    public ProxyServer(final Protocol protocol, final String host, final int port) {
-        this(protocol, host, port, null, null);
+        this(AuthScheme.BASIC, host, port, principal, password);
     }
 
     public ProxyServer(final String host, final int port) {
-        this(Protocol.HTTP, host, port, null, null);
+        this(AuthScheme.NONE, host, port, null, null);
     }
 
     public Realm.RealmBuilder realmBuilder() {
@@ -96,10 +71,6 @@ public class ProxyServer {
         .setPrincipal(principal)
         .setPassword(password)
         .setScheme(scheme);
-    }
-
-    public Protocol getProtocol() {
-        return protocol;
     }
 
     public String getHost() {
