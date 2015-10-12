@@ -30,20 +30,17 @@ public class ProxyUtilsTest {
 
         // should avoid, it's in non-proxy hosts
         req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
-        ProxyServer proxyServer = new ProxyServer("foo", 1234);
-        proxyServer.addNonProxyHost("somewhere.com");
+        ProxyServer proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("somewhere.com").build();
         assertTrue(ProxyUtils.ignoreProxy(proxyServer, req));
 
         // should avoid, it's in non-proxy hosts (with "*")
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = new ProxyServer("foo", 1234);
-        proxyServer.addNonProxyHost("*.somewhere.com");
+        proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
         assertTrue(ProxyUtils.ignoreProxy(proxyServer, req));
 
         // should use it
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = new ProxyServer("foo", 1234);
-        proxyServer.addNonProxyHost("*.somewhere.org");
+        proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("*.somewhere.org").build();
         assertFalse(ProxyUtils.ignoreProxy(proxyServer, req));
     }
 }

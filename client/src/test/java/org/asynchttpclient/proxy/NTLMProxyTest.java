@@ -26,6 +26,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -82,9 +83,12 @@ public class NTLMProxyTest extends AbstractBasicTest {
     }
 
     private ProxyServer ntlmProxy() throws UnknownHostException {
-        ProxyServer proxyServer = new ProxyServer("127.0.0.1", port2, "Zaphod", "Beeblebrox").setNtlmDomain("Ursa-Minor");
-        proxyServer.setNtlmHost("LightCity");
-        proxyServer.setScheme(AuthScheme.NTLM);
-        return proxyServer;
+        Realm realm = new Realm.RealmBuilder().setScheme(AuthScheme.NTLM)//
+                .setNtlmDomain("Ursa-Minor")//
+                .setNtlmHost("LightCity")//
+                .setPrincipal("Zaphod")//
+                .setPassword("Beeblebrox")//
+                .build();
+        return ProxyServer.newProxyServer("127.0.0.1", port2).realm(realm).build();
     }
 }

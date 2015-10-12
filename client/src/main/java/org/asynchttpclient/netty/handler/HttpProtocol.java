@@ -33,7 +33,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
@@ -101,14 +100,9 @@ public final class HttpProtocol extends Protocol {
 
         try {
             String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
-            headers.remove(HttpHeaders.Names.AUTHORIZATION);
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+            headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "Negotiate " + challengeHeader);
 
-            return proxyServer.realmBuilder()//
-                    .setUri(request.getUri())//
-                    .setMethodName(request.getMethod())//
-                    .setScheme(Realm.AuthScheme.KERBEROS)//
-                    .build();
+            return proxyServer.getRealm();
 
         } catch (SpnegoEngineException throwable) {
             String ntlmAuthenticate = getNTLM(proxyAuth);
@@ -161,10 +155,7 @@ public final class HttpProtocol extends Protocol {
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
 
         // FIXME we should probably check that the scheme is NTLM
-        Realm realm = proxyServer.realmBuilder()//
-                .setScheme(AuthScheme.NTLM)//
-                .setUri(request.getUri())//
-                .setMethodName(request.getMethod()).build();
+        Realm realm = proxyServer.getRealm();
 
         addType3NTLMAuthorizationHeader(authenticateHeader, headers, realm, true);
 
@@ -313,7 +304,7 @@ public final class HttpProtocol extends Protocol {
 
                 } else {
                     // BASIC or DIGEST
-                    newRealm = proxyServer.realmBuilder()
+                    newRealm = new Realm.RealmBuilder().clone(proxyServer.getRealm())
                             .setUri(request.getUri())//
                             .setOmitQuery(true)//
                             .setMethodName(request.getMethod())//

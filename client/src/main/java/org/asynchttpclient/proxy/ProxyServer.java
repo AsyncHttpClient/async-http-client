@@ -16,61 +16,35 @@
  */
 package org.asynchttpclient.proxy;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Realm.AuthScheme;
 
 /**
  * Represents a proxy server.
  */
 public class ProxyServer {
 
-    private final List<String> nonProxyHosts = new ArrayList<>();
+    public static Builder newProxyServer(String host, int port) {
+        return new Builder(host, port);
+    }
+
     private final String host;
-    private final String principal;
-    private final String password;
     private final int port;
     private final int securedPort;
-    private Charset charset = UTF_8;
-    private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
-    private String ntlmHost;
-    private AuthScheme scheme;
-    private boolean forceHttp10 = false;
+    private final Realm realm;
+    private final List<String> nonProxyHosts;
+    private final boolean forceHttp10;
 
-    public ProxyServer(AuthScheme scheme, String host, int port, int securedPort, String principal, String password) {
-        this.scheme = scheme;
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, boolean forceHttp10) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
-        this.principal = principal;
-        this.password = password;
-    }
-    
-    public ProxyServer(AuthScheme scheme, String host, int port, String principal, String password) {
-        this(scheme, host, port, port, principal, password);
-    }
-
-    public ProxyServer(String host, int port, String principal, String password) {
-        this(AuthScheme.BASIC, host, port, principal, password);
-    }
-
-    public ProxyServer(final String host, final int port) {
-        this(AuthScheme.NONE, host, port, null, null);
-    }
-
-    public Realm.RealmBuilder realmBuilder() {
-        return new Realm.RealmBuilder()//
-        .setNtlmDomain(ntlmDomain)
-        .setNtlmHost(ntlmHost)
-        .setPrincipal(principal)
-        .setPassword(password)
-        .setScheme(scheme);
+        this.realm = realm;
+        this.nonProxyHosts = nonProxyHosts;
+        this.forceHttp10 = forceHttp10;
     }
 
     public String getHost() {
@@ -85,63 +59,66 @@ public class ProxyServer {
         return securedPort;
     }
 
-    public String getPrincipal() {
-        return principal;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public ProxyServer setCharset(Charset charset) {
-        this.charset = charset;
-        return this;
-    }
-
-    public Charset getCharset() {
-        return charset;
-    }
-
-    public ProxyServer addNonProxyHost(String uri) {
-        nonProxyHosts.add(uri);
-        return this;
-    }
-
-    public ProxyServer removeNonProxyHost(String uri) {
-        nonProxyHosts.remove(uri);
-        return this;
-    }
-
     public List<String> getNonProxyHosts() {
-        return Collections.unmodifiableList(nonProxyHosts);
+        return nonProxyHosts;
     }
 
-    public ProxyServer setNtlmDomain(String ntlmDomain) {
-        this.ntlmDomain = ntlmDomain;
-        return this;
-    }
-
-    public AuthScheme getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(AuthScheme scheme) {
-        if (principal == null)
-            throw new NullPointerException("principal");
-        if (password == null)
-            throw new NullPointerException("password");
-        this.scheme = scheme;
-    }
-
-    public void setNtlmHost(String ntlmHost) {
-        this.ntlmHost = ntlmHost;
-    }
-    
     public boolean isForceHttp10() {
         return forceHttp10;
     }
 
-    public void setForceHttp10(boolean forceHttp10) {
-        this.forceHttp10 = forceHttp10;
+    public Realm getRealm() {
+        return realm;
+    }
+
+    public static class Builder {
+
+        private String host;
+        private int port;
+        private int securedPort;
+        private Realm realm;
+        private List<String> nonProxyHosts;
+        private boolean forceHttp10;
+
+        public Builder(String host, int port) {
+            this.host = host;
+            this.port = port;
+            this.securedPort = port;
+        }
+
+        public Builder securedPort(int securedPort) {
+            this.securedPort = securedPort;
+            return this;
+        }
+
+        public Builder realm(Realm realm) {
+            this.realm = realm;
+            return this;
+        }
+
+        public Builder nonProxyHost(String nonProxyHost) {
+            if (nonProxyHosts == null)
+                nonProxyHosts = new ArrayList<String>(1);
+            nonProxyHosts.add(nonProxyHost);
+            return this;
+        }
+        
+        public Builder nonProxyHosts(List<String> nonProxyHosts) {
+            this.nonProxyHosts = nonProxyHosts;
+            return this;
+        }
+
+        public Builder forceHttp10() {
+            this.forceHttp10 = true;
+            return this;
+        }
+
+        public ProxyServer build() {
+            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
+            // FIXME!!!!!!!!!!!!!!!!!!!!!!!!
+            Realm realm = this.realm != null && !this.realm.isTargetProxy() ? new Realm.RealmBuilder().clone(this.realm).setTargetProxy(true).build() : this.realm;
+
+            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, forceHttp10);
+        }
     }
 }

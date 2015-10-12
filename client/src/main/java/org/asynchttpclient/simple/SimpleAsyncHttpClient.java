@@ -692,8 +692,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             }
 
             if (proxyHost != null) {
-                AuthScheme proxyAuthScheme = proxyPrincipal != null && this.proxyAuthScheme == AuthScheme.NONE ? AuthScheme.BASIC : this.proxyAuthScheme;
-                configBuilder.setProxyServer(new ProxyServer(proxyAuthScheme, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
+                Realm realm = null;
+                if (proxyPrincipal != null) {
+                    AuthScheme proxyAuthScheme = this.proxyAuthScheme == AuthScheme.NONE ? AuthScheme.BASIC : this.proxyAuthScheme;
+                    realm = new Realm.RealmBuilder().setScheme(proxyAuthScheme).setPrincipal(proxyPrincipal).setPassword(proxyPassword).build();
+                }
+
+                configBuilder.setProxyServer(ProxyServer.newProxyServer(proxyHost, proxyPort).realm(realm).build());
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());

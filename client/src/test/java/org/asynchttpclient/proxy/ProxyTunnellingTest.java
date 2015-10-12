@@ -75,7 +75,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        ProxyServer ps = new ProxyServer("127.0.0.1", port1);
+        ProxyServer ps = ProxyServer.newProxyServer("127.0.0.1", port1).build();
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
         .setFollowRedirect(true)//
@@ -106,7 +106,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
                 .setFollowRedirect(true)//
-                .setProxyServer(new ProxyServer("127.0.0.1", port1))//
+                .setProxyServer(ProxyServer.newProxyServer("127.0.0.1", port1).build())//
                 .setAcceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {

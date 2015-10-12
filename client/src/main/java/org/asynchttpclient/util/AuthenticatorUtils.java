@@ -33,11 +33,11 @@ public final class AuthenticatorUtils {
     private static final String PROXY_AUTHORIZATION_HEADER = "Proxy-Authorization";
 
     public static String computeBasicAuthentication(Realm realm) {
-        return computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset());
+        return realm != null ? computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset()) : null;
     }
 
     public static String computeBasicAuthentication(ProxyServer proxyServer) {
-        return computeBasicAuthentication(proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getCharset());
+        return computeBasicAuthentication(proxyServer.getRealm());
     }
 
     private static String computeBasicAuthentication(String principal, String password, Charset charset) {
@@ -109,7 +109,7 @@ public final class AuthenticatorUtils {
                 proxyAuthorization = ntlmHeader;
             }
 
-        } else if (proxyServer != null && proxyServer.getPrincipal() != null && proxyServer.getScheme().isLikeNtlm()) {
+        } else if (proxyServer != null && proxyServer.getRealm() != null && proxyServer.getRealm().getScheme().isLikeNtlm()) {
             List<String> auth = getProxyAuthorizationHeader(request);
             if (getNTLM(auth) == null) {
                 String msg = NtlmEngine.INSTANCE.generateType1Msg();
@@ -124,7 +124,7 @@ public final class AuthenticatorUtils {
 
         String proxyAuthorization = null;
 
-        if (!connect && proxyServer != null && proxyServer.getScheme() == AuthScheme.BASIC) {
+        if (!connect && proxyServer != null && proxyServer.getRealm() != null && proxyServer.getRealm().getScheme() == AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
         } else if (realm != null && realm.getUsePreemptiveAuth() && realm.isTargetProxy()) {
 

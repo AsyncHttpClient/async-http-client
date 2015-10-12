@@ -14,7 +14,18 @@ package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -22,14 +33,6 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * Utilities for Proxy handling.
@@ -160,19 +163,22 @@ public final class ProxyUtils {
         if (host != null) {
             int port = Integer.valueOf(properties.getProperty(PROXY_PORT, "80"));
 
-            String user = properties.getProperty(PROXY_USER);
+            String principal = properties.getProperty(PROXY_USER);
             String password = properties.getProperty(PROXY_PASSWORD);
             
-            ProxyServer proxyServer = new ProxyServer(user != null ? AuthScheme.BASIC : AuthScheme.NONE, host, port, user, password);
+            Realm realm = null;
+            if (principal != null) {
+                realm = new Realm.RealmBuilder().setScheme(AuthScheme.BASIC).setPrincipal(principal).setPassword(password).build();
+            }
+            
+            ProxyServer.Builder proxyServer = ProxyServer.newProxyServer(host, port).realm(realm);
 
             String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {
-                for (String spec : nonProxyHosts.split("\\|")) {
-                    proxyServer.addNonProxyHost(spec);
-                }
+                proxyServer.nonProxyHosts(new ArrayList<String>(Arrays.asList(nonProxyHosts.split("\\|"))));
             }
 
-            return createProxyServerSelector(proxyServer);
+            return createProxyServerSelector(proxyServer.build());
         }
 
         return ProxyServerSelector.NO_PROXY_SELECTOR;
@@ -210,7 +216,7 @@ public final class ProxyUtils {
                                     return null;
                                 } else {
                                     InetSocketAddress address = (InetSocketAddress) proxy.address();
-                                    return new ProxyServer(address.getHostName(), address.getPort());
+                                    return ProxyServer.newProxyServer(address.getHostName(), address.getPort()).build();
                                 }
                             case DIRECT:
                                 return null;
