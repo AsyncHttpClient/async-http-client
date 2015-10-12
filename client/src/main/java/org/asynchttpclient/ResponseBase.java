@@ -8,6 +8,7 @@ import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
@@ -128,11 +129,16 @@ public abstract class ResponseBase implements Response {
 
     @Override
     public String toString() {
-        return new StringBuilder()//
-                .append(getClass().getSimpleName()).append(" {\n")//
-                .append("\tstatusCode=").append(getStatusCode()).append("\n")//
-                .append("\theaders=").append(getHeaders()).append("\n")//
-                .append("\tbody=\n").append(getResponseBody()).append("\n")//
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName()).append(" {\n")//
+        .append("\tstatusCode=").append(getStatusCode()).append("\n")//
+        .append("\theaders=\n");
+        
+        for (Map.Entry<String, String> header: getHeaders()) {
+            sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
+        }
+        sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
                 .append("}").toString();
+        return sb.toString();
     }
 }
