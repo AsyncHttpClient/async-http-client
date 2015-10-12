@@ -27,8 +27,8 @@ import org.asynchttpclient.Realm;
  */
 public class ProxyServer {
 
-    public static ProxyBuilder newProxyServer(String host, int port) {
-        return new ProxyBuilder(host, port);
+    public static ProxyServerBuilder newProxyServer(String host, int port) {
+        return new ProxyServerBuilder(host, port);
     }
 
     private final String host;
@@ -71,7 +71,7 @@ public class ProxyServer {
         return realm;
     }
 
-    public static class ProxyBuilder {
+    public static class ProxyServerBuilder {
 
         private String host;
         private int port;
@@ -80,35 +80,35 @@ public class ProxyServer {
         private List<String> nonProxyHosts;
         private boolean forceHttp10;
 
-        public ProxyBuilder(String host, int port) {
+        public ProxyServerBuilder(String host, int port) {
             this.host = host;
             this.port = port;
             this.securedPort = port;
         }
 
-        public ProxyBuilder securedPort(int securedPort) {
+        public ProxyServerBuilder securedPort(int securedPort) {
             this.securedPort = securedPort;
             return this;
         }
 
-        public ProxyBuilder realm(Realm realm) {
+        public ProxyServerBuilder realm(Realm realm) {
             this.realm = realm;
             return this;
         }
 
-        public ProxyBuilder nonProxyHost(String nonProxyHost) {
+        public ProxyServerBuilder nonProxyHost(String nonProxyHost) {
             if (nonProxyHosts == null)
                 nonProxyHosts = new ArrayList<String>(1);
             nonProxyHosts.add(nonProxyHost);
             return this;
         }
         
-        public ProxyBuilder nonProxyHosts(List<String> nonProxyHosts) {
+        public ProxyServerBuilder nonProxyHosts(List<String> nonProxyHosts) {
             this.nonProxyHosts = nonProxyHosts;
             return this;
         }
 
-        public ProxyBuilder forceHttp10(boolean forceHttp10) {
+        public ProxyServerBuilder forceHttp10(boolean forceHttp10) {
             this.forceHttp10 = forceHttp10;
             return this;
         }
