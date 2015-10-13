@@ -112,8 +112,9 @@ public abstract class Protocol {
                 throw maxRedirectException;
 
             } else {
-                // We must allow 401 handling again.
-                future.getAndSetAuth(false);
+                // We must allow auth handling again.
+                future.getInAuth().set(false);
+                future.getInProxyAuth().set(false);
 
                 String originalMethod = request.getMethod();
                 boolean switchToGet = !originalMethod.equals(HttpMethod.GET.name()) && (statusCode == 301 || statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));

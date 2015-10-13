@@ -35,6 +35,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -236,6 +237,9 @@ public final class NettyRequestSender {
         Realm proxyRealm = future.getProxyRealm();
         requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
         requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
+        
+        future.getInAuth().set(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
+        future.getInProxyAuth().set(proxyRealm != null && proxyRealm.isUsePreemptiveAuth() && proxyRealm.getScheme() != AuthScheme.NTLM);
 
         // Do not throw an exception when we need an extra connection for a redirect
         // FIXME why? This violate the max connection per host handling, right?

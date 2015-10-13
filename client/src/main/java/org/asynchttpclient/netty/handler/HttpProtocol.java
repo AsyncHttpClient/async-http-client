@@ -100,7 +100,7 @@ public final class HttpProtocol extends Protocol {
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             headers.set(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-            future.getAndSetAuth(false);
+            future.getInAuth().set(false);
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
@@ -117,16 +117,13 @@ public final class HttpProtocol extends Protocol {
             HttpHeaders headers,//
             NettyResponseFuture<?> future) {
 
-        // FIXME what's this?????
-        future.getAndSetAuth(false);
-
         if (authenticateHeader.equals("NTLM")) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
-            future.getAndSetAuth(false);
+            future.getInProxyAuth().set(false);
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
@@ -198,7 +195,7 @@ public final class HttpProtocol extends Protocol {
             return false;
         }
         
-        if (future.getAndSetAuth(true)) {
+        if (future.getInAuth().getAndSet(true)) {
             logger.info("Can't handle 401 as auth was already performed");
             return false;
         }
@@ -322,6 +319,11 @@ public final class HttpProtocol extends Protocol {
         if (statusCode != PROXY_AUTHENTICATION_REQUIRED.code())
             return false;
 
+        if (future.getInProxyAuth().getAndSet(true)) {
+            logger.info("Can't handle 407 as auth was already performed");
+            return false;
+        }
+        
         Realm proxyRealm = future.getProxyRealm();
         
         if (proxyRealm == null) {
@@ -329,16 +331,10 @@ public final class HttpProtocol extends Protocol {
             return false;
         }
         
-        // FIXME no good: mess direct and proxy auth
-        if (future.getAndSetAuth(true)) {
-            logger.info("Can't handle 407 as auth was already performed");
-            return false;
-        }
-
         List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
         if (proxyAuthHeaders.isEmpty()) {
-            logger.info("Can't handle 401 as response doesn't contain Proxy-Authenticate headers");
+            logger.info("Can't handle 407 as response doesn't contain Proxy-Authenticate headers");
             return false;
         }
         

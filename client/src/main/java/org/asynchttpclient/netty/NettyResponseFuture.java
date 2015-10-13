@@ -69,6 +69,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
     private final AtomicInteger redirectCount = new AtomicInteger();
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
+    private final AtomicBoolean inProxyAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
     private final AtomicReference<STATE> state = new AtomicReference<>(STATE.NEW);
@@ -339,12 +340,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.timeoutsHolder = timeoutsHolder;
     }
 
-    public boolean isInAuth() {
-        return inAuth.get();
+    public AtomicBoolean getInAuth() {
+        return inAuth;
     }
 
-    public boolean getAndSetAuth(boolean inDigestAuth) {
-        return inAuth.getAndSet(inDigestAuth);
+    public AtomicBoolean getInProxyAuth() {
+        return inProxyAuth;
     }
 
     public STATE getState() {
@@ -442,7 +443,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     public boolean canBeReplayed() {
         return !isDone() && canRetry()
-                && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !isInAuth();
+                && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !inAuth.get() && !inProxyAuth.get();
     }
 
     public long getStart() {

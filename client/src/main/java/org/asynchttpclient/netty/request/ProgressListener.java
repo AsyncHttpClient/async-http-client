@@ -20,7 +20,6 @@ import io.netty.channel.ChannelProgressiveFutureListener;
 import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.Realm;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
@@ -78,10 +77,9 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
              * same event after the authorization, causing unpredictable
              * behavior.
              */
-            // FIXME what about proxy auth?
-            Realm realm = future.getRealm();
-            boolean startPublishing = future.isInAuth() || realm == null || realm.isUsePreemptiveAuth();
-
+            // FIXME Don't get it?!
+            boolean startPublishing = future.getInAuth().get() || future.getInProxyAuth().get();
+            
             if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler<?> progressAsyncHandler = (ProgressAsyncHandler<?>) asyncHandler;
                 if (notifyHeaders) {
