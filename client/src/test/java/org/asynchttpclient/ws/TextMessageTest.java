@@ -12,9 +12,8 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.testng.Assert.*;
 
 import java.net.ConnectException;
 import java.net.UnknownHostException;
@@ -24,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
@@ -43,7 +41,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onOpen() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -73,7 +71,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onEmptyListenerTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             WebSocket websocket = null;
             try {
                 websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().build()).get();
@@ -86,7 +84,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
     public void onFailureTest() throws Throwable {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
             if (e.getCause() != null)
@@ -98,7 +96,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onTimeoutCloseTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -128,7 +126,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onClose() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -160,7 +158,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoText() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -197,7 +195,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoDoubleListenerText() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -256,7 +254,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -291,7 +289,7 @@ public class TextMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -329,7 +327,7 @@ public class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoTextAndThenClose() throws Throwable {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final CountDownLatch textLatch = new CountDownLatch(1);
             final CountDownLatch closeLatch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");

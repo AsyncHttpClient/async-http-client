@@ -14,6 +14,7 @@ package org.asynchttpclient.extras.simple;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -49,8 +49,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
-
-import io.netty.handler.codec.http.HttpHeaders;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
@@ -314,7 +312,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     private AsyncHttpClient asyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
-                asyncHttpClient = new DefaultAsyncHttpClient(config);
+                asyncHttpClient = newAsyncHttpClient(config);
             }
         }
         return asyncHttpClient;
@@ -418,7 +416,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     public final static class Builder implements DerivedBuilder {
 
         private final RequestBuilder requestBuilder;
-        private final DefaultAsyncHttpClientConfig.Builder configBuilder = new DefaultAsyncHttpClientConfig.Builder();
+        private final DefaultAsyncHttpClientConfig.Builder configBuilder = newConfig();
         private Realm.RealmBuilder realmBuilder = null;
         private Realm.AuthScheme proxyAuthScheme;
         private String proxyHost = null;
@@ -699,7 +697,7 @@ public class SimpleAsyncHttpClient implements Closeable {
                     realm = newRealm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 
-                configBuilder.proxyServer(ProxyServer.newProxyServer(proxyHost, proxyPort).realm(realm).build());
+                configBuilder.proxyServer(newProxyServer(proxyHost, proxyPort).realm(realm).build());
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());

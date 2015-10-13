@@ -12,14 +12,14 @@
  */
 package org.asynchttpclient.extras.registry;
 
+import java.lang.reflect.InvocationTargetException;
+
+import junit.extensions.PA;
+
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
-import org.asynchttpclient.extras.registry.AsyncHttpClientFactory;
-import org.asynchttpclient.extras.registry.AsyncHttpClientImplException;
-import org.asynchttpclient.extras.registry.AsyncImplHelper;
 import org.asynchttpclient.test.EchoHandler;
 import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Server;
@@ -28,10 +28,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.lang.reflect.InvocationTargetException;
-
-import junit.extensions.PA;
 
 public abstract class AbstractAsyncHttpClientFactoryTest {
 
@@ -81,7 +77,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
 
     @Test(groups = "fast")
     public void testGetAsyncHttpClientConfig() throws Exception {
-        try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().build())) {
+        try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
             Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
             assertClientWorks(asyncHttpClient);
         }
@@ -113,7 +109,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     public void testGetAsyncHttpClientConfigWithSystemProperty() {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
-        AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient();
         Assert.assertTrue(asyncHttpClient.getClass().equals(TestAsyncHttpClient.class));
     }
 
@@ -145,7 +141,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, BAD_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
         try {
-            AsyncHttpClientFactory.getAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().build());
+            AsyncHttpClientFactory.getAsyncHttpClient();
         } catch (AsyncHttpClientImplException e) {
             assertException(e);
         }
@@ -195,7 +191,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         Assert.assertTrue(exceptionCaught, "Didn't catch exception the first time");
         exceptionCaught = false;
         try {
-            AsyncHttpClientFactory.getAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().build());
+            AsyncHttpClientFactory.getAsyncHttpClient();
         } catch (AsyncHttpClientImplException e) {
             exceptionCaught = true;
         }

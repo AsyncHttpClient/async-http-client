@@ -15,15 +15,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 import static org.testng.Assert.fail;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.concurrent.BrokenBarrierException;
@@ -31,6 +24,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * Tests HEAD request that gets 302 response.
@@ -64,7 +64,7 @@ public class Head302Test extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
 

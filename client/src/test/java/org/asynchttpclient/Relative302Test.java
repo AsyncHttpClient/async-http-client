@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -85,7 +85,7 @@ public class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
 
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -101,7 +101,7 @@ public class Relative302Test extends AbstractBasicTest {
         AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
             assertNotNull(response);
@@ -116,7 +116,7 @@ public class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
@@ -134,7 +134,7 @@ public class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 

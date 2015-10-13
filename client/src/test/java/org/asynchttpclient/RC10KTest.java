@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -92,7 +92,7 @@ public class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(newConfig().maxConnectionsPerHost(C10K).allowPoolingConnections(true).build())) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient(newConfig().maxConnectionsPerHost(C10K).allowPoolingConnections(true).build())) {
             List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {

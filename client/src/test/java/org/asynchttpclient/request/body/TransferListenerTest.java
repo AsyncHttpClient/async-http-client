@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.handler.TransferListener;
@@ -80,7 +79,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
@@ -140,7 +139,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
         int timeout = (int) (file.length() / 1000);
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
@@ -182,7 +181,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutFileBodyGeneratorTest() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();

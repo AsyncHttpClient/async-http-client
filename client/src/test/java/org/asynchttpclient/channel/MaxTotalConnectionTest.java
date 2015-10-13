@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.channel;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertNull;
 
 import java.io.IOException;
@@ -28,7 +28,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
@@ -47,7 +46,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
                 .requestTimeout(5000).allowPoolingConnections(false).maxConnections(1).maxConnectionsPerHost(1)
                 .build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < urls.length; i++) {
                 futures.add(client.prepareGet(urls[i]).execute());
@@ -81,7 +80,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = newConfig().connectTimeout(1000).requestTimeout(5000)
                 .allowPoolingConnections(false).maxConnections(2).maxConnectionsPerHost(1).build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             for (String url : urls) {
                 final String thisUrl = url;
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Exception {
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(newConfig().maxRequestRetry(0).build())) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient(newConfig().maxRequestRetry(0).build())) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {

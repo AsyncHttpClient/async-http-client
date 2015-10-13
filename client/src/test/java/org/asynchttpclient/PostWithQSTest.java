@@ -15,14 +15,15 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -30,11 +31,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * Tests POST request with Query String.
@@ -70,7 +69,7 @@ public class PostWithQSTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -80,7 +79,7 @@ public class PostWithQSTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
@@ -100,7 +99,7 @@ public class PostWithQSTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
@@ -120,7 +119,7 @@ public class PostWithQSTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override

@@ -15,22 +15,8 @@
  */
 package org.asynchttpclient;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.continuation.Continuation;
-import org.eclipse.jetty.continuation.ContinuationSupport;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -41,6 +27,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.continuation.Continuation;
+import org.eclipse.jetty.continuation.ContinuationSupport;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
 
 /**
  * Tests default asynchronous life cycle.
@@ -100,7 +97,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testStream() throws IOException {
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);

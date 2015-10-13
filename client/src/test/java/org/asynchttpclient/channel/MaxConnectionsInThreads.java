@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient.channel;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
@@ -36,7 +36,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -61,7 +60,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
         final AtomicInteger failedCount = new AtomicInteger();
         
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
                 Thread t = new Thread() {

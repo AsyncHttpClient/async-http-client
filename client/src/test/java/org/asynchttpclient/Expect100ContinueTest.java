@@ -15,22 +15,20 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
-import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.concurrent.Future;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * Test the Expect: 100-Continue.
@@ -62,7 +60,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void Expect100Continue() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);

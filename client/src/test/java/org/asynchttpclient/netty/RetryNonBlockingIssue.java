@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -90,7 +89,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .requestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -121,7 +120,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .requestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));

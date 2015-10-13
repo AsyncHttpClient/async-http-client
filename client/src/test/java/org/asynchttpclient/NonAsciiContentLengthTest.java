@@ -12,16 +12,14 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -29,9 +27,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class NonAsciiContentLengthTest extends AbstractBasicTest {
 
@@ -70,7 +69,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyCharset(UTF_8);
             Future<Response> f = r.execute();
             Response resp = f.get();

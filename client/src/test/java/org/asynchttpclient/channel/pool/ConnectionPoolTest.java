@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.channel.pool;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.EventCollectingHandler.*;
 import static org.testng.Assert.*;
 
@@ -35,7 +35,6 @@ import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -50,7 +49,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnections() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().allowPoolingConnections(true).maxConnections(1).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().allowPoolingConnections(true).maxConnections(1))) {
             String url = getTargetUrl();
             int i;
             Exception exception = null;
@@ -69,7 +68,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnectionsException() throws IOException {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().allowPoolingConnections(true).maxConnections(1).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().allowPoolingConnections(true).maxConnections(1))) {
             String url = getTargetUrl();
 
             List<ListenableFuture<Response>> futures = new ArrayList<>();
@@ -96,7 +95,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = true, invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(2);
 
@@ -133,7 +132,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Exception {
         AsyncHttpClientConfig cg = newConfig().allowPoolingConnections(true).connectTimeout(5000).maxConnections(1).build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             String body = "hello there";
 
             // once
@@ -159,7 +158,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
         AsyncHttpClientConfig cg = newConfig().allowPoolingConnections(true).connectTimeout(5000).maxConnections(1).build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             String body = "hello there";
 
             // once
@@ -191,7 +190,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     public void win7DisconnectTest() throws Exception {
         final AtomicInteger count = new AtomicInteger(0);
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -219,7 +218,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncHandlerOnThrowableTest() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             final AtomicInteger count = new AtomicInteger();
             final String THIS_IS_NOT_FOR_YOU = "This is not for you";
             final CountDownLatch latch = new CountDownLatch(16);
@@ -261,7 +260,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
         Request request = new RequestBuilder().setUrl(getTargetUrl()).setHeader("Connection", "close").build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             client.executeRequest(request).get();
             Thread.sleep(1000);
             client.executeRequest(request).get();
@@ -276,7 +275,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     public void testPooledEventsFired() throws Exception {
         Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             EventCollectingHandler firstHandler = new EventCollectingHandler();
             client.executeRequest(request, firstHandler).get(3, TimeUnit.SECONDS);
             firstHandler.waitForCompletion(3, TimeUnit.SECONDS);

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -65,9 +64,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
-        DefaultAsyncHttpClientConfig.Builder bc = httpClientBuilder();
-
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
+        try (AsyncHttpClient c = newAsyncHttpClient(httpClientBuilder())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -81,9 +78,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
-        DefaultAsyncHttpClientConfig.Builder bc = httpClientBuilder();
-
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
+        try (AsyncHttpClient c = newAsyncHttpClient(httpClientBuilder())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());

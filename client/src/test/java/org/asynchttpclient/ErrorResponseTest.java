@@ -16,23 +16,22 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * Tests to reproduce issues with handling of error responses
@@ -63,7 +62,7 @@ public class ErrorResponseTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.proxy;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -26,7 +26,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EchoHandler;
@@ -73,14 +72,14 @@ public class HttpsProxyTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        ProxyServer ps = ProxyServer.newProxyServer("127.0.0.1", port1).build();
+        ProxyServer ps = newProxyServer("127.0.0.1", port1).build();
 
         AsyncHttpClientConfig config = newConfig()//
         .followRedirect(true)//
         .acceptAnyCertificate(true)//
         .build();
 
-        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = newAsyncHttpClient(config)) {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
@@ -104,10 +103,10 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = newConfig()//
                 .followRedirect(true)//
-                .proxyServer(ProxyServer.newProxyServer("127.0.0.1", port1).build())//
+                .proxyServer(newProxyServer("127.0.0.1", port1).build())//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = newAsyncHttpClient(config)) {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {

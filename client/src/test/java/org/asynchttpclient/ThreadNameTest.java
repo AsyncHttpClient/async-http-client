@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -46,7 +46,7 @@ public class ThreadNameTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().threadPoolName(threadPoolName).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().threadPoolName(threadPoolName).build())) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/").execute();
             f.get(3, TimeUnit.SECONDS);
 

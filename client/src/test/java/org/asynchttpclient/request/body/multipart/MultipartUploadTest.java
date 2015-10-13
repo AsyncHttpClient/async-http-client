@@ -13,7 +13,7 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -46,7 +46,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -151,7 +150,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
             fail("Unable to test ByteArrayMultiPart, as unable to write to filesystem the tmp test content");
         }
 
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().followRedirect(true).build())) {
+        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().followRedirect(true))) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");

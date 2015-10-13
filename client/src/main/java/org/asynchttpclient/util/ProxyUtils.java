@@ -117,7 +117,7 @@ public final class ProxyUtils {
                 realm = newBasicAuth(principal, password).build();
             }
             
-            ProxyServerBuilder proxyServer = ProxyServer.newProxyServer(host, port).realm(realm);
+            ProxyServerBuilder proxyServer = newProxyServer(host, port).realm(realm);
 
             String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {
@@ -162,7 +162,7 @@ public final class ProxyUtils {
                                     return null;
                                 } else {
                                     InetSocketAddress address = (InetSocketAddress) proxy.address();
-                                    return ProxyServer.newProxyServer(address.getHostName(), address.getPort()).build();
+                                    return newProxyServer(address.getHostName(), address.getPort()).build();
                                 }
                             case DIRECT:
                                 return null;

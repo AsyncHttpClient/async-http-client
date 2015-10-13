@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
@@ -78,7 +77,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         int samples = 10;
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().maxConnections(1).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().maxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(samples);
             final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
 

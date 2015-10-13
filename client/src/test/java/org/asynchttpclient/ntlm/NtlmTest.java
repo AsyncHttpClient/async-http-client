@@ -25,8 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Realm.RealmBuilder;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -78,9 +76,7 @@ public class NtlmTest extends AbstractBasicTest {
 
     private void ntlmAuthTest(RealmBuilder realmBuilder) throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = newConfig().realm(realmBuilder.build()).build();
-
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().realm(realmBuilder.build()))) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();

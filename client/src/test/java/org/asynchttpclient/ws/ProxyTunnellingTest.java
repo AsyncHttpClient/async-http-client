@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
@@ -20,7 +20,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
@@ -84,8 +83,8 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
         String targetUrl = String.format("%s://127.0.0.1:%d/", secure ? "wss" : "ws", port2);
 
         // CONNECT happens over HTTP, not HTTPS
-        ProxyServer ps = ProxyServer.newProxyServer("127.0.0.1", port1).build();
-        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(newConfig().proxyServer(ps).acceptAnyCertificate(true).build())) {
+        ProxyServer ps = newProxyServer("127.0.0.1", port1).build();
+        try (AsyncHttpClient asyncHttpClient = newAsyncHttpClient(newConfig().proxyServer(ps).acceptAnyCertificate(true))) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -75,7 +75,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .followRedirect(true)//
                 .build();
 
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(config)) {
             Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
 
             ListenableFuture<Response> response = c.executeRequest(r);

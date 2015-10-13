@@ -176,7 +176,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient newClient() {
-        return new DefaultAsyncHttpClient(newConfig().pooledConnectionIdleTimeout(2000).connectTimeout(20000).requestTimeout(2000).build());
+        return newAsyncHttpClient(newConfig().pooledConnectionIdleTimeout(2000).connectTimeout(20000).requestTimeout(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {

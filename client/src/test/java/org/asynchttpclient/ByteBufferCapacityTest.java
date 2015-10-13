@@ -12,18 +12,9 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.testng.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +22,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class ByteBufferCapacityTest extends AbstractBasicTest {
 
@@ -72,7 +71,7 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 

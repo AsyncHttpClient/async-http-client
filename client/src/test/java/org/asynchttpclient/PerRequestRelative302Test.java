@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -87,7 +87,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
 
             assertNotNull(response);
@@ -104,7 +104,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(false).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
@@ -131,7 +131,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
@@ -146,7 +146,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient c = newAsyncHttpClient()) {
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

@@ -12,16 +12,9 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
+import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.BufferedReader;
@@ -39,6 +32,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * @author Hubert Iwaniuk
@@ -95,7 +92,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {
@@ -144,7 +141,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {

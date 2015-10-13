@@ -12,16 +12,18 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The AsyncHttpClientFactory returns back an instance of AsyncHttpClient. The
@@ -55,7 +57,7 @@ public class AsyncHttpClientFactory {
             throw new AsyncHttpClientImplException("Unable to find the class specified by system property : "
                     + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
         }
-        return new DefaultAsyncHttpClient();
+        return newAsyncHttpClient();
     }
 
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
@@ -68,7 +70,7 @@ public class AsyncHttpClientFactory {
                         + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
-        return new DefaultAsyncHttpClient(config);
+        return newAsyncHttpClient(config);
     }
 
     private static boolean attemptInstantiation() {

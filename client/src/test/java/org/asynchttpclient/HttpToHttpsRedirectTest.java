@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -96,7 +96,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -113,7 +113,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -136,7 +136,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

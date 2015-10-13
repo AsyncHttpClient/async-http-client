@@ -29,10 +29,6 @@ import org.asynchttpclient.Realm;
  */
 public class ProxyServer {
 
-    public static ProxyServerBuilder newProxyServer(String host, int port) {
-        return new ProxyServerBuilder(host, port);
-    }
-
     private final String host;
     private final int port;
     private final int securedPort;

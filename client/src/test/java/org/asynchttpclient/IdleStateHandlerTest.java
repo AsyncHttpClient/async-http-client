@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.fail;
 
@@ -61,7 +61,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
     public void idleStateTest() throws Exception {
         AsyncHttpClientConfig cg = newConfig().pooledConnectionIdleTimeout(10 * 1000).build();
 
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);

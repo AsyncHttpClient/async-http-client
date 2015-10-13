@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertNotNull;
 
 import java.security.GeneralSecurityException;
@@ -46,7 +46,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
                 .maxConnections(-1)//
                 .build();
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
             Thread.sleep(4000);

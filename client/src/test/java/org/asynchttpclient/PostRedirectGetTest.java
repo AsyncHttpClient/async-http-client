@@ -13,7 +13,7 @@
 
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = newAsyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
@@ -117,7 +117,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = newAsyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 

@@ -12,12 +12,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newAsyncHttpClient;
 import static org.testng.Assert.assertEquals;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Response;
-import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -25,12 +21,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.testng.annotations.Test;
+
 public class ListenableFutureTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
             future.addListener(new Runnable() {

@@ -15,13 +15,34 @@ package org.asynchttpclient;
 
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
+import org.asynchttpclient.proxy.ProxyServer.ProxyServerBuilder;
 
 public final class Dsl {
 
+    // /////////// Client ////////////////
+    public static AsyncHttpClient newAsyncHttpClient() {
+        return new DefaultAsyncHttpClient();
+    }
+
+    public static AsyncHttpClient newAsyncHttpClient(DefaultAsyncHttpClientConfig.Builder configBuilder) {
+        return new DefaultAsyncHttpClient(configBuilder.build());
+    }
+    
+    public static AsyncHttpClient newAsyncHttpClient(AsyncHttpClientConfig config) {
+        return new DefaultAsyncHttpClient(config);
+    }
+
+    // /////////// ProxyServer ////////////////
+    public static ProxyServerBuilder newProxyServer(String host, int port) {
+        return new ProxyServerBuilder(host, port);
+    }
+
+    // /////////// Config ////////////////
     public static DefaultAsyncHttpClientConfig.Builder newConfig() {
         return new DefaultAsyncHttpClientConfig.Builder();
     }
 
+    // /////////// Realm ////////////////
     public static RealmBuilder newRealm(Realm prototype) {
         return new RealmBuilder()//
                 .realmName(prototype.getRealmName())//

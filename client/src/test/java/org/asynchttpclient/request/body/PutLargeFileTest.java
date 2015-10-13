@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 
@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -43,7 +42,7 @@ public class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -54,7 +53,7 @@ public class PutLargeFileTest extends AbstractBasicTest {
 
         File file = createTempFile(1024);
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
+        try (AsyncHttpClient client = newAsyncHttpClient()) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
