@@ -15,22 +15,9 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +26,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * Reverse C10K Problem test.
@@ -94,7 +92,7 @@ public class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnectionsPerHost(C10K).setAllowPoolingConnections(true).build())) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(newConfig().maxConnectionsPerHost(C10K).allowPoolingConnections(true).build())) {
             List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {

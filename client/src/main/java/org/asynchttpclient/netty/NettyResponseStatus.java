@@ -19,10 +19,10 @@ import io.netty.handler.codec.http.HttpResponse;
 import java.net.SocketAddress;
 import java.util.List;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
 

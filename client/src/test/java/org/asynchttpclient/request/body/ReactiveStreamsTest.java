@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_PUBLISHER;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
@@ -21,7 +21,6 @@ import java.util.concurrent.ExecutionException;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -35,7 +34,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testStreamingPutImage() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER).execute().get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
@@ -44,7 +43,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testConnectionDoesNotGetClosed() throws Exception { // test that we can stream the same request multiple times
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
             BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER);
             Response response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
@@ -58,7 +57,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true, expectedExceptions = ExecutionException.class)
     public void testFailingStream() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
             Observable<ByteBuffer> failingObservable = Observable.error(new FailedStream());
             Publisher<ByteBuffer> failingPublisher = RxReactiveStreams.toPublisher(failingObservable);
 

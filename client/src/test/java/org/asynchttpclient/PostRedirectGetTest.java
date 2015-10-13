@@ -13,23 +13,22 @@
 
 package org.asynchttpclient;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.ResponseFilter;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class PostRedirectGetTest extends AbstractBasicTest {
 
@@ -71,7 +70,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestNegative(final int status, boolean strict) throws Exception {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setStrict302Handling(strict).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = newConfig().followRedirect(true).strict302Handling(strict).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
@@ -106,7 +105,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestPositive(final int status) throws Exception {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = newConfig().followRedirect(true).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect

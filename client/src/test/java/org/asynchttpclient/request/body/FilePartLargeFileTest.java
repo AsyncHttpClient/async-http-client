@@ -12,28 +12,27 @@
  */
 package org.asynchttpclient.request.body;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_FILE;
-import static org.asynchttpclient.test.TestUtils.createTempFile;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.request.body.multipart.FilePart;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.File;
+import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.File;
-import java.io.IOException;
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.request.body.multipart.FilePart;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class FilePartLargeFileTest extends AbstractBasicTest {
 
@@ -64,7 +63,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -74,7 +73,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

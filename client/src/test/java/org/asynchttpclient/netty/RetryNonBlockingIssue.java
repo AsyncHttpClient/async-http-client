@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -82,11 +83,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     @Test
     public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnections(true)//
-                .setMaxConnections(100)//
-                .setConnectTimeout(60000)//
-                .setRequestTimeout(30000)//
+        AsyncHttpClientConfig config = newConfig()//
+                .allowPoolingConnections(true)//
+                .maxConnections(100)//
+                .connectTimeout(60000)//
+                .requestTimeout(30000)//
                 .build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
@@ -113,11 +114,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     @Test
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnections(true)//
-                .setMaxConnections(100)//
-                .setConnectTimeout(60000)//
-                .setRequestTimeout(30000)//
+        AsyncHttpClientConfig config = newConfig()//
+                .allowPoolingConnections(true)//
+                .maxConnections(100)//
+                .connectTimeout(60000)//
+                .requestTimeout(30000)//
                 .build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {

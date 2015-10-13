@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.ntlm;
 
+import static org.asynchttpclient.Dsl.*;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -25,11 +27,10 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.RealmBuilder;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.Realm.RealmBuilder;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -70,14 +71,14 @@ public class NtlmTest extends AbstractBasicTest {
     }
 
     private RealmBuilder realmBuilderBase() {
-        return Realm.newNtlmAuth("Zaphod", "Beeblebrox")//
+        return newNtlmAuth("Zaphod", "Beeblebrox")//
                 .ntlmDomain("Ursa-Minor")//
                 .ntlmHost("LightCity");
     }
 
     private void ntlmAuthTest(RealmBuilder realmBuilder) throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRealm(realmBuilder.build()).build();
+        AsyncHttpClientConfig config = newConfig().realm(realmBuilder.build()).build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();

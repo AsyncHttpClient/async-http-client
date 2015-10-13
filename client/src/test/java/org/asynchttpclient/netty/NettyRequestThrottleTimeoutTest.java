@@ -12,24 +12,8 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.continuation.Continuation;
-import org.eclipse.jetty.continuation.ContinuationSupport;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +23,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.continuation.Continuation;
+import org.eclipse.jetty.continuation.ContinuationSupport;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
@@ -79,7 +78,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         int samples = 10;
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxConnections(1).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().maxConnections(1).build())) {
             final CountDownLatch latch = new CountDownLatch(samples);
             final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
 

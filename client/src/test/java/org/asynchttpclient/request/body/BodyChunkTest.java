@@ -15,7 +15,11 @@
  */
 package org.asynchttpclient.request.body;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.testng.Assert.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.util.concurrent.Future;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
@@ -26,9 +30,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
 
-import java.io.ByteArrayInputStream;
-import java.util.concurrent.Future;
-
 public class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
@@ -36,13 +37,13 @@ public class BodyChunkTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void negativeContentTypeTest() throws Exception {
 
-        AsyncHttpClientConfig.Builder confbuilder = new AsyncHttpClientConfig.Builder();
-        confbuilder = confbuilder.setConnectTimeout(100);
-        confbuilder = confbuilder.setMaxConnections(50);
-        confbuilder = confbuilder.setRequestTimeout(5 * 60 * 1000); // 5 minutes
+        AsyncHttpClientConfig config = newConfig()//
+                .connectTimeout(100)//
+                .maxConnections(50)//
+                .requestTimeout(5 * 60 * 1000) // 5 minutes
+                .build();
 
-        // Create client
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(confbuilder.build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
 
             requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));

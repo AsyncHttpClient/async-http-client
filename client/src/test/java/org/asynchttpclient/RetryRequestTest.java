@@ -12,22 +12,20 @@
  */
 package org.asynchttpclient;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.util.HttpUtils;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import org.asynchttpclient.util.HttpUtils;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class RetryRequestTest extends AbstractBasicTest {
     public static class SlowAndBigHandler extends AbstractHandler {
@@ -72,7 +70,7 @@ public class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Exception {
-        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build())) {
+        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(newConfig().maxRequestRetry(0).build())) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {

@@ -16,18 +16,18 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.testng.Assert.assertNotNull;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.testng.annotations.Test;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import java.security.GeneralSecurityException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import org.testng.annotations.Test;
 
 public class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
@@ -35,8 +35,16 @@ public class NoNullResponseTest extends AbstractBasicTest {
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setSSLContext(getSSLContext()).setAllowPoolingConnections(true).setConnectTimeout(10000)
-                .setPooledConnectionIdleTimeout(60000).setRequestTimeout(10000).setMaxConnectionsPerHost(-1).setMaxConnections(-1).build();
+        AsyncHttpClientConfig config = newConfig()//
+                .followRedirect(true)//
+                .sslContext(getSSLContext())//
+                .allowPoolingConnections(true)//
+                .connectTimeout(10000)//
+                .pooledConnectionIdleTimeout(60000)//
+                .requestTimeout(10000)//
+                .maxConnectionsPerHost(-1)//
+                .maxConnections(-1)//
+                .build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);

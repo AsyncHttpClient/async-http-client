@@ -15,21 +15,18 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
-import org.apache.commons.io.IOUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.cookie.Cookie;
-import org.testng.annotations.Test;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.testng.Assert.*;
 
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.IOUtils;
+import org.asynchttpclient.cookie.Cookie;
+import org.testng.annotations.Test;
 
 /**
  * Unit tests for remote site.
@@ -45,7 +42,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleCom() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://www.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
         }
@@ -53,7 +50,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testMailGoogleCom() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -63,7 +60,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testMicrosoftCom() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 301);
@@ -73,7 +70,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testWwwMicrosoftCom() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
@@ -83,7 +80,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     // FIXME
     public void testUpdateMicrosoftCom() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
@@ -92,7 +89,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testGoogleComWithTimeout() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().requestTimeout(10000).build())) {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
             assertTrue(response.getStatusCode() == 301 || response.getStatusCode() == 302);
@@ -101,7 +98,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStatusHEADContentLenghtTest() throws Exception {
-        try (AsyncHttpClient p = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
+        try (AsyncHttpClient p = new DefaultAsyncHttpClient(newConfig().followRedirect(true).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl("http://www.google.com/").build();
 
@@ -125,8 +122,8 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void invalidStreamTest2() throws Exception {
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).setFollowRedirect(true)
-                .setAllowPoolingConnections(false).setMaxRedirects(6).build();
+        AsyncHttpClientConfig config = newConfig().requestTimeout(10000).followRedirect(true)
+                .allowPoolingConnections(false).maxRedirects(6).build();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(config)) {
             Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();
@@ -166,7 +163,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void stripQueryStringTest() throws Exception {
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get();
 
@@ -193,7 +190,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testAHC62Com() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().followRedirect(true).build())) {
             Response response = c.prepareGet("http://api.crunchbase.com/v/1/financial-organization/kinsey-hills-group.js")
                     .execute(new AsyncHandler<Response>() {
 

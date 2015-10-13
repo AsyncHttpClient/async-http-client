@@ -15,12 +15,9 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -32,7 +29,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.uri.Uri;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -107,7 +103,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(false).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
             assertNotNull(response);

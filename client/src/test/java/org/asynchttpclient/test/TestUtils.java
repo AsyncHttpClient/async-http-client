@@ -247,7 +247,7 @@ public class TestUtils {
         return tmf.getTrustManagers();
     }
 
-    public static SSLContext createSSLContext(AtomicBoolean trust) {
+    public static SSLContext createSslContext(AtomicBoolean trust) {
         try {
             KeyManager[] keyManagers = createKeyManagers();
             TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0]) };

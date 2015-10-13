@@ -12,19 +12,20 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.asynchttpclient.test.TestUtils.ADMIN;
-import static org.asynchttpclient.test.TestUtils.USER;
-import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
-import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Realm;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.util.HttpUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -32,15 +33,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
 
@@ -184,7 +176,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient newClient() {
-        return new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000).build());
+        return new DefaultAsyncHttpClient(newConfig().pooledConnectionIdleTimeout(2000).connectTimeout(20000).requestTimeout(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {
@@ -194,7 +186,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private Realm realm(boolean preemptive) {
-        return Realm.newBasicAuth(USER, ADMIN).usePreemptiveAuth(preemptive).build();
+        return newBasicAuth(USER, ADMIN).usePreemptiveAuth(preemptive).build();
     }
 
     @Override

@@ -13,6 +13,7 @@
 package org.asynchttpclient.handler;
 
 import static org.apache.commons.io.IOUtils.copy;
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.testng.Assert.*;
 
@@ -106,7 +107,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     public AsyncHttpClientConfig getAsyncHttpClientConfig() {
         // for this test brevity's sake, we are limiting to 1 retries
-        return new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).setRequestTimeout(10000).build();
+        return newConfig().maxRequestRetry(0).requestTimeout(10000).build();
     }
 
     @Test(groups = { "standalone", "default_provider" })

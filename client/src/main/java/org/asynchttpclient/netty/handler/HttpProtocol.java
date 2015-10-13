@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -32,8 +33,8 @@ import java.util.List;
 import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -229,7 +230,7 @@ public final class HttpProtocol extends Protocol {
             
             // FIXME do we want to update the realm, or directly
             // set the header?
-            Realm newBasicRealm = Realm.newRealm(realm)//
+            Realm newBasicRealm = newRealm(realm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setRealm(newBasicRealm);
@@ -241,7 +242,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
                 return false;
             }
-            Realm newDigestRealm = Realm.newRealm(realm)//
+            Realm newDigestRealm = newRealm(realm)//
                     .uri(request.getUri())//
                     .methodName(request.getMethod())//
                     .usePreemptiveAuth(true)//
@@ -258,7 +259,7 @@ public final class HttpProtocol extends Protocol {
             }
 
             ntlmChallenge(ntlmHeader, request, requestHeaders, realm, future);
-            Realm newNtlmRealm = Realm.newRealm(realm)//
+            Realm newNtlmRealm = newRealm(realm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setRealm(newNtlmRealm);
@@ -279,7 +280,7 @@ public final class HttpProtocol extends Protocol {
                 if (ntlmHeader2 != null) {
                     logger.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, realm, future);
-                    Realm newNtlmRealm2 = Realm.newRealm(realm)//
+                    Realm newNtlmRealm2 = newRealm(realm)//
                             .scheme(AuthScheme.NTLM)//
                             .usePreemptiveAuth(true)//
                             .build();
@@ -360,7 +361,7 @@ public final class HttpProtocol extends Protocol {
             
             // FIXME do we want to update the realm, or directly
             // set the header?
-            Realm newBasicRealm = Realm.newRealm(proxyRealm)//
+            Realm newBasicRealm = newRealm(proxyRealm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newBasicRealm);
@@ -372,7 +373,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
                 return false;
             }
-            Realm newDigestRealm = Realm.newRealm(proxyRealm)//
+            Realm newDigestRealm = newRealm(proxyRealm)//
                     .uri(request.getUri())//
                     .methodName(request.getMethod())//
                     .usePreemptiveAuth(true)//
@@ -388,7 +389,7 @@ public final class HttpProtocol extends Protocol {
                 return false;
             }
             ntlmProxyChallenge(ntlmHeader, request, proxyRealm, requestHeaders, future);
-            Realm newNtlmRealm = Realm.newRealm(proxyRealm)//
+            Realm newNtlmRealm = newRealm(proxyRealm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newNtlmRealm);
@@ -409,7 +410,7 @@ public final class HttpProtocol extends Protocol {
                 if (ntlmHeader2 != null) {
                     logger.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, proxyRealm, future);
-                    Realm newNtlmRealm2 = Realm.newRealm(proxyRealm)//
+                    Realm newNtlmRealm2 = newRealm(proxyRealm)//
                             .scheme(AuthScheme.NTLM)//
                             .usePreemptiveAuth(true)//
                             .build();

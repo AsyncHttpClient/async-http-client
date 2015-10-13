@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -296,7 +297,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStream302RedirectWithBody() throws Exception {
         final AtomicReference<Integer> statusCode = new AtomicReference<>(0);
         final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().followRedirect(true).build())) {
             Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public State onStatusReceived(HttpResponseStatus status) throws Exception {

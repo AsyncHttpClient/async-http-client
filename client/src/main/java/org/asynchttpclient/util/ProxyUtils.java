@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.util;
 
+import static org.asynchttpclient.Dsl.*;
+
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -112,7 +114,7 @@ public final class ProxyUtils {
             
             Realm realm = null;
             if (principal != null) {
-                realm = Realm.newBasicAuth(principal, password).build();
+                realm = newBasicAuth(principal, password).build();
             }
             
             ProxyServerBuilder proxyServer = ProxyServer.newProxyServer(host, port).realm(realm);

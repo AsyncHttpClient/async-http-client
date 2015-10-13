@@ -15,8 +15,7 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.Dsl.newConfig;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -24,6 +23,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
+
+import org.testng.annotations.Test;
 
 /**
  * Simple stress test for exercising the follow redirect.
@@ -45,7 +46,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
-                        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build())) {
+                        try (AsyncHttpClient ahc = new DefaultAsyncHttpClient(newConfig().followRedirect(true).build())) {
                             ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
 
                                 public void onThrowable(Throwable t) {

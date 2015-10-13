@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -67,7 +67,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
@@ -79,7 +79,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void loadThrottleTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
@@ -98,7 +98,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void maxConnectionsText() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(b.build())) {
@@ -111,7 +111,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicResponseFilterTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         b.addResponseFilter(new ResponseFilter() {
 
             @Override
@@ -130,7 +130,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void replayResponseFilterTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
 
         b.addResponseFilter(new ResponseFilter() {
@@ -156,7 +156,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void replayStatusCodeResponseFilterTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
 
         b.addResponseFilter(new ResponseFilter() {
@@ -182,7 +182,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void replayHeaderResponseFilterTest() throws Exception {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        DefaultAsyncHttpClientConfig.Builder b = new DefaultAsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
 
         b.addResponseFilter(new ResponseFilter() {

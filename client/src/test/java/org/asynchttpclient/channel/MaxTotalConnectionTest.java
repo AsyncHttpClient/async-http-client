@@ -15,7 +15,8 @@
  */
 package org.asynchttpclient.channel;
 
-import static org.testng.Assert.*;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.testng.Assert.assertNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,8 +43,8 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000)
-                .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
+        AsyncHttpClientConfig config = newConfig().connectTimeout(1000)
+                .requestTimeout(5000).allowPoolingConnections(false).maxConnections(1).maxConnectionsPerHost(1)
                 .build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
@@ -77,8 +78,8 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         final AtomicReference<Throwable> ex = new AtomicReference<>();
         final AtomicReference<String> failedUrl = new AtomicReference<>();
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000)
-                .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
+        AsyncHttpClientConfig config = newConfig().connectTimeout(1000).requestTimeout(5000)
+                .allowPoolingConnections(false).maxConnections(2).maxConnectionsPerHost(1).build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             for (String url : urls) {

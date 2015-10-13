@@ -12,21 +12,16 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpsServer;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketTextListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
@@ -90,8 +85,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
 
         // CONNECT happens over HTTP, not HTTPS
         ProxyServer ps = ProxyServer.newProxyServer("127.0.0.1", port1).build();
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
-        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(newConfig().proxyServer(ps).acceptAnyCertificate(true).build())) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 

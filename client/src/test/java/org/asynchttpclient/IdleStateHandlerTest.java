@@ -15,22 +15,21 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.fail;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class IdleStateHandlerTest extends AbstractBasicTest {
 
@@ -60,7 +59,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void idleStateTest() throws Exception {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(10 * 1000).build();
+        AsyncHttpClientConfig cg = newConfig().pooledConnectionIdleTimeout(10 * 1000).build();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             c.prepareGet(getTargetUrl()).execute().get();

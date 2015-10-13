@@ -13,6 +13,7 @@
 
 package org.asynchttpclient.netty;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.testng.Assert.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -26,7 +27,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AdvancedConfig.AdditionalPipelineInitializer;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -45,8 +45,7 @@ public class EventPipelineTest extends AbstractBasicTest {
             }
         });
 
-        try (AsyncHttpClient p = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAdvancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient p = new DefaultAsyncHttpClient(newConfig().advancedConfig(advancedConfig).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {

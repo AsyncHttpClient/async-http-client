@@ -77,8 +77,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
              * same event after the authorization, causing unpredictable
              * behavior.
              */
-            // FIXME Don't get it?!
-            boolean startPublishing = future.getInAuth().get() || future.getInProxyAuth().get();
+            boolean startPublishing = !future.getInAuth().get() && !future.getInProxyAuth().get();
             
             if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler<?> progressAsyncHandler = (ProgressAsyncHandler<?>) asyncHandler;

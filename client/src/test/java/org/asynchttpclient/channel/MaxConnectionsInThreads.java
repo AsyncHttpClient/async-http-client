@@ -16,8 +16,8 @@
  */
 package org.asynchttpclient.channel;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -55,8 +55,8 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectTimeout(1000).setRequestTimeout(5000).setAllowPoolingConnections(true)//
-                .setMaxConnections(1).setMaxConnectionsPerHost(1).build();
+        AsyncHttpClientConfig config = newConfig().connectTimeout(1000).requestTimeout(5000).allowPoolingConnections(true)//
+                .maxConnections(1).maxConnectionsPerHost(1).build();
 
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
         final AtomicInteger failedCount = new AtomicInteger();

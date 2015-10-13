@@ -31,9 +31,9 @@ import java.util.Locale;
 
 import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler.State;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.Callback;

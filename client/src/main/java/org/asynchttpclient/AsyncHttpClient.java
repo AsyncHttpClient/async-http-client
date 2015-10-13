@@ -116,7 +116,7 @@ import java.util.concurrent.Future;
  *      Response r = f.get();
  * </pre></blockquote>
  * 
- * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance.
+ * Finally, you can configure the AsyncHttpClient using an {@link DefaultAsyncHttpClientConfig} instance.
  * <br>
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
@@ -124,7 +124,7 @@ import java.util.concurrent.Future;
  *      Response r = f.get();
  * </pre></blockquote>
  * <br>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getReadTimeout()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link DefaultAsyncHttpClientConfig#getReadTimeout()}
  * expires. This object can hold many persistent connections to different host.
  */
 public interface AsyncHttpClient extends Closeable {

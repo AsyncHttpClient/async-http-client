@@ -34,46 +34,6 @@ import org.asynchttpclient.util.StringUtils;
  */
 public class Realm {
 
-    public static RealmBuilder newRealm(Realm prototype) {
-        return new RealmBuilder()//
-                .realmName(prototype.getRealmName())//
-                .algorithm(prototype.getAlgorithm())//
-                .methodName(prototype.getMethodName())//
-                .nc(prototype.getNc())//
-                .nonce(prototype.getNonce())//
-                .password(prototype.getPassword())//
-                .principal(prototype.getPrincipal())//
-                .charset(prototype.getCharset())//
-                .opaque(prototype.getOpaque())//
-                .qop(prototype.getQop())//
-                .scheme(prototype.getScheme())//
-                .uri(prototype.getUri())//
-                .usePreemptiveAuth(prototype.isUsePreemptiveAuth())//
-                .ntlmDomain(prototype.getNtlmDomain())//
-                .ntlmHost(prototype.getNtlmHost())//
-                .useAbsoluteURI(prototype.isUseAbsoluteURI())//
-                .omitQuery(prototype.isOmitQuery());
-    }
-
-    public static RealmBuilder newRealm(AuthScheme scheme, String principal, String password) {
-        return new RealmBuilder()//
-        .scheme(scheme)//
-        .principal(principal)//
-        .password(password);
-    }
-    
-    public static RealmBuilder newBasicAuth(String principal, String password) {
-        return newRealm(AuthScheme.BASIC, principal, password);
-    }
-    
-    public static RealmBuilder newDigestAuth(String principal, String password) {
-        return newRealm(AuthScheme.DIGEST, principal, password);
-    }
-    
-    public static RealmBuilder newNtlmAuth(String principal, String password) {
-        return newRealm(AuthScheme.NTLM, principal, password);
-    }
-
     private static final String DEFAULT_NC = "00000001";
     private static final String EMPTY_ENTITY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 

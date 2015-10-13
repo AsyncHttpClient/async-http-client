@@ -49,21 +49,21 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     protected SignatureCalculator signatureCalculator;
 
     /**
-     * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
+     * Create a new HTTP Asynchronous Client using the default {@link DefaultAsyncHttpClientConfig} configuration. The
      * default {@link AsyncHttpClient} that will be used will be based on the classpath configuration.
      *
      * If none of those providers are found, then the engine will throw an IllegalStateException.
      */
     public DefaultAsyncHttpClient() {
-        this(new AsyncHttpClientConfig.Builder().build());
+        this(new DefaultAsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using the specified {@link AsyncHttpClientConfig} configuration.
+     * Create a new HTTP Asynchronous Client using the specified {@link DefaultAsyncHttpClientConfig} configuration.
      * This configuration will be passed to the default {@link AsyncHttpClient} that will be selected based on
      * the classpath configuration.
      *
-     * @param config a {@link AsyncHttpClientConfig}
+     * @param config a {@link DefaultAsyncHttpClientConfig}
      */
     public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
         

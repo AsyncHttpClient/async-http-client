@@ -12,30 +12,24 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.ADMIN;
-import static org.asynchttpclient.test.TestUtils.USER;
-import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Realm;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.asynchttpclient.Dsl.newDigestAuth;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class DigestAuthTest extends AbstractBasicTest {
 
@@ -69,7 +63,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
-                    .setRealm(Realm.newDigestAuth(USER, ADMIN).realmName("MyRealm").build())//
+                    .setRealm(newDigestAuth(USER, ADMIN).realmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -82,7 +76,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
-                    .setRealm(Realm.newDigestAuth(USER, ADMIN).realmName("MyRealm").build())//
+                    .setRealm(newDigestAuth(USER, ADMIN).realmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -95,7 +89,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
-                    .setRealm(Realm.newDigestAuth("fake", ADMIN).build())//
+                    .setRealm(newDigestAuth("fake", ADMIN).build())//
                     .execute();
             Response resp = f.get(20, TimeUnit.SECONDS);
             assertNotNull(resp);

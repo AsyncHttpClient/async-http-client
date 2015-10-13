@@ -12,10 +12,15 @@
  */
 package org.asynchttpclient.proxy;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpsServer;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
+import io.netty.handler.codec.http.HttpHeaders;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
@@ -24,7 +29,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
@@ -33,13 +37,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import io.netty.handler.codec.http.HttpHeaders;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Proxy usage tests.
@@ -79,9 +76,9 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
         ProxyServer ps = ProxyServer.newProxyServer("127.0.0.1", port1).build();
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-        .setFollowRedirect(true)//
-        .setAcceptAnyCertificate(true)//
+        AsyncHttpClientConfig config = newConfig()//
+        .followRedirect(true)//
+        .acceptAnyCertificate(true)//
         .build();
 
         try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
@@ -106,10 +103,10 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setFollowRedirect(true)//
-                .setProxyServer(ProxyServer.newProxyServer("127.0.0.1", port1).build())//
-                .setAcceptAnyCertificate(true)//
+        AsyncHttpClientConfig config = newConfig()//
+                .followRedirect(true)//
+                .proxyServer(ProxyServer.newProxyServer("127.0.0.1", port1).build())//
+                .acceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {

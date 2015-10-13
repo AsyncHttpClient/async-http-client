@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -30,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.TransferCompletionHandler;
@@ -140,7 +140,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
         int timeout = (int) (file.length() / 1000);
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 

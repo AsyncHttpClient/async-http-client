@@ -15,25 +15,23 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Date;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * Test for multithreaded url fetcher calls that use two separate sets of ssl certificates. This then tests that the certificate settings do not clash (override each other),
@@ -68,13 +66,13 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     @Test
     public void testGetRedirectFinalUrl() throws Exception {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnections(true)//
-                .setMaxConnectionsPerHost(1)//
-                .setMaxConnections(1)//
-                .setConnectTimeout(1000)//
-                .setRequestTimeout(1000)//
-                .setFollowRedirect(true)//
+        AsyncHttpClientConfig config = newConfig()//
+                .allowPoolingConnections(true)//
+                .maxConnectionsPerHost(1)//
+                .maxConnections(1)//
+                .connectTimeout(1000)//
+                .requestTimeout(1000)//
+                .followRedirect(true)//
                 .build();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(config)) {

@@ -15,23 +15,20 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.asynchttpclient.test.EventCollectingHandler.*;
-import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
-import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
-import static org.asynchttpclient.test.TestUtils.createSSLContext;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig.Builder;
-import org.asynchttpclient.test.EventCollectingHandler;
-import org.testng.annotations.Test;
-
-import javax.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.test.EventCollectingHandler;
+import org.testng.annotations.Test;
 
 public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
@@ -42,7 +39,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Exception {
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -52,7 +49,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             String body = "hello there";
 
             // once
@@ -69,7 +66,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
-        try (AsyncHttpClient c = new DefaultAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowPoolingSslConnections(false).build())) {
+        try (AsyncHttpClient c = new DefaultAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).allowPoolingSslConnections(false).build())) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -85,7 +82,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
         
         AtomicBoolean trust = new AtomicBoolean(false);
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().sslContext(createSslContext(trust)).build())) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
@@ -108,7 +105,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(timeOut = 2000, expectedExceptions = { Exception.class } )
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new Builder().setRequestTimeout(2000).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().requestTimeout(2000).build())) {
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
@@ -119,7 +116,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNormalEventsFired() throws Exception {
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             EventCollectingHandler handler = new EventCollectingHandler();
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);

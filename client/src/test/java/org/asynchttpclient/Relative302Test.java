@@ -15,12 +15,9 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -33,7 +30,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.uri.Uri;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -87,7 +83,7 @@ public class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
@@ -102,7 +98,7 @@ public class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
@@ -119,7 +115,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
@@ -137,7 +133,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        AsyncHttpClientConfig cg = newConfig().followRedirect(true).build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();

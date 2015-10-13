@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.proxy;
 
+import static org.asynchttpclient.Dsl.newNtlmAuth;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +29,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -94,7 +97,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     @Test
     public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
+        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
 
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             Request request = new RequestBuilder("GET").setProxyServer(ntlmProxy()).build();
@@ -105,7 +108,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     }
 
     private ProxyServer ntlmProxy() throws UnknownHostException {
-        Realm realm = Realm.newNtlmAuth("Zaphod", "Beeblebrox")//
+        Realm realm = newNtlmAuth("Zaphod", "Beeblebrox")//
                 .ntlmDomain("Ursa-Minor")//
                 .ntlmHost("LightCity")//
                 .build();

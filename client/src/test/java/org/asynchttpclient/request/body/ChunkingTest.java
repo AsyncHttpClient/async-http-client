@@ -12,10 +12,9 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_FILE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
 
 import java.io.BufferedInputStream;
@@ -26,8 +25,8 @@ import java.nio.ByteBuffer;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -66,7 +65,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
-        AsyncHttpClientConfig.Builder bc = httpClientBuilder();
+        DefaultAsyncHttpClientConfig.Builder bc = httpClientBuilder();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
 
@@ -82,7 +81,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
-        AsyncHttpClientConfig.Builder bc = httpClientBuilder();
+        DefaultAsyncHttpClientConfig.Builder bc = httpClientBuilder();
 
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(bc.build())) {
 
@@ -114,13 +113,14 @@ public class ChunkingTest extends AbstractBasicTest {
 
     }
 
-    private AsyncHttpClientConfig.Builder httpClientBuilder() {
-        return new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnections(true)//
-                .setMaxConnectionsPerHost(1)//
-                .setMaxConnections(1)//
-                .setConnectTimeout(1000)//
-                .setRequestTimeout(1000).setFollowRedirect(true);
+    private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
+        return newConfig()//
+                .allowPoolingConnections(true)//
+                .maxConnectionsPerHost(1)//
+                .maxConnections(1)//
+                .connectTimeout(1000)//
+                .requestTimeout(1000)//
+                .followRedirect(true);
     }
 
     private void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, java.util.concurrent.ExecutionException, IOException {

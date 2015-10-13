@@ -12,24 +12,24 @@
  */
 package org.asynchttpclient.request.body;
 
+import static org.asynchttpclient.Dsl.newConfig;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.File;
+import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.File;
-import java.io.IOException;
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * @author Benjamin Hanzelmann
@@ -43,7 +43,7 @@ public class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = new DefaultAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

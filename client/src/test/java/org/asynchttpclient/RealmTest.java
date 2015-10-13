@@ -12,26 +12,25 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
-
-import org.asynchttpclient.Realm.RealmBuilder;
-import org.asynchttpclient.uri.Uri;
-import org.testng.annotations.Test;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 
+import org.asynchttpclient.uri.Uri;
+import org.testng.annotations.Test;
+
 public class RealmTest {
     @Test(groups = "fast")
     public void testClone() {
-        RealmBuilder builder = Realm.newBasicAuth("user", "pass").charset(UTF_16)//
+        Realm orig = newBasicAuth("user", "pass").charset(UTF_16)//
                 .usePreemptiveAuth(true)//
                 .realmName("realm")//
-                .algorithm("algo");
-        Realm orig = builder.build();
+                .algorithm("algo").build();
 
-        Realm clone = Realm.newRealm(orig).build();
+        Realm clone = newRealm(orig).build();
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
         assertEquals(clone.getPassword(), orig.getPassword());
         assertEquals(clone.getCharset(), orig.getCharset());
@@ -60,13 +59,12 @@ public class RealmTest {
         String nonce = "nonce";
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
-        RealmBuilder builder = Realm.newDigestAuth(user, pass)//
+        Realm orig = newDigestAuth(user, pass)//
                 .nonce(nonce)//
                 .uri(uri)//
                 .methodName(method)//
                 .realmName(realm)//
-                .qop(qop);
-        Realm orig = builder.build();
+                .qop(qop).build();
 
         String ha1 = getMd5(user + ":" + realm + ":" + pass);
         String ha2 = getMd5(method + ":" + uri.getPath());
@@ -84,13 +82,12 @@ public class RealmTest {
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
         String qop = "auth";
-        RealmBuilder builder = Realm.newDigestAuth(user, pass)//
+        Realm orig = newDigestAuth(user, pass)//
                 .nonce(nonce)//
                 .uri(uri)//
                 .methodName(method)//
                 .realmName(realm)//
-                .qop(qop);
-        Realm orig = builder.build();
+                .qop(qop).build();
 
         String nc = orig.getNc();
         String cnonce = orig.getCnonce();

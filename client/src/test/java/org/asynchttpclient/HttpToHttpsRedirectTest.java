@@ -15,26 +15,22 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
-import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.asynchttpclient.Dsl.newConfig;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
@@ -95,10 +91,10 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
-                .setMaxRedirects(5)//
-                .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+        AsyncHttpClientConfig cg = newConfig()//
+                .maxRedirects(5)//
+                .followRedirect(true)//
+                .acceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
@@ -112,10 +108,10 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
-                .setMaxRedirects(5)//
-                .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+        AsyncHttpClientConfig cg = newConfig()//
+                .maxRedirects(5)//
+                .followRedirect(true)//
+                .acceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
@@ -135,10 +131,10 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
-                .setMaxRedirects(5)//
-                .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+        AsyncHttpClientConfig cg = newConfig()//
+                .maxRedirects(5)//
+                .followRedirect(true)//
+                .acceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient c = new DefaultAsyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
