@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,21 +10,20 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.simple.consumer;
+package org.asynchttpclient.extras.simple;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * A simple {@link OutputStream} implementation for {@link BodyConsumer}
+ * A {@link ByteBuffer} implementation of {@link BodyConsumer}
  */
-public class OutputStreamBodyConsumer implements BodyConsumer {
+public class ByteBufferBodyConsumer implements BodyConsumer {
 
-    private final OutputStream outputStream;
+    private final ByteBuffer byteBuffer;
 
-    public OutputStreamBodyConsumer(OutputStream outputStream) {
-        this.outputStream = outputStream;
+    public ByteBufferBodyConsumer(ByteBuffer byteBuffer) {
+        this.byteBuffer = byteBuffer;
     }
 
     /**
@@ -32,7 +31,7 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
      */
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
-        outputStream.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+        byteBuffer.put(byteBuffer);
     }
 
     /**
@@ -40,6 +39,6 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
      */
     @Override
     public void close() throws IOException {
-        outputStream.close();
+        byteBuffer.flip();
     }
 }

@@ -31,9 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.simple.SimpleAsyncHttpClient;
-import org.asynchttpclient.simple.consumer.AppendableBodyConsumer;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -320,22 +317,6 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void stringBuilderBodyConsumerTest() throws Exception {
-
-        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setRealmPrincipal(USER).setRealmPassword(ADMIN).setUrl(getTargetUrl())
-                .setHeader("Content-Type", "text/html").build()) {
-            StringBuilder s = new StringBuilder();
-            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
-
-            Response response = future.get();
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(s.toString(), MY_MESSAGE);
-            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-            assertNotNull(response.getHeader("X-Auth"));
         }
     }
 

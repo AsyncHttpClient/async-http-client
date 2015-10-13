@@ -10,43 +10,53 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.simple.consumer;
+package org.asynchttpclient.extras.simple;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.Closeable;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 
 /**
- * An {@link Appendable} customer for {@link ByteBuffer}
+ * A {@link RandomAccessFile} that can be used as a {@link ResumableBodyConsumer}
  */
-public class AppendableBodyConsumer implements BodyConsumer {
+public class FileBodyConsumer implements ResumableBodyConsumer {
 
-    private final Appendable appendable;
-    private final Charset charset;
+    private final RandomAccessFile file;
 
-    public AppendableBodyConsumer(Appendable appendable, Charset charset) {
-        this.appendable = appendable;
-        this.charset = charset;
+    public FileBodyConsumer(RandomAccessFile file) {
+        this.file = file;
     }
 
-    public AppendableBodyConsumer(Appendable appendable) {
-        this.appendable = appendable;
-        this.charset = UTF_8;
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
-        appendable
-                .append(new String(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining(), charset));
+        // TODO: Channel.transferFrom may be a good idea to investigate.
+        file.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void close() throws IOException {
-        if (appendable instanceof Closeable) {
-            Closeable.class.cast(appendable).close();
-        }
+        file.close();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getTransferredBytes() throws IOException {
+        return file.length();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resume() throws IOException {
+        file.seek(getTransferredBytes());
     }
 }

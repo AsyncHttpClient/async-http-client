@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.simple;
+package org.asynchttpclient.extras.simple;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
@@ -48,9 +48,8 @@ import org.asynchttpclient.handler.resumable.ResumableIOExceptionFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.simple.consumer.BodyConsumer;
-import org.asynchttpclient.simple.consumer.ResumableBodyConsumer;
 import org.asynchttpclient.uri.Uri;
+
 import io.netty.handler.codec.http.HttpHeaders;
 
 /**

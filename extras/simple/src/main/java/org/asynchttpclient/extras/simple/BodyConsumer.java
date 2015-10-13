@@ -11,13 +11,11 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-package org.asynchttpclient.simple.consumer;
+package org.asynchttpclient.extras.simple;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 
 /**
  * A simple API to be used with the {@link SimpleAsyncHttpClient} class in order to process response's bytes.

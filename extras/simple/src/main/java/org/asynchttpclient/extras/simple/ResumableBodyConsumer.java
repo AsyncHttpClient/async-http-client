@@ -11,13 +11,27 @@
 * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 */
 
-package org.asynchttpclient.simple;
+package org.asynchttpclient.extras.simple;
 
+import java.io.IOException;
 
 /**
- * Simple {@link Throwable} handler to be used with {@link SimpleAsyncHttpClient}
+ * @author Benjamin Hanzelmann
  */
-public interface ThrowableHandler {
+public interface ResumableBodyConsumer extends BodyConsumer {
 
-    void onThrowable(Throwable t);
+    /**
+     * Prepare this consumer to resume a download, for example by seeking to the end of the underlying file.
+     *
+     * @throws IOException IO exception
+     */
+    void resume() throws IOException;
+
+    /**
+     * Get the previously transferred bytes, for example the current file size.
+     *
+     *@return the number of tranferred bytes
+     * @throws IOException IO exception
+     */
+    long getTransferredBytes() throws IOException;
 }

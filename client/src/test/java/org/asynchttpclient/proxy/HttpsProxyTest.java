@@ -29,7 +29,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.simple.SimpleAsyncHttpClient;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
@@ -122,24 +121,6 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 }
             });
             Response r = responseFuture.get();
-            assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
-        }
-    }
-
-    @Test(groups = { "online", "default_provider" })
-    public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-
-        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                .setProxyHost("127.0.0.1")//
-                .setProxyPort(port1)//
-                .setFollowRedirect(true)//
-                .setUrl(getTargetUrl2())//
-                .setAcceptAnyCertificate(true)//
-                .setHeader("Content-Type", "text/html")//
-                .build()) {
-            Response r = client.get().get();
-
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }

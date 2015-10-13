@@ -10,26 +10,23 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.simple;
+package org.asynchttpclient.extras.simple;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.simple.SimpleAsyncHttpClient;
-import org.asynchttpclient.simple.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
-import org.asynchttpclient.simple.consumer.OutputStreamBodyConsumer;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.Future;
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.extras.simple.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 /**
  * @author Benjamin Hanzelmann

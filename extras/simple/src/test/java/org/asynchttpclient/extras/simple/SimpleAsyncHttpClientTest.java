@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.simple;
+package org.asynchttpclient.extras.simple;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
@@ -30,8 +30,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
-import org.asynchttpclient.simple.consumer.AppendableBodyConsumer;
-import org.asynchttpclient.simple.consumer.OutputStreamBodyConsumer;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 

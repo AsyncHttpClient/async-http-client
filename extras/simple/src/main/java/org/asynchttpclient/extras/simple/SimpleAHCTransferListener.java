@@ -1,4 +1,4 @@
-package org.asynchttpclient.simple;
+package org.asynchttpclient.extras.simple;
 
 /*
  * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
