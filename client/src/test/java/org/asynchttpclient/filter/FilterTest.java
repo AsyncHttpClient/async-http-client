@@ -67,7 +67,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().addRequestFilter(new ThrottleRequestFilter(100)))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -76,7 +76,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void loadThrottleTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().addRequestFilter(new ThrottleRequestFilter(10)))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(10)))) {
             List<Future<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 200; i++) {
                 futures.add(c.preparePost(getTargetUrl()).execute());
@@ -92,7 +92,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void maxConnectionsText() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
             c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (ExecutionException ex) {
@@ -102,7 +102,7 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicResponseFilterTest() throws Exception {
-        AsyncHttpClientConfig config = newConfig().addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().addResponseFilter(new ResponseFilter() {
 
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
@@ -111,7 +111,7 @@ public class FilterTest extends AbstractBasicTest {
 
         }).build();
 
-        try (AsyncHttpClient c = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = asyncHttpClient(config)) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -122,7 +122,7 @@ public class FilterTest extends AbstractBasicTest {
     public void replayResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
 
-        AsyncHttpClientConfig config = newConfig().addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().addResponseFilter(new ResponseFilter() {
 
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
@@ -135,7 +135,7 @@ public class FilterTest extends AbstractBasicTest {
 
         }).build();
 
-        try (AsyncHttpClient c = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = asyncHttpClient(config)) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -147,7 +147,7 @@ public class FilterTest extends AbstractBasicTest {
     public void replayStatusCodeResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
 
-        AsyncHttpClientConfig config = newConfig().addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().addResponseFilter(new ResponseFilter() {
 
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
@@ -160,7 +160,7 @@ public class FilterTest extends AbstractBasicTest {
 
         }).build();
 
-        try (AsyncHttpClient c = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = asyncHttpClient(config)) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -171,7 +171,7 @@ public class FilterTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void replayHeaderResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
-        AsyncHttpClientConfig config = newConfig().addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().addResponseFilter(new ResponseFilter() {
 
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
@@ -185,7 +185,7 @@ public class FilterTest extends AbstractBasicTest {
 
         }).build();
 
-        try (AsyncHttpClient c = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient c = asyncHttpClient(config)) {
             Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

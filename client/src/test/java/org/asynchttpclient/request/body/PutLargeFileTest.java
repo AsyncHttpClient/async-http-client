@@ -42,7 +42,7 @@ public class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) file.length() / 1000;
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().connectTimeout(timeout).build())) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -53,7 +53,7 @@ public class PutLargeFileTest extends AbstractBasicTest {
 
         File file = createTempFile(1024);
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

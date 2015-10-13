@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.*;
 
@@ -71,7 +71,7 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicByteBufferTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 

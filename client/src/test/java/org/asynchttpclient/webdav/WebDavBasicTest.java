@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.webdav;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.testng.Assert.*;
 
@@ -87,7 +87,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     @AfterMethod(alwaysRun = true)
     // FIXME not sure that's threadsafe
     public void clean() throws InterruptedException, Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
             c.executeRequest(deleteRequest).get();
         }
@@ -95,7 +95,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
@@ -104,7 +104,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 409);
@@ -113,7 +113,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
             Response response = c.executeRequest(propFindRequest).get();
 
@@ -123,7 +123,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
@@ -142,7 +142,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);

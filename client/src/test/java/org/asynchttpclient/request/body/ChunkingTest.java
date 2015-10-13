@@ -64,7 +64,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
-        try (AsyncHttpClient c = newAsyncHttpClient(httpClientBuilder())) {
+        try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -78,7 +78,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
-        try (AsyncHttpClient c = newAsyncHttpClient(httpClientBuilder())) {
+        try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -109,7 +109,7 @@ public class ChunkingTest extends AbstractBasicTest {
     }
 
     private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
-        return newConfig()//
+        return config()//
                 .allowPoolingConnections(true)//
                 .maxConnectionsPerHost(1)//
                 .maxConnections(1)//

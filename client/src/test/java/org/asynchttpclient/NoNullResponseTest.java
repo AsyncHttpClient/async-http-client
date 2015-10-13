@@ -35,7 +35,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
 
-        AsyncHttpClientConfig config = newConfig()//
+        AsyncHttpClientConfig config = config()//
                 .followRedirect(true)//
                 .sslContext(getSSLContext())//
                 .allowPoolingConnections(true)//
@@ -46,7 +46,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
                 .maxConnections(-1)//
                 .build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
             Thread.sleep(4000);

@@ -75,9 +75,9 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(target).setProxyServer(newProxyServer("127.0.0.1", port1).build()).execute();
+            Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("127.0.0.1", port1).build()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -87,8 +87,8 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg = newConfig().proxyServer(newProxyServer("127.0.0.1", port1).build()).build();
-        try (AsyncHttpClient client = newAsyncHttpClient(cfg)) {
+        AsyncHttpClientConfig cfg = config().proxyServer(proxyServer("127.0.0.1", port1).build()).build();
+        try (AsyncHttpClient client = asyncHttpClient(cfg)) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -100,10 +100,10 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg = newConfig().proxyServer(newProxyServer("127.0.0.1", port1 - 1).build()).build();
-        try (AsyncHttpClient client = newAsyncHttpClient(cfg)) {
+        AsyncHttpClientConfig cfg = config().proxyServer(proxyServer("127.0.0.1", port1 - 1).build()).build();
+        try (AsyncHttpClient client = asyncHttpClient(cfg)) {
             String target = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(target).setProxyServer(newProxyServer("127.0.0.1", port1).build()).execute();
+            Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("127.0.0.1", port1).build()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -116,27 +116,27 @@ public class ProxyTest extends AbstractBasicTest {
 
         // // should avoid, it's in non-proxy hosts
         Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
-        ProxyServer proxyServer = newProxyServer("foo", 1234).nonProxyHost("somewhere.com").build();
+        ProxyServer proxyServer = proxyServer("foo", 1234).nonProxyHost("somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
         //
         // // should avoid, it's in non-proxy hosts (with "*")
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = newProxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
 
         // should use it
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = newProxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNonProxyHostsRequestOverridesConfig() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         
-        ProxyServer configProxy = newProxyServer("127.0.0.1", port1 - 1).build();
-        ProxyServer requestProxy = newProxyServer("127.0.0.1", port1).nonProxyHost("127.0.0.1").build();
+        ProxyServer configProxy = proxyServer("127.0.0.1", port1 - 1).build();
+        ProxyServer requestProxy = proxyServer("127.0.0.1", port1).nonProxyHost("127.0.0.1").build();
         
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().proxyServer(configProxy))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().proxyServer(configProxy))) {
             String target = "http://127.0.0.1:1234/";
             client.prepareGet(target).setProxyServer(requestProxy).execute().get();
             assertFalse(true);
@@ -149,8 +149,8 @@ public class ProxyTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testRequestNonProxyHost() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         
-        ProxyServer proxy = newProxyServer("127.0.0.1", port1 - 1).nonProxyHost("127.0.0.1").build();
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        ProxyServer proxy = proxyServer("127.0.0.1", port1 - 1).nonProxyHost("127.0.0.1").build();
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://127.0.0.1:" + port1 + "/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxy).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -180,7 +180,7 @@ public class ProxyTest extends AbstractBasicTest {
         AsyncHttpClientConfigHelper.reloadProperties();
 
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().useProxyProperties(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().useProxyProperties(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -211,7 +211,7 @@ public class ProxyTest extends AbstractBasicTest {
         System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "localhost");
         AsyncHttpClientConfigHelper.reloadProperties();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             try {
@@ -236,7 +236,7 @@ public class ProxyTest extends AbstractBasicTest {
         System.setProperty(AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT + "useProxyProperties", "true");
         AsyncHttpClientConfigHelper.reloadProperties();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -267,7 +267,7 @@ public class ProxyTest extends AbstractBasicTest {
         System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "127.*");
         AsyncHttpClientConfigHelper.reloadProperties();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().useProxyProperties(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().useProxyProperties(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             try {
@@ -297,7 +297,7 @@ public class ProxyTest extends AbstractBasicTest {
             }
         });
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().useProxySelector(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().useProxySelector(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);

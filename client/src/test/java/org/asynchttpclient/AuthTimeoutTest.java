@@ -176,7 +176,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient newClient() {
-        return newAsyncHttpClient(newConfig().pooledConnectionIdleTimeout(2000).connectTimeout(20000).requestTimeout(2000).build());
+        return asyncHttpClient(config().pooledConnectionIdleTimeout(2000).connectTimeout(20000).requestTimeout(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {
@@ -186,7 +186,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private Realm realm(boolean preemptive) {
-        return newBasicAuth(USER, ADMIN).usePreemptiveAuth(preemptive).build();
+        return basicAuthRealm(USER, ADMIN).usePreemptiveAuth(preemptive).build();
     }
 
     @Override

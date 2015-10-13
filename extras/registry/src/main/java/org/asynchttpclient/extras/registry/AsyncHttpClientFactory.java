@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.locks.Lock;
@@ -57,7 +57,7 @@ public class AsyncHttpClientFactory {
             throw new AsyncHttpClientImplException("Unable to find the class specified by system property : "
                     + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
         }
-        return newAsyncHttpClient();
+        return asyncHttpClient();
     }
 
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
@@ -70,7 +70,7 @@ public class AsyncHttpClientFactory {
                         + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
-        return newAsyncHttpClient(config);
+        return asyncHttpClient(config);
     }
 
     private static boolean attemptInstantiation() {

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
@@ -67,7 +67,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
             final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
@@ -98,7 +98,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
@@ -116,7 +116,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             try (FileOutputStream stream = new FileOutputStream(tmp)) {
                 Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {
@@ -149,7 +149,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             try (FileOutputStream stream = new FileOutputStream(tmp)) {
                 Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {

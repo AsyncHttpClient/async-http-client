@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.extras.rxjava;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class AsyncHttpObservableTest {
     public void testToObservableNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Observable<Response> o1 = AsyncHttpObservable.toObservable(new Func0<BoundRequestBuilder>() {
                 @Override
                 public BoundRequestBuilder call() {
@@ -57,7 +57,7 @@ public class AsyncHttpObservableTest {
     public void testToObservableError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Observable<Response> o1 = AsyncHttpObservable.toObservable(new Func0<BoundRequestBuilder>() {
                 @Override
                 public BoundRequestBuilder call() {
@@ -82,7 +82,7 @@ public class AsyncHttpObservableTest {
     public void testObserveNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
                 @Override
                 public BoundRequestBuilder call() {
@@ -107,7 +107,7 @@ public class AsyncHttpObservableTest {
     public void testObserveError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
                 @Override
                 public BoundRequestBuilder call() {
@@ -132,7 +132,7 @@ public class AsyncHttpObservableTest {
     public void testObserveMultiple() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
                 @Override
                 public BoundRequestBuilder call() {

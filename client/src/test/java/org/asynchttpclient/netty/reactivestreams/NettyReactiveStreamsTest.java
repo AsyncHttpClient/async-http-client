@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty.reactivestreams;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertTrue;
 import io.netty.channel.Channel;
@@ -40,7 +40,7 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testRetryingOnFailingStream() throws Exception {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch streamStarted = new CountDownLatch(1); // allows us to wait until subscriber has received the first body chunk
             final CountDownLatch streamOnHold = new CountDownLatch(1); // allows us to hold the subscriber from processing further body chunks
             final CountDownLatch replayingRequest = new CountDownLatch(1); // allows us to block until the request is being replayed ( this is what we want to test here!)

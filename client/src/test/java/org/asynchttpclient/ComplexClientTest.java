@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.TimeUnit;
@@ -26,7 +26,7 @@ public class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleRequestsTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";
 
             // once
@@ -43,7 +43,7 @@ public class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithoutSlashTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";
             Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);

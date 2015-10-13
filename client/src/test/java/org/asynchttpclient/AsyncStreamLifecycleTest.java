@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -97,7 +97,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testStream() throws IOException {
-        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);

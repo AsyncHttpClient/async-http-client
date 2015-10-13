@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +38,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -53,7 +53,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
@@ -98,7 +98,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
     @Test(timeOut = 60000, expectedExceptions = { ExecutionException.class })
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                 @Override
@@ -125,7 +125,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class })
     public void wrongStatusCode() throws Throwable {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
@@ -158,7 +158,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class })
     public void wrongProtocolCode() throws Throwable {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 

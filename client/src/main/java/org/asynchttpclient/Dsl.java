@@ -20,30 +20,34 @@ import org.asynchttpclient.proxy.ProxyServer.ProxyServerBuilder;
 public final class Dsl {
 
     // /////////// Client ////////////////
-    public static AsyncHttpClient newAsyncHttpClient() {
+    public static AsyncHttpClient asyncHttpClient() {
         return new DefaultAsyncHttpClient();
     }
 
-    public static AsyncHttpClient newAsyncHttpClient(DefaultAsyncHttpClientConfig.Builder configBuilder) {
+    public static AsyncHttpClient asyncHttpClient(DefaultAsyncHttpClientConfig.Builder configBuilder) {
         return new DefaultAsyncHttpClient(configBuilder.build());
     }
-    
-    public static AsyncHttpClient newAsyncHttpClient(AsyncHttpClientConfig config) {
+
+    public static AsyncHttpClient asyncHttpClient(AsyncHttpClientConfig config) {
         return new DefaultAsyncHttpClient(config);
     }
 
     // /////////// ProxyServer ////////////////
-    public static ProxyServerBuilder newProxyServer(String host, int port) {
+    public static ProxyServerBuilder proxyServer(String host, int port) {
         return new ProxyServerBuilder(host, port);
     }
 
     // /////////// Config ////////////////
-    public static DefaultAsyncHttpClientConfig.Builder newConfig() {
+    public static DefaultAsyncHttpClientConfig.Builder config() {
         return new DefaultAsyncHttpClientConfig.Builder();
     }
 
+    public static AdvancedConfig.Builder advancedConfig() {
+        return new AdvancedConfig.Builder();
+    }
+
     // /////////// Realm ////////////////
-    public static RealmBuilder newRealm(Realm prototype) {
+    public static RealmBuilder realm(Realm prototype) {
         return new RealmBuilder()//
                 .realmName(prototype.getRealmName())//
                 .algorithm(prototype.getAlgorithm())//
@@ -64,23 +68,23 @@ public final class Dsl {
                 .omitQuery(prototype.isOmitQuery());
     }
 
-    public static RealmBuilder newRealm(AuthScheme scheme, String principal, String password) {
+    public static RealmBuilder realm(AuthScheme scheme, String principal, String password) {
         return new RealmBuilder()//
                 .scheme(scheme)//
                 .principal(principal)//
                 .password(password);
     }
 
-    public static RealmBuilder newBasicAuth(String principal, String password) {
-        return newRealm(AuthScheme.BASIC, principal, password);
+    public static RealmBuilder basicAuthRealm(String principal, String password) {
+        return realm(AuthScheme.BASIC, principal, password);
     }
 
-    public static RealmBuilder newDigestAuth(String principal, String password) {
-        return newRealm(AuthScheme.DIGEST, principal, password);
+    public static RealmBuilder digestAuthRealm(String principal, String password) {
+        return realm(AuthScheme.DIGEST, principal, password);
     }
 
-    public static RealmBuilder newNtlmAuth(String principal, String password) {
-        return newRealm(AuthScheme.NTLM, principal, password);
+    public static RealmBuilder ntlmAuthRealm(String principal, String password) {
+        return realm(AuthScheme.NTLM, principal, password);
     }
 
     private Dsl() {

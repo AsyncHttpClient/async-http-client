@@ -62,7 +62,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().requestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
@@ -72,7 +72,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().requestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().requestTimeout(100 * 6000).build())) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

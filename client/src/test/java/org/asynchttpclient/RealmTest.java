@@ -25,12 +25,12 @@ import org.testng.annotations.Test;
 public class RealmTest {
     @Test(groups = "fast")
     public void testClone() {
-        Realm orig = newBasicAuth("user", "pass").charset(UTF_16)//
+        Realm orig = basicAuthRealm("user", "pass").charset(UTF_16)//
                 .usePreemptiveAuth(true)//
                 .realmName("realm")//
                 .algorithm("algo").build();
 
-        Realm clone = newRealm(orig).build();
+        Realm clone = realm(orig).build();
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
         assertEquals(clone.getPassword(), orig.getPassword());
         assertEquals(clone.getCharset(), orig.getCharset());
@@ -59,7 +59,7 @@ public class RealmTest {
         String nonce = "nonce";
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
-        Realm orig = newDigestAuth(user, pass)//
+        Realm orig = digestAuthRealm(user, pass)//
                 .nonce(nonce)//
                 .uri(uri)//
                 .methodName(method)//
@@ -82,7 +82,7 @@ public class RealmTest {
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
         String qop = "auth";
-        Realm orig = newDigestAuth(user, pass)//
+        Realm orig = digestAuthRealm(user, pass)//
                 .nonce(nonce)//
                 .uri(uri)//
                 .methodName(method)//

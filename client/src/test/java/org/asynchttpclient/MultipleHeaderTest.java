@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -92,7 +92,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {
@@ -141,7 +141,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[] { null, null };
 
-        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
             Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {

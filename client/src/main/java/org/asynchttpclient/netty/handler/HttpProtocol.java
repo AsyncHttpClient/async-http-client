@@ -230,7 +230,7 @@ public final class HttpProtocol extends Protocol {
             
             // FIXME do we want to update the realm, or directly
             // set the header?
-            Realm newBasicRealm = newRealm(realm)//
+            Realm newBasicRealm = realm(realm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setRealm(newBasicRealm);
@@ -242,7 +242,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
                 return false;
             }
-            Realm newDigestRealm = newRealm(realm)//
+            Realm newDigestRealm = realm(realm)//
                     .uri(request.getUri())//
                     .methodName(request.getMethod())//
                     .usePreemptiveAuth(true)//
@@ -259,7 +259,7 @@ public final class HttpProtocol extends Protocol {
             }
 
             ntlmChallenge(ntlmHeader, request, requestHeaders, realm, future);
-            Realm newNtlmRealm = newRealm(realm)//
+            Realm newNtlmRealm = realm(realm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setRealm(newNtlmRealm);
@@ -280,7 +280,7 @@ public final class HttpProtocol extends Protocol {
                 if (ntlmHeader2 != null) {
                     logger.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, realm, future);
-                    Realm newNtlmRealm2 = newRealm(realm)//
+                    Realm newNtlmRealm2 = realm(realm)//
                             .scheme(AuthScheme.NTLM)//
                             .usePreemptiveAuth(true)//
                             .build();
@@ -361,7 +361,7 @@ public final class HttpProtocol extends Protocol {
             
             // FIXME do we want to update the realm, or directly
             // set the header?
-            Realm newBasicRealm = newRealm(proxyRealm)//
+            Realm newBasicRealm = realm(proxyRealm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newBasicRealm);
@@ -373,7 +373,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
                 return false;
             }
-            Realm newDigestRealm = newRealm(proxyRealm)//
+            Realm newDigestRealm = realm(proxyRealm)//
                     .uri(request.getUri())//
                     .methodName(request.getMethod())//
                     .usePreemptiveAuth(true)//
@@ -389,7 +389,7 @@ public final class HttpProtocol extends Protocol {
                 return false;
             }
             ntlmProxyChallenge(ntlmHeader, request, proxyRealm, requestHeaders, future);
-            Realm newNtlmRealm = newRealm(proxyRealm)//
+            Realm newNtlmRealm = realm(proxyRealm)//
                     .usePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newNtlmRealm);
@@ -410,7 +410,7 @@ public final class HttpProtocol extends Protocol {
                 if (ntlmHeader2 != null) {
                     logger.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, proxyRealm, future);
-                    Realm newNtlmRealm2 = newRealm(proxyRealm)//
+                    Realm newNtlmRealm2 = realm(proxyRealm)//
                             .scheme(AuthScheme.NTLM)//
                             .usePreemptiveAuth(true)//
                             .build();

@@ -54,13 +54,13 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        AsyncHttpClientConfig config = newConfig().connectTimeout(1000).requestTimeout(5000).allowPoolingConnections(true)//
+        AsyncHttpClientConfig config = config().connectTimeout(1000).requestTimeout(5000).allowPoolingConnections(true)//
                 .maxConnections(1).maxConnectionsPerHost(1).build();
 
         final CountDownLatch inThreadsLatch = new CountDownLatch(2);
         final AtomicInteger failedCount = new AtomicInteger();
         
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             for (int i = 0; i < urls.length; i++) {
                 final String url = urls[i];
                 Thread t = new Thread() {

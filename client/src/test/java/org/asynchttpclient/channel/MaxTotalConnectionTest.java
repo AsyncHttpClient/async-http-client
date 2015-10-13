@@ -42,11 +42,11 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
-        AsyncHttpClientConfig config = newConfig().connectTimeout(1000)
+        AsyncHttpClientConfig config = config().connectTimeout(1000)
                 .requestTimeout(5000).allowPoolingConnections(false).maxConnections(1).maxConnectionsPerHost(1)
                 .build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < urls.length; i++) {
                 futures.add(client.prepareGet(urls[i]).execute());
@@ -77,10 +77,10 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         final AtomicReference<Throwable> ex = new AtomicReference<>();
         final AtomicReference<String> failedUrl = new AtomicReference<>();
 
-        AsyncHttpClientConfig config = newConfig().connectTimeout(1000).requestTimeout(5000)
+        AsyncHttpClientConfig config = config().connectTimeout(1000).requestTimeout(5000)
                 .allowPoolingConnections(false).maxConnections(2).maxConnectionsPerHost(1).build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             for (String url : urls) {
                 final String thisUrl = url;
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {

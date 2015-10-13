@@ -309,10 +309,10 @@ public class SimpleAsyncHttpClient implements Closeable {
         return asyncHttpClient().executeRequest(request, handler);
     }
 
-    private AsyncHttpClient asyncHttpClient() {
+    private AsyncHttpClient getAsyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
-                asyncHttpClient = newAsyncHttpClient(config);
+                asyncHttpClient = asyncHttpClient(config);
             }
         }
         return asyncHttpClient;
@@ -416,7 +416,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     public final static class Builder implements DerivedBuilder {
 
         private final RequestBuilder requestBuilder;
-        private final DefaultAsyncHttpClientConfig.Builder configBuilder = newConfig();
+        private final DefaultAsyncHttpClientConfig.Builder configBuilder = config();
         private Realm.RealmBuilder realmBuilder = null;
         private Realm.AuthScheme proxyAuthScheme;
         private String proxyHost = null;
@@ -438,7 +438,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             this.defaultThrowableHandler = client.defaultThrowableHandler;
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
-            this.ahc = client.asyncHttpClient();
+            this.ahc = client.getAsyncHttpClient();
             this.listener = client.listener;
         }
 
@@ -563,37 +563,37 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setRealmNtlmDomain(String domain) {
-            realm().ntlmDomain(domain);
+            getRealm().ntlmDomain(domain);
             return this;
         }
 
         public Builder setRealmPrincipal(String principal) {
-            realm().principal(principal);
+            getRealm().principal(principal);
             return this;
         }
 
         public Builder setRealmPassword(String password) {
-            realm().password(password);
+            getRealm().password(password);
             return this;
         }
 
         public Builder setRealmScheme(Realm.AuthScheme scheme) {
-            realm().scheme(scheme);
+            getRealm().scheme(scheme);
             return this;
         }
 
         public Builder setRealmName(String realmName) {
-            realm().realmName(realmName);
+            getRealm().realmName(realmName);
             return this;
         }
 
         public Builder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
-            realm().usePreemptiveAuth(usePreemptiveAuth);
+            getRealm().usePreemptiveAuth(usePreemptiveAuth);
             return this;
         }
 
         public Builder setRealmCharset(Charset charset) {
-            realm().charset(charset);
+            getRealm().charset(charset);
             return this;
         }
 
@@ -650,7 +650,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        private Realm.RealmBuilder realm() {
+        private Realm.RealmBuilder getRealm() {
             if (realmBuilder == null) {
                 realmBuilder = new Realm.RealmBuilder().scheme(AuthScheme.BASIC);
             }
@@ -694,10 +694,10 @@ public class SimpleAsyncHttpClient implements Closeable {
                 Realm realm = null;
                 if (proxyPrincipal != null) {
                     AuthScheme proxyAuthScheme = this.proxyAuthScheme == null ? AuthScheme.BASIC : this.proxyAuthScheme;
-                    realm = newRealm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
+                    realm = realm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 
-                configBuilder.proxyServer(newProxyServer(proxyHost, proxyPort).realm(realm).build());
+                configBuilder.proxyServer(proxyServer(proxyHost, proxyPort).realm(realm).build());
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());

@@ -42,7 +42,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Exception {
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -52,7 +52,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient c = asyncHttpClient(config().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             String body = "hello there";
 
             // once
@@ -70,16 +70,15 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
 
-        AdvancedConfig advancedConfig = new AdvancedConfig();
-        advancedConfig.setConnectionStrategy(new ConnectionStrategy() {
+        AdvancedConfig advancedConfig = advancedConfig().connectionStrategy(new ConnectionStrategy() {
 
             @Override
             public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {
                 return !ahcRequest.getUri().isSecured();
             }
-        });
+        }).build();
 
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).advancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient c = asyncHttpClient(config().sslContext(createSslContext(new AtomicBoolean(true))).advancedConfig(advancedConfig).build())) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -95,7 +94,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
 
         AtomicBoolean trust = new AtomicBoolean(false);
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().sslContext(createSslContext(trust)).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().sslContext(createSslContext(trust)).build())) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
@@ -118,7 +117,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(timeOut = 2000, expectedExceptions = { Exception.class })
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().requestTimeout(2000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().requestTimeout(2000).build())) {
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
@@ -129,7 +128,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNormalEventsFired() throws Exception {
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().sslContext(createSslContext(new AtomicBoolean(true))).build())) {
             EventCollectingHandler handler = new EventCollectingHandler();
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);

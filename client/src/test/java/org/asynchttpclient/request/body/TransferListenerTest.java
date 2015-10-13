@@ -79,7 +79,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
@@ -139,7 +139,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
         int timeout = (int) (file.length() / 1000);
 
-        try (AsyncHttpClient client = newAsyncHttpClient(newConfig().connectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().connectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
@@ -181,7 +181,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutFileBodyGeneratorTest() throws Exception {
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
             final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();

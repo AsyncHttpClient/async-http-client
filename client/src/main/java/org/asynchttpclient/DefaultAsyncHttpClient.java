@@ -21,6 +21,7 @@ import io.netty.util.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.AdvancedConfig.Builder;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -69,7 +70,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         
         this.config = config;
         
-        AdvancedConfig advancedConfig = config.getAdvancedConfig() != null ? config.getAdvancedConfig() : new AdvancedConfig();
+        AdvancedConfig advancedConfig = config.getAdvancedConfig() != null ? config.getAdvancedConfig() : new Builder().build();
 
         allowStopNettyTimer = advancedConfig.getNettyTimer() == null;
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : advancedConfig.getNettyTimer();

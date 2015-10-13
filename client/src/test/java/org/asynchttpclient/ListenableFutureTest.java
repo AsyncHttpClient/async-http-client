@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +28,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
-        try (AsyncHttpClient ahc = newAsyncHttpClient()) {
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
             future.addListener(new Runnable() {

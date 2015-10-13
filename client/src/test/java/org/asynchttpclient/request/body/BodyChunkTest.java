@@ -36,13 +36,13 @@ public class BodyChunkTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void negativeContentTypeTest() throws Exception {
 
-        AsyncHttpClientConfig config = newConfig()//
+        AsyncHttpClientConfig config = config()//
                 .connectTimeout(100)//
                 .maxConnections(50)//
                 .requestTimeout(5 * 60 * 1000) // 5 minutes
                 .build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
 
             requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));

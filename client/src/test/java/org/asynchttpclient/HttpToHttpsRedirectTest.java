@@ -91,12 +91,12 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = newConfig()//
+        AsyncHttpClientConfig cg = config()//
                 .maxRedirects(5)//
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -108,12 +108,12 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = newConfig()//
+        AsyncHttpClientConfig cg = config()//
                 .maxRedirects(5)//
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -131,12 +131,12 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);
 
-        AsyncHttpClientConfig cg = newConfig()//
+        AsyncHttpClientConfig cg = config()//
                 .maxRedirects(5)//
                 .followRedirect(true)//
                 .acceptAnyCertificate(true)//
                 .build();
-        try (AsyncHttpClient c = newAsyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

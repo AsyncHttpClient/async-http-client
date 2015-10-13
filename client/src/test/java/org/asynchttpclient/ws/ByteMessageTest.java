@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
@@ -37,7 +37,7 @@ public class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(new byte[0]);
 
@@ -75,7 +75,7 @@ public class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
@@ -120,7 +120,7 @@ public class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoOnOpenMessagesTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
@@ -163,7 +163,7 @@ public class ByteMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 

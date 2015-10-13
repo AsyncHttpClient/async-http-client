@@ -33,27 +33,46 @@ import org.asynchttpclient.netty.ws.NettyWebSocket;
 
 public class AdvancedConfig {
 
-    private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
-    private EventLoopGroup eventLoopGroup;
-    private boolean preferNative;
-    private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
-    private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-    private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
-    private ChannelPool channelPool;
-    private Timer nettyTimer;
-    private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
-    private ConnectionStrategy connectionStrategy = new DefaultConnectionStrategy();
+    private final Map<ChannelOption<Object>, Object> channelOptions;
+    private final EventLoopGroup eventLoopGroup;
+    private final boolean preferNative;
+    private final AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
+    private final AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+    private final ResponseBodyPartFactory bodyPartFactory;
+    private final ChannelPool channelPool;
+    private final Timer nettyTimer;
+    private final NettyWebSocketFactory nettyWebSocketFactory;
+    private final ConnectionStrategy connectionStrategy;
 
-    /**
-     * @param name the name of the ChannelOption
-     * @param value the value of the ChannelOption
-     * @param <T> the type of value
-     * @return this instance of AdvancedConfig
-     */
-    @SuppressWarnings("unchecked")
-    public <T> AdvancedConfig addChannelOption(ChannelOption<T> name, T value) {
-        channelOptions.put((ChannelOption<Object>) name, value);
-        return this;
+    public AdvancedConfig(//
+            Map<ChannelOption<Object>, Object> channelOptions,//
+            EventLoopGroup eventLoopGroup,//
+            boolean preferNative,//
+            AdditionalPipelineInitializer httpAdditionalPipelineInitializer,//
+            AdditionalPipelineInitializer wsAdditionalPipelineInitializer,//
+            ResponseBodyPartFactory bodyPartFactory,//
+            ChannelPool channelPool,//
+            Timer nettyTimer,//
+            NettyWebSocketFactory nettyWebSocketFactory,//
+            ConnectionStrategy connectionStrategy) {
+
+        if (bodyPartFactory == null)
+            throw new NullPointerException("bodyPartFactory");
+        if (nettyWebSocketFactory == null)
+            throw new NullPointerException("nettyWebSocketFactory");
+        if (connectionStrategy == null)
+            throw new NullPointerException("connectionStrategy");
+
+        this.channelOptions = channelOptions;
+        this.eventLoopGroup = eventLoopGroup;
+        this.preferNative = preferNative;
+        this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
+        this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
+        this.bodyPartFactory = bodyPartFactory;
+        this.channelPool = channelPool;
+        this.nettyTimer = nettyTimer;
+        this.nettyWebSocketFactory = nettyWebSocketFactory;
+        this.connectionStrategy = connectionStrategy;
     }
 
     public Map<ChannelOption<Object>, Object> getChannelOptions() {
@@ -64,14 +83,6 @@ public class AdvancedConfig {
         return eventLoopGroup;
     }
 
-    public void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
-        this.eventLoopGroup = eventLoopGroup;
-    }
-
-    public void setPreferNative(boolean preferNative) {
-        this.preferNative = preferNative;
-    }
-    
     public boolean isPreferNative() {
         return preferNative;
     }
@@ -80,58 +91,115 @@ public class AdvancedConfig {
         return httpAdditionalPipelineInitializer;
     }
 
-    public void setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
-        this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
-    }
-
     public AdditionalPipelineInitializer getWsAdditionalPipelineInitializer() {
         return wsAdditionalPipelineInitializer;
-    }
-
-    public void setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
-        this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
     }
 
     public ResponseBodyPartFactory getBodyPartFactory() {
         return bodyPartFactory;
     }
 
-    public void setBodyPartFactory(ResponseBodyPartFactory bodyPartFactory) {
-        this.bodyPartFactory = bodyPartFactory;
-    }
-
     public ChannelPool getChannelPool() {
         return channelPool;
-    }
-
-    public void setChannelPool(ChannelPool channelPool) {
-        this.channelPool = channelPool;
     }
 
     public Timer getNettyTimer() {
         return nettyTimer;
     }
 
-    public void setNettyTimer(Timer nettyTimer) {
-        this.nettyTimer = nettyTimer;
-    }
-
     public NettyWebSocketFactory getNettyWebSocketFactory() {
         return nettyWebSocketFactory;
-    }
-
-    public void setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
-        this.nettyWebSocketFactory = nettyWebSocketFactory;
     }
 
     public ConnectionStrategy getConnectionStrategy() {
         return connectionStrategy;
     }
 
-    public void setConnectionStrategy(ConnectionStrategy connectionStrategy) {
-        this.connectionStrategy = connectionStrategy;
+    public static class Builder {
+
+        private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
+        private EventLoopGroup eventLoopGroup;
+        private boolean preferNative;
+        private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
+        private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+        private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
+        private ChannelPool channelPool;
+        private Timer nettyTimer;
+        private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
+        private ConnectionStrategy connectionStrategy = new DefaultConnectionStrategy();
+
+        /**
+         * @param name the name of the ChannelOption
+         * @param value the value of the ChannelOption
+         * @param <T> the type of value
+         * @return this instance of AdvancedConfig
+         */
+        @SuppressWarnings("unchecked")
+        public <T> Builder addChannelOption(ChannelOption<T> name, T value) {
+            channelOptions.put((ChannelOption<Object>) name, value);
+            return this;
+        }
+
+        public Builder eventLoopGroup(EventLoopGroup eventLoopGroup) {
+            this.eventLoopGroup = eventLoopGroup;
+            return this;
+        }
+
+        public Builder preferNative(boolean preferNative) {
+            this.preferNative = preferNative;
+            return this;
+        }
+
+        public Builder httpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
+            this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
+            return this;
+        }
+
+        public Builder wsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
+            this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
+            return this;
+        }
+
+        public Builder bodyPartFactory(ResponseBodyPartFactory bodyPartFactory) {
+            this.bodyPartFactory = bodyPartFactory;
+            return this;
+        }
+
+        public Builder channelPool(ChannelPool channelPool) {
+            this.channelPool = channelPool;
+            return this;
+        }
+
+        public Builder nettyTimer(Timer nettyTimer) {
+            this.nettyTimer = nettyTimer;
+            return this;
+        }
+
+        public Builder nettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
+            this.nettyWebSocketFactory = nettyWebSocketFactory;
+            return this;
+        }
+
+        public Builder connectionStrategy(ConnectionStrategy connectionStrategy) {
+            this.connectionStrategy = connectionStrategy;
+            return this;
+        }
+
+        public AdvancedConfig build() {
+            return new AdvancedConfig(//
+                    channelOptions,//
+                    eventLoopGroup,//
+                    preferNative,//
+                    httpAdditionalPipelineInitializer,//
+                    wsAdditionalPipelineInitializer,//
+                    bodyPartFactory,//
+                    channelPool,//
+                    nettyTimer,//
+                    nettyWebSocketFactory,//
+                    connectionStrategy);
+        }
     }
-    
+
     public static interface AdditionalPipelineInitializer {
 
         void initPipeline(ChannelPipeline pipeline) throws Exception;
@@ -162,7 +230,7 @@ public class AdvancedConfig {
         NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
     }
 
-    public class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+    public static class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
 
         @Override
         public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {

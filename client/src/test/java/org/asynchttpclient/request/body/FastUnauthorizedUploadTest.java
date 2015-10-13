@@ -13,7 +13,7 @@
 package org.asynchttpclient.request.body;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 
@@ -53,7 +53,7 @@ public class FastUnauthorizedUploadTest extends AbstractBasicTest {
     public void testUnauthorizedWhileUploading() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute()
                     .get();
             assertEquals(response.getStatusCode(), 401);

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.testng.Assert.*;
 
@@ -57,7 +57,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addFormParam("test", value).execute();
             Response resp = f.get(10, TimeUnit.SECONDS);
             assertNotNull(resp);

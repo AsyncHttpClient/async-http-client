@@ -94,7 +94,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     @Test
     public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
 
-        try (AsyncHttpClient client = newAsyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             Request request = new RequestBuilder("GET").setProxyServer(ntlmProxy()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
@@ -103,10 +103,10 @@ public class NTLMProxyTest extends AbstractBasicTest {
     }
 
     private ProxyServer ntlmProxy() throws UnknownHostException {
-        Realm realm = newNtlmAuth("Zaphod", "Beeblebrox")//
+        Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")//
                 .ntlmDomain("Ursa-Minor")//
                 .ntlmHost("LightCity")//
                 .build();
-        return newProxyServer("127.0.0.1", port2).realm(realm).build();
+        return proxyServer("127.0.0.1", port2).realm(realm).build();
     }
 }

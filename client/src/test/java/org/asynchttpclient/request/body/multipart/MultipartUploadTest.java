@@ -150,7 +150,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
             fail("Unable to test ByteArrayMultiPart, as unable to write to filesystem the tmp test content");
         }
 
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().followRedirect(true))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().followRedirect(true))) {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");

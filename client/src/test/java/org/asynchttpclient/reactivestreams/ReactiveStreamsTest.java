@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.reactivestreams;
 
-import static org.asynchttpclient.Dsl.newAsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertEquals;
 
@@ -38,7 +38,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void streamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
 
             ListenableFuture<SimpleStreamedAsyncHandler> future = c.preparePost(getTargetUrl())
                     .setBody(LARGE_IMAGE_BYTES)
@@ -63,7 +63,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void cancelStreamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = newAsyncHttpClient()) {
+        try (AsyncHttpClient c = asyncHttpClient()) {
 
             // Cancel immediately
             c.preparePost(getTargetUrl())

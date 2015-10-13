@@ -70,7 +70,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestNegative(final int status, boolean strict) throws Exception {
 
-        AsyncHttpClientConfig config = newConfig().followRedirect(true).strict302Handling(strict).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().followRedirect(true).strict302Handling(strict).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
@@ -82,7 +82,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = asyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
@@ -105,7 +105,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestPositive(final int status) throws Exception {
 
-        AsyncHttpClientConfig config = newConfig().followRedirect(true).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().followRedirect(true).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
@@ -117,7 +117,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient p = asyncHttpClient(config)) {
             Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 

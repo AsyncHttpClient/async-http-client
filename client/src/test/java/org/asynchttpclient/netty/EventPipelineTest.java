@@ -37,14 +37,13 @@ public class EventPipelineTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Exception {
 
-        AdvancedConfig advancedConfig = new AdvancedConfig();
-        advancedConfig.setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
+        AdvancedConfig advancedConfig = advancedConfig().httpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
             public void initPipeline(ChannelPipeline pipeline) throws Exception {
                 pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
-        });
+        }).build();
 
-        try (AsyncHttpClient p = newAsyncHttpClient(newConfig().advancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient p = asyncHttpClient(config().advancedConfig(advancedConfig).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {

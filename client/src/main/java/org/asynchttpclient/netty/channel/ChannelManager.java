@@ -199,8 +199,10 @@ public class ChannelManager {
         httpBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
         wsBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 
-        if (config.getConnectTimeout() > 0)
-            advancedConfig.addChannelOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        if (config.getConnectTimeout() > 0) {
+            httpBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+            wsBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        }
         for (Entry<ChannelOption<Object>, Object> entry : advancedConfig.getChannelOptions().entrySet()) {
             ChannelOption<Object> key = entry.getKey();
             Object value = entry.getValue();

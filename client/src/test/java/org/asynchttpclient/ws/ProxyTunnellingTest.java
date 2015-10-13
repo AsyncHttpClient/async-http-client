@@ -83,8 +83,8 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
         String targetUrl = String.format("%s://127.0.0.1:%d/", secure ? "wss" : "ws", port2);
 
         // CONNECT happens over HTTP, not HTTPS
-        ProxyServer ps = newProxyServer("127.0.0.1", port1).build();
-        try (AsyncHttpClient asyncHttpClient = newAsyncHttpClient(newConfig().proxyServer(ps).acceptAnyCertificate(true))) {
+        ProxyServer ps = proxyServer("127.0.0.1", port1).build();
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().proxyServer(ps).acceptAnyCertificate(true))) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 

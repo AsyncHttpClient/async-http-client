@@ -82,14 +82,14 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     @Test
     public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = newConfig()//
+        AsyncHttpClientConfig config = config()//
                 .allowPoolingConnections(true)//
                 .maxConnections(100)//
                 .connectTimeout(60000)//
                 .requestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
@@ -113,14 +113,14 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     @Test
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
-        AsyncHttpClientConfig config = newConfig()//
+        AsyncHttpClientConfig config = config()//
                 .allowPoolingConnections(true)//
                 .maxConnections(100)//
                 .connectTimeout(60000)//
                 .requestTimeout(30000)//
                 .build();
 
-        try (AsyncHttpClient client = newAsyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             List<ListenableFuture<Response>> res = new ArrayList<>();
             for (int i = 0; i < 32; i++) {
                 res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
