@@ -205,13 +205,6 @@ public interface AsyncHttpClientConfig {
     int getMaxRequestRetry();
 
     /**
-     * Return true is SSL connection polling is enabled. Default is true.
-     *
-     * @return true is enabled.
-     */
-    boolean isAllowPoolingSslConnections();
-
-    /**
      * @return the disableUrlEncodingForBoundRequests
      */
     boolean isDisableUrlEncodingForBoundRequests();

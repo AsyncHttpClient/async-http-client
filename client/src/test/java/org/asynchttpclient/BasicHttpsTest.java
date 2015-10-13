@@ -19,6 +19,8 @@ import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.EventCollectingHandler.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.channel.pool.ConnectionStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 
@@ -66,7 +69,17 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
-        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).allowPoolingSslConnections(false).build())) {
+
+        AdvancedConfig advancedConfig = new AdvancedConfig();
+        advancedConfig.setConnectionStrategy(new ConnectionStrategy() {
+
+            @Override
+            public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {
+                return !ahcRequest.getUri().isSecured();
+            }
+        });
+
+        try (AsyncHttpClient c = newAsyncHttpClient(newConfig().sslContext(createSslContext(new AtomicBoolean(true))).advancedConfig(advancedConfig).build())) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -80,7 +93,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void reconnectsAfterFailedCertificationPath() throws Exception {
-        
+
         AtomicBoolean trust = new AtomicBoolean(false);
         try (AsyncHttpClient client = newAsyncHttpClient(newConfig().sslContext(createSslContext(trust)).build())) {
             String body = "hello there";
@@ -102,7 +115,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(timeOut = 2000, expectedExceptions = { Exception.class } )
+    @Test(timeOut = 2000, expectedExceptions = { Exception.class })
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
         try (AsyncHttpClient client = newAsyncHttpClient(newConfig().requestTimeout(2000).build())) {
@@ -121,18 +134,8 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            Object[] expectedEvents = new Object[] {
-                    CONNECTION_POOL_EVENT,
-                    CONNECTION_OPEN_EVENT,
-                    DNS_RESOLVED_EVENT,
-                    CONNECTION_SUCCESS_EVENT,
-                    SSL_HANDSHAKE_COMPLETED_EVENT,
-                    REQUEST_SEND_EVENT,
-                    HEADERS_WRITTEN_EVENT,
-                    STATUS_RECEIVED_EVENT,
-                    HEADERS_RECEIVED_EVENT,
-                    CONNECTION_OFFER_EVENT,
-                    COMPLETED_EVENT};
+            Object[] expectedEvents = new Object[] { CONNECTION_POOL_EVENT, CONNECTION_OPEN_EVENT, DNS_RESOLVED_EVENT, CONNECTION_SUCCESS_EVENT, SSL_HANDSHAKE_COMPLETED_EVENT,
+                    REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT, HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT };
 
             assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }

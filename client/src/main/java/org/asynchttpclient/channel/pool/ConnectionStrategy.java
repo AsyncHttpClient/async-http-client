@@ -16,6 +16,8 @@ package org.asynchttpclient.channel.pool;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
+import org.asynchttpclient.Request;
+
 /**
  * Provides an interface for decisions about HTTP connections.
  */
@@ -27,5 +29,5 @@ public interface ConnectionStrategy {
      * @param response the HTTP response
      * @return true if the connection should be kept alive, false if it should be closed.
      */
-    boolean keepAlive(HttpRequest request, HttpResponse response);
+    boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
 }

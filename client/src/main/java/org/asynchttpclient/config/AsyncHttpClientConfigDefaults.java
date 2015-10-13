@@ -95,10 +95,6 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "maxRequestRetry");
     }
 
-    public static boolean defaultAllowPoolingSslConnections() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "allowPoolingSslConnections");
-    }
-
     public static boolean defaultDisableUrlEncodingForBoundRequests() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableUrlEncodingForBoundRequests");
     }

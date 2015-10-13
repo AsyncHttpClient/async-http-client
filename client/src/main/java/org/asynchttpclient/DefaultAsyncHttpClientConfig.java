@@ -75,7 +75,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int webSocketTimeout;
 
     private final boolean allowPoolingConnections;
-    private final boolean allowPoolingSslConnections;
     private final int pooledConnectionIdleTimeout;
     private final int connectionTTL;
 
@@ -123,7 +122,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int readTimeout,//
             int webSocketTimeout,//
             boolean allowPoolingConnection,//
-            boolean allowSslConnectionPool,//
             int idleConnectionInPoolTimeout,//
             int maxConnectionLifeTime,//
             SSLContext sslContext, //
@@ -167,7 +165,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.readTimeout = readTimeout;
         this.webSocketTimeout = webSocketTimeout;
         this.allowPoolingConnections = allowPoolingConnection;
-        this.allowPoolingSslConnections = allowSslConnectionPool;
         this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
         this.connectionTTL = maxConnectionLifeTime;
         this.sslContext = sslContext;
@@ -334,11 +331,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isAllowPoolingSslConnections() {
-        return allowPoolingSslConnections;
-    }
-
-    @Override
     public boolean isDisableUrlEncodingForBoundRequests() {
         return disableUrlEncodingForBoundRequests;
     }
@@ -449,7 +441,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int readTimeout = defaultReadTimeout();
         private int webSocketTimeout = defaultWebSocketTimeout();
         private boolean allowPoolingConnections = defaultAllowPoolingConnections();
-        private boolean allowPoolingSslConnections = defaultAllowPoolingSslConnections();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         private int connectionTTL = defaultConnectionTTL();
         private SSLContext sslContext;
@@ -621,11 +612,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder allowPoolingSslConnections(boolean allowPoolingSslConnections) {
-            this.allowPoolingSslConnections = allowPoolingSslConnections;
-            return this;
-        }
-
         public Builder disableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
             this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
             return this;
@@ -759,7 +745,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     readTimeout,//
                     webSocketTimeout,//
                     allowPoolingConnections,//
-                    allowPoolingSslConnections,//
                     pooledConnectionIdleTimeout,//
                     connectionTTL,//
                     sslContext, //

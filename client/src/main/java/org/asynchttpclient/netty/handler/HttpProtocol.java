@@ -518,7 +518,7 @@ public final class HttpProtocol extends Protocol {
         // the handler in case of trailing headers
         future.setHttpHeaders(response.headers());
 
-        future.setKeepAlive(connectionStrategy.keepAlive(httpRequest, response));
+        future.setKeepAlive(connectionStrategy.keepAlive(future.getTargetRequest(), httpRequest, response));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
         int statusCode = response.getStatus().code();

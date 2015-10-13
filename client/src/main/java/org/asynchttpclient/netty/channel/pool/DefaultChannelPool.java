@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.channel.pool;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
@@ -32,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,6 @@ public final class DefaultChannelPool implements ChannelPool {
     private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
-    private final boolean sslConnectionPoolEnabled;
     private final int maxConnectionTTL;
     private final boolean maxConnectionTTLDisabled;
     private final long maxIdleTime;
@@ -59,7 +56,6 @@ public final class DefaultChannelPool implements ChannelPool {
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
         this(config.getPooledConnectionIdleTimeout(),//
                 config.getConnectionTTL(),//
-                config.isAllowPoolingSslConnections(),//
                 hashedWheelTimer);
     }
 
@@ -69,9 +65,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
     public DefaultChannelPool(long maxIdleTime,//
             int maxConnectionTTL,//
-            boolean sslConnectionPoolEnabled,//
             Timer nettyTimer) {
-        this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionTTL = maxConnectionTTL;
         maxConnectionTTLDisabled = maxConnectionTTL <= 0;
@@ -241,7 +235,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean offer(Channel channel, Object partitionKey) {
-        if (isClosed.get() || (!sslConnectionPoolEnabled && channel.pipeline().get(SslHandler.class) != null))
+        if (isClosed.get())
             return false;
 
         long now = millisTime();

@@ -14,13 +14,13 @@
 package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Values.CLOSE;
-import static io.netty.handler.codec.http.HttpHeaders.Values.KEEP_ALIVE;
+import static io.netty.handler.codec.http.HttpHeaders.Values.*;
 import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 
+import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.pool.ConnectionStrategy;
 
 /**
@@ -33,7 +33,7 @@ public class DefaultConnectionStrategy implements ConnectionStrategy {
      * https://tools.ietf.org/html/rfc7230#section-6.1
      */
     @Override
-    public boolean keepAlive(HttpRequest request, HttpResponse response) {
+    public boolean keepAlive(Request ahcRequest, HttpRequest request, HttpResponse response) {
 
         String responseConnectionHeader = connectionHeader(response);
 

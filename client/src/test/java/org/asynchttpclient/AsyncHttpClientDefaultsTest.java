@@ -97,11 +97,6 @@ public class AsyncHttpClientDefaultsTest {
         testIntegerSystemProperty("maxRequestRetry", "defaultMaxRequestRetry", "100");
     }
 
-    public void testDefaultAllowPoolingSslConnections() {
-       Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultAllowPoolingSslConnections());
-       testBooleanSystemProperty("allowPoolingSslConnections", "defaultAllowPoolingSslConnections", "false");
-    }
-
     public void testDefaultDisableUrlEncodingForBoundRequests() {
         Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests());
         testBooleanSystemProperty("disableUrlEncodingForBoundRequests", "defaultDisableUrlEncodingForBoundRequests", "true");
