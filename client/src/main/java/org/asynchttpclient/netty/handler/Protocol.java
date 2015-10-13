@@ -18,6 +18,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.util.HashSet;
@@ -115,10 +116,10 @@ public abstract class Protocol {
                 future.getAndSetAuth(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals("GET") && (statusCode == 301 || statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
+                boolean switchToGet = !originalMethod.equals(HttpMethod.GET.name()) && (statusCode == 301 || statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
                 boolean keepBody = statusCode == 307 || (statusCode == 302 && config.isStrict302Handling());
 
-                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? "GET" : originalMethod)//
+                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? HttpMethod.GET.name() : originalMethod)//
                         .setCookies(request.getCookies())//
                         .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
                         .setFollowRedirect(true)//
@@ -161,7 +162,7 @@ public abstract class Protocol {
                         requestBuilder.addOrReplaceCookie(c);
                 }
 
-                requestBuilder.setHeaders(propagatedHeaders(future.getRequest(), realm, switchToGet));
+                requestBuilder.setHeaders(propagatedHeaders(future.getCurrentRequest(), realm, switchToGet));
 
                 boolean sameBase = isSameBase(request.getUri(), newUri);
 
@@ -171,6 +172,7 @@ public abstract class Protocol {
                 }
 
                 final Request nextRequest = requestBuilder.setUri(newUri).build();
+                future.setTargetRequest(nextRequest);
 
                 logger.debug("Sending redirect to {}", newUri);
 
@@ -206,7 +208,7 @@ public abstract class Protocol {
             HttpResponseHeaders responseHeaders) {
 
         if (hasResponseFilters) {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status).responseHeaders(responseHeaders)
                     .build();
 
             for (ResponseFilter asyncFilter : config.getResponseFilters()) {

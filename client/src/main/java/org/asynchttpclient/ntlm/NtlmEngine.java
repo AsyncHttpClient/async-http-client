@@ -48,6 +48,7 @@ import org.asynchttpclient.util.Base64;
  *
  * @since 4.1
  */
+@SuppressWarnings("unused")
 public final class NtlmEngine {
 
     public static final NtlmEngine INSTANCE = new NtlmEngine();

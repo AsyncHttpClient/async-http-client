@@ -83,7 +83,7 @@ public final class WebSocketProtocol extends Protocol {
         public void call() throws Exception {
             
             WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
-            Request request = future.getRequest();
+            Request request = future.getCurrentRequest();
             
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
             HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());

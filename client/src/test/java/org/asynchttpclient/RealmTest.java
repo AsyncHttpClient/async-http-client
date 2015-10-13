@@ -35,7 +35,7 @@ public class RealmTest {
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
         assertEquals(clone.getPassword(), orig.getPassword());
         assertEquals(clone.getCharset(), orig.getCharset());
-        assertEquals(clone.getUsePreemptiveAuth(), orig.getUsePreemptiveAuth());
+        assertEquals(clone.isUsePreemptiveAuth(), orig.isUsePreemptiveAuth());
         assertEquals(clone.getRealmName(), orig.getRealmName());
         assertEquals(clone.getAlgorithm(), orig.getAlgorithm());
         assertEquals(clone.getScheme(), orig.getScheme());

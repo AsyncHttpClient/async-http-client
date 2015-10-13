@@ -20,7 +20,6 @@ import io.netty.channel.ChannelProgressiveFutureListener;
 import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -33,19 +32,16 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProgressListener.class);
 
-    private final AsyncHttpClientConfig config;
     private final AsyncHandler<?> asyncHandler;
     private final NettyResponseFuture<?> future;
     private final boolean notifyHeaders;
     private final long expectedTotal;
     private long lastProgress = 0L;
 
-    public ProgressListener(AsyncHttpClientConfig config,//
-            AsyncHandler<?> asyncHandler,//
+    public ProgressListener(AsyncHandler<?> asyncHandler,//
             NettyResponseFuture<?> future,//
             boolean notifyHeaders,//
             long expectedTotal) {
-        this.config = config;
         this.asyncHandler = asyncHandler;
         this.future = future;
         this.notifyHeaders = notifyHeaders;
@@ -82,8 +78,9 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
              * same event after the authorization, causing unpredictable
              * behavior.
              */
-            Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : config.getRealm();
-            boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
+            // FIXME what about proxy auth?
+            Realm realm = future.getRealm();
+            boolean startPublishing = future.isInAuth() || realm == null || realm.isUsePreemptiveAuth();
 
             if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler<?> progressAsyncHandler = (ProgressAsyncHandler<?>) asyncHandler;

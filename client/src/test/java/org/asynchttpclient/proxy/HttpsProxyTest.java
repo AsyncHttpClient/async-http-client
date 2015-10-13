@@ -34,6 +34,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -42,7 +44,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Proxy usage tests.
  */
-public class ProxyTunnellingTest extends AbstractBasicTest {
+public class HttpsProxyTest extends AbstractBasicTest {
 
     private Server server2;
 
@@ -98,7 +100,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
             });
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 
@@ -124,7 +126,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
             });
             Response r = responseFuture.get();
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 
@@ -142,7 +144,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
             Response r = client.get().get();
 
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), "keep-alive");
+            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 }

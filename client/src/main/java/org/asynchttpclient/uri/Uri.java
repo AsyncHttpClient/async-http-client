@@ -117,10 +117,6 @@ public class Uri {
         return isSecured() ? 443 : 80;
     }
 
-    public boolean useProxyConnect() {
-        return isSecured() || isWebSocket();
-    }
-    
     public String toUrl() {
         if (url == null) {
             StringBuilder sb = StringUtils.stringBuilder();

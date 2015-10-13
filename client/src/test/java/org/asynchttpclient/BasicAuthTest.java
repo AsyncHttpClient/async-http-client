@@ -21,7 +21,6 @@ import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
 import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
-import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.assertEquals;
@@ -72,10 +71,11 @@ public class BasicAuthTest extends AbstractBasicTest {
         server.start();
 
         server2 = newJettyHttpServer(port2);
-        addDigestAuthHandler(server2, new RedirectHandler());
+        addBasicAuthHandler(server2, new RedirectHandler());
         server2.start();
 
-        // need noAuth server to verify the preemptive auth mode (see basicAuthTetPreemtiveTest) 
+        // need noAuth server to verify the preemptive auth mode (see
+        // basicAuthTestPreemtiveTest)
         serverNoAuth = newJettyHttpServer(portNoAuth);
         serverNoAuth.setHandler(new SimpleHandler());
         serverNoAuth.start();
@@ -149,7 +149,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
                 response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
                 response.setStatus(200);
-    
+
                 int size = 10 * 1024;
                 if (request.getContentLength() > 0) {
                     size = request.getContentLength();
@@ -184,7 +184,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
+    public void redirectAndDigestAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaxRedirects(10).build())) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm(Realm.newBasicAuth(USER, ADMIN).build())//
@@ -241,8 +241,8 @@ public class BasicAuthTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
-        	// send the request to the no-auth endpoint to be able to verify the auth header is
-        	// really sent preemptively for the initial call.
+            // send the request to the no-auth endpoint to be able to verify the
+            // auth header is really sent preemptively for the initial call.
             Future<Response> f = client.prepareGet(getTargetUrlNoAuth())//
                     .setRealm(Realm.newBasicAuth(USER, ADMIN).usePreemptiveAuth(true).build())//
                     .execute();
@@ -334,8 +334,8 @@ public class BasicAuthTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void stringBuilderBodyConsumerTest() throws Exception {
 
-        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setRealmPrincipal(USER).setRealmPassword(ADMIN)
-                .setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build()) {
+        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setRealmPrincipal(USER).setRealmPassword(ADMIN).setUrl(getTargetUrl())
+                .setHeader("Content-Type", "text/html").build()) {
             StringBuilder s = new StringBuilder();
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
 

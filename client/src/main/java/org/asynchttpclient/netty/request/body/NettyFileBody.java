@@ -82,7 +82,7 @@ public class NettyFileBody implements NettyBody {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
                 writeFuture = channel.write(region, channel.newProgressivePromise());
             }
-            writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
+            writeFuture.addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()) {
                 public void operationComplete(ChannelProgressiveFuture cf) {
                     closeSilently(raf);
                     super.operationComplete(cf);

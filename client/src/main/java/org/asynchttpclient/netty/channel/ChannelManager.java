@@ -465,8 +465,8 @@ public class ChannelManager {
             pipeline.remove(SSL_HANDLER);
     }
 
-    public Bootstrap getBootstrap(Uri uri, boolean useProxy) {
-        return uri.isWebSocket() && !useProxy ? wsBootstrap : httpBootstrap;
+    public Bootstrap getBootstrap(Uri uri, ProxyServer proxy) {
+        return uri.isWebSocket() && proxy == null ? wsBootstrap : httpBootstrap;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

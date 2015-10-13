@@ -21,15 +21,57 @@ import java.net.UnknownHostException;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.channel.ChannelConnector;
+import org.asynchttpclient.channel.NameResolution;
+import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.uri.Uri;
 
-public class NettyChannelConnector extends ChannelConnector {
+public class NettyChannelConnector {
+    
+    private final AsyncHandlerExtensions asyncHandlerExtensions;
+    private final InetSocketAddress localAddress;
+    private final InetSocketAddress[] remoteAddresses;
+    private volatile int i = 0;
 
-    public NettyChannelConnector(Request request, ProxyServer proxy, boolean useProxy, AsyncHandler<?> asyncHandler) throws UnknownHostException {
-        super(request, proxy, useProxy, asyncHandler);
+    public NettyChannelConnector(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) throws UnknownHostException {
+
+        this.asyncHandlerExtensions = asyncHandler instanceof AsyncHandlerExtensions ? (AsyncHandlerExtensions) asyncHandler : null;
+        NameResolution[] resolutions;
+        Uri uri = request.getUri();
+        int port = uri.getExplicitPort();
+
+        if (request.getInetAddress() != null) {
+            resolutions = new NameResolution[] { new NameResolution(request.getInetAddress()) };
+
+        } else if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
+            resolutions = request.getNameResolver().resolve(proxy.getHost());
+            port = uri.isSecured() ? proxy.getSecuredPort(): proxy.getPort();
+
+        } else {
+            resolutions = request.getNameResolver().resolve(uri.getHost());
+        }
+
+        if (asyncHandlerExtensions != null)
+            asyncHandlerExtensions.onDnsResolved(resolutions);
+        
+        remoteAddresses = new InetSocketAddress[resolutions.length];
+        for (int i = 0; i < resolutions.length; i ++) {
+            remoteAddresses[i] = new InetSocketAddress(resolutions[i].address, port);
+        }
+        
+        if (request.getLocalAddress() != null) {
+            localAddress = new InetSocketAddress(request.getLocalAddress(), 0);
+                    
+        } else {
+            localAddress = null;
+        }
     }
 
+    private boolean pickNextRemoteAddress() {
+        i++;
+        return i < remoteAddresses.length;
+    }
+    
     public void connect(final Bootstrap bootstrap, final ChannelFutureListener listener) throws UnknownHostException {
         final InetSocketAddress remoteAddress = remoteAddresses[i];
 

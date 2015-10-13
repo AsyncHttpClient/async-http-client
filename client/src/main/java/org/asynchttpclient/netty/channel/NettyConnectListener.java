@@ -84,7 +84,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private void onFutureSuccess(final Channel channel) throws Exception {
         
-        Request request = future.getRequest();
+        Request request = future.getTargetRequest();
         Uri uri = request.getUri();
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request

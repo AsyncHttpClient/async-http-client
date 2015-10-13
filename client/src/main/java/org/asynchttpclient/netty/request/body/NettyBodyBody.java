@@ -66,7 +66,7 @@ public class NettyBodyBody implements NettyBody {
         } else {
             msg = new BodyChunkedInput(body);
 
-            BodyGenerator bg = future.getRequest().getBodyGenerator();
+            BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
             if (bg instanceof SimpleFeedableBodyGenerator) {
                 SimpleFeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
                     @Override
@@ -80,7 +80,7 @@ public class NettyBodyBody implements NettyBody {
         }
         ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
 
-        writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
+        writeFuture.addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()) {
             public void operationComplete(ChannelProgressiveFuture cf) {
                 closeSilently(body);
                 super.operationComplete(cf);

@@ -48,12 +48,11 @@ public class Realm {
                 .qop(prototype.getQop())//
                 .scheme(prototype.getScheme())//
                 .uri(prototype.getUri())//
-                .usePreemptiveAuth(prototype.getUsePreemptiveAuth())//
+                .usePreemptiveAuth(prototype.isUsePreemptiveAuth())//
                 .ntlmDomain(prototype.getNtlmDomain())//
                 .ntlmHost(prototype.getNtlmHost())//
                 .useAbsoluteURI(prototype.isUseAbsoluteURI())//
-                .omitQuery(prototype.isOmitQuery())//
-                .targetProxy(prototype.isTargetProxy());
+                .omitQuery(prototype.isOmitQuery());
     }
 
     public static RealmBuilder newRealm(AuthScheme scheme, String principal, String password) {
@@ -97,27 +96,22 @@ public class Realm {
     private final String ntlmDomain;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
-    private final boolean targetProxy;
 
     public enum AuthScheme {
 
-        DIGEST(false), BASIC(false), NTLM(true), SPNEGO(true), KERBEROS(true), NONE(false);
-
-        private boolean likeNtlm;
-
-        private AuthScheme(boolean likeNtlm) {
-            this.likeNtlm = likeNtlm;
-        }
-
-        public boolean isLikeNtlm() {
-            return likeNtlm;
-        }
+        BASIC, DIGEST, NTLM, SPNEGO, KERBEROS;
     }
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
-            Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset, String host, String opaque, boolean useAbsoluteURI, boolean omitQuery,
-            boolean targetProxy) {
+            Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset, String host, String opaque, boolean useAbsoluteURI, boolean omitQuery) {
 
+        if (scheme == null)
+            throw new NullPointerException("scheme");
+        if (principal == null)
+            throw new NullPointerException("principal");
+        if (password == null)
+            throw new NullPointerException("password");
+        
         this.principal = principal;
         this.password = password;
         this.scheme = scheme;
@@ -137,7 +131,6 @@ public class Realm {
         this.charset = charset;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
-        this.targetProxy = targetProxy;
     }
 
     public String getPrincipal() {
@@ -202,7 +195,7 @@ public class Realm {
      * 
      * @return true is preemptive authentication is enabled
      */
-    public boolean getUsePreemptiveAuth() {
+    public boolean isUsePreemptiveAuth() {
         return usePreemptiveAuth;
     }
 
@@ -232,10 +225,6 @@ public class Realm {
         return omitQuery;
     }
 
-    public boolean isTargetProxy() {
-        return targetProxy;
-    }
-
     @Override
     public String toString() {
         return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm
@@ -261,7 +250,7 @@ public class Realm {
 
         private String principal;
         private String password;
-        private AuthScheme scheme = AuthScheme.NONE;
+        private AuthScheme scheme;
         private String realmName;
         private String nonce;
         private String algorithm;
@@ -278,7 +267,6 @@ public class Realm {
         private String ntlmHost = "localhost";
         private boolean useAbsoluteURI = false;
         private boolean omitQuery;
-        private boolean targetProxy;
 
         public RealmBuilder ntlmDomain(String ntlmDomain) {
             this.ntlmDomain = ntlmDomain;
@@ -367,11 +355,6 @@ public class Realm {
             return this;
         }
 
-        public RealmBuilder targetProxy(boolean targetProxy) {
-            this.targetProxy = targetProxy;
-            return this;
-        }
-
         public RealmBuilder charset(Charset charset) {
             this.charset = charset;
             return this;
@@ -399,34 +382,36 @@ public class Realm {
         }
 
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
-            realmName(match(headerLine, "realm"))
-            .nonce(match(headerLine, "nonce"));
+            realmName(match(headerLine, "realm"))//
+                    .nonce(match(headerLine, "nonce"))//
+                    .opaque(match(headerLine, "opaque"))//
+                    .scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
                 algorithm(algorithm);
             }
-            opaque(match(headerLine, "opaque"));
 
+            // FIXME qop is different with proxy?
             String rawQop = match(headerLine, "qop");
             if (rawQop != null) {
                 qop(parseRawQop(rawQop));
             }
-
-            scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+            
             return this;
         }
 
         public RealmBuilder parseProxyAuthenticateHeader(String headerLine) {
-            realmName(match(headerLine, "realm"))
-                .nonce(match(headerLine, "nonce"))
-                .opaque(match(headerLine, "opaque"));
+            realmName(match(headerLine, "realm"))//
+                    .nonce(match(headerLine, "nonce"))//
+                    .opaque(match(headerLine, "opaque"))//
+                    .scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
                 algorithm(algorithm);
             }
+            // FIXME qop is different with proxy?
             qop(match(headerLine, "qop"));
-            scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
-            targetProxy(true);
+            
             return this;
         }
 
@@ -556,7 +541,7 @@ public class Realm {
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName, usePreemptive, ntlmDomain, charset, ntlmHost,
-                    opaque, useAbsoluteURI, omitQuery, targetProxy);
+                    opaque, useAbsoluteURI, omitQuery);
         }
     }
 }

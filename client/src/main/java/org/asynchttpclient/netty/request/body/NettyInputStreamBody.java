@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request.body;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.ProgressListener;
 import org.slf4j.Logger;
@@ -34,11 +33,9 @@ public class NettyInputStreamBody implements NettyBody {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
     private final InputStream inputStream;
-    private final AsyncHttpClientConfig config;
 
-    public NettyInputStreamBody(InputStream inputStream, AsyncHttpClientConfig config) {
+    public NettyInputStreamBody(InputStream inputStream) {
         this.inputStream = inputStream;
-        this.config = config;
     }
 
     public InputStream getInputStream() {
@@ -71,7 +68,7 @@ public class NettyInputStreamBody implements NettyBody {
         }
 
         channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
-                new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
+                new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()) {
                     public void operationComplete(ChannelProgressiveFuture cf) {
                         closeSilently(is);
                         super.operationComplete(cf);

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.future.AbstractListenableFuture;
@@ -81,7 +82,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     // state mutated only inside the event loop
     private Channel channel;
     private boolean keepAlive = true;
-    private Request request;
+    private Request targetRequest;
+    private Request currentRequest;
     private NettyRequest nettyRequest;
     private HttpHeaders httpHeaders;
     private AsyncHandler<V> asyncHandler;
@@ -90,8 +92,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean headersAlreadyWrittenOnContinue;
     private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
+    private Realm realm;
+    private Realm proxyRealm;
 
-    public NettyResponseFuture(Request request,//
+    public NettyResponseFuture(Request originalRequest,//
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
             int maxRetry,//
@@ -99,7 +103,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
-        this.request = request;
+        this.targetRequest = currentRequest = originalRequest;
         this.nettyRequest = nettyRequest;
         this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.proxyServer = proxyServer;
@@ -269,7 +273,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     // INTERNAL
 
     public Uri getUri() {
-        return request.getUri();
+        return targetRequest.getUri();
     }
 
     public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
@@ -291,8 +295,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
     }
 
-    public final Request getRequest() {
-        return request;
+    public final Request getTargetRequest() {
+        return targetRequest;
+    }
+    
+    public final Request getCurrentRequest() {
+        return currentRequest;
     }
 
     public final NettyRequest getNettyRequest() {
@@ -418,8 +426,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return channel != null ? channel.remoteAddress() : null;
     }
 
-    public void setRequest(Request request) {
-        this.request = request;
+    public void setTargetRequest(Request targetRequest) {
+        this.targetRequest = targetRequest;
+    }
+
+    public void setCurrentRequest(Request currentRequest) {
+        this.currentRequest = currentRequest;
     }
 
     /**
@@ -438,7 +450,23 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public Object getPartitionKey() {
-        return connectionPoolPartitioning.getPartitionKey(request.getUri(), request.getVirtualHost(), proxyServer);
+        return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(), proxyServer);
+    }
+
+    public Realm getRealm() {
+        return realm;
+    }
+
+    public void setRealm(Realm realm) {
+        this.realm = realm;
+    }
+
+    public Realm getProxyRealm() {
+        return proxyRealm;
+    }
+
+    public void setProxyRealm(Realm proxyRealm) {
+        this.proxyRealm = proxyRealm;
     }
 
     @Override

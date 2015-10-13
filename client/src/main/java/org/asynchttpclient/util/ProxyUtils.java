@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.util;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -89,63 +87,9 @@ public final class ProxyUtils {
                 proxyServer = selector.select(request.getUri());
             }
         }
-        return ProxyUtils.ignoreProxy(proxyServer, request) ? null : proxyServer;
+        return proxyServer != null && !proxyServer.isIgnoredForHost(request.getUri().getHost()) ? proxyServer : null;
     }
     
-    /**
-     * @see #ignoreProxy(ProxyServer, String)
-     * 
-     * @param proxyServer a proxy
-     * @param request a request
-     * @return if this request should ignore the proxy
-     */
-    public static boolean ignoreProxy(final ProxyServer proxyServer, final Request request) {
-        return ignoreProxy(proxyServer, request.getUri().getHost());
-    }
-
-    private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
-
-        if (nonProxyHost.length() > 1) {
-            if (nonProxyHost.charAt(0) == '*')
-                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
-                        nonProxyHost.length() - 1);
-            else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
-                return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
-        }
-
-        return nonProxyHost.equalsIgnoreCase(targetHost);
-    }
-    
-    /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
-     * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
-     * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * 
-     * @param proxyServer the proxy
-     * @param hostname the hostname
-     * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
-     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
-     */
-    public static boolean ignoreProxy(final ProxyServer proxyServer, String hostname) {
-        if (proxyServer != null) {
-            if (hostname == null)
-                throw new NullPointerException("hostname");
-
-            List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
-
-            if (isNonEmpty(nonProxyHosts)) {
-                for (String nonProxyHost : nonProxyHosts) {
-                    if (matchNonProxyHost(hostname, nonProxyHost))
-                        return true;
-                }
-            }
-
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     /**
      * Creates a proxy server instance from the given properties.
      * Currently the default http.* proxy properties are supported as well as properties specific for AHC.

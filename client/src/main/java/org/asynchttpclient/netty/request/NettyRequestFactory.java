@@ -28,9 +28,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_VERSIO
 import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
-import static org.asynchttpclient.util.HttpUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.HttpUtils.hostHeader;
-import static org.asynchttpclient.util.HttpUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -66,12 +64,14 @@ import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
-public final class NettyRequestFactory extends NettyRequestFactoryBase {
+public final class NettyRequestFactory {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
+    
+    private final AsyncHttpClientConfig config;
 
     public NettyRequestFactory(AsyncHttpClientConfig config) {
-        super(config);
+        this.config = config;
     }
 
     private NettyBody body(Request request, boolean connect) {
@@ -93,7 +93,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
                 nettyBody = new NettyByteBufferBody(request.getByteBufferData());
 
             else if (request.getStreamData() != null)
-                nettyBody = new NettyInputStreamBody(request.getStreamData(), config);
+                nettyBody = new NettyInputStreamBody(request.getStreamData());
 
             else if (isNonEmpty(request.getFormParams())) {
 
@@ -114,7 +114,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
                 nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
-                nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream(), config);
+                nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
             else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator)
                 nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher());
             else if (request.getBodyGenerator() != null)
@@ -135,7 +135,7 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
 
-    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer) {
+    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
 
         Uri uri = request.getUri();
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
@@ -167,7 +167,11 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
 
         HttpHeaders headers = httpRequest.headers();
 
-        if (!connect) {
+        if (connect) {
+            // assign proxy-auth as configured on request
+            headers.set(PROXY_AUTHORIZATION, request.getHeaders().getAll(PROXY_AUTHORIZATION));
+        
+        } else {
             // assign headers as configured on request
             headers.set(request.getHeaders());
 
@@ -205,12 +209,9 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
         if (!headers.contains(HOST))
             headers.set(HOST, hostHeader(request, uri));
 
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
         // don't override authorization but append
-        addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
-
-        setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyServer, realm, connect));
+        addAuthorizationHeader(headers, perRequestAuthorizationHeader(realm));
+        setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(proxyRealm));
 
         // Add default accept headers
         if (!headers.contains(ACCEPT))
@@ -221,5 +222,33 @@ public final class NettyRequestFactory extends NettyRequestFactoryBase {
             headers.set(USER_AGENT, config.getUserAgent());
 
         return nettyRequest;
+    }
+    
+    private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
+        if (connect)
+            // proxy tunnelling, connect need host and explicit port
+            return getAuthority(uri);
+
+        else if (proxyServer != null)
+            // proxy over HTTP, need full url
+            return uri.toUrl();
+
+        else {
+            // direct connection to target host: only path and query
+            String path = getNonEmptyPath(uri);
+            if (isNonEmpty(uri.getQuery()))
+                return path + "?" + uri.getQuery();
+            else
+                return path;
+        }
+    }
+
+    private String connectionHeader(boolean allowConnectionPooling, boolean http11) {
+        if (allowConnectionPooling)
+            return HttpHeaders.Values.KEEP_ALIVE;
+        else if (http11)
+            return HttpHeaders.Values.CLOSE;
+        else
+            return null;
     }
 }

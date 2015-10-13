@@ -40,11 +40,12 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.util.ProxyUtils;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -54,8 +55,8 @@ import org.testng.annotations.Test;
  * @author Hubert Iwaniuk
  */
 public class ProxyTest extends AbstractBasicTest {
-    private class ProxyHandler extends AbstractHandler {
-        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+    public static class ProxyHandler extends AbstractHandler {
+        public void handle(String s,  org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getUri().getPath());
                 response.setStatus(HttpServletResponse.SC_OK);
@@ -110,12 +111,35 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
+    @Test(groups = "fast")
+    public void testNonProxyHost() {
+
+        // // should avoid, it's in non-proxy hosts
+        Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
+        ProxyServer proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("somewhere.com").build();
+        assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
+        //
+        // // should avoid, it's in non-proxy hosts (with "*")
+        req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
+        proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
+
+        // should use it
+        req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
+        proxyServer = ProxyServer.newProxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
+    }
+
     @Test(groups = { "standalone", "default_provider" })
-    public void testNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(ProxyServer.newProxyServer("127.0.0.1", port1 - 1).build()).build();
+    public void testNonProxyHostsRequestOverridesConfig() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        
+        ProxyServer configProxy = ProxyServer.newProxyServer("127.0.0.1", port1 - 1).build();
+        ProxyServer requestProxy = ProxyServer.newProxyServer("127.0.0.1", port1).nonProxyHost("127.0.0.1").build();
+        
+        AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(configProxy).build();
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(cfg)) {
             String target = "http://127.0.0.1:1234/";
-            client.prepareGet(target).setProxyServer(ProxyServer.newProxyServer("127.0.0.1", port1).nonProxyHost("127.0.0.1").build()).execute().get();
+            client.prepareGet(target).setProxyServer(requestProxy).execute().get();
             assertFalse(true);
         } catch (Throwable e) {
             assertNotNull(e.getCause());
@@ -124,17 +148,19 @@ public class ProxyTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testNonProxyHostIssue202() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testRequestNonProxyHost() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        
+        ProxyServer proxy = ProxyServer.newProxyServer("127.0.0.1", port1 - 1).nonProxyHost("127.0.0.1").build();
         try (AsyncHttpClient client = new DefaultAsyncHttpClient()) {
             String target = "http://127.0.0.1:" + port1 + "/";
-            Future<Response> f = client.prepareGet(target).setProxyServer(ProxyServer.newProxyServer("127.0.0.1", port1 - 1).nonProxyHost("127.0.0.1").build()).execute();
+            Future<Response> f = client.prepareGet(target).setProxyServer(proxy).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
         }
     }
-
+    
     @Test(groups = { "standalone", "default_provider" })
     public void runSequentiallyBecauseNotThreadSafe() throws Exception {
         testProxyProperties();
@@ -261,18 +287,18 @@ public class ProxyTest extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         ProxySelector originalProxySelector = ProxySelector.getDefault();
-            ProxySelector.setDefault(new ProxySelector() {
-                public List<Proxy> select(URI uri) {
-                    if (uri.getHost().equals("127.0.0.1")) {
-                        return Arrays.asList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", port1)));
-                    } else {
-                        return Arrays.asList(Proxy.NO_PROXY);
-                    }
+        ProxySelector.setDefault(new ProxySelector() {
+            public List<Proxy> select(URI uri) {
+                if (uri.getHost().equals("127.0.0.1")) {
+                    return Arrays.asList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", port1)));
+                } else {
+                    return Arrays.asList(Proxy.NO_PROXY);
                 }
+            }
 
-                public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-                }
-            });
+            public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+            }
+        });
 
         AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxySelector(true).build();
         try (AsyncHttpClient client = new DefaultAsyncHttpClient(cfg)) {

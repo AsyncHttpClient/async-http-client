@@ -419,7 +419,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
         private Realm.RealmBuilder realmBuilder = null;
-        private Realm.AuthScheme proxyAuthScheme = Realm.AuthScheme.NONE;
+        private Realm.AuthScheme proxyAuthScheme;
         private String proxyHost = null;
         private String proxyPrincipal = null;
         private String proxyPassword = null;
@@ -653,7 +653,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         private Realm.RealmBuilder realm() {
             if (realmBuilder == null) {
-                realmBuilder = new Realm.RealmBuilder();
+                realmBuilder = new Realm.RealmBuilder().scheme(AuthScheme.BASIC);
             }
             return realmBuilder;
         }
@@ -694,7 +694,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             if (proxyHost != null) {
                 Realm realm = null;
                 if (proxyPrincipal != null) {
-                    AuthScheme proxyAuthScheme = this.proxyAuthScheme == AuthScheme.NONE ? AuthScheme.BASIC : this.proxyAuthScheme;
+                    AuthScheme proxyAuthScheme = this.proxyAuthScheme == null ? AuthScheme.BASIC : this.proxyAuthScheme;
                     realm = Realm.newRealm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 

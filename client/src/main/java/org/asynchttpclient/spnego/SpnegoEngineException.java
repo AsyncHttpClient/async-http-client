@@ -16,7 +16,7 @@ package org.asynchttpclient.spnego;
 /**
  * Signals SPNEGO protocol failure.
  */
-public class SpnegoEngineException extends RuntimeException {
+public class SpnegoEngineException extends Exception {
 
     private static final long serialVersionUID = -3123799505052881438L;
 
