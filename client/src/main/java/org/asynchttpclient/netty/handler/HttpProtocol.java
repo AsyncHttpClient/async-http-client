@@ -342,8 +342,6 @@ public final class HttpProtocol extends Protocol {
             return false;
         }
         
-        logger.debug("Sending proxy authentication to {}", request.getUri());
-
         // FIXME what's this???
         future.setState(NettyResponseFuture.STATE.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
