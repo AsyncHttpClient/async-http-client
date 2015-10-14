@@ -21,10 +21,10 @@ public interface AsyncHttpClientRegistry {
     /**
      * Returns back the AsyncHttpClient associated with this name
      * 
-     * @param clientName
-     * @return
+     * @param name the name of the client instance in the registry
+     * @return the client
      */
-    AsyncHttpClient get(String clientName);
+    AsyncHttpClient get(String name);
 
     /**
      * Registers this instance of AsyncHttpClient with this name and returns
@@ -32,11 +32,11 @@ public interface AsyncHttpClientRegistry {
      * previous instance if there was another instance registered with the same
      * name and has been replaced by this one.
      * 
-     * @param name
-     * @param ahc
-     * @return
+     * @param name the name of the client instance in the registry
+     * @param client the client instance
+     * @return the previous instance
      */
-    AsyncHttpClient addOrReplace(String name, AsyncHttpClient ahc);
+    AsyncHttpClient addOrReplace(String name, AsyncHttpClient client);
 
     /**
      * Will register only if an instance with this name doesn't exist and if it
@@ -51,26 +51,24 @@ public interface AsyncHttpClientRegistry {
      *      }
      * </pre></blockquote>
      * 
-     * @param name
-     * @param ahc
-     * @return
+     * @param name the name of the client instance in the registry
+     * @param client the client instance
+     * @return true is the client was indeed registered
      */
 
-    boolean registerIfNew(String name, AsyncHttpClient ahc);
+    boolean registerIfNew(String name, AsyncHttpClient client);
 
     /**
      * Remove the instance associate with this name
      * 
-     * @param name
-     * @return
+     * @param name the name of the client instance in the registry
+     * @return true is the client was indeed unregistered
      */
 
-    boolean unRegister(String name);
+    boolean unregister(String name);
 
     /**
-     * Returns back all registered names
-     * 
-     * @return
+     * @return all registered names
      */
 
     Set<String> getAllRegisteredNames();

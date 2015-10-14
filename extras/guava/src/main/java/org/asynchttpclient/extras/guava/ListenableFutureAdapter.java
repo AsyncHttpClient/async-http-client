@@ -23,6 +23,7 @@ public final class ListenableFutureAdapter {
 
     /**
      * @param future an AHC ListenableFuture
+     * @param <V> the Future's value type
      * @return a Guava ListenableFuture
      */
     public static <V> com.google.common.util.concurrent.ListenableFuture<V> asGuavaFuture(final ListenableFuture<V> future) {

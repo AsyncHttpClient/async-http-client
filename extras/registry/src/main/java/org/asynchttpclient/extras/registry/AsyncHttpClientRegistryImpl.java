@@ -94,7 +94,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
      * org.asynchttpclient.IAsyncHttpClientRegistry#unRegister(java.lang.String)
      */
     @Override
-    public boolean unRegister(String name) {
+    public boolean unregister(String name) {
         return asyncHttpClientMap.remove(name) != null;
     }
 

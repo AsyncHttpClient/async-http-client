@@ -59,9 +59,9 @@ public class AsyncHttpClientRegistryTest {
     @Test(groups = "fast")
     public void testDeRegister() {
         AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
-        Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().unRegister(TEST_AHC));
+        Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
         Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().unRegister(TEST_AHC));
+        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
         Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
     }
 
