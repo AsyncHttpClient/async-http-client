@@ -74,7 +74,6 @@ public class ProxyServer {
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
      * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
      * 
-     * @param proxyServer the proxy
      * @param hostname the hostname
      * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
      * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>

@@ -33,10 +33,10 @@ import org.slf4j.LoggerFactory;
  * TransferCompletionHandler tl = new TransferCompletionHandler();
  * tl.addTransferListener(new TransferListener() {
  * 
- * public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+ * public void onRequestHeadersSent(HttpHeaders headers) {
  * }
  * 
- * public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+ * public void onResponseHeadersReceived(HttpHeaders headers) {
  * }
  * 
  * public void onBytesReceived(ByteBuffer buffer) {
@@ -82,36 +82,16 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         this.accumulateResponseBytes = accumulateResponseBytes;
     }
 
-    /**
-     * Add a {@link TransferListener}
-     * 
-     * @param t
-     *            a {@link TransferListener}
-     * @return this
-     */
     public TransferCompletionHandler addTransferListener(TransferListener t) {
         listeners.offer(t);
         return this;
     }
 
-    /**
-     * Remove a {@link TransferListener}
-     * 
-     * @param t
-     *            a {@link TransferListener}
-     * @return this
-     */
     public TransferCompletionHandler removeTransferListener(TransferListener t) {
         listeners.remove(t);
         return this;
     }
 
-    /**
-     * Set headers to this listener.
-     * 
-     * @param headers
-     *            {@link FluentCaseInsensitiveStringsMap}
-     */
     public void headers(HttpHeaders headers) {
         this.headers = headers;
     }

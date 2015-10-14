@@ -25,8 +25,9 @@ public interface ConnectionStrategy {
 
     /**
      * Determines whether the connection should be kept alive after this HTTP message exchange.
-     * @param request the HTTP request
-     * @param response the HTTP response
+     * @param ahcRequest the Request, as built by AHC
+     * @param nettyRequest the HTTP request sent to Netty
+     * @param nettyResponse the HTTP response received from Netty
      * @return true if the connection should be kept alive, false if it should be closed.
      */
     boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);

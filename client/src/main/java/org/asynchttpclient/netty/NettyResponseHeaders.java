@@ -55,11 +55,6 @@ public class NettyResponseHeaders extends HttpResponseHeaders {
         return h;
     }
 
-    /**
-     * Return the HTTP header
-     * 
-     * @return an {@link org.asynchttpclient.FluentCaseInsensitiveStringsMap}
-     */
     @Override
     public HttpHeaders getHeaders() {
         return headers;
