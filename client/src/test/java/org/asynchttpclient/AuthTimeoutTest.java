@@ -180,9 +180,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {
-        BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test");
-        Future<Response> f = r.execute();
-        return f;
+        return client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test").execute();
     }
 
     private Realm realm(boolean preemptive) {
