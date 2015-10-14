@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Realm.RealmBuilder;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -68,15 +68,15 @@ public class NtlmTest extends AbstractBasicTest {
         return new NTLMHandler();
     }
 
-    private RealmBuilder realmBuilderBase() {
+    private Realm.Builder realmBuilderBase() {
         return ntlmAuthRealm("Zaphod", "Beeblebrox")//
-                .ntlmDomain("Ursa-Minor")//
-                .ntlmHost("LightCity");
+                .setNtlmDomain("Ursa-Minor")//
+                .setNtlmHost("LightCity");
     }
 
-    private void ntlmAuthTest(RealmBuilder realmBuilder) throws IOException, InterruptedException, ExecutionException {
+    private void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
 
-        try (AsyncHttpClient client = asyncHttpClient(config().realm(realmBuilder.build()))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(realmBuilder.build()))) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
@@ -91,7 +91,7 @@ public class NtlmTest extends AbstractBasicTest {
 
     @Test
     public void preemptiveNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
-        ntlmAuthTest(realmBuilderBase().usePreemptiveAuth(true));
+        ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
     }
 }
 

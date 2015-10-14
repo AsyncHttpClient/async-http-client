@@ -59,7 +59,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void idleStateTest() throws Exception {
-        AsyncHttpClientConfig cg = config().pooledConnectionIdleTimeout(10 * 1000).build();
+        AsyncHttpClientConfig cg = config().setPooledConnectionIdleTimeout(10 * 1000).build();
 
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             c.prepareGet(getTargetUrl()).execute().get();

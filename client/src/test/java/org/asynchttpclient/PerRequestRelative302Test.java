@@ -103,7 +103,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = config().followRedirect(true).build();
+        AsyncHttpClientConfig cg = config().setFollowRedirect(true).build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(false).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
             assertNotNull(response);

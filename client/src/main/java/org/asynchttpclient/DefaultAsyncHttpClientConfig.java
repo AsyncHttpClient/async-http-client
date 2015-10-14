@@ -111,7 +111,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int webSocketMaxBufferSize;
     private final int webSocketMaxFrameSize;
     private final boolean keepEncodingHeader;
-    private final int shutdownQuiet;
+    private final int shutdownQuietPeriod;
     private final int shutdownTimeout;
     private final AdvancedConfig advancedConfig;
 
@@ -154,7 +154,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int webSocketMaxBufferSize,//
             int webSocketMaxFrameSize,//
             boolean keepEncodingHeader,//
-            int shutdownQuiet,//
+            int shutdownQuietPeriod,//
             int shutdownTimeout,//
             AdvancedConfig advancedConfig) {
 
@@ -199,7 +199,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
         this.keepEncodingHeader = keepEncodingHeader;
-        this.shutdownQuiet = shutdownQuiet;
+        this.shutdownQuietPeriod = shutdownQuietPeriod;
         this.shutdownTimeout = shutdownTimeout;
     }
 
@@ -421,8 +421,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getShutdownQuiet() {
-        return shutdownQuiet;
+    public int getShutdownQuietPeriod() {
+        return shutdownQuietPeriod;
     }
 
     @Override
@@ -442,7 +442,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketTimeout = defaultWebSocketTimeout();
         private boolean allowPoolingConnections = defaultAllowPoolingConnections();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
-        private int connectionTTL = defaultConnectionTTL();
+        private int connectionTtl = defaultConnectionTTL();
         private SSLContext sslContext;
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
@@ -482,97 +482,97 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         public Builder() {
         }
 
-        public Builder threadPoolName(String threadPoolName) {
+        public Builder setThreadPoolName(String threadPoolName) {
             this.threadPoolName = threadPoolName;
             return this;
         }
 
-        public Builder maxConnections(int maxConnections) {
+        public Builder setMaxConnections(int maxConnections) {
             this.maxConnections = maxConnections;
             return this;
         }
 
-        public Builder maxConnectionsPerHost(int maxConnectionsPerHost) {
+        public Builder setMaxConnectionsPerHost(int maxConnectionsPerHost) {
             this.maxConnectionsPerHost = maxConnectionsPerHost;
             return this;
         }
 
-        public Builder connectTimeout(int connectTimeout) {
+        public Builder setConnectTimeout(int connectTimeout) {
             this.connectTimeout = connectTimeout;
             return this;
         }
 
-        public Builder webSocketTimeout(int webSocketTimeout) {
+        public Builder setWebSocketTimeout(int webSocketTimeout) {
             this.webSocketTimeout = webSocketTimeout;
             return this;
         }
 
-        public Builder readTimeout(int readTimeout) {
+        public Builder setReadTimeout(int readTimeout) {
             this.readTimeout = readTimeout;
             return this;
         }
 
-        public Builder pooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
             this.pooledConnectionIdleTimeout = pooledConnectionIdleTimeout;
             return this;
         }
 
-        public Builder requestTimeout(int requestTimeout) {
+        public Builder setRequestTimeout(int requestTimeout) {
             this.requestTimeout = requestTimeout;
             return this;
         }
 
-        public Builder followRedirect(boolean followRedirect) {
+        public Builder setFollowRedirect(boolean followRedirect) {
             this.followRedirect = followRedirect;
             return this;
         }
 
-        public Builder maxRedirects(int maxRedirects) {
+        public Builder setMaxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return this;
         }
 
-        public Builder compressionEnforced(boolean compressionEnforced) {
+        public Builder setCompressionEnforced(boolean compressionEnforced) {
             this.compressionEnforced = compressionEnforced;
             return this;
         }
 
-        public Builder userAgent(String userAgent) {
+        public Builder setUserAgent(String userAgent) {
             this.userAgent = userAgent;
             return this;
         }
 
-        public Builder allowPoolingConnections(boolean allowPoolingConnections) {
+        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
             this.allowPoolingConnections = allowPoolingConnections;
             return this;
         }
 
-        public Builder threadFactory(ThreadFactory threadFactory) {
+        public Builder setThreadFactory(ThreadFactory threadFactory) {
             this.threadFactory = threadFactory;
             return this;
         }
 
-        public Builder proxyServerSelector(ProxyServerSelector proxyServerSelector) {
+        public Builder setProxyServerSelector(ProxyServerSelector proxyServerSelector) {
             this.proxyServerSelector = proxyServerSelector;
             return this;
         }
 
-        public Builder proxyServer(ProxyServer proxyServer) {
+        public Builder setProxyServer(ProxyServer proxyServer) {
             this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
             return this;
         }
 
-        public Builder sslContext(final SSLContext sslContext) {
+        public Builder setSslContext(final SSLContext sslContext) {
             this.sslContext = sslContext;
             return this;
         }
 
-        public Builder advancedConfig(AdvancedConfig advancedConfig) {
+        public Builder setAdvancedConfig(AdvancedConfig advancedConfig) {
             this.advancedConfig = advancedConfig;
             return this;
         }
 
-        public Builder realm(Realm realm) {
+        public Builder setRealm(Realm realm) {
             this.realm = realm;
             return this;
         }
@@ -607,126 +607,121 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder maxRequestRetry(int maxRequestRetry) {
+        public Builder setMaxRequestRetry(int maxRequestRetry) {
             this.maxRequestRetry = maxRequestRetry;
             return this;
         }
 
-        public Builder disableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
+        public Builder setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
             this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
             return this;
         }
 
-        public Builder useProxySelector(boolean useProxySelector) {
+        public Builder setUseProxySelector(boolean useProxySelector) {
             this.useProxySelector = useProxySelector;
             return this;
         }
 
-        public Builder useProxyProperties(boolean useProxyProperties) {
+        public Builder setUseProxyProperties(boolean useProxyProperties) {
             this.useProxyProperties = useProxyProperties;
             return this;
         }
 
-        public Builder strict302Handling(final boolean strict302Handling) {
+        public Builder setStrict302Handling(final boolean strict302Handling) {
             this.strict302Handling = strict302Handling;
             return this;
         }
 
-        public Builder connectionTTL(int connectionTTL) {
-            this.connectionTTL = connectionTTL;
+        public Builder setConnectionTtl(int connectionTtl) {
+            this.connectionTtl = connectionTtl;
             return this;
         }
 
-        public Builder acceptAnyCertificate(boolean acceptAnyCertificate) {
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
         }
 
-        public Builder enabledProtocols(String[] enabledProtocols) {
+        public Builder setEnabledProtocols(String[] enabledProtocols) {
             this.enabledProtocols = enabledProtocols;
             return this;
         }
 
-        public Builder enabledCipherSuites(String[] enabledCipherSuites) {
+        public Builder setEnabledCipherSuites(String[] enabledCipherSuites) {
             this.enabledCipherSuites = enabledCipherSuites;
             return this;
         }
 
-        public Builder sslSessionCacheSize(Integer sslSessionCacheSize) {
+        public Builder setSslSessionCacheSize(Integer sslSessionCacheSize) {
             this.sslSessionCacheSize = sslSessionCacheSize;
             return this;
         }
 
-        public Builder sslSessionTimeout(Integer sslSessionTimeout) {
+        public Builder setSslSessionTimeout(Integer sslSessionTimeout) {
             this.sslSessionTimeout = sslSessionTimeout;
             return this;
         }
 
-        public Builder httpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
+        public Builder setHttpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
             this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
             return this;
         }
 
-        public Builder httpClientCodecMaxHeaderSize(int httpClientCodecMaxHeaderSize) {
+        public Builder setHttpClientCodecMaxHeaderSize(int httpClientCodecMaxHeaderSize) {
             this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
             return this;
         }
 
-        public Builder httpClientCodecMaxChunkSize(int httpClientCodecMaxChunkSize) {
+        public Builder setHttpClientCodecMaxChunkSize(int httpClientCodecMaxChunkSize) {
             this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
             return this;
         }
 
-        public Builder disableZeroCopy(boolean disableZeroCopy) {
+        public Builder setDisableZeroCopy(boolean disableZeroCopy) {
             this.disableZeroCopy = disableZeroCopy;
             return this;
         }
 
-        public Builder handshakeTimeout(long handshakeTimeout) {
+        public Builder setHandshakeTimeout(long handshakeTimeout) {
             this.handshakeTimeout = handshakeTimeout;
             return this;
         }
 
-        public Builder sslEngineFactory(SSLEngineFactory sslEngineFactory) {
+        public Builder setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
             this.sslEngineFactory = sslEngineFactory;
             return this;
         }
 
-        public Builder chunkedFileChunkSize(int chunkedFileChunkSize) {
+        public Builder setChunkedFileChunkSize(int chunkedFileChunkSize) {
             this.chunkedFileChunkSize = chunkedFileChunkSize;
             return this;
         }
 
-        public Builder webSocketMaxBufferSize(int webSocketMaxBufferSize) {
+        public Builder setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
             this.webSocketMaxBufferSize = webSocketMaxBufferSize;
             return this;
         }
 
-        public Builder webSocketMaxFrameSize(int webSocketMaxFrameSize) {
+        public Builder setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
             this.webSocketMaxFrameSize = webSocketMaxFrameSize;
             return this;
         }
 
-        public Builder keepEncodingHeader(boolean keepEncodingHeader) {
+        public Builder setKeepEncodingHeader(boolean keepEncodingHeader) {
             this.keepEncodingHeader = keepEncodingHeader;
             return this;
         }
 
-        public Builder shutdownQuiet(int shutdownQuiet) {
+        public Builder setShutdownQuiet(int shutdownQuiet) {
             this.shutdownQuiet = shutdownQuiet;
             return this;
         }
 
-        public Builder shutdownTimeout(int shutdownTimeout) {
+        public Builder setShutdownTimeout(int shutdownTimeout) {
             this.shutdownTimeout = shutdownTimeout;
             return this;
         }
 
-        /**
-         * Build an {@link DefaultAsyncHttpClientConfig}
-         *
-         * @return an {@link DefaultAsyncHttpClientConfig}
-         */
         public DefaultAsyncHttpClientConfig build() {
 
             if (proxyServerSelector == null && useProxySelector)
@@ -746,7 +741,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     webSocketTimeout,//
                     allowPoolingConnections,//
                     pooledConnectionIdleTimeout,//
-                    connectionTTL,//
+                    connectionTtl,//
                     sslContext, //
                     acceptAnyCertificate, //
                     followRedirect, //

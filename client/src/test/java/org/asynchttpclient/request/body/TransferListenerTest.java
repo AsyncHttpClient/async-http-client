@@ -139,7 +139,7 @@ public class TransferListenerTest extends AbstractBasicTest {
 
         int timeout = (int) (file.length() / 1000);
 
-        try (AsyncHttpClient client = asyncHttpClient(config().connectTimeout(timeout).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(timeout).build())) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 

@@ -43,7 +43,7 @@ public class EventPipelineTest extends AbstractBasicTest {
             }
         }).build();
 
-        try (AsyncHttpClient p = asyncHttpClient(config().advancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient p = asyncHttpClient(config().setAdvancedConfig(advancedConfig).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {

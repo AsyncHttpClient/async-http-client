@@ -344,7 +344,7 @@ public class ChannelManager {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void close() {
         if (allowReleaseEventLoopGroup) {
-            io.netty.util.concurrent.Future whenEventLoopGroupClosed = eventLoopGroup.shutdownGracefully(config.getShutdownQuiet(), config.getShutdownTimeout(),
+            io.netty.util.concurrent.Future whenEventLoopGroupClosed = eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(),
                     TimeUnit.MILLISECONDS);
 
             whenEventLoopGroupClosed.addListener((GenericFutureListener<?>) new GenericFutureListener<io.netty.util.concurrent.Future<?>>() {

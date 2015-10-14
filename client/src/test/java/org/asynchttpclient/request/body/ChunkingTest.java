@@ -110,12 +110,12 @@ public class ChunkingTest extends AbstractBasicTest {
 
     private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
         return config()//
-                .allowPoolingConnections(true)//
-                .maxConnectionsPerHost(1)//
-                .maxConnections(1)//
-                .connectTimeout(1000)//
-                .requestTimeout(1000)//
-                .followRedirect(true);
+                .setAllowPoolingConnections(true)//
+                .setMaxConnectionsPerHost(1)//
+                .setMaxConnections(1)//
+                .setConnectTimeout(1000)//
+                .setRequestTimeout(1000)//
+                .setFollowRedirect(true);
     }
 
     private void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, java.util.concurrent.ExecutionException, IOException {

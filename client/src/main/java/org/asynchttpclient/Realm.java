@@ -195,7 +195,7 @@ public class Realm {
     /**
      * A builder for {@link Realm}
      */
-    public static class RealmBuilder {
+    public static class Builder {
 
         private static final ThreadLocal<MessageDigest> DIGEST_TL = new ThreadLocal<MessageDigest>() {
             @Override
@@ -228,94 +228,94 @@ public class Realm {
         private boolean useAbsoluteURI = false;
         private boolean omitQuery;
 
-        public RealmBuilder ntlmDomain(String ntlmDomain) {
+        public Builder setNtlmDomain(String ntlmDomain) {
             this.ntlmDomain = ntlmDomain;
             return this;
         }
 
-        public RealmBuilder ntlmHost(String host) {
+        public Builder setNtlmHost(String host) {
             this.ntlmHost = host;
             return this;
         }
 
-        public RealmBuilder principal(String principal) {
+        public Builder setPrincipal(String principal) {
             this.principal = principal;
             return this;
         }
 
-        public RealmBuilder password(String password) {
+        public Builder setPassword(String password) {
             this.password = password;
             return this;
         }
 
-        public RealmBuilder scheme(AuthScheme scheme) {
+        public Builder setScheme(AuthScheme scheme) {
             this.scheme = scheme;
             return this;
         }
 
-        public RealmBuilder realmName(String realmName) {
+        public Builder setRealmName(String realmName) {
             this.realmName = realmName;
             return this;
         }
 
-        public RealmBuilder nonce(String nonce) {
+        public Builder setNonce(String nonce) {
             this.nonce = nonce;
             return this;
         }
 
-        public RealmBuilder algorithm(String algorithm) {
+        public Builder setAlgorithm(String algorithm) {
             this.algorithm = algorithm;
             return this;
         }
 
-        public RealmBuilder response(String response) {
+        public Builder setResponse(String response) {
             this.response = response;
             return this;
         }
 
-        public RealmBuilder opaque(String opaque) {
+        public Builder setOpaque(String opaque) {
             this.opaque = opaque;
             return this;
         }
 
-        public RealmBuilder qop(String qop) {
+        public Builder setQop(String qop) {
             if (isNonEmpty(qop)) {
                 this.qop = qop;
             }
             return this;
         }
 
-        public RealmBuilder nc(String nc) {
+        public Builder setNc(String nc) {
             this.nc = nc;
             return this;
         }
 
-        public RealmBuilder uri(Uri uri) {
+        public Builder setUri(Uri uri) {
             this.uri = uri;
             return this;
         }
 
-        public RealmBuilder methodName(String methodName) {
+        public Builder setMethodName(String methodName) {
             this.methodName = methodName;
             return this;
         }
 
-        public RealmBuilder usePreemptiveAuth(boolean usePreemptiveAuth) {
+        public Builder setUsePreemptiveAuth(boolean usePreemptiveAuth) {
             this.usePreemptive = usePreemptiveAuth;
             return this;
         }
 
-        public RealmBuilder useAbsoluteURI(boolean useAbsoluteURI) {
+        public Builder setUseAbsoluteURI(boolean useAbsoluteURI) {
             this.useAbsoluteURI = useAbsoluteURI;
             return this;
         }
 
-        public RealmBuilder omitQuery(boolean omitQuery) {
+        public Builder setOmitQuery(boolean omitQuery) {
             this.omitQuery = omitQuery;
             return this;
         }
 
-        public RealmBuilder charset(Charset charset) {
+        public Builder setCharset(Charset charset) {
             this.charset = charset;
             return this;
         }
@@ -341,36 +341,36 @@ public class Realm {
             return null;
         }
 
-        public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
-            realmName(match(headerLine, "realm"))//
-                    .nonce(match(headerLine, "nonce"))//
-                    .opaque(match(headerLine, "opaque"))//
-                    .scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+        public Builder parseWWWAuthenticateHeader(String headerLine) {
+            setRealmName(match(headerLine, "realm"))//
+                    .setNonce(match(headerLine, "nonce"))//
+                    .setOpaque(match(headerLine, "opaque"))//
+                    .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
-                algorithm(algorithm);
+                setAlgorithm(algorithm);
             }
 
             // FIXME qop is different with proxy?
             String rawQop = match(headerLine, "qop");
             if (rawQop != null) {
-                qop(parseRawQop(rawQop));
+                setQop(parseRawQop(rawQop));
             }
             
             return this;
         }
 
-        public RealmBuilder parseProxyAuthenticateHeader(String headerLine) {
-            realmName(match(headerLine, "realm"))//
-                    .nonce(match(headerLine, "nonce"))//
-                    .opaque(match(headerLine, "opaque"))//
-                    .scheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+        public Builder parseProxyAuthenticateHeader(String headerLine) {
+            setRealmName(match(headerLine, "realm"))//
+                    .setNonce(match(headerLine, "nonce"))//
+                    .setOpaque(match(headerLine, "opaque"))//
+                    .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             String algorithm = match(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
-                algorithm(algorithm);
+                setAlgorithm(algorithm);
             }
             // FIXME qop is different with proxy?
-            qop(match(headerLine, "qop"));
+            setQop(match(headerLine, "qop"));
             
             return this;
         }

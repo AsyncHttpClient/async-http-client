@@ -87,7 +87,7 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg = config().proxyServer(proxyServer("127.0.0.1", port1).build()).build();
+        AsyncHttpClientConfig cfg = config().setProxyServer(proxyServer("127.0.0.1", port1).build()).build();
         try (AsyncHttpClient client = asyncHttpClient(cfg)) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
@@ -100,7 +100,7 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg = config().proxyServer(proxyServer("127.0.0.1", port1 - 1).build()).build();
+        AsyncHttpClientConfig cfg = config().setProxyServer(proxyServer("127.0.0.1", port1 - 1).build()).build();
         try (AsyncHttpClient client = asyncHttpClient(cfg)) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("127.0.0.1", port1).build()).execute();
@@ -116,17 +116,17 @@ public class ProxyTest extends AbstractBasicTest {
 
         // // should avoid, it's in non-proxy hosts
         Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
-        ProxyServer proxyServer = proxyServer("foo", 1234).nonProxyHost("somewhere.com").build();
+        ProxyServer proxyServer = proxyServer("foo", 1234).setNonProxyHost("somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
         //
         // // should avoid, it's in non-proxy hosts (with "*")
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = proxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
 
         // should use it
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
-        proxyServer = proxyServer("foo", 1234).nonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
     }
 
@@ -134,9 +134,9 @@ public class ProxyTest extends AbstractBasicTest {
     public void testNonProxyHostsRequestOverridesConfig() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         
         ProxyServer configProxy = proxyServer("127.0.0.1", port1 - 1).build();
-        ProxyServer requestProxy = proxyServer("127.0.0.1", port1).nonProxyHost("127.0.0.1").build();
+        ProxyServer requestProxy = proxyServer("127.0.0.1", port1).setNonProxyHost("127.0.0.1").build();
         
-        try (AsyncHttpClient client = asyncHttpClient(config().proxyServer(configProxy))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(configProxy))) {
             String target = "http://127.0.0.1:1234/";
             client.prepareGet(target).setProxyServer(requestProxy).execute().get();
             assertFalse(true);
@@ -149,7 +149,7 @@ public class ProxyTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testRequestNonProxyHost() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         
-        ProxyServer proxy = proxyServer("127.0.0.1", port1 - 1).nonProxyHost("127.0.0.1").build();
+        ProxyServer proxy = proxyServer("127.0.0.1", port1 - 1).setNonProxyHost("127.0.0.1").build();
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://127.0.0.1:" + port1 + "/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxy).execute();
@@ -180,7 +180,7 @@ public class ProxyTest extends AbstractBasicTest {
         AsyncHttpClientConfigHelper.reloadProperties();
 
 
-        try (AsyncHttpClient client = asyncHttpClient(config().useProxyProperties(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseProxyProperties(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -267,7 +267,7 @@ public class ProxyTest extends AbstractBasicTest {
         System.setProperty(ProxyUtils.PROXY_NONPROXYHOSTS, "127.*");
         AsyncHttpClientConfigHelper.reloadProperties();
 
-        try (AsyncHttpClient client = asyncHttpClient(config().useProxyProperties(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseProxyProperties(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             try {
@@ -297,7 +297,7 @@ public class ProxyTest extends AbstractBasicTest {
             }
         });
 
-        try (AsyncHttpClient client = asyncHttpClient(config().useProxySelector(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseProxySelector(true))) {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);

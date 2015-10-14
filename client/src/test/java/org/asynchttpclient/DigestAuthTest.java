@@ -63,7 +63,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
-                    .setRealm(digestAuthRealm(USER, ADMIN).realmName("MyRealm").build())//
+                    .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -76,7 +76,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
-                    .setRealm(digestAuthRealm(USER, ADMIN).realmName("MyRealm").build())//
+                    .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
             assertNotNull(resp);

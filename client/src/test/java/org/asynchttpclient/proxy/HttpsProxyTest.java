@@ -75,8 +75,8 @@ public class HttpsProxyTest extends AbstractBasicTest {
         ProxyServer ps = proxyServer("127.0.0.1", port1).build();
 
         AsyncHttpClientConfig config = config()//
-        .followRedirect(true)//
-        .acceptAnyCertificate(true)//
+        .setFollowRedirect(true)//
+        .setAcceptAnyCertificate(true)//
         .build();
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
@@ -102,9 +102,9 @@ public class HttpsProxyTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = config()//
-                .followRedirect(true)//
-                .proxyServer(proxyServer("127.0.0.1", port1).build())//
-                .acceptAnyCertificate(true)//
+                .setFollowRedirect(true)//
+                .setProxyServer(proxyServer("127.0.0.1", port1).build())//
+                .setAcceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {

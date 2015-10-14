@@ -106,7 +106,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     public AsyncHttpClientConfig getAsyncHttpClientConfig() {
         // for this test brevity's sake, we are limiting to 1 retries
-        return config().maxRequestRetry(0).requestTimeout(10000).build();
+        return config().setMaxRequestRetry(0).setRequestTimeout(10000).build();
     }
 
     @Test(groups = { "standalone", "default_provider" })

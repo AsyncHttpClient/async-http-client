@@ -174,7 +174,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void redirectAndDigestAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = asyncHttpClient(config().followRedirect(true).maxRedirects(10).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10).build())) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm(basicAuthRealm(USER, ADMIN).build())//
                     .execute();
@@ -233,7 +233,7 @@ public class BasicAuthTest extends AbstractBasicTest {
             // send the request to the no-auth endpoint to be able to verify the
             // auth header is really sent preemptively for the initial call.
             Future<Response> f = client.prepareGet(getTargetUrlNoAuth())//
-                    .setRealm(basicAuthRealm(USER, ADMIN).usePreemptiveAuth(true).build())//
+                    .setRealm(basicAuthRealm(USER, ADMIN).setUsePreemptiveAuth(true).build())//
                     .execute();
 
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -290,7 +290,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthAsyncConfigTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().realm(basicAuthRealm(USER, ADMIN).build()).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN).build()).build())) {
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE_STRING)//
                     .execute();
@@ -305,7 +305,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthFileNoKeepAliveTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().allowPoolingConnections(false).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setAllowPoolingConnections(false).build())) {
 
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE)//

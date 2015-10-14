@@ -36,14 +36,14 @@ public class NoNullResponseTest extends AbstractBasicTest {
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
 
         AsyncHttpClientConfig config = config()//
-                .followRedirect(true)//
-                .sslContext(getSSLContext())//
-                .allowPoolingConnections(true)//
-                .connectTimeout(10000)//
-                .pooledConnectionIdleTimeout(60000)//
-                .requestTimeout(10000)//
-                .maxConnectionsPerHost(-1)//
-                .maxConnections(-1)//
+                .setFollowRedirect(true)//
+                .setSslContext(getSSLContext())//
+                .setAllowPoolingConnections(true)//
+                .setConnectTimeout(10000)//
+                .setPooledConnectionIdleTimeout(60000)//
+                .setRequestTimeout(10000)//
+                .setMaxConnectionsPerHost(-1)//
+                .setMaxConnections(-1)//
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {

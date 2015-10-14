@@ -297,7 +297,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStream302RedirectWithBody() throws Exception {
         final AtomicReference<Integer> statusCode = new AtomicReference<>(0);
         final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
-        try (AsyncHttpClient c = asyncHttpClient(config().followRedirect(true).build())) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).build())) {
             Future<String> f = c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public State onStatusReceived(HttpResponseStatus status) throws Exception {

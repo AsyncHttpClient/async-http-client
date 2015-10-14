@@ -70,7 +70,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestNegative(final int status, boolean strict) throws Exception {
 
-        AsyncHttpClientConfig config = config().followRedirect(true).strict302Handling(strict).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().setFollowRedirect(true).setStrict302Handling(strict).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
@@ -105,7 +105,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestPositive(final int status) throws Exception {
 
-        AsyncHttpClientConfig config = config().followRedirect(true).addResponseFilter(new ResponseFilter() {
+        AsyncHttpClientConfig config = config().setFollowRedirect(true).addResponseFilter(new ResponseFilter() {
             @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect

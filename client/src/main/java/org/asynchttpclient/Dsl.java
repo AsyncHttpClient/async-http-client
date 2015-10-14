@@ -14,8 +14,7 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.Realm.AuthScheme;
-import org.asynchttpclient.Realm.RealmBuilder;
-import org.asynchttpclient.proxy.ProxyServer.ProxyServerBuilder;
+import org.asynchttpclient.proxy.ProxyServer;
 
 public final class Dsl {
 
@@ -33,8 +32,8 @@ public final class Dsl {
     }
 
     // /////////// ProxyServer ////////////////
-    public static ProxyServerBuilder proxyServer(String host, int port) {
-        return new ProxyServerBuilder(host, port);
+    public static ProxyServer.Builder proxyServer(String host, int port) {
+        return new ProxyServer.Builder(host, port);
     }
 
     // /////////// Config ////////////////
@@ -47,43 +46,43 @@ public final class Dsl {
     }
 
     // /////////// Realm ////////////////
-    public static RealmBuilder realm(Realm prototype) {
-        return new RealmBuilder()//
-                .realmName(prototype.getRealmName())//
-                .algorithm(prototype.getAlgorithm())//
-                .methodName(prototype.getMethodName())//
-                .nc(prototype.getNc())//
-                .nonce(prototype.getNonce())//
-                .password(prototype.getPassword())//
-                .principal(prototype.getPrincipal())//
-                .charset(prototype.getCharset())//
-                .opaque(prototype.getOpaque())//
-                .qop(prototype.getQop())//
-                .scheme(prototype.getScheme())//
-                .uri(prototype.getUri())//
-                .usePreemptiveAuth(prototype.isUsePreemptiveAuth())//
-                .ntlmDomain(prototype.getNtlmDomain())//
-                .ntlmHost(prototype.getNtlmHost())//
-                .useAbsoluteURI(prototype.isUseAbsoluteURI())//
-                .omitQuery(prototype.isOmitQuery());
+    public static Realm.Builder realm(Realm prototype) {
+        return new Realm.Builder()//
+                .setRealmName(prototype.getRealmName())//
+                .setAlgorithm(prototype.getAlgorithm())//
+                .setMethodName(prototype.getMethodName())//
+                .setNc(prototype.getNc())//
+                .setNonce(prototype.getNonce())//
+                .setPassword(prototype.getPassword())//
+                .setPrincipal(prototype.getPrincipal())//
+                .setCharset(prototype.getCharset())//
+                .setOpaque(prototype.getOpaque())//
+                .setQop(prototype.getQop())//
+                .setScheme(prototype.getScheme())//
+                .setUri(prototype.getUri())//
+                .setUsePreemptiveAuth(prototype.isUsePreemptiveAuth())//
+                .setNtlmDomain(prototype.getNtlmDomain())//
+                .setNtlmHost(prototype.getNtlmHost())//
+                .setUseAbsoluteURI(prototype.isUseAbsoluteURI())//
+                .setOmitQuery(prototype.isOmitQuery());
     }
 
-    public static RealmBuilder realm(AuthScheme scheme, String principal, String password) {
-        return new RealmBuilder()//
-                .scheme(scheme)//
-                .principal(principal)//
-                .password(password);
+    public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {
+        return new Realm.Builder()//
+                .setScheme(scheme)//
+                .setPrincipal(principal)//
+                .setPassword(password);
     }
 
-    public static RealmBuilder basicAuthRealm(String principal, String password) {
+    public static Realm.Builder basicAuthRealm(String principal, String password) {
         return realm(AuthScheme.BASIC, principal, password);
     }
 
-    public static RealmBuilder digestAuthRealm(String principal, String password) {
+    public static Realm.Builder digestAuthRealm(String principal, String password) {
         return realm(AuthScheme.DIGEST, principal, password);
     }
 
-    public static RealmBuilder ntlmAuthRealm(String principal, String password) {
+    public static Realm.Builder ntlmAuthRealm(String principal, String password) {
         return realm(AuthScheme.NTLM, principal, password);
     }
 

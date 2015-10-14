@@ -272,7 +272,7 @@ public interface AsyncHttpClientConfig {
 
     boolean isKeepEncodingHeader();
 
-    int getShutdownQuiet();
+    int getShutdownQuietPeriod();
 
     int getShutdownTimeout();
 }

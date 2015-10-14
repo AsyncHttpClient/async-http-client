@@ -107,7 +107,7 @@ public class ProxyServer {
     }
     
     
-    public static class ProxyServerBuilder {
+    public static class Builder {
 
         private String host;
         private int port;
@@ -116,35 +116,35 @@ public class ProxyServer {
         private List<String> nonProxyHosts;
         private boolean forceHttp10;
 
-        public ProxyServerBuilder(String host, int port) {
+        public Builder(String host, int port) {
             this.host = host;
             this.port = port;
             this.securedPort = port;
         }
 
-        public ProxyServerBuilder securedPort(int securedPort) {
+        public Builder setSecuredPort(int securedPort) {
             this.securedPort = securedPort;
             return this;
         }
 
-        public ProxyServerBuilder realm(Realm realm) {
+        public Builder setRealm(Realm realm) {
             this.realm = realm;
             return this;
         }
 
-        public ProxyServerBuilder nonProxyHost(String nonProxyHost) {
+        public Builder setNonProxyHost(String nonProxyHost) {
             if (nonProxyHosts == null)
                 nonProxyHosts = new ArrayList<String>(1);
             nonProxyHosts.add(nonProxyHost);
             return this;
         }
         
-        public ProxyServerBuilder nonProxyHosts(List<String> nonProxyHosts) {
+        public Builder setNonProxyHosts(List<String> nonProxyHosts) {
             this.nonProxyHosts = nonProxyHosts;
             return this;
         }
 
-        public ProxyServerBuilder forceHttp10(boolean forceHttp10) {
+        public Builder setForceHttp10(boolean forceHttp10) {
             this.forceHttp10 = forceHttp10;
             return this;
         }

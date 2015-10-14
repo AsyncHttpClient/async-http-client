@@ -25,10 +25,10 @@ import org.testng.annotations.Test;
 public class RealmTest {
     @Test(groups = "fast")
     public void testClone() {
-        Realm orig = basicAuthRealm("user", "pass").charset(UTF_16)//
-                .usePreemptiveAuth(true)//
-                .realmName("realm")//
-                .algorithm("algo").build();
+        Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)//
+                .setUsePreemptiveAuth(true)//
+                .setRealmName("realm")//
+                .setAlgorithm("algo").build();
 
         Realm clone = realm(orig).build();
         assertEquals(clone.getPrincipal(), orig.getPrincipal());
@@ -60,11 +60,11 @@ public class RealmTest {
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");
         Realm orig = digestAuthRealm(user, pass)//
-                .nonce(nonce)//
-                .uri(uri)//
-                .methodName(method)//
-                .realmName(realm)//
-                .qop(qop).build();
+                .setNonce(nonce)//
+                .setUri(uri)//
+                .setMethodName(method)//
+                .setRealmName(realm)//
+                .setQop(qop).build();
 
         String ha1 = getMd5(user + ":" + realm + ":" + pass);
         String ha2 = getMd5(method + ":" + uri.getPath());
@@ -83,11 +83,11 @@ public class RealmTest {
         Uri uri = Uri.create("http://ahc.io/foo");
         String qop = "auth";
         Realm orig = digestAuthRealm(user, pass)//
-                .nonce(nonce)//
-                .uri(uri)//
-                .methodName(method)//
-                .realmName(realm)//
-                .qop(qop).build();
+                .setNonce(nonce)//
+                .setUri(uri)//
+                .setMethodName(method)//
+                .setRealmName(realm)//
+                .setQop(qop).build();
 
         String nc = orig.getNc();
         String cnonce = orig.getCnonce();

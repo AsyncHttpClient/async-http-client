@@ -231,7 +231,7 @@ public final class HttpProtocol extends Protocol {
             // FIXME do we want to update the realm, or directly
             // set the header?
             Realm newBasicRealm = realm(realm)//
-                    .usePreemptiveAuth(true)//
+                    .setUsePreemptiveAuth(true)//
                     .build();
             future.setRealm(newBasicRealm);
             break;
@@ -243,9 +243,9 @@ public final class HttpProtocol extends Protocol {
                 return false;
             }
             Realm newDigestRealm = realm(realm)//
-                    .uri(request.getUri())//
-                    .methodName(request.getMethod())//
-                    .usePreemptiveAuth(true)//
+                    .setUri(request.getUri())//
+                    .setMethodName(request.getMethod())//
+                    .setUsePreemptiveAuth(true)//
                     .parseWWWAuthenticateHeader(digestHeader)//
                     .build();
             future.setRealm(newDigestRealm);
@@ -260,7 +260,7 @@ public final class HttpProtocol extends Protocol {
 
             ntlmChallenge(ntlmHeader, request, requestHeaders, realm, future);
             Realm newNtlmRealm = realm(realm)//
-                    .usePreemptiveAuth(true)//
+                    .setUsePreemptiveAuth(true)//
                     .build();
             future.setRealm(newNtlmRealm);
             break;
@@ -281,8 +281,8 @@ public final class HttpProtocol extends Protocol {
                     logger.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, realm, future);
                     Realm newNtlmRealm2 = realm(realm)//
-                            .scheme(AuthScheme.NTLM)//
-                            .usePreemptiveAuth(true)//
+                            .setScheme(AuthScheme.NTLM)//
+                            .setUsePreemptiveAuth(true)//
                             .build();
                     future.setRealm(newNtlmRealm2);
                 } else {
@@ -362,7 +362,7 @@ public final class HttpProtocol extends Protocol {
             // FIXME do we want to update the realm, or directly
             // set the header?
             Realm newBasicRealm = realm(proxyRealm)//
-                    .usePreemptiveAuth(true)//
+                    .setUsePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newBasicRealm);
             break;
@@ -374,9 +374,9 @@ public final class HttpProtocol extends Protocol {
                 return false;
             }
             Realm newDigestRealm = realm(proxyRealm)//
-                    .uri(request.getUri())//
-                    .methodName(request.getMethod())//
-                    .usePreemptiveAuth(true)//
+                    .setUri(request.getUri())//
+                    .setMethodName(request.getMethod())//
+                    .setUsePreemptiveAuth(true)//
                     .parseProxyAuthenticateHeader(digestHeader)//
                     .build();
             future.setProxyRealm(newDigestRealm);
@@ -390,7 +390,7 @@ public final class HttpProtocol extends Protocol {
             }
             ntlmProxyChallenge(ntlmHeader, request, proxyRealm, requestHeaders, future);
             Realm newNtlmRealm = realm(proxyRealm)//
-                    .usePreemptiveAuth(true)//
+                    .setUsePreemptiveAuth(true)//
                     .build();
             future.setProxyRealm(newNtlmRealm);
             break;
@@ -411,8 +411,8 @@ public final class HttpProtocol extends Protocol {
                     logger.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
                     ntlmChallenge(ntlmHeader2, request, requestHeaders, proxyRealm, future);
                     Realm newNtlmRealm2 = realm(proxyRealm)//
-                            .scheme(AuthScheme.NTLM)//
-                            .usePreemptiveAuth(true)//
+                            .setScheme(AuthScheme.NTLM)//
+                            .setUsePreemptiveAuth(true)//
                             .build();
                     future.setProxyRealm(newNtlmRealm2);
                 } else {

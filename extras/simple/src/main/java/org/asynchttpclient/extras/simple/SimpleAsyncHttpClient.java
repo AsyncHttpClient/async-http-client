@@ -417,7 +417,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         private final RequestBuilder requestBuilder;
         private final DefaultAsyncHttpClientConfig.Builder configBuilder = config();
-        private Realm.RealmBuilder realmBuilder = null;
+        private Realm.Builder realmBuilder = null;
         private Realm.AuthScheme proxyAuthScheme;
         private String proxyHost = null;
         private String proxyPrincipal = null;
@@ -508,92 +508,92 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setMaxConnections(int defaultMaxConnections) {
-            configBuilder.maxConnections(defaultMaxConnections);
+            configBuilder.setMaxConnections(defaultMaxConnections);
             return this;
         }
 
         public Builder setMaxConnectionsPerHost(int defaultMaxConnectionsPerHost) {
-            configBuilder.maxConnectionsPerHost(defaultMaxConnectionsPerHost);
+            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionsPerHost);
             return this;
         }
 
         public Builder setConnectTimeout(int connectTimeuot) {
-            configBuilder.connectTimeout(connectTimeuot);
+            configBuilder.setConnectTimeout(connectTimeuot);
             return this;
         }
 
         public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
-            configBuilder.pooledConnectionIdleTimeout(pooledConnectionIdleTimeout);
+            configBuilder.setPooledConnectionIdleTimeout(pooledConnectionIdleTimeout);
             return this;
         }
 
         public Builder setRequestTimeout(int defaultRequestTimeout) {
-            configBuilder.requestTimeout(defaultRequestTimeout);
+            configBuilder.setRequestTimeout(defaultRequestTimeout);
             return this;
         }
 
         public Builder setMaxRedirects(int maxRedirects) {
-            configBuilder.maxRedirects(maxRedirects);
+            configBuilder.setMaxRedirects(maxRedirects);
             return this;
         }
 
         public Builder setCompressionEnforced(boolean compressionEnforced) {
-            configBuilder.compressionEnforced(compressionEnforced);
+            configBuilder.setCompressionEnforced(compressionEnforced);
             return this;
         }
 
         public Builder setUserAgent(String userAgent) {
-            configBuilder.userAgent(userAgent);
+            configBuilder.setUserAgent(userAgent);
             return this;
         }
 
         public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
-            configBuilder.allowPoolingConnections(allowPoolingConnections);
+            configBuilder.setAllowPoolingConnections(allowPoolingConnections);
             return this;
         }
 
         public Builder setThreadFactory(ThreadFactory threadFactory) {
-            configBuilder.threadFactory(threadFactory);
+            configBuilder.setThreadFactory(threadFactory);
             return this;
         }
 
         public Builder setSSLContext(final SSLContext sslContext) {
-            configBuilder.sslContext(sslContext);
+            configBuilder.setSslContext(sslContext);
             return this;
         }
 
         public Builder setRealmNtlmDomain(String domain) {
-            getRealm().ntlmDomain(domain);
+            getRealm().setNtlmDomain(domain);
             return this;
         }
 
         public Builder setRealmPrincipal(String principal) {
-            getRealm().principal(principal);
+            getRealm().setPrincipal(principal);
             return this;
         }
 
         public Builder setRealmPassword(String password) {
-            getRealm().password(password);
+            getRealm().setPassword(password);
             return this;
         }
 
         public Builder setRealmScheme(Realm.AuthScheme scheme) {
-            getRealm().scheme(scheme);
+            getRealm().setScheme(scheme);
             return this;
         }
 
         public Builder setRealmName(String realmName) {
-            getRealm().realmName(realmName);
+            getRealm().setRealmName(realmName);
             return this;
         }
 
         public Builder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
-            getRealm().usePreemptiveAuth(usePreemptiveAuth);
+            getRealm().setUsePreemptiveAuth(usePreemptiveAuth);
             return this;
         }
 
         public Builder setRealmCharset(Charset charset) {
-            getRealm().charset(charset);
+            getRealm().setCharset(charset);
             return this;
         }
 
@@ -650,9 +650,9 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        private Realm.RealmBuilder getRealm() {
+        private Realm.Builder getRealm() {
             if (realmBuilder == null) {
-                realmBuilder = new Realm.RealmBuilder().scheme(AuthScheme.BASIC);
+                realmBuilder = new Realm.Builder().setScheme(AuthScheme.BASIC);
             }
             return realmBuilder;
         }
@@ -675,19 +675,19 @@ public class SimpleAsyncHttpClient implements Closeable {
          * @return this
          */
         public Builder setMaxRequestRetry(int maxRequestRetry) {
-            configBuilder.maxRequestRetry(maxRequestRetry);
+            configBuilder.setMaxRequestRetry(maxRequestRetry);
             return this;
         }
 
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
-            configBuilder.acceptAnyCertificate(acceptAnyCertificate);
+            configBuilder.setAcceptAnyCertificate(acceptAnyCertificate);
             return this;
         }
 
         public SimpleAsyncHttpClient build() {
 
             if (realmBuilder != null) {
-                configBuilder.realm(realmBuilder.build());
+                configBuilder.setRealm(realmBuilder.build());
             }
 
             if (proxyHost != null) {
@@ -697,7 +697,7 @@ public class SimpleAsyncHttpClient implements Closeable {
                     realm = realm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 
-                configBuilder.proxyServer(proxyServer(proxyHost, proxyPort).realm(realm).build());
+                configBuilder.setProxyServer(proxyServer(proxyHost, proxyPort).setRealm(realm).build());
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());

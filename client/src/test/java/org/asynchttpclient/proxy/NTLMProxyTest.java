@@ -104,9 +104,9 @@ public class NTLMProxyTest extends AbstractBasicTest {
 
     private ProxyServer ntlmProxy() throws UnknownHostException {
         Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")//
-                .ntlmDomain("Ursa-Minor")//
-                .ntlmHost("LightCity")//
+                .setNtlmDomain("Ursa-Minor")//
+                .setNtlmHost("LightCity")//
                 .build();
-        return proxyServer("127.0.0.1", port2).realm(realm).build();
+        return proxyServer("127.0.0.1", port2).setRealm(realm).build();
     }
 }
