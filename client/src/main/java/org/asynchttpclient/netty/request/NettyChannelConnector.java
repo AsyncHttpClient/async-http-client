@@ -40,8 +40,8 @@ public class NettyChannelConnector {
         Uri uri = request.getUri();
         int port = uri.getExplicitPort();
 
-        if (request.getInetAddress() != null) {
-            resolutions = new NameResolution[] { new NameResolution(request.getInetAddress()) };
+        if (request.getAddress() != null) {
+            resolutions = new NameResolution[] { new NameResolution(request.getAddress()) };
 
         } else if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
             resolutions = request.getNameResolver().resolve(proxy.getHost());

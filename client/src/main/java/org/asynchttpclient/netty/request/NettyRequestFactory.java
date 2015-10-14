@@ -78,7 +78,7 @@ public final class NettyRequestFactory {
         NettyBody nettyBody = null;
         if (!connect) {
 
-            Charset bodyCharset = request.getBodyCharset() == null ? DEFAULT_CHARSET : request.getBodyCharset();
+            Charset bodyCharset = request.getCharset() == null ? DEFAULT_CHARSET : request.getCharset();
 
             if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());
@@ -103,8 +103,8 @@ public final class NettyRequestFactory {
 
                 nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
-            } else if (isNonEmpty(request.getParts()))
-                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), config);
+            } else if (isNonEmpty(request.getBodyParts()))
+                nettyBody = new NettyMultipartBody(request.getBodyParts(), request.getHeaders(), config);
 
             else if (request.getFile() != null)
                 nettyBody = new NettyFileBody(request.getFile(), config);

@@ -62,7 +62,7 @@ public interface Request {
      *
      * @return the InetAddress
      */
-    InetAddress getInetAddress();
+    InetAddress getAddress();
 
     InetAddress getLocalAddress();
 
@@ -139,7 +139,7 @@ public interface Request {
      *
      * @return the current {@link Part}
      */
-    List<Part> getParts();
+    List<Part> getBodyParts();
 
     /**
      * Return the virtual host value.
@@ -201,7 +201,7 @@ public interface Request {
      *
      * @return the charset value used when decoding the request's body.
      */
-    Charset getBodyCharset();
+    Charset getCharset();
 
     ConnectionPoolPartitioning getConnectionPoolPartitioning();
 

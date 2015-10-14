@@ -18,12 +18,12 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
     private final AsyncHttpClient client;
 
     public BoundRequestBuilder(AsyncHttpClient client, String method, boolean isDisableUrlEncoding) {
-        super(BoundRequestBuilder.class, method, isDisableUrlEncoding);
+        super(method, isDisableUrlEncoding);
         this.client = client;
     }
 
     public BoundRequestBuilder(AsyncHttpClient client, Request prototype) {
-        super(BoundRequestBuilder.class, prototype);
+        super(prototype);
         this.client = client;
     }
 

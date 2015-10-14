@@ -50,349 +50,160 @@ import org.slf4j.LoggerFactory;
  * @param <T> the builder type
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
-    private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
 
     private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
 
-    private static final class RequestImpl implements Request {
-        private String method;
-        private Uri uri;
-        private InetAddress address;
-        private InetAddress localAddress;
-        private HttpHeaders headers = new DefaultHttpHeaders();
-        private ArrayList<Cookie> cookies;
-        private byte[] byteData;
-        private List<byte[]> compositeByteData;
-        private String stringData;
-        private ByteBuffer byteBufferData;
-        private InputStream streamData;
-        private BodyGenerator bodyGenerator;
-        private List<Param> formParams;
-        private List<Part> parts;
-        private String virtualHost;
-        private long length = -1;
-        public ProxyServer proxyServer;
-        private Realm realm;
-        private File file;
-        private Boolean followRedirect;
-        private int requestTimeout;
-        private long rangeOffset;
-        public Charset charset;
-        private ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
-        private NameResolver nameResolver = NameResolver.JdkNameResolver.INSTANCE;
-        private List<Param> queryParams;
-
-        public RequestImpl() {
-        }
-
-        public RequestImpl(Request prototype) {
-            if (prototype != null) {
-                this.method = prototype.getMethod();
-                this.uri = prototype.getUri();
-                this.address = prototype.getInetAddress();
-                this.localAddress = prototype.getLocalAddress();
-                this.headers = new DefaultHttpHeaders().add(prototype.getHeaders());
-                this.cookies = new ArrayList<>(prototype.getCookies());
-                this.byteData = prototype.getByteData();
-                this.compositeByteData = prototype.getCompositeByteData();
-                this.stringData = prototype.getStringData();
-                this.byteBufferData = prototype.getByteBufferData();
-                this.streamData = prototype.getStreamData();
-                this.bodyGenerator = prototype.getBodyGenerator();
-                this.formParams = prototype.getFormParams() == null ? null : new ArrayList<>(prototype.getFormParams());
-                this.parts = prototype.getParts() == null ? null : new ArrayList<>(prototype.getParts());
-                this.virtualHost = prototype.getVirtualHost();
-                this.length = prototype.getContentLength();
-                this.proxyServer = prototype.getProxyServer();
-                this.realm = prototype.getRealm();
-                this.file = prototype.getFile();
-                this.followRedirect = prototype.getFollowRedirect();
-                this.requestTimeout = prototype.getRequestTimeout();
-                this.rangeOffset = prototype.getRangeOffset();
-                this.charset = prototype.getBodyCharset();
-                this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
-                this.nameResolver = prototype.getNameResolver();
-            }
-        }
-
-        @Override
-        public String getUrl() {
-            return uri.toUrl();
-        }
-
-        @Override
-        public String getMethod() {
-            return method;
-        }
-
-        @Override
-        public InetAddress getInetAddress() {
-            return address;
-        }
-
-        @Override
-        public InetAddress getLocalAddress() {
-            return localAddress;
-        }
-
-        @Override
-        public Uri getUri() {
-            return uri;
-        }
-
-        @Override
-        public HttpHeaders getHeaders() {
-            return headers;
-        }
-
-        @Override
-        public Collection<Cookie> getCookies() {
-            return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
-        }
-
-        @Override
-        public byte[] getByteData() {
-            return byteData;
-        }
-
-        @Override
-        public List<byte[]> getCompositeByteData() {
-            return compositeByteData;
-        }
-
-        @Override
-        public String getStringData() {
-            return stringData;
-        }
-
-        @Override
-        public ByteBuffer getByteBufferData() {
-            return byteBufferData;
-        }
-
-        @Override
-        public InputStream getStreamData() {
-            return streamData;
-        }
-
-        @Override
-        public BodyGenerator getBodyGenerator() {
-            return bodyGenerator;
-        }
-
-        @Override
-        public long getContentLength() {
-            return length;
-        }
-
-        @Override
-        public List<Param> getFormParams() {
-            return formParams != null ? formParams : Collections.<Param> emptyList();
-        }
-
-        @Override
-        public List<Part> getParts() {
-            return parts != null ? parts : Collections.<Part> emptyList();
-        }
-
-        @Override
-        public String getVirtualHost() {
-            return virtualHost;
-        }
-
-        @Override
-        public ProxyServer getProxyServer() {
-            return proxyServer;
-        }
-
-        @Override
-        public Realm getRealm() {
-            return realm;
-        }
-
-        @Override
-        public File getFile() {
-            return file;
-        }
-
-        @Override
-        public Boolean getFollowRedirect() {
-            return followRedirect;
-        }
-
-        @Override
-        public int getRequestTimeout() {
-            return requestTimeout;
-        }
-
-        @Override
-        public long getRangeOffset() {
-            return rangeOffset;
-        }
-
-        @Override
-        public Charset getBodyCharset() {
-            return charset;
-        }
-
-        @Override
-        public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
-            return connectionPoolPartitioning;
-        }
-
-        @Override
-        public NameResolver getNameResolver() {
-            return nameResolver;
-        }
-
-        @Override
-        public List<Param> getQueryParams() {
-            if (queryParams == null)
-                // lazy load
-                if (isNonEmpty(uri.getQuery())) {
-                    queryParams = new ArrayList<>(1);
-                    for (String queryStringParam : uri.getQuery().split("&")) {
-                        int pos = queryStringParam.indexOf('=');
-                        if (pos <= 0)
-                            queryParams.add(new Param(queryStringParam, null));
-                        else
-                            queryParams.add(new Param(queryStringParam.substring(0, pos), queryStringParam.substring(pos + 1)));
-                    }
-                } else
-                    queryParams = Collections.emptyList();
-            return queryParams;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(getUrl());
-
-            sb.append("\t");
-            sb.append(method);
-            sb.append("\theaders:");
-            if (!headers.isEmpty()) {
-                for (Map.Entry<String, String> header : headers) {
-                    sb.append("\t");
-                    sb.append(header.getKey());
-                    sb.append(":");
-                    sb.append(header.getValue());
-                }
-            }
-            if (isNonEmpty(formParams)) {
-                sb.append("\tformParams:");
-                for (Param param : formParams) {
-                    sb.append("\t");
-                    sb.append(param.getName());
-                    sb.append(":");
-                    sb.append(param.getValue());
-                }
-            }
-
-            return sb.toString();
-        }
-    }
-
-    private final Class<T> derived;
-    protected final RequestImpl request;
+    // builder only fields
     protected UriEncoder uriEncoder;
-    protected List<Param> rbQueryParams;
+    protected List<Param> queryParams;
     protected SignatureCalculator signatureCalculator;
 
-    protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
-        this(derived, method, UriEncoder.uriEncoder(disableUrlEncoding));
+    // request fields
+    protected String method;
+    protected Uri uri;
+    protected InetAddress address;
+    protected InetAddress localAddress;
+    protected HttpHeaders headers = new DefaultHttpHeaders();
+    protected ArrayList<Cookie> cookies;
+    protected byte[] byteData;
+    protected List<byte[]> compositeByteData;
+    protected String stringData;
+    protected ByteBuffer byteBufferData;
+    protected InputStream streamData;
+    protected BodyGenerator bodyGenerator;
+    protected List<Param> formParams;
+    protected List<Part> bodyParts;
+    protected String virtualHost;
+    protected long contentLength = -1;
+    protected ProxyServer proxyServer;
+    protected Realm realm;
+    protected File file;
+    protected Boolean followRedirect;
+    protected int requestTimeout;
+    protected long rangeOffset;
+    protected Charset charset;
+    protected ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
+    protected NameResolver nameResolver = NameResolver.JdkNameResolver.INSTANCE;
+
+    protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
+        this.method = method;
+        this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
     }
 
-    protected RequestBuilderBase(Class<T> derived, String method, UriEncoder uriEncoder) {
-        this.derived = derived;
-        request = new RequestImpl();
-        request.method = method;
-        this.uriEncoder = uriEncoder;
+    protected RequestBuilderBase(Request prototype) {
+        this(prototype, false);
     }
 
-    protected RequestBuilderBase(Class<T> derived, Request prototype) {
-        this(derived, prototype, UriEncoder.FIXING);
+    protected RequestBuilderBase(Request prototype, boolean disableUrlEncoding) {
+        this.method = prototype.getMethod();
+        this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
+        this.uri = prototype.getUri();
+        this.address = prototype.getAddress();
+        this.localAddress = prototype.getLocalAddress();
+        this.headers.add(prototype.getHeaders());
+        this.cookies = new ArrayList<Cookie>(prototype.getCookies());
+        this.byteData = prototype.getByteData();
+        this.compositeByteData = prototype.getCompositeByteData();
+        this.stringData = prototype.getStringData();
+        this.byteBufferData = prototype.getByteBufferData();
+        this.streamData = prototype.getStreamData();
+        this.bodyGenerator = prototype.getBodyGenerator();
+        this.formParams = prototype.getFormParams();
+        this.bodyParts = prototype.getBodyParts();
+        this.virtualHost = prototype.getVirtualHost();
+        this.contentLength = prototype.getContentLength();
+        this.proxyServer = prototype.getProxyServer();
+        this.realm = prototype.getRealm();
+        this.file = prototype.getFile();
+        this.followRedirect = prototype.getFollowRedirect();
+        this.requestTimeout = prototype.getRequestTimeout();
+        this.rangeOffset = prototype.getRangeOffset();
+        this.charset = prototype.getCharset();
+        this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
+        this.nameResolver = prototype.getNameResolver();
     }
 
-    protected RequestBuilderBase(Class<T> derived, Request prototype, UriEncoder uriEncoder) {
-        this.derived = derived;
-        request = new RequestImpl(prototype);
-        this.uriEncoder = uriEncoder;
+    @SuppressWarnings("unchecked")
+    private T asDerivedType() {
+        return (T) this;
     }
-    
+
     public T setUrl(String url) {
         return setUri(Uri.create(url));
     }
 
     public T setUri(Uri uri) {
-        request.uri = uri;
-        return derived.cast(this);
+        this.uri = uri;
+        return asDerivedType();
     }
 
-    public T setInetAddress(InetAddress address) {
-        request.address = address;
-        return derived.cast(this);
+    public T setAddress(InetAddress address) {
+        this.address = address;
+        return asDerivedType();
     }
 
-    public T setLocalInetAddress(InetAddress address) {
-        request.localAddress = address;
-        return derived.cast(this);
+    public T setLocalAddress(InetAddress address) {
+        this.localAddress = address;
+        return asDerivedType();
     }
 
     public T setVirtualHost(String virtualHost) {
-        request.virtualHost = virtualHost;
-        return derived.cast(this);
+        this.virtualHost = virtualHost;
+        return asDerivedType();
     }
 
     public T setHeader(CharSequence name, String value) {
-        request.headers.set(name, value);
-        return derived.cast(this);
+        this.headers.set(name, value);
+        return asDerivedType();
     }
 
     public T addHeader(CharSequence name, String value) {
         if (value == null) {
-            logger.warn("Value was null, set to \"\"");
+            LOGGER.warn("Value was null, set to \"\"");
             value = "";
         }
 
-        request.headers.add(name, value);
-        return derived.cast(this);
+        this.headers.add(name, value);
+        return asDerivedType();
     }
 
     public T setHeaders(HttpHeaders headers) {
-        request.headers = headers == null ? new DefaultHttpHeaders() : headers;
-        return derived.cast(this);
+        this.headers = headers == null ? new DefaultHttpHeaders() : headers;
+        return asDerivedType();
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        request.headers = new DefaultHttpHeaders();
+        this.headers = new DefaultHttpHeaders();
         if (headers != null) {
             for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
                 String headerName = entry.getKey();
-                request.headers.add(headerName, entry.getValue());
+                this.headers.add(headerName, entry.getValue());
             }
         }
-        return derived.cast(this);
+        return asDerivedType();
     }
 
-    public T setContentLength(int length) {
-        request.length = length;
-        return derived.cast(this);
+    public T setContentLength(int contentLength) {
+        this.contentLength = contentLength;
+        return asDerivedType();
     }
 
     private void lazyInitCookies() {
-        if (request.cookies == null)
-            request.cookies = new ArrayList<>(3);
+        if (this.cookies == null)
+            this.cookies = new ArrayList<>(3);
     }
 
     public T setCookies(Collection<Cookie> cookies) {
-        request.cookies = new ArrayList<>(cookies);
-        return derived.cast(this);
+        this.cookies = new ArrayList<>(cookies);
+        return asDerivedType();
     }
 
     public T addCookie(Cookie cookie) {
         lazyInitCookies();
-        request.cookies.add(cookie);
-        return derived.cast(this);
+        this.cookies.add(cookie);
+        return asDerivedType();
     }
 
     public T addOrReplaceCookie(Cookie cookie) {
@@ -400,7 +211,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         boolean replace = false;
         int index = 0;
         lazyInitCookies();
-        for (Cookie c : request.cookies) {
+        for (Cookie c : this.cookies) {
             if (c.getName().equals(cookieKey)) {
                 replace = true;
                 break;
@@ -409,43 +220,43 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             index++;
         }
         if (replace)
-            request.cookies.set(index, cookie);
+            this.cookies.set(index, cookie);
         else
-            request.cookies.add(cookie);
-        return derived.cast(this);
+            this.cookies.add(cookie);
+        return asDerivedType();
     }
-    
+
     public void resetCookies() {
-        if (request.cookies != null)
-            request.cookies.clear();
+        if (this.cookies != null)
+            this.cookies.clear();
     }
-    
+
     public void resetQuery() {
-        rbQueryParams = null;
-        request.uri = request.uri.withNewQuery(null);
+        queryParams = null;
+        this.uri = this.uri.withNewQuery(null);
     }
-    
+
     public void resetFormParams() {
-        request.formParams = null;
+        this.formParams = null;
     }
 
     public void resetNonMultipartData() {
-        request.byteData = null;
-        request.compositeByteData = null;
-        request.byteBufferData = null;
-        request.stringData = null;
-        request.streamData = null;
-        request.bodyGenerator = null;
-        request.length = -1;
+        this.byteData = null;
+        this.compositeByteData = null;
+        this.byteBufferData = null;
+        this.stringData = null;
+        this.streamData = null;
+        this.bodyGenerator = null;
+        this.contentLength = -1;
     }
 
     public void resetMultipartData() {
-        request.parts = null;
+        this.bodyParts = null;
     }
 
     public T setBody(File file) {
-        request.file = file;
-        return derived.cast(this);
+        this.file = file;
+        return asDerivedType();
     }
 
     private void resetBody() {
@@ -456,32 +267,32 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setBody(byte[] data) {
         resetBody();
-        request.byteData = data;
-        return derived.cast(this);
+        this.byteData = data;
+        return asDerivedType();
     }
 
     public T setBody(List<byte[]> data) {
         resetBody();
-        request.compositeByteData = data;
-        return derived.cast(this);
+        this.compositeByteData = data;
+        return asDerivedType();
     }
 
     public T setBody(String data) {
         resetBody();
-        request.stringData = data;
-        return derived.cast(this);
+        this.stringData = data;
+        return asDerivedType();
     }
 
     public T setBody(ByteBuffer data) {
         resetBody();
-        request.byteBufferData = data;
-        return derived.cast(this);
+        this.byteBufferData = data;
+        return asDerivedType();
     }
-    
+
     public T setBody(InputStream stream) {
         resetBody();
-        request.streamData = stream;
-        return derived.cast(this);
+        this.streamData = stream;
+        return asDerivedType();
     }
 
     public T setBody(Publisher<ByteBuffer> publisher) {
@@ -489,191 +300,253 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(BodyGenerator bodyGenerator) {
-        request.bodyGenerator = bodyGenerator;
-        return derived.cast(this);
+        this.bodyGenerator = bodyGenerator;
+        return asDerivedType();
     }
 
     public T addQueryParam(String name, String value) {
-        if (rbQueryParams == null)
-            rbQueryParams = new ArrayList<>(1);
-        rbQueryParams.add(new Param(name, value));
-        return derived.cast(this);
+        if (queryParams == null)
+            queryParams = new ArrayList<>(1);
+        queryParams.add(new Param(name, value));
+        return asDerivedType();
     }
 
     public T addQueryParams(List<Param> params) {
-        if (rbQueryParams == null)
-            rbQueryParams = params;
+        if (queryParams == null)
+            queryParams = params;
         else
-            rbQueryParams.addAll(params);
-        return derived.cast(this);
+            queryParams.addAll(params);
+        return asDerivedType();
     }
 
-    private List<Param> map2ParamList(Map<String, List<String>> map) {
-        if (map == null)
-            return null;
-
-        List<Param> params = new ArrayList<>(map.size());
-        for (Map.Entry<String, List<String>> entries : map.entrySet()) {
-            String name = entries.getKey();
-            for (String value : entries.getValue())
-                params.add(new Param(name, value));
-        }
-        return params;
-    }
-    
     public T setQueryParams(Map<String, List<String>> map) {
-        return setQueryParams(map2ParamList(map));
+        return setQueryParams(Param.map2ParamList(map));
     }
 
     public T setQueryParams(List<Param> params) {
         // reset existing query
-        if (isNonEmpty(request.uri.getQuery()))
-            request.uri = request.uri.withNewQuery(null);
-        rbQueryParams = params;
-        return derived.cast(this);
+        if (isNonEmpty(this.uri.getQuery()))
+            this.uri = this.uri.withNewQuery(null);
+        queryParams = params;
+        return asDerivedType();
     }
-    
+
     public T addFormParam(String name, String value) {
         resetNonMultipartData();
         resetMultipartData();
-        if (request.formParams == null)
-            request.formParams = new ArrayList<>(1);
-        request.formParams.add(new Param(name, value));
-        return derived.cast(this);
+        if (this.formParams == null)
+            this.formParams = new ArrayList<>(1);
+        this.formParams.add(new Param(name, value));
+        return asDerivedType();
     }
 
     public T setFormParams(Map<String, List<String>> map) {
-        return setFormParams(map2ParamList(map));
+        return setFormParams(Param.map2ParamList(map));
     }
+
     public T setFormParams(List<Param> params) {
         resetNonMultipartData();
         resetMultipartData();
-        request.formParams = params;
-        return derived.cast(this);
+        this.formParams = params;
+        return asDerivedType();
     }
 
-    public T addBodyPart(Part part) {
+    public T addBodyPart(Part bodyPart) {
         resetFormParams();
         resetNonMultipartData();
-        if (request.parts == null)
-            request.parts = new ArrayList<>();
-        request.parts.add(part);
-        return derived.cast(this);
+        if (this.bodyParts == null)
+            this.bodyParts = new ArrayList<>();
+        this.bodyParts.add(bodyPart);
+        return asDerivedType();
+    }
+
+    public T setBodyParts(List<Part> bodyParts) {
+        this.bodyParts = new ArrayList<>(bodyParts);
+        return asDerivedType();
     }
 
     public T setProxyServer(ProxyServer proxyServer) {
-        request.proxyServer = proxyServer;
-        return derived.cast(this);
+        this.proxyServer = proxyServer;
+        return asDerivedType();
     }
 
     public T setRealm(Realm realm) {
-        request.realm = realm;
-        return derived.cast(this);
+        this.realm = realm;
+        return asDerivedType();
     }
 
     public T setFollowRedirect(boolean followRedirect) {
-        request.followRedirect = followRedirect;
-        return derived.cast(this);
+        this.followRedirect = followRedirect;
+        return asDerivedType();
     }
 
     public T setRequestTimeout(int requestTimeout) {
-        request.requestTimeout = requestTimeout;
-        return derived.cast(this);
+        this.requestTimeout = requestTimeout;
+        return asDerivedType();
     }
 
     public T setRangeOffset(long rangeOffset) {
-        request.rangeOffset = rangeOffset;
-        return derived.cast(this);
+        this.rangeOffset = rangeOffset;
+        return asDerivedType();
     }
 
     public T setMethod(String method) {
-        request.method = method;
-        return derived.cast(this);
+        this.method = method;
+        return asDerivedType();
     }
 
-    public T setBodyCharset(Charset charset) {
-        request.charset = charset;
-        return derived.cast(this);
+    public T setCharset(Charset charset) {
+        this.charset = charset;
+        return asDerivedType();
     }
 
     public T setConnectionPoolPartitioning(ConnectionPoolPartitioning connectionPoolPartitioning) {
-        request.connectionPoolPartitioning = connectionPoolPartitioning;
-        return derived.cast(this);
+        this.connectionPoolPartitioning = connectionPoolPartitioning;
+        return asDerivedType();
     }
 
     public T setNameResolver(NameResolver nameResolver) {
-        request.nameResolver = nameResolver;
-        return derived.cast(this);
+        this.nameResolver = nameResolver;
+        return asDerivedType();
     }
 
     public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
         this.signatureCalculator = signatureCalculator;
-        return derived.cast(this);
+        return asDerivedType();
     }
 
-    private void executeSignatureCalculator() {
-        /* Let's first calculate and inject signature, before finalizing actual build
-         * (order does not matter with current implementation but may in future)
-         */
-        if (signatureCalculator != null) {
-            RequestBuilder rb = new RequestBuilder(request).setSignatureCalculator(null);
-            rb.rbQueryParams = this.rbQueryParams;
-            Request unsignedRequest = rb.build();
-            signatureCalculator.calculateAndAddSignature(unsignedRequest, this);
-        }
+    private RequestBuilderBase<?> executeSignatureCalculator() {
+        if (signatureCalculator == null)
+            return this;
+
+        // build a first version of the request, without signatureCalculator in play
+        RequestBuilder rb = new RequestBuilder(this.method);
+        // make copy of mutable collections so we don't risk affecting
+        // original RequestBuilder
+        // call setFormParams first as it resets other fields
+        if (this.formParams != null)
+            rb.setFormParams(this.formParams);
+        if (this.headers != null)
+            rb.headers.add(this.headers);
+        if (this.cookies != null)
+            rb.setCookies(this.cookies);
+        if (this.bodyParts != null)
+            rb.setBodyParts(this.bodyParts);
+
+        // copy all other fields
+        // but rb.signatureCalculator, that's the whole point here
+        rb.uriEncoder = this.uriEncoder;
+        rb.queryParams = this.queryParams;
+        rb.uri = this.uri;
+        rb.address = this.address;
+        rb.localAddress = this.localAddress;
+        rb.byteData = this.byteData;
+        rb.compositeByteData = this.compositeByteData;
+        rb.stringData = this.stringData;
+        rb.byteBufferData = this.byteBufferData;
+        rb.streamData = this.streamData;
+        rb.bodyGenerator = this.bodyGenerator;
+        rb.virtualHost = this.virtualHost;
+        rb.contentLength = this.contentLength;
+        rb.proxyServer = this.proxyServer;
+        rb.realm = this.realm;
+        rb.file = this.file;
+        rb.followRedirect = this.followRedirect;
+        rb.requestTimeout = this.requestTimeout;
+        rb.rangeOffset = this.rangeOffset;
+        rb.charset = this.charset;
+        rb.connectionPoolPartitioning = this.connectionPoolPartitioning;
+        rb.nameResolver = this.nameResolver;
+        Request unsignedRequest = rb.build();
+        signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
+        return rb;
     }
-    
-    private void computeRequestCharset() {
-        if (request.charset == null) {
+
+    private Charset computeCharset() {
+        if (this.charset == null) {
             try {
-                final String contentType = request.headers.get(HttpHeaders.Names.CONTENT_TYPE);
+                final String contentType = this.headers.get(HttpHeaders.Names.CONTENT_TYPE);
                 if (contentType != null) {
                     final Charset charset = parseCharset(contentType);
                     if (charset != null) {
-                        // ensure that if charset is provided with the Content-Type header,
-                        // we propagate that down to the charset of the Request object
-                        request.charset = charset;
+                        // ensure that if charset is provided with the
+                        // Content-Type header,
+                        // we propagate that down to the charset of the Request
+                        // object
+                        return charset;
                     }
                 }
             } catch (Throwable e) {
                 // NoOp -- we can't fix the Content-Type or charset from here
             }
         }
+        return this.charset;
     }
-    
-    private void computeRequestLength() {
-        if (request.length < 0 && request.streamData == null) {
+
+    private long computeRequestContentLength() {
+        if (this.contentLength < 0 && this.streamData == null) {
             // can't concatenate content-length
-            final String contentLength = request.headers.get(HttpHeaders.Names.CONTENT_LENGTH);
+            final String contentLength = this.headers.get(HttpHeaders.Names.CONTENT_LENGTH);
 
             if (contentLength != null) {
                 try {
-                    request.length = Long.parseLong(contentLength);
+                    return Long.parseLong(contentLength);
                 } catch (NumberFormatException e) {
-                    // NoOp -- we wdn't specify length so it will be chunked?
+                    // NoOp -- we won't specify length so it will be chunked?
                 }
             }
         }
+        return this.contentLength;
     }
 
-    private void computeFinalUri() {
+    private Uri computeUri() {
 
-        if (request.uri == null) {
-            logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
-            request.uri = DEFAULT_REQUEST_URL;
+        Uri tempUri = this.uri;
+        if (tempUri == null) {
+            LOGGER.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
+            tempUri = DEFAULT_REQUEST_URL;
         } else {
-            validateSupportedScheme(request.uri);
+            validateSupportedScheme(tempUri);
         }
 
-        request.uri =  uriEncoder.encode(request.uri, rbQueryParams);
+        return uriEncoder.encode(tempUri, queryParams);
     }
 
     public Request build() {
-        executeSignatureCalculator();
-        computeFinalUri();
-        computeRequestCharset();
-        computeRequestLength();
-        return request;
+        RequestBuilderBase<?> rb = executeSignatureCalculator();
+        Uri finalUri = rb.computeUri();
+        Charset finalCharset = rb.computeCharset();
+        long finalContentLength = rb.computeRequestContentLength();
+        
+        // make copies of mutable internal collections
+        List<Cookie> cookiesCopy = rb.cookies == null ? Collections.emptyList() : new ArrayList<>(rb.cookies);
+        List<Param> formParamsCopy = rb.formParams == null ? Collections.emptyList() : new ArrayList<>(rb.formParams);
+        List<Part> bodyPartsCopy = rb.bodyParts == null ? Collections.emptyList() : new ArrayList<>(rb.bodyParts);
+        
+        return new DefaultRequest(rb.method,//
+                finalUri,//
+                rb.address,//
+                rb.localAddress,//
+                rb.headers,//
+                cookiesCopy,//
+                rb.byteData,//
+                rb.compositeByteData,//
+                rb.stringData,//
+                rb.byteBufferData,//
+                rb.streamData,//
+                rb.bodyGenerator,//
+                formParamsCopy,//
+                bodyPartsCopy,//
+                rb.virtualHost,//
+                finalContentLength,//
+                rb.proxyServer,//
+                rb.realm,//
+                rb.file,//
+                rb.followRedirect,//
+                rb.requestTimeout,//
+                rb.rangeOffset,//
+                finalCharset,//
+                rb.connectionPoolPartitioning,//
+                rb.nameResolver);
     }
 }
-

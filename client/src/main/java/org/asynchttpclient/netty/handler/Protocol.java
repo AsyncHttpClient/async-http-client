@@ -124,14 +124,14 @@ public abstract class Protocol {
                         .setCookies(request.getCookies())//
                         .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
                         .setFollowRedirect(true)//
-                        .setLocalInetAddress(request.getLocalAddress())//
+                        .setLocalAddress(request.getLocalAddress())//
                         .setNameResolver(request.getNameResolver())//
                         .setProxyServer(request.getProxyServer())//
                         .setRealm(request.getRealm())//
                         .setRequestTimeout(request.getRequestTimeout());
 
                 if (keepBody) {
-                    requestBuilder.setBodyCharset(request.getBodyCharset());
+                    requestBuilder.setCharset(request.getCharset());
                     if (MiscUtils.isNonEmpty(request.getFormParams()))
                         requestBuilder.setFormParams(request.getFormParams());
                     else if (request.getStringData() != null)

@@ -12,11 +12,28 @@
  */
 package org.asynchttpclient;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * A pair of (name, value) String
  * @author slandelle
  */
 public class Param {
+    
+    public static List<Param> map2ParamList(Map<String, List<String>> map) {
+        if (map == null)
+            return null;
+
+        List<Param> params = new ArrayList<>(map.size());
+        for (Map.Entry<String, List<String>> entries : map.entrySet()) {
+            String name = entries.getKey();
+            for (String value : entries.getValue())
+                params.add(new Param(name, value));
+        }
+        return params;
+    }
 
     private final String name;
     private final String value;

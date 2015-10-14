@@ -118,8 +118,8 @@ public class RequestBuilderTest {
     @Test(groups = {"standalone", "default_provider"})
     public void testContentTypeCharsetToBodyEncoding() {
         final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=utf-8").build();
-        assertEquals(req.getBodyCharset(), UTF_8);
+        assertEquals(req.getCharset(), UTF_8);
         final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"utf-8\"").build();
-        assertEquals(req2.getBodyCharset(), UTF_8);
+        assertEquals(req2.getCharset(), UTF_8);
     }
 }
