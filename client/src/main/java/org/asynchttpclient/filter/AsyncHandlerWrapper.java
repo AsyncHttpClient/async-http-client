@@ -1,4 +1,4 @@
-package org.asynchttpclient.extra;
+package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;

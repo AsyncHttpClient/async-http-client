@@ -1,10 +1,10 @@
 package org.asynchttpclient.extras.guava;
 
-import org.asynchttpclient.extra.AsyncHandlerWrapper;
-import org.asynchttpclient.extra.ThrottleRequestFilter;
+import org.asynchttpclient.filter.AsyncHandlerWrapper;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
+import org.asynchttpclient.filter.ThrottleRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

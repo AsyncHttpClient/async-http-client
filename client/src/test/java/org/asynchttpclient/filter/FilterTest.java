@@ -33,7 +33,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.extra.ThrottleRequestFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
