@@ -32,7 +32,7 @@ public class RFC2616DateParserTest {
 
     @Test(groups = "fast")
     public void testRFC822() throws ParseException {
-        Date date = RFC2616DateParser.get().parse("Sun, 06 Nov 1994 08:49:37 GMT");
+        Date date = DateParser.get().parse("Sun, 06 Nov 1994 08:49:37 GMT");
         assertNotNull(date);
 
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -48,7 +48,7 @@ public class RFC2616DateParserTest {
 
     @Test(groups = "fast")
     public void testRFC822SingleDigitDayOfMonth() throws ParseException {
-        Date date = RFC2616DateParser.get().parse("Sun, 6 Nov 1994 08:49:37 GMT");
+        Date date = DateParser.get().parse("Sun, 6 Nov 1994 08:49:37 GMT");
         assertNotNull(date);
 
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -64,7 +64,7 @@ public class RFC2616DateParserTest {
 
     @Test(groups = "fast")
     public void testRFC822SingleDigitHour() throws ParseException {
-        Date date = RFC2616DateParser.get().parse("Sun, 6 Nov 1994 8:49:37 GMT");
+        Date date = DateParser.get().parse("Sun, 6 Nov 1994 8:49:37 GMT");
         assertNotNull(date);
 
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -80,7 +80,7 @@ public class RFC2616DateParserTest {
 
     @Test(groups = "fast")
     public void testRFC850() throws ParseException {
-        Date date = RFC2616DateParser.get().parse("Sunday, 06-Nov-94 08:49:37 GMT");
+        Date date = DateParser.get().parse("Sunday, 06-Nov-94 08:49:37 GMT");
         assertNotNull(date);
         
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -96,7 +96,7 @@ public class RFC2616DateParserTest {
 
     @Test(groups = "fast")
     public void testANSIC() throws ParseException {
-        Date date = RFC2616DateParser.get().parse("Sun Nov  6 08:49:37 1994");
+        Date date = DateParser.get().parse("Sun Nov  6 08:49:37 1994");
         assertNotNull(date);
 
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"));

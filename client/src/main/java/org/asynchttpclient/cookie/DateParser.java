@@ -25,19 +25,19 @@ import java.util.TimeZone;
  * @author slandelle
  */
 @SuppressWarnings("serial")
-public class RFC2616DateParser extends SimpleDateFormat {
+public class DateParser extends SimpleDateFormat {
 
     private final SimpleDateFormat format1 = new RFC2616DateParserObsolete1();
     private final SimpleDateFormat format2 = new RFC2616DateParserObsolete2();
 
-    private static final ThreadLocal<RFC2616DateParser> DATE_FORMAT_HOLDER = new ThreadLocal<RFC2616DateParser>() {
+    private static final ThreadLocal<DateParser> DATE_FORMAT_HOLDER = new ThreadLocal<DateParser>() {
         @Override
-        protected RFC2616DateParser initialValue() {
-            return new RFC2616DateParser();
+        protected DateParser initialValue() {
+            return new DateParser();
         }
     };
 
-    public static RFC2616DateParser get() {
+    public static DateParser get() {
         return DATE_FORMAT_HOLDER.get();
     }
 
@@ -47,7 +47,7 @@ public class RFC2616DateParser extends SimpleDateFormat {
      * E, d MMM yyyy HH:mm:ss z
      * e.g. Sun, 06 Nov 1994 08:49:37 GMT
      */
-    private RFC2616DateParser() {
+    private DateParser() {
         super("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         setTimeZone(TimeZone.getTimeZone("GMT"));
     }

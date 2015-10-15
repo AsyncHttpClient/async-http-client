@@ -97,7 +97,7 @@ public class CookieUtil {
 
     static long computeExpires(String expires) {
         if (expires != null) {
-            Date expiresDate = RFC2616DateParser.get().parse(expires, new ParsePosition(0));
+            Date expiresDate = DateParser.get().parse(expires, new ParsePosition(0));
             if (expiresDate != null)
                 return expiresDate.getTime();
         }
