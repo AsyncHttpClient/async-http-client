@@ -10,11 +10,9 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.extra;
+package org.asynchttpclient.handler.resumable;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
-
-import org.asynchttpclient.handler.resumable.ResumableListener;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
