@@ -76,7 +76,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     private final boolean allowPoolingConnections;
     private final int pooledConnectionIdleTimeout;
-    private final int connectionTTL;
+    private final int connectionTtl;
 
     private final SSLContext sslContext;
     private final boolean acceptAnyCertificate;
@@ -123,7 +123,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int webSocketTimeout,//
             boolean allowPoolingConnection,//
             int idleConnectionInPoolTimeout,//
-            int maxConnectionLifeTime,//
+            int connectionTtl,//
             SSLContext sslContext, //
             boolean acceptAnyCertificate, //
             boolean followRedirect, //
@@ -166,7 +166,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.webSocketTimeout = webSocketTimeout;
         this.allowPoolingConnections = allowPoolingConnection;
         this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
-        this.connectionTTL = maxConnectionLifeTime;
+        this.connectionTtl = connectionTtl;
         this.sslContext = sslContext;
         this.acceptAnyCertificate = acceptAnyCertificate;
         this.followRedirect = followRedirect;
@@ -341,8 +341,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getConnectionTTL() {
-        return connectionTTL;
+    public int getConnectionTtl() {
+        return connectionTtl;
     }
 
     @Override
@@ -442,7 +442,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketTimeout = defaultWebSocketTimeout();
         private boolean allowPoolingConnections = defaultAllowPoolingConnections();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
-        private int connectionTtl = defaultConnectionTTL();
+        private int connectionTtl = defaultConnectionTtl();
         private SSLContext sslContext;
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private boolean followRedirect = defaultFollowRedirect();
@@ -491,7 +491,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             webSocketTimeout = config.getWebSocketTimeout();
             allowPoolingConnections = config.isAllowPoolingConnections();
             pooledConnectionIdleTimeout = config.getPooledConnectionIdleTimeout();
-            connectionTtl = config.getConnectionTTL();
+            connectionTtl = config.getConnectionTtl();
             sslContext = config.getSSLContext();
             acceptAnyCertificate = config.isAcceptAnyCertificate();
             followRedirect = config.isFollowRedirect();

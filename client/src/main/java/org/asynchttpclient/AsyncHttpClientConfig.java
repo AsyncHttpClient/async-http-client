@@ -228,7 +228,7 @@ public interface AsyncHttpClientConfig {
      *         keep connection in the pool, or -1 to keep connection while
      *         possible.
      */
-    int getConnectionTTL();
+    int getConnectionTtl();
 
     boolean isAcceptAnyCertificate();
 

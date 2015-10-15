@@ -47,15 +47,15 @@ public final class DefaultChannelPool implements ChannelPool {
     private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
-    private final int maxConnectionTTL;
-    private final boolean maxConnectionTTLDisabled;
+    private final int maxConnectionTtl;
+    private final boolean maxConnectionTtlDisabled;
     private final long maxIdleTime;
     private final boolean maxIdleTimeDisabled;
     private final long cleanerPeriod;
 
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
         this(config.getPooledConnectionIdleTimeout(),//
-                config.getConnectionTTL(),//
+                config.getConnectionTtl(),//
                 hashedWheelTimer);
     }
 
@@ -64,17 +64,17 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     public DefaultChannelPool(long maxIdleTime,//
-            int maxConnectionTTL,//
+            int maxConnectionTtl,//
             Timer nettyTimer) {
         this.maxIdleTime = maxIdleTime;
-        this.maxConnectionTTL = maxConnectionTTL;
-        maxConnectionTTLDisabled = maxConnectionTTL <= 0;
+        this.maxConnectionTtl = maxConnectionTtl;
+        maxConnectionTtlDisabled = maxConnectionTtl <= 0;
         this.nettyTimer = nettyTimer;
         maxIdleTimeDisabled = maxIdleTime <= 0;
 
-        cleanerPeriod = Math.min(maxConnectionTTLDisabled ? Long.MAX_VALUE : maxConnectionTTL, maxIdleTimeDisabled ? Long.MAX_VALUE : maxIdleTime);
+        cleanerPeriod = Math.min(maxConnectionTtlDisabled ? Long.MAX_VALUE : maxConnectionTtl, maxIdleTimeDisabled ? Long.MAX_VALUE : maxIdleTime);
 
-        if (!maxConnectionTTLDisabled || !maxIdleTimeDisabled)
+        if (!maxConnectionTtlDisabled || !maxIdleTimeDisabled)
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
     }
 
@@ -115,12 +115,12 @@ public final class DefaultChannelPool implements ChannelPool {
         }
     }
 
-    private boolean isTTLExpired(Channel channel, long now) {
-        if (maxConnectionTTLDisabled)
+    private boolean isTtlExpired(Channel channel, long now) {
+        if (maxConnectionTtlDisabled)
             return false;
 
         ChannelCreation creation = channelId2Creation.get(channelId(channel));
-        return creation != null && now - creation.creationTime >= maxConnectionTTL;
+        return creation != null && now - creation.creationTime >= maxConnectionTtl;
     }
 
     private boolean isRemotelyClosed(Channel channel) {
@@ -137,7 +137,7 @@ public final class DefaultChannelPool implements ChannelPool {
             // lazy create
             List<IdleChannel> idleTimeoutChannels = null;
             for (IdleChannel idleChannel : partition) {
-                if (isTTLExpired(idleChannel.channel, now) || isIdleTimeoutExpired(idleChannel, now) || isRemotelyClosed(idleChannel.channel)) {
+                if (isTtlExpired(idleChannel.channel, now) || isIdleTimeoutExpired(idleChannel, now) || isRemotelyClosed(idleChannel.channel)) {
                     LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
                     if (idleTimeoutChannels == null)
                         idleTimeoutChannels = new ArrayList<>();
@@ -240,7 +240,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
         long now = millisTime();
 
-        if (isTTLExpired(channel, now))
+        if (isTtlExpired(channel, now))
             return false;
 
         boolean added = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedQueue<>()).add(new IdleChannel(channel, now));
