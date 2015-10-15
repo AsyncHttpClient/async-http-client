@@ -208,8 +208,8 @@ public class Realm {
             }
         };
 
-        private String principal;
-        private String password;
+        private final String principal;
+        private final String password;
         private AuthScheme scheme;
         private String realmName;
         private String nonce;
@@ -228,6 +228,11 @@ public class Realm {
         private boolean useAbsoluteURI = false;
         private boolean omitQuery;
 
+        public Builder(String principal, String password) {
+            this.principal = principal;
+            this.password = password;
+        }
+        
         public Builder setNtlmDomain(String ntlmDomain) {
             this.ntlmDomain = ntlmDomain;
             return this;
@@ -235,16 +240,6 @@ public class Realm {
 
         public Builder setNtlmHost(String host) {
             this.ntlmHost = host;
-            return this;
-        }
-
-        public Builder setPrincipal(String principal) {
-            this.principal = principal;
-            return this;
-        }
-
-        public Builder setPassword(String password) {
-            this.password = password;
             return this;
         }
 

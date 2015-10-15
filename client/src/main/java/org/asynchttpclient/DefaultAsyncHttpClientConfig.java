@@ -448,7 +448,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
         private boolean strict302Handling = defaultStrict302Handling();
-        private ProxyServerSelector proxyServerSelector = null;
+        private ProxyServerSelector proxyServerSelector;
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean compressionEnforced = defaultCompressionEnforced();
@@ -475,11 +475,56 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
         private boolean keepEncodingHeader = defaultKeepEncodingHeader();
-        private int shutdownQuiet = defaultShutdownQuiet();
+        private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
         private int shutdownTimeout = defaultShutdownTimeout();
         private AdvancedConfig advancedConfig;
 
         public Builder() {
+        }
+
+        public Builder(AsyncHttpClientConfig config) {
+            connectTimeout = config.getConnectTimeout();
+            maxConnections = config.getMaxConnections();
+            maxConnectionsPerHost = config.getMaxConnectionsPerHost();
+            requestTimeout = config.getRequestTimeout();
+            readTimeout = config.getReadTimeout();
+            webSocketTimeout = config.getWebSocketTimeout();
+            allowPoolingConnections = config.isAllowPoolingConnections();
+            pooledConnectionIdleTimeout = config.getPooledConnectionIdleTimeout();
+            connectionTtl = config.getConnectionTTL();
+            sslContext = config.getSSLContext();
+            acceptAnyCertificate = config.isAcceptAnyCertificate();
+            followRedirect = config.isFollowRedirect();
+            maxRedirects = config.getMaxRedirects();
+            strict302Handling = config.isStrict302Handling();
+            proxyServerSelector = config.getProxyServerSelector();
+            compressionEnforced = config.isCompressionEnforced();
+            userAgent = config.getUserAgent();
+            threadPoolName = config.getThreadPoolName();
+            threadFactory = config.getThreadFactory();
+            realm = config.getRealm();
+            requestFilters.addAll(config.getRequestFilters());
+            responseFilters.addAll(config.getResponseFilters());
+            ioExceptionFilters.addAll(config.getIOExceptionFilters());
+            maxRequestRetry = config.getMaxRequestRetry();
+            disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
+            enabledProtocols = config.getEnabledProtocols();
+            enabledCipherSuites = config.getEnabledCipherSuites();
+            sslSessionCacheSize = config.getSslSessionCacheSize();
+            sslSessionTimeout = config.getSslSessionTimeout();
+            httpClientCodecMaxInitialLineLength = config.getHttpClientCodecMaxInitialLineLength();
+            httpClientCodecMaxHeaderSize = config.getHttpClientCodecMaxHeaderSize();
+            httpClientCodecMaxChunkSize = config.getHttpClientCodecMaxChunkSize();
+            disableZeroCopy = config.isDisableZeroCopy();
+            handshakeTimeout = config.getHandshakeTimeout();
+            sslEngineFactory = config.getSslEngineFactory();
+            chunkedFileChunkSize = config.getChunkedFileChunkSize();
+            webSocketMaxBufferSize = config.getWebSocketMaxBufferSize();
+            webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
+            keepEncodingHeader = config.isKeepEncodingHeader();
+            shutdownQuietPeriod = config.getShutdownQuietPeriod();
+            shutdownTimeout = config.getShutdownTimeout();
+            advancedConfig = config.getAdvancedConfig();
         }
 
         public Builder setThreadPoolName(String threadPoolName) {
@@ -712,8 +757,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setShutdownQuiet(int shutdownQuiet) {
-            this.shutdownQuiet = shutdownQuiet;
+        public Builder setShutdownQuietPeriod(int shutdownQuietPeriod) {
+            this.shutdownQuietPeriod = shutdownQuietPeriod;
             return this;
         }
 
@@ -755,7 +800,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     realm,//
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters), //
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),//
-                    Collections.unmodifiableList(ioExceptionFilters),//
+                    ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),//
                     maxRequestRetry, //
                     disableUrlEncodingForBoundRequests, //
                     enabledProtocols, //
@@ -772,7 +817,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     webSocketMaxBufferSize, //
                     webSocketMaxFrameSize, //
                     keepEncodingHeader, //
-                    shutdownQuiet,//
+                    shutdownQuietPeriod,//
                     shutdownTimeout,//
                     advancedConfig);
         }

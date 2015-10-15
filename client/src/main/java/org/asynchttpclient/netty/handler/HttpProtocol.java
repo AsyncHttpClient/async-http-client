@@ -556,7 +556,7 @@ public final class HttpProtocol extends Protocol {
 
         ByteBuf buf = chunk.content();
         if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-            NettyResponseBodyPart part = advancedConfig.getBodyPartFactory().newResponseBodyPart(buf, last);
+            NettyResponseBodyPart part = advancedConfig.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             interrupt = updateBodyAndInterrupt(future, handler, part);
         }
 

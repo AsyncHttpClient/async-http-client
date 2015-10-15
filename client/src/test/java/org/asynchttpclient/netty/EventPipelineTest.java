@@ -37,7 +37,7 @@ public class EventPipelineTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Exception {
 
-        AdvancedConfig advancedConfig = advancedConfig().httpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
+        AdvancedConfig advancedConfig = advancedConfig().setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
             public void initPipeline(ChannelPipeline pipeline) throws Exception {
                 pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }

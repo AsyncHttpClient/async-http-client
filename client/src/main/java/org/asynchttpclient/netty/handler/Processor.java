@@ -104,7 +104,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                     // Republish as a HttpResponseBodyPart
                     if (content.readableBytes() > 0) {
-                        NettyResponseBodyPart part = advancedConfig.getBodyPartFactory().newResponseBodyPart(content, false);
+                        NettyResponseBodyPart part = advancedConfig.getResponseBodyPartFactory().newResponseBodyPart(content, false);
                         ctx.fireChannelRead(part);
                     }
 

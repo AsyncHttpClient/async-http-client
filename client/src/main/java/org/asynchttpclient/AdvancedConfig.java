@@ -38,7 +38,7 @@ public class AdvancedConfig {
     private final boolean preferNative;
     private final AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private final AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-    private final ResponseBodyPartFactory bodyPartFactory;
+    private final ResponseBodyPartFactory responseBodyPartFactory;
     private final ChannelPool channelPool;
     private final Timer nettyTimer;
     private final NettyWebSocketFactory nettyWebSocketFactory;
@@ -50,14 +50,14 @@ public class AdvancedConfig {
             boolean preferNative,//
             AdditionalPipelineInitializer httpAdditionalPipelineInitializer,//
             AdditionalPipelineInitializer wsAdditionalPipelineInitializer,//
-            ResponseBodyPartFactory bodyPartFactory,//
+            ResponseBodyPartFactory responseBodyPartFactory,//
             ChannelPool channelPool,//
             Timer nettyTimer,//
             NettyWebSocketFactory nettyWebSocketFactory,//
             ConnectionStrategy connectionStrategy) {
 
-        if (bodyPartFactory == null)
-            throw new NullPointerException("bodyPartFactory");
+        if (responseBodyPartFactory == null)
+            throw new NullPointerException("responseBodyPartFactory");
         if (nettyWebSocketFactory == null)
             throw new NullPointerException("nettyWebSocketFactory");
         if (connectionStrategy == null)
@@ -68,7 +68,7 @@ public class AdvancedConfig {
         this.preferNative = preferNative;
         this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
         this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
-        this.bodyPartFactory = bodyPartFactory;
+        this.responseBodyPartFactory = responseBodyPartFactory;
         this.channelPool = channelPool;
         this.nettyTimer = nettyTimer;
         this.nettyWebSocketFactory = nettyWebSocketFactory;
@@ -95,8 +95,8 @@ public class AdvancedConfig {
         return wsAdditionalPipelineInitializer;
     }
 
-    public ResponseBodyPartFactory getBodyPartFactory() {
-        return bodyPartFactory;
+    public ResponseBodyPartFactory getResponseBodyPartFactory() {
+        return responseBodyPartFactory;
     }
 
     public ChannelPool getChannelPool() {
@@ -122,7 +122,7 @@ public class AdvancedConfig {
         private boolean preferNative;
         private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
         private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-        private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
+        private ResponseBodyPartFactory responseBodyPartFactory = new EagerResponseBodyPartFactory();
         private ChannelPool channelPool;
         private Timer nettyTimer;
         private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
@@ -140,47 +140,47 @@ public class AdvancedConfig {
             return this;
         }
 
-        public Builder eventLoopGroup(EventLoopGroup eventLoopGroup) {
+        public Builder setEventLoopGroup(EventLoopGroup eventLoopGroup) {
             this.eventLoopGroup = eventLoopGroup;
             return this;
         }
 
-        public Builder preferNative(boolean preferNative) {
+        public Builder setPreferNative(boolean preferNative) {
             this.preferNative = preferNative;
             return this;
         }
 
-        public Builder httpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
+        public Builder setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
             this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
             return this;
         }
 
-        public Builder wsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
+        public Builder setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
             this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
             return this;
         }
 
-        public Builder bodyPartFactory(ResponseBodyPartFactory bodyPartFactory) {
-            this.bodyPartFactory = bodyPartFactory;
+        public Builder setResponseBodyPartFactory(ResponseBodyPartFactory responseBodyPartFactory) {
+            this.responseBodyPartFactory = responseBodyPartFactory;
             return this;
         }
 
-        public Builder channelPool(ChannelPool channelPool) {
+        public Builder setChannelPool(ChannelPool channelPool) {
             this.channelPool = channelPool;
             return this;
         }
 
-        public Builder nettyTimer(Timer nettyTimer) {
+        public Builder setNettyTimer(Timer nettyTimer) {
             this.nettyTimer = nettyTimer;
             return this;
         }
 
-        public Builder nettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
+        public Builder setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
             this.nettyWebSocketFactory = nettyWebSocketFactory;
             return this;
         }
 
-        public Builder connectionStrategy(ConnectionStrategy connectionStrategy) {
+        public Builder setConnectionStrategy(ConnectionStrategy connectionStrategy) {
             this.connectionStrategy = connectionStrategy;
             return this;
         }
@@ -192,7 +192,7 @@ public class AdvancedConfig {
                     preferNative,//
                     httpAdditionalPipelineInitializer,//
                     wsAdditionalPipelineInitializer,//
-                    bodyPartFactory,//
+                    responseBodyPartFactory,//
                     channelPool,//
                     nettyTimer,//
                     nettyWebSocketFactory,//

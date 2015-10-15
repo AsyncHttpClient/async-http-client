@@ -70,7 +70,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
 
-        AdvancedConfig advancedConfig = advancedConfig().connectionStrategy(new ConnectionStrategy() {
+        AdvancedConfig advancedConfig = advancedConfig().setConnectionStrategy(new ConnectionStrategy() {
 
             @Override
             public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {

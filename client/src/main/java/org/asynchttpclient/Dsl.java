@@ -86,14 +86,12 @@ public final class Dsl {
 
     // /////////// Realm ////////////////
     public static Realm.Builder realm(Realm prototype) {
-        return new Realm.Builder()//
+        return new Realm.Builder(prototype.getPrincipal(), prototype.getPassword())//
                 .setRealmName(prototype.getRealmName())//
                 .setAlgorithm(prototype.getAlgorithm())//
                 .setMethodName(prototype.getMethodName())//
                 .setNc(prototype.getNc())//
                 .setNonce(prototype.getNonce())//
-                .setPassword(prototype.getPassword())//
-                .setPrincipal(prototype.getPrincipal())//
                 .setCharset(prototype.getCharset())//
                 .setOpaque(prototype.getOpaque())//
                 .setQop(prototype.getQop())//
@@ -107,10 +105,8 @@ public final class Dsl {
     }
 
     public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {
-        return new Realm.Builder()//
-                .setScheme(scheme)//
-                .setPrincipal(principal)//
-                .setPassword(password);
+        return new Realm.Builder(principal, password)//
+                .setScheme(scheme);
     }
 
     public static Realm.Builder basicAuthRealm(String principal, String password) {

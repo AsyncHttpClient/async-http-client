@@ -18,7 +18,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -562,38 +561,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setRealmNtlmDomain(String domain) {
-            getRealm().setNtlmDomain(domain);
-            return this;
-        }
-
-        public Builder setRealmPrincipal(String principal) {
-            getRealm().setPrincipal(principal);
-            return this;
-        }
-
-        public Builder setRealmPassword(String password) {
-            getRealm().setPassword(password);
-            return this;
-        }
-
-        public Builder setRealmScheme(Realm.AuthScheme scheme) {
-            getRealm().setScheme(scheme);
-            return this;
-        }
-
-        public Builder setRealmName(String realmName) {
-            getRealm().setRealmName(realmName);
-            return this;
-        }
-
-        public Builder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
-            getRealm().setUsePreemptiveAuth(usePreemptiveAuth);
-            return this;
-        }
-
-        public Builder setRealmCharset(Charset charset) {
-            getRealm().setCharset(charset);
+        public Builder setRealm(Realm realm) {
+            configBuilder.setRealm(realm);
             return this;
         }
 
@@ -648,13 +617,6 @@ public class SimpleAsyncHttpClient implements Closeable {
         public Builder setResumableDownload(boolean enableResumableDownload) {
             this.enableResumableDownload = enableResumableDownload;
             return this;
-        }
-
-        private Realm.Builder getRealm() {
-            if (realmBuilder == null) {
-                realmBuilder = new Realm.Builder().setScheme(AuthScheme.BASIC);
-            }
-            return realmBuilder;
         }
 
         /**
