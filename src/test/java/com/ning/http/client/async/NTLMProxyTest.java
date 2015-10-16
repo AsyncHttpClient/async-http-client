@@ -40,7 +40,7 @@ public abstract class NTLMProxyTest extends AbstractBasicTest {
 
         @Override
         public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+                HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String authorization = httpRequest.getHeader("Proxy-Authorization");
             if (authorization == null) {
@@ -81,8 +81,7 @@ public abstract class NTLMProxyTest extends AbstractBasicTest {
         }
     }
 
-    private ProxyServer ntlmProxy() throws UnknownHostException
-    {
+    private ProxyServer ntlmProxy() throws UnknownHostException {
         ProxyServer proxyServer = new ProxyServer("127.0.0.1", port2, "Zaphod", "Beeblebrox").setNtlmDomain("Ursa-Minor");
         proxyServer.setNtlmHost("LightCity");
         proxyServer.setScheme(AuthScheme.NTLM);
