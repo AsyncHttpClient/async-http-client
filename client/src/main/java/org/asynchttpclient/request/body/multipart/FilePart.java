@@ -119,34 +119,17 @@ public class FilePart extends AbstractFilePart {
                         LOGGER.debug("Stalled error");
                         throw new FileUploadStalledException();
                     }
-                    try {
-                        nWrite = fc.transferTo(fileLength, l, target);
+                    nWrite = fc.transferTo(fileLength, l, target);
 
-                        if (nWrite == 0) {
-                            LOGGER.info("Waiting for writing...");
-                            try {
-                                fc.wait(50);
-                            } catch (InterruptedException e) {
-                                LOGGER.trace(e.getMessage(), e);
-                            }
-                        } else {
-                            handler.writeHappened();
+                    if (nWrite == 0) {
+                        LOGGER.info("Waiting for writing...");
+                        try {
+                            fc.wait(50);
+                        } catch (InterruptedException e) {
+                            LOGGER.trace(e.getMessage(), e);
                         }
-                    } catch (IOException ex) {
-                        String message = ex.getMessage();
-
-                        // http://bugs.sun.com/view_bug.do?bug_id=5103988
-                        if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
-                            try {
-                                fc.wait(1000);
-                            } catch (InterruptedException e) {
-                                LOGGER.trace(e.getMessage(), e);
-                            }
-                            LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
-                            continue;
-                        } else {
-                            throw ex;
-                        }
+                    } else {
+                        handler.writeHappened();
                     }
                     fileLength += nWrite;
                 }
