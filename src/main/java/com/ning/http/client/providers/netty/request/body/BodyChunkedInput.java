@@ -49,22 +49,21 @@ public class BodyChunkedInput implements ChunkedInput {
     }
 
     public Object nextChunk() throws Exception {
-        if (endOfInput) {
+        if (endOfInput)
+            return null;
+
+        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+        long r = body.read(buffer);
+        if (r < 0L) {
+            endOfInput = true;
+            return null;
+        } else if (r == 0 && body instanceof FeedableBodyGenerator.PushBody) {
+            //this will suspend the stream in ChunkedWriteHandler
             return null;
         } else {
-            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-            long r = body.read(buffer);
-            if (r < 0L) {
-                endOfInput = true;
-                return null;
-            } else if (r == 0 && body instanceof FeedableBodyGenerator.PushBody) {
-                //this will suspend the stream in ChunkedWriteHandler
-                return null;
-            } else {
-                endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
-                buffer.flip();
-                return ChannelBuffers.wrappedBuffer(buffer);
-            }
+            endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
+            buffer.flip();
+            return ChannelBuffers.wrappedBuffer(buffer);
         }
     }
 
