@@ -13,10 +13,7 @@
 package org.asynchttpclient.request.body.multipart;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
@@ -63,29 +60,6 @@ public class FilePart extends AbstractFilePart {
         setFileName(fileName != null ? fileName : file.getName());
     }
     
-    @Override
-    protected void sendData(OutputStream out) throws IOException {
-        if (getDataLength() == 0) {
-
-            // this file contains no data, so there is nothing to send.
-            // we don't want to create a zero length buffer as this will
-            // cause an infinite loop when reading.
-            return;
-        }
-
-        byte[] tmp = new byte[4096];
-        InputStream instream = new FileInputStream(file);
-        try {
-            int len;
-            while ((len = instream.read(tmp)) >= 0) {
-                out.write(tmp, 0, len);
-            }
-        } finally {
-            // we're done with the stream, close it
-            instream.close();
-        }
-    }
-
     @Override
     protected long getDataLength() {
         return file.length();

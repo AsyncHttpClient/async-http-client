@@ -19,43 +19,44 @@ import java.util.TimerTask;
  * @author Gail Hernandez
  */
 public class FilePartStallHandler extends TimerTask {
+
+    private final long waitTime;
+    private Timer timer;
+    private volatile boolean failed;
+    private volatile boolean written;
+
     public FilePartStallHandler(long waitTime, AbstractFilePart filePart) {
-        _waitTime = waitTime;
-        _failed = false;
-        _written = false;
+        this.waitTime = waitTime;
+        failed = false;
+        written = false;
     }
 
     public void completed() {
-        if (_waitTime > 0) {
-            _timer.cancel();
+        if (waitTime > 0) {
+            timer.cancel();
         }
     }
 
     public boolean isFailed() {
-        return _failed;
+        return failed;
     }
 
     public void run() {
-        if (!_written) {
-            _failed = true;
-            _timer.cancel();
+        if (!written) {
+            failed = true;
+            timer.cancel();
         }
-        _written = false;
+        written = false;
     }
 
     public void start() {
-        if (_waitTime > 0) {
-            _timer = new Timer();
-            _timer.scheduleAtFixedRate(this, _waitTime, _waitTime);
+        if (waitTime > 0) {
+            timer = new Timer();
+            timer.scheduleAtFixedRate(this, waitTime, waitTime);
         }
     }
 
     public void writeHappened() {
-        _written = true;
+        written = true;
     }
-
-    private long _waitTime;
-    private Timer _timer;
-    private boolean _failed;
-    private boolean _written;
 }

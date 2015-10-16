@@ -13,7 +13,6 @@
 package org.asynchttpclient.request.body.multipart;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
@@ -49,11 +48,6 @@ public class ByteArrayPart extends AbstractFilePart {
         setFileName(fileName);
     }
     
-    @Override
-    protected void sendData(OutputStream out) throws IOException {
-        out.write(bytes);
-    }
-
     @Override
     protected long getDataLength() {
         return bytes.length;

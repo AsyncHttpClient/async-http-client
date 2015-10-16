@@ -12,11 +12,10 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
@@ -46,15 +45,15 @@ public class StringPart extends PartBase {
     private static Charset charsetOrDefault(Charset charset) {
         return charset == null ? DEFAULT_CHARSET : charset;
     }
-    
+
     private static String contentTypeOrDefault(String contentType) {
         return contentType == null ? DEFAULT_CONTENT_TYPE : contentType;
     }
-    
+
     private static String transferEncodingOrDefault(String transferEncoding) {
         return transferEncoding == null ? DEFAULT_TRANSFER_ENCODING : transferEncoding;
     }
-    
+
     public StringPart(String name, String value) {
         this(name, value, null);
     }
@@ -85,18 +84,6 @@ public class StringPart extends PartBase {
     }
 
     /**
-     * Writes the data to the given OutputStream.
-     * 
-     * @param out
-     *            the OutputStream to write to
-     * @throws java.io.IOException
-     *             if there is a write error
-     */
-    protected void sendData(OutputStream out) throws IOException {
-        out.write(content);
-    }
-
-    /**
      * Return the length of the data.
      * 
      * @return The length of the data.
@@ -106,9 +93,18 @@ public class StringPart extends PartBase {
     }
 
     public byte[] getBytes(byte[] boundary) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        write(outputStream, boundary);
-        return outputStream.toByteArray();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(os);
+        visitStart(visitor, boundary);
+        visitDispositionHeader(visitor);
+        visitContentTypeHeader(visitor);
+        visitTransferEncodingHeader(visitor);
+        visitContentIdHeader(visitor);
+        visitCustomHeaders(visitor);
+        visitEndOfHeaders(visitor);
+        os.write(content);
+        visitEnd(visitor);
+        return os.toByteArray();
     }
 
     @Override

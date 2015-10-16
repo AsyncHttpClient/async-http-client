@@ -79,7 +79,6 @@ public abstract class AbstractFilePart extends PartBase {
         visitContentIdHeader(visitor);
         visitCustomHeaders(visitor);
         visitEndOfHeaders(visitor);
-
         return out.toByteArray();
     }
 

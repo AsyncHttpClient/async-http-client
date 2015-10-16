@@ -12,10 +12,9 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
@@ -112,18 +111,6 @@ public interface Part {
      * @return the disposition-type
      */
     String getDispositionType();
-
-    /**
-     * Write all the data to the output stream. If you override this method make sure to override #length() as well
-     * 
-     * @param out
-     *            The output stream
-     * @param boundary
-     *            the boundary
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    void write(OutputStream out, byte[] boundary) throws IOException;
 
     /**
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well

@@ -16,7 +16,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -146,33 +145,6 @@ public abstract class PartBase implements Part {
     }
 
     protected abstract long getDataLength();
-
-    protected abstract void sendData(OutputStream out) throws IOException;
-
-    /**
-     * Write all the data to the output stream. If you override this method make sure to override #length() as well
-     * 
-     * @param out
-     *            The output stream
-     * @param boundary
-     *            the boundary
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    public void write(OutputStream out, byte[] boundary) throws IOException {
-
-        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
-
-        visitStart(visitor, boundary);
-        visitDispositionHeader(visitor);
-        visitContentTypeHeader(visitor);
-        visitTransferEncodingHeader(visitor);
-        visitContentIdHeader(visitor);
-        visitCustomHeaders(visitor);
-        visitEndOfHeaders(visitor);
-        sendData(visitor.getOutputStream());
-        visitEnd(visitor);
-    }
 
     /**
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
