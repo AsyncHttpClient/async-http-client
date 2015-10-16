@@ -78,7 +78,7 @@ public class MultipartBody implements RandomAccessBody {
         long overallLength = 0;
 
         if (transfertDone) {
-            return contentLength;
+            return -1;
         }
 
         for (Part part : parts) {
@@ -173,7 +173,7 @@ public class MultipartBody implements RandomAccessBody {
                     }
                 }
             }
-            return transfertDone ? State.Continue : State.Stop;
+            return transfertDone ? State.Stop : State.Continue;
 
         } catch (Exception e) {
             LOGGER.error("Read exception", e);

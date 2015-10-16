@@ -48,25 +48,26 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
     @Override
     public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception {
-        if (endOfInput) {
+
+        if (endOfInput)
             return null;
-        } else {
-            // FIXME pass a visitor so we can directly pass a pooled ByteBuf
-            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-            Body.State state = body.read(buffer);
-            switch (state) {
-                case Stop:
-                    endOfInput = true;
-                    return null;
-                case Suspend:
-                    //this will suspend the stream in ChunkedWriteHandler
-                    return null;
-                case Continue:
-                    buffer.flip();
-                    return Unpooled.wrappedBuffer(buffer);
-                default:
-                    throw new IllegalStateException("Unknown state: " + state);
-            }
+
+        // FIXME pass a visitor so we can directly pass a pooled ByteBuf
+        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+        Body.State state = body.read(buffer);
+        switch (state) {
+            case Stop:
+                endOfInput = true;
+                buffer.flip();
+                return Unpooled.wrappedBuffer(buffer);
+            case Suspend:
+                //this will suspend the stream in ChunkedWriteHandler
+                return null;
+            case Continue:
+                buffer.flip();
+                return Unpooled.wrappedBuffer(buffer);
+            default:
+                throw new IllegalStateException("Unknown state: " + state);
         }
     }
 
