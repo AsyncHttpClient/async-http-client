@@ -111,7 +111,7 @@ public class ChannelManager {
         this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
         ChannelPool channelPool = advancedConfig.getChannelPool();
-        if (channelPool == null && config.isAllowPoolingConnections()) {
+        if (channelPool == null && config.isKeepAlive()) {
             channelPool = new DefaultChannelPool(config, nettyTimer);
         } else if (channelPool == null) {
             channelPool = new NoopChannelPool();

@@ -74,7 +74,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int readTimeout;
     private final int webSocketTimeout;
 
-    private final boolean allowPoolingConnections;
+    private final boolean keepAlive;
     private final int pooledConnectionIdleTimeout;
     private final int connectionTtl;
 
@@ -121,7 +121,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int requestTimeout,//
             int readTimeout,//
             int webSocketTimeout,//
-            boolean allowPoolingConnection,//
+            boolean keepAlive,//
             int idleConnectionInPoolTimeout,//
             int connectionTtl,//
             SSLContext sslContext, //
@@ -164,7 +164,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.requestTimeout = requestTimeout;
         this.readTimeout = readTimeout;
         this.webSocketTimeout = webSocketTimeout;
-        this.allowPoolingConnections = allowPoolingConnection;
+        this.keepAlive = keepAlive;
         this.pooledConnectionIdleTimeout = idleConnectionInPoolTimeout;
         this.connectionTtl = connectionTtl;
         this.sslContext = sslContext;
@@ -271,8 +271,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isAllowPoolingConnections() {
-        return allowPoolingConnections;
+    public boolean isKeepAlive() {
+        return keepAlive;
     }
 
     @Override
@@ -440,7 +440,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int requestTimeout = defaultRequestTimeout();
         private int readTimeout = defaultReadTimeout();
         private int webSocketTimeout = defaultWebSocketTimeout();
-        private boolean allowPoolingConnections = defaultAllowPoolingConnections();
+        private boolean keepAlive = defaultKeepAlive();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
         private int connectionTtl = defaultConnectionTtl();
         private SSLContext sslContext;
@@ -489,7 +489,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             requestTimeout = config.getRequestTimeout();
             readTimeout = config.getReadTimeout();
             webSocketTimeout = config.getWebSocketTimeout();
-            allowPoolingConnections = config.isAllowPoolingConnections();
+            keepAlive = config.isKeepAlive();
             pooledConnectionIdleTimeout = config.getPooledConnectionIdleTimeout();
             connectionTtl = config.getConnectionTtl();
             sslContext = config.getSslContext();
@@ -587,8 +587,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
-            this.allowPoolingConnections = allowPoolingConnections;
+        public Builder setKeepAlive(boolean keepAlive) {
+            this.keepAlive = keepAlive;
             return this;
         }
 
@@ -784,7 +784,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     requestTimeout,//
                     readTimeout,//
                     webSocketTimeout,//
-                    allowPoolingConnections,//
+                    keepAlive,//
                     pooledConnectionIdleTimeout,//
                     connectionTtl,//
                     sslContext, //

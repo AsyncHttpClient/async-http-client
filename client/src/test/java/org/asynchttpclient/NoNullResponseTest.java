@@ -38,7 +38,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//
                 .setSslContext(getSSLContext())//
-                .setAllowPoolingConnections(true)//
+                .setKeepAlive(true)//
                 .setConnectTimeout(10000)//
                 .setPooledConnectionIdleTimeout(60000)//
                 .setRequestTimeout(10000)//

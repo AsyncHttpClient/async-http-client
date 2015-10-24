@@ -119,7 +119,7 @@ public interface AsyncHttpClientConfig {
      *
      * @return true if keep-alive is enabled
      */
-    boolean isAllowPoolingConnections();
+    boolean isKeepAlive();
 
     /**
      * Return the USER_AGENT header value

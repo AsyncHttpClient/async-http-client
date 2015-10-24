@@ -110,7 +110,7 @@ public class ChunkingTest extends AbstractBasicTest {
 
     private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
         return config()//
-                .setAllowPoolingConnections(true)//
+                .setKeepAlive(true)//
                 .setMaxConnectionsPerHost(1)//
                 .setMaxConnections(1)//
                 .setConnectTimeout(1000)//

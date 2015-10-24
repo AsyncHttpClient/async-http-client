@@ -67,7 +67,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     public void testGetRedirectFinalUrl() throws Exception {
 
         AsyncHttpClientConfig config = config()//
-                .setAllowPoolingConnections(true)//
+                .setKeepAlive(true)//
                 .setMaxConnectionsPerHost(1)//
                 .setMaxConnections(1)//
                 .setConnectTimeout(1000)//

@@ -546,8 +546,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setAllowPoolingConnections(boolean allowPoolingConnections) {
-            configBuilder.setAllowPoolingConnections(allowPoolingConnections);
+        public Builder setKeepAlive(boolean allowPoolingConnections) {
+            configBuilder.setKeepAlive(allowPoolingConnections);
             return this;
         }
 

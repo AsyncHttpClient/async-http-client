@@ -88,7 +88,7 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     public void testDefaultAllowPoolingConnection() {
-       Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultAllowPoolingConnections());
+       Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultKeepAlive());
        testBooleanSystemProperty("allowPoolingConnections", "defaultAllowPoolingConnections", "false");
     }
 

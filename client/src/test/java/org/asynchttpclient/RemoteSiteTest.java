@@ -123,7 +123,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void invalidStreamTest2() throws Exception {
         AsyncHttpClientConfig config = config().setRequestTimeout(10000).setFollowRedirect(true)
-                .setAllowPoolingConnections(false).setMaxRedirects(6).build();
+                .setKeepAlive(false).setMaxRedirects(6).build();
 
         try (AsyncHttpClient c = asyncHttpClient(config)) {
             Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();

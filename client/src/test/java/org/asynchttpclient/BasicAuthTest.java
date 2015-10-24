@@ -305,7 +305,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthFileNoKeepAliveTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setAllowPoolingConnections(false).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).build())) {
 
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE)//

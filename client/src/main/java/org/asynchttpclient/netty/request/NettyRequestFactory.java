@@ -141,7 +141,7 @@ public final class NettyRequestFactory {
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
 
-        boolean allowConnectionPooling = config.isAllowPoolingConnections();
+        boolean allowConnectionPooling = config.isKeepAlive();
 
         HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);

@@ -43,7 +43,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
         AsyncHttpClientConfig config = config().setConnectTimeout(1000)
-                .setRequestTimeout(5000).setAllowPoolingConnections(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
+                .setRequestTimeout(5000).setKeepAlive(false).setMaxConnections(1).setMaxConnectionsPerHost(1)
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
@@ -78,7 +78,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         final AtomicReference<String> failedUrl = new AtomicReference<>();
 
         AsyncHttpClientConfig config = config().setConnectTimeout(1000).setRequestTimeout(5000)
-                .setAllowPoolingConnections(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
+                .setKeepAlive(false).setMaxConnections(2).setMaxConnectionsPerHost(1).build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             for (String url : urls) {

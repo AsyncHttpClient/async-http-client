@@ -49,7 +49,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnections() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setAllowPoolingConnections(true).setMaxConnections(1))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
             int i;
             Exception exception = null;
@@ -68,7 +68,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnectionsException() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setAllowPoolingConnections(true).setMaxConnections(1))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
 
             List<ListenableFuture<Response>> futures = new ArrayList<>();
@@ -131,7 +131,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Exception {
-        AsyncHttpClientConfig cg = config().setAllowPoolingConnections(true).setConnectTimeout(5000).setMaxConnections(1).build();
+        AsyncHttpClientConfig cg = config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1).build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             String body = "hello there";
 
@@ -157,7 +157,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
-        AsyncHttpClientConfig cg = config().setAllowPoolingConnections(true).setConnectTimeout(5000).setMaxConnections(1).build();
+        AsyncHttpClientConfig cg = config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1).build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             String body = "hello there";
 

@@ -83,7 +83,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
         AsyncHttpClientConfig config = config()//
-                .setAllowPoolingConnections(true)//
+                .setKeepAlive(true)//
                 .setMaxConnections(100)//
                 .setConnectTimeout(60000)//
                 .setRequestTimeout(30000)//
@@ -114,7 +114,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
         AsyncHttpClientConfig config = config()//
-                .setAllowPoolingConnections(true)//
+                .setKeepAlive(true)//
                 .setMaxConnections(100)//
                 .setConnectTimeout(60000)//
                 .setRequestTimeout(30000)//
