@@ -120,10 +120,10 @@ public class AdvancedConfig {
         private boolean preferNative;
         private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
         private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
-        private ResponseBodyPartFactory responseBodyPartFactory = new EagerResponseBodyPartFactory();
+        private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
         private ChannelPool channelPool;
         private Timer nettyTimer;
-        private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
+        private NettyWebSocketFactory nettyWebSocketFactory = NettyWebSocketFactory.DefaultNettyWebSocketFactory.INSTANCE;
         private KeepAliveStrategy keepAliveStrategy = KeepAliveStrategy.DefaultKeepAliveStrategy.INSTANCE;
 
         /**
@@ -203,36 +203,38 @@ public class AdvancedConfig {
         void initPipeline(ChannelPipeline pipeline) throws Exception;
     }
 
-    public static interface ResponseBodyPartFactory {
+    public enum ResponseBodyPartFactory {
 
-        NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
-    }
+        EAGER {
+            @Override
+            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new EagerNettyResponseBodyPart(buf, last);
+            }
+        },
 
-    public static class EagerResponseBodyPartFactory implements ResponseBodyPartFactory {
+        LAZY {
 
-        @Override
-        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new EagerNettyResponseBodyPart(buf, last);
-        }
-    }
+            @Override
+            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new LazyNettyResponseBodyPart(buf, last);
+            }
+        };
 
-    public static class LazyResponseBodyPartFactory implements ResponseBodyPartFactory {
-
-        @Override
-        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new LazyNettyResponseBodyPart(buf, last);
-        }
+        public abstract NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
     }
 
     public static interface NettyWebSocketFactory {
+
         NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
-    }
 
-    public static class DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+        enum DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
 
-        @Override
-        public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
-            return new NettyWebSocket(channel, config);
+            INSTANCE;
+
+            @Override
+            public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
+                return new NettyWebSocket(channel, config);
+            }
         }
     }
 }
