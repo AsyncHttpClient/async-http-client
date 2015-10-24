@@ -76,7 +76,7 @@ public abstract class Protocol {
         this.advancedConfig = advancedConfig;
 
         hasResponseFilters = !config.getResponseFilters().isEmpty();
-        hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
+        hasIOExceptionFilters = !config.getIoExceptionFilters().isEmpty();
         maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
     }
 

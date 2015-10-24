@@ -408,7 +408,7 @@ public final class NettyRequestSender {
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getCurrentRequest()).ioException(e).build();
-        for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+        for (IOExceptionFilter asyncFilter : config.getIoExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
                 assertNotNull(fc, "filterContext");

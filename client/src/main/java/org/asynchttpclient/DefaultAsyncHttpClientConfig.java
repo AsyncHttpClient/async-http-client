@@ -296,7 +296,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public SSLContext getSSLContext() {
+    public SSLContext getSslContext() {
         return sslContext;
     }
 
@@ -321,7 +321,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public List<IOExceptionFilter> getIOExceptionFilters() {
+    public List<IOExceptionFilter> getIoExceptionFilters() {
         return ioExceptionFilters;
     }
 
@@ -492,7 +492,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             allowPoolingConnections = config.isAllowPoolingConnections();
             pooledConnectionIdleTimeout = config.getPooledConnectionIdleTimeout();
             connectionTtl = config.getConnectionTtl();
-            sslContext = config.getSSLContext();
+            sslContext = config.getSslContext();
             acceptAnyCertificate = config.isAcceptAnyCertificate();
             followRedirect = config.isFollowRedirect();
             maxRedirects = config.getMaxRedirects();
@@ -505,7 +505,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             realm = config.getRealm();
             requestFilters.addAll(config.getRequestFilters());
             responseFilters.addAll(config.getResponseFilters());
-            ioExceptionFilters.addAll(config.getIOExceptionFilters());
+            ioExceptionFilters.addAll(config.getIoExceptionFilters());
             maxRequestRetry = config.getMaxRequestRetry();
             disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
             enabledProtocols = config.getEnabledProtocols();

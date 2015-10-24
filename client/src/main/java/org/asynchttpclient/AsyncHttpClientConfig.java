@@ -158,7 +158,7 @@ public interface AsyncHttpClientConfig {
      *
      * @return an instance of {@link SSLContext} used for SSL connection.
      */
-    SSLContext getSSLContext();
+    SSLContext getSslContext();
 
     /**
      * Return the {@link AdvancedConfig}
@@ -193,7 +193,7 @@ public interface AsyncHttpClientConfig {
      *
      * @return Unmodifiable list of {@link java.io.IOException}
      */
-    List<IOExceptionFilter> getIOExceptionFilters();
+    List<IOExceptionFilter> getIoExceptionFilters();
 
     /**
      * Return the number of time the library will retry when an

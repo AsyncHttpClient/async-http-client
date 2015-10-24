@@ -154,7 +154,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
             NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attribute);
             future.touch();
 
-            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+            if (!config.getIoExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                 return;
 
             protocol.onClose(future);
@@ -191,7 +191,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                     // FIXME why drop the original exception and throw a new
                     // one?
-                    if (!config.getIOExceptionFilters().isEmpty()) {
+                    if (!config.getIoExceptionFilters().isEmpty()) {
                         if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
                             // Close the channel so the recovering can occurs.
                             Channels.silentlyCloseChannel(channel);
