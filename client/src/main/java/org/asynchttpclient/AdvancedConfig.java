@@ -25,12 +25,11 @@ import io.netty.util.Timer;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.asynchttpclient.channel.pool.ConnectionStrategy;
+import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.netty.EagerNettyResponseBodyPart;
 import org.asynchttpclient.netty.LazyNettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.handler.DefaultConnectionStrategy;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 
 public class AdvancedConfig {
@@ -44,7 +43,7 @@ public class AdvancedConfig {
     private final ChannelPool channelPool;
     private final Timer nettyTimer;
     private final NettyWebSocketFactory nettyWebSocketFactory;
-    private final ConnectionStrategy connectionStrategy;
+    private final KeepAliveStrategy connectionStrategy;
 
     public AdvancedConfig(//
             Map<ChannelOption<Object>, Object> channelOptions,//
@@ -56,7 +55,7 @@ public class AdvancedConfig {
             ChannelPool channelPool,//
             Timer nettyTimer,//
             NettyWebSocketFactory nettyWebSocketFactory,//
-            ConnectionStrategy connectionStrategy) {
+            KeepAliveStrategy connectionStrategy) {
 
         assertNotNull(responseBodyPartFactory, "responseBodyPartFactory");
         assertNotNull(nettyWebSocketFactory, "nettyWebSocketFactory");
@@ -110,7 +109,7 @@ public class AdvancedConfig {
         return nettyWebSocketFactory;
     }
 
-    public ConnectionStrategy getConnectionStrategy() {
+    public KeepAliveStrategy getKeepAliveStrategy() {
         return connectionStrategy;
     }
 
@@ -125,7 +124,7 @@ public class AdvancedConfig {
         private ChannelPool channelPool;
         private Timer nettyTimer;
         private NettyWebSocketFactory nettyWebSocketFactory = new DefaultNettyWebSocketFactory();
-        private ConnectionStrategy connectionStrategy = new DefaultConnectionStrategy();
+        private KeepAliveStrategy keepAliveStrategy = KeepAliveStrategy.DefaultKeepAliveStrategy.INSTANCE;
 
         /**
          * @param name the name of the ChannelOption
@@ -179,8 +178,8 @@ public class AdvancedConfig {
             return this;
         }
 
-        public Builder setConnectionStrategy(ConnectionStrategy connectionStrategy) {
-            this.connectionStrategy = connectionStrategy;
+        public Builder setKeepAliveStrategy(KeepAliveStrategy keepAliveStrategy) {
+            this.keepAliveStrategy = keepAliveStrategy;
             return this;
         }
 
@@ -195,7 +194,7 @@ public class AdvancedConfig {
                     channelPool,//
                     nettyTimer,//
                     nettyWebSocketFactory,//
-                    connectionStrategy);
+                    keepAliveStrategy);
         }
     }
 

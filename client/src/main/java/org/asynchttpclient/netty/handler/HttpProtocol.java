@@ -38,7 +38,7 @@ import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.channel.pool.ConnectionStrategy;
+import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
@@ -56,12 +56,11 @@ import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
 
-    private final ConnectionStrategy connectionStrategy;
+    private final KeepAliveStrategy connectionStrategy;
 
     public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, AdvancedConfig advancedConfig, NettyRequestSender requestSender) {
         super(channelManager, config, advancedConfig, requestSender);
-
-        connectionStrategy = advancedConfig.getConnectionStrategy();
+        connectionStrategy = advancedConfig.getKeepAliveStrategy();
     }
 
     private void kerberosChallenge(Channel channel,//

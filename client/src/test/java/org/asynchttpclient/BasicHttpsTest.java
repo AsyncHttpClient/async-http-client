@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.channel.pool.ConnectionStrategy;
+import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 
@@ -70,7 +70,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
 
-        AdvancedConfig advancedConfig = advancedConfig().setConnectionStrategy(new ConnectionStrategy() {
+        AdvancedConfig advancedConfig = advancedConfig().setKeepAliveStrategy(new KeepAliveStrategy() {
 
             @Override
             public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {
