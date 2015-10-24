@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.cookie;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +33,7 @@ public class CookieDecoder {
      */
     public static Cookie decode(String header) {
 
-        if (header == null) {
-            throw new NullPointerException("header");
-        }
+        assertNotNull(header, "header");
 
         final int headerLen = header.length();
 

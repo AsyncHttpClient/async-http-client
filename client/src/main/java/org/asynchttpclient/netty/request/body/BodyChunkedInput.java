@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import static org.asynchttpclient.util.Assertions.*;
 import org.asynchttpclient.request.body.Body;
 
 import io.netty.buffer.ByteBuf;
@@ -36,8 +37,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
-        if (body == null)
-            throw new NullPointerException("body");
+        assertNotNull(body, "body");
         this.body = body;
         contentLength = (int) body.getContentLength();
         if (contentLength <= 0)

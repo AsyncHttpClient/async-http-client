@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -50,8 +52,7 @@ public class FilePart extends AbstractFilePart {
 
     public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
-        if (file == null)
-            throw new NullPointerException("file");
+        assertNotNull(file, "file");
         if (!file.isFile())
             throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
         if (!file.canRead())

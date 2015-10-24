@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import org.asynchttpclient.request.body.RandomAccessBody;
@@ -31,8 +33,7 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
     private long transfered;
 
     public BodyFileRegion(RandomAccessBody body) {
-        if (body == null)
-            throw new NullPointerException("body");
+        assertNotNull(body, "body");
         this.body = body;
     }
 

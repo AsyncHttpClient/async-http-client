@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.io.File;
 
 import org.asynchttpclient.request.body.RandomAccessBody;
@@ -30,9 +32,7 @@ public final class FileBodyGenerator implements BodyGenerator {
     }
 
     public FileBodyGenerator(File file, long regionSeek, long regionLength) {
-        if (file == null) {
-            throw new NullPointerException("file");
-        }
+        assertNotNull(file, "file");
         this.file = file;
         this.regionLength = regionLength;
         this.regionSeek = regionSeek;

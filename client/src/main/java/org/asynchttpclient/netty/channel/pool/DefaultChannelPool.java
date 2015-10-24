@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.channel.pool;
 
+import static org.asynchttpclient.util.Assertions.*;
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
 import io.netty.util.Timeout;
@@ -97,8 +98,7 @@ public final class DefaultChannelPool implements ChannelPool {
         final long start;
 
         IdleChannel(Channel channel, long start) {
-            if (channel == null)
-                throw new NullPointerException("channel");
+            assertNotNull(channel, "channel");
             this.channel = channel;
             this.start = start;
         }

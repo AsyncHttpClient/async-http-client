@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
@@ -216,9 +218,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws FilterException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             fc = asyncFilter.filter(fc);
-            if (fc == null) {
-                throw new NullPointerException("FilterContext is null");
-            }
+            assertNotNull(fc, "filterContext");
         }
 
         Request request = fc.getRequest();

@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.uri;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -58,11 +60,8 @@ public class Uri {
             String path,//
             String query) {
 
-        if (scheme == null)
-            throw new NullPointerException("scheme");
-        if (host == null)
-            throw new NullPointerException("host");
-
+        assertNotNull(scheme, "scheme");
+        assertNotNull(host, "host");
         this.scheme = scheme;
         this.userInfo = userInfo;
         this.host = host;

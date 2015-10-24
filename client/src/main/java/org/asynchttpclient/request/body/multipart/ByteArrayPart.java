@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
@@ -42,8 +44,7 @@ public class ByteArrayPart extends AbstractFilePart {
 
     public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
-        if (bytes == null)
-            throw new NullPointerException("bytes");
+        assertNotNull(bytes, "bytes");
         this.bytes = bytes;
         setFileName(fileName);
     }

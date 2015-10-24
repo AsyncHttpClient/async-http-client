@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.request;
 
+import static org.asynchttpclient.util.Assertions.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -410,9 +411,7 @@ public final class NettyRequestSender {
         for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
+                assertNotNull(fc, "filterContext");
             } catch (FilterException efe) {
                 abort(channel, future, efe);
             }

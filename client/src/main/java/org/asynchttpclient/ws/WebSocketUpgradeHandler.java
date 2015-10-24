@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.ws;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -93,9 +95,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
             throw e;
         }
 
-        if (webSocket == null) {
-            throw new NullPointerException("webSocket");
-        }
+        assertNotNull(webSocket, "webSocket");
         return webSocket;
     }
 

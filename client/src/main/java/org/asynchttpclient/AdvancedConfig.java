@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -56,12 +58,9 @@ public class AdvancedConfig {
             NettyWebSocketFactory nettyWebSocketFactory,//
             ConnectionStrategy connectionStrategy) {
 
-        if (responseBodyPartFactory == null)
-            throw new NullPointerException("responseBodyPartFactory");
-        if (nettyWebSocketFactory == null)
-            throw new NullPointerException("nettyWebSocketFactory");
-        if (connectionStrategy == null)
-            throw new NullPointerException("connectionStrategy");
+        assertNotNull(responseBodyPartFactory, "responseBodyPartFactory");
+        assertNotNull(nettyWebSocketFactory, "nettyWebSocketFactory");
+        assertNotNull(connectionStrategy, "connectionStrategy");
 
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;

@@ -12,17 +12,15 @@
  */
 package org.asynchttpclient.cookie;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 public class Cookie {
 
     public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
 
-        if (name == null) {
-            throw new NullPointerException("name");
-        }
+        assertNotNull(name, "name");
         name = name.trim();
-        if (name.length() == 0) {
-            throw new IllegalArgumentException("empty name");
-        }
+        assertNotEmpty(name, "name");
 
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
@@ -49,10 +47,7 @@ public class Cookie {
             throw new IllegalArgumentException("name starting with '$' not allowed: " + name);
         }
 
-        if (value == null) {
-            throw new NullPointerException("value");
-        }
-
+        assertNotNull(value, "value");
         domain = validateValue("domain", domain);
         path = validateValue("path", path);
 

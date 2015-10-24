@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.handler;
 
+import static org.asynchttpclient.util.Assertions.*;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.util.HttpUtils.*;
@@ -216,9 +217,7 @@ public abstract class Protocol {
                 try {
                     fc = asyncFilter.filter(fc);
                     // FIXME Is it worth protecting against this?
-                    if (fc == null) {
-                        throw new NullPointerException("FilterContext is null");
-                    }
+                    assertNotNull("fc", "filterContext");
                 } catch (FilterException efe) {
                     requestSender.abort(channel, future, efe);
                 }

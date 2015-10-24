@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.io.ByteArrayOutputStream;
@@ -72,8 +74,7 @@ public class StringPart extends PartBase {
 
     public StringPart(String name, String value, String contentType, Charset charset, String contentId, String transferEncoding) {
         super(name, contentTypeOrDefault(contentType), charsetOrDefault(charset), contentId, transferEncodingOrDefault(transferEncoding));
-        if (value == null)
-            throw new NullPointerException("value");
+        assertNotNull(value, "value");
 
         if (value.indexOf(0) != -1)
             // See RFC 2048, 2.8. "8bit Data"

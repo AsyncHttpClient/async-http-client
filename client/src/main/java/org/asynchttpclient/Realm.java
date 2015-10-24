@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
@@ -65,13 +67,10 @@ public class Realm {
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
             Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset, String host, String opaque, boolean useAbsoluteURI, boolean omitQuery) {
 
-        if (scheme == null)
-            throw new NullPointerException("scheme");
-        if (principal == null)
-            throw new NullPointerException("principal");
-        if (password == null)
-            throw new NullPointerException("password");
-        
+        assertNotNull(scheme, "scheme");
+        assertNotNull(principal, "principal");
+        assertNotNull(password, "password");
+
         this.principal = principal;
         this.password = password;
         this.scheme = scheme;
@@ -232,7 +231,7 @@ public class Realm {
             this.principal = principal;
             this.password = password;
         }
-        
+
         public Builder setNtlmDomain(String ntlmDomain) {
             this.ntlmDomain = ntlmDomain;
             return this;
@@ -314,7 +313,7 @@ public class Realm {
             this.charset = charset;
             return this;
         }
-        
+
         private String parseRawQop(String rawQop) {
             String[] rawServerSupportedQops = rawQop.split(",");
             String[] serverSupportedQops = new String[rawServerSupportedQops.length];
@@ -351,7 +350,7 @@ public class Realm {
             if (rawQop != null) {
                 setQop(parseRawQop(rawQop));
             }
-            
+
             return this;
         }
 
@@ -366,7 +365,7 @@ public class Realm {
             }
             // FIXME qop is different with proxy?
             setQop(match(headerLine, "qop"));
-            
+
             return this;
         }
 

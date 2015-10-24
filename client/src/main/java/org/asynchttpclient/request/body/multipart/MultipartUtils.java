@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.request.body.multipart.Part.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -61,9 +63,7 @@ public class MultipartUtils {
      * @return a MultipartBody
      */
     public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
-        if (parts == null) {
-            throw new NullPointerException("parts");
-        }
+        assertNotNull(parts, "parts");
 
         byte[] multipartBoundary;
         String contentType;
@@ -176,10 +176,9 @@ public class MultipartUtils {
 
     public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) {
 
+        assertNotNull(parts, "parts");
+
         try {
-            if (parts == null) {
-                throw new NullPointerException("parts");
-            }
             long total = 0;
             for (Part part : parts) {
                 long l = part.length(partBoundary);

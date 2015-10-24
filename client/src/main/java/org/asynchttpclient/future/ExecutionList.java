@@ -28,6 +28,8 @@
 
 package org.asynchttpclient.future;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -66,14 +68,8 @@ public final class ExecutionList implements Runnable {
      */
     public void add(Runnable runnable, Executor executor) {
 
-        if (runnable == null) {
-            throw new NullPointerException("Runnable is null");
-        }
-
-        if (executor == null) {
-            throw new NullPointerException("Executor is null");
-        }
-
+        assertNotNull(runnable, "runnable");
+        assertNotNull(executor, "executor");
         boolean executeImmediate = false;
 
         // Lock while we check state.  We must maintain the lock while adding the

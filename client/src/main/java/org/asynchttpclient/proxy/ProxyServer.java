@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient.proxy;
 
+import static org.asynchttpclient.util.Assertions.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.util.ArrayList;
@@ -79,9 +80,7 @@ public class ProxyServer {
      * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public boolean isIgnoredForHost(String hostname) {
-        if (hostname == null)
-            throw new NullPointerException("hostname");
-
+        assertNotNull(hostname, "hostname");
         if (isNonEmpty(nonProxyHosts)) {
             for (String nonProxyHost : nonProxyHosts) {
                 if (matchNonProxyHost(hostname, nonProxyHost))

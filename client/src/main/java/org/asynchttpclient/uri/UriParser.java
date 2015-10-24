@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.uri;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 final class UriParser {
 
     public String scheme;
@@ -318,8 +320,7 @@ final class UriParser {
 
     public void parse(Uri context, final String originalUrl) {
 
-        if (originalUrl == null)
-            throw new NullPointerException("originalUrl");
+        assertNotNull(originalUrl, "orginalUri");
 
         boolean isRelative = false;
 
