@@ -34,7 +34,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -76,7 +75,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 log.info("{} requesting url [{}]...", i, url);
                 futures.add(client.prepareGet(url).execute());
             }
-            
+
             Exception exception = null;
             for (ListenableFuture<Response> future : futures) {
                 try {
@@ -131,8 +130,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Exception {
-        AsyncHttpClientConfig cg = config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1).build();
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
 
             // once
@@ -157,8 +155,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
-        AsyncHttpClientConfig cg = config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1).build();
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
 
             // once
@@ -181,10 +178,11 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     /**
-     * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception. The onComplete method must be only called once.
+     * This test just make sure the hack used to catch disconnected channel
+     * under win7 doesn't throw any exception. The onComplete method must be
+     * only called once.
      * 
-     * @throws Exception
-     *             if something wrong happens.
+     * @throws Exception if something wrong happens.
      */
     @Test(groups = { "standalone", "default_provider" })
     public void win7DisconnectTest() throws Exception {
@@ -253,14 +251,9 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
 
-        AsyncHttpClientConfig config = config()
-        .setMaxConnections(6)
-        .setMaxConnectionsPerHost(3)
-        .build();
-
         Request request = new RequestBuilder().setUrl(getTargetUrl()).setHeader("Connection", "close").build();
 
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setMaxConnections(6).setMaxConnectionsPerHost(3))) {
             client.executeRequest(request).get();
             Thread.sleep(1000);
             client.executeRequest(request).get();
@@ -270,7 +263,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request).get();
         }
     }
-    
+
     @Test(groups = { "standalone", "default_provider" })
     public void testPooledEventsFired() throws Exception {
         Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
@@ -284,15 +277,8 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
             secondHandler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            Object[] expectedEvents = new Object[] {
-                    CONNECTION_POOL_EVENT,
-                    CONNECTION_POOLED_EVENT,
-                    REQUEST_SEND_EVENT,
-                    HEADERS_WRITTEN_EVENT,
-                    STATUS_RECEIVED_EVENT,
-                    HEADERS_RECEIVED_EVENT,
-                    CONNECTION_OFFER_EVENT,
-                    COMPLETED_EVENT};
+            Object[] expectedEvents = new Object[] { CONNECTION_POOL_EVENT, CONNECTION_POOLED_EVENT, REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT,
+                    HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT };
 
             assertEquals(secondHandler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
         }

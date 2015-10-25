@@ -369,6 +369,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         this.proxyServer = proxyServer;
         return asDerivedType();
     }
+    
+    public T setProxyServer(ProxyServer.Builder proxyServerBuilder) {
+        this.proxyServer = proxyServerBuilder.build();
+        return asDerivedType();
+    }
 
     public T setRealm(Realm realm) {
         this.realm = realm;

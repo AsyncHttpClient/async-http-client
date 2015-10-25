@@ -70,7 +70,7 @@ public class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Exception {
-        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0).build())) {
+        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {

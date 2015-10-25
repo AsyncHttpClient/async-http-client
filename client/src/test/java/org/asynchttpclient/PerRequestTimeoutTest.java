@@ -108,7 +108,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
             Response response = responseFuture.get();
             assertNotNull(response);
@@ -122,7 +122,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalRequestTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
@@ -140,7 +140,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalIdleTimeout() throws IOException {
         final long times[] = new long[] { -1, -1 };
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {

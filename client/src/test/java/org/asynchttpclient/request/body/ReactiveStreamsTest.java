@@ -33,7 +33,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testStreamingPutImage() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             Response response = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER).execute().get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
@@ -42,7 +42,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testConnectionDoesNotGetClosed() throws Exception { // test that we can stream the same request multiple times
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER);
             Response response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
@@ -56,7 +56,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true, expectedExceptions = ExecutionException.class)
     public void testFailingStream() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             Observable<ByteBuffer> failingObservable = Observable.error(new FailedStream());
             Publisher<ByteBuffer> failingPublisher = RxReactiveStreams.toPublisher(failingObservable);
 

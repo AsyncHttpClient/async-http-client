@@ -59,9 +59,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void idleStateTest() throws Exception {
-        AsyncHttpClientConfig cg = config().setPooledConnectionIdleTimeout(10 * 1000).build();
-
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);

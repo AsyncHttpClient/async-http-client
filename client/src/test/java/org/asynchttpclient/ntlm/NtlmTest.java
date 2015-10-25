@@ -76,7 +76,7 @@ public class NtlmTest extends AbstractBasicTest {
 
     private void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(realmBuilder.build()))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(realmBuilder))) {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();

@@ -317,7 +317,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     // TODO: fix test
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
     public void asyncStatusHEADContentLenghtTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(120 * 1000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(120 * 1000))) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
 
@@ -612,7 +612,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setCompressionEnforced(true).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setCompressionEnforced(true))) {
             final CountDownLatch l = new CountDownLatch(1);
             HttpHeaders h = new DefaultHttpHeaders();
             h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
@@ -1074,7 +1074,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoGetDelayHandlerTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(5 * 1000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(5 * 1000))) {
             HttpHeaders h = new DefaultHttpHeaders();
             h.add("LockThread", "true");
 
@@ -1180,7 +1180,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider", "async" })
     public void asyncDoGetMaxRedirectTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setMaxRedirects(0).setFollowRedirect(true).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setMaxRedirects(0).setFollowRedirect(true))) {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(1);
 
@@ -1292,8 +1292,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testAsyncHttpProviderConfig() throws Exception {
-        AsyncHttpClientConfig config = config().addChannelOption(ChannelOption.TCP_NODELAY, Boolean.TRUE).build();
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config().addChannelOption(ChannelOption.TCP_NODELAY, Boolean.TRUE))) {
             Response response = client.prepareGet("http://test.s3.amazonaws.com/").execute().get();
             if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
                 fail("No response Body");
@@ -1305,7 +1304,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void idleRequestTimeoutTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(5000).setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(5000).setRequestTimeout(10000))) {
             HttpHeaders h = new DefaultHttpHeaders();
             h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             h.add("LockThread", "true");

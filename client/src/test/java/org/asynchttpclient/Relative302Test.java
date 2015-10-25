@@ -83,9 +83,8 @@ public class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = config().setFollowRedirect(true).build();
 
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -98,10 +97,9 @@ public class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = config().setFollowRedirect(true).build();
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
             assertNotNull(response);
@@ -115,8 +113,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = config().setFollowRedirect(true).build();
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
@@ -133,8 +130,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = config().setFollowRedirect(true).build();
-        try (AsyncHttpClient c = asyncHttpClient(cg)) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 

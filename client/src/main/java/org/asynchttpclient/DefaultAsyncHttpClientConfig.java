@@ -689,6 +689,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             this.realm = realm;
             return this;
         }
+        
+        public Builder setRealm(Realm.Builder realmBuilder) {
+            this.realm = realmBuilder.build();
+            return this;
+        }
 
         public Builder setMaxRequestRetry(int maxRequestRetry) {
             this.maxRequestRetry = maxRequestRetry;
@@ -717,6 +722,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setProxyServer(ProxyServer proxyServer) {
             this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
+            return this;
+        }
+        
+        public Builder setProxyServer(ProxyServer.Builder proxyServerBuilder) {
+            this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServerBuilder.build());
             return this;
         }
 

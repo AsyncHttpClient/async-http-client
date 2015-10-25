@@ -46,7 +46,7 @@ public class ThreadNameTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
-        try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName))) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/").execute();
             f.get(3, TimeUnit.SECONDS);
 

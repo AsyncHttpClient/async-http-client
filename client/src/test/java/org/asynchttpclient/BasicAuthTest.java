@@ -174,7 +174,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void redirectAndDigestAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm(basicAuthRealm(USER, ADMIN).build())//
                     .execute();
@@ -290,7 +290,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthAsyncConfigTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN).build()).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN)))) {
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE_STRING)//
                     .execute();
@@ -305,7 +305,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthFileNoKeepAliveTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
 
             Future<Response> f = client.preparePost(getTargetUrl())//
                     .setBody(SIMPLE_TEXT_FILE)//
