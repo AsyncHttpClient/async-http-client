@@ -47,22 +47,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private static final String AHC_VERSION;
 
     static {
-        InputStream is = null;
-        Properties prop = new Properties();
-        try {
-            is = DefaultAsyncHttpClientConfig.class.getResourceAsStream("/ahc-version.properties");
+        try (InputStream is = DefaultAsyncHttpClientConfig.class.getResourceAsStream("/ahc-version.properties")) {
+            Properties prop = new Properties();
             prop.load(is);
+            AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
-        AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
     }
 
     private final int connectTimeout;
