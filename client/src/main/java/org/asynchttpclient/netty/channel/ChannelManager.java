@@ -132,9 +132,9 @@ public class ChannelManager {
                         if (maxConnectionsPerHostEnabled) {
                             Object partitionKey = channelId2PartitionKey.remove(Channel.class.cast(o));
                             if (partitionKey != null) {
-                                Semaphore freeChannelsForHost = freeChannelsPerHost.get(partitionKey);
-                                if (freeChannelsForHost != null)
-                                    freeChannelsForHost.release();
+                                Semaphore hostFreeChannels = freeChannelsPerHost.get(partitionKey);
+                                if (hostFreeChannels != null)
+                                    hostFreeChannels.release();
                             }
                         }
                     }
