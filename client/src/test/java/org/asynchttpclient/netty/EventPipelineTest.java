@@ -24,9 +24,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AdvancedConfig;
-import org.asynchttpclient.AdvancedConfig.AdditionalPipelineInitializer;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -37,13 +36,13 @@ public class EventPipelineTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Exception {
 
-        AdvancedConfig advancedConfig = advancedConfig().setHttpAdditionalPipelineInitializer(new AdditionalPipelineInitializer() {
+        AsyncHttpClientConfig.AdditionalPipelineInitializer httpAdditionalPipelineInitializer = new AsyncHttpClientConfig.AdditionalPipelineInitializer() {
             public void initPipeline(ChannelPipeline pipeline) throws Exception {
                 pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
-        }).build();
+        };
 
-        try (AsyncHttpClient p = asyncHttpClient(config().setAdvancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient p = asyncHttpClient(config().setHttpAdditionalPipelineInitializer(httpAdditionalPipelineInitializer).build())) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
             p.executeRequest(request, new AsyncCompletionHandlerAdapter() {

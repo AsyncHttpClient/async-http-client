@@ -80,10 +80,6 @@ public final class Dsl {
         return new DefaultAsyncHttpClientConfig.Builder();
     }
 
-    public static AdvancedConfig.Builder advancedConfig() {
-        return new AdvancedConfig.Builder();
-    }
-
     // /////////// Realm ////////////////
     public static Realm.Builder realm(Realm prototype) {
         return new Realm.Builder(prototype.getPrincipal(), prototype.getPassword())//

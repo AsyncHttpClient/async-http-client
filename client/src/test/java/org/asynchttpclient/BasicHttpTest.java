@@ -1292,7 +1292,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testAsyncHttpProviderConfig() throws Exception {
-        AsyncHttpClientConfig config = config().setAdvancedConfig(advancedConfig().addChannelOption(ChannelOption.TCP_NODELAY, Boolean.TRUE).build()).build();
+        AsyncHttpClientConfig config = config().addChannelOption(ChannelOption.TCP_NODELAY, Boolean.TRUE).build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             Response response = client.prepareGet("http://test.s3.amazonaws.com/").execute().get();
             if (response.getResponseBody() == null || response.getResponseBody().equals("")) {

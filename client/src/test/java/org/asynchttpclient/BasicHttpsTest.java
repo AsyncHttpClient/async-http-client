@@ -70,15 +70,15 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Exception {
 
-        AdvancedConfig advancedConfig = advancedConfig().setKeepAliveStrategy(new KeepAliveStrategy() {
+        KeepAliveStrategy keepAliveStrategy = new KeepAliveStrategy() {
 
             @Override
             public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {
                 return !ahcRequest.getUri().isSecured();
             }
-        }).build();
+        };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))).setAdvancedConfig(advancedConfig).build())) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))).setKeepAliveStrategy(keepAliveStrategy).build())) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 

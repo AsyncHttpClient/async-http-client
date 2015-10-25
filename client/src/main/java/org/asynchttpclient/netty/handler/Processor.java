@@ -27,7 +27,6 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
-import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.DiscardEvent;
@@ -46,18 +45,15 @@ public class Processor extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
     private final AsyncHttpClientConfig config;
-    private final AdvancedConfig advancedConfig;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
     public Processor(AsyncHttpClientConfig config,//
-            AdvancedConfig advancedConfig,//
             ChannelManager channelManager,//
             NettyRequestSender requestSender,//
             Protocol protocol) {
         this.config = config;
-        this.advancedConfig = advancedConfig;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
         this.protocol = protocol;
@@ -98,13 +94,13 @@ public class Processor extends ChannelInboundHandlerAdapter {
                     // Send the last content on to the protocol, so that it can
                     // conclude the cleanup
                     protocol.handle(channel, publisher.future(), msg);
-                } else if (msg instanceof HttpContent) {
 
+                } else if (msg instanceof HttpContent) {
                     ByteBuf content = ((HttpContent) msg).content();
 
                     // Republish as a HttpResponseBodyPart
                     if (content.readableBytes() > 0) {
-                        NettyResponseBodyPart part = advancedConfig.getResponseBodyPartFactory().newResponseBodyPart(content, false);
+                        NettyResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(content, false);
                         ctx.fireChannelRead(part);
                     }
 

@@ -127,8 +127,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableZeroCopy");
     }
 
-    public static long defaultHandshakeTimeout() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getLong(ASYNC_CLIENT_CONFIG_ROOT + "handshakeTimeout");
+    public static int defaultHandshakeTimeout() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "handshakeTimeout");
     }
 
     public static int defaultChunkedFileChunkSize() {

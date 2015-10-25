@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
 
-import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.SSLEngineFactory;
@@ -81,7 +80,6 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
     private final AsyncHttpClientConfig config;
-    private final AdvancedConfig advancedConfig;
     private final SSLEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
@@ -104,17 +102,16 @@ public class ChannelManager {
 
     private Processor wsProcessor;
 
-    public ChannelManager(final AsyncHttpClientConfig config, AdvancedConfig advancedConfig, Timer nettyTimer) {
+    public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
         this.config = config;
-        this.advancedConfig = advancedConfig;
         this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
 
-        ChannelPool channelPool = advancedConfig.getChannelPool();
+        ChannelPool channelPool = config.getChannelPool();
         if (channelPool == null && config.isKeepAlive()) {
             channelPool = new DefaultChannelPool(config, nettyTimer);
         } else if (channelPool == null) {
-            channelPool = new NoopChannelPool();
+            channelPool = NoopChannelPool.INSTANCE;
         }
         this.channelPool = channelPool;
 
@@ -168,10 +165,10 @@ public class ChannelManager {
         handshakeTimeout = config.getHandshakeTimeout();
 
         // check if external EventLoopGroup is defined
-        ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolNameOrDefault());
-        allowReleaseEventLoopGroup = advancedConfig.getEventLoopGroup() == null;
+        ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
+        allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
-            if (advancedConfig.isPreferNative()) {
+            if (config.isPreferNative()) {
                 eventLoopGroup = newEpollEventLoopGroup(threadFactory);
                 socketChannelClass = getEpollSocketChannelClass();
 
@@ -181,7 +178,7 @@ public class ChannelManager {
             }
 
         } else {
-            eventLoopGroup = advancedConfig.getEventLoopGroup();
+            eventLoopGroup = config.getEventLoopGroup();
             if (eventLoopGroup instanceof OioEventLoopGroup)
                 throw new IllegalArgumentException("Oio is not supported");
 
@@ -203,7 +200,7 @@ public class ChannelManager {
             httpBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
             wsBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
         }
-        for (Entry<ChannelOption<Object>, Object> entry : advancedConfig.getChannelOptions().entrySet()) {
+        for (Entry<ChannelOption<Object>, Object> entry : config.getChannelOptions().entrySet()) {
             ChannelOption<Object> key = entry.getKey();
             Object value = entry.getValue();
             httpBootstrap.option(key, value);
@@ -231,11 +228,11 @@ public class ChannelManager {
     
     public void configureBootstraps(NettyRequestSender requestSender) {
 
-        HttpProtocol httpProtocol = new HttpProtocol(this, config, advancedConfig, requestSender);
-        final Processor httpProcessor = new Processor(config, advancedConfig, this, requestSender, httpProtocol);
+        HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
+        final Processor httpProcessor = new Processor(config, this, requestSender, httpProtocol);
 
-        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, advancedConfig, requestSender);
-        wsProcessor = new Processor(config, advancedConfig, this, requestSender, wsProtocol);
+        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
+        wsProcessor = new Processor(config, this, requestSender, wsProtocol);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -248,8 +245,8 @@ public class ChannelManager {
 
                 ch.config().setOption(ChannelOption.AUTO_READ, false);
 
-                if (advancedConfig.getHttpAdditionalPipelineInitializer() != null)
-                    advancedConfig.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getHttpAdditionalPipelineInitializer() != null)
+                    config.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
 
@@ -260,8 +257,8 @@ public class ChannelManager {
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
-                if (advancedConfig.getWsAdditionalPipelineInitializer() != null)
-                    advancedConfig.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getWsAdditionalPipelineInitializer() != null)
+                    config.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
             }
         });
     }

@@ -1,15 +1,28 @@
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.Timer;
+
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLContext;
 
 import org.asynchttpclient.channel.SSLEngineFactory;
+import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.netty.EagerNettyResponseBodyPart;
+import org.asynchttpclient.netty.LazyNettyResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
+import org.asynchttpclient.netty.ws.NettyWebSocket;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
@@ -21,19 +34,12 @@ public interface AsyncHttpClientConfig {
     String getAhcVersion();
 
     /**
-     * Return the name of {@link AsyncHttpClient}, which is used for thread naming
-     * and debugging.
+     * Return the name of {@link AsyncHttpClient}, which is used for thread
+     * naming and debugging.
      *
      * @return the name.
      */
     String getThreadPoolName();
-
-    /**
-     * Return the name of {@link AsyncHttpClient}, or default string if name is null or empty.
-     *
-     * @return the name.
-     */
-    String getThreadPoolNameOrDefault();
 
     /**
      * Return the maximum number of connections an {@link AsyncHttpClient} can
@@ -161,13 +167,6 @@ public interface AsyncHttpClientConfig {
     SSLContext getSslContext();
 
     /**
-     * Return the {@link AdvancedConfig}
-     *
-     * @return the {@link AdvancedConfig}
-     */
-    AdvancedConfig getAdvancedConfig();
-
-    /**
      * Return the current {@link Realm}
      *
      * @return the current {@link Realm}
@@ -260,7 +259,7 @@ public interface AsyncHttpClientConfig {
 
     boolean isDisableZeroCopy();
 
-    long getHandshakeTimeout();
+    int getHandshakeTimeout();
 
     SSLEngineFactory getSslEngineFactory();
 
@@ -275,4 +274,64 @@ public interface AsyncHttpClientConfig {
     int getShutdownQuietPeriod();
 
     int getShutdownTimeout();
+
+    Map<ChannelOption<Object>, Object> getChannelOptions();
+
+    EventLoopGroup getEventLoopGroup();
+
+    boolean isPreferNative();
+
+    AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer();
+
+    AdditionalPipelineInitializer getWsAdditionalPipelineInitializer();
+
+    ResponseBodyPartFactory getResponseBodyPartFactory();
+
+    ChannelPool getChannelPool();
+
+    Timer getNettyTimer();
+
+    NettyWebSocketFactory getNettyWebSocketFactory();
+
+    KeepAliveStrategy getKeepAliveStrategy();
+
+    interface AdditionalPipelineInitializer {
+
+        void initPipeline(ChannelPipeline pipeline) throws Exception;
+    }
+
+    enum ResponseBodyPartFactory {
+
+        EAGER {
+            @Override
+            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new EagerNettyResponseBodyPart(buf, last);
+            }
+        },
+
+        LAZY {
+
+            @Override
+            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new LazyNettyResponseBodyPart(buf, last);
+            }
+        };
+
+        public abstract NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
+    }
+
+    interface NettyWebSocketFactory {
+
+        NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
+
+        enum DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
+
+            INSTANCE;
+
+            @Override
+            public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
+                return new NettyWebSocket(channel, config);
+            }
+        }
+    }
 }

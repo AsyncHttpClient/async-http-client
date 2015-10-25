@@ -16,14 +16,12 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.Assertions.*;
-
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.asynchttpclient.AdvancedConfig.Builder;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -72,12 +70,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         
         this.config = config;
         
-        AdvancedConfig advancedConfig = config.getAdvancedConfig() != null ? config.getAdvancedConfig() : new Builder().build();
+        allowStopNettyTimer = config.getNettyTimer() == null;
+        nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
 
-        allowStopNettyTimer = advancedConfig.getNettyTimer() == null;
-        nettyTimer = allowStopNettyTimer ? newNettyTimer() : advancedConfig.getNettyTimer();
-
-        channelManager = new ChannelManager(config, advancedConfig, nettyTimer);
+        channelManager = new ChannelManager(config, nettyTimer);
         requestSender = new NettyRequestSender(config, channelManager, nettyTimer, closed);
         channelManager.configureBootstraps(requestSender);
     }

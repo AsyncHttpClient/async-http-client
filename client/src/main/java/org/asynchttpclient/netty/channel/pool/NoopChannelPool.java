@@ -17,7 +17,9 @@ import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
 
 import io.netty.channel.Channel;
 
-public class NoopChannelPool implements ChannelPool {
+public enum NoopChannelPool implements ChannelPool {
+
+    INSTANCE;
 
     @Override
     public boolean offer(Channel channel, Object partitionKey) {

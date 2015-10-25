@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -30,15 +30,13 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
-import org.asynchttpclient.AdvancedConfig;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
@@ -56,11 +54,8 @@ import org.asynchttpclient.uri.Uri;
 
 public final class HttpProtocol extends Protocol {
 
-    private final KeepAliveStrategy connectionStrategy;
-
-    public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, AdvancedConfig advancedConfig, NettyRequestSender requestSender) {
-        super(channelManager, config, advancedConfig, requestSender);
-        connectionStrategy = advancedConfig.getKeepAliveStrategy();
+    public HttpProtocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+        super(channelManager, config, requestSender);
     }
 
     private void kerberosChallenge(Channel channel,//
@@ -160,7 +155,6 @@ public final class HttpProtocol extends Protocol {
         return interrupt;
     }
 
-
     private boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
         if (statusCode == CONTINUE.code()) {
             future.setHeadersAlreadyWrittenOnContinue(true);
@@ -186,7 +180,7 @@ public final class HttpProtocol extends Protocol {
             int statusCode,//
             Realm realm,//
             ProxyServer proxyServer) {
-        
+
         if (statusCode != UNAUTHORIZED.code())
             return false;
 
@@ -194,7 +188,7 @@ public final class HttpProtocol extends Protocol {
             logger.info("Can't handle 401 as there's no realm");
             return false;
         }
-        
+
         if (future.getInAuth().getAndSet(true)) {
             logger.info("Can't handle 401 as auth was already performed");
             return false;
@@ -226,7 +220,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 401 with Basic realm as auth was preemptive and already performed");
                 return false;
             }
-            
+
             // FIXME do we want to update the realm, or directly
             // set the header?
             Realm newBasicRealm = realm(realm)//
@@ -249,7 +243,7 @@ public final class HttpProtocol extends Protocol {
                     .build();
             future.setRealm(newDigestRealm);
             break;
-            
+
         case NTLM:
             String ntlmHeader = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
             if (ntlmHeader == null) {
@@ -272,7 +266,7 @@ public final class HttpProtocol extends Protocol {
             }
             try {
                 kerberosChallenge(channel, wwwAuthHeaders, request, requestHeaders, realm, future);
-                
+
             } catch (SpnegoEngineException e) {
                 // FIXME
                 String ntlmHeader2 = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
@@ -323,25 +317,25 @@ public final class HttpProtocol extends Protocol {
             logger.info("Can't handle 407 as auth was already performed");
             return false;
         }
-        
+
         Realm proxyRealm = future.getProxyRealm();
-        
+
         if (proxyRealm == null) {
             logger.info("Can't handle 407 as there's no proxyRealm");
             return false;
         }
-        
+
         List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
         if (proxyAuthHeaders.isEmpty()) {
             logger.info("Can't handle 407 as response doesn't contain Proxy-Authenticate headers");
             return false;
         }
-        
+
         // FIXME what's this???
         future.setState(NettyResponseFuture.STATE.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
-        
+
         switch (proxyRealm.getScheme()) {
         case BASIC:
             if (getHeaderWithPrefix(proxyAuthHeaders, "Basic") == null) {
@@ -357,7 +351,7 @@ public final class HttpProtocol extends Protocol {
                 logger.info("Can't handle 407 with Basic realm as auth was preemptive and already performed");
                 return false;
             }
-            
+
             // FIXME do we want to update the realm, or directly
             // set the header?
             Realm newBasicRealm = realm(proxyRealm)//
@@ -380,7 +374,7 @@ public final class HttpProtocol extends Protocol {
                     .build();
             future.setProxyRealm(newDigestRealm);
             break;
-            
+
         case NTLM:
             String ntlmHeader = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
             if (ntlmHeader == null) {
@@ -402,7 +396,7 @@ public final class HttpProtocol extends Protocol {
             }
             try {
                 kerberosProxyChallenge(channel, proxyAuthHeaders, request, proxyServer, proxyRealm, requestHeaders, future);
-                
+
             } catch (SpnegoEngineException e) {
                 // FIXME
                 String ntlmHeader2 = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
@@ -429,7 +423,7 @@ public final class HttpProtocol extends Protocol {
             nextRequestBuilder.setMethod(HttpMethod.CONNECT.name());
         }
         final Request nextRequest = nextRequestBuilder.build();
-        
+
         logger.debug("Sending proxy authentication to {}", request.getUri());
         if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
             future.setConnectAllowed(true);
@@ -517,7 +511,7 @@ public final class HttpProtocol extends Protocol {
         // the handler in case of trailing headers
         future.setHttpHeaders(response.headers());
 
-        future.setKeepAlive(connectionStrategy.keepAlive(future.getTargetRequest(), httpRequest, response));
+        future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(future.getTargetRequest(), httpRequest, response));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
         int statusCode = response.getStatus().code();
@@ -555,7 +549,7 @@ public final class HttpProtocol extends Protocol {
 
         ByteBuf buf = chunk.content();
         if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-            NettyResponseBodyPart part = advancedConfig.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
+            NettyResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             interrupt = updateBodyAndInterrupt(future, handler, part);
         }
 

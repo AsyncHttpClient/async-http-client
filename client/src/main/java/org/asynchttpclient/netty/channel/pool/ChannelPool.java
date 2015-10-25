@@ -13,8 +13,6 @@
  */
 package org.asynchttpclient.netty.channel.pool;
 
-import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
-
 import io.netty.channel.Channel;
 
 public interface ChannelPool {
@@ -37,7 +35,8 @@ public interface ChannelPool {
     Channel poll(Object partitionKey);
 
     /**
-     * Remove all channels from the cache. A channel might have been associated with several uri.
+     * Remove all channels from the cache. A channel might have been associated
+     * with several uri.
      * 
      * @param channel a channel
      * @return the true if the channel has been removed
@@ -45,8 +44,9 @@ public interface ChannelPool {
     boolean removeAll(Channel channel);
 
     /**
-     * Return true if a channel can be cached. A implementation can decide based on some rules to allow caching
-     * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Channel, Object)}
+     * Return true if a channel can be cached. A implementation can decide based
+     * on some rules to allow caching Calling this method is equivalent of
+     * checking the returned value of {@link ChannelPool#offer(Channel, Object)}
      * 
      * @return true if a channel can be cached.
      */
@@ -59,6 +59,7 @@ public interface ChannelPool {
 
     /**
      * Flush a partition
+     * 
      * @param partitionKey the partition
      */
     void flushPartition(Object partitionKey);
