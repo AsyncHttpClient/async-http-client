@@ -13,8 +13,6 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
@@ -23,14 +21,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.asynchttpclient.request.body.Body;
 
 public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator, BodyGenerator {
-    private final static byte[] END_PADDING = "\r\n".getBytes(US_ASCII);
-    private final static byte[] ZERO = "0".getBytes(US_ASCII);
-    private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
     private FeedListener listener;
-
-    // must be set to true when using Netty 3 where native chunking is broken
-    private boolean writeChunkBoundaries = false;
 
     @Override
     public Body createBody() {
@@ -48,11 +40,6 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
     @Override
     public void setListener(FeedListener listener) {
         this.listener = listener;
-    }
-
-    @Override
-    public void writeChunkBoundaries() {
-        this.writeChunkBoundaries = true;
     }
 
     public final class PushBody implements Body {
@@ -95,12 +82,9 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
 
         private void readBodyPart(ByteBuffer buffer, BodyPart part) {
-            part.initBoundaries();
-            move(buffer, part.size);
             move(buffer, part.buffer);
-            move(buffer, part.endPadding);
 
-            if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
+            if (!part.buffer.hasRemaining()) {
                 if (part.isLast) {
                     state = BodyState.STOP;
                 }
@@ -125,47 +109,11 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
     private final class BodyPart {
         private final boolean isLast;
-        private ByteBuffer size = null;
         private final ByteBuffer buffer;
-        private ByteBuffer endPadding = null;
 
         public BodyPart(final ByteBuffer buffer, final boolean isLast) {
             this.buffer = buffer;
             this.isLast = isLast;
-        }
-
-        private void initBoundaries() {
-            if(size == null && endPadding == null) {
-                if (SimpleFeedableBodyGenerator.this.writeChunkBoundaries) {
-                    if(buffer.hasRemaining()) {
-                        final byte[] sizeAsHex = Integer.toHexString(buffer.remaining()).getBytes(US_ASCII);
-                        size = ByteBuffer.allocate(sizeAsHex.length + END_PADDING.length);
-                        size.put(sizeAsHex);
-                        size.put(END_PADDING);
-                        size.flip();
-                    } else {
-                        size = EMPTY_BUFFER;
-                    }
-
-                    if(isLast) {
-                        endPadding = ByteBuffer.allocate(END_PADDING.length * 3 + ZERO.length);
-                        if(buffer.hasRemaining()) {
-                            endPadding.put(END_PADDING);
-                        }
-
-                        //add last empty
-                        endPadding.put(ZERO);
-                        endPadding.put(END_PADDING);
-                        endPadding.put(END_PADDING);
-                        endPadding.flip();
-                    } else {
-                        endPadding = ByteBuffer.wrap(END_PADDING);
-                    }
-                } else {
-                    size = EMPTY_BUFFER;
-                    endPadding = EMPTY_BUFFER;
-                }
-            }
         }
     }
 }

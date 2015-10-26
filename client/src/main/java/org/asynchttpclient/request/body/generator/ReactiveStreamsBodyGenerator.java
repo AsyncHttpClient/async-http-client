@@ -46,11 +46,6 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     }
 
     @Override
-    public void writeChunkBoundaries() {
-        feedableBodyGenerator.writeChunkBoundaries();
-    }
-
-    @Override
     public void setListener(FeedListener listener) {
         feedListener.set(listener);
         feedableBodyGenerator.setListener(listener);

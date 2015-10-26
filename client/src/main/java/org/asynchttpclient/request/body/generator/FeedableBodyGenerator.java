@@ -22,8 +22,6 @@ import java.nio.ByteBuffer;
 public interface FeedableBodyGenerator extends BodyGenerator {
     void feed(ByteBuffer buffer, boolean isLast);
 
-    void writeChunkBoundaries();
-
     void setListener(FeedListener listener);
 
     interface FeedListener {

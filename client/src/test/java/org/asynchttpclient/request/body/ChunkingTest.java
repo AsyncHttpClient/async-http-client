@@ -35,11 +35,6 @@ import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.generator.SimpleFeedableBodyGenerator;
 import org.testng.annotations.Test;
 
-/**
- * Test that the url fetcher is able to communicate via a proxy
- * 
- * @author dominict
- */
 public class ChunkingTest extends AbstractBasicTest {
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimeters.
