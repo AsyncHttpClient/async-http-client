@@ -102,7 +102,8 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     // RandomAccessBody API, suited for HTTP but not for HTTPS (zero-copy)
-    public long transferTo(long position, WritableByteChannel target) throws IOException {
+    @Override
+    public long transferTo(WritableByteChannel target) throws IOException {
 
         if (done)
             return -1L;
