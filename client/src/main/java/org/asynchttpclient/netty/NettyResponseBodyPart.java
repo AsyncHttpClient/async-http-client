@@ -18,7 +18,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public abstract class NettyResponseBodyPart extends HttpResponseBodyPart {
+public abstract class NettyResponseBodyPart implements HttpResponseBodyPart {
 
     private final boolean last;
     private boolean closeConnection;

@@ -31,9 +31,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.netty.NettyResponseBodyPart;
+import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteFragmentListener;
 import org.asynchttpclient.ws.WebSocketByteListener;
@@ -248,7 +247,7 @@ public class NettyWebSocket implements WebSocket {
         }
 
         if (interestedInByteMessages) {
-            byte[] fragment = NettyResponseBodyPart.class.cast(part).getBodyPartBytes();
+            byte[] fragment = part.getBodyPartBytes();
 
             if (part.isLast()) {
                 if (bufferSize == 0) {
@@ -284,7 +283,7 @@ public class NettyWebSocket implements WebSocket {
         }
 
         if (interestedInTextMessages) {
-            byte[] fragment = NettyResponseBodyPart.class.cast(part).getBodyPartBytes();
+            byte[] fragment = part.getBodyPartBytes();
 
             if (part.isLast()) {
                 if (bufferSize == 0) {

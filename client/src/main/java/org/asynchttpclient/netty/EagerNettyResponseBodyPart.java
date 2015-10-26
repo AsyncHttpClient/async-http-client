@@ -12,13 +12,9 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.netty.util.ByteBufUtils.*;
+import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.buffer.ByteBuf;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -45,19 +41,8 @@ public class EagerNettyResponseBodyPart extends NettyResponseBodyPart {
     }
 
     @Override
-    public InputStream readBodyPartBytes() {
-        return new ByteArrayInputStream(bytes);
-    }
-
-    @Override
     public int length() {
         return bytes.length;
-    }
-
-    @Override
-    public int writeTo(OutputStream outputStream) throws IOException {
-        outputStream.write(bytes);
-        return length();
     }
 
     @Override
