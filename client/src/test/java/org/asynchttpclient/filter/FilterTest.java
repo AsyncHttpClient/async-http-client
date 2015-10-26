@@ -63,7 +63,7 @@ public class FilterTest extends AbstractBasicTest {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -72,7 +72,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void loadThrottleTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(10)))) {
             List<Future<Response>> futures = new ArrayList<>();
@@ -88,7 +88,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void maxConnectionsText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
             c.preparePost(getTargetUrl()).execute().get();
@@ -98,7 +98,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicResponseFilterTest() throws Exception {
 
         ResponseFilter responseFilter = new ResponseFilter() {
@@ -115,7 +115,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void replayResponseFilterTest() throws Exception {
 
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -137,7 +137,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void replayStatusCodeResponseFilterTest() throws Exception {
 
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -159,7 +159,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void replayHeaderResponseFilterTest() throws Exception {
 
         final AtomicBoolean replay = new AtomicBoolean(true);

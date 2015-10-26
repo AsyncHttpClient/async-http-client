@@ -48,7 +48,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//

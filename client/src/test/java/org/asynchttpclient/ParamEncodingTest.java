@@ -53,7 +53,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";

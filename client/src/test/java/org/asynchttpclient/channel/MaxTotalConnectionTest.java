@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 public class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 

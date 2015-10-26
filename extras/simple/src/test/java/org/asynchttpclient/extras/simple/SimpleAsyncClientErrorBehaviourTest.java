@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  */
 public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
     
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testAccumulateErrorBody() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
                 .setUrl(getTargetUrl() + "/nonexistent")//
@@ -50,7 +50,7 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testOmitErrorBody() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
                 .setUrl(getTargetUrl() + "/nonexistent")//

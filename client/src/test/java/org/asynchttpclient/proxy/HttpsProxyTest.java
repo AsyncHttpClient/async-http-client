@@ -69,7 +69,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
@@ -92,7 +92,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//

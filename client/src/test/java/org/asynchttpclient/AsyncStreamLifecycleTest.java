@@ -95,7 +95,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     // TODO Netty only.
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testStream() throws IOException {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);

@@ -43,7 +43,7 @@ public class ThreadNameTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName))) {

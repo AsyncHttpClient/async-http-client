@@ -68,7 +68,7 @@ public class RetryRequestTest extends AbstractBasicTest {
         return new SlowAndBigHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMaxRetry() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();

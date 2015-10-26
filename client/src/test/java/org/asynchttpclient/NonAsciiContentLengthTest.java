@@ -62,7 +62,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
         server.start();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testNonAsciiContentLength() throws Exception {
         execute("test");
         execute("\u4E00"); // Unicode CJK ideograph for one

@@ -43,7 +43,7 @@ import rx.RxReactiveStreams;
 
 public class ReactiveStreamsTest extends AbstractBasicTest {
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testStreamingPutImage() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             Response response = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER).execute().get();
@@ -52,7 +52,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testConnectionDoesNotGetClosed() throws Exception {
         // test that we can stream the same request multiple times
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
@@ -67,7 +67,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = ExecutionException.class)
+    @Test(groups = "standalone", expectedExceptions = ExecutionException.class)
     public void testFailingStream() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             Observable<ByteBuffer> failingObservable = Observable.error(new FailedStream());
@@ -81,7 +81,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
     private class FailedStream extends RuntimeException {
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void streamedResponseTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
 
@@ -100,7 +100,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void cancelStreamedResponseTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
 

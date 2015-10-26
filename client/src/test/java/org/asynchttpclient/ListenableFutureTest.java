@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 
 public class ListenableFutureTest extends AbstractBasicTest {
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
         try (AsyncHttpClient ahc = asyncHttpClient()) {

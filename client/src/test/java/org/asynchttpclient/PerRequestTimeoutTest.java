@@ -90,7 +90,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(100).execute();
@@ -106,7 +106,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
@@ -120,7 +120,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testGlobalRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -136,7 +136,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testGlobalIdleTimeout() throws IOException {
         final long times[] = new long[] { -1, -1 };
 

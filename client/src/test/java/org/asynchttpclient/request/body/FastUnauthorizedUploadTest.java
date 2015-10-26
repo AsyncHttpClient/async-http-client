@@ -49,7 +49,7 @@ public class FastUnauthorizedUploadTest extends AbstractBasicTest {
         };
     }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    @Test(groups = "standalone", enabled = true)
     public void testUnauthorizedWhileUploading() throws Exception {
         File file = createTempFile(1024 * 1024);
 

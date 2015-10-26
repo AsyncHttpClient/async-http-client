@@ -58,7 +58,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(SIMPLE_TEXT_FILE).execute();

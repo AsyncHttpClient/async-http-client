@@ -39,7 +39,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         return String.format("https://127.0.0.1:%d/foo/test", port1);
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void zeroCopyPostTest() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
@@ -50,7 +50,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void multipleSSLRequestsTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
             String body = "hello there";
@@ -67,7 +67,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void multipleSSLWithoutCacheTest() throws Exception {
 
         KeepAliveStrategy keepAliveStrategy = new KeepAliveStrategy() {
@@ -90,7 +90,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void reconnectsAfterFailedCertificationPath() throws Exception {
 
         AtomicBoolean trust = new AtomicBoolean(false);
@@ -126,7 +126,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testNormalEventsFired() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
             EventCollectingHandler handler = new EventCollectingHandler();

@@ -39,7 +39,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     public static final String URL = "http://google.com?q=";
     public static final String REQUEST_PARAM = "github github \n" + "github";
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testGoogleCom() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
             Response response = c.prepareGet("http://www.google.com/").execute().get(10, TimeUnit.SECONDS);
@@ -47,7 +47,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testMailGoogleCom() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
             Response response = c.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
@@ -56,7 +56,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     // FIXME
     public void testMicrosoftCom() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
@@ -66,7 +66,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     // FIXME
     public void testWwwMicrosoftCom() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
@@ -76,7 +76,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     // FIXME
     public void testUpdateMicrosoftCom() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
@@ -86,7 +86,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testGoogleComWithTimeout() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
@@ -95,7 +95,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void asyncStatusHEADContentLenghtTest() throws Exception {
         try (AsyncHttpClient p = asyncHttpClient(config().setFollowRedirect(true))) {
             final CountDownLatch l = new CountDownLatch(1);
@@ -119,7 +119,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     public void invalidStreamTest2() throws Exception {
         AsyncHttpClientConfig config = config()//
                 .setRequestTimeout(10000)//
@@ -140,7 +140,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void asyncFullBodyProperlyRead() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
@@ -153,7 +153,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     }
 
     // FIXME Get a 302 in France...
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     public void testUrlRequestParametersEncoding() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
@@ -163,7 +163,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void stripQueryStringTest() throws Exception {
 
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -174,7 +174,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void evilCoookieTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             RequestBuilder builder2 = new RequestBuilder("GET");
@@ -190,7 +190,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" }, enabled = false)
+    @Test(groups = "online", enabled = false)
     public void testAHC62Com() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.prepareGet("http://api.crunchbase.com/v/1/financial-organization/kinsey-hills-group.js").execute(new AsyncHandler<Response>() {

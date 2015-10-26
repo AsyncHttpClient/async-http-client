@@ -24,7 +24,7 @@ import org.testng.annotations.Test;
 
 public class ComplexClientTest extends AbstractBasicTest {
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void multipleRequestsTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";
@@ -41,7 +41,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void urlWithoutSlashTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";

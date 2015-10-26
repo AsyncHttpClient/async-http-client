@@ -93,7 +93,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -102,7 +102,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
@@ -111,7 +111,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
@@ -121,7 +121,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -140,7 +140,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();

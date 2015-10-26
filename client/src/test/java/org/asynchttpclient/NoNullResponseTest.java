@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 public class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
 
-    @Test(invocationCount = 4, groups = { "online", "default_provider" })
+    @Test(invocationCount = 4, groups = "online")
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
 
         AsyncHttpClientConfig config = config()//

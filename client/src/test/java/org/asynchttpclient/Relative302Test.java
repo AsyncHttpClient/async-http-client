@@ -72,7 +72,7 @@ public class Relative302Test extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
         redirected302InvalidTest();
@@ -80,7 +80,7 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    // @Test(groups = { "online", "default_provider" })
+    // @Test(groups = "online")
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
 
@@ -94,7 +94,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -109,7 +109,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -126,7 +126,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 

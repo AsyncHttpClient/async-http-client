@@ -34,7 +34,7 @@ public class RequestBuilderTest {
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.";
     private final static String HEX_CHARS = "0123456789ABCDEF";
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testEncodesQueryParameters() throws UnsupportedEncodingException {
         String[] values = new String[]{
                 "abcdefghijklmnopqrstuvwxyz",
@@ -75,7 +75,7 @@ public class RequestBuilderTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testChaining() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com")
@@ -87,7 +87,7 @@ public class RequestBuilderTest {
         assertEquals(request2.getUri(), request.getUri());
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
@@ -101,21 +101,21 @@ public class RequestBuilderTest {
         assertEquals(params.get(1), new Param("param2", "value2"));
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");
         assertEquals(req.getUrl(), "http://foo.com");
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testPercentageEncodedUserInfo() {
         final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com").build();
         assertEquals(req.getMethod(), "GET");
         assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = "standalone")
     public void testContentTypeCharsetToBodyEncoding() {
         final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=utf-8").build();
         assertEquals(req.getCharset(), UTF_8);

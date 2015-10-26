@@ -49,7 +49,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
     // FIXME weird
     private static URI servletEndpointUri;
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = "online")
     public void testMaxConnectionsWithinThreads() throws Exception {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };

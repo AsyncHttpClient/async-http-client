@@ -56,7 +56,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     };
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void regular301LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(redirectOnce))) {
             String body = "hello there";
@@ -66,7 +66,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void regular302LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(redirectOnce))) {
             String body = "hello there";
@@ -76,7 +76,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void regular302StrictKeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true).addResponseFilter(redirectOnce))) {
             String body = "hello there";
@@ -86,7 +86,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void regular307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(redirectOnce))) {
             String body = "hello there";

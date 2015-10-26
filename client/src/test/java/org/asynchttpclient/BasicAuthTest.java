@@ -159,7 +159,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())//
@@ -172,7 +172,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void redirectAndDigestAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
@@ -185,7 +185,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basic401Test() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl())//
@@ -227,7 +227,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // send the request to the no-auth endpoint to be able to verify the
@@ -243,7 +243,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())//
@@ -256,7 +256,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())//
@@ -272,7 +272,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthFileTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())//
@@ -288,7 +288,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthAsyncConfigTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN)))) {
             Future<Response> f = client.preparePost(getTargetUrl())//
@@ -303,7 +303,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void basicAuthFileNoKeepAliveTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
 
@@ -320,7 +320,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(basicAuthRealm(USER, ADMIN).build());

@@ -109,7 +109,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         return config().setMaxRequestRetry(0).setRequestTimeout(10000).build();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimple");
@@ -133,7 +133,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    @Test(groups = "standalone", enabled = false)
     public void deferredSimpleWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER",
@@ -163,7 +163,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrick");
@@ -196,7 +196,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER",
@@ -229,7 +229,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testConnectionRefused() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         int newPortWithoutAnyoneListening = findFreePort();
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {

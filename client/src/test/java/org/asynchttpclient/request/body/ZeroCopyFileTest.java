@@ -65,7 +65,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
@@ -96,7 +96,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
@@ -112,7 +112,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
@@ -145,7 +145,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();

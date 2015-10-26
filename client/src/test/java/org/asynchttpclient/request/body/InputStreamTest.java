@@ -67,7 +67,7 @@ public class InputStreamTest extends AbstractBasicTest {
         return new InputStreamHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         try (AsyncHttpClient c = asyncHttpClient()) {

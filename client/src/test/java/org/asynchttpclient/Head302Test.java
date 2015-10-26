@@ -62,7 +62,7 @@ public class Head302Test extends AbstractBasicTest {
         return new Head302handler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);

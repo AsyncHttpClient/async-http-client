@@ -37,7 +37,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     private final static String MY_MESSAGE = "my message";
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void inputStreamBodyConsumerTest() throws Exception {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
@@ -54,7 +54,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void stringBuilderBodyConsumerTest() throws Exception {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
@@ -72,7 +72,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void byteArrayOutputStreamBodyConsumerTest() throws Exception {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
@@ -89,7 +89,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void requestByteArrayOutputStreamBodyConsumerTest() throws Exception {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build()) {
@@ -105,7 +105,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     /**
      * See https://issues.sonatype.org/browse/AHC-5
      */
-    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    @Test(groups = "standalone", enabled = true)
     public void testPutZeroBytesFileTest() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
                 .setPooledConnectionIdleTimeout(100)//
@@ -127,7 +127,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testDerive() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
         SimpleAsyncHttpClient derived = client.derive().build();
@@ -139,7 +139,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testDeriveOverrideURL() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build()) {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
@@ -157,7 +157,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testSimpleTransferListener() throws Exception {
 
         final List<Error> errors = Collections.synchronizedList(new ArrayList<Error>());
@@ -245,7 +245,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testNullUrl() throws Exception {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build()) {
@@ -253,7 +253,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testCloseDerivedValidMaster() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build()) {
             try (SimpleAsyncHttpClient derived = client.derive().build()) {
@@ -265,7 +265,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { IllegalStateException.class })
+    @Test(groups = "standalone", expectedExceptions = { IllegalStateException.class })
     public void testCloseMasterInvalidDerived() throws Throwable {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
@@ -280,7 +280,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMultiPartPut() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build()) {
             Response response = client.put(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();
@@ -301,7 +301,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMultiPartPost() throws Exception {
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build()) {
             Response response = client.post(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName")).get();

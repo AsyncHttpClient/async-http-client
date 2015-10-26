@@ -64,7 +64,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
         return new NoBodyResponseHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testEmptyBody() throws IOException {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
@@ -119,7 +119,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testPutEmptyBody() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();

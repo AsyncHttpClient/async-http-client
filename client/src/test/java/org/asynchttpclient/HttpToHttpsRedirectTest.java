@@ -79,7 +79,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         httpToHttpsRedirect();
@@ -87,7 +87,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         relativeLocationUrl();
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -104,7 +104,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -127,7 +127,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = "standalone")
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);
 

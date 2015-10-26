@@ -88,7 +88,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         serverSocket.close();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
 
@@ -137,7 +137,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[] { null, null };
 

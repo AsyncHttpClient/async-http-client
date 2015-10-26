@@ -60,7 +60,7 @@ public class ErrorResponseTest extends AbstractBasicTest {
         return new ErrorHandler();
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = "standalone")
     public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
