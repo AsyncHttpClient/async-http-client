@@ -15,31 +15,22 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static org.asynchttpclient.util.Assertions.*;
-
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.request.body.multipart.Part.*;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
+import org.asynchttpclient.request.body.multipart.part.ByteArrayMultipartPart;
+import org.asynchttpclient.request.body.multipart.part.FileMultipartPart;
+import org.asynchttpclient.request.body.multipart.part.MessageEndMultipartPart;
+import org.asynchttpclient.request.body.multipart.part.MultipartPart;
 import org.asynchttpclient.util.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MultipartUtils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(MultipartUtils.class);
 
     /**
      * The Content-Type for multipart/form-data.
@@ -49,11 +40,7 @@ public class MultipartUtils {
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
-    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            .getBytes(US_ASCII);
-
-    private MultipartUtils() {
-    }
+    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
 
     /**
      * Creates a new multipart entity containing the given parts.
@@ -65,7 +52,7 @@ public class MultipartUtils {
     public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
         assertNotNull(parts, "parts");
 
-        byte[] multipartBoundary;
+        byte[] boundary;
         String contentType;
 
         String contentTypeHeader = requestHeaders.get(HttpHeaders.Names.CONTENT_TYPE);
@@ -74,127 +61,70 @@ public class MultipartUtils {
             if (boundaryLocation != -1) {
                 // boundary defined in existing Content-Type
                 contentType = contentTypeHeader;
-                multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim())
-                        .getBytes(US_ASCII);
+                boundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
             } else {
                 // generate boundary and append it to existing Content-Type
-                multipartBoundary = generateMultipartBoundary();
-                contentType = computeContentType(contentTypeHeader, multipartBoundary);
+                boundary = generateBoundary();
+                contentType = computeContentType(contentTypeHeader, boundary);
             }
         } else {
-            multipartBoundary = generateMultipartBoundary();
-            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE, multipartBoundary);
+            boundary = generateBoundary();
+            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE, boundary);
         }
 
-        long contentLength = getLengthOfParts(parts, multipartBoundary);
+        List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
 
-        return new MultipartBody(parts, contentType, contentLength, multipartBoundary);
+        return new MultipartBody(multipartParts, contentType, boundary);
     }
 
-    private static byte[] generateMultipartBoundary() {
-        Random rand = new Random();
-        byte[] bytes = new byte[rand.nextInt(11) + 30]; // a random size from 30 to 40
+    public static List<MultipartPart<? extends Part>> generateMultipartParts(List<Part> parts, byte[] boundary) {
+        List<MultipartPart<? extends Part>> multipartParts = new ArrayList<MultipartPart<? extends Part>>(parts.size());
+        for (Part part : parts) {
+            if (part instanceof FilePart) {
+                multipartParts.add(new FileMultipartPart((FilePart) part, boundary));
+
+            } else if (part instanceof ByteArrayPart) {
+                multipartParts.add(new ByteArrayMultipartPart((ByteArrayPart) part, boundary));
+
+            } else if (part instanceof StringPart) {
+                // convert to a byte array
+                StringPart stringPart = (StringPart) part;
+                byte[] bytes = stringPart.getValue().getBytes(stringPart.getCharset());
+                ByteArrayPart byteArrayPart = new ByteArrayPart(//
+                        stringPart.getName(),//
+                        bytes, //
+                        stringPart.getContentType(), //
+                        stringPart.getCharset(), //
+                        null, //
+                        stringPart.getContentId(), //
+                        stringPart.getTransferEncoding());
+                byteArrayPart.setCustomHeaders(stringPart.getCustomHeaders());
+                multipartParts.add(new ByteArrayMultipartPart(byteArrayPart, boundary));
+
+            } else {
+                throw new IllegalArgumentException("Unknown part type: " + part);
+            }
+        }
+        // add an extra fake part for terminating the message
+        multipartParts.add(new MessageEndMultipartPart(boundary));
+
+        return multipartParts;
+    }
+
+    // a random size from 30 to 40
+    private static byte[] generateBoundary() {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        byte[] bytes = new byte[random.nextInt(11) + 30];
         for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = MULTIPART_CHARS[rand.nextInt(MULTIPART_CHARS.length)];
+            bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];
         }
         return bytes;
     }
 
-    private static String computeContentType(String base, byte[] multipartBoundary) {
+    private static String computeContentType(String base, byte[] boundary) {
         StringBuilder buffer = StringUtils.stringBuilder().append(base);
         if (!base.endsWith(";"))
             buffer.append(';');
-        return buffer.append(" boundary=").append(new String(multipartBoundary, US_ASCII)).toString();
-    }
-
-    public static long writeBytesToChannel(WritableByteChannel target, byte[] bytes) throws IOException {
-
-        int written = 0;
-        int maxSpin = 0;
-        ByteBuffer message = ByteBuffer.wrap(bytes);
-
-        if (target instanceof SocketChannel) {
-            final Selector selector = Selector.open();
-            try {
-                final SocketChannel channel = (SocketChannel) target;
-                channel.register(selector, SelectionKey.OP_WRITE);
-
-                while (written < bytes.length) {
-                    selector.select(1000);
-                    maxSpin++;
-                    final Set<SelectionKey> selectedKeys = selector.selectedKeys();
-
-                    for (SelectionKey key : selectedKeys) {
-                        if (key.isWritable()) {
-                            written += target.write(message);
-                            maxSpin = 0;
-                        }
-                    }
-                    if (maxSpin >= 10) {
-                        throw new IOException("Unable to write on channel " + target);
-                    }
-                }
-            } finally {
-                selector.close();
-            }
-        } else {
-            while ((target.isOpen()) && (written < bytes.length)) {
-                long nWrite = target.write(message);
-                written += nWrite;
-                if (nWrite == 0 && maxSpin++ < 10) {
-                    LOGGER.info("Waiting for writing...");
-                    try {
-                        bytes.wait(1000);
-                    } catch (InterruptedException e) {
-                        LOGGER.trace(e.getMessage(), e);
-                    }
-                } else {
-                    if (maxSpin >= 10) {
-                        throw new IOException("Unable to write on channel " + target);
-                    }
-                    maxSpin = 0;
-                }
-            }
-        }
-        return written;
-    }
-
-    public static byte[] getMessageEnd(byte[] partBoundary) throws IOException {
-
-        if (!isNonEmpty(partBoundary))
-            throw new IllegalArgumentException("partBoundary may not be empty");
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
-        visitor.withBytes(EXTRA_BYTES);
-        visitor.withBytes(partBoundary);
-        visitor.withBytes(EXTRA_BYTES);
-        visitor.withBytes(CRLF_BYTES);
-
-        return out.toByteArray();
-    }
-
-    public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) {
-
-        assertNotNull(parts, "parts");
-
-        try {
-            long total = 0;
-            for (Part part : parts) {
-                long l = part.length(partBoundary);
-                if (l < 0) {
-                    return -1;
-                }
-                total += l;
-            }
-            total += EXTRA_BYTES.length;
-            total += partBoundary.length;
-            total += EXTRA_BYTES.length;
-            total += CRLF_BYTES.length;
-            return total;
-        } catch (Exception e) {
-            LOGGER.error("An exception occurred while getting the length of the parts", e);
-            return 0L;
-        }
+        return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
     }
 }

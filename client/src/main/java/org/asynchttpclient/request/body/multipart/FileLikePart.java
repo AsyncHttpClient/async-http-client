@@ -12,16 +12,12 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
  */
-public abstract class AbstractFilePart extends PartBase {
+public abstract class FileLikePart extends PartBase {
 
     /**
      * Default content encoding of file attachments.
@@ -32,11 +28,6 @@ public abstract class AbstractFilePart extends PartBase {
      * Default transfer encoding of file attachments.
      */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
-
-    /**
-     * Attachment's file name as a byte array
-     */
-    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(US_ASCII);
 
     private long stalledTime = -1L;
 
@@ -51,42 +42,12 @@ public abstract class AbstractFilePart extends PartBase {
      * @param contentId the content id
      * @param transfertEncoding the transfer encoding
      */
-    public AbstractFilePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
+    public FileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
         super(name,//
                 contentType == null ? DEFAULT_CONTENT_TYPE : contentType,//
                 charset,//
                 contentId,//
                 transfertEncoding == null ? DEFAULT_TRANSFER_ENCODING : transfertEncoding);
-    }
-
-    protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
-        super.visitDispositionHeader(visitor);
-        if (fileName != null) {
-            visitor.withBytes(FILE_NAME_BYTES);
-            visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(fileName.getBytes(getCharset() != null ? getCharset() : US_ASCII));
-            visitor.withByte(QUOTE_BYTE);
-        }
-    }
-
-    protected byte[] generateFileStart(byte[] boundary) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
-        visitStart(visitor, boundary);
-        visitDispositionHeader(visitor);
-        visitContentTypeHeader(visitor);
-        visitTransferEncodingHeader(visitor);
-        visitContentIdHeader(visitor);
-        visitCustomHeaders(visitor);
-        visitEndOfHeaders(visitor);
-        return out.toByteArray();
-    }
-
-    protected byte[] generateFileEnd() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
-        visitEnd(visitor);
-        return out.toByteArray();
     }
 
     public void setStalledTime(long ms) {

@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  */
 public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
-    private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
+    public static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 
     private final Body body;
     private final int contentLength;
@@ -54,7 +54,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
         // FIXME pass a visitor so we can directly pass a pooled ByteBuf
         ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-        Body.BodyState state = body.read(buffer);
+        Body.BodyState state = body.transferTo(buffer);
         switch (state) {
             case STOP:
                 endOfInput = true;

@@ -49,7 +49,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.STOP);
+        assertEquals(body.transferTo(ByteBuffer.allocate(1)), BodyState.STOP);
     }
 
 
@@ -60,12 +60,12 @@ public class FeedableBodyGeneratorTest {
 
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.SUSPEND);
+        assertEquals(body.transferTo(ByteBuffer.allocate(1)), BodyState.SUSPEND);
     }
 
     private byte[] readFromBody(Body body) throws IOException {
         ByteBuffer byteBuffer = ByteBuffer.allocate(512);
-        body.read(byteBuffer);
+        body.transferTo(byteBuffer);
         byteBuffer.flip();
         byte[] readBytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(readBytes);

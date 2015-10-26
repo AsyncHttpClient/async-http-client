@@ -25,7 +25,7 @@ public class FilePartStallHandler extends TimerTask {
     private volatile boolean failed;
     private volatile boolean written;
 
-    public FilePartStallHandler(long waitTime, AbstractFilePart filePart) {
+    public FilePartStallHandler(long waitTime, FileLikePart filePart) {
         this.waitTime = waitTime;
         failed = false;
         written = false;

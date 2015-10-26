@@ -14,9 +14,10 @@ package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import java.io.IOException;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+import java.util.List;
+
+import org.asynchttpclient.Param;
 
 public interface Part {
 
@@ -80,28 +81,32 @@ public interface Part {
     /**
      * Returns the content type of this part.
      * 
-     * @return the content type, or <code>null</code> to exclude the content type header
+     * @return the content type, or <code>null</code> to exclude the content
+     *         type header
      */
     String getContentType();
 
     /**
      * Return the character encoding of this part.
      * 
-     * @return the character encoding, or <code>null</code> to exclude the character encoding header
+     * @return the character encoding, or <code>null</code> to exclude the
+     *         character encoding header
      */
     Charset getCharset();
 
     /**
      * Return the transfer encoding of this part.
      * 
-     * @return the transfer encoding, or <code>null</code> to exclude the transfer encoding header
+     * @return the transfer encoding, or <code>null</code> to exclude the
+     *         transfer encoding header
      */
     String getTransferEncoding();
 
     /**
      * Return the content ID of this part.
      * 
-     * @return the content ID, or <code>null</code> to exclude the content ID header
+     * @return the content ID, or <code>null</code> to exclude the content ID
+     *         header
      */
     String getContentId();
 
@@ -112,13 +117,5 @@ public interface Part {
      */
     String getDispositionType();
 
-    /**
-     * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
-     * 
-     * @param boundary the multipart boundary
-     * @return long The length.
-     */
-    long length(byte[] boundary);
-
-    long write(WritableByteChannel target, byte[] boundary) throws IOException;
+    List<Param> getCustomHeaders();
 }

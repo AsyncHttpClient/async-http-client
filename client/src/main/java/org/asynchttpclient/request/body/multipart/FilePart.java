@@ -12,21 +12,12 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class FilePart extends AbstractFilePart {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(FilePart.class);
+public class FilePart extends FileLikePart {
 
     private final File file;
 
@@ -60,63 +51,8 @@ public class FilePart extends AbstractFilePart {
         this.file = file;
         setFileName(fileName != null ? fileName : file.getName());
     }
-    
-    @Override
-    protected long getDataLength() {
-        return file.length();
-    }
 
     public File getFile() {
         return file;
-    }
-
-    @Override
-    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
-        FilePartStallHandler handler = new FilePartStallHandler(getStalledTime(), this);
-
-        handler.start();
-
-        int length = 0;
-
-        length += MultipartUtils.writeBytesToChannel(target, generateFileStart(boundary));
-
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
-        FileChannel fc = raf.getChannel();
-
-        final long fileLength = file.length();
-        int position = 0;
-        long nWrite = 0;
-        try {
-            // FIXME why sync?
-            synchronized (fc) {
-                while (position != fileLength) {
-                    if (handler.isFailed()) {
-                        LOGGER.debug("Stalled error");
-                        throw new FileUploadStalledException();
-                    }
-                    nWrite = fc.transferTo(position, fileLength, target);
-
-                    if (nWrite == 0) {
-                        LOGGER.info("Waiting for writing...");
-                        try {
-                            fc.wait(50);
-                        } catch (InterruptedException e) {
-                            LOGGER.trace(e.getMessage(), e);
-                        }
-                    } else {
-                        handler.writeHappened();
-                    }
-                    position += nWrite;
-                }
-            }
-        } finally {
-            handler.completed();
-            raf.close();
-        }
-
-        length += fileLength;
-        length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
-
-        return length;
     }
 }

@@ -45,11 +45,11 @@ public class ByteArrayBodyGeneratorTest {
         final ByteBuffer chunkBuffer = ByteBuffer.allocate(chunkSize);
 
         // should take 1 read to get through the srcArray
-        body.read(chunkBuffer);
+        body.transferTo(chunkBuffer);
         assertEquals(chunkBuffer.position(), srcArraySize, "bytes read");
         chunkBuffer.clear();
 
-        assertEquals(body.read(chunkBuffer), BodyState.STOP, "body at EOF");
+        assertEquals(body.transferTo(chunkBuffer), BodyState.STOP, "body at EOF");
     }
 
     @Test(groups = "standalone")
@@ -66,7 +66,7 @@ public class ByteArrayBodyGeneratorTest {
 
         int reads = 0;
         int bytesRead = 0;
-        while (body.read(chunkBuffer) != BodyState.STOP) {
+        while (body.transferTo(chunkBuffer) != BodyState.STOP) {
           reads += 1;
           bytesRead += chunkBuffer.position();
           chunkBuffer.clear();

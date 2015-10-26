@@ -36,7 +36,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
             return bytes.length;
         }
 
-        public BodyState read(ByteBuffer byteBuffer) throws IOException {
+        public BodyState transferTo(ByteBuffer byteBuffer) throws IOException {
 
             if (eof) {
                 return BodyState.STOP;

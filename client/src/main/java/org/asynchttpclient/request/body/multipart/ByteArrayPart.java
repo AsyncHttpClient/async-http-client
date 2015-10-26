@@ -12,13 +12,11 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 
-import java.io.IOException;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
-public class ByteArrayPart extends AbstractFilePart {
+public class ByteArrayPart extends FileLikePart {
 
     private final byte[] bytes;
 
@@ -48,30 +46,8 @@ public class ByteArrayPart extends AbstractFilePart {
         this.bytes = bytes;
         setFileName(fileName);
     }
-    
-    @Override
-    protected long getDataLength() {
-        return bytes.length;
-    }
 
     public byte[] getBytes() {
         return bytes;
-    }
-
-    @Override
-    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
-        FilePartStallHandler handler = new FilePartStallHandler(getStalledTime(), this);
-
-        try {
-            handler.start();
-
-            long length = MultipartUtils.writeBytesToChannel(target, generateFileStart(boundary));
-            length += MultipartUtils.writeBytesToChannel(target, bytes);
-            length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
-
-            return length;
-        } finally {
-            handler.completed();
-        }
     }
 }

@@ -55,5 +55,5 @@ public interface Body extends Closeable {
      * @throws IOException If the chunk could not be read.
      */
     // FIXME introduce a visitor pattern so that Netty can pass a pooled buffer
-    BodyState read(ByteBuffer buffer) throws IOException;
+    BodyState transferTo(ByteBuffer buffer) throws IOException;
 }

@@ -52,7 +52,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
 
         @Override
-        public BodyState read(final ByteBuffer buffer) throws IOException {
+        public BodyState transferTo(final ByteBuffer buffer) throws IOException {
             switch (state) {
                 case CONTINUE:
                     return readNextPart(buffer);
