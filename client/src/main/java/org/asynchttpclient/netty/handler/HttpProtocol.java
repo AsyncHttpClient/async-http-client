@@ -44,6 +44,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseHeaders;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
@@ -202,7 +203,7 @@ public final class HttpProtocol extends Protocol {
         }
 
         // FIXME what's this???
-        future.setState(NettyResponseFuture.STATE.NEW);
+        future.setChannelState(ChannelState.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
         switch (realm.getScheme()) {
@@ -333,7 +334,7 @@ public final class HttpProtocol extends Protocol {
         }
 
         // FIXME what's this???
-        future.setState(NettyResponseFuture.STATE.NEW);
+        future.setChannelState(ChannelState.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
         switch (proxyRealm.getScheme()) {

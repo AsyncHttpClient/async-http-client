@@ -119,7 +119,7 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
         if (canRetry//
                 && cause != null//
-                && (future.getState() != NettyResponseFuture.STATE.NEW || StackTraceInspector.recoverOnNettyDisconnectException(cause))) {
+                && (future.getChannelState() != ChannelState.NEW || StackTraceInspector.recoverOnNettyDisconnectException(cause))) {
 
             if (requestSender.retry(future)) {
                 return;

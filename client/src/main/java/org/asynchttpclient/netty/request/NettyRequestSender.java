@@ -45,6 +45,7 @@ import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.timeout.ReadTimeoutTimerTask;
@@ -207,7 +208,7 @@ public final class NettyRequestSender {
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
 
-        future.setState(NettyResponseFuture.STATE.POOLED);
+        future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
         LOGGER.debug("Using cached Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
@@ -359,7 +360,7 @@ public final class NettyRequestSender {
             channelManager.closeChannel(channel);
 
         if (!future.isDone()) {
-            future.setState(NettyResponseFuture.STATE.CLOSED);
+            future.setChannelState(ChannelState.CLOSED);
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
             future.abort(t);
@@ -380,7 +381,7 @@ public final class NettyRequestSender {
             return false;
 
         if (future.canBeReplayed()) {
-            future.setState(NettyResponseFuture.STATE.RECONNECTED);
+            future.setChannelState(ChannelState.RECONNECTED);
             future.getAndSetStatusReceived(false);
 
             LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
@@ -467,7 +468,7 @@ public final class NettyRequestSender {
 
         Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
-        future.setState(NettyResponseFuture.STATE.NEW);
+        future.setChannelState(ChannelState.NEW);
         future.touch();
 
         LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);

@@ -36,6 +36,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.future.AbstractListenableFuture;
+import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
@@ -53,10 +54,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
-    public enum STATE {
-        NEW, POOLED, RECONNECTED, CLOSED,
-    }
-
     private final long start = millisTime();
     private final ConnectionPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
@@ -72,7 +69,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean inProxyAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
-    private final AtomicReference<STATE> state = new AtomicReference<>(STATE.NEW);
+    private final AtomicReference<ChannelState> channelState = new AtomicReference<>(ChannelState.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private final AtomicInteger currentRetry = new AtomicInteger(0);
     private final AtomicBoolean onThrowableCalled = new AtomicBoolean(false);
@@ -348,12 +345,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return inProxyAuth;
     }
 
-    public STATE getState() {
-        return state.get();
+    public ChannelState getChannelState() {
+        return channelState.get();
     }
 
-    public void setState(STATE state) {
-        this.state.set(state);
+    public void setChannelState(ChannelState channelState) {
+        this.channelState.set(channelState);
     }
 
     public boolean getAndSetStatusReceived(boolean sr) {

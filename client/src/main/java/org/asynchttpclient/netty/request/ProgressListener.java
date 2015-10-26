@@ -22,6 +22,7 @@ import java.nio.channels.ClosedChannelException;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
 
     private boolean abortOnThrowable(Throwable cause, Channel channel) {
 
-        if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
+        if (cause != null && future.getChannelState() != ChannelState.NEW) {
             if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
                 LOGGER.debug(cause.getMessage(), cause);
                 Channels.silentlyCloseChannel(channel);
