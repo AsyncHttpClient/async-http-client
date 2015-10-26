@@ -50,6 +50,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 import javax.activation.MimetypesFileTypeMap;
+import org.asynchttpclient.test.TestUtils;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -258,7 +259,7 @@ public class HttpStaticFileServerHandler extends SimpleChannelInboundHandler<Ful
         }
 
         // Convert to absolute path.
-        return SystemPropertyUtil.get("user.dir") + File.separator + uri;
+        return TestUtils.TMP_DIR + File.separator + uri;
     }
 
     private static final Pattern ALLOWED_FILE_NAME = Pattern.compile("[A-Za-z0-9][-_A-Za-z0-9\\.]*");
