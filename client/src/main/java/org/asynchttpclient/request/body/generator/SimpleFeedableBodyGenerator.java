@@ -57,7 +57,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
     public final class PushBody implements Body {
 
-        private State state = State.Continue;
+        private BodyState state = BodyState.Continue;
 
         @Override
         public long getContentLength() {
@@ -65,20 +65,20 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
 
         @Override
-        public State read(final ByteBuffer buffer) throws IOException {
+        public BodyState read(final ByteBuffer buffer) throws IOException {
             switch (state) {
                 case Continue:
                     return readNextPart(buffer);
                 case Stop:
-                    return State.Stop;
+                    return BodyState.Stop;
                 default:
                     throw new IllegalStateException("Illegal process state.");
             }
         }
 
-        private State readNextPart(ByteBuffer buffer) throws IOException {
-            State res = State.Suspend;
-            while (buffer.hasRemaining() && state != State.Stop) {
+        private BodyState readNextPart(ByteBuffer buffer) throws IOException {
+            BodyState res = BodyState.Suspend;
+            while (buffer.hasRemaining() && state != BodyState.Stop) {
                 BodyPart nextPart = queue.peek();
                 if (nextPart == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
@@ -87,7 +87,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                     // skip empty buffers
                     queue.remove();
                 } else {
-                    res = State.Continue;
+                    res = BodyState.Continue;
                     readBodyPart(buffer, nextPart);
                 }
             }
@@ -102,7 +102,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
             if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
                 if (part.isLast) {
-                    state = State.Stop;
+                    state = BodyState.Stop;
                 }
                 queue.remove();
             }

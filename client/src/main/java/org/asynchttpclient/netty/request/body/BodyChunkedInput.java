@@ -54,7 +54,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
         // FIXME pass a visitor so we can directly pass a pooled ByteBuf
         ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-        Body.State state = body.read(buffer);
+        Body.BodyState state = body.read(buffer);
         switch (state) {
             case Stop:
                 endOfInput = true;

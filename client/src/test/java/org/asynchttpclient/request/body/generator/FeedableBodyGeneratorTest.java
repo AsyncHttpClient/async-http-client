@@ -14,7 +14,7 @@
 package org.asynchttpclient.request.body.generator;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.Body.State;
+import org.asynchttpclient.request.body.Body.BodyState;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -52,7 +52,7 @@ public class FeedableBodyGeneratorTest {
         assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
         feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         assertEquals(readFromBody(body), "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), State.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
     }
 
     @Test(groups = "standalone")
@@ -63,7 +63,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), State.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
     }
 
     @Test(groups = "standalone")
@@ -73,7 +73,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), State.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
 
     }
 
@@ -83,7 +83,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), State.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
     }
 
 
@@ -95,7 +95,7 @@ public class FeedableBodyGeneratorTest {
 
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), State.Suspend);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Suspend);
     }
 
     private byte[] readFromBody(Body body) throws IOException {

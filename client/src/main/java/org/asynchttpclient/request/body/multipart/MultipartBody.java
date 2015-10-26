@@ -93,14 +93,14 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     // Regular Body API
-    public State read(ByteBuffer buffer) throws IOException {
+    public BodyState read(ByteBuffer buffer) throws IOException {
         try {
             int overallLength = 0;
 
             int maxLength = buffer.remaining();
 
             if (currentPart == parts.size() && transfertDone) {
-                return State.Stop;
+                return BodyState.Stop;
             }
 
             boolean full = false;
@@ -173,11 +173,11 @@ public class MultipartBody implements RandomAccessBody {
                     }
                 }
             }
-            return transfertDone ? State.Stop : State.Continue;
+            return transfertDone ? BodyState.Stop : BodyState.Continue;
 
         } catch (Exception e) {
             LOGGER.error("Read exception", e);
-            return State.Stop;
+            return BodyState.Stop;
         }
     }
 

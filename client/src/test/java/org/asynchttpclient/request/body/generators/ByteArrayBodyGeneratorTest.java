@@ -16,7 +16,7 @@ package org.asynchttpclient.request.body.generators;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.Body.State;
+import org.asynchttpclient.request.body.Body.BodyState;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.testng.annotations.Test;
 
@@ -49,7 +49,7 @@ public class ByteArrayBodyGeneratorTest {
         assertEquals(chunkBuffer.position(), srcArraySize, "bytes read");
         chunkBuffer.clear();
 
-        assertEquals(body.read(chunkBuffer), State.Stop, "body at EOF");
+        assertEquals(body.read(chunkBuffer), BodyState.Stop, "body at EOF");
     }
 
     @Test(groups = "standalone")
@@ -66,7 +66,7 @@ public class ByteArrayBodyGeneratorTest {
 
         int reads = 0;
         int bytesRead = 0;
-        while (body.read(chunkBuffer) != State.Stop) {
+        while (body.read(chunkBuffer) != BodyState.Stop) {
           reads += 1;
           bytesRead += chunkBuffer.position();
           chunkBuffer.clear();

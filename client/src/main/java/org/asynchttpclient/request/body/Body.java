@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
  */
 public interface Body extends Closeable {
 
-    enum State {
+    enum BodyState {
 
         /**
          * There's something to read
@@ -55,5 +55,5 @@ public interface Body extends Closeable {
      * @throws IOException If the chunk could not be read.
      */
     // FIXME introduce a visitor pattern so that Netty can pass a pooled buffer
-    State read(ByteBuffer buffer) throws IOException;
+    BodyState read(ByteBuffer buffer) throws IOException;
 }

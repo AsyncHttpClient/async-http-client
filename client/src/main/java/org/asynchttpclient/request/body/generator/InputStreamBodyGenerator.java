@@ -61,7 +61,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             return -1L;
         }
 
-        public State read(ByteBuffer buffer) throws IOException {
+        public BodyState read(ByteBuffer buffer) throws IOException {
 
             // To be safe.
             chunk = new byte[buffer.remaining() - 10];
@@ -78,7 +78,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                 buffer.put(chunk, 0, read);
                 write = true;
             }
-            return write ? State.Continue : State.Stop;
+            return write ? BodyState.Continue : BodyState.Stop;
         }
 
         public void close() throws IOException {

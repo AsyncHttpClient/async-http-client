@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.Body.State;
+import org.asynchttpclient.request.body.Body.BodyState;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -69,7 +69,7 @@ public class MultipartBodyTest {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;
             while (!last) {
-                if (multipartBody.read(buffer) == State.Stop) {
+                if (multipartBody.read(buffer) == BodyState.Stop) {
                     last = true;
                 }
             }

@@ -83,7 +83,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         }
 
         @Override
-        public State read(ByteBuffer buffer) throws IOException {
+        public BodyState read(ByteBuffer buffer) throws IOException {
             if(initialized.compareAndSet(false, true))
                 publisher.subscribe(subscriber);
 
