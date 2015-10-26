@@ -133,7 +133,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
             List<HttpResponseBodyPart> bodyParts = subscriber.getElements();
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             for (HttpResponseBodyPart part : bodyParts) {
-                part.writeTo(bytes);
+                bytes.write(part.getBodyPartBytes());
             }
             return bytes.toByteArray();
         }

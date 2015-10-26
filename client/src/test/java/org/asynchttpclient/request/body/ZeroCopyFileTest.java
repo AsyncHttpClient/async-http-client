@@ -123,7 +123,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                     }
 
                     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                        bodyPart.writeTo(stream);
+                        stream.write(bodyPart.getBodyPartBytes());
                         return State.CONTINUE;
                     }
 
@@ -156,7 +156,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                     }
 
                     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                        bodyPart.writeTo(stream);
+                        stream.write(bodyPart.getBodyPartBytes());
 
                         if (bodyPart.getBodyPartBytes().length == 0) {
                             return State.ABORT;

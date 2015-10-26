@@ -140,7 +140,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
             headersArrived.countDown();
         }
 
-        bodyPart.writeTo(output);
+        output.write(bodyPart.getBodyPartBytes());
         return State.CONTINUE;
     }
 
