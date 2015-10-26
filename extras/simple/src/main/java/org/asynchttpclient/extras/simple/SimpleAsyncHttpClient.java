@@ -305,7 +305,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             handler = new ResumableBodyConsumerAsyncHandler(length, handler);
         }
 
-        return asyncHttpClient().executeRequest(request, handler);
+        return getAsyncHttpClient().executeRequest(request, handler);
     }
 
     private AsyncHttpClient getAsyncHttpClient() {
