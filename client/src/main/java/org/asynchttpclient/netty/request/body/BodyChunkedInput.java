@@ -56,14 +56,14 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
         Body.BodyState state = body.read(buffer);
         switch (state) {
-            case Stop:
+            case STOP:
                 endOfInput = true;
                 buffer.flip();
                 return Unpooled.wrappedBuffer(buffer);
-            case Suspend:
+            case SUSPEND:
                 //this will suspend the stream in ChunkedWriteHandler
                 return null;
-            case Continue:
+            case CONTINUE:
                 buffer.flip();
                 return Unpooled.wrappedBuffer(buffer);
             default:

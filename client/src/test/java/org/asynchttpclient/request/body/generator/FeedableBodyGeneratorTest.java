@@ -52,7 +52,7 @@ public class FeedableBodyGeneratorTest {
         assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
         feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         assertEquals(readFromBody(body), "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.STOP);
     }
 
     @Test(groups = "standalone")
@@ -63,7 +63,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.STOP);
     }
 
     @Test(groups = "standalone")
@@ -73,7 +73,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.STOP);
 
     }
 
@@ -83,7 +83,7 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.feed(ByteBuffer.wrap(content), true);
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Stop);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.STOP);
     }
 
 
@@ -95,7 +95,7 @@ public class FeedableBodyGeneratorTest {
 
         Body body = feedableBodyGenerator.createBody();
         assertEquals(readFromBody(body), "7\r\nTest123\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.Suspend);
+        assertEquals(body.read(ByteBuffer.allocate(1)), BodyState.SUSPEND);
     }
 
     private byte[] readFromBody(Body body) throws IOException {

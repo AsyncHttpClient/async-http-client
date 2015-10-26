@@ -57,7 +57,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
     public final class PushBody implements Body {
 
-        private BodyState state = BodyState.Continue;
+        private BodyState state = BodyState.CONTINUE;
 
         @Override
         public long getContentLength() {
@@ -67,18 +67,18 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         @Override
         public BodyState read(final ByteBuffer buffer) throws IOException {
             switch (state) {
-                case Continue:
+                case CONTINUE:
                     return readNextPart(buffer);
-                case Stop:
-                    return BodyState.Stop;
+                case STOP:
+                    return BodyState.STOP;
                 default:
                     throw new IllegalStateException("Illegal process state.");
             }
         }
 
         private BodyState readNextPart(ByteBuffer buffer) throws IOException {
-            BodyState res = BodyState.Suspend;
-            while (buffer.hasRemaining() && state != BodyState.Stop) {
+            BodyState res = BodyState.SUSPEND;
+            while (buffer.hasRemaining() && state != BodyState.STOP) {
                 BodyPart nextPart = queue.peek();
                 if (nextPart == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
@@ -87,7 +87,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                     // skip empty buffers
                     queue.remove();
                 } else {
-                    res = BodyState.Continue;
+                    res = BodyState.CONTINUE;
                     readBodyPart(buffer, nextPart);
                 }
             }
@@ -102,7 +102,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
             if (!part.buffer.hasRemaining() && !part.endPadding.hasRemaining()) {
                 if (part.isLast) {
-                    state = BodyState.Stop;
+                    state = BodyState.STOP;
                 }
                 queue.remove();
             }

@@ -27,17 +27,17 @@ public interface Body extends Closeable {
         /**
          * There's something to read
          */
-        Continue,
+        CONTINUE,
 
         /**
          * There's nothing to read and input has to suspend
          */
-        Suspend,
+        SUSPEND,
 
         /**
          * There's nothing to read and input has to stop
          */
-        Stop;
+        STOP;
     }
 
     /**

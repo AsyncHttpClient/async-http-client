@@ -69,7 +69,7 @@ public class MultipartBodyTest {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;
             while (!last) {
-                if (multipartBody.read(buffer) == BodyState.Stop) {
+                if (multipartBody.read(buffer) == BodyState.STOP) {
                     last = true;
                 }
             }

@@ -49,7 +49,7 @@ public class ByteArrayBodyGeneratorTest {
         assertEquals(chunkBuffer.position(), srcArraySize, "bytes read");
         chunkBuffer.clear();
 
-        assertEquals(body.read(chunkBuffer), BodyState.Stop, "body at EOF");
+        assertEquals(body.read(chunkBuffer), BodyState.STOP, "body at EOF");
     }
 
     @Test(groups = "standalone")
@@ -66,7 +66,7 @@ public class ByteArrayBodyGeneratorTest {
 
         int reads = 0;
         int bytesRead = 0;
-        while (body.read(chunkBuffer) != BodyState.Stop) {
+        while (body.read(chunkBuffer) != BodyState.STOP) {
           reads += 1;
           bytesRead += chunkBuffer.position();
           chunkBuffer.clear();

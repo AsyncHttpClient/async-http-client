@@ -100,7 +100,7 @@ public class MultipartBody implements RandomAccessBody {
             int maxLength = buffer.remaining();
 
             if (currentPart == parts.size() && transfertDone) {
-                return BodyState.Stop;
+                return BodyState.STOP;
             }
 
             boolean full = false;
@@ -173,11 +173,11 @@ public class MultipartBody implements RandomAccessBody {
                     }
                 }
             }
-            return transfertDone ? BodyState.Stop : BodyState.Continue;
+            return transfertDone ? BodyState.STOP : BodyState.CONTINUE;
 
         } catch (Exception e) {
             LOGGER.error("Read exception", e);
-            return BodyState.Stop;
+            return BodyState.STOP;
         }
     }
 

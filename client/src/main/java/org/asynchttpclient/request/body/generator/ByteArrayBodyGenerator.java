@@ -39,7 +39,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
         public BodyState read(ByteBuffer byteBuffer) throws IOException {
 
             if (eof) {
-                return BodyState.Stop;
+                return BodyState.STOP;
             }
 
             final int remaining = bytes.length - lastPosition;
@@ -50,7 +50,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
                 byteBuffer.put(bytes, lastPosition, byteBuffer.capacity());
                 lastPosition = lastPosition + byteBuffer.capacity();
             }
-            return BodyState.Continue;
+            return BodyState.CONTINUE;
         }
 
         public void close() throws IOException {

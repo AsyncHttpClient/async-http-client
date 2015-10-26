@@ -78,7 +78,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                 buffer.put(chunk, 0, read);
                 write = true;
             }
-            return write ? BodyState.Continue : BodyState.Stop;
+            return write ? BodyState.CONTINUE : BodyState.STOP;
         }
 
         public void close() throws IOException {
