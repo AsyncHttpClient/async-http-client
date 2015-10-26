@@ -103,15 +103,21 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         this.address = prototype.getAddress();
         this.localAddress = prototype.getLocalAddress();
         this.headers.add(prototype.getHeaders());
-        this.cookies = new ArrayList<Cookie>(prototype.getCookies());
+        if (isNonEmpty(prototype.getCookies())) {
+            this.cookies = new ArrayList<>(prototype.getCookies());
+        }
         this.byteData = prototype.getByteData();
         this.compositeByteData = prototype.getCompositeByteData();
         this.stringData = prototype.getStringData();
         this.byteBufferData = prototype.getByteBufferData();
         this.streamData = prototype.getStreamData();
         this.bodyGenerator = prototype.getBodyGenerator();
-        this.formParams = prototype.getFormParams();
-        this.bodyParts = prototype.getBodyParts();
+        if (isNonEmpty(prototype.getFormParams())) {
+            this.formParams = new ArrayList<>(prototype.getFormParams());
+        }
+        if (isNonEmpty(prototype.getBodyParts())) {
+            this.bodyParts = new ArrayList<>(prototype.getBodyParts());
+        }
         this.virtualHost = prototype.getVirtualHost();
         this.contentLength = prototype.getContentLength();
         this.proxyServer = prototype.getProxyServer();
