@@ -12,11 +12,12 @@
  */
 package org.asynchttpclient.cookie;
 
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * A parser for <a href="http://tools.ietf.org/html/rfc2616#section-3.3">RFC2616
@@ -24,73 +25,37 @@ import java.util.TimeZone;
  * 
  * @author slandelle
  */
-@SuppressWarnings("serial")
-public class DateParser extends SimpleDateFormat {
+public final class DateParser {
 
-    private final SimpleDateFormat format1 = new RFC2616DateParserObsolete1();
-    private final SimpleDateFormat format2 = new RFC2616DateParserObsolete2();
+    private static final DateTimeFormatter PROPER_FORMAT_RFC822 = DateTimeFormatter.RFC_1123_DATE_TIME;
+    // give up on pre 2000 dates
+    private static final DateTimeFormatter OBSOLETE_FORMAT1_RFC850 = DateTimeFormatter.ofPattern("EEEE, dd-MMM-yy HH:mm:ss z", Locale.ENGLISH);
+    private static final DateTimeFormatter OBSOLETE_FORMAT2_ANSIC = DateTimeFormatter.ofPattern("EEE MMM d HH:mm:ss yyyy", Locale.ENGLISH);
 
-    private static final ThreadLocal<DateParser> DATE_FORMAT_HOLDER = new ThreadLocal<DateParser>() {
-        @Override
-        protected DateParser initialValue() {
-            return new DateParser();
+    private static Date parseZonedDateTimeSilent(String text, DateTimeFormatter formatter) {
+        try {
+            return Date.from(ZonedDateTime.parse(text, formatter).toInstant());
+        } catch (Exception e) {
+            return null;
         }
-    };
-
-    public static DateParser get() {
-        return DATE_FORMAT_HOLDER.get();
     }
 
-    /**
-     * Standard date format
-     * <br>
-     * E, d MMM yyyy HH:mm:ss z
-     * e.g. Sun, 06 Nov 1994 08:49:37 GMT
-     */
-    private DateParser() {
-        super("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-        setTimeZone(TimeZone.getTimeZone("GMT"));
+    private static Date parseDateTimeSilent(String text, DateTimeFormatter formatter) {
+        try {
+            return Date.from(LocalDateTime.parse(text, formatter).toInstant(ZoneOffset.UTC));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    @Override
-    public Date parse(String text, ParsePosition pos) {
-        Date date = super.parse(text, pos);
+    public static Date parse(String text) {
+        Date date = parseZonedDateTimeSilent(text, PROPER_FORMAT_RFC822);
         if (date == null) {
-            date = format1.parse(text, pos);
+            date = parseZonedDateTimeSilent(text, OBSOLETE_FORMAT1_RFC850);
         }
         if (date == null) {
-            date = format2.parse(text, pos);
+            date = parseDateTimeSilent(text, OBSOLETE_FORMAT2_ANSIC);
         }
         return date;
-    }
-
-    /**
-     * First obsolete format
-     * <br>
-     * E, d-MMM-y HH:mm:ss z
-     * e.g. Sunday, 06-Nov-94 08:49:37 GMT
-     */
-    private static final class RFC2616DateParserObsolete1 extends SimpleDateFormat {
-        private static final long serialVersionUID = -3178072504225114298L;
-
-        RFC2616DateParserObsolete1() {
-            super("E, dd-MMM-yy HH:mm:ss z", Locale.ENGLISH);
-            setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
-    }
-
-    /**
-     * Second obsolete format
-     * <br>
-     * EEE, MMM d HH:mm:ss yyyy
-     * e.g. Sun Nov 6 08:49:37 1994
-     */
-    private static final class RFC2616DateParserObsolete2 extends SimpleDateFormat {
-        private static final long serialVersionUID = 3010674519968303714L;
-
-        RFC2616DateParserObsolete2() {
-            super("E MMM d HH:mm:ss yyyy", Locale.ENGLISH);
-            setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
     }
 }

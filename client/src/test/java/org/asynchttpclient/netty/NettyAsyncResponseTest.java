@@ -27,15 +27,12 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.cookie.Cookie;
 import org.testng.annotations.Test;
 
-/**
- * @author Benjamin Hanzelmann
- */
 public class NettyAsyncResponseTest {
 
     @Test(groups = "standalone")
     public void testCookieParseExpires() {
-        // e.g. "Sun, 06-Feb-2012 03:45:24 GMT";
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US);
+        // e.g. "Tue, 27 Oct 2015 12:54:24 GMT";
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 
         Date date = new Date(System.currentTimeMillis() + 60000);

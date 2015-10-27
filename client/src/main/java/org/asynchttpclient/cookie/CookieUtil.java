@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.cookie;
 
-import java.text.ParsePosition;
 import java.util.BitSet;
 import java.util.Date;
 
@@ -97,7 +96,7 @@ public class CookieUtil {
 
     static long computeExpires(String expires) {
         if (expires != null) {
-            Date expiresDate = DateParser.get().parse(expires, new ParsePosition(0));
+            Date expiresDate = DateParser.parse(expires);
             if (expiresDate != null)
                 return expiresDate.getTime();
         }
