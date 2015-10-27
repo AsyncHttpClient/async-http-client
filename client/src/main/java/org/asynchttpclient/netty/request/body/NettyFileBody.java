@@ -13,18 +13,15 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedNioFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -72,26 +69,16 @@ public class NettyFileBody implements NettyBody {
 
     @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
-        final RandomAccessFile raf = new RandomAccessFile(file, "r");
+        @SuppressWarnings("resource")
+        // Netty will close the ChunkedNioFile or the DefaultFileRegion
+        final FileChannel fileChannel = new RandomAccessFile(file, "r").getChannel();
 
-        try {
-            ChannelFuture writeFuture;
-            if (ChannelManager.isSslHandlerConfigured(channel.pipeline()) || config.isDisableZeroCopy()) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, length, config.getChunkedFileChunkSize()), channel.newProgressivePromise());
-            } else {
-                FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
-                writeFuture = channel.write(region, channel.newProgressivePromise());
-            }
-            writeFuture.addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()) {
-                public void operationComplete(ChannelProgressiveFuture cf) {
-                    closeSilently(raf);
-                    super.operationComplete(cf);
-                }
-            });
-            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-        } catch (IOException ex) {
-            closeSilently(raf);
-            throw ex;
-        }
+        Object message = (ChannelManager.isSslHandlerConfigured(channel.pipeline()) || config.isDisableZeroCopy()) ? //
+        new ChunkedNioFile(fileChannel, offset, length, config.getChunkedFileChunkSize())
+                : new DefaultFileRegion(fileChannel, offset, length);
+
+        channel.write(message, channel.newProgressivePromise())//
+                .addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()));
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 }
