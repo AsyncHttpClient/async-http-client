@@ -29,8 +29,6 @@ public abstract class FileLikePart extends PartBase {
      */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
 
-    private long stalledTime = -1L;
-
     private String fileName;
 
     /**
@@ -48,14 +46,6 @@ public abstract class FileLikePart extends PartBase {
                 charset,//
                 contentId,//
                 transfertEncoding == null ? DEFAULT_TRANSFER_ENCODING : transfertEncoding);
-    }
-
-    public void setStalledTime(long ms) {
-        stalledTime = ms;
-    }
-
-    public long getStalledTime() {
-        return stalledTime;
     }
 
     public void setFileName(String fileName) {
