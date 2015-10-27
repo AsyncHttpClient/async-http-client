@@ -1,7 +1,6 @@
 package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -22,7 +21,6 @@ import org.asynchttpclient.netty.EagerNettyResponseBodyPart;
 import org.asynchttpclient.netty.LazyNettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
-import org.asynchttpclient.netty.ws.NettyWebSocket;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
@@ -291,8 +289,6 @@ public interface AsyncHttpClientConfig {
 
     Timer getNettyTimer();
 
-    NettyWebSocketFactory getNettyWebSocketFactory();
-
     KeepAliveStrategy getKeepAliveStrategy();
 
     interface AdditionalPipelineInitializer {
@@ -318,20 +314,5 @@ public interface AsyncHttpClientConfig {
         };
 
         public abstract NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
-    }
-
-    interface NettyWebSocketFactory {
-
-        NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config);
-
-        enum DefaultNettyWebSocketFactory implements NettyWebSocketFactory {
-
-            INSTANCE;
-
-            @Override
-            public NettyWebSocket newNettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
-                return new NettyWebSocket(channel, config);
-            }
-        }
     }
 }

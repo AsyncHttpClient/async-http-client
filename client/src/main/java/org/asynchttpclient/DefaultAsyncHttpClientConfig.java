@@ -121,7 +121,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean preferNative;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
-    private final NettyWebSocketFactory nettyWebSocketFactory;
     private final AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
     private final AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
@@ -185,7 +184,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             boolean preferNative,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
-            NettyWebSocketFactory nettyWebSocketFactory,//
             AdditionalPipelineInitializer httpAdditionalPipelineInitializer,//
             AdditionalPipelineInitializer wsAdditionalPipelineInitializer,//
             ResponseBodyPartFactory responseBodyPartFactory) {
@@ -248,7 +246,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.preferNative = preferNative;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
-        this.nettyWebSocketFactory = nettyWebSocketFactory;
         this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
         this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
@@ -502,11 +499,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public NettyWebSocketFactory getNettyWebSocketFactory() {
-        return nettyWebSocketFactory;
-    }
-
-    @Override
     public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
         return httpAdditionalPipelineInitializer;
     }
@@ -586,7 +578,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean preferNative;
         private Timer nettyTimer;
         private ThreadFactory threadFactory;
-        private NettyWebSocketFactory nettyWebSocketFactory = NettyWebSocketFactory.DefaultNettyWebSocketFactory.INSTANCE;
         private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
         private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
@@ -653,7 +644,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             preferNative = config.isPreferNative();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
-            nettyWebSocketFactory = config.getNettyWebSocketFactory();
             httpAdditionalPipelineInitializer = config.getHttpAdditionalPipelineInitializer();
             wsAdditionalPipelineInitializer = config.getWsAdditionalPipelineInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
@@ -941,11 +931,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setNettyWebSocketFactory(NettyWebSocketFactory nettyWebSocketFactory) {
-            this.nettyWebSocketFactory = nettyWebSocketFactory;
-            return this;
-        }
-
         public Builder setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
             this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
             return this;
@@ -1024,7 +1009,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     preferNative, //
                     nettyTimer, //
                     threadFactory, //
-                    nettyWebSocketFactory, //
                     httpAdditionalPipelineInitializer, //
                     wsAdditionalPipelineInitializer, //
                     responseBodyPartFactory);
