@@ -74,7 +74,7 @@ public interface AsyncHandler<T> {
      * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
      *
      * @param bodyPart response's body part.
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
      * @throws Exception if something wrong happens
      */
     State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;

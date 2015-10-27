@@ -21,7 +21,6 @@ import org.asynchttpclient.HttpResponseBodyPart;
 public abstract class NettyResponseBodyPart implements HttpResponseBodyPart {
 
     private final boolean last;
-    private boolean closeConnection;
 
     public NettyResponseBodyPart(boolean last) {
         this.last = last;
@@ -33,21 +32,5 @@ public abstract class NettyResponseBodyPart implements HttpResponseBodyPart {
     @Override
     public boolean isLast() {
         return last;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void markUnderlyingConnectionAsToBeClosed() {
-        closeConnection = true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isUnderlyingConnectionToBeClosed() {
-        return closeConnection;
     }
 }

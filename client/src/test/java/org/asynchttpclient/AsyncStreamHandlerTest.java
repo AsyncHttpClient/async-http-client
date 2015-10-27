@@ -447,11 +447,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
                 public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                     builder.accumulate(content);
-
-                    if (content.isLast()) {
-                        content.markUnderlyingConnectionAsToBeClosed();
-                    }
-                    return State.CONTINUE;
+                    return content.isLast() ? State.ABORT : State.CONTINUE;
                 }
 
                 public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {

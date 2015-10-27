@@ -151,7 +151,7 @@ public final class HttpProtocol extends Protocol {
 
     private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart) throws Exception {
         boolean interrupt = handler.onBodyPartReceived(bodyPart) != State.CONTINUE;
-        if (bodyPart.isUnderlyingConnectionToBeClosed())
+        if (interrupt)
             future.setKeepAlive(false);
         return interrupt;
     }

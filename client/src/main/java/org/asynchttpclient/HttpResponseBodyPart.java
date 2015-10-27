@@ -42,16 +42,4 @@ public interface HttpResponseBodyPart {
      * @return true if this is the last part.
      */
     boolean isLast();
-
-    /**
-     * Close the underlying connection once the processing has completed. Invoking that method means the
-     * underlying TCP connection will be closed as soon as the processing of the response is completed. That
-     * means the underlying connection will never get pooled.
-     */
-    void markUnderlyingConnectionAsToBeClosed();
-
-    /**
-     * @return true of the underlying connection will be closed once the response has been fully processed.
-     */
-    boolean isUnderlyingConnectionToBeClosed();
 }
