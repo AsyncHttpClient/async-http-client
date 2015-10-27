@@ -1,18 +1,20 @@
 package org.asynchttpclient.request.body.multipart.part;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 
 public class ByteArrayMultipartPart extends MultipartPart<ByteArrayPart> {
 
-    private final ByteBuffer contentBuffer;
+    private final ByteBuf contentBuffer;
 
     public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
         super(part, boundary);
-        contentBuffer = ByteBuffer.wrap(part.getBytes());
+        contentBuffer = Unpooled.wrappedBuffer(part.getBytes());
     }
 
     @Override
@@ -21,7 +23,7 @@ public class ByteArrayMultipartPart extends MultipartPart<ByteArrayPart> {
     }
 
     @Override
-    protected long transferContentTo(ByteBuffer target) throws IOException {
+    protected long transferContentTo(ByteBuf target) throws IOException {
         return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
     }
     
@@ -32,5 +34,7 @@ public class ByteArrayMultipartPart extends MultipartPart<ByteArrayPart> {
     
     @Override
     public void close() {
+        super.close();
+        contentBuffer.release();
     }
 }

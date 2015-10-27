@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart.part;
 
+import io.netty.buffer.ByteBuf;
+
 import java.nio.ByteBuffer;
 
 public interface PartVisitor {
@@ -55,6 +57,24 @@ public interface PartVisitor {
         @Override
         public void withByte(byte b) {
             target.put(b);
+        }
+    }
+    
+    class ByteBufVisitor implements PartVisitor {
+        private final ByteBuf target;
+
+        public ByteBufVisitor(ByteBuf target) {
+            this.target = target;
+        }
+
+        @Override
+        public void withBytes(byte[] bytes) {
+            target.writeBytes(bytes);
+        }
+
+        @Override
+        public void withByte(byte b) {
+            target.writeByte(b);
         }
     }
 }

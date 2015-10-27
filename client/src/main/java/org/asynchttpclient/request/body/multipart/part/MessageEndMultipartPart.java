@@ -1,29 +1,28 @@
 package org.asynchttpclient.request.body.multipart.part;
 
 import static org.asynchttpclient.request.body.multipart.Part.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 import org.asynchttpclient.request.body.multipart.FileLikePart;
 
 public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
-    private static final ByteBuffer EMPTY_BYTE_BUFFER = ByteBuffer.allocate(0);
-
-    private final ByteBuffer buffer;
+    private final ByteBuf buffer;
 
     public MessageEndMultipartPart(byte[] boundary) {
         super(null, boundary);
-        buffer = ByteBuffer.allocate((int) length());
-        buffer.put(EXTRA_BYTES).put(boundary).put(EXTRA_BYTES).put(CRLF_BYTES);
-        buffer.flip();
+        buffer = ByteBufAllocator.DEFAULT.buffer((int) length());
+        buffer.writeBytes(EXTRA_BYTES).writeBytes(boundary).writeBytes(EXTRA_BYTES).writeBytes(CRLF_BYTES);
         state = MultipartState.PRE_CONTENT;
     }
 
     @Override
-    public long transferTo(ByteBuffer target) throws IOException {
+    public long transferTo(ByteBuf target) throws IOException {
         return transfer(buffer, target, MultipartState.DONE);
     }
 
@@ -34,13 +33,13 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
     }
 
     @Override
-    protected ByteBuffer computePreContentBytes() {
-        return EMPTY_BYTE_BUFFER;
+    protected ByteBuf computePreContentBytes() {
+        return Unpooled.EMPTY_BUFFER;
     }
 
     @Override
-    protected ByteBuffer computePostContentBytes() {
-        return EMPTY_BYTE_BUFFER;
+    protected ByteBuf computePostContentBytes() {
+        return Unpooled.EMPTY_BUFFER;
     }
 
     @Override
@@ -49,7 +48,7 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
     }
 
     @Override
-    protected long transferContentTo(ByteBuffer target) throws IOException {
+    protected long transferContentTo(ByteBuf target) throws IOException {
         throw new UnsupportedOperationException("Not supposed to be called");
     }
 
@@ -60,5 +59,6 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
     @Override
     public void close() {
+        buffer.release();
     }
 }

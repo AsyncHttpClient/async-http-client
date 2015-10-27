@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
@@ -52,10 +54,10 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
 
         @Override
-        public BodyState transferTo(final ByteBuffer buffer) throws IOException {
+        public BodyState transferTo(final ByteBuf target) throws IOException {
             switch (state) {
                 case CONTINUE:
-                    return readNextPart(buffer);
+                    return readNextPart(target);
                 case STOP:
                     return BodyState.STOP;
                 default:
@@ -63,9 +65,9 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
             }
         }
 
-        private BodyState readNextPart(ByteBuffer buffer) throws IOException {
+        private BodyState readNextPart(ByteBuf target) throws IOException {
             BodyState res = BodyState.SUSPEND;
-            while (buffer.hasRemaining() && state != BodyState.STOP) {
+            while (target.isWritable() && state != BodyState.STOP) {
                 BodyPart nextPart = queue.peek();
                 if (nextPart == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
@@ -75,14 +77,14 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                     queue.remove();
                 } else {
                     res = BodyState.CONTINUE;
-                    readBodyPart(buffer, nextPart);
+                    readBodyPart(target, nextPart);
                 }
             }
             return res;
         }
 
-        private void readBodyPart(ByteBuffer buffer, BodyPart part) {
-            move(buffer, part.buffer);
+        private void readBodyPart(ByteBuf target, BodyPart part) {
+            move(target, part.buffer);
 
             if (!part.buffer.hasRemaining()) {
                 if (part.isLast) {
@@ -97,12 +99,12 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
     }
 
-    private void move(ByteBuffer destination, ByteBuffer source) {
-        int size = Math.min(destination.remaining(), source.remaining());
+    private void move(ByteBuf target, ByteBuffer source) {
+        int size = Math.min(target.writableBytes(), source.remaining());
         if (size > 0) {
             ByteBuffer slice = source.slice();
             slice.limit(size);
-            destination.put(slice);
+            target.writeBytes(slice);
             source.position(source.position() + size);
         }
     }

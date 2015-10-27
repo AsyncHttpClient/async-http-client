@@ -12,8 +12,9 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.asynchttpclient.request.body.Body;
 
@@ -36,19 +37,20 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
             return bytes.length;
         }
 
-        public BodyState transferTo(ByteBuffer byteBuffer) throws IOException {
+        public BodyState transferTo(ByteBuf target) throws IOException {
 
             if (eof) {
                 return BodyState.STOP;
             }
 
             final int remaining = bytes.length - lastPosition;
-            if (remaining <= byteBuffer.capacity()) {
-                byteBuffer.put(bytes, lastPosition, remaining);
+            final int initialTargetWritableBytes = target.writableBytes();
+            if (remaining <= initialTargetWritableBytes) {
+                target.writeBytes(bytes, lastPosition, remaining);
                 eof = true;
             } else {
-                byteBuffer.put(bytes, lastPosition, byteBuffer.capacity());
-                lastPosition = lastPosition + byteBuffer.capacity();
+                target.writeBytes(bytes, lastPosition, initialTargetWritableBytes);
+                lastPosition += initialTargetWritableBytes;
             }
             return BodyState.CONTINUE;
         }

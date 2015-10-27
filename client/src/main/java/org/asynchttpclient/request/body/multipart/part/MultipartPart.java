@@ -2,16 +2,19 @@ package org.asynchttpclient.request.body.multipart.part;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.request.body.multipart.FileLikePart;
-import org.asynchttpclient.request.body.multipart.part.PartVisitor.ByteBufferVisitor;
+import org.asynchttpclient.request.body.multipart.part.PartVisitor.ByteBufVisitor;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.CounterPartVisitor;
 
 public abstract class MultipartPart<T extends FileLikePart> implements Closeable {
@@ -24,7 +27,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
     /**
      * Content disposition as a byte
      */
-    protected static final byte QUOTE_BYTE = '\"';
+    private static final byte QUOTE_BYTE = '\"';
 
     /**
      * Extra characters as a byte array
@@ -75,8 +78,8 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
     protected final byte[] boundary;
 
     private final long length;
-    private ByteBuffer preContentBuffer;
-    private ByteBuffer postContentBuffer;
+    private ByteBuf preContentBuffer;
+    private ByteBuf postContentBuffer;
     protected MultipartState state;
     protected boolean slowTarget;
 
@@ -85,7 +88,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         this.boundary = boundary;
         preContentBuffer = computePreContentBytes();
         postContentBuffer = computePostContentBytes();
-        length = preContentBuffer.remaining() + postContentBuffer.remaining() + getContentLength();
+        length = preContentBuffer.readableBytes() + postContentBuffer.readableBytes() + getContentLength();
         state = MultipartState.PRE_CONTENT;
     }
 
@@ -101,7 +104,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         return slowTarget;
     }
 
-    public long transferTo(ByteBuffer target) throws IOException {
+    public long transferTo(ByteBuf target) throws IOException {
 
         switch (state) {
         case DONE:
@@ -142,35 +145,53 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         }
     }
 
+    @Override
+    public void close() {
+        preContentBuffer.release();
+        postContentBuffer.release();
+    }
+
     protected abstract long getContentLength();
 
-    protected abstract long transferContentTo(ByteBuffer target) throws IOException;
+    protected abstract long transferContentTo(ByteBuf target) throws IOException;
 
     protected abstract long transferContentTo(WritableByteChannel target) throws IOException;
 
-    protected long transfer(ByteBuffer source, ByteBuffer target, MultipartState sourceFullyWrittenState) {
+    protected long transfer(ByteBuf source, ByteBuf target, MultipartState sourceFullyWrittenState) {
 
-        int sourceRemaining = source.remaining();
-        int targetRemaining = target.remaining();
+        int sourceRemaining = source.readableBytes();
+        int targetRemaining = target.writableBytes();
 
         if (sourceRemaining <= targetRemaining) {
-            target.put(source);
+            target.writeBytes(source);
             state = sourceFullyWrittenState;
             return sourceRemaining;
         } else {
-            int originalSourceLimit = source.limit();
-            source.limit(source.position() + targetRemaining);
-            target.put(source);
-            // revert source initial limit
-            source.limit(originalSourceLimit);
+            target.writeBytes(source, targetRemaining - sourceRemaining);
             return targetRemaining;
         }
     }
 
-    protected long transfer(ByteBuffer source, WritableByteChannel target, MultipartState sourceFullyWrittenState) throws IOException {
+    protected long transfer(ByteBuf source, WritableByteChannel target, MultipartState sourceFullyWrittenState) throws IOException {
 
-        int transferred = target.write(source);
-        if (source.hasRemaining()) {
+        int transferred = 0;
+        if (target instanceof GatheringByteChannel) {
+            transferred = source.readBytes((GatheringByteChannel) target, (int) source.readableBytes());
+        } else {
+            for (ByteBuffer byteBuffer : source.nioBuffers()) {
+                int len = byteBuffer.remaining();
+                int written = target.write(byteBuffer);
+                transferred += written;
+                if (written != len) {
+                    // couldn't write full buffer, exit loop
+                    break;
+                }
+            }
+            // assume this is a basic single ByteBuf
+            source.readerIndex(source.readerIndex() + transferred);
+        }
+
+        if (source.isReadable()) {
             slowTarget = true;
         } else {
             state = sourceFullyWrittenState;
@@ -178,7 +199,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         return transferred;
     }
 
-    protected ByteBuffer computePreContentBytes() {
+    protected ByteBuf computePreContentBytes() {
 
         // compute length
         CounterPartVisitor counterVisitor = new CounterPartVisitor();
@@ -186,14 +207,13 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         long length = counterVisitor.getCount();
 
         // compute bytes
-        ByteBuffer buffer = ByteBuffer.allocate((int) length);
-        ByteBufferVisitor bytesVisitor = new ByteBufferVisitor(buffer);
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer((int) length);
+        ByteBufVisitor bytesVisitor = new ByteBufVisitor(buffer);
         visitPreContent(bytesVisitor);
-        buffer.flip();
         return buffer;
     }
 
-    protected ByteBuffer computePostContentBytes() {
+    protected ByteBuf computePostContentBytes() {
 
         // compute length
         CounterPartVisitor counterVisitor = new CounterPartVisitor();
@@ -201,10 +221,9 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         long length = counterVisitor.getCount();
 
         // compute bytes
-        ByteBuffer buffer = ByteBuffer.allocate((int) length);
-        ByteBufferVisitor bytesVisitor = new ByteBufferVisitor(buffer);
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer((int) length);
+        ByteBufVisitor bytesVisitor = new ByteBufVisitor(buffer);
         visitPostContent(bytesVisitor);
-        buffer.flip();
         return buffer;
     }
 

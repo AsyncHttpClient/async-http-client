@@ -13,13 +13,14 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,14 +67,14 @@ public class MultipartBodyTest {
         final Body multipartBody = MultipartUtils.newMultipartBody(parts, HttpHeaders.EMPTY_HEADERS);
         final long expectedContentLength = multipartBody.getContentLength();
         try {
-            final ByteBuffer buffer = ByteBuffer.allocate(8192);
+            final ByteBuf buffer = Unpooled.buffer(8192);
             boolean last = false;
             while (!last) {
                 if (multipartBody.transferTo(buffer) == BodyState.STOP) {
                     last = true;
                 }
             }
-            Assert.assertEquals(buffer.position(), expectedContentLength);
+            Assert.assertEquals(buffer.readableBytes(), expectedContentLength);
         } finally {
             try {
                 multipartBody.close();

@@ -13,11 +13,13 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.RandomAccessBody;
@@ -36,6 +38,7 @@ public class MultipartBody implements RandomAccessBody {
     private final long contentLength;
     private int currentPartIndex;
     private boolean done = false;
+    private AtomicBoolean closed = new AtomicBoolean();
 
     public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
         assertNotNull(parts, "parts");
@@ -63,8 +66,10 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     public void close() throws IOException {
-        for (MultipartPart<? extends Part> part: parts) {
-            part.close();
+        if (closed.compareAndSet(false, true)) {
+            for (MultipartPart<? extends Part> part : parts) {
+                closeSilently(part);
+            }
         }
     }
 
@@ -81,12 +86,12 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     // Regular Body API
-    public BodyState transferTo(ByteBuffer target) throws IOException {
+    public BodyState transferTo(ByteBuf target) throws IOException {
 
         if (done)
             return BodyState.STOP;
 
-        while (target.hasRemaining() && !done) {
+        while (target.isWritable() && !done) {
             MultipartPart<? extends Part> currentPart = parts.get(currentPartIndex);
             currentPart.transferTo(target);
 

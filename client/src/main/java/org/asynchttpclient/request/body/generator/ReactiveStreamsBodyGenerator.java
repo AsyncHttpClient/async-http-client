@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,11 +80,11 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         }
 
         @Override
-        public BodyState transferTo(ByteBuffer buffer) throws IOException {
+        public BodyState transferTo(ByteBuf target) throws IOException {
             if(initialized.compareAndSet(false, true))
                 publisher.subscribe(subscriber);
 
-            return body.transferTo(buffer);
+            return body.transferTo(target);
         }
     }
 

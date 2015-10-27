@@ -1,9 +1,11 @@
 package org.asynchttpclient.request.body.multipart.part;
 
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import io.netty.buffer.ByteBuf;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -12,7 +14,6 @@ import org.asynchttpclient.request.body.multipart.FilePart;
 
 public class FileMultipartPart extends MultipartPart<FilePart> {
 
-    // FIXME make sure channel gets closed when upload crashes
     private final FileChannel channel;
     private final long length;
     private long position = 0L;
@@ -33,8 +34,8 @@ public class FileMultipartPart extends MultipartPart<FilePart> {
     }
 
     @Override
-    protected long transferContentTo(ByteBuffer target) throws IOException {
-        int transferred = channel.read(target);
+    protected long transferContentTo(ByteBuf target) throws IOException {
+        int transferred = target.writeBytes(channel, target.writableBytes());
         position += transferred;
         if (position == length) {
             state = MultipartState.POST_CONTENT;
@@ -42,7 +43,7 @@ public class FileMultipartPart extends MultipartPart<FilePart> {
         }
         return transferred;
     }
-    
+
     @Override
     protected long transferContentTo(WritableByteChannel target) throws IOException {
         long transferred = channel.transferTo(channel.position(), BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
@@ -55,9 +56,10 @@ public class FileMultipartPart extends MultipartPart<FilePart> {
         }
         return transferred;
     }
-    
+
     @Override
-    public void close() throws IOException {
-        channel.close();
+    public void close() {
+        super.close();
+        closeSilently(channel);
     }
 }

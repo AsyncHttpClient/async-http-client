@@ -13,15 +13,12 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import static org.asynchttpclient.util.Assertions.*;
-import org.asynchttpclient.request.body.Body;
-
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
 
-import java.nio.ByteBuffer;
+import org.asynchttpclient.request.body.Body;
 
 /**
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
@@ -52,20 +49,17 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         if (endOfInput)
             return null;
 
-        // FIXME pass a visitor so we can directly pass a pooled ByteBuf
-        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+        ByteBuf buffer = ctx.alloc().buffer(chunkSize);
         Body.BodyState state = body.transferTo(buffer);
         switch (state) {
             case STOP:
                 endOfInput = true;
-                buffer.flip();
-                return Unpooled.wrappedBuffer(buffer);
+                return buffer;
             case SUSPEND:
                 //this will suspend the stream in ChunkedWriteHandler
                 return null;
             case CONTINUE:
-                buffer.flip();
-                return Unpooled.wrappedBuffer(buffer);
+                return buffer;
             default:
                 throw new IllegalStateException("Unknown state: " + state);
         }
