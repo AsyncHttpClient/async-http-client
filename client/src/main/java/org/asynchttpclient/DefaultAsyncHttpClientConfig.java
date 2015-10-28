@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.Timer;
 
 import java.io.IOException;
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
-
-import javax.net.ssl.SSLContext;
 
 import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
@@ -93,13 +92,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final KeepAliveStrategy keepAliveStrategy;
 
     // ssl
+    private final boolean useOpenSsl;
     private final boolean acceptAnyCertificate;
     private final int handshakeTimeout;
     private final String[] enabledProtocols;
     private final String[] enabledCipherSuites;
-    private final Integer sslSessionCacheSize;
-    private final Integer sslSessionTimeout;
-    private final SSLContext sslContext;
+    private final int sslSessionCacheSize;
+    private final int sslSessionTimeout;
+    private final SslContext sslContext;
     private final SSLEngineFactory sslEngineFactory;
 
     // filters
@@ -155,13 +155,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             KeepAliveStrategy keepAliveStrategy,//
 
             // ssl
+            boolean useOpenSsl,//
             boolean acceptAnyCertificate,//
             int handshakeTimeout,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
-            Integer sslSessionCacheSize,//
-            Integer sslSessionTimeout,//
-            SSLContext sslContext,//
+            int sslSessionCacheSize,//
+            int sslSessionTimeout,//
+            SslContext sslContext,//
             SSLEngineFactory sslEngineFactory,//
 
             // filters
@@ -216,6 +217,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.keepAliveStrategy = keepAliveStrategy;
 
         // ssl
+        this.useOpenSsl = useOpenSsl;
         this.acceptAnyCertificate = acceptAnyCertificate;
         this.handshakeTimeout = handshakeTimeout;
         this.enabledProtocols = enabledProtocols;
@@ -374,6 +376,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // ssl
     @Override
+    public boolean isUseOpenSsl() {
+        return useOpenSsl;
+    }
+    
+    @Override
     public boolean isAcceptAnyCertificate() {
         return acceptAnyCertificate;
     }
@@ -394,17 +401,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public Integer getSslSessionCacheSize() {
+    public int getSslSessionCacheSize() {
         return sslSessionCacheSize;
     }
 
     @Override
-    public Integer getSslSessionTimeout() {
+    public int getSslSessionTimeout() {
         return sslSessionTimeout;
     }
 
     @Override
-    public SSLContext getSslContext() {
+    public SslContext getSslContext() {
         return sslContext;
     }
 
@@ -542,13 +549,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private KeepAliveStrategy keepAliveStrategy = KeepAliveStrategy.DefaultKeepAliveStrategy.INSTANCE;
 
         // ssl
+        private boolean useOpenSsl = defaultUseOpenSsl();
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private int handshakeTimeout = defaultHandshakeTimeout();
         private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites;
-        private Integer sslSessionCacheSize = defaultSslSessionCacheSize();
-        private Integer sslSessionTimeout = defaultSslSessionTimeout();
-        private SSLContext sslContext;
+        private int sslSessionCacheSize = defaultSslSessionCacheSize();
+        private int sslSessionTimeout = defaultSslSessionTimeout();
+        private SslContext sslContext;
         private SSLEngineFactory sslEngineFactory;
 
         // filters
@@ -783,6 +791,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         // ssl
+        public Builder setUseOpenSsl(boolean useOpenSsl) {
+            this.useOpenSsl = useOpenSsl;
+            return this;
+        }
+
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
             this.acceptAnyCertificate = acceptAnyCertificate;
             return this;
@@ -813,7 +826,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setSslContext(final SSLContext sslContext) {
+        public Builder setSslContext(final SslContext sslContext) {
             this.sslContext = sslContext;
             return this;
         }
@@ -970,6 +983,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     maxConnectionsPerHost, //
                     channelPool, //
                     keepAliveStrategy, //
+                    useOpenSsl, //
                     acceptAnyCertificate, //
                     handshakeTimeout, //
                     enabledProtocols, //

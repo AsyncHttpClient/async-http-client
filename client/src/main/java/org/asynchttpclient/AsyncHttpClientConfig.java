@@ -4,13 +4,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.Timer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
-
-import javax.net.ssl.SSLContext;
 
 import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
@@ -147,11 +146,11 @@ public interface AsyncHttpClientConfig {
     ProxyServerSelector getProxyServerSelector();
 
     /**
-     * Return an instance of {@link SSLContext} used for SSL connection.
+     * Return an instance of {@link SslContext} used for SSL connection.
      *
-     * @return an instance of {@link SSLContext} used for SSL connection.
+     * @return an instance of {@link SslContext} used for SSL connection.
      */
-    SSLContext getSslContext();
+    SslContext getSslContext();
 
     /**
      * Return the current {@link Realm}
@@ -216,6 +215,8 @@ public interface AsyncHttpClientConfig {
      */
     int getConnectionTtl();
 
+    boolean isUseOpenSsl();
+    
     boolean isAcceptAnyCertificate();
 
     /**
@@ -229,14 +230,14 @@ public interface AsyncHttpClientConfig {
     String[] getEnabledCipherSuites();
 
     /**
-     * @return the size of the SSL session cache
+     * @return the size of the SSL session cache, 0 means using the default value
      */
-    Integer getSslSessionCacheSize();
+    int getSslSessionCacheSize();
 
     /**
-     * @return the SSL session timeout in seconds (optional)
+     * @return the SSL session timeout in seconds, 0 means using the default value
      */
-    Integer getSslSessionTimeout();
+    int getSslSessionTimeout();
 
     int getHttpClientCodecMaxInitialLineLength();
 

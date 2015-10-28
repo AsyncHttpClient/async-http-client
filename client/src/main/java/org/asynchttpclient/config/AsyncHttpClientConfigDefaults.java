@@ -95,16 +95,20 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableUrlEncodingForBoundRequests");
     }
 
+    public static boolean defaultUseOpenSsl() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useOpenSsl");
+    }
+    
     public static boolean defaultAcceptAnyCertificate() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "acceptAnyCertificate");
     }
 
-    public static Integer defaultSslSessionCacheSize() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionCacheSize");
+    public static int defaultSslSessionCacheSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionCacheSize");
     }
 
-    public static Integer defaultSslSessionTimeout() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInteger(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionTimeout");
+    public static int defaultSslSessionTimeout() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionTimeout");
     }
 
     public static int defaultHttpClientCodecMaxInitialLineLength() {

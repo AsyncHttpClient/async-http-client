@@ -94,7 +94,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
 
         AtomicBoolean trust = new AtomicBoolean(false);
-        try (AsyncHttpClient client = asyncHttpClient(config().setSslContext(createSslContext(trust)))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setSslEngineFactory(createSSLEngineFactory(trust)))) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected

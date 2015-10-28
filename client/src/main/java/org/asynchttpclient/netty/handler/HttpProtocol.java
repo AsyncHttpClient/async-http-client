@@ -27,7 +27,6 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
@@ -454,15 +453,10 @@ public final class HttpProtocol extends Protocol {
             Uri requestUri = request.getUri();
             logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
-            try {
-                channelManager.upgradeProtocol(channel.pipeline(), requestUri);
-                future.setReuseChannel(true);
-                future.setConnectAllowed(false);
-                requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
-
-            } catch (GeneralSecurityException ex) {
-                requestSender.abort(channel, future, ex);
-            }
+            channelManager.upgradeProtocol(channel.pipeline(), requestUri);
+            future.setReuseChannel(true);
+            future.setConnectAllowed(false);
+            requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
 
             return true;
         }

@@ -45,6 +45,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -105,7 +106,11 @@ public class ChannelManager {
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
         this.config = config;
-        this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
+        try {
+            this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
+        } catch (SSLException e) {
+            throw new ExceptionInInitializerError(e);
+        }
 
         ChannelPool channelPool = config.getChannelPool();
         if (channelPool == null) {
@@ -386,7 +391,7 @@ public class ChannelManager {
                 false);
     }
 
-    private SslHandler createSslHandler(String peerHost, int peerPort) throws GeneralSecurityException {
+    private SslHandler createSslHandler(String peerHost, int peerPort) {
         SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
@@ -398,7 +403,7 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws SSLException {
         if (pipeline.get(HTTP_HANDLER) != null)
             pipeline.remove(HTTP_HANDLER);
 
@@ -419,7 +424,7 @@ public class ChannelManager {
         }
     }
 
-    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) {
         String peerHost;
         int peerPort;
 
