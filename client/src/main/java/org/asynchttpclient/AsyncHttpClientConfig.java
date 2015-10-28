@@ -67,17 +67,6 @@ public interface AsyncHttpClientConfig {
     int getConnectTimeout();
 
     /**
-     * Return the maximum time, in milliseconds, a
-     * {@link org.asynchttpclient.ws.WebSocket} may be idle before being timed
-     * out.
-     * 
-     * @return the maximum time, in milliseconds, a
-     *         {@link org.asynchttpclient.ws.WebSocket} may be idle before being
-     *         timed out.
-     */
-    int getWebSocketTimeout();
-
-    /**
      * Return the maximum time in millisecond an {@link AsyncHttpClient} can
      * stay idle.
      *

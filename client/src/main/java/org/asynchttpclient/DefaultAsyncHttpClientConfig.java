@@ -80,7 +80,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int connectTimeout;
     private final int requestTimeout;
     private final int readTimeout;
-    private final int webSocketTimeout;
     private final int shutdownQuietPeriod;
     private final int shutdownTimeout;
 
@@ -143,7 +142,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int connectTimeout,//
             int requestTimeout,//
             int readTimeout,//
-            int webSocketTimeout,//
             int shutdownQuietPeriod,//
             int shutdownTimeout,//
 
@@ -205,7 +203,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.connectTimeout = connectTimeout;
         this.requestTimeout = requestTimeout;
         this.readTimeout = readTimeout;
-        this.webSocketTimeout = webSocketTimeout;
         this.shutdownQuietPeriod = shutdownQuietPeriod;
         this.shutdownTimeout = shutdownTimeout;
 
@@ -327,11 +324,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public int getReadTimeout() {
         return readTimeout;
-    }
-
-    @Override
-    public int getWebSocketTimeout() {
-        return webSocketTimeout;
     }
 
     @Override
@@ -537,7 +529,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int connectTimeout = defaultConnectTimeout();
         private int requestTimeout = defaultRequestTimeout();
         private int readTimeout = defaultReadTimeout();
-        private int webSocketTimeout = defaultWebSocketTimeout();
         private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
         private int shutdownTimeout = defaultShutdownTimeout();
 
@@ -603,7 +594,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             connectTimeout = config.getConnectTimeout();
             requestTimeout = config.getRequestTimeout();
             readTimeout = config.getReadTimeout();
-            webSocketTimeout = config.getWebSocketTimeout();
             shutdownQuietPeriod = config.getShutdownQuietPeriod();
             shutdownTimeout = config.getShutdownTimeout();
 
@@ -743,11 +733,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setReadTimeout(int readTimeout) {
             this.readTimeout = readTimeout;
-            return this;
-        }
-
-        public Builder setWebSocketTimeout(int webSocketTimeout) {
-            this.webSocketTimeout = webSocketTimeout;
             return this;
         }
 
@@ -976,7 +961,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     connectTimeout, //
                     requestTimeout, //
                     readTimeout, //
-                    webSocketTimeout, //
                     shutdownQuietPeriod, //
                     shutdownTimeout, //
                     keepAlive, //

@@ -42,11 +42,6 @@ public class AsyncHttpClientDefaultsTest {
         testIntegerSystemProperty("requestTimeout", "defaultRequestTimeout", "100");
     }
 
-    public void testDefaultWebSocketTimeout() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultWebSocketTimeout(), 15 * 60 * 1000);
-        testIntegerSystemProperty("webSocketTimeout", "defaultWebSocketTimeout", "100");
-    }
-
     public void testDefaultConnectionTtl() {
         Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
         testIntegerSystemProperty("connectionTtl", "defaultConnectionTtl", "100");
