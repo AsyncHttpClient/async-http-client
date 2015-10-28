@@ -35,7 +35,6 @@ import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EventCollectingHandler;
@@ -251,7 +250,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
 
-        Request request = new RequestBuilder().setUrl(getTargetUrl()).setHeader("Connection", "close").build();
+        RequestBuilder request = get(getTargetUrl()).setHeader("Connection", "close");
 
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxConnections(6).setMaxConnectionsPerHost(3))) {
             client.executeRequest(request).get();
@@ -266,7 +265,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testPooledEventsFired() throws Exception {
-        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+        RequestBuilder request = get("http://127.0.0.1:" + port1 + "/Test");
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             EventCollectingHandler firstHandler = new EventCollectingHandler();

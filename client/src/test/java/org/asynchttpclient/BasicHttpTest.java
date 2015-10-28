@@ -58,7 +58,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "async" })
     public void asyncProviderEncodingTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
+            Request request = get(getTargetUrl() + "?q=+%20x").build();
             assertEquals(request.getUrl(), getTargetUrl() + "?q=+%20x");
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
@@ -81,7 +81,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "async" })
     public void asyncProviderEncodingTest2() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "").addQueryParam("q", "a b").build();
+            Request request = get(getTargetUrl() + "").addQueryParam("q", "a b").build();
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -103,7 +103,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "async" })
     public void emptyRequestURI() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
+            Request request = get(getTargetUrl()).build();
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -131,7 +131,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
+            Request request = get(getTargetUrl()).build();
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -170,7 +170,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncContentTypeGETTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
+            Request request = get(getTargetUrl()).build();
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -194,7 +194,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncHeaderGETTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
+            Request request = get(getTargetUrl()).build();
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -225,7 +225,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             h.add("Test3", "Test3");
             h.add("Test4", "Test4");
             h.add("Test5", "Test5");
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).setHeaders(h).build();
+            Request request = get(getTargetUrl()).setHeaders(h).build();
 
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
@@ -260,7 +260,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m).build();
+            Request request = post(getTargetUrl()).setHeaders(h).setFormParams(m).build();
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -287,7 +287,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncStatusHEADTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
+            Request request = head(getTargetUrl()).build();
             Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -319,7 +319,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     public void asyncStatusHEADContentLenghtTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(120 * 1000))) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
+            Request request = head(getTargetUrl()).build();
 
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
                 @Override
@@ -679,7 +679,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m).setVirtualHost("localhost:" + port1).build();
+            Request request = post(getTargetUrl()).setHeaders(h).setFormParams(m).setVirtualHost("localhost:" + port1).build();
 
             Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter()).get();
 
@@ -1133,7 +1133,7 @@ public class BasicHttpTest extends AbstractBasicTest {
                 }
             };
 
-            Request req = new RequestBuilder("GET").setUrl(getTargetUrl() + "?foo=bar").build();
+            Request req = get(getTargetUrl() + "?foo=bar").build();
 
             client.executeRequest(req, handler).get();
 
@@ -1388,7 +1388,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "async" })
     public void testNewConnectionEventsFired() throws Exception {
-        Request request = new RequestBuilder("GET").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+        Request request = get("http://127.0.0.1:" + port1 + "/Test").build();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             EventCollectingHandler handler = new EventCollectingHandler();

@@ -18,6 +18,7 @@ import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SignatureCalculator;
 
@@ -110,4 +111,18 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
         return null;
     }
 
+    @Override
+    public BoundRequestBuilder prepareRequest(RequestBuilder requestBuilder) {
+        return null;
+    }
+
+    @Override
+    public <T> ListenableFuture<T> executeRequest(RequestBuilder requestBuilder, AsyncHandler<T> handler) {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
+        return null;
+    }
 }

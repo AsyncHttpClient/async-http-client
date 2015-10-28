@@ -15,8 +15,8 @@
  */
 package org.asynchttpclient.oauth;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.asynchttpclient.Dsl.*;
+import static org.testng.Assert.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
@@ -135,8 +134,7 @@ public class OAuthSignatureCalculatorTest {
     @Test(groups = "fast")
     public void testSignatureBaseStringWithProperlyEncodedUri() {
 
-        Request request = new RequestBuilder("POST")//
-                .setUrl("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")//
+        Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")//
                 .addFormParam("c2", "")//
                 .addFormParam("a3", "2 q")//
                 .build();
@@ -152,8 +150,7 @@ public class OAuthSignatureCalculatorTest {
         // encoded back
         // note: we don't know how to fix a = that should have been encoded as
         // %3D but who would be stupid enough to do that?
-        Request request = new RequestBuilder("POST")//
-                .setUrl("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r b")//
+        Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r b")//
                 .addFormParam("c2", "")//
                 .addFormParam("a3", "2 q")//
                 .build();
@@ -188,8 +185,7 @@ public class OAuthSignatureCalculatorTest {
         formParams.add(new Param("file", "vacation.jpg"));
         formParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
-        final Request req = new RequestBuilder("POST")//
-                .setUri(Uri.create(url))//
+        final Request req = post(url)//
                 .setFormParams(formParams)//
                 .setSignatureCalculator(calc)//
                 .build();
@@ -228,8 +224,7 @@ public class OAuthSignatureCalculatorTest {
         queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
 
-        final Request req = new RequestBuilder("GET")//
-                .setUri(Uri.create(url))//
+        final Request req = get(url)//
                 .setQueryParams(queryParams)//
                 .setSignatureCalculator(calc)//
                 .build();
@@ -269,8 +264,7 @@ public class OAuthSignatureCalculatorTest {
 
         String url = "http://photos.example.net/photos?file=vacation.jpg&size=original";
 
-        final Request req = new RequestBuilder("GET")//
-                .setUri(Uri.create(url))//
+        final Request req = get(url)//
                 .setSignatureCalculator(calc)//
                 .build();
 
@@ -305,8 +299,7 @@ public class OAuthSignatureCalculatorTest {
       RequestToken user = new RequestToken(null, null);
       OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
 
-      final Request request = new RequestBuilder("GET")//
-          .setUri(Uri.create(url))//
+      final Request request = get(url)//
           .setSignatureCalculator(calc)//
           .build();
 

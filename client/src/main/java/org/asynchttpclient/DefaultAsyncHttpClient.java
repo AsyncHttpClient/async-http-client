@@ -43,33 +43,38 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private final Timer nettyTimer;
 
     /**
-     * Default signature calculator to use for all requests constructed by this client instance.
+     * Default signature calculator to use for all requests constructed by this
+     * client instance.
      *
      * @since 1.1
      */
     protected SignatureCalculator signatureCalculator;
 
     /**
-     * Create a new HTTP Asynchronous Client using the default {@link DefaultAsyncHttpClientConfig} configuration. The
-     * default {@link AsyncHttpClient} that will be used will be based on the classpath configuration.
+     * Create a new HTTP Asynchronous Client using the default
+     * {@link DefaultAsyncHttpClientConfig} configuration. The default
+     * {@link AsyncHttpClient} that will be used will be based on the classpath
+     * configuration.
      *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
+     * If none of those providers are found, then the engine will throw an
+     * IllegalStateException.
      */
     public DefaultAsyncHttpClient() {
         this(new DefaultAsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using the specified {@link DefaultAsyncHttpClientConfig} configuration.
-     * This configuration will be passed to the default {@link AsyncHttpClient} that will be selected based on
-     * the classpath configuration.
+     * Create a new HTTP Asynchronous Client using the specified
+     * {@link DefaultAsyncHttpClientConfig} configuration. This configuration
+     * will be passed to the default {@link AsyncHttpClient} that will be
+     * selected based on the classpath configuration.
      *
      * @param config a {@link DefaultAsyncHttpClientConfig}
      */
     public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
-        
+
         this.config = config;
-        
+
         allowStopNettyTimer = config.getNettyTimer() == null;
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
 
@@ -83,8 +88,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         timer.start();
         return timer;
     }
-    
-    
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
@@ -173,6 +177,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
+    public BoundRequestBuilder prepareRequest(RequestBuilder requestBuilder) {
+        return prepareRequest(requestBuilder.build());
+    }
+
+    @Override
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
 
         if (config.getRequestFilters().isEmpty()) {
@@ -192,8 +201,18 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
+    public <T> ListenableFuture<T> executeRequest(RequestBuilder requestBuilder, AsyncHandler<T> handler) {
+        return executeRequest(requestBuilder.build(), handler);
+    }
+
+    @Override
     public ListenableFuture<Response> executeRequest(Request request) {
         return executeRequest(request, new AsyncCompletionHandlerBase());
+    }
+
+    @Override
+    public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
+        return executeRequest(requestBuilder.build());
     }
 
     private <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {
@@ -204,9 +223,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             return new ListenableFuture.CompletedFailure<>(e);
         }
     }
-    
+
     /**
-     * Configure and execute the associated {@link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
+     * Configure and execute the associated {@link RequestFilter}. This class
+     * may decorate the {@link Request} and {@link AsyncHandler}
      *
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
@@ -234,7 +254,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     public ChannelPool getChannelPool() {
         return channelManager.getChannelPool();
     }
-    
+
     protected BoundRequestBuilder requestBuilder(String method, String url) {
         return new BoundRequestBuilder(this, method, config.isDisableUrlEncodingForBoundRequests()).setUrl(url).setSignatureCalculator(signatureCalculator);
     }

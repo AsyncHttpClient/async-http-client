@@ -43,9 +43,9 @@ public class BodyChunkTest extends AbstractBasicTest {
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
-
-            requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
+            RequestBuilder requestBuilder = post(getTargetUrl())//
+                    .setHeader("Content-Type", "message/rfc822")//
+                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
             Future<Response> future = client.executeRequest(requestBuilder.build());
 

@@ -73,7 +73,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
-            RequestBuilder rb = new RequestBuilder("GET").setProxyServer(proxyServer("127.0.0.1", port1)).setUrl(getTargetUrl2());
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
@@ -100,7 +100,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 .setAcceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
+            Future<Response> responseFuture = asyncHttpClient.executeRequest(get(getTargetUrl2()), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();

@@ -34,7 +34,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -63,12 +62,10 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     }
 
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) throws IOException {
-        Request r = new RequestBuilder("GET")//
-                .setUrl(getTargetUrl())//
+        RequestBuilder r = get(getTargetUrl())//
                 .addQueryParam(action, "1")//
                 .addQueryParam("maxRequests", "" + requests)//
-                .addQueryParam("id", id)//
-                .build();
+                .addQueryParam("id", id);
         return client.executeRequest(r);
     }
 

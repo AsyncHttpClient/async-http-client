@@ -29,7 +29,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -95,7 +94,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Request request = new RequestBuilder("GET").setProxyServer(ntlmProxy()).build();
+            Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
             Assert.assertEquals(status, 200);

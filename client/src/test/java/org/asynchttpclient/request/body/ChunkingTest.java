@@ -61,9 +61,7 @@ public class ChunkingTest extends AbstractBasicTest {
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
 
-            RequestBuilder builder = new RequestBuilder("POST");
-            builder.setUrl(getTargetUrl());
-            builder.setBody(new InputStreamBodyGenerator(is));
+            RequestBuilder builder = post(getTargetUrl()).setBody(new InputStreamBodyGenerator(is));
 
             Request r = builder.build();
 
@@ -75,14 +73,10 @@ public class ChunkingTest extends AbstractBasicTest {
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
 
-            RequestBuilder builder = new RequestBuilder("POST");
-            builder.setUrl(getTargetUrl());
             final FeedableBodyGenerator feedableBodyGenerator = new SimpleFeedableBodyGenerator();
-            builder.setBody(feedableBodyGenerator);
+            Request r = post(getTargetUrl()).setBody(feedableBodyGenerator).build();
 
-            Request r = builder.build();
-
-            final ListenableFuture<Response> responseFuture = c.executeRequest(r);
+            ListenableFuture<Response> responseFuture = c.executeRequest(r);
 
             feed(feedableBodyGenerator, is);
 

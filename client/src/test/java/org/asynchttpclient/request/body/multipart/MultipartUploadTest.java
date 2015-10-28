@@ -152,13 +152,11 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
 
-            RequestBuilder builder = new RequestBuilder("POST");
-            builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
+            RequestBuilder builder = post("http://localhost" + ":" + port1 + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
             builder.addBodyPart(new StringPart("Name", "Dominic"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
-
             builder.addBodyPart(new StringPart("Age", "3"));
             builder.addBodyPart(new StringPart("Height", "shrimplike"));
             builder.addBodyPart(new StringPart("Hair", "ridiculous"));

@@ -88,8 +88,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     // FIXME not sure that's threadsafe
     public void clean() throws InterruptedException, Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
-            c.executeRequest(deleteRequest).get();
+            c.executeRequest(delete(getTargetUrl())).get();
         }
     }
 
@@ -128,7 +127,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
-            Request putRequest = new RequestBuilder("PUT").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
+            Request putRequest = put(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
             response = c.executeRequest(putRequest).get();
             assertEquals(response.getStatusCode(), 201);
 

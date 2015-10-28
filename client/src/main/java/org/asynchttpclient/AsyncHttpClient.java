@@ -222,6 +222,14 @@ public interface AsyncHttpClient extends Closeable {
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareRequest(Request request);
+    
+    /**
+     * Construct a {@link RequestBuilder} using a {@link RequestBuilder}
+     *
+     * @param requestBuilder a {@link RequestBuilder}
+     * @return {@link RequestBuilder}
+     */
+    BoundRequestBuilder prepareRequest(RequestBuilder requestBuilder);
 
     /**
      * Execute an HTTP request.
@@ -232,6 +240,16 @@ public interface AsyncHttpClient extends Closeable {
      * @return a {@link Future} of type T
      */
     <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler);
+    
+    /**
+     * Execute an HTTP request.
+     *
+     * @param requestBuilder {@link RequestBuilder}
+     * @param handler an instance of {@link AsyncHandler}
+     * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @return a {@link Future} of type T
+     */
+    <T> ListenableFuture<T> executeRequest(RequestBuilder requestBuilder, AsyncHandler<T> handler);
 
     /**
      * Execute an HTTP request.
@@ -240,4 +258,12 @@ public interface AsyncHttpClient extends Closeable {
      * @return a {@link Future} of type Response
      */
     ListenableFuture<Response> executeRequest(Request request);
+    
+    /**
+     * Execute an HTTP request.
+     *
+     * @param request {@link RequestBuilder}
+     * @return a {@link Future} of type Response
+     */
+    ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder);
 }

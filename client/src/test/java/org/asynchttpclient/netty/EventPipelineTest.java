@@ -26,8 +26,6 @@ import java.util.concurrent.TimeUnit;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
 
@@ -44,8 +42,7 @@ public class EventPipelineTest extends AbstractBasicTest {
 
         try (AsyncHttpClient p = asyncHttpClient(config().setHttpAdditionalPipelineInitializer(httpAdditionalPipelineInitializer))) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
-            p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
+            p.executeRequest(get(getTargetUrl()), new AsyncCompletionHandlerAdapter() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
                     try {

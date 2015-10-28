@@ -13,13 +13,11 @@ package org.asynchttpclient.handler.resumable;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.asynchttpclient.Dsl.get;
+import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.testng.annotations.Test;
 
 /**
@@ -31,7 +29,7 @@ public class ResumableAsyncHandlerTest {
         MapResumableProcessor proc = new MapResumableProcessor();
 
         ResumableAsyncHandler h = new ResumableAsyncHandler(proc);
-        Request request = new RequestBuilder("GET").setUrl("http://test/url").build();
+        Request request = get("http://test/url").build();
         Request newRequest = h.adjustRequestRange(request);
         assertEquals(newRequest.getUri(), request.getUri());
         String rangeHeader = newRequest.getHeaders().get(HttpHeaders.Names.RANGE);

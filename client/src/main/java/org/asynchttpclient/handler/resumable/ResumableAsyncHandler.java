@@ -204,7 +204,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
             byteTransferred.set(ri);
         }
 
-        // The Resumbale
+        // The Resumable
         if (resumableListener != null && resumableListener.length() > 0 && byteTransferred.get() != resumableListener.length()) {
             byteTransferred.set(resumableListener.length());
         }

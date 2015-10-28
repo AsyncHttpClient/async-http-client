@@ -40,7 +40,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
@@ -112,17 +111,17 @@ public class ProxyTest extends AbstractBasicTest {
     public void testNonProxyHost() {
 
         // // should avoid, it's in non-proxy hosts
-        Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
+        Request req = get("http://somewhere.com/foo").build();
         ProxyServer proxyServer = proxyServer("foo", 1234).setNonProxyHost("somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
         //
         // // should avoid, it's in non-proxy hosts (with "*")
-        req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
+        req = get("http://sub.somewhere.com/foo").build();
         proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
 
         // should use it
-        req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
+        req = get("http://sub.somewhere.com/foo").build();
         proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
     }

@@ -76,9 +76,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .build();
 
         try (AsyncHttpClient c = asyncHttpClient(config)) {
-            Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
-
-            ListenableFuture<Response> response = c.executeRequest(r);
+            ListenableFuture<Response> response = c.executeRequest(get(servletEndpointRedirectUrl));
             Response res = null;
             res = response.get();
             assertNotNull(res.getResponseBody());

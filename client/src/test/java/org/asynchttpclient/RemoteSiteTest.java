@@ -99,9 +99,8 @@ public class RemoteSiteTest extends AbstractBasicTest {
     public void asyncStatusHEADContentLenghtTest() throws Exception {
         try (AsyncHttpClient p = asyncHttpClient(config().setFollowRedirect(true))) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = new RequestBuilder("HEAD").setUrl("http://www.google.com/").build();
 
-            p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
+            p.executeRequest(head("http://www.google.com/"), new AsyncCompletionHandlerAdapter() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
                     try {
@@ -177,14 +176,13 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = "online")
     public void evilCoookieTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            RequestBuilder builder2 = new RequestBuilder("GET");
-            builder2.setFollowRedirect(true);
-            builder2.setUrl("http://www.google.com/");
-            builder2.addHeader("Content-Type", "text/plain");
-            builder2.addCookie(new Cookie("evilcookie", "test", false, ".google.com", "/", Long.MIN_VALUE, false, false));
-            Request request2 = builder2.build();
-            Response response = c.executeRequest(request2).get();
+            RequestBuilder builder = get("http://localhost")//
+                    .setFollowRedirect(true)//
+                    .setUrl("http://www.google.com/")//
+                    .addHeader("Content-Type", "text/plain")//
+                    .addCookie(new Cookie("evilcookie", "test", false, ".google.com", "/", Long.MIN_VALUE, false, false));
 
+            Response response = c.executeRequest(builder.build()).get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         }
