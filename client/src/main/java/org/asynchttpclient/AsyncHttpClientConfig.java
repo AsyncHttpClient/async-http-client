@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
-import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -249,7 +248,7 @@ public interface AsyncHttpClientConfig {
 
     int getHandshakeTimeout();
 
-    SSLEngineFactory getSslEngineFactory();
+    SslEngineFactory getSslEngineFactory();
 
     int getChunkedFileChunkSize();
 

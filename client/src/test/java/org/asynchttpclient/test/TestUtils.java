@@ -2,7 +2,6 @@ package org.asynchttpclient.test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
-import io.netty.handler.ssl.SslContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,15 +31,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.io.FileUtils;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.channel.SSLEngineFactory;
+import org.asynchttpclient.SslEngineFactory;
+import org.asynchttpclient.netty.ssl.JsseSslEngineFactory;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -274,37 +272,21 @@ public class TestUtils {
         return tmf.getTrustManagers();
     }
 
-    public static SSLEngineFactory createSSLEngineFactory(AsyncHttpClientConfig config, AtomicBoolean trust) throws SSLException {
-        
-        return new SSLEngineFactory.DefaultSSLEngineFactory(config) {
-            
-            private SSLContext sslContext = newSSLContext();
-                    
-            private SSLContext newSSLContext() {
-                try {
-                    KeyManager[] keyManagers = createKeyManagers();
-                    TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0]) };
-                    SecureRandom secureRandom = new SecureRandom();
+    public static SslEngineFactory createSslEngineFactory(AtomicBoolean trust) throws SSLException {
 
-                    SSLContext sslContext = SSLContext.getInstance("TLS");
-                    sslContext.init(keyManagers, trustManagers, secureRandom);
+        try {
+            KeyManager[] keyManagers = createKeyManagers();
+            TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0]) };
+            SecureRandom secureRandom = new SecureRandom();
 
-                    return sslContext;
-                } catch (Exception e) {
-                    throw new ExceptionInInitializerError(e);
-                }
-            }
-            
-            @Override
-            protected SslContext getSslContext() throws SSLException {
-                return null;
-            }
-            
-            @Override
-            protected SSLEngine instanciateSslEngine(String peerHost, int peerPort) {
-                return sslContext.createSSLEngine(peerHost, peerPort);
-            }
-        };
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers, trustManagers, secureRandom);
+
+            return new JsseSslEngineFactory(sslContext);
+
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     public static class DummyTrustManager implements X509TrustManager {

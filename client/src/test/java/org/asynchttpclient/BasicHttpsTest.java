@@ -42,7 +42,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = "standalone")
     public void zeroCopyPostTest() throws Exception {
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true))))) {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -52,7 +52,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = "standalone")
     public void multipleSSLRequestsTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true))))) {
             String body = "hello there";
 
             // once
@@ -78,7 +78,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
             }
         };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))).setKeepAliveStrategy(keepAliveStrategy))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true))).setKeepAliveStrategy(keepAliveStrategy))) {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
 
@@ -94,7 +94,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
     public void reconnectsAfterFailedCertificationPath() throws Exception {
 
         AtomicBoolean trust = new AtomicBoolean(false);
-        try (AsyncHttpClient client = asyncHttpClient(config().setSslEngineFactory(createSSLEngineFactory(trust)))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setSslEngineFactory(createSslEngineFactory(trust)))) {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
@@ -128,7 +128,7 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = "standalone")
     public void testNormalEventsFired() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setSslContext(createSslContext(new AtomicBoolean(true))))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true))))) {
             EventCollectingHandler handler = new EventCollectingHandler();
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);

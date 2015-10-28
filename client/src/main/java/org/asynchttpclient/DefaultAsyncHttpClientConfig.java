@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
 
-import org.asynchttpclient.channel.SSLEngineFactory;
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -100,7 +99,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int sslSessionCacheSize;
     private final int sslSessionTimeout;
     private final SslContext sslContext;
-    private final SSLEngineFactory sslEngineFactory;
+    private final SslEngineFactory sslEngineFactory;
 
     // filters
     private final List<RequestFilter> requestFilters;
@@ -163,7 +162,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int sslSessionCacheSize,//
             int sslSessionTimeout,//
             SslContext sslContext,//
-            SSLEngineFactory sslEngineFactory,//
+            SslEngineFactory sslEngineFactory,//
 
             // filters
             List<RequestFilter> requestFilters,//
@@ -416,7 +415,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public SSLEngineFactory getSslEngineFactory() {
+    public SslEngineFactory getSslEngineFactory() {
         return sslEngineFactory;
     }
 
@@ -557,7 +556,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int sslSessionCacheSize = defaultSslSessionCacheSize();
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private SslContext sslContext;
-        private SSLEngineFactory sslEngineFactory;
+        private SslEngineFactory sslEngineFactory;
 
         // filters
         private final List<RequestFilter> requestFilters = new LinkedList<>();
@@ -831,7 +830,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
+        public Builder setSslEngineFactory(SslEngineFactory sslEngineFactory) {
             this.sslEngineFactory = sslEngineFactory;
             return this;
         }

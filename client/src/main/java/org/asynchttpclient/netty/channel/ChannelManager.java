@@ -49,7 +49,7 @@ import javax.net.ssl.SSLException;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.channel.SSLEngineFactory;
+import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
@@ -61,6 +61,7 @@ import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.Processor;
 import org.asynchttpclient.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
     private final AsyncHttpClientConfig config;
-    private final SSLEngineFactory sslEngineFactory;
+    private final SslEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
     private final Class<? extends Channel> socketChannelClass;
@@ -107,7 +108,7 @@ public class ChannelManager {
 
         this.config = config;
         try {
-            this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new SSLEngineFactory.DefaultSSLEngineFactory(config);
+            this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory(config);
         } catch (SSLException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -392,7 +393,7 @@ public class ChannelManager {
     }
 
     private SslHandler createSslHandler(String peerHost, int peerPort) {
-        SSLEngine sslEngine = sslEngineFactory.newSSLEngine(peerHost, peerPort);
+        SSLEngine sslEngine = sslEngineFactory.newSslEngine(config, peerHost, peerPort);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);

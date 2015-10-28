@@ -15,6 +15,7 @@ package org.asynchttpclient.extras.simple;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.ssl.SslContext;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -23,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-
-import javax.net.ssl.SSLContext;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
@@ -40,6 +39,7 @@ import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
@@ -556,8 +556,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setSSLContext(final SSLContext sslContext) {
+        public Builder setSslContext(SslContext sslContext) {
             configBuilder.setSslContext(sslContext);
+            return this;
+        }
+        
+        public Builder setSslEngineFactory(SslEngineFactory sslEngineFactory) {
+            configBuilder.setSslEngineFactory(sslEngineFactory);
             return this;
         }
 
