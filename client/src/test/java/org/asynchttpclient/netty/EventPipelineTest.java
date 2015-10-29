@@ -15,9 +15,9 @@ package org.asynchttpclient.netty;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpMessage;
 
 import java.util.concurrent.CountDownLatch;
@@ -34,13 +34,13 @@ public class EventPipelineTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Exception {
 
-        AsyncHttpClientConfig.AdditionalPipelineInitializer httpAdditionalPipelineInitializer = new AsyncHttpClientConfig.AdditionalPipelineInitializer() {
-            public void initPipeline(ChannelPipeline pipeline) throws Exception {
-                pipeline.addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
+        AsyncHttpClientConfig.AdditionalChannelInitializer httpAdditionalPipelineInitializer = new AsyncHttpClientConfig.AdditionalChannelInitializer() {
+            public void initChannel(Channel channel) throws Exception {
+                channel.pipeline().addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         };
 
-        try (AsyncHttpClient p = asyncHttpClient(config().setHttpAdditionalPipelineInitializer(httpAdditionalPipelineInitializer))) {
+        try (AsyncHttpClient p = asyncHttpClient(config().setHttpAdditionalChannelInitializer(httpAdditionalPipelineInitializer))) {
             final CountDownLatch l = new CountDownLatch(1);
             p.executeRequest(get(getTargetUrl()), new AsyncCompletionHandlerAdapter() {
                 @Override

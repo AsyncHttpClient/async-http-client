@@ -253,8 +253,8 @@ public class ChannelManager {
 
                 ch.config().setOption(ChannelOption.AUTO_READ, false);
 
-                if (config.getHttpAdditionalPipelineInitializer() != null)
-                    config.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getHttpAdditionalChannelInitializer() != null)
+                    config.getHttpAdditionalChannelInitializer().initChannel(ch);
             }
         });
 
@@ -265,8 +265,8 @@ public class ChannelManager {
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(AHC_WS_HANDLER, wsHandler);
 
-                if (config.getWsAdditionalPipelineInitializer() != null)
-                    config.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getWsAdditionalChannelInitializer() != null)
+                    config.getWsAdditionalChannelInitializer().initChannel(ch);
             }
         });
     }
