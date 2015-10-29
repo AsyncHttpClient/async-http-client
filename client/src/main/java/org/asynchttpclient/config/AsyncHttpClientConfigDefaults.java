@@ -98,7 +98,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultUseOpenSsl() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useOpenSsl");
     }
-    
+
     public static boolean defaultAcceptAnyCertificate() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "acceptAnyCertificate");
     }
@@ -153,5 +153,9 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static int defaultShutdownTimeout() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "shutdownTimeout");
+    }
+
+    public static boolean defaultUseNativeTransport() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useNativeTransport");
     }
 }

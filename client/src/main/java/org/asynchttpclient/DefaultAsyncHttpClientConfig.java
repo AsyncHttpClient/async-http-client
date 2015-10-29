@@ -116,7 +116,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int webSocketMaxFrameSize;
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final EventLoopGroup eventLoopGroup;
-    private final boolean preferNative;
+    private final boolean useNativeTransport;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
     private final AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
@@ -179,7 +179,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int webSocketMaxFrameSize,//
             Map<ChannelOption<Object>, Object> channelOptions,//
             EventLoopGroup eventLoopGroup,//
-            boolean preferNative,//
+            boolean useNativeTransport,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
             AdditionalPipelineInitializer httpAdditionalPipelineInitializer,//
@@ -241,7 +241,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
-        this.preferNative = preferNative;
+        this.useNativeTransport = useNativeTransport;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
         this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
@@ -482,8 +482,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isPreferNative() {
-        return preferNative;
+    public boolean isUseNativeTransport() {
+        return useNativeTransport;
     }
 
     @Override
@@ -571,9 +571,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
+        private boolean useNativeTransport = defaultUseNativeTransport();
         private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private EventLoopGroup eventLoopGroup;
-        private boolean preferNative;
         private Timer nettyTimer;
         private ThreadFactory threadFactory;
         private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
@@ -638,7 +638,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
-            preferNative = config.isPreferNative();
+            useNativeTransport = config.isUseNativeTransport();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
             httpAdditionalPipelineInitializer = config.getHttpAdditionalPipelineInitializer();
@@ -913,8 +913,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setPreferNative(boolean preferNative) {
-            this.preferNative = preferNative;
+        public Builder setUseNativeTransport(boolean useNativeTransport) {
+            this.useNativeTransport = useNativeTransport;
             return this;
         }
 
@@ -1003,7 +1003,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     webSocketMaxFrameSize, //
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),//
                     eventLoopGroup, //
-                    preferNative, //
+                    useNativeTransport, //
                     nettyTimer, //
                     threadFactory, //
                     httpAdditionalPipelineInitializer, //

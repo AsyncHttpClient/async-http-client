@@ -176,7 +176,7 @@ public class ChannelManager {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
         allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
         if (allowReleaseEventLoopGroup) {
-            if (config.isPreferNative()) {
+            if (config.isUseNativeTransport()) {
                 eventLoopGroup = newEpollEventLoopGroup(threadFactory);
                 socketChannelClass = getEpollSocketChannelClass();
 

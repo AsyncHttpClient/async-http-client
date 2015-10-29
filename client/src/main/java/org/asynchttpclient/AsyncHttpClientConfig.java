@@ -266,7 +266,7 @@ public interface AsyncHttpClientConfig {
 
     EventLoopGroup getEventLoopGroup();
 
-    boolean isPreferNative();
+    boolean isUseNativeTransport();
 
     AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer();
 
