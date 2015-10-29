@@ -40,16 +40,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class Processor extends ChannelInboundHandlerAdapter {
+public class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncHttpClientHandler.class);
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final Protocol protocol;
 
-    public Processor(AsyncHttpClientConfig config,//
+    public AsyncHttpClientHandler(AsyncHttpClientConfig config,//
             ChannelManager channelManager,//
             NettyRequestSender requestSender,//
             Protocol protocol) {

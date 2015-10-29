@@ -58,7 +58,7 @@ import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
 import org.asynchttpclient.netty.handler.HttpProtocol;
-import org.asynchttpclient.netty.handler.Processor;
+import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
 import org.asynchttpclient.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
@@ -70,16 +70,16 @@ import org.slf4j.LoggerFactory;
 public class ChannelManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
-    public static final String HTTP_HANDLER = "httpHandler";
-    public static final String SSL_HANDLER = "sslHandler";
-    public static final String HTTP_PROCESSOR = "httpProcessor";
-    public static final String WS_PROCESSOR = "wsProcessor";
+    public static final String HTTP_CLIENT_CODEC = "http";
+    public static final String SSL_HANDLER = "ssl";
     public static final String DEFLATER_HANDLER = "deflater";
     public static final String INFLATER_HANDLER = "inflater";
-    public static final String CHUNKED_WRITER_HANDLER = "chunkedWriter";
+    public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
     public static final String WS_DECODER_HANDLER = "ws-decoder";
     public static final String WS_FRAME_AGGREGATOR = "ws-aggregator";
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
+    public static final String AHC_HTTP_HANDLER = "ahc-http";
+    public static final String AHC_WS_HANDLER = "ahc-ws";
 
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
@@ -102,7 +102,7 @@ public class ChannelManager {
     private final ConcurrentHashMapV8<Channel, Object> channelId2PartitionKey;
     private final ConcurrentHashMapV8.Fun<Object, Semaphore> semaphoreComputer;
 
-    private Processor wsProcessor;
+    private AsyncHttpClientHandler wsHandler;
 
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
@@ -237,19 +237,19 @@ public class ChannelManager {
     public void configureBootstraps(NettyRequestSender requestSender) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
-        final Processor httpProcessor = new Processor(config, this, requestSender, httpProtocol);
+        final AsyncHttpClientHandler httpHandler = new AsyncHttpClientHandler(config, this, requestSender, httpProtocol);
 
         WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
-        wsProcessor = new Processor(config, this, requestSender, wsProtocol);
+        wsHandler = new AsyncHttpClientHandler(config, this, requestSender, wsProtocol);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(HTTP_PROCESSOR, httpProcessor);
+                        .addLast(AHC_HTTP_HANDLER, httpHandler);
 
                 ch.config().setOption(ChannelOption.AUTO_READ, false);
 
@@ -262,8 +262,8 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(WS_PROCESSOR, wsProcessor);
+                        .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
+                        .addLast(AHC_WS_HANDLER, wsHandler);
 
                 if (config.getWsAdditionalPipelineInitializer() != null)
                     config.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
@@ -405,23 +405,23 @@ public class ChannelManager {
     }
 
     public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws SSLException {
-        if (pipeline.get(HTTP_HANDLER) != null)
-            pipeline.remove(HTTP_HANDLER);
+        if (pipeline.get(HTTP_CLIENT_CODEC) != null)
+            pipeline.remove(HTTP_CLIENT_CODEC);
 
         if (requestUri.isSecured())
             if (isSslHandlerConfigured(pipeline)) {
-                pipeline.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
+                pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
             } else {
-                pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
+                pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
                 pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
             }
 
         else
-            pipeline.addFirst(HTTP_HANDLER, newHttpClientCodec());
+            pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
 
         if (requestUri.isWebSocket()) {
-            pipeline.addAfter(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
-            pipeline.remove(HTTP_PROCESSOR);
+            pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
+            pipeline.remove(AHC_HTTP_HANDLER);
         }
     }
 
@@ -477,9 +477,9 @@ public class ChannelManager {
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
-        pipeline.addAfter(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        pipeline.remove(HTTP_HANDLER);
-        pipeline.addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, config.getWebSocketMaxFrameSize()));
+        pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        pipeline.remove(HTTP_CLIENT_CODEC);
+        pipeline.addBefore(AHC_WS_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, config.getWebSocketMaxFrameSize()));
         pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(config.getWebSocketMaxBufferSize()));
     }
 
