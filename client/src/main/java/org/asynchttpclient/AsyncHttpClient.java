@@ -262,7 +262,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Execute an HTTP request.
      *
-     * @param request {@link RequestBuilder}
+     * @param requestBuilder {@link RequestBuilder}
      * @return a {@link Future} of type Response
      */
     ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder);
