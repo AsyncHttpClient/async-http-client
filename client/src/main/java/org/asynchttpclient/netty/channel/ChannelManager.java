@@ -69,6 +69,7 @@ import org.slf4j.LoggerFactory;
 public class ChannelManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
+    public static final String PINNED_ENTRY = "entry";
     public static final String HTTP_CLIENT_CODEC = "http";
     public static final String SSL_HANDLER = "ssl";
     public static final String DEFLATER_HANDLER = "deflater";
@@ -232,7 +233,7 @@ public class ChannelManager {
             throw new IllegalArgumentException(e);
         }
     }
-    
+
     public void configureBootstraps(NettyRequestSender requestSender) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
@@ -241,10 +242,13 @@ public class ChannelManager {
         WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
         wsHandler = new AsyncHttpClientHandler(config, this, requestSender, wsProtocol);
 
+        final NoopHandler pinnedEntry = new NoopHandler();
+
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
+                        .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
@@ -261,6 +265,7 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
+                        .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(AHC_WS_HANDLER, wsHandler);
 
@@ -411,12 +416,12 @@ public class ChannelManager {
             if (isSslHandlerConfigured(pipeline)) {
                 pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
             } else {
-                pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
-                pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
+                pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
+                pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
             }
 
         else
-            pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
+            pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
         if (requestUri.isWebSocket()) {
             pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
