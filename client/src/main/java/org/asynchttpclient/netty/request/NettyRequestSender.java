@@ -121,10 +121,10 @@ public final class NettyRequestSender {
 
         NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, forceConnect);
 
-        Channel channel = getCachedChannel(future, request, proxyServer, asyncHandler);
+        Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
 
         if (Channels.isChannelValid(channel))
-            return sendRequestWithCachedChannel(request, proxyServer, newFuture, asyncHandler, channel);
+            return sendRequestWithOpenChannel(request, proxyServer, newFuture, asyncHandler, channel);
         else
             return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, reclaimCache);
     }
@@ -144,7 +144,7 @@ public final class NettyRequestSender {
 
         NettyResponseFuture<T> newFuture = null;
         for (int i = 0; i < 3; i++) {
-            Channel channel = getCachedChannel(future, request, proxyServer, asyncHandler);
+            Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
             if (Channels.isChannelValid(channel))
                 if (newFuture == null)
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false);
@@ -152,7 +152,7 @@ public final class NettyRequestSender {
             if (Channels.isChannelValid(channel))
                 // if the channel is still active, we can use it, otherwise try
                 // gain
-                return sendRequestWithCachedChannel(request, proxyServer, newFuture, asyncHandler, channel);
+                return sendRequestWithOpenChannel(request, proxyServer, newFuture, asyncHandler, channel);
             else
                 // pool is empty
                 break;
@@ -195,15 +195,15 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel getCachedChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
+    private Channel getOpenChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
         if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
-            return pollAndVerifyCachedChannel(request, proxyServer, asyncHandler);
+            return pollPooledChannel(request, proxyServer, asyncHandler);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
+    private <T> ListenableFuture<T> sendRequestWithOpenChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
@@ -442,7 +442,7 @@ public final class NettyRequestSender {
         }
     }
 
-    private Channel pollAndVerifyCachedChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
+    private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPool();
@@ -453,12 +453,6 @@ public final class NettyRequestSender {
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
-
-            try {
-                channelManager.verifyChannelPipeline(channel.pipeline(), uri, virtualHost);
-            } catch (Exception ex) {
-                LOGGER.debug(ex.getMessage(), ex);
-            }
         }
         return channel;
     }

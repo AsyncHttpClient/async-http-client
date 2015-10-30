@@ -448,28 +448,6 @@ public class ChannelManager {
         return sslHandler;
     }
 
-    /**
-     * Always make sure the channel who got cached supports the proper protocol.
-     * It could only occurs when a HttpMethod. CONNECT is used against a proxy
-     * that requires upgrading from http to https.
-     */
-    /**
-     * @param pipeline the pipeline
-     * @param uri the uri
-     * @param virtualHost the virtual host
-     */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) {
-
-        boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
-
-        if (uri.isSecured()) {
-            if (!sslHandlerConfigured)
-                addSslHandler(pipeline, uri, virtualHost);
-
-        } else if (sslHandlerConfigured)
-            pipeline.remove(SSL_HANDLER);
-    }
-
     public Bootstrap getBootstrap(Uri uri, ProxyServer proxy) {
         return uri.isWebSocket() && proxy == null ? wsBootstrap : httpBootstrap;
     }
