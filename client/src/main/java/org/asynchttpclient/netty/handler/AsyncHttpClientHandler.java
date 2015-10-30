@@ -84,32 +84,29 @@ public class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
 
                 StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
 
-                if (msg instanceof LastHttpContent) {
-                    // Remove the handler from the pipeline, this will trigger
-                    // it to finish
-                    ctx.pipeline().remove(publisher);
-                    // Trigger a read, just in case the last read complete
-                    // triggered no new read
-                    ctx.read();
-                    // Send the last content on to the protocol, so that it can
-                    // conclude the cleanup
-                    protocol.handle(channel, publisher.future(), msg);
-
-                } else if (msg instanceof HttpContent) {
+                if(msg instanceof HttpContent) {
                     ByteBuf content = ((HttpContent) msg).content();
-
                     // Republish as a HttpResponseBodyPart
                     if (content.readableBytes() > 0) {
                         NettyResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(content, false);
                         ctx.fireChannelRead(part);
                     }
-
+                    if (msg instanceof LastHttpContent) {
+                        // Remove the handler from the pipeline, this will trigger
+                        // it to finish
+                        ctx.pipeline().remove(publisher);
+                        // Trigger a read, just in case the last read complete
+                        // triggered no new read
+                        ctx.read();
+                        // Send the last content on to the protocol, so that it can
+                        // conclude the cleanup
+                        protocol.handle(channel, publisher.future(), msg);
+                    }
                 } else {
                     LOGGER.info("Received unexpected message while expecting a chunk: " + msg);
                     ctx.pipeline().remove((StreamedResponsePublisher) attribute);
                     Channels.setDiscard(channel);
                 }
-
             } else if (attribute != DiscardEvent.INSTANCE) {
                 // unhandled message
                 LOGGER.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
