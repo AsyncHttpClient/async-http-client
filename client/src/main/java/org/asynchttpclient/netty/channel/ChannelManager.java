@@ -38,7 +38,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
@@ -57,8 +56,8 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
-import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
+import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
@@ -450,7 +449,7 @@ public class ChannelManager {
     }
 
     /**
-     * Always make sure the channel who got cached support the proper protocol.
+     * Always make sure the channel who got cached supports the proper protocol.
      * It could only occurs when a HttpMethod. CONNECT is used against a proxy
      * that requires upgrading from http to https.
      */
@@ -458,9 +457,8 @@ public class ChannelManager {
      * @param pipeline the pipeline
      * @param uri the uri
      * @param virtualHost the virtual host
-     * @throws GeneralSecurityException if creating the SslHandler crashed
      */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
+    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) {
 
         boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
 
