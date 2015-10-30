@@ -28,7 +28,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
 
     /**
      * Returns a singleton instance of AsyncHttpClientRegistry
-     * @return
+     * @return the current instance
      */
     public static AsyncHttpClientRegistry getInstance() {
         if (_instance == null) {
