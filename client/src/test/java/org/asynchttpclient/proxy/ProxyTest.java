@@ -107,7 +107,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testNonProxyHost() {
 
         // // should avoid, it's in non-proxy hosts

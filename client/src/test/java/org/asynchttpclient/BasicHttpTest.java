@@ -31,7 +31,6 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -346,7 +345,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" }, expectedExceptions = { NullPointerException.class })
+    @Test(groups = "online", expectedExceptions = NullPointerException.class)
     public void asyncNullSchemeTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             client.prepareGet("www.sun.com").execute();
@@ -743,7 +742,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone", expectedExceptions = { CancellationException.class })
+    @Test(groups = "standalone", expectedExceptions = CancellationException.class)
     public void asyncDoPostDelayCancelTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             HttpHeaders h = new DefaultHttpHeaders();
@@ -931,7 +930,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" }, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
+    @Test(groups = "online", expectedExceptions = UnknownHostException.class)
     public void asyncConnectInvalidHandlerHost() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient()) {
 
@@ -1013,7 +1012,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "asyncAPI" })
+    @Test(groups = "standalone")
     public void asyncAPIContentLenghtGETTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // Use a l in case the assert fail
@@ -1042,7 +1041,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "asyncAPI" })
+    @Test(groups = "standalone")
     public void asyncAPIHandlerExceptionTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // Use a l in case the assert fail
@@ -1178,7 +1177,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" })
+    @Test(groups = "online")
     public void asyncDoGetMaxRedirectTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxRedirects(0).setFollowRedirect(true))) {
             // Use a l in case the assert fail
@@ -1211,7 +1210,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" })
+    @Test(groups = "online")
     public void asyncDoGetNestedTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // FIXME find a proper website that redirects the same number of
@@ -1252,7 +1251,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" })
+    @Test(groups = "online")
     public void asyncDoGetStreamAndBodyTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.prepareGet("http://www.lemonde.fr").execute().get();
@@ -1260,7 +1259,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "async" })
+    @Test(groups = "online")
     public void asyncUrlWithoutPathTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.prepareGet("http://www.lemonde.fr").execute().get();
@@ -1268,7 +1267,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "async")
+    @Test(groups = "standalone")
     public void optionsTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.prepareOptions(getTargetUrl()).execute().get();
@@ -1361,14 +1360,14 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone", expectedExceptions = { NullPointerException.class })
+    @Test(groups = "standalone", expectedExceptions = NullPointerException.class)
     public void invalidUri() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             client.prepareGet(String.format("http:127.0.0.1:%d/foo/test", port1)).build();
         }
     }
 
-    @Test(groups = "async")
+    @Test(groups = "standalone")
     public void bodyAsByteTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.prepareGet(getTargetUrl()).execute().get();
@@ -1377,7 +1376,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "async")
+    @Test(groups = "standalone")
     public void mirrorByteTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();

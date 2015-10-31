@@ -265,7 +265,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone", expectedExceptions = { IllegalStateException.class })
+    @Test(groups = "standalone", expectedExceptions = IllegalStateException.class)
     public void testCloseMasterInvalidDerived() throws Throwable {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();

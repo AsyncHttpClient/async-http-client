@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testBasics() throws IOException {
         final List<Part> parts = new ArrayList<>();
 

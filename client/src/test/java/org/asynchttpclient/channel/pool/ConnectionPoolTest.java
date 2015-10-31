@@ -88,7 +88,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "async" }, enabled = true, invocationCount = 10, alwaysRun = true)
+    @Test(groups = "standalone", invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // Use a l in case the assert fail
