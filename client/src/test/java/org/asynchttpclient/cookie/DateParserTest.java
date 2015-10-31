@@ -30,7 +30,7 @@ import java.util.TimeZone;
  */
 public class DateParserTest {
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testRFC822() throws ParseException {
         Date date = DateParser.parse("Sun, 06 Nov 1994 08:49:37 GMT");
         assertNotNull(date);
@@ -46,7 +46,7 @@ public class DateParserTest {
         assertEquals(cal.get(Calendar.SECOND), 37);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testRFC822SingleDigitDayOfMonth() throws ParseException {
         Date date = DateParser.parse("Sun, 6 Nov 1994 08:49:37 GMT");
         assertNotNull(date);
@@ -62,7 +62,7 @@ public class DateParserTest {
         assertEquals(cal.get(Calendar.SECOND), 37);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testRFC822SingleDigitHour() throws ParseException {
         Date date = DateParser.parse("Sun, 6 Nov 1994 8:49:37 GMT");
         assertNotNull(date);
@@ -78,7 +78,7 @@ public class DateParserTest {
         assertEquals(cal.get(Calendar.SECOND), 37);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testRFC850() throws ParseException {
         Date date = DateParser.parse("Saturday, 06-Nov-94 08:49:37 GMT");
         assertNotNull(date);
@@ -94,7 +94,7 @@ public class DateParserTest {
         assertEquals(cal.get(Calendar.SECOND), 37);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testANSIC() throws ParseException {
         Date date = DateParser.parse("Sun Nov 6 08:49:37 1994");
         assertNotNull(date);

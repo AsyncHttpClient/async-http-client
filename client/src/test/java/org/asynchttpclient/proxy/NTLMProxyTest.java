@@ -90,7 +90,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         return new NTLMProxyHandler();
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
 
         try (AsyncHttpClient client = asyncHttpClient()) {

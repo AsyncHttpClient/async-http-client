@@ -76,7 +76,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    @Test
+    @Test(groups = "standalone")
     public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
         AsyncHttpClientConfig config = config()//
@@ -107,7 +107,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
         AsyncHttpClientConfig config = config()//

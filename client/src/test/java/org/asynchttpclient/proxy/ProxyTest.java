@@ -220,7 +220,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = "standalone")
+     @Test(groups = "standalone", enabled = false)
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();

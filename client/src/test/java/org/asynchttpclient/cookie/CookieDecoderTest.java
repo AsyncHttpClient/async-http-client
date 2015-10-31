@@ -20,7 +20,7 @@ import org.testng.annotations.Test;
 
 public class CookieDecoderTest {
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testDecodeUnquoted() {
         Cookie cookie = CookieDecoder.decode("foo=value; domain=/; path=/");
         assertNotNull(cookie);
@@ -30,7 +30,7 @@ public class CookieDecoderTest {
         assertEquals(cookie.getPath(), "/");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testDecodeQuoted() {
         Cookie cookie = CookieDecoder.decode("ALPHA=\"VALUE1\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         assertNotNull(cookie);
@@ -38,7 +38,7 @@ public class CookieDecoderTest {
         assertEquals(cookie.isWrap(), true);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testDecodeQuotedContainingEscapedQuote() {
         Cookie cookie = CookieDecoder.decode("ALPHA=\"VALUE1\\\"\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         assertNotNull(cookie);
@@ -46,7 +46,7 @@ public class CookieDecoderTest {
         assertEquals(cookie.isWrap(), true);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testIgnoreEmptyDomain() {
         Cookie cookie = CookieDecoder.decode("sessionid=OTY4ZDllNTgtYjU3OC00MWRjLTkzMWMtNGUwNzk4MTY0MTUw;Domain=;Path=/");
         assertNull(cookie.getDomain());

@@ -72,7 +72,7 @@ public class RedirectTest extends AbstractBasicTest {
     }
 
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             final CountDownLatch latch = new CountDownLatch(1);

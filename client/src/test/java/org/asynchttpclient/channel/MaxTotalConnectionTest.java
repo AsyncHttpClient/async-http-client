@@ -30,15 +30,12 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
-    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
-    @Test(groups = "standalone")
+    @Test(groups = "online")
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
@@ -74,7 +71,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "online")
     public void testMaxTotalConnections() throws Exception {
         String[] urls = new String[] { "http://google.com", "http://gatling.io" };
 

@@ -24,7 +24,8 @@ import org.testng.annotations.Test;
  * @author Benjamin Hanzelmann
  */
 public class ResumableAsyncHandlerTest {
-    @Test
+
+    @Test(groups = "standalone")
     public void testAdjustRange() {
         MapResumableProcessor proc = new MapResumableProcessor();
 

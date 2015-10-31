@@ -229,7 +229,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = "standalone", expectedExceptions = IOException.class)
     public void testConnectionRefused() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         int newPortWithoutAnyoneListening = findFreePort();
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
@@ -238,12 +238,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
             r.execute(bdah);
-            try {
-                bdah.getResponse();
-                fail("IOException should be thrown here!");
-            } catch (IOException e) {
-                // good
-            }
+            bdah.getResponse();
         }
     }
 }

@@ -93,10 +93,8 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
         };
     }
 
-    // TODO Netty only.
-
     @Test(groups = "standalone")
-    public void testStream() throws IOException {
+    public void testStream() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
@@ -135,11 +133,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                     return null;
                 }
             });
-            try {
-                assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
-            } catch (InterruptedException e) {
-                fail("Interrupted.", e);
-            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
             assertFalse(err.get());
             assertEquals(queue.size(), 2);
             assertTrue(queue.contains("part1"));

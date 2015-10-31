@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 
 public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
 
-    @Test(groups = "standalone", enabled = true)
+    @Test(groups = "standalone")
     public void testRetryingOnFailingStream() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch streamStarted = new CountDownLatch(1); // allows us to wait until subscriber has received the first body chunk

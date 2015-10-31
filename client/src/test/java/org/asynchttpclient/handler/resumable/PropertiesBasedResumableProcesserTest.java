@@ -24,7 +24,8 @@ import java.util.Map;
  * @author Benjamin Hanzelmann
  */
 public class PropertiesBasedResumableProcesserTest {
-    @Test
+    
+    @Test(groups = "standalone")
     public void testSaveLoad() throws Exception {
         PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
         p.put("http://localhost/test.url", 15L);

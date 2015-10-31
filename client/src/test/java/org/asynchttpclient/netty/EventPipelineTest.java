@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 
 public class EventPipelineTest extends AbstractBasicTest {
 
-    @Test(groups = { "standalone", "netty_provider" })
+    @Test(groups = "standalone")
     public void asyncPipelineTest() throws Exception {
 
         AsyncHttpClientConfig.AdditionalChannelInitializer httpAdditionalPipelineInitializer = new AsyncHttpClientConfig.AdditionalChannelInitializer() {

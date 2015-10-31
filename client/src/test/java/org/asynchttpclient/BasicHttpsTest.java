@@ -22,11 +22,13 @@ import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
@@ -114,14 +116,15 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(timeOut = 2000, expectedExceptions = { Exception.class })
+    @Test(groups = "standalone", timeOut = 2000)
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
-                throw e.getCause() != null ? e.getCause() : e;
+                assertTrue(e.getCause() instanceof ConnectException, "Expecting a ConnectException");
+                assertTrue(e.getCause().getCause() instanceof SSLHandshakeException, "Expecting SSLHandshakeException cause");
             }
         }
     }

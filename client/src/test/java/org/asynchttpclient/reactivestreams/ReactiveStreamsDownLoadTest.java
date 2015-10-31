@@ -46,7 +46,7 @@ public class ReactiveStreamsDownLoadTest {
         HttpStaticFileServer.shutdown();
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void streamedResponseLargeFileTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String largeFileName = "http://127.0.0.1:" + serverPort + "/" + largeFile.getName();
@@ -56,7 +56,7 @@ public class ReactiveStreamsDownLoadTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void streamedResponseSmallFileTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String smallFileName = "http://127.0.0.1:" + serverPort + "/" + smallFile.getName();

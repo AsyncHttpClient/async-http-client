@@ -36,7 +36,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         };
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onCloseWithCode() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -51,7 +51,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -95,7 +95,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { ExecutionException.class })
+    @Test(groups = "online", timeOut = 60000, expectedExceptions = ExecutionException.class)
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -123,7 +123,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         latch.await();
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { IllegalArgumentException.class })
+    @Test(groups = "online", timeOut = 60000, expectedExceptions = IllegalArgumentException.class)
     public void wrongStatusCode() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -156,7 +156,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { IllegalStateException.class })
+    @Test(groups = "online", timeOut = 60000, expectedExceptions = IllegalStateException.class)
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);

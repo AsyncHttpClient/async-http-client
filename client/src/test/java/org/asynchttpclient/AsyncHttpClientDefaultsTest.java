@@ -9,7 +9,7 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
 
-@Test
+@Test(groups = "standalone")
 public class AsyncHttpClientDefaultsTest {
 
     public void testDefaultMaxTotalConnections() {

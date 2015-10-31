@@ -63,7 +63,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     /**
      * Tests that after a redirect the final url in the response reflect the redirect
      */
-    @Test
+    @Test(groups = "standalone")
     public void testGetRedirectFinalUrl() throws Exception {
 
         AsyncHttpClientConfig config = config()//
