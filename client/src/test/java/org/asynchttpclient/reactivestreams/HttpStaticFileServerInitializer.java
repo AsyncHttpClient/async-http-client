@@ -20,14 +20,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-
 public class HttpStaticFileServerInitializer extends ChannelInitializer<SocketChannel> {
-
-    public HttpStaticFileServerInitializer() {
-    }
 
     @Override
     public void initChannel(SocketChannel ch) {

@@ -23,8 +23,13 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class HttpStaticFileServer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpStaticFileServer.class);
+
     static private EventLoopGroup bossGroup;
     static private EventLoopGroup workerGroup;
 
@@ -32,19 +37,18 @@ public final class HttpStaticFileServer {
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup();
         ServerBootstrap b = new ServerBootstrap();
-        b.group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .handler(new LoggingHandler(LogLevel.INFO))
-            .childHandler(new HttpStaticFileServerInitializer());
+        b.group(bossGroup, workerGroup)//
+                .channel(NioServerSocketChannel.class)//
+                .handler(new LoggingHandler(LogLevel.INFO))//
+                .childHandler(new HttpStaticFileServerInitializer());
 
         b.bind(port).sync().channel();
-        System.err.println("Open your web browser and navigate to " +
-                    ("http") + "://127.0.0.1:" + port + '/');
+        LOGGER.info("Open your web browser and navigate to " + ("http") + "://127.0.0.1:" + port + '/');
     }
 
     public static void shutdown() {
-        Future bossFuture = bossGroup.shutdownGracefully();
-        Future workerFuture = workerGroup.shutdownGracefully();
+        Future<?> bossFuture = bossGroup.shutdownGracefully();
+        Future<?> workerFuture = workerGroup.shutdownGracefully();
         try {
             bossFuture.await();
             workerFuture.await();
