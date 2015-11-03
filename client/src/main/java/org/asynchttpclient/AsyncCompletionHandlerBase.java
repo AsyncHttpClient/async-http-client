@@ -16,28 +16,16 @@
  */
 package org.asynchttpclient;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Simple {@link AsyncHandler} of type {@link Response}
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
-
     /**
      * {@inheritDoc}
      */
     @Override
     public Response onCompleted(Response response) throws Exception {
         return response;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onThrowable(Throwable t) {
-        LOGGER.debug(t.getMessage(), t);
     }
 }
