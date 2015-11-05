@@ -13,6 +13,7 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -24,19 +25,19 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.asynchttpclient.request.body.Body;
+import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
 
     @Test(groups = "standalone")
-    public void testBasics() throws IOException {
+    public void testBasics() throws Exception {
         final List<Part> parts = new ArrayList<>();
 
         // add a file
         final File testFile = getTestfile();
+        System.err.println(testFile.length());
         parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
@@ -48,38 +49,25 @@ public class MultipartBodyTest {
         compareContentLength(parts);
     }
 
-    private static File getTestfile() {
+    private static File getTestfile() throws URISyntaxException {
         final ClassLoader cl = MultipartBodyTest.class.getClassLoader();
         final URL url = cl.getResource("textfile.txt");
-        Assert.assertNotNull(url);
-        File file = null;
-        try {
-            file = new File(url.toURI());
-        } catch (URISyntaxException use) {
-            Assert.fail("uri syntax error");
-        }
-        return file;
+        assertNotNull(url);
+        return new File(url.toURI());
     }
 
     private static void compareContentLength(final List<Part> parts) throws IOException {
-        Assert.assertNotNull(parts);
+        assertNotNull(parts);
         // get expected values
-        final Body multipartBody = MultipartUtils.newMultipartBody(parts, HttpHeaders.EMPTY_HEADERS);
+        final MultipartBody multipartBody = MultipartUtils.newMultipartBody(parts, HttpHeaders.EMPTY_HEADERS);
         final long expectedContentLength = multipartBody.getContentLength();
         try {
             final ByteBuf buffer = Unpooled.buffer(8192);
-            boolean last = false;
-            while (!last) {
-                if (multipartBody.transferTo(buffer) == BodyState.STOP) {
-                    last = true;
-                }
+            while (multipartBody.transferTo(buffer) != BodyState.STOP) {
             }
-            Assert.assertEquals(buffer.readableBytes(), expectedContentLength);
+            assertEquals(buffer.readableBytes(), expectedContentLength);
         } finally {
-            try {
-                multipartBody.close();
-            } catch (IOException ignore) {
-            }
+            IOUtils.closeQuietly(multipartBody);
         }
     }
 }

@@ -90,23 +90,25 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
     protected final T part;
     protected final byte[] boundary;
 
-    private final long length;
-    private ByteBuf preContentBuffer;
-    private ByteBuf postContentBuffer;
+    private final int preContentLength;
+    private final int postContentLength;
     protected MultipartState state;
     protected boolean slowTarget;
+
+    // lazy
+    private ByteBuf preContentBuffer;
+    private ByteBuf postContentBuffer;
 
     public MultipartPart(T part, byte[] boundary) {
         this.part = part;
         this.boundary = boundary;
-        preContentBuffer = computePreContentBytes();
-        postContentBuffer = computePostContentBytes();
-        length = preContentBuffer.readableBytes() + postContentBuffer.readableBytes() + getContentLength();
+        preContentLength = computePreContentLength();
+        postContentLength = computePostContentLength();
         state = MultipartState.PRE_CONTENT;
     }
 
     public long length() {
-        return length;
+        return preContentLength + postContentLength + getContentLength();
     }
 
     public MultipartState getState() {
@@ -124,13 +126,13 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
             return 0L;
 
         case PRE_CONTENT:
-            return transfer(preContentBuffer, target, MultipartState.CONTENT);
+            return transfer(lazyLoadPreContentBuffer(), target, MultipartState.CONTENT);
 
         case CONTENT:
             return transferContentTo(target);
 
         case POST_CONTENT:
-            return transfer(postContentBuffer, target, MultipartState.DONE);
+            return transfer(lazyLoadPostContentBuffer(), target, MultipartState.DONE);
 
         default:
             throw new IllegalStateException("Unknown state " + state);
@@ -145,23 +147,37 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
             return 0L;
 
         case PRE_CONTENT:
-            return transfer(preContentBuffer, target, MultipartState.CONTENT);
+            return transfer(lazyLoadPreContentBuffer(), target, MultipartState.CONTENT);
 
         case CONTENT:
             return transferContentTo(target);
 
         case POST_CONTENT:
-            return transfer(postContentBuffer, target, MultipartState.DONE);
+            return transfer(lazyLoadPostContentBuffer(), target, MultipartState.DONE);
 
         default:
             throw new IllegalStateException("Unknown state " + state);
         }
     }
 
+    private ByteBuf lazyLoadPreContentBuffer() {
+        if (preContentBuffer == null)
+            preContentBuffer = computePreContentBytes(preContentLength);
+        return preContentBuffer;
+    }
+
+    private ByteBuf lazyLoadPostContentBuffer() {
+        if (postContentBuffer == null)
+            postContentBuffer = computePostContentBytes(postContentLength);
+        return postContentBuffer;
+    }
+
     @Override
     public void close() {
-        preContentBuffer.release();
-        postContentBuffer.release();
+        if (preContentBuffer != null)
+            preContentBuffer.release();
+        if (postContentBuffer != null)
+            postContentBuffer.release();
     }
 
     protected abstract long getContentLength();
@@ -212,29 +228,27 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         return transferred;
     }
 
-    protected ByteBuf computePreContentBytes() {
-
-        // compute length
+    protected int computePreContentLength() {
         CounterPartVisitor counterVisitor = new CounterPartVisitor();
         visitPreContent(counterVisitor);
-        long length = counterVisitor.getCount();
+        return counterVisitor.getCount();
+    }
 
-        // compute bytes
-        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer((int) length);
+    protected ByteBuf computePreContentBytes(int preContentLength) {
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(preContentLength);
         ByteBufVisitor bytesVisitor = new ByteBufVisitor(buffer);
         visitPreContent(bytesVisitor);
         return buffer;
     }
 
-    protected ByteBuf computePostContentBytes() {
-
-        // compute length
+    protected int computePostContentLength() {
         CounterPartVisitor counterVisitor = new CounterPartVisitor();
         visitPostContent(counterVisitor);
-        long length = counterVisitor.getCount();
+        return counterVisitor.getCount();
+    }
 
-        // compute bytes
-        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer((int) length);
+    protected ByteBuf computePostContentBytes(int postContentLength) {
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(postContentLength);
         ByteBufVisitor bytesVisitor = new ByteBufVisitor(buffer);
         visitPostContent(bytesVisitor);
         return buffer;

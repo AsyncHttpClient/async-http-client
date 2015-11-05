@@ -24,7 +24,7 @@ public interface PartVisitor {
 
     class CounterPartVisitor implements PartVisitor {
 
-        private long count = 0L;
+        private int count = 0;
 
         @Override
         public void withBytes(byte[] bytes) {
@@ -36,7 +36,7 @@ public interface PartVisitor {
             count++;
         }
 
-        public long getCount() {
+        public int getCount() {
             return count;
         }
     }
