@@ -322,7 +322,7 @@ public final class NettyRequestSender {
 
             // don't bother scheduling timeouts if channel became invalid
             if (Channels.isChannelValid(channel))
-                scheduleTimeouts(future);
+                scheduleTimeouts(httpRequest, future);
 
         } catch (Exception e) {
             LOGGER.error("Can't write request", e);
@@ -335,7 +335,7 @@ public final class NettyRequestSender {
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 
-    private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
+    private void scheduleTimeouts(HttpRequest httpRequest, NettyResponseFuture<?> nettyResponseFuture) {
 
         nettyResponseFuture.touch();
         int requestTimeoutInMs = requestTimeout(config, nettyResponseFuture.getTargetRequest());
@@ -348,7 +348,7 @@ public final class NettyRequestSender {
         int readTimeoutValue = config.getReadTimeout();
         if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
             // no need to schedule a readTimeout if the requestTimeout happens first
-            Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeoutValue), readTimeoutValue);
+            Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeoutValue, httpRequest), readTimeoutValue);
             timeoutsHolder.readTimeout = readTimeout;
         }
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);

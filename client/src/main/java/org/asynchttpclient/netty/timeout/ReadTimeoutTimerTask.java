@@ -14,6 +14,8 @@
 package org.asynchttpclient.netty.timeout;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
+
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.Timeout;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -23,6 +25,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
     private final long requestTimeoutInstant;
+    private final HttpRequest httpRequest;
 
     public ReadTimeoutTimerTask(//
             NettyResponseFuture<?> nettyResponseFuture,//
@@ -30,8 +33,19 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             TimeoutsHolder timeoutsHolder,//
             long requestTimeout,//
             long readTimeout) {
+        this(nettyResponseFuture, requestSender, timeoutsHolder, requestTimeout, readTimeout, null);
+    }
+
+    public ReadTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            NettyRequestSender requestSender,//
+            TimeoutsHolder timeoutsHolder,//
+            long requestTimeout,//
+            long readTimeout,//
+            HttpRequest httpRequest) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
+        this.httpRequest = httpRequest;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
@@ -52,7 +66,12 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectTimeout reached
-            String message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            String message;
+            if (httpRequest == null) {
+                message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            } else {
+                message = "Read timeout to " + httpRequest.getUri() + " of " + readTimeout + " ms";
+            }
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
             // cancel request timeout sibling
