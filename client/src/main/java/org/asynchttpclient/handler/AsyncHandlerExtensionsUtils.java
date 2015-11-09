@@ -10,26 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.channel;
+package org.asynchttpclient.handler;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import org.asynchttpclient.AsyncHandler;
 
-public interface NameResolver {
+public final class AsyncHandlerExtensionsUtils {
 
-    NameResolution[] resolve(String name) throws UnknownHostException;
+    public static AsyncHandlerExtensions toAsyncHandlerExtensions(AsyncHandler<?> asyncHandler) {
+        return asyncHandler instanceof AsyncHandlerExtensions ? (AsyncHandlerExtensions) asyncHandler : null;
+    }
 
-    enum JdkNameResolver implements NameResolver {
-
-        INSTANCE;
-
-        @Override
-        public NameResolution[] resolve(String name) throws UnknownHostException {
-            InetAddress[] addresses = InetAddress.getAllByName(name);
-            NameResolution[] resolutions = new NameResolution[addresses.length];
-            for (int i = 0; i < addresses.length; i++)
-                resolutions[i] = new NameResolution(addresses[i]);
-            return resolutions;
-        }
+    private AsyncHandlerExtensionsUtils() {
     }
 }

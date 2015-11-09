@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.handler;
 
 import static org.asynchttpclient.util.HttpUtils.CHANNEL_CLOSED_EXCEPTION;
+import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -157,7 +158,7 @@ public class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) throws Exception {
-        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        Throwable cause = getCause(e.getCause());
 
         if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
             return;

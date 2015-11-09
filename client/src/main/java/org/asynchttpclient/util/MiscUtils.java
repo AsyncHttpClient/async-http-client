@@ -64,4 +64,8 @@ public class MiscUtils {
         ioe.setStackTrace(new StackTraceElement[] {});
         return ioe;
     }
+
+    public static Throwable getCause(Throwable t) {
+        return t.getCause() != null ? t.getCause() : t;
+    }
 }

@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 
@@ -212,8 +213,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
-            Throwable exception = t.getCause() != null ? t.getCause() : t;
-            exEx.compareAndSet(null, new ExecutionException(exception));
+            exEx.compareAndSet(null, new ExecutionException(getCause(t)));
 
         } finally {
             latch.countDown();
@@ -267,7 +267,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
         return completable;
     }
-    
+
     // INTERNAL
 
     public Uri getUri() {
@@ -296,7 +296,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public final Request getTargetRequest() {
         return targetRequest;
     }
-    
+
     public final Request getCurrentRequest() {
         return currentRequest;
     }
@@ -433,14 +433,13 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an
-     * unexpected IOException, and in some situation we can recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
+     * recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplayed() {
-        return !isDone() && canRetry()
-                && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !inAuth.get() && !inProxyAuth.get();
+        return !isDone() && canRetry() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !inAuth.get() && !inProxyAuth.get();
     }
 
     public long getStart() {

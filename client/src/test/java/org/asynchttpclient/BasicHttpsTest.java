@@ -136,8 +136,20 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            Object[] expectedEvents = new Object[] { CONNECTION_POOL_EVENT, CONNECTION_OPEN_EVENT, DNS_RESOLVED_EVENT, CONNECTION_SUCCESS_EVENT, SSL_HANDSHAKE_COMPLETED_EVENT,
-                    REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT, HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT };
+            Object[] expectedEvents = new Object[] { //
+            CONNECTION_POOL_EVENT,//
+                    DNS_RESOLUTION_EVENT,//
+                    DNS_RESOLUTION_SUCCESS_EVENT,//
+                    CONNECTION_OPEN_EVENT,//
+                    CONNECTION_SUCCESS_EVENT,//
+                    TLS_HANDSHAKE_EVENT,//
+                    TLS_HANDSHAKE_SUCCESS_EVENT,//
+                    REQUEST_SEND_EVENT,//
+                    HEADERS_WRITTEN_EVENT,//
+                    STATUS_RECEIVED_EVENT,//
+                    HEADERS_RECEIVED_EVENT,//
+                    CONNECTION_OFFER_EVENT,//
+                    COMPLETED_EVENT };
 
             assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }

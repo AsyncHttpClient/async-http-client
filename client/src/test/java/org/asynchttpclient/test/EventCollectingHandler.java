@@ -14,7 +14,8 @@ package org.asynchttpclient.test;
 
 import io.netty.channel.Channel;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -24,7 +25,6 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
@@ -37,10 +37,14 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     public static final String HEADERS_WRITTEN_EVENT = "HeadersWritten";
     public static final String CONTENT_WRITTEN_EVENT = "ContentWritten";
     public static final String CONNECTION_OPEN_EVENT = "ConnectionOpen";
-    public static final String DNS_RESOLVED_EVENT = "DnsResolved";
+    public static final String DNS_RESOLUTION_EVENT = "DnsResolution";
+    public static final String DNS_RESOLUTION_SUCCESS_EVENT = "DnsResolutionSuccess";
+    public static final String DNS_RESOLUTION_FAILURE_EVENT = "DnsResolutionFailure";
     public static final String CONNECTION_SUCCESS_EVENT = "ConnectionSuccess";
     public static final String CONNECTION_FAILURE_EVENT = "ConnectionFailure";
-    public static final String SSL_HANDSHAKE_COMPLETED_EVENT = "SslHandshakeCompleted";
+    public static final String TLS_HANDSHAKE_EVENT = "TlsHandshake";
+    public static final String TLS_HANDSHAKE_SUCCESS_EVENT = "TlsHandshakeSuccess";
+    public static final String TLS_HANDSHAKE_FAILURE_EVENT = "TlsHandshakeFailure";
     public static final String CONNECTION_POOL_EVENT = "ConnectionPool";
     public static final String CONNECTION_POOLED_EVENT = "ConnectionPooled";
     public static final String CONNECTION_OFFER_EVENT = "ConnectionOffer";
@@ -91,28 +95,48 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionOpen() {
+    public void onTcpConnect(InetSocketAddress address) {
         firedEvents.add(CONNECTION_OPEN_EVENT);
     }
 
     @Override
-    public void onDnsResolved(NameResolution[] nameResolutions) {
-        firedEvents.add(DNS_RESOLVED_EVENT);
-    }
-
-    @Override
-    public void onConnectionSuccess(Channel connection, InetAddress address) {
+    public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {
         firedEvents.add(CONNECTION_SUCCESS_EVENT);
     }
 
     @Override
-    public void onConnectionFailure(InetAddress address) {
+    public void onTcpConnectFailure(InetSocketAddress address, Throwable t) {
         firedEvents.add(CONNECTION_FAILURE_EVENT);
     }
 
     @Override
-    public void onSslHandshakeCompleted() {
-        firedEvents.add(SSL_HANDSHAKE_COMPLETED_EVENT);
+    public void onDnsResolution(String name) {
+        firedEvents.add(DNS_RESOLUTION_EVENT);
+    }
+
+    @Override
+    public void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+        firedEvents.add(DNS_RESOLUTION_SUCCESS_EVENT);
+    }
+
+    @Override
+    public void onDnsResolutionFailure(String name, Throwable cause) {
+        firedEvents.add(DNS_RESOLUTION_FAILURE_EVENT);
+    }
+
+    @Override
+    public void onTlsHandshake() {
+        firedEvents.add(TLS_HANDSHAKE_EVENT);
+    }
+
+    @Override
+    public void onTlsHandshakeSuccess() {
+        firedEvents.add(TLS_HANDSHAKE_SUCCESS_EVENT);
+    }
+
+    @Override
+    public void onTlsHandshakeFailure(Throwable cause) {
+        firedEvents.add(TLS_HANDSHAKE_FAILURE_EVENT);
     }
 
     @Override

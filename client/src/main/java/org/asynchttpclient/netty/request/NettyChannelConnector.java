@@ -12,87 +12,65 @@
  */
 package org.asynchttpclient.netty.request;
 
+import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.netty.SimpleChannelFutureListener;
+import org.asynchttpclient.netty.channel.NettyConnectListener;
 
 public class NettyChannelConnector {
-    
+
     private final AsyncHandlerExtensions asyncHandlerExtensions;
     private final InetSocketAddress localAddress;
-    private final InetSocketAddress[] remoteAddresses;
+    private final List<InetSocketAddress> remoteAddresses;
     private volatile int i = 0;
 
-    public NettyChannelConnector(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) throws UnknownHostException {
-
-        this.asyncHandlerExtensions = asyncHandler instanceof AsyncHandlerExtensions ? (AsyncHandlerExtensions) asyncHandler : null;
-        NameResolution[] resolutions;
-        Uri uri = request.getUri();
-        int port = uri.getExplicitPort();
-
-        if (request.getAddress() != null) {
-            resolutions = new NameResolution[] { new NameResolution(request.getAddress()) };
-
-        } else if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
-            resolutions = request.getNameResolver().resolve(proxy.getHost());
-            port = uri.isSecured() ? proxy.getSecuredPort(): proxy.getPort();
-
-        } else {
-            resolutions = request.getNameResolver().resolve(uri.getHost());
-        }
-
-        if (asyncHandlerExtensions != null)
-            asyncHandlerExtensions.onDnsResolved(resolutions);
-        
-        remoteAddresses = new InetSocketAddress[resolutions.length];
-        for (int i = 0; i < resolutions.length; i ++) {
-            remoteAddresses[i] = new InetSocketAddress(resolutions[i].address, port);
-        }
-        
-        if (request.getLocalAddress() != null) {
-            localAddress = new InetSocketAddress(request.getLocalAddress(), 0);
-                    
-        } else {
-            localAddress = null;
-        }
+    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler) {
+        this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
+        this.remoteAddresses = remoteAddresses;
+        this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
     }
 
     private boolean pickNextRemoteAddress() {
         i++;
-        return i < remoteAddresses.length;
+        return i < remoteAddresses.size();
     }
-    
-    public void connect(final Bootstrap bootstrap, final ChannelFutureListener listener) throws UnknownHostException {
-        final InetSocketAddress remoteAddress = remoteAddresses[i];
 
-        ChannelFuture future = localAddress != null ? bootstrap.connect(remoteAddress, localAddress) : bootstrap.connect(remoteAddress);
+    public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
+        final InetSocketAddress remoteAddress = remoteAddresses.get(i);
+        
+        if (asyncHandlerExtensions != null)
+            asyncHandlerExtensions.onTcpConnect(remoteAddress);
 
-        future.addListener(new ChannelFutureListener() {
+        final ChannelFuture future = localAddress != null ? bootstrap.connect(remoteAddress, localAddress) : bootstrap.connect(remoteAddress);
+
+        future.addListener(new SimpleChannelFutureListener() {
+
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                boolean retry = false;
-                if (future.isSuccess()) {
-                    if (asyncHandlerExtensions != null)
-                        asyncHandlerExtensions.onConnectionSuccess(future.channel(), remoteAddress.getAddress());
-                } else {
-                    if (asyncHandlerExtensions != null)
-                        asyncHandlerExtensions.onConnectionFailure(remoteAddress.getAddress());
-                    retry = pickNextRemoteAddress();
-                }
+            public void onSuccess(Channel channel) throws Exception {
+                if (asyncHandlerExtensions != null)
+                    asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, future.channel());
+
+                connectListener.onSuccess(channel);
+            }
+
+            @Override
+            public void onFailure(Channel channel, Throwable t) throws Exception {
+                if (asyncHandlerExtensions != null)
+                    asyncHandlerExtensions.onTcpConnectFailure(remoteAddress, t);
+                boolean retry = pickNextRemoteAddress();
                 if (retry)
-                    NettyChannelConnector.this.connect(bootstrap, listener);
+                    NettyChannelConnector.this.connect(bootstrap, connectListener);
                 else
-                    listener.operationComplete(future);
+                    connectListener.onFailure(channel, t);
             }
         });
     }

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty.reactivestreams;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertTrue;
 import io.netty.channel.Channel;
@@ -20,13 +20,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 import java.lang.reflect.Field;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.request.NettyRequest;
@@ -127,11 +127,23 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
             this.replaying = replaying;
         }
         @Override
-        public void onConnectionOpen() {}
+        public void onDnsResolution(String name) {}
         @Override
-        public void onConnectionSuccess(Channel connection, InetAddress address) {}
+        public void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses) {}
         @Override
-        public void onConnectionFailure(InetAddress address) {}
+        public void onDnsResolutionFailure(String name, Throwable cause) {}
+        @Override
+        public void onTcpConnect(InetSocketAddress address) {}
+        @Override
+        public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {}
+        @Override
+        public void onTcpConnectFailure(InetSocketAddress address, Throwable cause) {}
+        @Override
+        public void onTlsHandshake() {}
+        @Override
+        public void onTlsHandshakeSuccess() {}
+        @Override
+        public void onTlsHandshakeFailure(Throwable cause) {}
         @Override
         public void onConnectionPool() {}
         @Override
@@ -142,9 +154,5 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
         public void onRequestSend(NettyRequest request) {}
         @Override
         public void onRetry() { replaying.countDown(); }
-        @Override
-        public void onDnsResolved(NameResolution[] resolutions) {}
-        @Override
-        public void onSslHandshakeCompleted() {}
     }
 }

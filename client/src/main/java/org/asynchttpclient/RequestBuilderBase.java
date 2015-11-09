@@ -31,13 +31,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.asynchttpclient.channel.NameResolver;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
+import org.asynchttpclient.resolver.JdkNameResolver;
+import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UriEncoder;
 import org.reactivestreams.Publisher;
@@ -85,7 +86,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected long rangeOffset;
     protected Charset charset;
     protected ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
-    protected NameResolver nameResolver = NameResolver.JdkNameResolver.INSTANCE;
+    protected NameResolver nameResolver = JdkNameResolver.INSTANCE;
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
         this.method = method;
