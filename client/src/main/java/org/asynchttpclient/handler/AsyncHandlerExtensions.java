@@ -58,14 +58,14 @@ public interface AsyncHandlerExtensions {
      * 
      * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
      * 
-     * @param address the address we try to connect to
+     * @param remoteAddress the address we try to connect to
      */
-    void onTcpConnect(InetSocketAddress address);
+    void onTcpConnect(InetSocketAddress remoteAddress);
 
     /**
      * Notify the callback after a successful connect
      * 
-     * @param address the address we try to connect to
+     * @param remoteAddress the address we try to connect to
      * @param connection the connection
      */
     void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection);
@@ -75,7 +75,7 @@ public interface AsyncHandlerExtensions {
      * 
      * Might be called several times, or be followed by onTcpConnectSuccess when the name was resolved to multiple addresses.
      * 
-     * @param address the address we try to connect to
+     * @param remoteAddress the address we try to connect to
      * @param cause the cause of the failure
      */
     void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause);
