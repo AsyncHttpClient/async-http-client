@@ -37,45 +37,15 @@
 	</mailingLists>
 
 	<prerequisites>
-		<maven>2.0.9</maven>
+		<maven>3.0.0</maven>
 	</prerequisites>
 	<developers>
 		<developer>
-			<id>brianm</id>
-			<name>Brian McCallister</name>
-			<email>brianm@skife.org</email>
-		</developer>
-		<developer>
-			<id>jfarcand</id>
-			<name>Jeanfrancois Arcand</name>
-			<email>jfarcand@apache.org</email>
-		</developer>
-		<developer>
-			<id>thomd</id>
-			<name>Thomas Dudziak</name>
-			<email>tomdz@apache.org</email>
-		</developer>
-		<developer>
-			<id>neotyk</id>
-			<name>Hubert Iwaniuk</name>
-		</developer>
-		<developer>
-			<id>rlubke</id>
-			<name>Ryan Lubke</name>
-			<email>ryan.lubke@gmail.com</email>
-		</developer>
-		<developer>
 			<id>slandelle</id>
 			<name>Stephane Landelle</name>
-			<email>slandelle@excilys.com</email>
+			<email>slandelle@gatling.io</email>
 		</developer>
 	</developers>
-	<contributors>
-		<contributor>
-			<name>Simone Tripodi</name>
-			<email>simonetripodi@apache.org</email>
-		</contributor>
-	</contributors>
 	<licenses>
 		<license>
 			<name>Apache License 2.0</name>
