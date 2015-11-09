@@ -105,7 +105,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
         state = MultipartState.PRE_CONTENT;
     }
 
-    public long length() {
+    public final long length() {
         return length;
     }
 
