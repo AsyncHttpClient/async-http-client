@@ -28,19 +28,17 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     public static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 
     private final Body body;
-    private final int contentLength;
     private final int chunkSize;
-
     private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
         assertNotNull(body, "body");
         this.body = body;
-        contentLength = (int) body.getContentLength();
+        long contentLength = body.getContentLength();
         if (contentLength <= 0)
             chunkSize = DEFAULT_CHUNK_SIZE;
         else
-            chunkSize = Math.min(contentLength, DEFAULT_CHUNK_SIZE);
+            chunkSize = (int) Math.min(contentLength, (long) DEFAULT_CHUNK_SIZE);
     }
 
     @Override
