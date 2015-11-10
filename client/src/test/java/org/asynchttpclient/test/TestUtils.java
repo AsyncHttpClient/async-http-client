@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,8 +65,8 @@ public class TestUtils {
 
     public static final String USER = "user";
     public static final String ADMIN = "admin";
-    public static final String TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET = "text/html; charset=UTF-8";
-    public static final String TEXT_HTML_CONTENT_TYPE_WITH_ISO_8859_1_CHARSET = "text/html; charset=ISO-8859-1";
+    public static final String TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET = "text/html;charset=UTF-8";
+    public static final String TEXT_HTML_CONTENT_TYPE_WITH_ISO_8859_1_CHARSET = "text/html;charset=ISO-8859-1";
     public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
     public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
     public static final File LARGE_IMAGE_FILE;
@@ -339,5 +340,10 @@ public class TestUtils {
         } catch (URISyntaxException e) {
             throw new FileNotFoundException(file);
         }
+    }
+    
+    public static void assertContentTypesEquals(String actual, String expected) {
+        assertEquals(actual.replace("; ", "").toLowerCase(Locale.ENGLISH), expected.replace("; ", "").toLowerCase(Locale.ENGLISH), "Unexpected content-type");
+
     }
 }
