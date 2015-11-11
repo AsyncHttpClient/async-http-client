@@ -27,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -92,6 +93,6 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
     }
 
     public String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
+        return String.format("http://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port1);
     }
 }

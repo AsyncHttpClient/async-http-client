@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -58,7 +59,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addFormParam("test", value).execute();
+            Future<Response> f = client.preparePost(String.format("http://%s:%d", TestUtils.getUnitTestIpAddress(), port1)).addFormParam("test", value).execute();
             Response resp = f.get(10, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);

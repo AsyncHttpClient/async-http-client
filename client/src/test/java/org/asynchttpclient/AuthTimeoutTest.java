@@ -26,6 +26,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.asynchttpclient.util.HttpUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -189,7 +190,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
     @Override
     protected String getTargetUrl() {
-        return "http://127.0.0.1:" + port1 + "/";
+        return String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     @Override

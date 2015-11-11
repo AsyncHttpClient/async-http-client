@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.asynchttpclient.test.TestUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -47,7 +48,7 @@ public class ThreadNameTest extends AbstractBasicTest {
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName))) {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/").execute();
+            Future<Response> f = client.prepareGet(String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1)).execute();
             f.get(3, TimeUnit.SECONDS);
 
             // We cannot assert that all threads are created with specified name,

@@ -31,6 +31,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -81,16 +82,16 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Override
     protected String getTargetUrl() {
-        return "http://127.0.0.1:" + port1 + "/";
+        return String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     @Override
     protected String getTargetUrl2() {
-        return "http://127.0.0.1:" + port2 + "/uff";
+        return String.format("http://%s:%d/uff", TestUtils.getUnitTestIpAddress(), port2);
     }
 
     protected String getTargetUrlNoAuth() {
-        return "http://127.0.0.1:" + portNoAuth + "/";
+        return String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), portNoAuth);
     }
 
     @Override

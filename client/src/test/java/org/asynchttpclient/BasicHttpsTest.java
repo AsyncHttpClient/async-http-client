@@ -31,12 +31,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.testng.annotations.Test;
 
 public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     protected String getTargetUrl() {
-        return String.format("https://127.0.0.1:%d/foo/test", port1);
+        return String.format("https://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     @Test(groups = "standalone")

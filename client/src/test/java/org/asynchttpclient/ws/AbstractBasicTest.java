@@ -15,6 +15,7 @@ package org.asynchttpclient.ws;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -38,7 +39,7 @@ public abstract class AbstractBasicTest extends org.asynchttpclient.AbstractBasi
     }
 
     protected String getTargetUrl() {
-        return String.format("ws://127.0.0.1:%d/", port1);
+        return String.format("ws://%s:%d/", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     public abstract WebSocketHandler getWebSocketHandler();

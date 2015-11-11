@@ -26,6 +26,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -61,7 +62,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(SIMPLE_TEXT_FILE).execute();
+            Future<Response> f = client.preparePut(String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1)).setHeader("Expect", "100-continue").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);

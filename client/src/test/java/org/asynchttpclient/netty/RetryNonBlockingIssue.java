@@ -36,6 +36,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
@@ -58,7 +59,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     }
 
     protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/", port1);
+        return String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) throws IOException {

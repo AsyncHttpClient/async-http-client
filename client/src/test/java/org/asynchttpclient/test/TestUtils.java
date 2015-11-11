@@ -340,4 +340,9 @@ public class TestUtils {
             throw new FileNotFoundException(file);
         }
     }
+
+    public static String getUnitTestIpAddress() {
+        return "127.0.0.1";
+    }
+    
 }

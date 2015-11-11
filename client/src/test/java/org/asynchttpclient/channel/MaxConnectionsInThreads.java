@@ -37,6 +37,7 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -135,12 +136,12 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         server.start();
 
-        String endpoint = "http://127.0.0.1:" + port1 + "/timeout/";
+        String endpoint = String.format("http://%s:%d/timeout/", TestUtils.getUnitTestIpAddress(), port1);
         servletEndpointUri = new URI(endpoint);
     }
 
     public String getTargetUrl() {
-        String s = "http://127.0.0.1:" + port1 + "/timeout/";
+        String s = String.format("http://%s:%d/timeout/", TestUtils.getUnitTestIpAddress(), port1);
         try {
             servletEndpointUri = new URI(s);
         } catch (URISyntaxException e) {

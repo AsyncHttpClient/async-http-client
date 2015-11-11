@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.asynchttpclient.uri.Uri;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -132,7 +133,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
             // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
-            Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
+            Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port2)).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 404);

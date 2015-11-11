@@ -29,6 +29,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EchoHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -73,7 +74,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
-            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer(TestUtils.getUnitTestIpAddress(), port1));
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
@@ -96,7 +97,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//
-                .setProxyServer(proxyServer("127.0.0.1", port1).build())//
+                .setProxyServer(proxyServer(TestUtils.getUnitTestIpAddress(), port1).build())//
                 .setAcceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {

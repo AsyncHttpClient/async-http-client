@@ -21,6 +21,7 @@ import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.test.EchoHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
@@ -59,11 +60,11 @@ public abstract class AbstractBasicTest {
     }
 
     protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
+        return String.format("http://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     protected String getTargetUrl2() {
-        return String.format("https://127.0.0.1:%d/foo/test", port2);
+        return String.format("https://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port2);
     }
 
     public AbstractHandler configureHandler() throws Exception {

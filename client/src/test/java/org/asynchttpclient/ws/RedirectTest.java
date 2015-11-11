@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -104,6 +105,6 @@ public class RedirectTest extends AbstractBasicTest {
     }
 
     private String getRedirectURL() {
-        return String.format("ws://127.0.0.1:%d/", port2);
+        return String.format("ws://%s:%d/", TestUtils.getUnitTestIpAddress(), port2);
     }
 }

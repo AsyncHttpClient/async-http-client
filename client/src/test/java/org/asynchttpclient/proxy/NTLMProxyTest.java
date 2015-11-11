@@ -30,6 +30,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
@@ -106,6 +107,6 @@ public class NTLMProxyTest extends AbstractBasicTest {
                 .setNtlmDomain("Ursa-Minor")//
                 .setNtlmHost("LightCity")//
                 .build();
-        return proxyServer("127.0.0.1", port2).setRealm(realm).build();
+        return proxyServer(TestUtils.getUnitTestIpAddress(), port2).setRealm(realm).build();
     }
 }

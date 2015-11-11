@@ -38,6 +38,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EventCollectingHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -140,7 +141,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             // twice
             Exception exception = null;
             try {
-                c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                c.preparePost(String.format("http://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
                 fail("Should throw exception. Too many connections issued.");
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -265,7 +266,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testPooledEventsFired() throws Exception {
-        RequestBuilder request = get("http://127.0.0.1:" + port1 + "/Test");
+        RequestBuilder request = get(String.format("http://%s:%d/Test", TestUtils.getUnitTestIpAddress(), port1));
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             EventCollectingHandler firstHandler = new EventCollectingHandler();

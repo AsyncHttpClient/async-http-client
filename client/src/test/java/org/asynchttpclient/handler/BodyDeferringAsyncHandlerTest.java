@@ -35,6 +35,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.BodyDeferringAsyncHandler.BodyDeferringInputStream;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -112,7 +113,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimple");
+            BoundRequestBuilder r = client.prepareGet(String.format("http://%s:%d/deferredSimple", TestUtils.getUnitTestIpAddress(), port1));
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
@@ -136,7 +137,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone", enabled = false)
     public void deferredSimpleWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER",
+            BoundRequestBuilder r = client.prepareGet(String.format("http://%s:%d/deferredSimpleWithFailure", TestUtils.getUnitTestIpAddress(), port1)).addHeader("X-FAIL-TRANSFER",
                     Boolean.TRUE.toString());
 
             CountingOutputStream cos = new CountingOutputStream();
@@ -166,7 +167,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrick");
+            BoundRequestBuilder r = client.prepareGet(String.format("http://%s:%d/deferredInputStreamTrick", TestUtils.getUnitTestIpAddress(), port1));
 
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
@@ -199,7 +200,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER",
+            BoundRequestBuilder r = client.prepareGet(String.format("http://%s:%d/deferredInputStreamTrickWithFailure", TestUtils.getUnitTestIpAddress(), port1)).addHeader("X-FAIL-TRANSFER",
                     Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
@@ -233,7 +234,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     public void testConnectionRefused() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         int newPortWithoutAnyoneListening = findFreePort();
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
+            BoundRequestBuilder r = client.prepareGet(String.format("http://%s:%d/testConnectionRefused", TestUtils.getUnitTestIpAddress(), newPortWithoutAnyoneListening));
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);

@@ -11,6 +11,7 @@ import java.util.concurrent.TimeoutException;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EchoHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -52,7 +53,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                .setProxyHost("127.0.0.1")//
+                .setProxyHost(TestUtils.getUnitTestIpAddress())//
                 .setProxyPort(port1)//
                 .setFollowRedirect(true)//
                 .setUrl(getTargetUrl2())//

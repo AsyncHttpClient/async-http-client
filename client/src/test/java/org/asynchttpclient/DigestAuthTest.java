@@ -26,6 +26,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
@@ -62,7 +63,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
+            Future<Response> f = client.prepareGet(String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1))//
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -75,7 +76,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
+            Future<Response> f = client.prepareGet(String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1))//
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())//
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -88,7 +89,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/")//
+            Future<Response> f = client.prepareGet(String.format("http://%s:%d/", TestUtils.getUnitTestIpAddress(), port1))//
                     .setRealm(digestAuthRealm("fake", ADMIN).build())//
                     .execute();
             Response resp = f.get(20, TimeUnit.SECONDS);

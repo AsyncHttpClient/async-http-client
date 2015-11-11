@@ -31,6 +31,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -96,7 +97,7 @@ public class RC10KTest extends AbstractBasicTest {
             List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {
-                resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
+                resps.add(ahc.prepareGet(String.format("http://%s:%d/%d", TestUtils.getUnitTestIpAddress(), ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
             }
             i = 0;
             for (Future<Integer> fResp : resps) {

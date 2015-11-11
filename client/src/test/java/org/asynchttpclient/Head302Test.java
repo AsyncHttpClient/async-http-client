@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -66,7 +67,7 @@ public class Head302Test extends AbstractBasicTest {
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = head("http://127.0.0.1:" + port1 + "/Test").build();
+            Request request = head(String.format("http://%s:%d/Test", TestUtils.getUnitTestIpAddress(), port1)).build();
 
             client.executeRequest(request, new AsyncCompletionHandlerBase() {
                 @Override

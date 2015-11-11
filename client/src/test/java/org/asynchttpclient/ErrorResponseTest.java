@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -63,7 +64,7 @@ public class ErrorResponseTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
+            Future<Response> f = client.prepareGet(String.format("http://%s:%d/foo", TestUtils.getUnitTestIpAddress(), port1)).addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 400);

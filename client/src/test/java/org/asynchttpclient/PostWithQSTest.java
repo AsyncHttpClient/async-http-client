@@ -31,6 +31,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -70,7 +71,7 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
+            Future<Response> f = client.preparePost(String.format("http://%s:%d/?a=b", TestUtils.getUnitTestIpAddress(), port1)).setBody("abc".getBytes()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -80,11 +81,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost(String.format("http://%s:%d/?a=", TestUtils.getUnitTestIpAddress(), port1)).setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=")) {
+                    if (!status.getUri().toUrl().equals(String.format("http://%s:%d/?a=", TestUtils.getUnitTestIpAddress(), port1))) {
                         throw new IOException(status.getUri().toUrl());
                     }
                     return super.onStatusReceived(status);
@@ -100,11 +101,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost(String.format("http://%s:%d/?a=b&c&d=e", TestUtils.getUnitTestIpAddress(), port1)).setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                    if (!status.getUri().toUrl().equals(String.format("http://%s:%d/?a=b&c&d=e", TestUtils.getUnitTestIpAddress(), port1))) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);
@@ -120,11 +121,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost(String.format("http://%s:%d/?a=b&c=&d=e", TestUtils.getUnitTestIpAddress(), port1)).setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
+                    if (!status.getUri().toUrl().equals(String.format("http://%s:%d/?a=b&c=&d=e", TestUtils.getUnitTestIpAddress(), port1))) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);

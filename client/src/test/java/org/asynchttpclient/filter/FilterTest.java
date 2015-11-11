@@ -32,6 +32,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.test.TestUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -60,7 +61,7 @@ public class FilterTest extends AbstractBasicTest {
     }
 
     public String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
+        return String.format("http://%s:%d/foo/test", TestUtils.getUnitTestIpAddress(), port1);
     }
 
     @Test(groups = "standalone")
