@@ -33,6 +33,7 @@ import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.ArrayUtils;
 
 public class DefaultRequest implements Request {
 
@@ -95,7 +96,7 @@ public class DefaultRequest implements Request {
         this.localAddress = localAddress;
         this.headers = headers;
         this.cookies = cookies;
-        this.byteData = byteData;
+        this.byteData = ArrayUtils.copyOf(byteData);
         this.compositeByteData = compositeByteData;
         this.stringData = stringData;
         this.byteBufferData = byteBufferData;

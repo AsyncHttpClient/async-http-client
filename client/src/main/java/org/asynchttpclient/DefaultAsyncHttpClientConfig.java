@@ -38,6 +38,7 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
+import org.asynchttpclient.util.ArrayUtils;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
@@ -806,12 +807,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         public Builder setEnabledProtocols(String[] enabledProtocols) {
-            this.enabledProtocols = enabledProtocols;
+            this.enabledProtocols = ArrayUtils.copyOf(enabledProtocols);
             return this;
         }
 
         public Builder setEnabledCipherSuites(String[] enabledCipherSuites) {
-            this.enabledCipherSuites = enabledCipherSuites;
+            this.enabledCipherSuites = ArrayUtils.copyOf(enabledCipherSuites);
             return this;
         }
 

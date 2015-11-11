@@ -40,6 +40,7 @@ import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.resolver.JdkNameResolver;
 import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.ArrayUtils;
 import org.asynchttpclient.util.UriEncoder;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -274,7 +275,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setBody(byte[] data) {
         resetBody();
-        this.byteData = data;
+        this.byteData = ArrayUtils.copyOf(data);
         return asDerivedType();
     }
 

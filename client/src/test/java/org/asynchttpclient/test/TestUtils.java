@@ -40,6 +40,7 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.commons.io.FileUtils;
 import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.netty.ssl.JsseSslEngineFactory;
+import org.asynchttpclient.util.ArrayUtils;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -137,7 +138,7 @@ public class TestUtils {
         private final int chunkSize;
 
         public ByteBufferIterable(byte[] payload, int chunkSize) {
-            this.payload = payload;
+            this.payload = ArrayUtils.copyOf(payload);
             this.chunkSize = chunkSize;
         }
 

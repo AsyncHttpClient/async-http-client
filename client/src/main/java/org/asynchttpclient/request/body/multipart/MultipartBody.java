@@ -26,6 +26,7 @@ import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.multipart.part.MultipartPart;
 import org.asynchttpclient.request.body.multipart.part.MultipartState;
+import org.asynchttpclient.util.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class MultipartBody implements RandomAccessBody {
 
     public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
         assertNotNull(parts, "parts");
-        this.boundary = boundary;
+        this.boundary = ArrayUtils.copyOf(boundary);
         this.contentType = contentType;
         this.parts = parts;
         this.contentLength = computeContentLength();
