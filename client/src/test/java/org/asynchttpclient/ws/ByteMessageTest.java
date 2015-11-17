@@ -35,7 +35,7 @@ public class ByteMessageTest extends AbstractBasicTest {
         };
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void echoByte() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -73,7 +73,7 @@ public class ByteMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);

@@ -131,7 +131,7 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_version%3D1.0");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testSignatureBaseStringWithProperlyEncodedUri() {
 
         Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")//
@@ -143,7 +143,7 @@ public class OAuthSignatureCalculatorTest {
         testSignatureBaseStringWithEncodableOAuthToken(request);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testSignatureBaseStringWithRawUri() {
 
         // note: @ is legal so don't decode it into %40 because it won't be
@@ -161,7 +161,7 @@ public class OAuthSignatureCalculatorTest {
 
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testGetCalculateSignature() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
@@ -175,7 +175,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testPostCalculateSignature() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
@@ -213,7 +213,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(sig, "wPkvxykrw+BTdCcGqKr+3I+PsiM=");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testGetWithRequestBuilder() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
@@ -256,7 +256,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testGetWithRequestBuilderAndQuery() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
@@ -292,7 +292,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testWithNullRequestToken() {
       String url = "http://photos.example.net/photos?file=vacation.jpg&size=original";
       ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);

@@ -26,12 +26,12 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
-import org.asynchttpclient.channel.NameResolver;
 import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
+import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 
 /**

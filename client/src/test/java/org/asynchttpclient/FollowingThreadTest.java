@@ -33,7 +33,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
     private static final int COUNT = 10;
 
-    @Test(timeOut = 30 * 1000, groups = { "online", "scalability" })
+    @Test(groups = "online", timeOut = 30 * 1000)
     public void testFollowRedirect() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         final CountDownLatch countDown = new CountDownLatch(COUNT);

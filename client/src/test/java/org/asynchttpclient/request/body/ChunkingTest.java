@@ -36,24 +36,25 @@ import org.asynchttpclient.request.body.generator.SimpleFeedableBodyGenerator;
 import org.testng.annotations.Test;
 
 public class ChunkingTest extends AbstractBasicTest {
+
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimeters.
-    @Test()
+    @Test(groups = "standalone")
     public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE), 400000));
     }
 
-    @Test()
+    @Test(groups = "standalone")
     public void testBufferSmallThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE)));
     }
 
-    @Test()
+    @Test(groups = "standalone")
     public void testDirectFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new FileInputStream(LARGE_IMAGE_FILE));
     }
 
-    @Test()
+    @Test(groups = "standalone")
     public void testDirectFileWithFeedableBodyGenerator() throws Throwable {
         doTestWithFeedableBodyGenerator(new FileInputStream(LARGE_IMAGE_FILE));
     }

@@ -38,12 +38,9 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EventCollectingHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
-    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test(groups = "standalone")
     public void testMaxTotalConnections() throws Exception {
@@ -53,9 +50,9 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             Exception exception = null;
             for (i = 0; i < 3; i++) {
                 try {
-                    log.info("{} requesting url [{}]...", i, url);
+                    logger.info("{} requesting url [{}]...", i, url);
                     Response response = client.prepareGet(url).execute().get();
-                    log.info("{} response [{}].", i, response);
+                    logger.info("{} response [{}].", i, response);
                 } catch (Exception ex) {
                     exception = ex;
                 }
@@ -71,7 +68,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
             List<ListenableFuture<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
-                log.info("{} requesting url [{}]...", i, url);
+                logger.info("{} requesting url [{}]...", i, url);
                 futures.add(client.prepareGet(url).execute());
             }
 
@@ -91,7 +88,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "async" }, enabled = true, invocationCount = 10, alwaysRun = true)
+    @Test(groups = "standalone", invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // Use a l in case the assert fail

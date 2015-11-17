@@ -23,7 +23,7 @@ import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
 public class RealmTest {
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testClone() {
         Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)//
                 .setUsePreemptiveAuth(true)//
@@ -40,13 +40,13 @@ public class RealmTest {
         assertEquals(clone.getScheme(), orig.getScheme());
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testOldDigestEmptyString() {
         String qop = "";
         testOldDigest(qop);
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testOldDigestNull() {
         String qop = null;
         testOldDigest(qop);
@@ -73,7 +73,7 @@ public class RealmTest {
         assertEquals(expectedResponse, orig.getResponse());
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testStrongDigest() {
         String user = "user";
         String pass = "pass";

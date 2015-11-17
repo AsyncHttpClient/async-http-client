@@ -23,7 +23,8 @@ import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 
 public class ByteArrayMultipartPart extends MultipartPart<ByteArrayPart> {
 
-    private final ByteBuf contentBuffer;
+    // lazy
+    private ByteBuf contentBuffer;
 
     public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
         super(part, boundary);
@@ -37,14 +38,20 @@ public class ByteArrayMultipartPart extends MultipartPart<ByteArrayPart> {
 
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
-        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.POST_CONTENT);
     }
-    
+
     @Override
     protected long transferContentTo(WritableByteChannel target) throws IOException {
-        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.POST_CONTENT);
     }
-    
+
+    private ByteBuf lazyLoadContentBuffer() {
+        if (contentBuffer == null)
+            contentBuffer = Unpooled.wrappedBuffer(part.getBytes());
+        return contentBuffer;
+    }
+
     @Override
     public void close() {
         super.close();

@@ -13,20 +13,18 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.ConnectException;
 
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.SimpleChannelFutureListener;
+import org.asynchttpclient.netty.SimpleGenericFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
@@ -36,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Non Blocking connect.
  */
-public final class NettyConnectListener<T> implements ChannelFutureListener {
+public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
 
@@ -65,13 +63,10 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private void writeRequest(Channel channel) {
 
-        LOGGER.debug("Using non-cached Channel {} for {} '{}'",
-                channel,
-                future.getNettyRequest().getHttpRequest().getMethod(),
-                future.getNettyRequest().getHttpRequest().getUri());
+        LOGGER.debug("Using non-cached Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
 
         Channels.setAttribute(channel, future);
-        
+
         if (future.isDone()) {
             abortChannelPreemption();
             return;
@@ -82,36 +77,45 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         requestSender.writeRequest(future, channel);
     }
 
-    private void onFutureSuccess(final Channel channel) throws Exception {
-        
+    @Override
+    public void onSuccess(Channel channel) throws Exception {
+
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
         if (future.getProxyServer() == null && uri.isSecured()) {
             SslHandler sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
-            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
-                @Override
-                public void operationComplete(Future<Channel> handshakeFuture) throws Exception {
-                 
-                    if (handshakeFuture.isSuccess()) {
-                        final AsyncHandler<T> asyncHandler = future.getAsyncHandler();
-                        if (asyncHandler instanceof AsyncHandlerExtensions)
-                            AsyncHandlerExtensions.class.cast(asyncHandler).onSslHandshakeCompleted();
 
-                        writeRequest(channel);
-                    } else {
-                        onFutureFailure(channel, handshakeFuture.cause());
-                    }
+            final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
+
+            if (asyncHandlerExtensions != null)
+                asyncHandlerExtensions.onTlsHandshake();
+
+            sslHandler.handshakeFuture().addListener(new SimpleGenericFutureListener<Channel>() {
+
+                @Override
+                protected void onSuccess(Channel value) throws Exception {
+                    if (asyncHandlerExtensions != null)
+                        asyncHandlerExtensions.onTlsHandshakeSuccess();
+                    writeRequest(channel);
+                }
+
+                @Override
+                protected void onFailure(Throwable cause) throws Exception {
+                    if (asyncHandlerExtensions != null)
+                        asyncHandlerExtensions.onTlsHandshakeFailure(cause);
+                    NettyConnectListener.this.onFailure(channel, cause);
                 }
             });
-        
+
         } else {
             writeRequest(channel);
         }
     }
 
-    private void onFutureFailure(Channel channel, Throwable cause) {
+    @Override
+    public void onFailure(Channel channel, Throwable cause) throws Exception {
 
         abortChannelPreemption();
 
@@ -134,12 +138,5 @@ public final class NettyConnectListener<T> implements ChannelFutureListener {
         if (cause != null)
             e.initCause(cause);
         future.abort(e);
-    }
-
-    public final void operationComplete(ChannelFuture f) throws Exception {
-        if (f.isSuccess())
-            onFutureSuccess(f.channel());
-        else
-            onFutureFailure(f.channel(), f.cause());
     }
 }

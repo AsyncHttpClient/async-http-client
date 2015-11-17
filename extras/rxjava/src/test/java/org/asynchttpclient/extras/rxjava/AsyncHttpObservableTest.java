@@ -28,7 +28,7 @@ import rx.observers.TestSubscriber;
 
 public class AsyncHttpObservableTest {
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testToObservableNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -53,7 +53,7 @@ public class AsyncHttpObservableTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testToObservableError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -78,7 +78,7 @@ public class AsyncHttpObservableTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testObserveNoError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -103,7 +103,7 @@ public class AsyncHttpObservableTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testObserveError() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -128,7 +128,7 @@ public class AsyncHttpObservableTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testObserveMultiple() {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 

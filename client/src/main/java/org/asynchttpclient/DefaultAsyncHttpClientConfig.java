@@ -119,8 +119,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean useNativeTransport;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
-    private final AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
-    private final AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+    private final AdditionalChannelInitializer httpAdditionalChannelInitializer;
+    private final AdditionalChannelInitializer wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
 
     private DefaultAsyncHttpClientConfig(//
@@ -182,8 +182,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             boolean useNativeTransport,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
-            AdditionalPipelineInitializer httpAdditionalPipelineInitializer,//
-            AdditionalPipelineInitializer wsAdditionalPipelineInitializer,//
+            AdditionalChannelInitializer httpAdditionalChannelInitializer,//
+            AdditionalChannelInitializer wsAdditionalChannelInitializer,//
             ResponseBodyPartFactory responseBodyPartFactory) {
 
         // http
@@ -244,8 +244,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.useNativeTransport = useNativeTransport;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
-        this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
-        this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
+        this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
+        this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
     }
 
@@ -497,13 +497,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer() {
-        return httpAdditionalPipelineInitializer;
+    public AdditionalChannelInitializer getHttpAdditionalChannelInitializer() {
+        return httpAdditionalChannelInitializer;
     }
 
     @Override
-    public AdditionalPipelineInitializer getWsAdditionalPipelineInitializer() {
-        return wsAdditionalPipelineInitializer;
+    public AdditionalChannelInitializer getWsAdditionalChannelInitializer() {
+        return wsAdditionalChannelInitializer;
     }
 
     @Override
@@ -576,8 +576,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private EventLoopGroup eventLoopGroup;
         private Timer nettyTimer;
         private ThreadFactory threadFactory;
-        private AdditionalPipelineInitializer httpAdditionalPipelineInitializer;
-        private AdditionalPipelineInitializer wsAdditionalPipelineInitializer;
+        private AdditionalChannelInitializer httpAdditionalChannelInitializer;
+        private AdditionalChannelInitializer wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
 
         public Builder() {
@@ -641,8 +641,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             useNativeTransport = config.isUseNativeTransport();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
-            httpAdditionalPipelineInitializer = config.getHttpAdditionalPipelineInitializer();
-            wsAdditionalPipelineInitializer = config.getWsAdditionalPipelineInitializer();
+            httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
+            wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
         }
 
@@ -928,13 +928,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setHttpAdditionalPipelineInitializer(AdditionalPipelineInitializer httpAdditionalPipelineInitializer) {
-            this.httpAdditionalPipelineInitializer = httpAdditionalPipelineInitializer;
+        public Builder setHttpAdditionalChannelInitializer(AdditionalChannelInitializer httpAdditionalChannelInitializer) {
+            this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
             return this;
         }
 
-        public Builder setWsAdditionalPipelineInitializer(AdditionalPipelineInitializer wsAdditionalPipelineInitializer) {
-            this.wsAdditionalPipelineInitializer = wsAdditionalPipelineInitializer;
+        public Builder setWsAdditionalChannelInitializer(AdditionalChannelInitializer wsAdditionalChannelInitializer) {
+            this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
             return this;
         }
 
@@ -1006,8 +1006,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     useNativeTransport, //
                     nettyTimer, //
                     threadFactory, //
-                    httpAdditionalPipelineInitializer, //
-                    wsAdditionalPipelineInitializer, //
+                    httpAdditionalChannelInitializer, //
+                    wsAdditionalChannelInitializer, //
                     responseBodyPartFactory);
         }
     }

@@ -28,7 +28,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-codec-http</artifactId>
-			<version>4.0.32.Final</version>
+			<version>4.0.33.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactivestreams</groupId>

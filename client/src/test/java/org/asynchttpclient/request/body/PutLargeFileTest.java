@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  */
 public class PutLargeFileTest extends AbstractBasicTest {
 
-    @Test(groups = "standalone", enabled = true)
+    @Test(groups = "standalone")
     public void testPutLargeFile() throws Exception {
 
         File file = createTempFile(1024 * 1024);

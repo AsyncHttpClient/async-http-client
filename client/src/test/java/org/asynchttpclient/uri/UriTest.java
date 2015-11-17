@@ -19,7 +19,7 @@ import static org.testng.Assert.assertNull;
 
 public class UriTest {
 
-    @Test
+    @Test(groups = "standalone")
     public void testSimpleParsing() {
         Uri url = Uri.create("https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
         assertEquals(url.getScheme(), "https");
@@ -29,7 +29,7 @@ public class UriTest {
         assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRootRelativeURIWithRootContext() {
 
         Uri context = Uri.create("https://graph.facebook.com");
@@ -43,7 +43,7 @@ public class UriTest {
         assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
     
-    @Test
+    @Test(groups = "standalone")
     public void testRootRelativeURIWithNonRootContext() {
 
         Uri context = Uri.create("https://graph.facebook.com/foo/bar");
@@ -57,7 +57,7 @@ public class UriTest {
         assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
     
-    @Test
+    @Test(groups = "standalone")
     public void testNonRootRelativeURIWithNonRootContext() {
 
         Uri context = Uri.create("https://graph.facebook.com/foo/bar");
@@ -71,7 +71,7 @@ public class UriTest {
         assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
     
-    @Test
+    @Test(groups = "standalone")
     public void testAbsoluteURIWithContext() {
 
         Uri context = Uri.create("https://hello.com/foo/bar");
@@ -85,7 +85,7 @@ public class UriTest {
         assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithDots() {
         Uri context = Uri.create("https://hello.com/level1/level2/");
 
@@ -98,7 +98,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithDotsAboveRoot() {
         Uri context = Uri.create("https://hello.com/level1");
 
@@ -111,7 +111,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithAbsoluteDots() {
         Uri context = Uri.create("https://hello.com/level1/");
 
@@ -124,7 +124,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDots() {
         Uri context = Uri.create("https://hello.com/level1/level2/");
 
@@ -137,7 +137,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDotsAboveRoot() {
         Uri context = Uri.create("https://hello.com/level1/level2");
 
@@ -150,7 +150,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithAbsoluteConsecutiveDots() {
         Uri context = Uri.create("https://hello.com/level1/level2/");
 
@@ -163,7 +163,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDotsFromRoot() {
         Uri context = Uri.create("https://hello.com/");
 
@@ -176,7 +176,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDotsFromRootResource() {
         Uri context = Uri.create("https://hello.com/level1");
 
@@ -189,7 +189,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDotsFromSubrootResource() {
         Uri context = Uri.create("https://hello.com/level1/level2");
 
@@ -202,7 +202,7 @@ public class UriTest {
         assertNull(url.getQuery());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testRelativeUriWithConsecutiveDotsFromLevel3Resource() {
         Uri context = Uri.create("https://hello.com/level1/level2/level3");
 

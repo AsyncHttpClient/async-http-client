@@ -107,7 +107,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testNonProxyHost() {
 
         // // should avoid, it's in non-proxy hosts
@@ -220,7 +220,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = "standalone")
+     @Test(groups = "standalone", enabled = false)
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();

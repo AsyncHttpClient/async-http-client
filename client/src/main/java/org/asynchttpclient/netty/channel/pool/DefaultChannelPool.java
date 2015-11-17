@@ -166,21 +166,20 @@ public final class DefaultChannelPool implements ChannelPool {
             List<IdleChannel> closedChannels = null;
             for (int i = 0; i < candidates.size(); i++) {
                 IdleChannel idleChannel = candidates.get(i);
-                if (!isChannelCloseable(idleChannel.channel))
-                    if (isChannelCloseable(idleChannel.channel)) {
-                        LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
-                        close(idleChannel.channel);
-                        if (closedChannels != null) {
-                            closedChannels.add(idleChannel);
-                        }
-
-                    } else if (closedChannels == null) {
-                        // first non closeable to be skipped, copy all
-                        // previously skipped closeable channels
-                        closedChannels = new ArrayList<>(candidates.size());
-                        for (int j = 0; j < i; j++)
-                            closedChannels.add(candidates.get(j));
+                if (isChannelCloseable(idleChannel.channel)) {
+                    LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
+                    close(idleChannel.channel);
+                    if (closedChannels != null) {
+                        closedChannels.add(idleChannel);
                     }
+
+                } else if (closedChannels == null) {
+                    // first non closeable to be skipped, copy all
+                    // previously skipped closeable channels
+                    closedChannels = new ArrayList<>(candidates.size());
+                    for (int j = 0; j < i; j++)
+                        closedChannels.add(candidates.get(j));
+                }
             }
 
             return closedChannels != null ? closedChannels : candidates;

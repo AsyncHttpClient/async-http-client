@@ -10,23 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.channel;
+package org.asynchttpclient.resolver;
 
-import java.net.InetAddress;
+import io.netty.util.concurrent.Future;
 
-public class NameResolution {
+import java.net.InetSocketAddress;
+import java.util.List;
 
-    public static final long UNKNOWN_EXPIRATION = 0;
-    
-    public final InetAddress address;
-    public final long expiration;
-    
-    public NameResolution(InetAddress address) {
-        this(address, UNKNOWN_EXPIRATION);
-       }
-    
-    public NameResolution(InetAddress address, long expiration) {
-     this.address = address;
-     this.expiration = expiration;
-    }
+public interface NameResolver {
+
+    Future<List<InetSocketAddress>> resolve(String name, int port);
 }

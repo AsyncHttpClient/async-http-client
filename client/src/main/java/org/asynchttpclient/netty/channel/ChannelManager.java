@@ -38,7 +38,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
@@ -57,8 +56,8 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
-import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
+import org.asynchttpclient.netty.handler.HttpProtocol;
 import org.asynchttpclient.netty.handler.WebSocketProtocol;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
@@ -70,6 +69,7 @@ import org.slf4j.LoggerFactory;
 public class ChannelManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
+    public static final String PINNED_ENTRY = "entry";
     public static final String HTTP_CLIENT_CODEC = "http";
     public static final String SSL_HANDLER = "ssl";
     public static final String DEFLATER_HANDLER = "deflater";
@@ -233,7 +233,7 @@ public class ChannelManager {
             throw new IllegalArgumentException(e);
         }
     }
-    
+
     public void configureBootstraps(NettyRequestSender requestSender) {
 
         HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
@@ -242,10 +242,13 @@ public class ChannelManager {
         WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
         wsHandler = new AsyncHttpClientHandler(config, this, requestSender, wsProtocol);
 
+        final NoopHandler pinnedEntry = new NoopHandler();
+
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
+                        .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
@@ -253,8 +256,8 @@ public class ChannelManager {
 
                 ch.config().setOption(ChannelOption.AUTO_READ, false);
 
-                if (config.getHttpAdditionalPipelineInitializer() != null)
-                    config.getHttpAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getHttpAdditionalChannelInitializer() != null)
+                    config.getHttpAdditionalChannelInitializer().initChannel(ch);
             }
         });
 
@@ -262,11 +265,12 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
+                        .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(AHC_WS_HANDLER, wsHandler);
 
-                if (config.getWsAdditionalPipelineInitializer() != null)
-                    config.getWsAdditionalPipelineInitializer().initPipeline(ch.pipeline());
+                if (config.getWsAdditionalChannelInitializer() != null)
+                    config.getWsAdditionalChannelInitializer().initChannel(ch);
             }
         });
     }
@@ -283,13 +287,12 @@ public class ChannelManager {
             return new HttpContentDecompressor();
     }
 
-    public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> handler, boolean keepAlive, Object partitionKey) {
+    public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> asyncHandler, boolean keepAlive, Object partitionKey) {
         if (channel.isActive() && keepAlive) {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
-            if (handler instanceof AsyncHandlerExtensions) {
-                AsyncHandlerExtensions.class.cast(handler).onConnectionOffer(channel);
-            }
+            if (asyncHandler instanceof AsyncHandlerExtensions)
+                AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOffer(channel);
             channelPool.offer(channel, partitionKey);
             if (maxConnectionsPerHostEnabled)
                 channelId2PartitionKey.putIfAbsent(channel, partitionKey);
@@ -412,12 +415,12 @@ public class ChannelManager {
             if (isSslHandlerConfigured(pipeline)) {
                 pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
             } else {
-                pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
-                pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
+                pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
+                pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
             }
 
         else
-            pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
+            pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
         if (requestUri.isWebSocket()) {
             pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
@@ -447,29 +450,6 @@ public class ChannelManager {
         SslHandler sslHandler = createSslHandler(peerHost, peerPort);
         pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
         return sslHandler;
-    }
-
-    /**
-     * Always make sure the channel who got cached support the proper protocol.
-     * It could only occurs when a HttpMethod. CONNECT is used against a proxy
-     * that requires upgrading from http to https.
-     */
-    /**
-     * @param pipeline the pipeline
-     * @param uri the uri
-     * @param virtualHost the virtual host
-     * @throws GeneralSecurityException if creating the SslHandler crashed
-     */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, Uri uri, String virtualHost) throws GeneralSecurityException {
-
-        boolean sslHandlerConfigured = isSslHandlerConfigured(pipeline);
-
-        if (uri.isSecured()) {
-            if (!sslHandlerConfigured)
-                addSslHandler(pipeline, uri, virtualHost);
-
-        } else if (sslHandlerConfigured)
-            pipeline.remove(SSL_HANDLER);
     }
 
     public Bootstrap getBootstrap(Uri uri, ProxyServer proxy) {

@@ -80,7 +80,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
      * Tests that the streaming of a file works.
      * @throws IOException 
      */
-    @Test
+    @Test(groups = "standalone")
     public void testSendingSmallFilesAndByteArray() throws IOException {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";

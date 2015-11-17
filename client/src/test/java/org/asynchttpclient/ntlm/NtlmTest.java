@@ -36,8 +36,8 @@ public class NtlmTest extends AbstractBasicTest {
     public static class NTLMHandler extends AbstractHandler {
 
         @Override
-        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest,
-                HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException,
+                ServletException {
 
             String authorization = httpRequest.getHeader("Authorization");
             if (authorization == null) {
@@ -81,14 +81,13 @@ public class NtlmTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void lazyNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
         ntlmAuthTest(realmBuilderBase());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void preemptiveNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
         ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
     }
 }
-

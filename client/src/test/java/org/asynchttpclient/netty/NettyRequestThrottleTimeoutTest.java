@@ -71,7 +71,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "netty_provider" })
+    @Test(groups = "standalone")
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
 

@@ -16,7 +16,7 @@
 package org.asynchttpclient;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.testng.Assert.*;
 
@@ -34,7 +34,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 /**
@@ -87,7 +86,7 @@ public class QueryParametersTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
-            LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
+            logger.info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
             String s = URLDecoder.decode(response.getHeader("q"), UTF_8.name());
             assertEquals(s, REQUEST_PARAM);

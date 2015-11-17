@@ -19,11 +19,9 @@ import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
@@ -69,30 +67,18 @@ public class HttpsProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @Test(groups = "online")
+    @Test(groups = "standalone")
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
-
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                    logger.debug(t.getMessage(), t);
-                }
-
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-                    return response;
-                }
-            });
-            Response r = responseFuture.get();
+            Response r = asyncHttpClient.executeRequest(rb.build()).get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 
-    @Test(groups = "online")
+    @Test(groups = "standalone")
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//
@@ -100,21 +86,23 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 .setAcceptAnyCertificate(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(get(getTargetUrl2()), new AsyncCompletionHandlerBase() {
-
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                    logger.debug(t.getMessage(), t);
-                }
-
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-                    return response;
-                }
-            });
-            Response r = responseFuture.get();
+            Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void testPooledConnectionsWithProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true).setKeepAlive(true))) {
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
+
+            Response r1 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(r1.getStatusCode(), 200);
+
+            Response r2 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(r2.getStatusCode(), 200);
         }
     }
 }

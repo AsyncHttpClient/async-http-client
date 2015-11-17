@@ -12,12 +12,10 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.*;
 
-import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +37,7 @@ public class TextMessageTest extends AbstractBasicTest {
         };
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onOpen() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -69,7 +67,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onEmptyListenerTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             WebSocket websocket = null;
@@ -82,19 +80,16 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
+    @Test(groups = "standalone", timeOut = 60000, expectedExceptions = UnknownHostException.class)
     public void onFailureTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
-            if (e.getCause() != null)
-                throw e.getCause();
-            else
-                throw e;
+            throw e.getCause();
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onTimeoutCloseTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -124,7 +119,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void onClose() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -156,7 +151,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void echoText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -193,7 +188,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void echoDoubleListenerText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -252,7 +247,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -325,7 +320,7 @@ public class TextMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void echoTextAndThenClose() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch textLatch = new CountDownLatch(1);

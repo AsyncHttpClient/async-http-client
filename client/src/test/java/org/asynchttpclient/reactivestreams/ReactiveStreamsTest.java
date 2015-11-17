@@ -115,7 +115,6 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
             // Make sure a regular request works
             assertEquals(c.preparePost(getTargetUrl()).setBody("Hello").execute().get().getResponseBody(), "Hello");
-
         }
     }
 

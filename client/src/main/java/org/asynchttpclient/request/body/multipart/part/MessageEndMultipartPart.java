@@ -25,33 +25,50 @@ import org.asynchttpclient.request.body.multipart.FileLikePart;
 
 public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
-    private final ByteBuf buffer;
+    // lazy
+    private ByteBuf contentBuffer;
 
     public MessageEndMultipartPart(byte[] boundary) {
         super(null, boundary);
-        buffer = ByteBufAllocator.DEFAULT.buffer((int) length());
-        buffer.writeBytes(EXTRA_BYTES).writeBytes(boundary).writeBytes(EXTRA_BYTES).writeBytes(CRLF_BYTES);
         state = MultipartState.PRE_CONTENT;
     }
 
     @Override
     public long transferTo(ByteBuf target) throws IOException {
-        return transfer(buffer, target, MultipartState.DONE);
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
     }
 
     @Override
     public long transferTo(WritableByteChannel target) throws IOException {
         slowTarget = false;
-        return transfer(buffer, target, MultipartState.DONE);
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
+    }
+
+    private ByteBuf lazyLoadContentBuffer() {
+        if (contentBuffer == null) {
+            contentBuffer = ByteBufAllocator.DEFAULT.buffer((int) getContentLength());
+            contentBuffer.writeBytes(EXTRA_BYTES).writeBytes(boundary).writeBytes(EXTRA_BYTES).writeBytes(CRLF_BYTES);
+        }
+        return contentBuffer;
     }
 
     @Override
-    protected ByteBuf computePreContentBytes() {
+    protected int computePreContentLength() {
+        return 0;
+    }
+
+    @Override
+    protected ByteBuf computePreContentBytes(int preContentLength) {
         return Unpooled.EMPTY_BUFFER;
     }
 
     @Override
-    protected ByteBuf computePostContentBytes() {
+    protected int computePostContentLength() {
+        return 0;
+    }
+
+    @Override
+    protected ByteBuf computePostContentBytes(int postContentLength) {
         return Unpooled.EMPTY_BUFFER;
     }
 
@@ -72,6 +89,8 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
     @Override
     public void close() {
-        buffer.release();
+        super.close();
+        if (contentBuffer != null)
+            contentBuffer.release();
     }
 }

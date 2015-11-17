@@ -22,8 +22,6 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,13 +44,10 @@ import org.testng.annotations.Test;
 
 public class MaxConnectionsInThreads extends AbstractBasicTest {
 
-    // FIXME weird
-    private static URI servletEndpointUri;
-
-    @Test(groups = "online")
+    @Test(groups = "standalone")
     public void testMaxConnectionsWithinThreads() throws Exception {
 
-        String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
+        String[] urls = new String[] { getTargetUrl(), getTargetUrl() };
 
         AsyncHttpClientConfig config = config()//
                 .setConnectTimeout(1000)//
@@ -134,19 +129,10 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
         context.addServlet(new ServletHolder(new MockTimeoutHttpServlet()), "/timeout/*");
 
         server.start();
-
-        String endpoint = "http://127.0.0.1:" + port1 + "/timeout/";
-        servletEndpointUri = new URI(endpoint);
     }
 
     public String getTargetUrl() {
-        String s = "http://127.0.0.1:" + port1 + "/timeout/";
-        try {
-            servletEndpointUri = new URI(s);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-        return s;
+        return "http://127.0.0.1:" + port1 + "/timeout/";
     }
 
     @SuppressWarnings("serial")

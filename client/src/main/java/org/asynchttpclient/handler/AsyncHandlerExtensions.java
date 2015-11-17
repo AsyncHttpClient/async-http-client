@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -14,48 +14,92 @@ package org.asynchttpclient.handler;
 
 import io.netty.channel.Channel;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.channel.NameResolution;
 import org.asynchttpclient.netty.request.NettyRequest;
 
 /**
  * This interface hosts new low level callback methods on {@link AsyncHandler}.
- * For now, those methods are in a dedicated interface in order not to break the
- * existing API, but could be merged into one of the existing ones in AHC 2.
  * 
  */
 public interface AsyncHandlerExtensions {
 
-    /**
-     * Notify the callback when trying to open a new connection.
-     */
-    void onConnectionOpen();
+    // ////////// DNS /////////////////
 
     /**
-     * Notify the callback after DNS resolution has completed.
+     * Notify the callback before DNS resolution
      * 
+     * @param name the name to be resolved
+     */
+    void onDnsResolution(String name);
+
+    /**
+     * Notify the callback after DNS resolution was successful.
+     * 
+     * @param name the name to be resolved
      * @param addresses the resolved addresses
      */
-    void onDnsResolved(NameResolution[] addresses);
+    void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses);
+
+    /**
+     * Notify the callback after DNS resolution failed.
+     * 
+     * @param name the name to be resolved
+     * @param cause the failure cause
+     */
+    void onDnsResolutionFailure(String name, Throwable cause);
+
+    // ////////////// TCP CONNECT ////////
+
+    /**
+     * Notify the callback when trying to open a new connection.
+     * 
+     * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
+     * 
+     * @param remoteAddress the address we try to connect to
+     */
+    void onTcpConnect(InetSocketAddress remoteAddress);
 
     /**
      * Notify the callback after a successful connect
      * 
+     * @param remoteAddress the address we try to connect to
      * @param connection the connection
-     * @param address the connected addresses
      */
-    void onConnectionSuccess(Channel connection, InetAddress address);
-    
+    void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection);
+
     /**
      * Notify the callback after a failed connect.
-     * Might be called several times, or be followed by onConnectionSuccess
-     * when the name was resolved to multiple addresses.
      * 
-     * @param address the tentative addresses
+     * Might be called several times, or be followed by onTcpConnectSuccess when the name was resolved to multiple addresses.
+     * 
+     * @param remoteAddress the address we try to connect to
+     * @param cause the cause of the failure
      */
-    void onConnectionFailure(InetAddress address);
+    void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause);
+
+    // ////////////// TLS ///////////////
+
+    /**
+     * Notify the callback before TLS handshake
+     */
+    void onTlsHandshake();
+
+    /**
+     * Notify the callback after the TLS was successful
+     */
+    void onTlsHandshakeSuccess();
+
+    /**
+     * Notify the callback after the TLS failed
+     * 
+     * @param cause the cause of the failure
+     */
+    void onTlsHandshakeFailure(Throwable cause);
+
+    // /////////// POOLING /////////////
 
     /**
      * Notify the callback when trying to fetch a connection from the pool.
@@ -63,8 +107,7 @@ public interface AsyncHandlerExtensions {
     void onConnectionPool();
 
     /**
-     * Notify the callback when a new connection was successfully fetched from
-     * the pool.
+     * Notify the callback when a new connection was successfully fetched from the pool.
      * 
      * @param connection the connection
      */
@@ -77,10 +120,11 @@ public interface AsyncHandlerExtensions {
      */
     void onConnectionOffer(Channel connection);
 
+    // //////////// SENDING //////////////
+
     /**
-     * Notify the callback when a request is being written on the wire. If the
-     * original request causes multiple requests to be sent, for example,
-     * because of authorization or retry, it will be notified multiple times.
+     * Notify the callback when a request is being written on the channel. If the original request causes multiple requests to be sent, for example, because of authorization or
+     * retry, it will be notified multiple times.
      * 
      * @param request the real request object as passed to the provider
      */
@@ -90,10 +134,4 @@ public interface AsyncHandlerExtensions {
      * Notify the callback every time a request is being retried.
      */
     void onRetry();
-
-    /**
-     * Notify the callback when the SSL handshake performed to establish an
-     * HTTPS connection has been completed.
-     */
-    void onSslHandshakeCompleted();
 }

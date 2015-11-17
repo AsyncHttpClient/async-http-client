@@ -22,11 +22,13 @@ import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.channel.pool.KeepAliveStrategy;
@@ -114,14 +116,15 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
         }
     }
 
-    @Test(timeOut = 2000, expectedExceptions = { Exception.class })
+    @Test(groups = "standalone", timeOut = 2000)
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
             try {
                 client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
-                throw e.getCause() != null ? e.getCause() : e;
+                assertTrue(e.getCause() instanceof ConnectException, "Expecting a ConnectException");
+                assertTrue(e.getCause().getCause() instanceof SSLHandshakeException, "Expecting SSLHandshakeException cause");
             }
         }
     }
@@ -133,8 +136,20 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
             client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            Object[] expectedEvents = new Object[] { CONNECTION_POOL_EVENT, CONNECTION_OPEN_EVENT, DNS_RESOLVED_EVENT, CONNECTION_SUCCESS_EVENT, SSL_HANDSHAKE_COMPLETED_EVENT,
-                    REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT, HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT };
+            Object[] expectedEvents = new Object[] { //
+            CONNECTION_POOL_EVENT,//
+                    DNS_RESOLUTION_EVENT,//
+                    DNS_RESOLUTION_SUCCESS_EVENT,//
+                    CONNECTION_OPEN_EVENT,//
+                    CONNECTION_SUCCESS_EVENT,//
+                    TLS_HANDSHAKE_EVENT,//
+                    TLS_HANDSHAKE_SUCCESS_EVENT,//
+                    REQUEST_SEND_EVENT,//
+                    HEADERS_WRITTEN_EVENT,//
+                    STATUS_RECEIVED_EVENT,//
+                    HEADERS_RECEIVED_EVENT,//
+                    CONNECTION_OFFER_EVENT,//
+                    COMPLETED_EVENT };
 
             assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
         }

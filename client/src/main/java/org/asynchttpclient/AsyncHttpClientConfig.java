@@ -1,8 +1,8 @@
 package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Timer;
@@ -268,9 +268,9 @@ public interface AsyncHttpClientConfig {
 
     boolean isUseNativeTransport();
 
-    AdditionalPipelineInitializer getHttpAdditionalPipelineInitializer();
+    AdditionalChannelInitializer getHttpAdditionalChannelInitializer();
 
-    AdditionalPipelineInitializer getWsAdditionalPipelineInitializer();
+    AdditionalChannelInitializer getWsAdditionalChannelInitializer();
 
     ResponseBodyPartFactory getResponseBodyPartFactory();
 
@@ -280,9 +280,9 @@ public interface AsyncHttpClientConfig {
 
     KeepAliveStrategy getKeepAliveStrategy();
 
-    interface AdditionalPipelineInitializer {
+    interface AdditionalChannelInitializer {
 
-        void initPipeline(ChannelPipeline pipeline) throws Exception;
+        void initChannel(Channel channel) throws Exception;
     }
 
     enum ResponseBodyPartFactory {

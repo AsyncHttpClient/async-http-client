@@ -66,12 +66,12 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void echoWSText() throws Exception {
         runTest(false);
     }
 
-    @Test(timeOut = 60000)
+    @Test(groups = "standalone", timeOut = 60000)
     public void echoWSSText() throws Exception {
         runTest(true);
     }

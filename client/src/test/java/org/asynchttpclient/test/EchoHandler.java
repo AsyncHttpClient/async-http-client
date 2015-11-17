@@ -29,7 +29,6 @@ public class EchoHandler extends AbstractHandler {
         if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
             httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
         }
-        ;
 
         Enumeration<?> e = httpRequest.getHeaderNames();
         String param;

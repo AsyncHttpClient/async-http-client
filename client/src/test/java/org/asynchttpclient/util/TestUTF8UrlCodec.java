@@ -20,7 +20,7 @@ import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
 
 public class TestUTF8UrlCodec {
-    @Test(groups = "fast")
+    @Test(groups = "standalone")
     public void testBasics() {
         assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
         assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
