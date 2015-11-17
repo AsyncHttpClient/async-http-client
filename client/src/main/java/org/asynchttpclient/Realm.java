@@ -323,12 +323,12 @@ public class Realm {
 
             // prefer auth over auth-int
             for (String rawServerSupportedQop : serverSupportedQops) {
-                if (rawServerSupportedQop.equals("auth"))
+                if ("auth".equals(rawServerSupportedQop))
                     return rawServerSupportedQop;
             }
 
             for (String rawServerSupportedQop : serverSupportedQops) {
-                if (rawServerSupportedQop.equals("auth-int"))
+                if ("auth-int".equals(rawServerSupportedQop))
                     return rawServerSupportedQop;
             }
 
@@ -407,7 +407,7 @@ public class Realm {
             sb.append(principal).append(':').append(realmName).append(':').append(password);
             byte[] ha1 = md5FromRecycledStringBuilder(sb, md);
 
-            if (algorithm == null || algorithm.equals("MD5")) {
+            if (algorithm == null || "MD5".equals(algorithm)) {
                 return ha1;
             } else if ("MD5-sess".equals(algorithm)) {
                 appendBase16(sb, ha1);
@@ -424,7 +424,7 @@ public class Realm {
             if ("auth-int".equals(qop)) {
                 sb.append(':').append(EMPTY_ENTITY_MD5);
 
-            } else if (qop != null && !qop.equals("auth")) {
+            } else if (qop != null && !"auth".equals(qop)) {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
             }
 

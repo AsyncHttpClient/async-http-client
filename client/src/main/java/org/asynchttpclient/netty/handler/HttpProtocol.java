@@ -89,7 +89,7 @@ public final class HttpProtocol extends Protocol {
             Realm realm,//
             NettyResponseFuture<?> future) {
 
-        if (authenticateHeader.equals("NTLM")) {
+        if ("NTLM".equals(authenticateHeader)) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
@@ -112,7 +112,7 @@ public final class HttpProtocol extends Protocol {
             HttpHeaders headers,//
             NettyResponseFuture<?> future) {
 
-        if (authenticateHeader.equals("NTLM")) {
+        if ("NTLM".equals(authenticateHeader)) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other

@@ -99,10 +99,10 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         sb.append(scheme).append("://").append(uri.getHost());
         
         int port = uri.getPort();
-        if (scheme.equals("http")) {
+        if ("http".equals(scheme)) {
             if (port == 80)
                 port = -1;
-        } else if (scheme.equals("https")) {
+        } else if ("https".equals(scheme)) {
             if (port == 443)
                 port = -1;
         }
