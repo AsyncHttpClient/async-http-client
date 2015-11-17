@@ -48,7 +48,7 @@ public abstract class FileLikePart extends PartBase {
                 transfertEncoding == null ? DEFAULT_TRANSFER_ENCODING : transfertEncoding);
     }
 
-    public final void setFileName(String fileName) {
+    public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
