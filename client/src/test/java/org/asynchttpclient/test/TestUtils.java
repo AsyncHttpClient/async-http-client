@@ -74,7 +74,7 @@ public class TestUtils {
     public static final Publisher<ByteBuffer> LARGE_IMAGE_PUBLISHER;
     public static final File SIMPLE_TEXT_FILE;
     public static final String SIMPLE_TEXT_FILE_STRING;
-    private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
+    private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", Thread.currentThread().getContextClassLoader().getResource("realm.properties").toString());
 
     static {
         try {
@@ -176,7 +176,6 @@ public class TestUtils {
     public static void addHttpConnector(Server server, int port) {
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
-
         server.addConnector(connector);
     }
 
