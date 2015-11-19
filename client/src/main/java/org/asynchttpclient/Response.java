@@ -17,6 +17,7 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.netty.NettyResponse;
 import org.asynchttpclient.uri.Uri;
 
 import io.netty.handler.codec.http.HttpHeaders;
@@ -199,7 +200,7 @@ public interface Response {
          * @return a {@link Response} instance
          */
         public Response build() {
-            return status == null ? null : status.prepareResponse(headers, bodyParts);
+            return status == null ? null : new NettyResponse(status, headers, bodyParts);
         }
 
         /**

@@ -17,13 +17,9 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.SocketAddress;
-import java.util.List;
 
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Response;
+import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -45,11 +41,6 @@ public class NettyResponseStatus extends HttpResponseStatus {
             remoteAddress = null;
             localAddress = null;
         }
-    }
-
-    @Override
-    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new NettyResponse(this, headers, bodyParts);
     }
 
     /**

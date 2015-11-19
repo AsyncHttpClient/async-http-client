@@ -13,13 +13,9 @@
 
 package org.asynchttpclient.webdav;
 
-import io.netty.handler.codec.http.HttpHeaders;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,9 +28,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.netty.NettyResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -51,16 +45,16 @@ import org.xml.sax.SAXException;
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
-    private final List<HttpResponseBodyPart> bodies = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
+    private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
 
     /**
      * {@inheritDoc}
      */
     @Override
     public final State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-        bodies.add(content);
+        bodyParts.add(content);
         return State.CONTINUE;
     }
 
@@ -82,18 +76,50 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         return State.CONTINUE;
     }
 
+    private Document readXMLResponse(InputStream stream) {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        Document document = null;
+        try {
+            document = factory.newDocumentBuilder().parse(stream);
+            parse(document);
+        } catch (SAXException e) {
+            logger.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } catch (ParserConfigurationException e) {
+            logger.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return document;
+    }
+
+    private void parse(Document document) {
+        Element element = document.getDocumentElement();
+        NodeList statusNode = element.getElementsByTagName("status");
+        for (int i = 0; i < statusNode.getLength(); i++) {
+            Node node = statusNode.item(i);
+
+            String value = node.getFirstChild().getNodeValue();
+            int statusCode = Integer.valueOf(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
+            String statusText = value.substring(value.lastIndexOf(" "));
+            status = new HttpStatusWrapper(status, statusText, statusCode);
+        }
+    }
+    
     /**
      * {@inheritDoc}
      */
     @Override
     public final T onCompleted() throws Exception {
         if (status != null) {
-            Response response = status.prepareResponse(headers, bodies);
             Document document = null;
             if (status.getStatusCode() == 207) {
-                document = readXMLResponse(response.getResponseBodyAsStream());
+                document = readXMLResponse(new NettyResponse(status, headers, bodyParts).getResponseBodyAsStream());
             }
-            return onCompleted(new WebDavResponse(status.prepareResponse(headers, bodies), document));
+            // recompute response as readXMLResponse->parse might have updated it
+            return onCompleted(new WebDavResponse(new NettyResponse(status, headers, bodyParts), document));
         } else {
             throw new IllegalStateException("Status is null");
         }
@@ -129,109 +155,6 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
             this.wrapped = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;
-        }
-
-        @Override
-        public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-            final Response wrappedResponse = wrapped.prepareResponse(headers, bodyParts);
-
-            return new Response() {
-
-                @Override
-                public int getStatusCode() {
-                    return statusCode;
-                }
-
-                @Override
-                public String getStatusText() {
-                    return statusText;
-                }
-
-                @Override
-                public byte[] getResponseBodyAsBytes() {
-                    return wrappedResponse.getResponseBodyAsBytes();
-                }
-
-                @Override
-                public ByteBuffer getResponseBodyAsByteBuffer() {
-                    return wrappedResponse.getResponseBodyAsByteBuffer();
-                }
-
-                @Override
-                public InputStream getResponseBodyAsStream() {
-                    return wrappedResponse.getResponseBodyAsStream();
-                }
-
-                @Override
-                public String getResponseBody(Charset charset) {
-                    return wrappedResponse.getResponseBody(charset);
-                }
-
-                @Override
-                public String getResponseBody() {
-                    return wrappedResponse.getResponseBody();
-                }
-
-                @Override
-                public Uri getUri() {
-                    return wrappedResponse.getUri();
-                }
-
-                @Override
-                public String getContentType() {
-                    return wrappedResponse.getContentType();
-                }
-
-                @Override
-                public String getHeader(String name) {
-                    return wrappedResponse.getHeader(name);
-                }
-
-                @Override
-                public List<String> getHeaders(String name) {
-                    return wrappedResponse.getHeaders(name);
-                }
-
-                @Override
-                public HttpHeaders getHeaders() {
-                    return wrappedResponse.getHeaders();
-                }
-
-                @Override
-                public boolean isRedirected() {
-                    return wrappedResponse.isRedirected();
-                }
-
-                @Override
-                public List<Cookie> getCookies() {
-                    return wrappedResponse.getCookies();
-                }
-
-                @Override
-                public boolean hasResponseStatus() {
-                    return wrappedResponse.hasResponseStatus();
-                }
-
-                @Override
-                public boolean hasResponseHeaders() {
-                    return wrappedResponse.hasResponseHeaders();
-                }
-
-                @Override
-                public boolean hasResponseBody() {
-                    return wrappedResponse.hasResponseBody();
-                }
-
-                @Override
-                public SocketAddress getRemoteAddress() {
-                    return wrappedResponse.getRemoteAddress();
-                }
-
-                @Override
-                public SocketAddress getLocalAddress() {
-                    return wrappedResponse.getLocalAddress();
-                }
-            };
         }
 
         @Override
@@ -272,38 +195,6 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         @Override
         public SocketAddress getLocalAddress() {
             return wrapped.getLocalAddress();
-        }
-    }
-
-    private Document readXMLResponse(InputStream stream) {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        Document document = null;
-        try {
-            document = factory.newDocumentBuilder().parse(stream);
-            parse(document);
-        } catch (SAXException e) {
-            logger.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (ParserConfigurationException e) {
-            logger.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-        return document;
-    }
-
-    private void parse(Document document) {
-        Element element = document.getDocumentElement();
-        NodeList statusNode = element.getElementsByTagName("status");
-        for (int i = 0; i < statusNode.getLength(); i++) {
-            Node node = statusNode.item(i);
-
-            String value = node.getFirstChild().getNodeValue();
-            int statusCode = Integer.valueOf(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
-            String statusText = value.substring(value.lastIndexOf(" "));
-            status = new HttpStatusWrapper(status, statusText, statusCode);
         }
     }
 }

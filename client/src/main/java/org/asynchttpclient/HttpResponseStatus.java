@@ -17,7 +17,6 @@
 package org.asynchttpclient;
 
 import java.net.SocketAddress;
-import java.util.List;
 
 import org.asynchttpclient.uri.Uri;
 
@@ -42,15 +41,6 @@ public abstract class HttpResponseStatus {
     public final Uri getUri() {
         return uri;
     }
-
-    /**
-     * Prepare a {@link Response}
-     * 
-     * @param headers {@link HttpResponseHeaders}
-     * @param bodyParts list of {@link HttpResponseBodyPart}
-     * @return a {@link Response}
-     */
-    public abstract Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts);
 
     /**
      * Return the response status code

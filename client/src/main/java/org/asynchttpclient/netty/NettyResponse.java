@@ -13,41 +13,53 @@
  */
 package org.asynchttpclient.netty;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.ResponseBase;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * Wrapper around the {@link org.asynchttpclient.Response} API.
  */
-public class NettyResponse extends ResponseBase {
+public class NettyResponse implements Response {
+
+    private final List<HttpResponseBodyPart> bodyParts;
+    private final HttpResponseHeaders headers;
+    private final HttpResponseStatus status;
+    private List<Cookie> cookies;
 
     public NettyResponse(HttpResponseStatus status,//
             HttpResponseHeaders headers,//
             List<HttpResponseBodyPart> bodyParts) {
-        super(status, headers, bodyParts);
+        this.bodyParts = bodyParts;
+        this.headers = headers;
+        this.status = status;
     }
 
-    protected List<Cookie> buildCookies() {
+    private List<Cookie> buildCookies() {
 
-        List<String> setCookieHeaders = headers.getHeaders().getAll(HttpHeaders.Names.SET_COOKIE2);
+        List<String> setCookieHeaders = headers.getHeaders().getAll(SET_COOKIE2);
 
         if (!isNonEmpty(setCookieHeaders)) {
-            setCookieHeaders = headers.getHeaders().getAll(HttpHeaders.Names.SET_COOKIE);
+            setCookieHeaders = headers.getHeaders().getAll(SET_COOKIE);
         }
 
         if (isNonEmpty(setCookieHeaders)) {
@@ -61,6 +73,94 @@ public class NettyResponse extends ResponseBase {
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public final int getStatusCode() {
+        return status.getStatusCode();
+    }
+
+    @Override
+    public final String getStatusText() {
+        return status.getStatusText();
+    }
+
+    @Override
+    public final Uri getUri() {
+        return status.getUri();
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return status.getRemoteAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        return status.getLocalAddress();
+    }
+
+    @Override
+    public final String getContentType() {
+        return headers != null ? getHeader(CONTENT_TYPE) : null;
+    }
+
+    @Override
+    public final String getHeader(String name) {
+        return headers != null ? getHeaders().get(name) : null;
+    }
+
+    @Override
+    public final List<String> getHeaders(String name) {
+        return headers != null ? getHeaders().getAll(name) : Collections.<String> emptyList();
+    }
+
+    @Override
+    public final HttpHeaders getHeaders() {
+        return headers != null ? headers.getHeaders() : HttpHeaders.EMPTY_HEADERS;
+    }
+
+    @Override
+    public final boolean isRedirected() {
+        switch (status.getStatusCode()) {
+        case 301:
+        case 302:
+        case 303:
+        case 307:
+        case 308:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    @Override
+    public List<Cookie> getCookies() {
+
+        if (headers == null) {
+            return Collections.emptyList();
+        }
+
+        if (cookies == null) {
+            cookies = buildCookies();
+        }
+        return cookies;
+
+    }
+
+    @Override
+    public boolean hasResponseStatus() {
+        return status != null;
+    }
+
+    @Override
+    public boolean hasResponseHeaders() {
+        return headers != null && !headers.getHeaders().isEmpty();
+    }
+
+    @Override
+    public boolean hasResponseBody() {
+        return isNonEmpty(bodyParts);
     }
 
     @Override
@@ -87,6 +187,17 @@ public class NettyResponse extends ResponseBase {
         return getResponseBody(null);
     }
 
+    private Charset computeCharset(Charset charset) {
+
+        if (charset == null) {
+            String contentType = getContentType();
+            if (contentType != null)
+                charset = parseCharset(contentType); // parseCharset can return
+                                                     // null
+        }
+        return charset != null ? charset : DEFAULT_CHARSET;
+    }
+
     @Override
     public String getResponseBody(Charset charset) {
         return new String(getResponseBodyAsBytes(), computeCharset(charset));
@@ -95,5 +206,20 @@ public class NettyResponse extends ResponseBase {
     @Override
     public InputStream getResponseBodyAsStream() {
         return new ByteArrayInputStream(getResponseBodyAsBytes());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName()).append(" {\n")//
+                .append("\tstatusCode=").append(getStatusCode()).append("\n")//
+                .append("\theaders=\n");
+
+        for (Map.Entry<String, String> header : getHeaders()) {
+            sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
+        }
+        sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
+                .append("}").toString();
+        return sb.toString();
     }
 }
