@@ -38,7 +38,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.NettyResponseHeaders;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
@@ -84,14 +83,13 @@ public final class WebSocketProtocol extends Protocol {
             Request request = future.getCurrentRequest();
             
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
-            HttpResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
+            HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
             Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
             if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
                 return;
             }
 
-            future.setHttpHeaders(response.headers());
             if (exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().code(), realm))
                 return;
 

@@ -17,35 +17,28 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
 
-
 /**
  * A class that represent the HTTP headers.
  */
-public abstract class HttpResponseHeaders {
+public class HttpResponseHeaders {
 
-    private final boolean traillingHeaders;
+    private final HttpHeaders headers;
+    private final boolean trailling;
 
-    public HttpResponseHeaders() {
-        this.traillingHeaders = false;
+    public HttpResponseHeaders(HttpHeaders headers) {
+        this(headers, false);
     }
 
-    public HttpResponseHeaders(boolean traillingHeaders) {
-        this.traillingHeaders = traillingHeaders;
+    public HttpResponseHeaders(HttpHeaders headers, boolean trailling) {
+        this.headers = headers;
+        this.trailling = trailling;
     }
 
-    /**
-     * Return the HTTP header
-     *
-     * @return an {@link HttpHeaders}
-     */
-    abstract public HttpHeaders getHeaders();
+    public HttpHeaders getHeaders() {
+        return headers;
+    }
 
-    /**
-     * Return true is headers has been received after the response body.
-     *
-     * @return true is headers has been received after the response body.
-     */
-    public boolean isTraillingHeadersReceived() {
-        return traillingHeaders;
+    public boolean isTrailling() {
+        return trailling;
     }
 }

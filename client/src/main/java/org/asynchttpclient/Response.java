@@ -70,8 +70,7 @@ public interface Response {
     /**
      * Return the entire response body as a String.
      * 
-     * @param charset
-     *            the charset to use when decoding the stream
+     * @param charset the charset to use when decoding the stream
      * @return the entire response body as a String.
      */
     String getResponseBody(Charset charset);
@@ -158,19 +157,17 @@ public interface Response {
     /**
      * Get remote address client initiated request to.
      * 
-     * @return remote address client initiated request to, may be {@code null}
-     *         if asynchronous provider is unable to provide the remote address
+     * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
      */
     SocketAddress getRemoteAddress();
 
     /**
      * Get local address client initiated request from.
      * 
-     * @return local address client initiated request from, may be {@code null}
-     *         if asynchronous provider is unable to provide the local address
+     * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
      */
     SocketAddress getLocalAddress();
-    
+
     class ResponseBuilder {
         private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>();
         private HttpResponseStatus status;
@@ -182,13 +179,12 @@ public interface Response {
         }
 
         public ResponseBuilder accumulate(HttpResponseHeaders headers) {
-            this.headers = headers;
+            this.headers = this.headers == null ? headers : new HttpResponseHeaders(this.headers.getHeaders().add(headers.getHeaders()), true);
             return this;
         }
 
         /**
-         * @param bodyPart
-         *            a body part (possibly empty, but will be filtered out)
+         * @param bodyPart a body part (possibly empty, but will be filtered out)
          * @return this
          */
         public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {

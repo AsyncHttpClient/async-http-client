@@ -16,7 +16,6 @@ package org.asynchttpclient.netty;
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
@@ -84,7 +83,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private Request targetRequest;
     private Request currentRequest;
     private NettyRequest nettyRequest;
-    private HttpHeaders httpHeaders;
     private AsyncHandler<V> asyncHandler;
     private boolean streamWasAlreadyConsumed;
     private boolean reuseChannel;
@@ -321,14 +319,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.keepAlive = keepAlive;
     }
 
-    public final HttpHeaders getHttpHeaders() {
-        return httpHeaders;
-    }
-
-    public final void setHttpHeaders(HttpHeaders httpHeaders) {
-        this.httpHeaders = httpHeaders;
-    }
-
     public int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
     }
@@ -477,7 +467,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\tcontent=" + content + //
                 ",\n\turi=" + getUri() + //
                 ",\n\tkeepAlive=" + keepAlive + //
-                ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
                 ",\n\ttimeoutsHolder=" + timeoutsHolder + //
