@@ -32,6 +32,7 @@ import java.util.List;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -39,7 +40,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
-import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -148,7 +148,7 @@ public final class HttpProtocol extends Protocol {
         }
     }
 
-    private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, NettyResponseBodyPart bodyPart) throws Exception {
+    private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart bodyPart) throws Exception {
         boolean interrupt = handler.onBodyPartReceived(bodyPart) != State.CONTINUE;
         if (interrupt)
             future.setKeepAlive(false);
@@ -550,7 +550,7 @@ public final class HttpProtocol extends Protocol {
 
         ByteBuf buf = chunk.content();
         if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-            NettyResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
+            HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             interrupt = updateBodyAndInterrupt(future, handler, part);
         }
 

@@ -17,15 +17,17 @@ import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
 
+import org.asynchttpclient.HttpResponseBodyPart;
+
 /**
  * A callback class used when an HTTP response body is received.
  * Bytes are eagerly fetched from the ByteBuf
  */
-public class EagerNettyResponseBodyPart extends NettyResponseBodyPart {
+public class EagerResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] bytes;
 
-    public EagerNettyResponseBodyPart(ByteBuf buf, boolean last) {
+    public EagerResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
         bytes = byteBuf2Bytes(buf);
     }

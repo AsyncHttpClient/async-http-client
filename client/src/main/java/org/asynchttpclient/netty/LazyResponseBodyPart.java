@@ -16,16 +16,17 @@ import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
 
+import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.util.ByteBufUtils;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class LazyNettyResponseBodyPart extends NettyResponseBodyPart {
+public class LazyResponseBodyPart extends HttpResponseBodyPart {
 
     private final ByteBuf buf;
 
-    public LazyNettyResponseBodyPart(ByteBuf buf, boolean last) {
+    public LazyResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
         this.buf = buf;
     }

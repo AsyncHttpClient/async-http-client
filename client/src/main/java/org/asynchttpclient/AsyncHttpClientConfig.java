@@ -15,9 +15,8 @@ import org.asynchttpclient.channel.pool.KeepAliveStrategy;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.netty.EagerNettyResponseBodyPart;
-import org.asynchttpclient.netty.LazyNettyResponseBodyPart;
-import org.asynchttpclient.netty.NettyResponseBodyPart;
+import org.asynchttpclient.netty.EagerResponseBodyPart;
+import org.asynchttpclient.netty.LazyResponseBodyPart;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
@@ -289,19 +288,19 @@ public interface AsyncHttpClientConfig {
 
         EAGER {
             @Override
-            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-                return new EagerNettyResponseBodyPart(buf, last);
+            public HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new EagerResponseBodyPart(buf, last);
             }
         },
 
         LAZY {
 
             @Override
-            public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-                return new LazyNettyResponseBodyPart(buf, last);
+            public HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+                return new LazyResponseBodyPart(buf, last);
             }
         };
 
-        public abstract NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
+        public abstract HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
     }
 }
