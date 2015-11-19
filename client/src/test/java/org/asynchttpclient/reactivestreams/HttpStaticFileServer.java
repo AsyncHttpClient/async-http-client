@@ -43,7 +43,7 @@ public final class HttpStaticFileServer {
                 .childHandler(new HttpStaticFileServerInitializer());
 
         b.bind(port).sync().channel();
-        LOGGER.info("Open your web browser and navigate to " + ("http") + "://127.0.0.1:" + port + '/');
+        LOGGER.info("Open your web browser and navigate to " + ("http") + "://localhost:" + port + '/');
     }
 
     public static void shutdown() {

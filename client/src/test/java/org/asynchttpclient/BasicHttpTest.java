@@ -643,7 +643,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void asyncDoPostProxyTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("127.0.0.1", port2).build()))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
             HttpHeaders h = new DefaultHttpHeaders();
             h.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
             StringBuilder sb = new StringBuilder();
@@ -686,7 +686,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             if (response.getHeader("X-Host").startsWith("localhost")) {
                 assertEquals(response.getHeader("X-Host"), "localhost:" + port1);
             } else {
-                assertEquals(response.getHeader("X-Host"), "127.0.0.1:" + port1);
+                assertEquals(response.getHeader("X-Host"), "localhost:" + port1);
             }
         }
     }
@@ -848,7 +848,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             final AtomicInteger count = new AtomicInteger();
             for (int i = 0; i < 20; i++) {
                 try {
-                    Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
+                    Response response = client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
                         @Override
                         public void onThrowable(Throwable t) {
                             count.incrementAndGet();
@@ -871,7 +871,7 @@ public class BasicHttpTest extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient()) {
             int dummyPort = findFreePort();
             try {
-                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
+                Response response = client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
                     @Override
                     public void onThrowable(Throwable t) {
                         t.printStackTrace();
@@ -894,7 +894,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             int port = findFreePort();
 
             try {
-                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+                Response response = client.preparePost(String.format("http://localhost:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
                     @Override
                     public void onThrowable(Throwable t) {
                         t.printStackTrace();
@@ -913,7 +913,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             final CountDownLatch l = new CountDownLatch(1);
             int port = findFreePort();
 
-            client.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+            client.prepareGet(String.format("http://localhost:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
                 @Override
                 public void onThrowable(Throwable t) {
                     try {
@@ -963,7 +963,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             int port = findFreePort();
 
             try {
-                Response response = client.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+                Response response = client.prepareGet(String.format("http://localhost:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
                     @Override
                     public void onThrowable(Throwable t) {
                         called.set(true);
@@ -1363,7 +1363,7 @@ public class BasicHttpTest extends AbstractBasicTest {
     @Test(groups = "standalone", expectedExceptions = NullPointerException.class)
     public void invalidUri() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            client.prepareGet(String.format("http:127.0.0.1:%d/foo/test", port1)).build();
+            client.prepareGet(String.format("http:localhost:%d/foo/test", port1)).build();
         }
     }
 
@@ -1387,7 +1387,7 @@ public class BasicHttpTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testNewConnectionEventsFired() throws Exception {
-        Request request = get("http://127.0.0.1:" + port1 + "/Test").build();
+        Request request = get("http://localhost:" + port1 + "/Test").build();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             EventCollectingHandler handler = new EventCollectingHandler();

@@ -50,9 +50,9 @@ public class WebDavBasicTest extends AbstractBasicTest {
         embedded.setCatalinaHome(path);
 
         Engine engine = embedded.createEngine();
-        engine.setDefaultHost("127.0.0.1");
+        engine.setDefaultHost("localhost");
 
-        Host host = embedded.createHost("127.0.0.1", path);
+        Host host = embedded.createHost("localhost", path);
         engine.addChild(host);
 
         Context c = embedded.createContext("/", path);
@@ -68,7 +68,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.addChild(w);
         host.addChild(c);
 
-        Connector connector = embedded.createConnector("127.0.0.1", port1, Http11NioProtocol.class.getName());
+        Connector connector = embedded.createConnector("localhost", port1, Http11NioProtocol.class.getName());
         connector.setContainer(host);
         embedded.addEngine(engine);
         embedded.addConnector(connector);
@@ -81,7 +81,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     }
 
     protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%s/folder1", port1);
+        return String.format("http://localhost:%s/folder1", port1);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -127,11 +127,11 @@ public class WebDavBasicTest extends AbstractBasicTest {
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
-            Request putRequest = put(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
+            Request putRequest = put(String.format("http://localhost:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
             response = c.executeRequest(putRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
-            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).build();
+            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://localhost:%s/folder1/Test.txt", port1)).build();
             response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 207);

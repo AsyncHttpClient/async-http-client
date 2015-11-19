@@ -132,7 +132,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
     }
 
     public String getTargetUrl() {
-        return "http://127.0.0.1:" + port1 + "/timeout/";
+        return "http://localhost:" + port1 + "/timeout/";
     }
 
     @SuppressWarnings("serial")

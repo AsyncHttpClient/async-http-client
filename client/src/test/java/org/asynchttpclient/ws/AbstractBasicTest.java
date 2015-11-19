@@ -38,7 +38,7 @@ public abstract class AbstractBasicTest extends org.asynchttpclient.AbstractBasi
     }
 
     protected String getTargetUrl() {
-        return String.format("ws://127.0.0.1:%d/", port1);
+        return String.format("ws://localhost:%d/", port1);
     }
 
     public abstract WebSocketHandler getWebSocketHandler();

@@ -132,7 +132,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
             // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
-            Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
+            Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://localhost:%d/", port2)).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 404);

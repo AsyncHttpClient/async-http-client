@@ -51,7 +51,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                .setProxyHost("127.0.0.1")//
+                .setProxyHost("localhost")//
                 .setProxyPort(port1)//
                 .setFollowRedirect(true)//
                 .setUrl(getTargetUrl2())//

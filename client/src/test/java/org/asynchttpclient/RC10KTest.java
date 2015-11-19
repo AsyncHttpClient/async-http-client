@@ -96,7 +96,7 @@ public class RC10KTest extends AbstractBasicTest {
             List<Future<Integer>> resps = new ArrayList<>(C10K);
             int i = 0;
             while (i < C10K) {
-                resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
+                resps.add(ahc.prepareGet(String.format("http://localhost:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
             }
             i = 0;
             for (Future<Integer> fResp : resps) {

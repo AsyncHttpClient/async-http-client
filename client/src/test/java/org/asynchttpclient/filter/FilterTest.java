@@ -60,7 +60,7 @@ public class FilterTest extends AbstractBasicTest {
     }
 
     public String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
+        return String.format("http://localhost:%d/foo/test", port1);
     }
 
     @Test(groups = "standalone")

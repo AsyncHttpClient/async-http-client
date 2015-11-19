@@ -104,6 +104,6 @@ public class RedirectTest extends AbstractBasicTest {
     }
 
     private String getRedirectURL() {
-        return String.format("ws://127.0.0.1:%d/", port2);
+        return String.format("ws://localhost:%d/", port2);
     }
 }

@@ -66,7 +66,7 @@ public class Head302Test extends AbstractBasicTest {
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch l = new CountDownLatch(1);
-            Request request = head("http://127.0.0.1:" + port1 + "/Test").build();
+            Request request = head("http://localhost:" + port1 + "/Test").build();
 
             client.executeRequest(request, new AsyncCompletionHandlerBase() {
                 @Override

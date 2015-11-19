@@ -106,6 +106,6 @@ public class NTLMProxyTest extends AbstractBasicTest {
                 .setNtlmDomain("Ursa-Minor")//
                 .setNtlmHost("LightCity")//
                 .build();
-        return proxyServer("127.0.0.1", port2).setRealm(realm).build();
+        return proxyServer("localhost", port2).setRealm(realm).build();
     }
 }

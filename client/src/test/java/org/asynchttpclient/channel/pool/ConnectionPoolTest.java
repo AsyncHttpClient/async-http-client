@@ -137,7 +137,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             // twice
             Exception exception = null;
             try {
-                c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                c.preparePost(String.format("http://localhost:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
                 fail("Should throw exception. Too many connections issued.");
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -262,7 +262,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testPooledEventsFired() throws Exception {
-        RequestBuilder request = get("http://127.0.0.1:" + port1 + "/Test");
+        RequestBuilder request = get("http://localhost:" + port1 + "/Test");
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             EventCollectingHandler firstHandler = new EventCollectingHandler();

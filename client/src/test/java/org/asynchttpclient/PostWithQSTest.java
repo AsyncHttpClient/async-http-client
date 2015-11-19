@@ -70,7 +70,7 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -80,11 +80,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=")) {
+                    if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=")) {
                         throw new IOException(status.getUri().toUrl());
                     }
                     return super.onStatusReceived(status);
@@ -100,11 +100,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                    if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c&d=e")) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);
@@ -120,11 +120,11 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
                 @Override
                 public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
+                    if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c=&d=e")) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);

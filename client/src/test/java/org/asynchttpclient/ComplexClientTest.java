@@ -45,7 +45,7 @@ public class ComplexClientTest extends AbstractBasicTest {
     public void urlWithoutSlashTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";
-            Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = c.preparePost(String.format("http://localhost:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
         }
     }

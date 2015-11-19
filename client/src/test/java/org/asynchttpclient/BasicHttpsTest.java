@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     protected String getTargetUrl() {
-        return String.format("https://127.0.0.1:%d/foo/test", port1);
+        return String.format("https://localhost:%d/foo/test", port1);
     }
 
     @Test(groups = "standalone")

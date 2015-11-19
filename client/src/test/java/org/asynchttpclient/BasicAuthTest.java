@@ -81,16 +81,16 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Override
     protected String getTargetUrl() {
-        return "http://127.0.0.1:" + port1 + "/";
+        return "http://localhost:" + port1 + "/";
     }
 
     @Override
     protected String getTargetUrl2() {
-        return "http://127.0.0.1:" + port2 + "/uff";
+        return "http://localhost:" + port2 + "/uff";
     }
 
     protected String getTargetUrlNoAuth() {
-        return "http://127.0.0.1:" + portNoAuth + "/";
+        return "http://localhost:" + portNoAuth + "/";
     }
 
     @Override

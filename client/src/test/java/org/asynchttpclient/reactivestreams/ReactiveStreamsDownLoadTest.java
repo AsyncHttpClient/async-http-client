@@ -49,7 +49,7 @@ public class ReactiveStreamsDownLoadTest {
     @Test(groups = "standalone")
     public void streamedResponseLargeFileTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            String largeFileName = "http://127.0.0.1:" + serverPort + "/" + largeFile.getName();
+            String largeFileName = "http://localhost:" + serverPort + "/" + largeFile.getName();
             ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(largeFileName).execute(new SimpleStreamedAsyncHandler());
             byte[] result = future.get().getBytes();
             assertEquals(result.length, largeFile.length());
@@ -59,7 +59,7 @@ public class ReactiveStreamsDownLoadTest {
     @Test(groups = "standalone")
     public void streamedResponseSmallFileTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            String smallFileName = "http://127.0.0.1:" + serverPort + "/" + smallFile.getName();
+            String smallFileName = "http://localhost:" + serverPort + "/" + smallFile.getName();
             ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(smallFileName).execute(new SimpleStreamedAsyncHandler());
             byte[] result = future.get().getBytes();
             LOGGER.debug("Result file size: " + result.length);

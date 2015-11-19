@@ -59,11 +59,11 @@ public abstract class AbstractBasicTest {
     }
 
     protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
+        return String.format("http://localhost:%d/foo/test", port1);
     }
 
     protected String getTargetUrl2() {
-        return String.format("https://127.0.0.1:%d/foo/test", port2);
+        return String.format("https://localhost:%d/foo/test", port2);
     }
 
     public AbstractHandler configureHandler() throws Exception {

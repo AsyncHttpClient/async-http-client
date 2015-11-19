@@ -189,7 +189,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
     @Override
     protected String getTargetUrl() {
-        return "http://127.0.0.1:" + port1 + "/";
+        return "http://localhost:" + port1 + "/";
     }
 
     @Override

@@ -60,7 +60,7 @@ public class RetryRequestTest extends AbstractBasicTest {
     }
 
     protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/", port1);
+        return String.format("http://localhost:%d/", port1);
     }
 
     @Override

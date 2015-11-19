@@ -71,7 +71,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
             final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
-            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
+            Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
 
                 public State onHeadersWritten() {
                     headerSent.set(true);
@@ -99,7 +99,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
+            Future<Response> f = client.preparePut("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -118,7 +118,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
             try (FileOutputStream stream = new FileOutputStream(tmp)) {
-                Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {
                     }
 
@@ -151,7 +151,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
             try (FileOutputStream stream = new FileOutputStream(tmp)) {
-                Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {
                     }
 

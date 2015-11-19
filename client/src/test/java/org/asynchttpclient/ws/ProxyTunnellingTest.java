@@ -80,10 +80,10 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
 
         setUpServers(secure);
 
-        String targetUrl = String.format("%s://127.0.0.1:%d/", secure ? "wss" : "ws", port2);
+        String targetUrl = String.format("%s://localhost:%d/", secure ? "wss" : "ws", port2);
 
         // CONNECT happens over HTTP, not HTTPS
-        ProxyServer ps = proxyServer("127.0.0.1", port1).build();
+        ProxyServer ps = proxyServer("localhost", port1).build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setProxyServer(ps).setAcceptAnyCertificate(true))) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
