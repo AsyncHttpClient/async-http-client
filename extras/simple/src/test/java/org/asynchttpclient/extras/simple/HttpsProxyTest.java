@@ -2,7 +2,6 @@ package org.asynchttpclient.extras.simple;
 
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +61,6 @@ public class HttpsProxyTest extends AbstractBasicTest {
             Response r = client.get().get();
 
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 }

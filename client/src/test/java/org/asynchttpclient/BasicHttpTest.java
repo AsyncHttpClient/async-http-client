@@ -664,7 +664,7 @@ public class BasicHttpTest extends AbstractBasicTest {
             }).get();
 
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("X-Connection"), "keep-alive");
+            assertEquals(response.getHeader("X-" + HttpHeaders.Names.CONTENT_TYPE), HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
         }
     }
 
