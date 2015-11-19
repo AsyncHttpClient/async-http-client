@@ -26,7 +26,7 @@ public class EchoHandler extends AbstractHandler {
             httpResponse.setContentType(TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
         }
 
-        if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
         }
 

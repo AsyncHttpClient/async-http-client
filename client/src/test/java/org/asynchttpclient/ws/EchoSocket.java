@@ -38,7 +38,7 @@ public class EchoSocket extends WebSocketAdapter {
             return;
         }
         try {
-            if (message.equals("CLOSE"))
+            if ("CLOSE".equals(message))
                 getSession().close();
             else
                 getRemote().sendString(message);

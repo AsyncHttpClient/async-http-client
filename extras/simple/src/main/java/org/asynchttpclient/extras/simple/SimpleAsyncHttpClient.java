@@ -298,7 +298,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
                 request.getUri(), listener);
 
-        if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
+        if (resumeEnabled && "GET".equals(request.getMethod()) && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
             long length = fileBodyConsumer.getTransferredBytes();
             fileBodyConsumer.resume();
