@@ -90,7 +90,7 @@ public final class WebSocketProtocol extends Protocol {
                 return;
             }
 
-            if (exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().code(), realm))
+            if (REDIRECT_STATUSES.contains(status.getStatusCode()) && exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().code(), realm))
                 return;
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
