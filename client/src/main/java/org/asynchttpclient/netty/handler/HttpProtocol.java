@@ -32,6 +32,7 @@ import java.util.List;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
@@ -40,7 +41,6 @@ import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.NettyResponseHeaders;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
@@ -156,20 +156,17 @@ public final class HttpProtocol extends Protocol {
     }
 
     private boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
-        if (statusCode == CONTINUE.code()) {
-            future.setHeadersAlreadyWrittenOnContinue(true);
-            future.setDontWriteBodyBecauseExpectContinue(false);
-            // directly send the body
-            Channels.setAttribute(channel, new Callback(future) {
-                @Override
-                public void call() throws IOException {
-                    Channels.setAttribute(channel, future);
-                    requestSender.writeRequest(future, channel);
-                }
-            });
-            return true;
-        }
-        return false;
+        future.setHeadersAlreadyWrittenOnContinue(true);
+        future.setDontWriteBodyBecauseExpectContinue(false);
+        // directly send the body
+        Channels.setAttribute(channel, new Callback(future) {
+            @Override
+            public void call() throws IOException {
+                Channels.setAttribute(channel, future);
+                requestSender.writeRequest(future, channel);
+            }
+        });
+        return true;
     }
 
     private boolean exitAfterHandling401(//
@@ -181,9 +178,6 @@ public final class HttpProtocol extends Protocol {
             Realm realm,//
             ProxyServer proxyServer,//
             HttpRequest httpRequest) {
-
-        if (statusCode != UNAUTHORIZED.code())
-            return false;
 
         if (realm == null) {
             logger.info("Can't handle 401 as there's no realm");
@@ -311,9 +305,6 @@ public final class HttpProtocol extends Protocol {
             int statusCode,//
             ProxyServer proxyServer,//
             HttpRequest httpRequest) {
-
-        if (statusCode != PROXY_AUTHENTICATION_REQUIRED.code())
-            return false;
 
         if (future.getInProxyAuth().getAndSet(true)) {
             logger.info("Can't handle 407 as auth was already performed");
@@ -447,53 +438,80 @@ public final class HttpProtocol extends Protocol {
             int statusCode,//
             HttpRequest httpRequest) throws IOException {
 
-        if (statusCode == OK.code() && httpRequest.getMethod() == HttpMethod.CONNECT) {
+        if (future.isKeepAlive())
+            future.attachChannel(channel, true);
 
-            if (future.isKeepAlive())
-                future.attachChannel(channel, true);
+        Uri requestUri = request.getUri();
+        logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
-            Uri requestUri = request.getUri();
-            logger.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
+        channelManager.upgradeProtocol(channel.pipeline(), requestUri);
+        future.setReuseChannel(true);
+        future.setConnectAllowed(false);
+        requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
 
-            channelManager.upgradeProtocol(channel.pipeline(), requestUri);
-            future.setReuseChannel(true);
-            future.setConnectAllowed(false);
-            requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
-
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
-    private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status, HttpRequest httpRequest)
-            throws IOException, Exception {
-        if (!future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE) {
+    private boolean exitAfterHandler(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status,
+            HttpRequest httpRequest, HttpResponseHeaders responseHeaders) throws IOException, Exception {
+
+        boolean exit = exitAfterHandlingStatus(channel, future, response, handler, status, httpRequest) || //
+                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders, httpRequest) || //
+                exitAfterHandlingReactiveStreams(channel, future, response, handler, httpRequest);
+
+        if (exit)
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) || HttpHeaders.isTransferEncodingChunked(response));
-            return true;
-        }
-        return false;
+
+        return exit;
     }
 
-    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseHeaders responseHeaders, HttpRequest httpRequest)
-            throws IOException, Exception {
-        if (!response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != State.CONTINUE) {
-            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) ||  HttpHeaders.isTransferEncodingChunked(response));
-            return true;
-        }
-        return false;
+    private boolean exitAfterHandlingStatus(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status,
+            HttpRequest httpRequest) throws IOException, Exception {
+        return !future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE;
     }
 
-    private boolean exitAfterHandlingReactiveStreams(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpRequest httpRequest) throws IOException {
+    private boolean exitAfterHandlingHeaders(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpResponseHeaders responseHeaders,
+            HttpRequest httpRequest) throws IOException, Exception {
+        return !response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != State.CONTINUE;
+    }
+
+    private boolean exitAfterHandlingReactiveStreams(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, HttpRequest httpRequest)
+            throws IOException {
         if (handler instanceof StreamedAsyncHandler) {
             StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
             StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
+            // FIXME do we really need to pass the event loop?
+            // FIXME move this to ChannelManager
             channel.pipeline().addLast(channel.eventLoop(), "streamedAsyncHandler", publisher);
             Channels.setAttribute(channel, publisher);
-            if (streamedAsyncHandler.onStream(publisher) != State.CONTINUE) {
-                finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) ||  HttpHeaders.isTransferEncodingChunked(response));
-                return true;
-            }
+            return streamedAsyncHandler.onStream(publisher) != State.CONTINUE;
+        }
+        return false;
+    }
+
+    private boolean exitAfterSpecialCases(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future) throws Exception {
+
+        HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
+        ProxyServer proxyServer = future.getProxyServer();
+        int statusCode = response.getStatus().code();
+        Request request = future.getCurrentRequest();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+
+        if (statusCode == UNAUTHORIZED.code()) {
+            return exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer, httpRequest);
+
+        } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code()) {
+            return exitAfterHandling407(channel, future, response, request, statusCode, proxyServer, httpRequest);
+
+        } else if (statusCode == CONTINUE.code()) {
+            return exitAfterHandling100(channel, future, statusCode);
+
+        } else if (REDIRECT_STATUSES.contains(statusCode)) {
+            return exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
+
+        } else if (httpRequest.getMethod() == HttpMethod.CONNECT && statusCode == OK.code()) {
+            return exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest);
+
         }
         return false;
     }
@@ -501,30 +519,16 @@ public final class HttpProtocol extends Protocol {
     private boolean handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-        ProxyServer proxyServer = future.getProxyServer();
         logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
-
-        // store the original headers so we can re-send all them to
-        // the handler in case of trailing headers
-        future.setHttpHeaders(response.headers());
 
         future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(future.getTargetRequest(), httpRequest, response));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
-        int statusCode = response.getStatus().code();
-        Request request = future.getCurrentRequest();
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        NettyResponseHeaders responseHeaders = new NettyResponseHeaders(response.headers());
+        HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
         return exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) || //
-                exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer, httpRequest) || //
-                exitAfterHandling407(channel, future, response, request, statusCode, proxyServer, httpRequest) || //
-                exitAfterHandling100(channel, future, statusCode) || //
-                exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm) || //
-                exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest) || //
-                exitAfterHandlingStatus(channel, future, response, handler, status, httpRequest) || //
-                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders, httpRequest) || //
-                exitAfterHandlingReactiveStreams(channel, future, response, handler, httpRequest);
+                exitAfterSpecialCases(response, channel, future) || //
+                exitAfterHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
     }
 
     private void handleChunk(HttpContent chunk,//
@@ -540,8 +544,7 @@ public final class HttpProtocol extends Protocol {
             LastHttpContent lastChunk = (LastHttpContent) chunk;
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
-                NettyResponseHeaders responseHeaders = new NettyResponseHeaders(future.getHttpHeaders(), trailingHeaders);
-                interrupt = handler.onHeadersReceived(responseHeaders) != State.CONTINUE;
+                interrupt = handler.onHeadersReceived(new HttpResponseHeaders(trailingHeaders, true)) != State.CONTINUE;
             }
         }
 

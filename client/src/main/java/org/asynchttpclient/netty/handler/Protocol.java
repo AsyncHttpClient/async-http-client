@@ -105,7 +105,7 @@ public abstract class Protocol {
             int statusCode,//
             Realm realm) throws Exception {
 
-        if (followRedirect(config, request) && REDIRECT_STATUSES.contains(statusCode)) {
+        if (followRedirect(config, request)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
                 throw maxRedirectException;
 
