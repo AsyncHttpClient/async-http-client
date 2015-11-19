@@ -201,7 +201,7 @@ public final class NettyRequestFactory {
                     .set(SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(CONNECTION)) {
-            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion == HttpVersion.HTTP_1_1);
+            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion);
             if (connectionHeaderValue != null)
                 headers.set(CONNECTION, connectionHeaderValue);
         }
@@ -243,12 +243,12 @@ public final class NettyRequestFactory {
         }
     }
 
-    private String connectionHeader(boolean allowConnectionPooling, boolean http11) {
-        if (allowConnectionPooling)
-            return HttpHeaders.Values.KEEP_ALIVE;
-        else if (http11)
-            return HttpHeaders.Values.CLOSE;
-        else
-            return null;
+    private String connectionHeader(boolean allowConnectionPooling, HttpVersion httpVersion) {
+        
+        if (httpVersion.isKeepAliveDefault()) {
+            return allowConnectionPooling ? null : HttpHeaders.Values.CLOSE;
+        } else {
+            return allowConnectionPooling ? HttpHeaders.Values.KEEP_ALIVE : null;
+        }
     }
 }
