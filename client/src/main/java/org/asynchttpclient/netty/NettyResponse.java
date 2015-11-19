@@ -89,7 +89,7 @@ public class NettyResponse extends ResponseBase {
 
     @Override
     public String getResponseBody(Charset charset) {
-        return new String(getResponseBodyAsBytes(), calculateCharset(charset));
+        return new String(getResponseBodyAsBytes(), computeCharset(charset));
     }
 
     @Override

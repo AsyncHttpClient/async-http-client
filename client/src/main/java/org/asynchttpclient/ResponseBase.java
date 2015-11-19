@@ -28,7 +28,7 @@ public abstract class ResponseBase implements Response {
 
     protected abstract List<Cookie> buildCookies();
 
-    protected Charset calculateCharset(Charset charset) {
+    protected Charset computeCharset(Charset charset) {
 
         if (charset == null) {
             String contentType = getContentType();
