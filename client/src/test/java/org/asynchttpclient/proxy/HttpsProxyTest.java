@@ -17,10 +17,6 @@ import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -68,7 +64,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
-    public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void testRequestProxy() throws Exception {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
@@ -79,7 +75,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
-    public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void testConfigProxy() throws Exception {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//
                 .setProxyServer(proxyServer("127.0.0.1", port1).build())//
@@ -88,12 +84,11 @@ public class HttpsProxyTest extends AbstractBasicTest {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
             Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
             assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getHeader("X-Connection"), HttpHeaders.Values.KEEP_ALIVE);
         }
     }
 
     @Test(groups = "standalone")
-    public void testPooledConnectionsWithProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void testPooledConnectionsWithProxy() throws Exception {
 
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true).setKeepAlive(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("127.0.0.1", port1));
