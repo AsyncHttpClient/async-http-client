@@ -173,7 +173,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
-    public void redirectAndDigestAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
+    public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm(basicAuthRealm(USER, ADMIN).build())//
