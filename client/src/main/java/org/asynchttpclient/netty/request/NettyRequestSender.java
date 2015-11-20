@@ -15,7 +15,7 @@ package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
-import static org.asynchttpclient.util.HttpUtils.*;
+import static org.asynchttpclient.util.HttpUtils.requestTimeout;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
@@ -52,6 +52,7 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.channel.exception.RemotelyClosedException;
 import org.asynchttpclient.netty.timeout.ReadTimeoutTimerTask;
 import org.asynchttpclient.netty.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
@@ -389,7 +390,7 @@ public final class NettyRequestSender {
             channelManager.closeChannel(channel);
 
         else if (!retry(future))
-            abort(channel, future, REMOTELY_CLOSED_EXCEPTION);
+            abort(channel, future, RemotelyClosedException.INSTANCE);
     }
 
     public boolean retry(NettyResponseFuture<?> future) {

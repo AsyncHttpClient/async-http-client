@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.util.MiscUtils.buildStaticIOException;
+import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -53,6 +53,9 @@ import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.channel.exception.PoolAlreadyClosedException;
+import org.asynchttpclient.netty.channel.exception.TooManyConnectionsException;
+import org.asynchttpclient.netty.channel.exception.TooManyConnectionsPerHostException;
 import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.channel.pool.DefaultChannelPool;
 import org.asynchttpclient.netty.channel.pool.NoopChannelPool;
@@ -91,7 +94,6 @@ public class ChannelManager {
     private final long handshakeTimeout;
     private final IOException tooManyConnections;
     private final IOException tooManyConnectionsPerHost;
-    private final IOException poolAlreadyClosed;
 
     private final ChannelPool channelPool;
     private final boolean maxTotalConnectionsEnabled;
@@ -123,9 +125,8 @@ public class ChannelManager {
         }
         this.channelPool = channelPool;
 
-        tooManyConnections = buildStaticIOException("Too many connections " + config.getMaxConnections());
-        tooManyConnectionsPerHost = buildStaticIOException("Too many connections per host " + config.getMaxConnectionsPerHost());
-        poolAlreadyClosed = buildStaticIOException("Pool is already closed");
+        tooManyConnections = trimStackTrace(new TooManyConnectionsException(config.getMaxConnections()));
+        tooManyConnectionsPerHost = trimStackTrace(new TooManyConnectionsPerHostException(config.getMaxConnectionsPerHost()));
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
@@ -325,7 +326,7 @@ public class ChannelManager {
 
     public void preemptChannel(Object partitionKey) throws IOException {
         if (!channelPool.isOpen())
-            throw poolAlreadyClosed;
+            throw PoolAlreadyClosedException.INSTANCE;
         if (!tryAcquireGlobal())
             throw tooManyConnections;
         if (!tryAcquirePerHost(partitionKey)) {

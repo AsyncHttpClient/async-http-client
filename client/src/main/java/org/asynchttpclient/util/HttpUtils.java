@@ -13,9 +13,8 @@
 package org.asynchttpclient.util;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static org.asynchttpclient.util.MiscUtils.*;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -29,9 +28,6 @@ import org.asynchttpclient.uri.Uri;
  * {@link org.asynchttpclient.AsyncHttpClient} common utilities.
  */
 public class HttpUtils {
-
-    public static final IOException REMOTELY_CLOSED_EXCEPTION = buildStaticIOException("Remotely closed");
-    public static final IOException CHANNEL_CLOSED_EXCEPTION = buildStaticIOException("Channel closed");
 
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 

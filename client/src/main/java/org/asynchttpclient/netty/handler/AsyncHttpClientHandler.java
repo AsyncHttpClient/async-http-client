@@ -13,7 +13,6 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static org.asynchttpclient.util.HttpUtils.CHANNEL_CLOSED_EXCEPTION;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -35,6 +34,7 @@ import org.asynchttpclient.netty.DiscardEvent;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
+import org.asynchttpclient.netty.channel.exception.ChannelClosedException;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
@@ -148,7 +148,7 @@ public class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
             NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attribute);
             future.touch();
 
-            if (!config.getIoExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+            if (!config.getIoExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel))
                 return;
 
             protocol.onClose(future);
@@ -186,7 +186,7 @@ public class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
                     // FIXME why drop the original exception and throw a new
                     // one?
                     if (!config.getIoExceptionFilters().isEmpty()) {
-                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, CHANNEL_CLOSED_EXCEPTION, channel))
+                        if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel))
                             // Close the channel so the recovering can occurs.
                             Channels.silentlyCloseChannel(channel);
                         return;
