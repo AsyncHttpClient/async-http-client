@@ -35,10 +35,10 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.io.IOException;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -100,9 +100,8 @@ public class ChannelManager {
     private final Semaphore freeChannels;
     private final ChannelGroup openChannels;
     private final boolean maxConnectionsPerHostEnabled;
-    private final ConcurrentHashMapV8<Object, Semaphore> freeChannelsPerHost;
-    private final ConcurrentHashMapV8<Channel, Object> channelId2PartitionKey;
-    private final ConcurrentHashMapV8.Fun<Object, Semaphore> semaphoreComputer;
+    private final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Channel, Object> channelId2PartitionKey = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
 
@@ -154,21 +153,6 @@ public class ChannelManager {
         } else {
             openChannels = new CleanupChannelGroup("asyncHttpClient");
             freeChannels = null;
-        }
-
-        if (maxConnectionsPerHostEnabled) {
-            freeChannelsPerHost = new ConcurrentHashMapV8<>();
-            channelId2PartitionKey = new ConcurrentHashMapV8<>();
-            semaphoreComputer = new ConcurrentHashMapV8.Fun<Object, Semaphore>() {
-                @Override
-                public Semaphore apply(Object partitionKey) {
-                    return new Semaphore(config.getMaxConnectionsPerHost());
-                }
-            };
-        } else {
-            freeChannelsPerHost = null;
-            channelId2PartitionKey = null;
-            semaphoreComputer = null;
         }
 
         handshakeTimeout = config.getHandshakeTimeout();
@@ -317,7 +301,7 @@ public class ChannelManager {
     }
 
     private Semaphore getFreeConnectionsForHost(Object partitionKey) {
-        return freeChannelsPerHost.computeIfAbsent(partitionKey, semaphoreComputer);
+        return freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(config.getMaxConnectionsPerHost()));
     }
 
     private boolean tryAcquirePerHost(Object partitionKey) {
