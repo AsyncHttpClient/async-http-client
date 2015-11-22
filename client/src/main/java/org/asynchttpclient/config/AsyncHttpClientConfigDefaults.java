@@ -78,6 +78,10 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultUseProxyProperties() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useProxyProperties");
     }
+    
+    public static boolean defaultValidateResponseHeaders() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "validateResponseHeaders");
+    }
 
     public static boolean defaultStrict302Handling() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "strict302Handling");

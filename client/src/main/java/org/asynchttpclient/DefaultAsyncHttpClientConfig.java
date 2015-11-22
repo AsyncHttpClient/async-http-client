@@ -41,8 +41,7 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 
 /**
- * Configuration class to use with a {@link AsyncHttpClient}. System property
- * can be also used to configure this object default behavior by doing: <br>
+ * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
  * -Dorg.asynchttpclient.nameOfTheProperty
  * 
  * @see AsyncHttpClientConfig for documentation
@@ -73,6 +72,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean disableZeroCopy;
     private final boolean keepEncodingHeader;
     private final ProxyServerSelector proxyServerSelector;
+    private final boolean validateResponseHeaders;
 
     // timeouts
     private final int connectTimeout;
@@ -136,6 +136,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             boolean disableZeroCopy,//
             boolean keepEncodingHeader,//
             ProxyServerSelector proxyServerSelector,//
+            boolean validateResponseHeaders,//
 
             // timeouts
             int connectTimeout,//
@@ -198,6 +199,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.disableZeroCopy = disableZeroCopy;
         this.keepEncodingHeader = keepEncodingHeader;
         this.proxyServerSelector = proxyServerSelector;
+        this.validateResponseHeaders = validateResponseHeaders;
 
         // timeouts
         this.connectTimeout = connectTimeout;
@@ -373,12 +375,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return keepAliveStrategy;
     }
 
+    @Override
+    public boolean isValidateResponseHeaders() {
+        return validateResponseHeaders;
+    }
+
     // ssl
     @Override
     public boolean isUseOpenSsl() {
         return useOpenSsl;
     }
-    
+
     @Override
     public boolean isAcceptAnyCertificate() {
         return acceptAnyCertificate;
@@ -530,6 +537,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private ProxyServerSelector proxyServerSelector;
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
+        private boolean validateResponseHeaders = defaultValidateResponseHeaders();
 
         // timeouts
         private int connectTimeout = defaultConnectTimeout();
@@ -676,7 +684,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             this.realm = realm;
             return this;
         }
-        
+
         public Builder setRealm(Realm.Builder realmBuilder) {
             this.realm = realmBuilder.build();
             return this;
@@ -707,11 +715,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setValidateResponseHeaders(boolean validateResponseHeaders) {
+            this.validateResponseHeaders = validateResponseHeaders;
+            return this;
+        }
+
         public Builder setProxyServer(ProxyServer proxyServer) {
             this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
             return this;
         }
-        
+
         public Builder setProxyServer(ProxyServer.Builder proxyServerBuilder) {
             this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServerBuilder.build());
             return this;
@@ -970,6 +983,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     disableZeroCopy, //
                     keepEncodingHeader, //
                     resolveProxyServerSelector(), //
+                    validateResponseHeaders, //
                     connectTimeout, //
                     requestTimeout, //
                     readTimeout, //
