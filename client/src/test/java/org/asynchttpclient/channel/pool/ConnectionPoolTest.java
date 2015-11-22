@@ -37,6 +37,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.netty.channel.exception.TooManyConnectionsException;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.testng.annotations.Test;
 
@@ -61,8 +62,8 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
-    public void testMaxTotalConnectionsException() throws IOException {
+    @Test(groups = "standalone", expectedExceptions = TooManyConnectionsException.class)
+    public void testMaxTotalConnectionsException() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
 
@@ -83,8 +84,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             }
 
             assertNotNull(exception);
-            assertNotNull(exception.getCause());
-            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
+            throw exception.getCause();
         }
     }
 
@@ -124,8 +124,8 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
-    public void multipleMaxConnectionOpenTest() throws Exception {
+    @Test(groups = "standalone", expectedExceptions = TooManyConnectionsException.class)
+    public void multipleMaxConnectionOpenTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
 
@@ -144,8 +144,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 exception = ex;
             }
             assertNotNull(exception);
-            assertNotNull(exception.getCause());
-            assertEquals(exception.getCause().getMessage(), "Too many connections 1");
+            throw exception.getCause();
         }
     }
 

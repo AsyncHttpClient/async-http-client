@@ -18,6 +18,6 @@ import java.io.IOException;
 public class TooManyConnectionsPerHostException extends IOException {
 
     public TooManyConnectionsPerHostException(int max) {
-        super("Too many connections " + max);
+        super("Too many connections: " + max);
     }
 }
