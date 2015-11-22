@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient;
 
+import io.netty.handler.codec.http.HttpMethod;
+
 /**
  * Builder for a {@link Request}. Warning: mutable and not thread-safe! Beware
  * that it holds a reference on the Request instance it builds, so modifying the
@@ -23,7 +25,7 @@ package org.asynchttpclient;
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 
     public RequestBuilder() {
-        this("GET");
+        this(HttpMethod.GET.name());
     }
 
     public RequestBuilder(String method) {
