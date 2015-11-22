@@ -12,10 +12,14 @@
  */
 package org.asynchttpclient;
 
-
 public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
 
     private final AsyncHttpClient client;
+
+    public BoundRequestBuilder(AsyncHttpClient client, String method, boolean isDisableUrlEncoding, boolean validateHeaders) {
+        super(method, isDisableUrlEncoding, validateHeaders);
+        this.client = client;
+    }
 
     public BoundRequestBuilder(AsyncHttpClient client, String method, boolean isDisableUrlEncoding) {
         super(method, isDisableUrlEncoding);

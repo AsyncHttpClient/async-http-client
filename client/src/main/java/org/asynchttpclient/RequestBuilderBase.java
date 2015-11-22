@@ -66,7 +66,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected Uri uri;
     protected InetAddress address;
     protected InetAddress localAddress;
-    protected HttpHeaders headers = new DefaultHttpHeaders();
+    protected HttpHeaders headers;
     protected ArrayList<Cookie> cookies;
     protected byte[] byteData;
     protected List<byte[]> compositeByteData;
@@ -89,8 +89,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected NameResolver nameResolver = JdkNameResolver.INSTANCE;
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
+        this(method, disableUrlEncoding, true);
+    }
+
+    protected RequestBuilderBase(String method, boolean disableUrlEncoding, boolean validateHeaders) {
         this.method = method;
         this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
+        this.headers = new DefaultHttpHeaders(validateHeaders);
     }
 
     protected RequestBuilderBase(Request prototype) {
@@ -177,12 +182,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setHeaders(HttpHeaders headers) {
-        this.headers = headers == null ? new DefaultHttpHeaders() : headers;
+        if (headers == null)
+            this.headers.clear();
+        else
+            this.headers = headers;
         return asDerivedType();
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        this.headers = new DefaultHttpHeaders();
+        this.headers.clear();
         if (headers != null) {
             for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
                 String headerName = entry.getKey();
@@ -376,7 +384,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         this.proxyServer = proxyServer;
         return asDerivedType();
     }
-    
+
     public T setProxyServer(ProxyServer.Builder proxyServerBuilder) {
         this.proxyServer = proxyServerBuilder.build();
         return asDerivedType();
@@ -529,12 +537,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         Uri finalUri = rb.computeUri();
         Charset finalCharset = rb.computeCharset();
         long finalContentLength = rb.computeRequestContentLength();
-        
+
         // make copies of mutable internal collections
         List<Cookie> cookiesCopy = rb.cookies == null ? Collections.emptyList() : new ArrayList<>(rb.cookies);
         List<Param> formParamsCopy = rb.formParams == null ? Collections.emptyList() : new ArrayList<>(rb.formParams);
         List<Part> bodyPartsCopy = rb.bodyParts == null ? Collections.emptyList() : new ArrayList<>(rb.bodyParts);
-        
+
         return new DefaultRequest(rb.method,//
                 finalUri,//
                 rb.address,//
