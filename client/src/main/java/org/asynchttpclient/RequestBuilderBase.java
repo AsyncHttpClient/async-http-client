@@ -99,15 +99,16 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     protected RequestBuilderBase(Request prototype) {
-        this(prototype, false);
+        this(prototype, false, false);
     }
 
-    protected RequestBuilderBase(Request prototype, boolean disableUrlEncoding) {
+    protected RequestBuilderBase(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
         this.method = prototype.getMethod();
         this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
         this.uri = prototype.getUri();
         this.address = prototype.getAddress();
         this.localAddress = prototype.getLocalAddress();
+        this.headers = new DefaultHttpHeaders(validateHeaders);
         this.headers.add(prototype.getHeaders());
         if (isNonEmpty(prototype.getCookies())) {
             this.cookies = new ArrayList<>(prototype.getCookies());
