@@ -164,8 +164,6 @@ public abstract class Protocol {
                         requestBuilder.addOrReplaceCookie(c);
                 }
 
-                requestBuilder.setHeaders(propagatedHeaders(future.getCurrentRequest(), realm, keepBody));
-
                 boolean sameBase = isSameBase(request.getUri(), newUri);
 
                 if (sameBase) {
