@@ -39,12 +39,12 @@ public class HttpUtils {
     }
 
     public final static String getBaseUrl(Uri uri) {
-        return uri.getScheme() + "://" + getAuthority(uri);
+        // getAuthority duplicate but we don't want to re-concatenate
+        return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getExplicitPort();
     }
 
     public final static String getAuthority(Uri uri) {
-        int port = uri.getPort() != -1 ? uri.getPort() : uri.getExplicitPort();
-        return uri.getHost() + ":" + port;
+        return uri.getHost() + ":" + uri.getExplicitPort();
     }
 
     public final static boolean isSameBase(Uri uri1, Uri uri2) {
