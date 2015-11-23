@@ -14,12 +14,12 @@
 package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.HttpConstants.Methods.*;
+import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.util.HashSet;
@@ -61,10 +61,10 @@ public abstract class Protocol {
 
     public static final Set<Integer> REDIRECT_STATUSES = new HashSet<>();
     static {
-        REDIRECT_STATUSES.add(MOVED_PERMANENTLY.code());
-        REDIRECT_STATUSES.add(FOUND.code());
-        REDIRECT_STATUSES.add(SEE_OTHER.code());
-        REDIRECT_STATUSES.add(TEMPORARY_REDIRECT.code());
+        REDIRECT_STATUSES.add(MOVED_PERMANENTLY_301);
+        REDIRECT_STATUSES.add(FOUND_302);
+        REDIRECT_STATUSES.add(SEE_OTHER_303);
+        REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
     }
 
     public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
@@ -118,10 +118,10 @@ public abstract class Protocol {
                 future.getInProxyAuth().set(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals(HttpMethod.GET.name()) && (statusCode == 301 || statusCode == 303 || (statusCode == 302 && !config.isStrict302Handling()));
-                boolean keepBody = statusCode == 307 || (statusCode == 302 && config.isStrict302Handling());
+                boolean switchToGet = !originalMethod.equals(GET) && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
+                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
-                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? HttpMethod.GET.name() : originalMethod)//
+                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
                         .setCookies(request.getCookies())//
                         .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
                         .setFollowRedirect(true)//

@@ -13,9 +13,10 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.Dsl.realm;
+import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.HttpConstants.Methods.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -413,7 +414,7 @@ public final class HttpProtocol extends Protocol {
 
         RequestBuilder nextRequestBuilder = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders);
         if (future.getCurrentRequest().getUri().isSecured()) {
-            nextRequestBuilder.setMethod(HttpMethod.CONNECT.name());
+            nextRequestBuilder.setMethod(CONNECT);
         }
         final Request nextRequest = nextRequestBuilder.build();
 
@@ -497,19 +498,19 @@ public final class HttpProtocol extends Protocol {
         Request request = future.getCurrentRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
-        if (statusCode == UNAUTHORIZED.code()) {
+        if (statusCode == UNAUTHORIZED_401) {
             return exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer, httpRequest);
 
-        } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code()) {
+        } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED_407) {
             return exitAfterHandling407(channel, future, response, request, statusCode, proxyServer, httpRequest);
 
-        } else if (statusCode == CONTINUE.code()) {
+        } else if (statusCode == CONTINUE_100) {
             return exitAfterHandling100(channel, future, statusCode);
 
         } else if (REDIRECT_STATUSES.contains(statusCode)) {
             return exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
 
-        } else if (httpRequest.getMethod() == HttpMethod.CONNECT && statusCode == OK.code()) {
+        } else if (httpRequest.getMethod() == HttpMethod.CONNECT && statusCode == OK_200) {
             return exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest);
 
         }

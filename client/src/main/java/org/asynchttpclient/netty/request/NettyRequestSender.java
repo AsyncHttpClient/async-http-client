@@ -15,6 +15,7 @@ package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
+import static org.asynchttpclient.util.HttpConstants.Methods.*;
 import static org.asynchttpclient.util.HttpUtils.requestTimeout;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -113,7 +114,7 @@ public final class NettyRequestSender {
         return future != null //
                 && future.getNettyRequest() != null //
                 && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT //
-                && !request.getMethod().equals(HttpMethod.CONNECT.name());
+                && !request.getMethod().equals(CONNECT);
     }
 
     /**
@@ -453,7 +454,7 @@ public final class NettyRequestSender {
         if (asyncHandler instanceof WebSocketUpgradeHandler) {
             if (!isWs)
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());
-            else if (!request.getMethod().equals(HttpMethod.GET.name()))
+            else if (!request.getMethod().equals(GET))
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET: " + request.getMethod());
         } else if (isWs) {
             throw new IllegalArgumentException("No WebSocketUpgradeHandler but scheme is " + uri.getScheme());

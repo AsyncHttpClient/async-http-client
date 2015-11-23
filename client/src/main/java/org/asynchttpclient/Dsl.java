@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient;
 
-import io.netty.handler.codec.http.HttpMethod;
+import static org.asynchttpclient.util.HttpConstants.Methods.*;
 
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -35,35 +35,35 @@ public final class Dsl {
 
     // /////////// Request ////////////////
     public static RequestBuilder get(String url) {
-        return request(HttpMethod.GET.name(), url);
+        return request(GET, url);
     }
 
     public static RequestBuilder put(String url) {
-        return request(HttpMethod.PUT.name(), url);
+        return request(PUT, url);
     }
 
     public static RequestBuilder post(String url) {
-        return request(HttpMethod.POST.name(), url);
+        return request(POST, url);
     }
 
     public static RequestBuilder delete(String url) {
-        return request(HttpMethod.DELETE.name(), url);
+        return request(DELETE, url);
     }
 
     public static RequestBuilder head(String url) {
-        return request(HttpMethod.HEAD.name(), url);
+        return request(HEAD, url);
     }
 
     public static RequestBuilder options(String url) {
-        return request(HttpMethod.OPTIONS.name(), url);
+        return request(OPTIONS, url);
     }
 
     public static RequestBuilder path(String url) {
-        return request(HttpMethod.PATCH.name(), url);
+        return request(PATCH, url);
     }
 
     public static RequestBuilder trace(String url) {
-        return request(HttpMethod.TRACE.name(), url);
+        return request(TRACE, url);
     }
 
     public static RequestBuilder request(String method, String url) {
