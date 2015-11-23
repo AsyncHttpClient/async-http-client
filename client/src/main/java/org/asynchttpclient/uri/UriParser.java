@@ -13,6 +13,7 @@
 package org.asynchttpclient.uri;
 
 import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.MiscUtils.*;
 
 final class UriParser {
 
@@ -85,7 +86,7 @@ final class UriParser {
 
             // see RFC2396 5.2.3
             String contextPath = context.getPath();
-            if (isNotEmpty(contextPath) && contextPath.charAt(0) == '/')
+            if (isNonEmpty(contextPath) && contextPath.charAt(0) == '/')
               scheme = null;
 
             if (scheme == null) {
@@ -280,7 +281,7 @@ final class UriParser {
                 throw new IllegalArgumentException("Invalid port number :" + port);
 
             // see RFC2396 5.2.4: ignore context path if authority is defined
-            if (isNotEmpty(authority))
+            if (isNonEmpty(authority))
                 path = "";
         }
     }
@@ -294,7 +295,7 @@ final class UriParser {
         if (urlWithoutQuery.charAt(start) == '/')
             path = urlWithoutQuery.substring(start, end);
 
-        else if (isNotEmpty(path))
+        else if (isNonEmpty(path))
             handleRelativePath();
 
         else {
@@ -335,9 +336,5 @@ final class UriParser {
         boolean queryOnly = splitUrlAndQuery(originalUrl);
         parseAuthority();
         computePath(queryOnly);
-    }
-
-    private static boolean isNotEmpty(String string) {
-        return string != null && string.length() > 0;
     }
 }
