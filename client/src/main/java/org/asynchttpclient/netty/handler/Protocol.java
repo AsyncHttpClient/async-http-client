@@ -83,12 +83,15 @@ public abstract class Protocol {
 
     public abstract void onClose(NettyResponseFuture<?> future);
 
-    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean switchToGet) {
+    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
 
         HttpHeaders headers = request.getHeaders()//
                 .remove(HttpHeaders.Names.HOST)//
-                .remove(HttpHeaders.Names.CONTENT_LENGTH)//
-                .remove(HttpHeaders.Names.CONTENT_TYPE);
+                .remove(HttpHeaders.Names.CONTENT_LENGTH);
+
+        if (!keepBody) {
+            headers.remove(HttpHeaders.Names.CONTENT_TYPE);
+        }
 
         if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
             headers.remove(AUTHORIZATION)//
@@ -142,7 +145,7 @@ public abstract class Protocol {
                         requestBuilder.setBody(request.getBodyGenerator());
                 }
 
-                requestBuilder.setHeaders(propagatedHeaders(request, realm, switchToGet));
+                requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody));
 
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
@@ -161,7 +164,7 @@ public abstract class Protocol {
                         requestBuilder.addOrReplaceCookie(c);
                 }
 
-                requestBuilder.setHeaders(propagatedHeaders(future.getCurrentRequest(), realm, switchToGet));
+                requestBuilder.setHeaders(propagatedHeaders(future.getCurrentRequest(), realm, keepBody));
 
                 boolean sameBase = isSameBase(request.getUri(), newUri);
 
