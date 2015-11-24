@@ -26,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
-import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
+import org.asynchttpclient.channel.pool.ChannelPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
@@ -203,7 +203,7 @@ public interface Request {
      */
     Charset getCharset();
 
-    ConnectionPoolPartitioning getConnectionPoolPartitioning();
+    ChannelPoolPartitioning getChannelPoolPartitioning();
 
     NameResolver getNameResolver();
 }

@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
+import org.asynchttpclient.channel.pool.ChannelPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
@@ -59,7 +59,7 @@ public class DefaultRequest implements Request {
     private final int requestTimeout;
     private final long rangeOffset;
     private final Charset charset;
-    private final ConnectionPoolPartitioning connectionPoolPartitioning;
+    private final ChannelPoolPartitioning channelPoolPartitioning;
     private final NameResolver nameResolver;
     // lazily loaded
     private List<Param> queryParams;
@@ -87,7 +87,7 @@ public class DefaultRequest implements Request {
             int requestTimeout,//
             long rangeOffset,//
             Charset charset,//
-            ConnectionPoolPartitioning connectionPoolPartitioning,//
+            ChannelPoolPartitioning channelPoolPartitioning,//
             NameResolver nameResolver) {
         this.method = method;
         this.uri = uri;
@@ -112,7 +112,7 @@ public class DefaultRequest implements Request {
         this.requestTimeout = requestTimeout;
         this.rangeOffset = rangeOffset;
         this.charset = charset;
-        this.connectionPoolPartitioning = connectionPoolPartitioning;
+        this.channelPoolPartitioning = channelPoolPartitioning;
         this.nameResolver = nameResolver;
     }
 
@@ -237,8 +237,8 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
-        return connectionPoolPartitioning;
+    public ChannelPoolPartitioning getChannelPoolPartitioning() {
+        return channelPoolPartitioning;
     }
 
     @Override

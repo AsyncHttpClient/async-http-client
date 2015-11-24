@@ -300,7 +300,7 @@ public final class NettyRequestSender {
                 asyncHandler,//
                 nettyRequest,//
                 config.getMaxRequestRetry(),//
-                request.getConnectionPoolPartitioning(),//
+                request.getChannelPoolPartitioning(),//
                 proxyServer);
 
         String expectHeader = request.getHeaders().get(HttpHeaders.Names.EXPECT);
@@ -468,7 +468,7 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
-        final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getConnectionPoolPartitioning());
+        final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
 
         if (channel != null) {
             LOGGER.debug("Using polled Channel {}\n for uri {}\n", channel, uri);

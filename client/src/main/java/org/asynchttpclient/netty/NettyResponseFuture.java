@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
+import org.asynchttpclient.channel.pool.ChannelPoolPartitioning;
 import org.asynchttpclient.future.AbstractListenableFuture;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
@@ -55,7 +55,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
     private final long start = millisTime();
-    private final ConnectionPoolPartitioning connectionPoolPartitioning;
+    private final ChannelPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
     private final int maxRetry;
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -96,7 +96,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
             int maxRetry,//
-            ConnectionPoolPartitioning connectionPoolPartitioning,//
+            ChannelPoolPartitioning connectionPoolPartitioning,//
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
@@ -272,7 +272,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return targetRequest.getUri();
     }
 
-    public ConnectionPoolPartitioning getConnectionPoolPartitioning() {
+    public ChannelPoolPartitioning getConnectionPoolPartitioning() {
         return connectionPoolPartitioning;
     }
 

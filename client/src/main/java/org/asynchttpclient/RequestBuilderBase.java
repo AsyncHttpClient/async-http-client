@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.asynchttpclient.channel.pool.ConnectionPoolPartitioning;
+import org.asynchttpclient.channel.pool.ChannelPoolPartitioning;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
@@ -85,7 +85,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected int requestTimeout;
     protected long rangeOffset;
     protected Charset charset;
-    protected ConnectionPoolPartitioning connectionPoolPartitioning = ConnectionPoolPartitioning.PerHostConnectionPoolPartitioning.INSTANCE;
+    protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
     protected NameResolver nameResolver = JdkNameResolver.INSTANCE;
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
@@ -134,7 +134,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         this.requestTimeout = prototype.getRequestTimeout();
         this.rangeOffset = prototype.getRangeOffset();
         this.charset = prototype.getCharset();
-        this.connectionPoolPartitioning = prototype.getConnectionPoolPartitioning();
+        this.channelPoolPartitioning = prototype.getChannelPoolPartitioning();
         this.nameResolver = prototype.getNameResolver();
     }
 
@@ -421,8 +421,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setConnectionPoolPartitioning(ConnectionPoolPartitioning connectionPoolPartitioning) {
-        this.connectionPoolPartitioning = connectionPoolPartitioning;
+    public T setChannelPoolPartitioning(ChannelPoolPartitioning channelPoolPartitioning) {
+        this.channelPoolPartitioning = channelPoolPartitioning;
         return asDerivedType();
     }
 
@@ -476,7 +476,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.requestTimeout = this.requestTimeout;
         rb.rangeOffset = this.rangeOffset;
         rb.charset = this.charset;
-        rb.connectionPoolPartitioning = this.connectionPoolPartitioning;
+        rb.channelPoolPartitioning = this.channelPoolPartitioning;
         rb.nameResolver = this.nameResolver;
         Request unsignedRequest = rb.build();
         signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
@@ -567,7 +567,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.requestTimeout,//
                 rb.rangeOffset,//
                 finalCharset,//
-                rb.connectionPoolPartitioning,//
+                rb.channelPoolPartitioning,//
                 rb.nameResolver);
     }
 }

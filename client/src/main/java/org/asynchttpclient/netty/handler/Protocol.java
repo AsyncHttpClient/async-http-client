@@ -123,7 +123,7 @@ public abstract class Protocol {
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
                         .setCookies(request.getCookies())//
-                        .setConnectionPoolPartitioning(request.getConnectionPoolPartitioning())//
+                        .setChannelPoolPartitioning(request.getChannelPoolPartitioning())//
                         .setFollowRedirect(true)//
                         .setLocalAddress(request.getLocalAddress())//
                         .setNameResolver(request.getNameResolver())//
