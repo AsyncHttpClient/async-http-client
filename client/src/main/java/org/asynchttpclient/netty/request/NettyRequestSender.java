@@ -21,6 +21,8 @@ import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelProgressivePromise;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -325,14 +327,18 @@ public final class NettyRequestSender {
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
+            boolean writeBody = !future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT && nettyRequest.getBody() != null;
+
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
                     AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSend(nettyRequest);
 
-                channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(future.getAsyncHandler(), future, true, 0L));
+                ChannelProgressivePromise promise = channel.newProgressivePromise();
+                ChannelFuture f = writeBody ? channel.write(httpRequest, promise) : channel.writeAndFlush(httpRequest, promise);
+                f.addListener(new ProgressListener(future.getAsyncHandler(), future, true, 0L));
             }
 
-            if (!future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT && nettyRequest.getBody() != null)
+            if (writeBody)
                 nettyRequest.getBody().write(channel, future);
 
             // don't bother scheduling timeouts if channel became invalid
