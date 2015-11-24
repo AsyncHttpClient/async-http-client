@@ -10,18 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.channel.exception;
+package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
-import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
-
 @SuppressWarnings("serial")
-public class PoolAlreadyClosedException extends IOException {
+public class TooManyConnectionsException extends IOException {
 
-    public static final PoolAlreadyClosedException INSTANCE = trimStackTrace(new PoolAlreadyClosedException());
-
-    private PoolAlreadyClosedException() {
-        super("Pool is already closed");
+    public TooManyConnectionsException(int max) {
+        super("Too many connections: " + max);
     }
 }

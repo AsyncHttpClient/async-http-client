@@ -22,12 +22,12 @@ import io.netty.util.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.channel.pool.ChannelPool;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

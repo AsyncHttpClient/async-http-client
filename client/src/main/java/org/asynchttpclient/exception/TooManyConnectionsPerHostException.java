@@ -10,18 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.channel.exception;
+package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
-import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
-
 @SuppressWarnings("serial")
-public final class RemotelyClosedException extends IOException {
+public class TooManyConnectionsPerHostException extends IOException {
 
-    public static final RemotelyClosedException INSTANCE = trimStackTrace(new RemotelyClosedException());
-    
-    public RemotelyClosedException() {
-        super("Remotely closed");
+    public TooManyConnectionsPerHostException(int max) {
+        super("Too many connections: " + max);
     }
 }

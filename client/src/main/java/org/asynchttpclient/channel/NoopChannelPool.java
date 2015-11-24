@@ -11,9 +11,9 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.channel.pool;
+package org.asynchttpclient.channel;
 
-import org.asynchttpclient.netty.channel.pool.ChannelPoolPartitionSelector;
+import org.asynchttpclient.channel.ChannelPoolPartitionSelector;
 
 import io.netty.channel.Channel;
 

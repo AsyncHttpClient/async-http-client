@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.channel.pool.ChannelPoolPartitioning;
+import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.future.AbstractListenableFuture;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;

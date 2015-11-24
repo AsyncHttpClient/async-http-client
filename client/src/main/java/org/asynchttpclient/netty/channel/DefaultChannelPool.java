@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.channel.pool;
+package org.asynchttpclient.netty.channel;
 
 import static org.asynchttpclient.util.Assertions.*;
 import static org.asynchttpclient.util.DateUtils.millisTime;
@@ -30,8 +30,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.channel.ChannelPoolPartitionSelector;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.channel.Channels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
