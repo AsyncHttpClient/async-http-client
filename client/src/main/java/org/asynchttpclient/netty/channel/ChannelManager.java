@@ -193,6 +193,7 @@ public class ChannelManager {
         Bootstrap bootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)//
+                .option(ChannelOption.TCP_NODELAY, true)//
                 .option(ChannelOption.AUTO_CLOSE, false);
 
         if (config.getConnectTimeout() > 0) {
