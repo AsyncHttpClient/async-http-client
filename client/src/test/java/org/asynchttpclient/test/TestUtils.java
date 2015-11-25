@@ -74,7 +74,7 @@ public class TestUtils {
     public static final Publisher<ByteBuffer> LARGE_IMAGE_PUBLISHER;
     public static final File SIMPLE_TEXT_FILE;
     public static final String SIMPLE_TEXT_FILE_STRING;
-    private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", Thread.currentThread().getContextClassLoader().getResource("realm.properties").toString());
+    private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
 
     static {
         try {

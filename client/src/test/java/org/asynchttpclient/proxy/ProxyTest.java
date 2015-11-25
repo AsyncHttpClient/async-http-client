@@ -56,7 +56,7 @@ public class ProxyTest extends AbstractBasicTest {
     public static class ProxyHandler extends AbstractHandler {
         public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
-                response.addHeader("target", r.getUri().getPath());
+                response.addHeader("target", r.getHttpURI().getPath());
                 response.setStatus(HttpServletResponse.SC_OK);
             } else {
                 // this handler is to handle POST request
