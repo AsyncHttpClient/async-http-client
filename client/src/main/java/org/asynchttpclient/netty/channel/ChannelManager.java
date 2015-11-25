@@ -87,7 +87,6 @@ public class ChannelManager {
     private final SslEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
-    private final Class<? extends Channel> socketChannelClass;
     private final Bootstrap httpBootstrap;
     private final Bootstrap wsBootstrap;
     private final long handshakeTimeout;
@@ -159,6 +158,7 @@ public class ChannelManager {
         // check if external EventLoopGroup is defined
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
         allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
+        Class<? extends Channel> socketChannelClass;
         if (allowReleaseEventLoopGroup) {
             if (config.isUseNativeTransport()) {
                 eventLoopGroup = newEpollEventLoopGroup(threadFactory);
@@ -181,23 +181,28 @@ public class ChannelManager {
             }
         }
 
-        httpBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        wsBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        httpBootstrap = newBootstrap(socketChannelClass, eventLoopGroup, config);
+        wsBootstrap = newBootstrap(socketChannelClass, eventLoopGroup, config);
 
-        // default to PooledByteBufAllocator
-        httpBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        wsBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        // for reactive streams
+        httpBootstrap.option(ChannelOption.AUTO_READ, false);
+    }
+
+    private Bootstrap newBootstrap(Class<? extends Channel> socketChannelClass, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
+        Bootstrap bootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup)//
+                // default to PooledByteBufAllocator
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)//
+                .option(ChannelOption.AUTO_CLOSE, false);
 
         if (config.getConnectTimeout() > 0) {
-            httpBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
-            wsBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
         }
+
         for (Entry<ChannelOption<Object>, Object> entry : config.getChannelOptions().entrySet()) {
-            ChannelOption<Object> key = entry.getKey();
-            Object value = entry.getValue();
-            httpBootstrap.option(key, value);
-            wsBootstrap.option(key, value);
+            bootstrap.option(entry.getKey(), entry.getValue());
         }
+
+        return bootstrap;
     }
 
     private EventLoopGroup newEpollEventLoopGroup(ThreadFactory threadFactory) {
@@ -237,8 +242,6 @@ public class ChannelManager {
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
-
-                ch.config().setOption(ChannelOption.AUTO_READ, false);
 
                 if (config.getHttpAdditionalChannelInitializer() != null)
                     config.getHttpAdditionalChannelInitializer().initChannel(ch);
@@ -376,7 +379,7 @@ public class ChannelManager {
                 config.getHttpClientCodecMaxInitialLineLength(),//
                 config.getHttpClientCodecMaxHeaderSize(),//
                 config.getHttpClientCodecMaxChunkSize(),//
-                false,
+                false,//
                 config.isValidateResponseHeaders());
     }
 
