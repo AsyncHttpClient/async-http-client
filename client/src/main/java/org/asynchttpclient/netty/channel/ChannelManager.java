@@ -189,6 +189,7 @@ public class ChannelManager {
     }
 
     private Bootstrap newBootstrap(Class<? extends Channel> socketChannelClass, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
+        @SuppressWarnings("deprecation")
         Bootstrap bootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)//
