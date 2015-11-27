@@ -17,7 +17,6 @@ import static org.asynchttpclient.util.DateUtils.millisTime;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.channel.Channel;
 
-import java.net.SocketAddress;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -408,10 +407,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public boolean canRetry() {
         return maxRetry > 0 && currentRetry.incrementAndGet() <= maxRetry;
-    }
-
-    public SocketAddress getChannelRemoteAddress() {
-        return channel != null ? channel.remoteAddress() : null;
     }
 
     public void setTargetRequest(Request targetRequest) {

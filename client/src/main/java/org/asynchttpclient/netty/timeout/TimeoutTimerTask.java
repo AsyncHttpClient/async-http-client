@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.timeout;
 
+import io.netty.channel.Channel;
 import io.netty.util.TimerTask;
 
 import java.net.SocketAddress;
@@ -39,8 +40,9 @@ public abstract class TimeoutTimerTask implements TimerTask {
         this.requestSender = requestSender;
         this.timeoutsHolder = timeoutsHolder;
         // saving remote address as the channel might be removed from the future when an exception occurs
-        SocketAddress sa = nettyResponseFuture.getChannelRemoteAddress();
-        remoteAddress = sa != null ? sa.toString() : "not-connected";
+        Channel channel = nettyResponseFuture.channel();
+        SocketAddress sa = channel == null ? null : channel.remoteAddress();
+        remoteAddress = sa == null ? "not-connected" : sa.toString();
     }
 
     protected void expire(String message, long time) {
