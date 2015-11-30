@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -142,10 +143,10 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = "online")
     public void asyncFullBodyProperlyRead() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
+            Response r = client.prepareGet("http://www.typesafe.com/").execute().get();
 
             InputStream stream = r.getResponseBodyAsStream();
-            int contentLength = Integer.valueOf(r.getHeader("Content-Length"));
+            int contentLength = Integer.valueOf(r.getHeader(HttpHeaders.Names.CONTENT_LENGTH));
 
             assertEquals(contentLength, IOUtils.toByteArray(stream).length);
         }
