@@ -58,30 +58,32 @@ public enum RequestNameResolver {
         }
 
         if (asyncHandlerExtensions != null)
-            asyncHandlerExtensions.onDnsResolution(name);
+            asyncHandlerExtensions.onHostnameResolutionAttempt(name);
 
         final Future<List<InetSocketAddress>> whenResolved = request.getNameResolver().resolve(name, port);
 
         if (asyncHandlerExtensions == null)
             return whenResolved;
 
-        Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
-
-        whenResolved.addListener(new SimpleGenericFutureListener<List<InetSocketAddress>>() {
-
-            @Override
-            protected void onSuccess(List<InetSocketAddress> addresses) throws Exception {
-                asyncHandlerExtensions.onDnsResolutionSuccess(name, addresses);
-                promise.setSuccess(addresses);
-            }
-
-            @Override
-            protected void onFailure(Throwable t) throws Exception {
-                asyncHandlerExtensions.onDnsResolutionFailure(name, t);
-                promise.setFailure(t);
-            }
-        });
-
-        return promise;
+        else {
+            Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+            
+            whenResolved.addListener(new SimpleGenericFutureListener<List<InetSocketAddress>>() {
+                
+                @Override
+                protected void onSuccess(List<InetSocketAddress> addresses) throws Exception {
+                    asyncHandlerExtensions.onHostnameResolutionSuccess(name, addresses);
+                    promise.setSuccess(addresses);
+                }
+                
+                @Override
+                protected void onFailure(Throwable t) throws Exception {
+                    asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                    promise.setFailure(t);
+                }
+            });
+            
+            return promise;
+        }
     }
 }

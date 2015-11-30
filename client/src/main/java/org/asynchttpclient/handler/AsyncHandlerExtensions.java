@@ -29,27 +29,27 @@ public interface AsyncHandlerExtensions {
     // ////////// DNS /////////////////
 
     /**
-     * Notify the callback before DNS resolution
+     * Notify the callback before hostname resolution
      * 
      * @param name the name to be resolved
      */
-    void onDnsResolution(String name);
+    void onHostnameResolutionAttempt(String name);
 
     /**
-     * Notify the callback after DNS resolution was successful.
+     * Notify the callback after hostname resolution was successful.
      * 
      * @param name the name to be resolved
      * @param addresses the resolved addresses
      */
-    void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses);
+    void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses);
 
     /**
-     * Notify the callback after DNS resolution failed.
+     * Notify the callback after hostname resolution failed.
      * 
      * @param name the name to be resolved
      * @param cause the failure cause
      */
-    void onDnsResolutionFailure(String name, Throwable cause);
+    void onHostnameResolutionFailure(String name, Throwable cause);
 
     // ////////////// TCP CONNECT ////////
 

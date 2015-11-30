@@ -127,11 +127,11 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
             this.replaying = replaying;
         }
         @Override
-        public void onDnsResolution(String name) {}
+        public void onHostnameResolutionAttempt(String name) {}
         @Override
-        public void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses) {}
+        public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {}
         @Override
-        public void onDnsResolutionFailure(String name, Throwable cause) {}
+        public void onHostnameResolutionFailure(String name, Throwable cause) {}
         @Override
         public void onTcpConnect(InetSocketAddress address) {}
         @Override
