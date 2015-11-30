@@ -95,7 +95,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onTcpConnect(InetSocketAddress address) {
+    public void onTcpConnectAttempt(InetSocketAddress address) {
         firedEvents.add(CONNECTION_OPEN_EVENT);
     }
 
@@ -125,7 +125,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onTlsHandshake() {
+    public void onTlsHandshakeAttempt() {
         firedEvents.add(TLS_HANDSHAKE_EVENT);
     }
 
@@ -140,7 +140,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionPool() {
+    public void onConnectionPoolAttempt() {
         firedEvents.add(CONNECTION_POOL_EVENT);
     }
 

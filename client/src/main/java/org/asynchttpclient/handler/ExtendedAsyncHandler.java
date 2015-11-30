@@ -36,7 +36,7 @@ public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncH
     }
 
     @Override
-    public void onTcpConnect(InetSocketAddress address) {
+    public void onTcpConnectAttempt(InetSocketAddress address) {
     }
 
     @Override
@@ -48,7 +48,7 @@ public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncH
     }
 
     @Override
-    public void onTlsHandshake() {
+    public void onTlsHandshakeAttempt() {
     }
 
     @Override
@@ -60,7 +60,7 @@ public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncH
     }
 
     @Override
-    public void onConnectionPool() {
+    public void onConnectionPoolAttempt() {
     }
 
     @Override

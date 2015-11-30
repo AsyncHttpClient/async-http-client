@@ -470,7 +470,7 @@ public final class NettyRequestSender {
     private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
 
         if (asyncHandler instanceof AsyncHandlerExtensions)
-            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPool();
+            AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPoolAttempt();
 
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();

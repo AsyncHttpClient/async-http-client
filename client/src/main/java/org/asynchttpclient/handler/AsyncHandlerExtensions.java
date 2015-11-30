@@ -60,7 +60,7 @@ public interface AsyncHandlerExtensions {
      * 
      * @param remoteAddress the address we try to connect to
      */
-    void onTcpConnect(InetSocketAddress remoteAddress);
+    void onTcpConnectAttempt(InetSocketAddress remoteAddress);
 
     /**
      * Notify the callback after a successful connect
@@ -85,7 +85,7 @@ public interface AsyncHandlerExtensions {
     /**
      * Notify the callback before TLS handshake
      */
-    void onTlsHandshake();
+    void onTlsHandshakeAttempt();
 
     /**
      * Notify the callback after the TLS was successful
@@ -104,7 +104,7 @@ public interface AsyncHandlerExtensions {
     /**
      * Notify the callback when trying to fetch a connection from the pool.
      */
-    void onConnectionPool();
+    void onConnectionPoolAttempt();
 
     /**
      * Notify the callback when a new connection was successfully fetched from the pool.

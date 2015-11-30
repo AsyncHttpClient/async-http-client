@@ -133,19 +133,19 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
         @Override
         public void onHostnameResolutionFailure(String name, Throwable cause) {}
         @Override
-        public void onTcpConnect(InetSocketAddress address) {}
+        public void onTcpConnectAttempt(InetSocketAddress address) {}
         @Override
         public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {}
         @Override
         public void onTcpConnectFailure(InetSocketAddress address, Throwable cause) {}
         @Override
-        public void onTlsHandshake() {}
+        public void onTlsHandshakeAttempt() {}
         @Override
         public void onTlsHandshakeSuccess() {}
         @Override
         public void onTlsHandshakeFailure(Throwable cause) {}
         @Override
-        public void onConnectionPool() {}
+        public void onConnectionPoolAttempt() {}
         @Override
         public void onConnectionPooled(Channel connection) {}
         @Override

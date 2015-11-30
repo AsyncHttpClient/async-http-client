@@ -90,7 +90,7 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
             final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
 
             if (asyncHandlerExtensions != null)
-                asyncHandlerExtensions.onTlsHandshake();
+                asyncHandlerExtensions.onTlsHandshakeAttempt();
 
             sslHandler.handshakeFuture().addListener(new SimpleGenericFutureListener<Channel>() {
 
