@@ -15,6 +15,7 @@ package org.asynchttpclient.netty.request.body;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
 
@@ -47,7 +48,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         if (endOfInput)
             return null;
 
-        ByteBuf buffer = ctx.alloc().buffer(chunkSize);
+        ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(chunkSize);
         Body.BodyState state = body.transferTo(buffer);
         switch (state) {
             case STOP:
