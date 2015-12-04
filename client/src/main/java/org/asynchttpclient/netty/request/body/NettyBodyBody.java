@@ -69,10 +69,11 @@ public class NettyBodyBody implements NettyBody {
 
             BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator && !(bg instanceof ReactiveStreamsBodyGenerator)) {
+                final ChunkedWriteHandler chunkedWriteHandler = channel.pipeline().get(ChunkedWriteHandler.class);
                 FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
                     @Override
                     public void onContentAdded() {
-                        channel.pipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                        chunkedWriteHandler.resumeTransfer();
                     }
                     @Override
                     public void onError(Throwable t) {}
