@@ -18,7 +18,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public final class BlockingFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
-    private final BlockingQueue<BodyChunk> queue;
+    private final ArrayBlockingQueue<BodyChunk> queue;
 
     public BlockingFeedableBodyGenerator(int capacity) {
         queue = new ArrayBlockingQueue<>(capacity);
