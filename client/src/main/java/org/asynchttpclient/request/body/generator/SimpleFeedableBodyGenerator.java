@@ -68,16 +68,16 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         private BodyState readNextChunk(ByteBuf target) throws IOException {
             BodyState res = BodyState.SUSPEND;
             while (target.isWritable() && state != BodyState.STOP) {
-                BodyChunk nextPart = queue.peek();
-                if (nextPart == null) {
+                BodyChunk nextChunk = queue.peek();
+                if (nextChunk == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                     return res;
-                } else if (!nextPart.buffer.hasRemaining() && !nextPart.isLast) {
+                } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.isLast) {
                     // skip empty buffers
                     queue.remove();
                 } else {
                     res = BodyState.CONTINUE;
-                    readChunk(target, nextPart);
+                    readChunk(target, nextChunk);
                 }
             }
             return res;
