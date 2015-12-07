@@ -16,15 +16,14 @@ package org.asynchttpclient.request.body.generator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-public final class BlockingQueueFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
+public final class BoundedQueueFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
 
-    public BlockingQueueFeedableBodyGenerator(int capacity) {
+    public BoundedQueueFeedableBodyGenerator(int capacity) {
         super(new ArrayBlockingQueue<>(capacity, true));
     }
 
     @Override
     protected boolean offer(BodyChunk chunk) throws InterruptedException {
-        queue.put(chunk);
-        return true;
+        return queue.offer(chunk);
     }
 }
