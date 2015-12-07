@@ -28,12 +28,13 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
 
     @Override
     public Body createBody() {
-        return new PushBody();
+        return new PushBody(queue());
     }
 
     protected abstract boolean offer(BodyChunk chunk) throws Exception;
+
     protected abstract Queue<BodyChunk> queue();
-    
+
     @Override
     public boolean feed(final ByteBuffer buffer, final boolean isLast) throws Exception {
         boolean offered = offer(new BodyChunk(buffer, isLast));
@@ -48,9 +49,14 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
         this.listener = listener;
     }
 
-    public final class PushBody implements Body {
+    public static final class PushBody implements Body {
 
+        private final Queue<BodyChunk> queue;
         private BodyState state = BodyState.CONTINUE;
+
+        public PushBody(Queue<BodyChunk> queue) {
+            this.queue = queue;
+        }
 
         @Override
         public long getContentLength() {
@@ -72,13 +78,13 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
         private BodyState readNextChunk(ByteBuf target) throws IOException {
             BodyState res = BodyState.SUSPEND;
             while (target.isWritable() && state != BodyState.STOP) {
-                BodyChunk nextChunk = queue().peek();
+                BodyChunk nextChunk = queue.peek();
                 if (nextChunk == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                     return res;
                 } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.isLast) {
                     // skip empty buffers
-                    queue().remove();
+                    queue.remove();
                 } else {
                     res = BodyState.CONTINUE;
                     readChunk(target, nextChunk);
@@ -94,22 +100,22 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
                 if (part.isLast) {
                     state = BodyState.STOP;
                 }
-                queue().remove();
+                queue.remove();
+            }
+        }
+
+        private void move(ByteBuf target, ByteBuffer source) {
+            int size = Math.min(target.writableBytes(), source.remaining());
+            if (size > 0) {
+                ByteBuffer slice = source.slice();
+                slice.limit(size);
+                target.writeBytes(slice);
+                source.position(source.position() + size);
             }
         }
 
         @Override
         public void close() {
-        }
-    }
-
-    private void move(ByteBuf target, ByteBuffer source) {
-        int size = Math.min(target.writableBytes(), source.remaining());
-        if (size > 0) {
-            ByteBuffer slice = source.slice();
-            slice.limit(size);
-            target.writeBytes(slice);
-            source.position(source.position() + size);
         }
     }
 
