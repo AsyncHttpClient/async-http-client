@@ -17,8 +17,6 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk;
-
 public final class BlockingFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
     private final BlockingQueue<BodyChunk> queue;
 
@@ -33,7 +31,7 @@ public final class BlockingFeedableBodyGenerator extends QueueBasedFeedableBodyG
     }
 
     @Override
-    protected Queue<org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk> queue() {
+    protected Queue<org.asynchttpclient.request.body.generator.BodyChunk> queue() {
         return queue;
     }
 }

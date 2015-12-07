@@ -13,16 +13,12 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import io.netty.buffer.ByteBuf;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 
 import org.asynchttpclient.request.body.Body;
-import org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk;
 
-public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>> implements FeedableBodyGenerator, BodyGenerator {
+public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>> implements FeedableBodyGenerator {
 
     private FeedListener listener;
 
@@ -47,85 +43,5 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
     @Override
     public void setListener(FeedListener listener) {
         this.listener = listener;
-    }
-
-    public static final class PushBody implements Body {
-
-        private final Queue<BodyChunk> queue;
-        private BodyState state = BodyState.CONTINUE;
-
-        public PushBody(Queue<BodyChunk> queue) {
-            this.queue = queue;
-        }
-
-        @Override
-        public long getContentLength() {
-            return -1;
-        }
-
-        @Override
-        public BodyState transferTo(final ByteBuf target) throws IOException {
-            switch (state) {
-            case CONTINUE:
-                return readNextChunk(target);
-            case STOP:
-                return BodyState.STOP;
-            default:
-                throw new IllegalStateException("Illegal process state.");
-            }
-        }
-
-        private BodyState readNextChunk(ByteBuf target) throws IOException {
-            BodyState res = BodyState.SUSPEND;
-            while (target.isWritable() && state != BodyState.STOP) {
-                BodyChunk nextChunk = queue.peek();
-                if (nextChunk == null) {
-                    // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
-                    return res;
-                } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.isLast) {
-                    // skip empty buffers
-                    queue.remove();
-                } else {
-                    res = BodyState.CONTINUE;
-                    readChunk(target, nextChunk);
-                }
-            }
-            return res;
-        }
-
-        private void readChunk(ByteBuf target, BodyChunk part) {
-            move(target, part.buffer);
-
-            if (!part.buffer.hasRemaining()) {
-                if (part.isLast) {
-                    state = BodyState.STOP;
-                }
-                queue.remove();
-            }
-        }
-
-        private void move(ByteBuf target, ByteBuffer source) {
-            int size = Math.min(target.writableBytes(), source.remaining());
-            if (size > 0) {
-                ByteBuffer slice = source.slice();
-                slice.limit(size);
-                target.writeBytes(slice);
-                source.position(source.position() + size);
-            }
-        }
-
-        @Override
-        public void close() {
-        }
-    }
-
-    public static final class BodyChunk {
-        private final boolean isLast;
-        private final ByteBuffer buffer;
-
-        public BodyChunk(final ByteBuffer buffer, final boolean isLast) {
-            this.buffer = buffer;
-            this.isLast = isLast;
-        }
     }
 }

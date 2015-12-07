@@ -16,8 +16,6 @@ package org.asynchttpclient.request.body.generator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk;
-
 public final class UnboundedFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<ConcurrentLinkedQueue<BodyChunk>> {
     private final Queue<BodyChunk> queue = new ConcurrentLinkedQueue<>();
 
@@ -27,7 +25,7 @@ public final class UnboundedFeedableBodyGenerator extends QueueBasedFeedableBody
     }
 
     @Override
-    protected Queue<org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk> queue() {
+    protected Queue<org.asynchttpclient.request.body.generator.BodyChunk> queue() {
         return queue;
     }
 }

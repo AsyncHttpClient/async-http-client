@@ -73,7 +73,7 @@ public class FeedableBodyGeneratorTest {
         return readBytes;
     }
 
-    private static class TestFeedListener implements UnboundedFeedableBodyGenerator.FeedListener {
+    private static class TestFeedListener implements FeedListener {
 
         private int calls;
 

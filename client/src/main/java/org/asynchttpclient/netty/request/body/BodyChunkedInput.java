@@ -48,7 +48,6 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
             return null;
 
         ByteBuf buffer = ctx.alloc().buffer(chunkSize);
-
         Body.BodyState state = body.transferTo(buffer);
         switch (state) {
         case STOP:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -15,13 +15,12 @@ package org.asynchttpclient.request.body.generator;
 
 import java.nio.ByteBuffer;
 
-/**
- * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
- * If it happens, client becomes responsible for providing the rest of the chunks.
- */
-public interface FeedableBodyGenerator extends BodyGenerator {
+public final class BodyChunk {
+    final boolean isLast;
+    final ByteBuffer buffer;
 
-    boolean feed(ByteBuffer buffer, boolean isLast) throws Exception;
-
-    void setListener(FeedListener listener);
+    public BodyChunk(final ByteBuffer buffer, final boolean isLast) {
+        this.buffer = buffer;
+        this.isLast = isLast;
+    }
 }
