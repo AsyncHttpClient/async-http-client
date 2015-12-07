@@ -77,13 +77,13 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                     queue.remove();
                 } else {
                     res = BodyState.CONTINUE;
-                    readBodyChunk(target, nextPart);
+                    readChunk(target, nextPart);
                 }
             }
             return res;
         }
 
-        private void readBodyChunk(ByteBuf target, BodyChunk part) {
+        private void readChunk(ByteBuf target, BodyChunk part) {
             move(target, part.buffer);
 
             if (!part.buffer.hasRemaining()) {
