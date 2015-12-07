@@ -21,7 +21,7 @@ public final class BlockingFeedableBodyGenerator extends QueueBasedFeedableBodyG
     private final ArrayBlockingQueue<BodyChunk> queue;
 
     public BlockingFeedableBodyGenerator(int capacity) {
-        queue = new ArrayBlockingQueue<>(capacity);
+        queue = new ArrayBlockingQueue<>(capacity, true);
     }
 
     @Override
