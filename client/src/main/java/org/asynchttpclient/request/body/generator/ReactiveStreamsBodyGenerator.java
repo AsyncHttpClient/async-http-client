@@ -43,8 +43,8 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     }
 
     @Override
-    public void feed(ByteBuffer buffer, boolean isLast) {
-        feedableBodyGenerator.feed(buffer, isLast);
+    public boolean feed(ByteBuffer buffer, boolean isLast) {
+        return feedableBodyGenerator.feed(buffer, isLast);
     }
 
     @Override

@@ -32,11 +32,12 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
     }
 
     @Override
-    public void feed(final ByteBuffer buffer, final boolean isLast) {
-        queue.offer(new BodyChunk(buffer, isLast));
-        if (listener != null) {
+    public boolean feed(final ByteBuffer buffer, final boolean isLast) {
+        boolean offered = queue.offer(new BodyChunk(buffer, isLast));
+        if (offered && listener != null) {
             listener.onContentAdded();
         }
+        return offered;
     }
 
     @Override
@@ -56,12 +57,12 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         @Override
         public BodyState transferTo(final ByteBuf target) throws IOException {
             switch (state) {
-                case CONTINUE:
-                    return readNextChunk(target);
-                case STOP:
-                    return BodyState.STOP;
-                default:
-                    throw new IllegalStateException("Illegal process state.");
+            case CONTINUE:
+                return readNextChunk(target);
+            case STOP:
+                return BodyState.STOP;
+            default:
+                throw new IllegalStateException("Illegal process state.");
             }
         }
 
