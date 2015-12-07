@@ -117,6 +117,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final EventLoopGroup eventLoopGroup;
     private final boolean useNativeTransport;
+    private final boolean usePooledMemory;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
     private final AdditionalChannelInitializer httpAdditionalChannelInitializer;
@@ -181,6 +182,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             Map<ChannelOption<Object>, Object> channelOptions,//
             EventLoopGroup eventLoopGroup,//
             boolean useNativeTransport,//
+            boolean usePooledMemory,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
             AdditionalChannelInitializer httpAdditionalChannelInitializer,//
@@ -244,6 +246,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
         this.useNativeTransport = useNativeTransport;
+        this.usePooledMemory = usePooledMemory;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
         this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
@@ -494,6 +497,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public boolean isUsePooledMemory() {
+        return usePooledMemory;
+    }
+
+    @Override
     public Timer getNettyTimer() {
         return nettyTimer;
     }
@@ -580,6 +588,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
+        private boolean usePooledMemory = defaultUsePooledMemory();
         private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private EventLoopGroup eventLoopGroup;
         private Timer nettyTimer;
@@ -647,6 +656,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
             useNativeTransport = config.isUseNativeTransport();
+            usePooledMemory = config.isUsePooledMemory();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
             httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
@@ -1018,6 +1028,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),//
                     eventLoopGroup, //
                     useNativeTransport, //
+                    usePooledMemory, //
                     nettyTimer, //
                     threadFactory, //
                     httpAdditionalChannelInitializer, //
