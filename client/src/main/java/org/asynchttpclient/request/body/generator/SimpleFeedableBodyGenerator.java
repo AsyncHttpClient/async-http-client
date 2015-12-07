@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.asynchttpclient.request.body.Body;
 
 public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator, BodyGenerator {
-    private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<>();
+    private final Queue<BodyChunk> queue = new ConcurrentLinkedQueue<>();
     private FeedListener listener;
 
     @Override
@@ -33,7 +33,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
 
     @Override
     public void feed(final ByteBuffer buffer, final boolean isLast) {
-        queue.offer(new BodyPart(buffer, isLast));
+        queue.offer(new BodyChunk(buffer, isLast));
         if (listener != null) {
             listener.onContentAdded();
         }
@@ -57,7 +57,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         public BodyState transferTo(final ByteBuf target) throws IOException {
             switch (state) {
                 case CONTINUE:
-                    return readNextPart(target);
+                    return readNextChunk(target);
                 case STOP:
                     return BodyState.STOP;
                 default:
@@ -65,10 +65,10 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
             }
         }
 
-        private BodyState readNextPart(ByteBuf target) throws IOException {
+        private BodyState readNextChunk(ByteBuf target) throws IOException {
             BodyState res = BodyState.SUSPEND;
             while (target.isWritable() && state != BodyState.STOP) {
-                BodyPart nextPart = queue.peek();
+                BodyChunk nextPart = queue.peek();
                 if (nextPart == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                     return res;
@@ -77,13 +77,13 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                     queue.remove();
                 } else {
                     res = BodyState.CONTINUE;
-                    readBodyPart(target, nextPart);
+                    readBodyChunk(target, nextPart);
                 }
             }
             return res;
         }
 
-        private void readBodyPart(ByteBuf target, BodyPart part) {
+        private void readBodyChunk(ByteBuf target, BodyChunk part) {
             move(target, part.buffer);
 
             if (!part.buffer.hasRemaining()) {
@@ -109,11 +109,11 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
     }
 
-    private final class BodyPart {
+    private final class BodyChunk {
         private final boolean isLast;
         private final ByteBuffer buffer;
 
-        public BodyPart(final ByteBuffer buffer, final boolean isLast) {
+        public BodyChunk(final ByteBuffer buffer, final boolean isLast) {
             this.buffer = buffer;
             this.isLast = isLast;
         }
