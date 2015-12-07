@@ -16,11 +16,11 @@ package org.asynchttpclient.request.body.generator;
 import java.nio.ByteBuffer;
 
 public final class BodyChunk {
-    final boolean isLast;
-    final ByteBuffer buffer;
+    public final boolean last;
+    public final ByteBuffer buffer;
 
-    public BodyChunk(final ByteBuffer buffer, final boolean isLast) {
+    public BodyChunk(final ByteBuffer buffer, final boolean last) {
         this.buffer = buffer;
-        this.isLast = isLast;
+        this.last = last;
     }
 }

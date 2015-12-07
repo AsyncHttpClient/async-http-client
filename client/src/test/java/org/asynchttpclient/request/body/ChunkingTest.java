@@ -32,7 +32,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.request.body.generator.UnboundedFeedableBodyGenerator;
+import org.asynchttpclient.request.body.generator.UnboundedQueueFeedableBodyGenerator;
 import org.testng.annotations.Test;
 
 public class ChunkingTest extends AbstractBasicTest {
@@ -74,7 +74,7 @@ public class ChunkingTest extends AbstractBasicTest {
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
 
-            final FeedableBodyGenerator feedableBodyGenerator = new UnboundedFeedableBodyGenerator();
+            final FeedableBodyGenerator feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
             Request r = post(getTargetUrl()).setBody(feedableBodyGenerator).build();
 
             ListenableFuture<Response> responseFuture = c.executeRequest(r);

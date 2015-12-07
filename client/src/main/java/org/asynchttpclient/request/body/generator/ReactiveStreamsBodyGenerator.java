@@ -35,7 +35,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     public ReactiveStreamsBodyGenerator(Publisher<ByteBuffer> publisher) {
         this.publisher = publisher;
-        this.feedableBodyGenerator = new UnboundedFeedableBodyGenerator();
+        this.feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
     }
 
     public Publisher<ByteBuffer> getPublisher() {

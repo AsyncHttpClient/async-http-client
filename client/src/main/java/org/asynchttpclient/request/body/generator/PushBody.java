@@ -54,7 +54,7 @@ public final class PushBody implements Body {
             if (nextChunk == null) {
                 // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                 return res;
-            } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.isLast) {
+            } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.last) {
                 // skip empty buffers
                 queue.remove();
             } else {
@@ -69,7 +69,7 @@ public final class PushBody implements Body {
         move(target, part.buffer);
 
         if (!part.buffer.hasRemaining()) {
-            if (part.isLast) {
+            if (part.last) {
                 state = BodyState.STOP;
             }
             queue.remove();

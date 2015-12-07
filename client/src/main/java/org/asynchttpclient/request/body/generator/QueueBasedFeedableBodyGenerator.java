@@ -20,16 +20,19 @@ import org.asynchttpclient.request.body.Body;
 
 public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>> implements FeedableBodyGenerator {
 
+    protected final T queue;
     private FeedListener listener;
+
+    public QueueBasedFeedableBodyGenerator(T queue) {
+        this.queue = queue;
+    }
 
     @Override
     public Body createBody() {
-        return new PushBody(queue());
+        return new PushBody(queue);
     }
 
     protected abstract boolean offer(BodyChunk chunk) throws Exception;
-
-    protected abstract Queue<BodyChunk> queue();
 
     @Override
     public boolean feed(final ByteBuffer buffer, final boolean isLast) throws Exception {

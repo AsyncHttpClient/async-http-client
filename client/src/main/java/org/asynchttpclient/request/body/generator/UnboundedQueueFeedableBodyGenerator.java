@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,25 +13,16 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public final class BlockingFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
-    private final ArrayBlockingQueue<BodyChunk> queue;
+public final class UnboundedQueueFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<ConcurrentLinkedQueue<BodyChunk>> {
 
-    public BlockingFeedableBodyGenerator(int capacity) {
-        queue = new ArrayBlockingQueue<>(capacity, true);
+    public UnboundedQueueFeedableBodyGenerator() {
+        super(new ConcurrentLinkedQueue<>());
     }
 
     @Override
-    protected boolean offer(BodyChunk chunk) throws InterruptedException {
-        queue.put(chunk);
-        return true;
-    }
-
-    @Override
-    protected Queue<org.asynchttpclient.request.body.generator.BodyChunk> queue() {
-        return queue;
+    protected boolean offer(BodyChunk chunk) throws Exception {
+        return queue.offer(chunk);
     }
 }
