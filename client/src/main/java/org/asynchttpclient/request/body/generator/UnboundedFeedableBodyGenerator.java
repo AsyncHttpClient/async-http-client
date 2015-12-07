@@ -13,21 +13,21 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import java.nio.ByteBuffer;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-/**
- * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
- * If it happens, client becomes responsible for providing the rest of the chunks.
- */
-public interface FeedableBodyGenerator extends BodyGenerator {
+import org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk;
 
-    boolean feed(ByteBuffer buffer, boolean isLast) throws Exception;
+public final class UnboundedFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<ConcurrentLinkedQueue<BodyChunk>> {
+    private final Queue<BodyChunk> queue = new ConcurrentLinkedQueue<>();
 
-    void setListener(FeedListener listener);
+    @Override
+    protected boolean offer(BodyChunk chunk) throws Exception {
+        return queue.offer(chunk);
+    }
 
-    interface FeedListener {
-        void onContentAdded();
-
-        void onError(Throwable t);
+    @Override
+    protected Queue<org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk> queue() {
+        return queue;
     }
 }

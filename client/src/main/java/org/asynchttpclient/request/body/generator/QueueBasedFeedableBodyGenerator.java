@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,12 +18,12 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.asynchttpclient.request.body.Body;
+import org.asynchttpclient.request.body.generator.QueueBasedFeedableBodyGenerator.BodyChunk;
 
-public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator, BodyGenerator {
-    private final Queue<BodyChunk> queue = new ConcurrentLinkedQueue<>();
+public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>> implements FeedableBodyGenerator, BodyGenerator {
+
     private FeedListener listener;
 
     @Override
@@ -31,9 +31,12 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         return new PushBody();
     }
 
+    protected abstract boolean offer(BodyChunk chunk) throws Exception;
+    protected abstract Queue<BodyChunk> queue();
+    
     @Override
-    public boolean feed(final ByteBuffer buffer, final boolean isLast) {
-        boolean offered = queue.offer(new BodyChunk(buffer, isLast));
+    public boolean feed(final ByteBuffer buffer, final boolean isLast) throws Exception {
+        boolean offered = offer(new BodyChunk(buffer, isLast));
         if (offered && listener != null) {
             listener.onContentAdded();
         }
@@ -69,13 +72,13 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         private BodyState readNextChunk(ByteBuf target) throws IOException {
             BodyState res = BodyState.SUSPEND;
             while (target.isWritable() && state != BodyState.STOP) {
-                BodyChunk nextChunk = queue.peek();
+                BodyChunk nextChunk = queue().peek();
                 if (nextChunk == null) {
                     // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                     return res;
                 } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.isLast) {
                     // skip empty buffers
-                    queue.remove();
+                    queue().remove();
                 } else {
                     res = BodyState.CONTINUE;
                     readChunk(target, nextChunk);
@@ -91,7 +94,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
                 if (part.isLast) {
                     state = BodyState.STOP;
                 }
-                queue.remove();
+                queue().remove();
             }
         }
 
@@ -110,7 +113,7 @@ public final class SimpleFeedableBodyGenerator implements FeedableBodyGenerator,
         }
     }
 
-    private final class BodyChunk {
+    public static final class BodyChunk {
         private final boolean isLast;
         private final ByteBuffer buffer;
 
