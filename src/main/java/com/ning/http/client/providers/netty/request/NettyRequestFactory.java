@@ -156,7 +156,7 @@ public final class NettyRequestFactory {
         
         boolean allowConnectionPooling = config.isAllowPoolingConnections() && (!isSecure(uri) || config.isAllowPoolingSslConnections());
         
-        HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        HttpVersion httpVersion = (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
 
         NettyBody body = body(request, connect);
