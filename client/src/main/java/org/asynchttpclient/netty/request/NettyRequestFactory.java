@@ -67,7 +67,7 @@ import org.asynchttpclient.util.StringUtils;
 public final class NettyRequestFactory {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
-    
+
     private final AsyncHttpClientConfig config;
 
     public NettyRequestFactory(AsyncHttpClientConfig config) {
@@ -168,7 +168,7 @@ public final class NettyRequestFactory {
         if (connect) {
             // assign proxy-auth as configured on request
             headers.set(PROXY_AUTHORIZATION, request.getHeaders().getAll(PROXY_AUTHORIZATION));
-        
+
         } else {
             // assign headers as configured on request
             headers.set(request.getHeaders());
@@ -221,7 +221,7 @@ public final class NettyRequestFactory {
 
         return nettyRequest;
     }
-    
+
     private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
         if (connect)
             // proxy tunnelling, connect need host and explicit port
