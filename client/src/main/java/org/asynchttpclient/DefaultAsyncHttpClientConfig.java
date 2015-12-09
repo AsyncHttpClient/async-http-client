@@ -941,6 +941,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setUsePooledMemory(boolean usePooledMemory) {
+            this.usePooledMemory = usePooledMemory;
+            return this;
+        }
+
         public Builder setNettyTimer(Timer nettyTimer) {
             this.nettyTimer = nettyTimer;
             return this;
