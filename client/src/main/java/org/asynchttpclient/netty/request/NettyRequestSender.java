@@ -60,7 +60,7 @@ import org.asynchttpclient.netty.timeout.ReadTimeoutTimerTask;
 import org.asynchttpclient.netty.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.resolver.RequestNameResolver;
+import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
@@ -274,7 +274,7 @@ public final class NettyRequestSender {
             return future;
         }
 
-        RequestNameResolver.INSTANCE.resolve(request, proxy, asyncHandler)//
+        RequestHostnameResolver.INSTANCE.resolve(request, proxy, asyncHandler)//
                 .addListener(new SimpleGenericFutureListener<List<InetSocketAddress>>() {
 
                     @Override

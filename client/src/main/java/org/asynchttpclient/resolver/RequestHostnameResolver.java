@@ -29,7 +29,7 @@ import org.asynchttpclient.netty.SimpleGenericFutureListener;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 
-public enum RequestNameResolver {
+public enum RequestHostnameResolver {
 
     INSTANCE;
 
