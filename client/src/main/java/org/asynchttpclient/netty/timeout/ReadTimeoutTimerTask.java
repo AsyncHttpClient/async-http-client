@@ -52,7 +52,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectTimeout reached
-            String message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            String message = "Read timeout to " + remoteAddress + " after " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
             // cancel request timeout sibling
