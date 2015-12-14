@@ -71,9 +71,8 @@ public class ProxyServer {
     }
 
     /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
-     * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
-     * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
+     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to target host. If <code>null</code> proxy is passed in, this method
+     * returns true -- since there is NO proxy, we should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
      * 
      * @param hostname the hostname
      * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
@@ -90,21 +89,19 @@ public class ProxyServer {
 
         return false;
     }
-    
+
     private boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
 
         if (nonProxyHost.length() > 1) {
             if (nonProxyHost.charAt(0) == '*') {
-                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
-                        nonProxyHost.length() - 1);
+                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1, nonProxyHost.length() - 1);
             } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
                 return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
         }
 
         return nonProxyHost.equalsIgnoreCase(targetHost);
     }
-    
-    
+
     public static class Builder {
 
         private String host;
@@ -130,13 +127,18 @@ public class ProxyServer {
             return this;
         }
 
+        public Builder setRealm(Realm.Builder realm) {
+            this.realm = realm.build();
+            return this;
+        }
+
         public Builder setNonProxyHost(String nonProxyHost) {
             if (nonProxyHosts == null)
                 nonProxyHosts = new ArrayList<String>(1);
             nonProxyHosts.add(nonProxyHost);
             return this;
         }
-        
+
         public Builder setNonProxyHosts(List<String> nonProxyHosts) {
             this.nonProxyHosts = nonProxyHosts;
             return this;
