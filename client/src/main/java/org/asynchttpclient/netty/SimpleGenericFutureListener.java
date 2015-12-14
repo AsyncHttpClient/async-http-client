@@ -21,7 +21,7 @@ public abstract class SimpleGenericFutureListener<V> implements GenericFutureLis
     @Override
     public final void operationComplete(Future<V> future) throws Exception {
         if (future.isSuccess()) {
-            onSuccess(future.get());
+            onSuccess(future.getNow());
         } else {
             onFailure(future.cause());
         }
