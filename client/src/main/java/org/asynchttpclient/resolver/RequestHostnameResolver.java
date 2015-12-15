@@ -25,7 +25,7 @@ import java.util.List;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.netty.SimpleGenericFutureListener;
+import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 
@@ -68,7 +68,7 @@ public enum RequestHostnameResolver {
         else {
             Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
             
-            whenResolved.addListener(new SimpleGenericFutureListener<List<InetSocketAddress>>() {
+            whenResolved.addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
                 
                 @Override
                 protected void onSuccess(List<InetSocketAddress> addresses) throws Exception {

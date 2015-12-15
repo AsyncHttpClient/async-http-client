@@ -51,7 +51,7 @@ import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.SimpleGenericFutureListener;
+import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
@@ -275,7 +275,7 @@ public final class NettyRequestSender {
         }
 
         RequestHostnameResolver.INSTANCE.resolve(request, proxy, asyncHandler)//
-                .addListener(new SimpleGenericFutureListener<List<InetSocketAddress>>() {
+                .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {

@@ -14,9 +14,9 @@
 package org.asynchttpclient.netty;
 
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.FutureListener;
 
-public abstract class SimpleGenericFutureListener<V> implements GenericFutureListener<Future<V>> {
+public abstract class SimpleFutureListener<V> implements FutureListener<V> {
 
     @Override
     public final void operationComplete(Future<V> future) throws Exception {
