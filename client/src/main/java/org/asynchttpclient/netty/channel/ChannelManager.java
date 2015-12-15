@@ -35,7 +35,8 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 
 import java.io.IOException;
 import java.util.Map.Entry;
@@ -342,14 +343,13 @@ public class ChannelManager {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void close() {
         if (allowReleaseEventLoopGroup) {
-            io.netty.util.concurrent.Future whenEventLoopGroupClosed = eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(),
-                    TimeUnit.MILLISECONDS);
-
-            whenEventLoopGroupClosed.addListener((GenericFutureListener<?>) new GenericFutureListener<io.netty.util.concurrent.Future<?>>() {
-                public void operationComplete(io.netty.util.concurrent.Future<?> future) throws Exception {
-                    doClose();
-                };
-            });
+            eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
+                    .addListener(new FutureListener() {
+                        @Override
+                        public void operationComplete(Future future) throws Exception {
+                            doClose();
+                        }
+                    });
         } else
             doClose();
     }
