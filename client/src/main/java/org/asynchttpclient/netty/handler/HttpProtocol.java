@@ -287,7 +287,11 @@ public final class HttpProtocol extends Protocol {
         final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
 
         logger.debug("Sending authentication to {}", request.getUri());
-        if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(httpRequest) && !HttpHeaders.isTransferEncodingChunked(response)) {
+        if (future.isKeepAlive()//
+                && HttpHeaders.isKeepAlive(httpRequest)//
+                && HttpHeaders.isKeepAlive(response)//
+                && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
+                && !HttpHeaders.isTransferEncodingChunked(response)) {
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
         } else {
@@ -419,7 +423,13 @@ public final class HttpProtocol extends Protocol {
         final Request nextRequest = nextRequestBuilder.build();
 
         logger.debug("Sending proxy authentication to {}", request.getUri());
-        if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(httpRequest) && !HttpHeaders.isTransferEncodingChunked(response)) {
+        if (future.isKeepAlive()//
+                && HttpHeaders.isKeepAlive(httpRequest)//
+                && HttpHeaders.isKeepAlive(response)//
+                // support broken Proxy-Connection
+                && !response.headers().contains("Proxy-Connection", HttpHeaders.Values.CLOSE, true)//
+                && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
+                && !HttpHeaders.isTransferEncodingChunked(response)) {
             future.setConnectAllowed(true);
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
