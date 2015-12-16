@@ -395,7 +395,6 @@ public final class NettyRequestSender {
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
         if (future.isDone())
             channelManager.closeChannel(channel);
-
         else if (!retry(future))
             abort(channel, future, RemotelyClosedException.INSTANCE);
     }
@@ -406,6 +405,7 @@ public final class NettyRequestSender {
             return false;
 
         if (future.canBeReplayed()) {
+            // FIXME should we set future.setReuseChannel(false); ?
             future.setChannelState(ChannelState.RECONNECTED);
             future.getAndSetStatusReceived(false);
 
@@ -451,6 +451,8 @@ public final class NettyRequestSender {
     }
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
+        // remove attribute in case the channel gets closed so it doesn't try to recover the previous future
+        Channels.setAttribute(future.channel(), null);
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
