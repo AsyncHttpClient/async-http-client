@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
 
 import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -561,7 +562,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private ChannelPool channelPool;
-        private KeepAliveStrategy keepAliveStrategy = KeepAliveStrategy.DefaultKeepAliveStrategy.INSTANCE;
+        private KeepAliveStrategy keepAliveStrategy = new DefaultKeepAliveStrategy();
 
         // ssl
         private boolean useOpenSsl = defaultUseOpenSsl();

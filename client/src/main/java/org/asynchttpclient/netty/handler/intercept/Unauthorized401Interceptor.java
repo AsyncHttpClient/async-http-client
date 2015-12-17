@@ -169,8 +169,6 @@ public class Unauthorized401Interceptor {
 
         LOGGER.debug("Sending authentication to {}", request.getUri());
         if (future.isKeepAlive()//
-                && HttpHeaders.isKeepAlive(httpRequest)//
-                && HttpHeaders.isKeepAlive(response)//
                 && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
                 && !HttpHeaders.isTransferEncodingChunked(response)) {
             future.setReuseChannel(true);

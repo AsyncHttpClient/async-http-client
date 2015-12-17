@@ -173,10 +173,6 @@ public class ProxyUnauthorized407Interceptor {
 
         LOGGER.debug("Sending proxy authentication to {}", request.getUri());
         if (future.isKeepAlive()//
-                && HttpHeaders.isKeepAlive(httpRequest)//
-                && HttpHeaders.isKeepAlive(response)//
-                // support broken Proxy-Connection
-                && !response.headers().contains("Proxy-Connection", HttpHeaders.Values.CLOSE, true)//
                 && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
                 && !HttpHeaders.isTransferEncodingChunked(response)) {
             future.setConnectAllowed(true);
