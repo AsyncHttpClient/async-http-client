@@ -17,6 +17,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
+import static org.asynchttpclient.util.MiscUtils.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -37,7 +38,6 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.MiscUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +62,7 @@ public class Redirect30xInterceptor {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
-        maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+        maxRedirectException = trimStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()));
     }
     
     public boolean exitAfterHandlingRedirect(//
@@ -99,7 +99,7 @@ public class Redirect30xInterceptor {
 
                 if (keepBody) {
                     requestBuilder.setCharset(request.getCharset());
-                    if (MiscUtils.isNonEmpty(request.getFormParams()))
+                    if (isNonEmpty(request.getFormParams()))
                         requestBuilder.setFormParams(request.getFormParams());
                     else if (request.getStringData() != null)
                         requestBuilder.setBody(request.getStringData());
