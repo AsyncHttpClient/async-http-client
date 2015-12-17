@@ -13,7 +13,6 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -21,9 +20,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 
@@ -32,8 +28,6 @@ import java.nio.channels.ClosedChannelException;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.exception.ChannelClosedException;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.DiscardEvent;
@@ -41,8 +35,8 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.StackTraceInspector;
+import org.asynchttpclient.netty.handler.intercept.Interceptors;
 import org.asynchttpclient.netty.request.NettyRequestSender;
-import org.asynchttpclient.proxy.ProxyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +47,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     protected final AsyncHttpClientConfig config;
     protected final ChannelManager channelManager;
     protected final NettyRequestSender requestSender;
-    private final Unauthorized401Handler unauthorized401Handler;
-    private final ProxyUnauthorized407Handler proxyUnauthorized407Handler;
-    private final Continue100Handler continue100Handler;
-    private final Redirect30xHandler redirect30xHandler;
-    private final ConnectSuccessHandler connectSuccessHandler;
-    protected final ResponseFiltersHandler responseFiltersHandler;
+    protected final Interceptors interceptors;
     protected final boolean hasIOExceptionFilters;
 
     public AsyncHttpClientHandler(AsyncHttpClientConfig config,//
@@ -67,12 +56,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         this.config = config;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
-        unauthorized401Handler = new Unauthorized401Handler(channelManager, requestSender);
-        proxyUnauthorized407Handler = new ProxyUnauthorized407Handler(channelManager, requestSender);
-        continue100Handler = new Continue100Handler(requestSender);
-        redirect30xHandler = new Redirect30xHandler(channelManager, config, requestSender);
-        connectSuccessHandler = new ConnectSuccessHandler(channelManager, requestSender);
-        responseFiltersHandler = new ResponseFiltersHandler(config, requestSender);
+        interceptors = new Interceptors(config, channelManager, requestSender);
         hasIOExceptionFilters = !config.getIoExceptionFilters().isEmpty();
     }
 
@@ -258,31 +242,4 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     public abstract void handleException(NettyResponseFuture<?> future, Throwable error);
 
     public abstract void handleChannelInactive(NettyResponseFuture<?> future);
-
-    protected boolean exitAfterSpecialCases(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future) throws Exception {
-
-        HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-        ProxyServer proxyServer = future.getProxyServer();
-        int statusCode = response.getStatus().code();
-        Request request = future.getCurrentRequest();
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
-        if (statusCode == UNAUTHORIZED_401) {
-            return unauthorized401Handler.exitAfterHandling401(channel, future, response, request, statusCode, realm, proxyServer, httpRequest);
-
-        } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED_407) {
-            return proxyUnauthorized407Handler.exitAfterHandling407(channel, future, response, request, statusCode, proxyServer, httpRequest);
-
-        } else if (statusCode == CONTINUE_100) {
-            return continue100Handler.exitAfterHandling100(channel, future, statusCode);
-
-        } else if (Redirect30xHandler.REDIRECT_STATUSES.contains(statusCode)) {
-            return redirect30xHandler.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
-
-        } else if (httpRequest.getMethod() == HttpMethod.CONNECT && statusCode == OK_200) {
-            return connectSuccessHandler.exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest);
-
-        }
-        return false;
-    }
 }

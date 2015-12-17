@@ -140,8 +140,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
-            if (responseFiltersHandler.exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) || //
-                    exitAfterSpecialCases(response, channel, future)) {
+            if (interceptors.intercept(channel, future, handler, response, status, responseHeaders)) {
                 return;
             }
 

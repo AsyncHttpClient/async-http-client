@@ -128,9 +128,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
-        return responseFiltersHandler.exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) || //
-                exitAfterSpecialCases(response, channel, future) || //
-                exitAfterHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
+        return interceptors.intercept(channel, future, handler, response, status, responseHeaders)
+                || exitAfterHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
     }
 
     private void handleChunk(HttpContent chunk,//

@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
 
@@ -22,11 +22,11 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
-public class Continue100Handler {
+public class Continue100Interceptor {
 
     private final NettyRequestSender requestSender;
 
-    public Continue100Handler(NettyRequestSender requestSender) {
+    public Continue100Interceptor(NettyRequestSender requestSender) {
         this.requestSender = requestSender;
     }
 

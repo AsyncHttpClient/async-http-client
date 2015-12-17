@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty.handler.intercept;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
@@ -41,7 +41,7 @@ import org.asynchttpclient.util.MiscUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Redirect30xHandler {
+public class Redirect30xInterceptor {
 
     public static final Set<Integer> REDIRECT_STATUSES = new HashSet<>();
     static {
@@ -51,21 +51,21 @@ public class Redirect30xHandler {
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
     }
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xInterceptor.class);
 
     private final ChannelManager channelManager;
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final MaxRedirectException maxRedirectException;
     
-    public Redirect30xHandler(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+    public Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
         maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
     }
     
-    protected boolean exitAfterHandlingRedirect(//
+    public boolean exitAfterHandlingRedirect(//
             Channel channel,//
             NettyResponseFuture<?> future,//
             HttpResponse response,//

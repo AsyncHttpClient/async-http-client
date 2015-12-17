@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
@@ -28,14 +28,14 @@ import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConnectSuccessHandler {
+public class ConnectSuccessInterceptor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectSuccessHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectSuccessInterceptor.class);
 
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
 
-    public ConnectSuccessHandler(ChannelManager channelManager, NettyRequestSender requestSender) {
+    public ConnectSuccessInterceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.requestSender = requestSender;
     }

@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.channel.Channel;
@@ -26,49 +26,44 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
-public class ResponseFiltersHandler {
+public class ResponseFiltersInterceptor {
 
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
-    private final boolean hasResponseFilters;
 
-    public ResponseFiltersHandler(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+    public ResponseFiltersInterceptor(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.config = config;
         this.requestSender = requestSender;
-
-        hasResponseFilters = !config.getResponseFilters().isEmpty();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected boolean exitAfterProcessingFilters(//
+    public boolean exitAfterProcessingFilters(//
             Channel channel,//
             NettyResponseFuture<?> future,//
             AsyncHandler<?> handler, //
             HttpResponseStatus status,//
             HttpResponseHeaders responseHeaders) {
 
-        if (hasResponseFilters) {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
-                    .responseHeaders(responseHeaders).build();
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
+                .responseHeaders(responseHeaders).build();
 
-            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-                try {
-                    fc = asyncFilter.filter(fc);
-                    // FIXME Is it worth protecting against this?
-                    assertNotNull("fc", "filterContext");
-                } catch (FilterException efe) {
-                    requestSender.abort(channel, future, efe);
-                }
+        for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                // FIXME Is it worth protecting against this?
+                assertNotNull("fc", "filterContext");
+            } catch (FilterException efe) {
+                requestSender.abort(channel, future, efe);
             }
+        }
 
-            // The handler may have been wrapped.
-            future.setAsyncHandler(fc.getAsyncHandler());
+        // The handler may have been wrapped.
+        future.setAsyncHandler(fc.getAsyncHandler());
 
-            // The request has changed
-            if (fc.replayRequest()) {
-                requestSender.replayRequest(future, fc, channel);
-                return true;
-            }
+        // The request has changed
+        if (fc.replayRequest()) {
+            requestSender.replayRequest(future, fc, channel);
+            return true;
         }
         return false;
     }

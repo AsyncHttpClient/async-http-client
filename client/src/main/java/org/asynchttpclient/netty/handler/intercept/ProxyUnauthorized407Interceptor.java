@@ -11,10 +11,11 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -35,46 +36,46 @@ import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
-import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Unauthorized401Handler {
+public class ProxyUnauthorized407Interceptor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Unauthorized401Handler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyUnauthorized407Interceptor.class);
 
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
 
-    public Unauthorized401Handler(ChannelManager channelManager, NettyRequestSender requestSender) {
+    public ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.requestSender = requestSender;
     }
 
-    public boolean exitAfterHandling401(//
-            final Channel channel,//
-            final NettyResponseFuture<?> future,//
+    public boolean exitAfterHandling407(//
+            Channel channel,//
+            NettyResponseFuture<?> future,//
             HttpResponse response,//
-            final Request request,//
+            Request request,//
             int statusCode,//
-            Realm realm,//
             ProxyServer proxyServer,//
             HttpRequest httpRequest) {
 
-        if (realm == null) {
-            LOGGER.info("Can't handle 401 as there's no realm");
+        if (future.getInProxyAuth().getAndSet(true)) {
+            LOGGER.info("Can't handle 407 as auth was already performed");
             return false;
         }
 
-        if (future.getInAuth().getAndSet(true)) {
-            LOGGER.info("Can't handle 401 as auth was already performed");
+        Realm proxyRealm = future.getProxyRealm();
+
+        if (proxyRealm == null) {
+            LOGGER.info("Can't handle 407 as there's no proxyRealm");
             return false;
         }
 
-        List<String> wwwAuthHeaders = response.headers().getAll(HttpHeaders.Names.WWW_AUTHENTICATE);
+        List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
 
-        if (wwwAuthHeaders.isEmpty()) {
-            LOGGER.info("Can't handle 401 as response doesn't contain WWW-Authenticate headers");
+        if (proxyAuthHeaders.isEmpty()) {
+            LOGGER.info("Can't handle 407 as response doesn't contain Proxy-Authenticate headers");
             return false;
         }
 
@@ -82,79 +83,78 @@ public class Unauthorized401Handler {
         future.setChannelState(ChannelState.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
 
-        switch (realm.getScheme()) {
+        switch (proxyRealm.getScheme()) {
         case BASIC:
-            if (getHeaderWithPrefix(wwwAuthHeaders, "Basic") == null) {
-                LOGGER.info("Can't handle 401 with Basic realm as WWW-Authenticate headers don't match");
+            if (getHeaderWithPrefix(proxyAuthHeaders, "Basic") == null) {
+                LOGGER.info("Can't handle 407 with Basic realm as Proxy-Authenticate headers don't match");
                 return false;
             }
 
-            if (realm.isUsePreemptiveAuth()) {
+            if (proxyRealm.isUsePreemptiveAuth()) {
                 // FIXME do we need this, as future.getAndSetAuth
                 // was tested above?
                 // auth was already performed, most likely auth
                 // failed
-                LOGGER.info("Can't handle 401 with Basic realm as auth was preemptive and already performed");
+                LOGGER.info("Can't handle 407 with Basic realm as auth was preemptive and already performed");
                 return false;
             }
 
             // FIXME do we want to update the realm, or directly
             // set the header?
-            Realm newBasicRealm = realm(realm)//
+            Realm newBasicRealm = realm(proxyRealm)//
                     .setUsePreemptiveAuth(true)//
                     .build();
-            future.setRealm(newBasicRealm);
+            future.setProxyRealm(newBasicRealm);
             break;
 
         case DIGEST:
-            String digestHeader = getHeaderWithPrefix(wwwAuthHeaders, "Digest");
+            String digestHeader = getHeaderWithPrefix(proxyAuthHeaders, "Digest");
             if (digestHeader == null) {
-                LOGGER.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
+                LOGGER.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
                 return false;
             }
-            Realm newDigestRealm = realm(realm)//
+            Realm newDigestRealm = realm(proxyRealm)//
                     .setUri(request.getUri())//
                     .setMethodName(request.getMethod())//
                     .setUsePreemptiveAuth(true)//
-                    .parseWWWAuthenticateHeader(digestHeader)//
+                    .parseProxyAuthenticateHeader(digestHeader)//
                     .build();
-            future.setRealm(newDigestRealm);
+            future.setProxyRealm(newDigestRealm);
             break;
 
         case NTLM:
-            String ntlmHeader = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
+            String ntlmHeader = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
             if (ntlmHeader == null) {
-                LOGGER.info("Can't handle 401 with NTLM realm as WWW-Authenticate headers don't match");
+                LOGGER.info("Can't handle 407 with NTLM realm as Proxy-Authenticate headers don't match");
                 return false;
             }
-
-            ntlmChallenge(ntlmHeader, request, requestHeaders, realm, future);
-            Realm newNtlmRealm = realm(realm)//
+            ntlmProxyChallenge(ntlmHeader, request, requestHeaders, proxyRealm, future);
+            Realm newNtlmRealm = realm(proxyRealm)//
                     .setUsePreemptiveAuth(true)//
                     .build();
-            future.setRealm(newNtlmRealm);
+            future.setProxyRealm(newNtlmRealm);
             break;
 
         case KERBEROS:
         case SPNEGO:
-            if (getHeaderWithPrefix(wwwAuthHeaders, "Negociate") == null) {
-                LOGGER.info("Can't handle 401 with Kerberos or Spnego realm as WWW-Authenticate headers don't match");
+            if (getHeaderWithPrefix(proxyAuthHeaders, "Negociate") == null) {
+                LOGGER.info("Can't handle 407 with Kerberos or Spnego realm as Proxy-Authenticate headers don't match");
                 return false;
             }
             try {
-                kerberosChallenge(channel, wwwAuthHeaders, request, requestHeaders, realm, future);
+                kerberosProxyChallenge(channel, proxyAuthHeaders, request, proxyServer, proxyRealm, requestHeaders, future);
 
             } catch (SpnegoEngineException e) {
                 // FIXME
-                String ntlmHeader2 = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
+                String ntlmHeader2 = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
                 if (ntlmHeader2 != null) {
-                    LOGGER.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
-                    ntlmChallenge(ntlmHeader2, request, requestHeaders, realm, future);
-                    Realm newNtlmRealm2 = realm(realm)//
+                    LOGGER.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
+                    ntlmProxyChallenge(ntlmHeader2, request, requestHeaders, proxyRealm, future);
+                    Realm newNtlmRealm2 = realm(proxyRealm)//
                             .setScheme(AuthScheme.NTLM)//
                             .setUsePreemptiveAuth(true)//
                             .build();
-                    future.setRealm(newNtlmRealm2);
+                    future.setProxyRealm(newNtlmRealm2);
                 } else {
                     requestSender.abort(channel, future, e);
                     return false;
@@ -162,17 +162,24 @@ public class Unauthorized401Handler {
             }
             break;
         default:
-            throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
+            throw new IllegalStateException("Invalid Authentication scheme " + proxyRealm.getScheme());
         }
 
-        final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
+        RequestBuilder nextRequestBuilder = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders);
+        if (future.getCurrentRequest().getUri().isSecured()) {
+            nextRequestBuilder.setMethod(CONNECT);
+        }
+        final Request nextRequest = nextRequestBuilder.build();
 
-        LOGGER.debug("Sending authentication to {}", request.getUri());
+        LOGGER.debug("Sending proxy authentication to {}", request.getUri());
         if (future.isKeepAlive()//
                 && HttpHeaders.isKeepAlive(httpRequest)//
                 && HttpHeaders.isKeepAlive(response)//
+                // support broken Proxy-Connection
+                && !response.headers().contains("Proxy-Connection", HttpHeaders.Values.CLOSE, true)//
                 && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
                 && !HttpHeaders.isTransferEncodingChunked(response)) {
+            future.setConnectAllowed(true);
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
         } else {
@@ -183,10 +190,22 @@ public class Unauthorized401Handler {
         return true;
     }
 
-    private void ntlmChallenge(String authenticateHeader,//
+    private void kerberosProxyChallenge(Channel channel,//
+            List<String> proxyAuth,//
+            Request request,//
+            ProxyServer proxyServer,//
+            Realm proxyRealm,//
+            HttpHeaders headers,//
+            NettyResponseFuture<?> future) throws SpnegoEngineException {
+
+        String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
+        headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "Negotiate " + challengeHeader);
+    }
+
+    private void ntlmProxyChallenge(String authenticateHeader,//
             Request request,//
             HttpHeaders requestHeaders,//
-            Realm realm,//
+            Realm proxyRealm,//
             NettyResponseFuture<?> future) {
 
         if (authenticateHeader.equals("NTLM")) {
@@ -194,28 +213,16 @@ public class Unauthorized401Handler {
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-            future.getInAuth().set(false);
+            requestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
+            future.getInProxyAuth().set(false);
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
-            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(realm.getPrincipal(), realm.getPassword(), realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(proxyRealm.getPrincipal(), proxyRealm.getPassword(), proxyRealm.getNtlmDomain(),
+                    proxyRealm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            requestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
         }
-    }
-
-    private void kerberosChallenge(Channel channel,//
-            List<String> authHeaders,//
-            Request request,//
-            HttpHeaders headers,//
-            Realm realm,//
-            NettyResponseFuture<?> future) throws SpnegoEngineException {
-
-        Uri uri = request.getUri();
-        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
-        String challengeHeader = SpnegoEngine.instance().generateToken(host);
-        headers.set(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
     }
 }
