@@ -17,6 +17,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
@@ -35,8 +36,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
@@ -46,12 +45,13 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
-public final class WebSocketProtocol extends Protocol {
+@Sharable
+public final class WebSocketHandler extends AsyncHttpClientHandler {
 
-    public WebSocketProtocol(ChannelManager channelManager,//
-            AsyncHttpClientConfig config,//
+    public WebSocketHandler(AsyncHttpClientConfig config,//
+            ChannelManager channelManager,//
             NettyRequestSender requestSender) {
-        super(channelManager, config, requestSender);
+        super(config, channelManager, requestSender);
     }
 
     // We don't need to synchronize as replacing the "ws-decoder" will
@@ -70,11 +70,12 @@ public final class WebSocketProtocol extends Protocol {
 
         private final Channel channel;
         private final HttpResponse response;
-        private final  WebSocketUpgradeHandler handler;
-        private final  HttpResponseStatus status;
-        private final  HttpResponseHeaders responseHeaders;
-        
-        public UpgradeCallback(NettyResponseFuture<?> future, Channel channel, HttpResponse response, WebSocketUpgradeHandler handler, HttpResponseStatus status, HttpResponseHeaders responseHeaders) {
+        private final WebSocketUpgradeHandler handler;
+        private final HttpResponseStatus status;
+        private final HttpResponseHeaders responseHeaders;
+
+        public UpgradeCallback(NettyResponseFuture<?> future, Channel channel, HttpResponse response, WebSocketUpgradeHandler handler, HttpResponseStatus status,
+                HttpResponseHeaders responseHeaders) {
             super(future);
             this.channel = channel;
             this.response = response;
@@ -82,10 +83,10 @@ public final class WebSocketProtocol extends Protocol {
             this.status = status;
             this.responseHeaders = responseHeaders;
         }
-        
+
         @Override
         public void call() throws Exception {
-            
+
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
             boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
             String connection = response.headers().get(HttpHeaders.Names.CONNECTION);
@@ -122,11 +123,11 @@ public final class WebSocketProtocol extends Protocol {
             // set back the future so the protocol gets notified of frames
             Channels.setAttribute(channel, future);
         }
-        
+
     }
-    
+
     @Override
-    public void handle(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
+    public void handleRead(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
@@ -134,21 +135,16 @@ public final class WebSocketProtocol extends Protocol {
                 HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
             }
-            
+
             WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
-            
-            Request request = future.getCurrentRequest();
-            Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
-            if (exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
+            if (responseFiltersHandler.exitAfterProcessingFilters(channel, future, handler, status, responseHeaders) || //
+                    exitAfterSpecialCases(response, channel, future)) {
                 return;
             }
 
-            if (REDIRECT_STATUSES.contains(status.getStatusCode()) && exitAfterHandlingRedirect(channel, future, response, request, response.getStatus().code(), realm))
-                return;
-            
             Channels.setAttribute(channel, new UpgradeCallback(future, channel, response, handler, status, responseHeaders));
 
         } else if (e instanceof WebSocketFrame) {
@@ -189,7 +185,7 @@ public final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onError(NettyResponseFuture<?> future, Throwable e) {
+    public void handleException(NettyResponseFuture<?> future, Throwable e) {
         logger.warn("onError {}", e);
 
         try {
@@ -206,7 +202,7 @@ public final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onClose(NettyResponseFuture<?> future) {
+    public void handleChannelInactive(NettyResponseFuture<?> future) {
         logger.trace("onClose");
 
         try {

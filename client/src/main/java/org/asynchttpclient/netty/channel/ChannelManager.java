@@ -61,8 +61,8 @@ import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
-import org.asynchttpclient.netty.handler.HttpProtocol;
-import org.asynchttpclient.netty.handler.WebSocketProtocol;
+import org.asynchttpclient.netty.handler.HttpHandler;
+import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -229,11 +229,8 @@ public class ChannelManager {
 
     public void configureBootstraps(NettyRequestSender requestSender) {
 
-        HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
-        final AsyncHttpClientHandler httpHandler = new AsyncHttpClientHandler(config, this, requestSender, httpProtocol);
-
-        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
-        wsHandler = new AsyncHttpClientHandler(config, this, requestSender, wsProtocol);
+        final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
+        wsHandler = new WebSocketHandler(config, this, requestSender);
 
         final NoopHandler pinnedEntry = new NoopHandler();
 

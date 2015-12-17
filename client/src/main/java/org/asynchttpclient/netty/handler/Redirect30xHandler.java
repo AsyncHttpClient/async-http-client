@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -14,30 +14,24 @@
 package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
-import static org.asynchttpclient.util.HttpConstants.Methods.*;
+import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.asynchttpclient.AsyncHandler;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponse;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -47,17 +41,7 @@ import org.asynchttpclient.util.MiscUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Protocol {
-
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
-
-    protected final ChannelManager channelManager;
-    protected final AsyncHttpClientConfig config;
-    protected final NettyRequestSender requestSender;
-
-    private final boolean hasResponseFilters;
-    protected final boolean hasIOExceptionFilters;
-    private final MaxRedirectException maxRedirectException;
+public class Redirect30xHandler {
 
     public static final Set<Integer> REDIRECT_STATUSES = new HashSet<>();
     static {
@@ -66,40 +50,21 @@ public abstract class Protocol {
         REDIRECT_STATUSES.add(SEE_OTHER_303);
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
     }
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xHandler.class);
 
-    public Protocol(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+    private final ChannelManager channelManager;
+    private final AsyncHttpClientConfig config;
+    private final NettyRequestSender requestSender;
+    private final MaxRedirectException maxRedirectException;
+    
+    public Redirect30xHandler(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
-
-        hasResponseFilters = !config.getResponseFilters().isEmpty();
-        hasIOExceptionFilters = !config.getIoExceptionFilters().isEmpty();
         maxRedirectException = new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
     }
-
-    public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
-
-    public abstract void onError(NettyResponseFuture<?> future, Throwable error);
-
-    public abstract void onClose(NettyResponseFuture<?> future);
-
-    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
-
-        HttpHeaders headers = request.getHeaders()//
-                .remove(HttpHeaders.Names.HOST)//
-                .remove(HttpHeaders.Names.CONTENT_LENGTH);
-
-        if (!keepBody) {
-            headers.remove(HttpHeaders.Names.CONTENT_TYPE);
-        }
-
-        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
-            headers.remove(AUTHORIZATION)//
-                    .remove(PROXY_AUTHORIZATION);
-        }
-        return headers;
-    }
-
+    
     protected boolean exitAfterHandlingRedirect(//
             Channel channel,//
             NettyResponseFuture<?> future,//
@@ -118,7 +83,8 @@ public abstract class Protocol {
                 future.getInProxyAuth().set(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals(GET) && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
+                boolean switchToGet = !originalMethod.equals(GET)
+                        && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
                 boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
@@ -156,7 +122,7 @@ public abstract class Protocol {
                 String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
                 Uri newUri = Uri.create(future.getUri(), location);
 
-                logger.debug("Redirecting to {}", newUri);
+                LOGGER.debug("Redirecting to {}", newUri);
 
                 for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
                     Cookie c = CookieDecoder.decode(cookieStr);
@@ -174,7 +140,7 @@ public abstract class Protocol {
                 final Request nextRequest = requestBuilder.setUri(newUri).build();
                 future.setTargetRequest(nextRequest);
 
-                logger.debug("Sending redirect to {}", newUri);
+                LOGGER.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
 
@@ -198,38 +164,21 @@ public abstract class Protocol {
         }
         return false;
     }
+    
+    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected boolean exitAfterProcessingFilters(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
-            AsyncHandler<?> handler, //
-            HttpResponseStatus status,//
-            HttpResponseHeaders responseHeaders) {
+        HttpHeaders headers = request.getHeaders()//
+                .remove(HttpHeaders.Names.HOST)//
+                .remove(HttpHeaders.Names.CONTENT_LENGTH);
 
-        if (hasResponseFilters) {
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status).responseHeaders(responseHeaders)
-                    .build();
-
-            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-                try {
-                    fc = asyncFilter.filter(fc);
-                    // FIXME Is it worth protecting against this?
-                    assertNotNull("fc", "filterContext");
-                } catch (FilterException efe) {
-                    requestSender.abort(channel, future, efe);
-                }
-            }
-
-            // The handler may have been wrapped.
-            future.setAsyncHandler(fc.getAsyncHandler());
-
-            // The request has changed
-            if (fc.replayRequest()) {
-                requestSender.replayRequest(future, fc, channel);
-                return true;
-            }
+        if (!keepBody) {
+            headers.remove(HttpHeaders.Names.CONTENT_TYPE);
         }
-        return false;
+
+        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+            headers.remove(AUTHORIZATION)//
+                    .remove(PROXY_AUTHORIZATION);
+        }
+        return headers;
     }
 }
