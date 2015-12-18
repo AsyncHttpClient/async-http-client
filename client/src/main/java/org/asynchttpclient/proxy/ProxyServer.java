@@ -35,15 +35,13 @@ public class ProxyServer {
     private final int securedPort;
     private final Realm realm;
     private final List<String> nonProxyHosts;
-    private final boolean forceHttp10;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, boolean forceHttp10) {
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
         this.realm = realm;
         this.nonProxyHosts = nonProxyHosts;
-        this.forceHttp10 = forceHttp10;
     }
 
     public String getHost() {
@@ -60,10 +58,6 @@ public class ProxyServer {
 
     public List<String> getNonProxyHosts() {
         return nonProxyHosts;
-    }
-
-    public boolean isForceHttp10() {
-        return forceHttp10;
     }
 
     public Realm getRealm() {
@@ -109,7 +103,6 @@ public class ProxyServer {
         private int securedPort;
         private Realm realm;
         private List<String> nonProxyHosts;
-        private boolean forceHttp10;
 
         public Builder(String host, int port) {
             this.host = host;
@@ -144,14 +137,9 @@ public class ProxyServer {
             return this;
         }
 
-        public Builder setForceHttp10(boolean forceHttp10) {
-            this.forceHttp10 = forceHttp10;
-            return this;
-        }
-
         public ProxyServer build() {
             List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
-            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, forceHttp10);
+            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts);
         }
     }
 }
