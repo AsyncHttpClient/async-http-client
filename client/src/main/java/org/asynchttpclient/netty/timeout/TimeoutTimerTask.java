@@ -13,10 +13,8 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import io.netty.channel.Channel;
 import io.netty.util.TimerTask;
 
-import java.net.SocketAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,16 +31,11 @@ public abstract class TimeoutTimerTask implements TimerTask {
     protected volatile NettyResponseFuture<?> nettyResponseFuture;
     protected final NettyRequestSender requestSender;
     protected final TimeoutsHolder timeoutsHolder;
-    protected final String remoteAddress;
 
     public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
         this.timeoutsHolder = timeoutsHolder;
-        // saving remote address as the channel might be removed from the future when an exception occurs
-        Channel channel = nettyResponseFuture.channel();
-        SocketAddress sa = channel == null ? null : channel.remoteAddress();
-        remoteAddress = sa == null ? "not-connected" : sa.toString();
     }
 
     protected void expire(String message, long time) {
@@ -55,7 +48,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
      * Holding a reference to the future might mean holding a reference to the channel, and heavy objects such as SslEngines
      */
     public void clean() {
-        if (done.compareAndSet(false, true))
+        if (done.compareAndSet(false, true)) {
             nettyResponseFuture = null;
+        }
     }
 }

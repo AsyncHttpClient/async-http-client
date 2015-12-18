@@ -78,10 +78,6 @@ public class HttpUtils {
         return null;
     }
 
-    public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
-        return request.getRequestTimeout() != 0 ? request.getRequestTimeout() : config.getRequestTimeout();
-    }
-
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
         return request.getFollowRedirect() != null ? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }

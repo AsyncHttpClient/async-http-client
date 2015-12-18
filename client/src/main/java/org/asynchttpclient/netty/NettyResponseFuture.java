@@ -325,6 +325,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
         this.timeoutsHolder = timeoutsHolder;
     }
+    
+    public TimeoutsHolder getTimeoutsHolder() {
+        return timeoutsHolder;
+    }
 
     public AtomicBoolean getInAuth() {
         return inAuth;

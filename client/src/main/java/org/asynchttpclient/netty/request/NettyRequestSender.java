@@ -16,7 +16,6 @@ package org.asynchttpclient.netty.request;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.*;
-import static org.asynchttpclient.util.HttpUtils.requestTimeout;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
@@ -27,14 +26,11 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.util.Timeout;
 import io.netty.util.Timer;
-import io.netty.util.TimerTask;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
@@ -56,8 +52,6 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
-import org.asynchttpclient.netty.timeout.ReadTimeoutTimerTask;
-import org.asynchttpclient.netty.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
@@ -218,6 +212,7 @@ public final class NettyRequestSender {
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
 
+        scheduleRequestTimeout(future);
         future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
@@ -273,6 +268,8 @@ public final class NettyRequestSender {
             // exit and don't try to resolve address
             return future;
         }
+
+        scheduleRequestTimeout(future);
 
         RequestHostnameResolver.INSTANCE.resolve(request, proxy, asyncHandler)//
                 .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
@@ -341,9 +338,9 @@ public final class NettyRequestSender {
             if (writeBody)
                 nettyRequest.getBody().write(channel, future);
 
-            // don't bother scheduling timeouts if channel became invalid
+            // don't bother scheduling read timeout if channel became invalid
             if (Channels.isChannelValid(channel))
-                scheduleTimeouts(future);
+                scheduleReadTimeout(future);
 
         } catch (Exception e) {
             LOGGER.error("Can't write request", e);
@@ -356,27 +353,16 @@ public final class NettyRequestSender {
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 
-    private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
-
+    private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture) {
         nettyResponseFuture.touch();
-        int requestTimeoutInMs = requestTimeout(config, nettyResponseFuture.getTargetRequest());
-        TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
-        if (requestTimeoutInMs != -1) {
-            Timeout requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs), requestTimeoutInMs);
-            timeoutsHolder.requestTimeout = requestTimeout;
-        }
-
-        int readTimeoutValue = config.getReadTimeout();
-        if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
-            // no need to schedule a readTimeout if the requestTimeout happens first
-            Timeout readTimeout = newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, this, timeoutsHolder, requestTimeoutInMs, readTimeoutValue), readTimeoutValue);
-            timeoutsHolder.readTimeout = readTimeout;
-        }
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config);
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
     }
 
-    public Timeout newTimeout(TimerTask task, long delay) {
-        return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
+    private void scheduleReadTimeout(NettyResponseFuture<?> nettyResponseFuture) {
+        nettyResponseFuture.touch();
+        TimeoutsHolder timeoutsHolder = nettyResponseFuture.getTimeoutsHolder();
+        timeoutsHolder.startReadTimeout();
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
