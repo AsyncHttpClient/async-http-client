@@ -278,7 +278,7 @@ class ConnectionManager {
         @Override
         protected void onConnect(final Connection connection,
                 final SingleEndpointPool<SocketAddress> pool) {
-            if (pool.getKeepAliveTimeout(TimeUnit.MILLISECONDS) <= 0) {
+            if (pool.getKeepAliveTimeout(TimeUnit.MILLISECONDS) == 0) {
                 IS_NOT_KEEP_ALIVE.set(connection, Boolean.TRUE);
             }
         }
