@@ -13,8 +13,6 @@
  */
 package org.asynchttpclient.channel;
 
-import org.asynchttpclient.channel.ChannelPoolPartitionSelector;
-
 import io.netty.channel.Channel;
 
 public enum NoopChannelPool implements ChannelPool {
