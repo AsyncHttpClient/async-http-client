@@ -115,6 +115,7 @@ public final class HttpTransactionContext {
         final HttpTransactionContext httpTxContext = currentTransaction(httpCtx);
         if (httpTxContext != null) {
             httpCtx.getCloseable().removeCloseListener(httpTxContext.listener);
+            REQUEST_STATE_ATTR.remove(httpCtx);
         }
         
         return httpTxContext;
