@@ -360,9 +360,13 @@ public final class NettyRequestSender {
     }
 
     private void scheduleReadTimeout(NettyResponseFuture<?> nettyResponseFuture) {
-        nettyResponseFuture.touch();
         TimeoutsHolder timeoutsHolder = nettyResponseFuture.getTimeoutsHolder();
-        timeoutsHolder.startReadTimeout();
+        if (timeoutsHolder != null) {
+            // on very fast requests, it's entirely possible that the response has already been completed
+            // by the time we try to schedule the read timeout
+            nettyResponseFuture.touch();
+            timeoutsHolder.startReadTimeout();
+        }
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
