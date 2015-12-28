@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.Dsl.realm;
-import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -137,7 +137,7 @@ public class ProxyUnauthorized407Interceptor {
 
         case KERBEROS:
         case SPNEGO:
-            if (getHeaderWithPrefix(proxyAuthHeaders, "Negociate") == null) {
+            if (getHeaderWithPrefix(proxyAuthHeaders, NEGOTIATE) == null) {
                 LOGGER.info("Can't handle 407 with Kerberos or Spnego realm as Proxy-Authenticate headers don't match");
                 return false;
             }
@@ -195,7 +195,7 @@ public class ProxyUnauthorized407Interceptor {
             NettyResponseFuture<?> future) throws SpnegoEngineException {
 
         String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
-        headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "Negotiate " + challengeHeader);
+        headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
     }
 
     private void ntlmProxyChallenge(String authenticateHeader,//

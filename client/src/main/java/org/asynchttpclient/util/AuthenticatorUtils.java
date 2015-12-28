@@ -28,6 +28,8 @@ import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
 
 public final class AuthenticatorUtils {
+    
+    public static final String NEGOTIATE = "Negotiate";
 
     private static final String PROXY_AUTHORIZATION_HEADER = "Proxy-Authorization";
 
@@ -173,7 +175,7 @@ public final class AuthenticatorUtils {
                     host = request.getUri().getHost();
 
                 try {
-                    authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
+                    authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance().generateToken(host);
                 } catch (SpnegoEngineException e) {
                     throw new RuntimeException(e);
                 }

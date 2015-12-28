@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.Dsl.realm;
-import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -137,7 +137,7 @@ public class Unauthorized401Interceptor {
 
         case KERBEROS:
         case SPNEGO:
-            if (getHeaderWithPrefix(wwwAuthHeaders, "Negociate") == null) {
+            if (getHeaderWithPrefix(wwwAuthHeaders, NEGOTIATE) == null) {
                 LOGGER.info("Can't handle 401 with Kerberos or Spnego realm as WWW-Authenticate headers don't match");
                 return false;
             }
@@ -214,6 +214,6 @@ public class Unauthorized401Interceptor {
         Uri uri = request.getUri();
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
         String challengeHeader = SpnegoEngine.instance().generateToken(host);
-        headers.set(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+        headers.set(HttpHeaders.Names.AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
     }
 }
