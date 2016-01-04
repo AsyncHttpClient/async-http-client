@@ -158,7 +158,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) throws Exception {
-        Throwable cause = getCause(e.getCause());
+        Throwable cause = getCause(e);
 
         if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
             return;

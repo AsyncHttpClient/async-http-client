@@ -65,6 +65,7 @@ public class MiscUtils {
     }
 
     public static Throwable getCause(Throwable t) {
-        return t.getCause() != null ? t.getCause() : t;
+        Throwable cause = t.getCause();
+        return cause != null ? getCause(cause) : t;
     }
 }
