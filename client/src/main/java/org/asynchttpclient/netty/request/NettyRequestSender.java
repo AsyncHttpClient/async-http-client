@@ -442,7 +442,11 @@ public final class NettyRequestSender {
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
         // remove attribute in case the channel gets closed so it doesn't try to recover the previous future
-        Channels.setAttribute(future.channel(), null);
+        Channel channel = future.channel();
+        if (channel != null) {
+            // channel can be null when it was closed by the server before it could be set
+            Channels.setAttribute(channel, null);
+        }
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
