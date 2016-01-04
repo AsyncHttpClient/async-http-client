@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
@@ -84,6 +85,7 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
     public static final String AHC_HTTP_HANDLER = "ahc-http";
     public static final String AHC_WS_HANDLER = "ahc-ws";
+    public static final String LOGGING_HANDLER = "logging";
 
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
@@ -234,15 +236,21 @@ public class ChannelManager {
 
         final NoopHandler pinnedEntry = new NoopHandler();
 
+        final LoggingHandler loggingHandler = new LoggingHandler();
+
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
+                ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
+
+                if (LOGGER.isDebugEnabled()) {
+                    pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+                }
 
                 if (config.getHttpAdditionalChannelInitializer() != null)
                     config.getHttpAdditionalChannelInitializer().initChannel(ch);
@@ -252,10 +260,14 @@ public class ChannelManager {
         wsBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
+                ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(AHC_WS_HANDLER, wsHandler);
+
+                if (LOGGER.isDebugEnabled()) {
+                    pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+                }
 
                 if (config.getWsAdditionalChannelInitializer() != null)
                     config.getWsAdditionalChannelInitializer().initChannel(ch);
