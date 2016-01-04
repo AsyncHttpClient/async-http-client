@@ -90,6 +90,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean allowConnect;
     private Realm realm;
     private Realm proxyRealm;
+    public Throwable pendingException;
 
     public NettyResponseFuture(Request originalRequest,//
             AsyncHandler<V> asyncHandler,//
@@ -325,7 +326,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
         this.timeoutsHolder = timeoutsHolder;
     }
-    
+
     public TimeoutsHolder getTimeoutsHolder() {
         return timeoutsHolder;
     }

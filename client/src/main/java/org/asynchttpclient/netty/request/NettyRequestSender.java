@@ -383,10 +383,13 @@ public final class NettyRequestSender {
     }
 
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
-        if (future.isDone())
+        if (future.isDone()) {
             channelManager.closeChannel(channel);
-        else if (!retry(future))
-            abort(channel, future, RemotelyClosedException.INSTANCE);
+        } else if (retry(future)) {
+            future.pendingException = null;
+        } else {
+            abort(channel, future, future.pendingException != null? future.pendingException : RemotelyClosedException.INSTANCE);
+        }
     }
 
     public boolean retry(NettyResponseFuture<?> future) {

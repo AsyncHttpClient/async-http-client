@@ -195,6 +195,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
                 if (StackTraceInspector.recoverOnReadOrWriteException(cause)) {
                     logger.debug("Trying to recover from dead Channel: {}", channel);
+                    future.pendingException = cause;
                     return;
                 }
             } else if (attribute instanceof Callback) {
