@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.ws;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,13 +26,13 @@ public final class WebSocketUtils {
 
     public static String getKey() {
         byte[] nonce = createRandomBytes(16);
-        return base64Encode(nonce);
+        return Base64.encode(nonce);
     }
 
     public static String getAcceptKey(String key) throws UnsupportedEncodingException {
         String acceptSeed = key + MAGIC_GUID;
-        byte[] sha1 = sha1(acceptSeed.getBytes("US-ASCII"));
-        return base64Encode(sha1);
+        byte[] sha1 = sha1(acceptSeed.getBytes(US_ASCII));
+        return Base64.encode(sha1);
     }
 
     public static byte[] md5(byte[] bytes) {
@@ -51,10 +53,6 @@ public final class WebSocketUtils {
         }
     }
 
-    public static String base64Encode(byte[] bytes) {
-        return Base64.encode(bytes);
-    }
-
     public static byte[] createRandomBytes(int size) {
         byte[] bytes = new byte[size];
 
@@ -70,4 +68,3 @@ public final class WebSocketUtils {
     }
 
 }
-
