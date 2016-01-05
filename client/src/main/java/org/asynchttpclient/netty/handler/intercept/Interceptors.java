@@ -55,7 +55,7 @@ public class Interceptors {
         hasResponseFilters = !config.getResponseFilters().isEmpty();
     }
 
-    public boolean intercept(//
+    public boolean exitAfterIntercept(//
             Channel channel,//
             NettyResponseFuture<?> future,//
             AsyncHandler<?> handler,//

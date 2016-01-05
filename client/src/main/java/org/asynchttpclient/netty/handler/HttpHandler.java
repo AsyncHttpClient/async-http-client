@@ -18,6 +18,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -68,7 +69,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return interrupt;
     }
 
-    private boolean exitAfterHandler(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status,
+    private void notifyHandler(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status,
             HttpRequest httpRequest, HttpResponseHeaders responseHeaders) throws IOException, Exception {
 
         boolean exit = exitAfterHandlingStatus(channel, future, response, handler, status, httpRequest) || //
@@ -77,8 +78,6 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         if (exit)
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) || HttpHeaders.isTransferEncodingChunked(response));
-
-        return exit;
     }
 
     private boolean exitAfterHandlingStatus(//
@@ -118,7 +117,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return false;
     }
 
-    private boolean handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
+    private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
@@ -128,8 +127,9 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
-        return interceptors.intercept(channel, future, handler, response, status, responseHeaders)
-                || exitAfterHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
+        if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
+            notifyHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
+        }
     }
 
     private void handleChunk(HttpContent chunk,//
@@ -173,9 +173,17 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         AsyncHandler<?> handler = future.getAsyncHandler();
         try {
-            if (e instanceof HttpResponse) {
-                if (handleHttpResponse((HttpResponse) e, channel, future, handler))
+            if (e instanceof HttpObject) {
+                HttpObject object = (HttpObject) e;
+                Throwable t = object.getDecoderResult().cause();
+                if (t != null) {
+                    readFailed(channel, future, t);
                     return;
+                }
+            }
+            
+            if (e instanceof HttpResponse) {
+                handleHttpResponse((HttpResponse) e, channel, future, handler);
 
             } else if (e instanceof HttpContent) {
                 handleChunk((HttpContent) e, channel, future, handler);
@@ -189,14 +197,18 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                 return;
             }
 
-            try {
-                requestSender.abort(channel, future, t);
-            } catch (Exception abortException) {
-                logger.debug("Abort failed", abortException);
-            } finally {
-                finishUpdate(future, channel, false);
-            }
+            readFailed(channel, future, t);
             throw t;
+        }
+    }
+    
+    private void readFailed(Channel channel, NettyResponseFuture<?> future, Throwable t) throws Exception {
+        try {
+            requestSender.abort(channel, future, t);
+        } catch (Exception abortException) {
+            logger.debug("Abort failed", abortException);
+        } finally {
+            finishUpdate(future, channel, false);
         }
     }
 
