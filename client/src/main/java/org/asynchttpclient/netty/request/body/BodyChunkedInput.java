@@ -55,6 +55,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
             return buffer;
         case SUSPEND:
             // this will suspend the stream in ChunkedWriteHandler
+            buffer.release();
             return null;
         case CONTINUE:
             return buffer;
