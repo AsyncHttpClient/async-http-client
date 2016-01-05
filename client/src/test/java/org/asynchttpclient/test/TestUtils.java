@@ -343,6 +343,9 @@ public class TestUtils {
     
     public static void assertContentTypesEquals(String actual, String expected) {
         assertEquals(actual.replace("; ", "").toLowerCase(Locale.ENGLISH), expected.replace("; ", "").toLowerCase(Locale.ENGLISH), "Unexpected content-type");
+    }
 
+    public static String getLocalhostIp() {
+        return "127.0.0.1";
     }
 }
