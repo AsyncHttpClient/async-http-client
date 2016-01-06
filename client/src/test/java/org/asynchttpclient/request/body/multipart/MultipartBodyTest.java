@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.request.body.Body.BodyState;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
@@ -47,6 +48,31 @@ public class MultipartBodyTest {
         parts.add(new StringPart("stringPart", "testString"));
 
         compareContentLength(parts);
+        
+        testMultipartBoundary();
+    }
+
+    private static void testMultipartBoundary() {
+        
+        byte[] originalBoundary = "abcd".getBytes();
+        
+        MultipartBody multipartBody = new MultipartBody(new ArrayList<>(), "application/test", originalBoundary);
+        
+        /*
+         * Test array references are different
+         */
+        Assert.assertTrue(originalBoundary != multipartBody.getBoundary());
+        
+        /*
+         * Test array contents are same
+         */
+        Assert.assertEquals(originalBoundary, multipartBody.getBoundary());
+        
+        try {
+            multipartBody.close();
+        } catch (IOException ignore) {
+        }
+        
     }
 
     private static File getTestfile() throws URISyntaxException {

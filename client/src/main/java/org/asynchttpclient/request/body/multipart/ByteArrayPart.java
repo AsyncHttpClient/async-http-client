@@ -16,6 +16,8 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 import java.nio.charset.Charset;
 
+import org.asynchttpclient.util.ArrayUtils;
+
 public class ByteArrayPart extends FileLikePart {
 
     private final byte[] bytes;
@@ -43,7 +45,7 @@ public class ByteArrayPart extends FileLikePart {
     public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
         assertNotNull(bytes, "bytes");
-        this.bytes = bytes;
+        this.bytes = ArrayUtils.copyOf(bytes);
         setFileName(fileName);
     }
 

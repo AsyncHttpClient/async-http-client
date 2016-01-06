@@ -29,6 +29,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.request.body.multipart.FileLikePart;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.ByteBufVisitor;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.CounterPartVisitor;
+import org.asynchttpclient.util.ArrayUtils;
 
 public abstract class MultipartPart<T extends FileLikePart> implements Closeable {
 
@@ -101,7 +102,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
 
     public MultipartPart(T part, byte[] boundary) {
         this.part = part;
-        this.boundary = boundary;
+        this.boundary = ArrayUtils.copyOf(boundary);
         preContentLength = computePreContentLength();
         postContentLength = computePostContentLength();
         state = MultipartState.PRE_CONTENT;

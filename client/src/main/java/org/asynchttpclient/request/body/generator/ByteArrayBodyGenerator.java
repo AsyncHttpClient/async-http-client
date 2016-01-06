@@ -17,6 +17,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 
 import org.asynchttpclient.request.body.Body;
+import org.asynchttpclient.util.ArrayUtils;
 
 /**
  * A {@link BodyGenerator} backed by a byte array.
@@ -26,7 +27,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
     private final byte[] bytes;
 
     public ByteArrayBodyGenerator(byte[] bytes) {
-        this.bytes = bytes;
+        this.bytes = ArrayUtils.copyOf(bytes);
     }
 
     protected final class ByteBody implements Body {

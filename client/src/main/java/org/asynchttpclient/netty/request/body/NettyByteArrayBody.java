@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import org.asynchttpclient.util.ArrayUtils;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -27,7 +29,7 @@ public class NettyByteArrayBody extends NettyDirectBody {
     }
 
     public NettyByteArrayBody(byte[] bytes, String contentType) {
-        this.bytes = bytes;
+        this.bytes = ArrayUtils.copyOf(bytes);
         this.contentType = contentType;
     }
 

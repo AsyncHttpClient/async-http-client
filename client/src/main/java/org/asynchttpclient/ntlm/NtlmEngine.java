@@ -40,6 +40,7 @@ import java.util.Locale;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.asynchttpclient.util.ArrayUtils;
 import org.asynchttpclient.util.Base64;
 
 /**
@@ -247,12 +248,12 @@ public final class NtlmEngine {
             this.target = target;
             this.user = user;
             this.password = password;
-            this.challenge = challenge;
-            this.targetInformation = targetInformation;
-            this.clientChallenge = clientChallenge;
-            this.clientChallenge2 = clientChallenge2;
-            this.secondaryKey = secondaryKey;
-            this.timestamp = timestamp;
+            this.challenge = ArrayUtils.copyOf(challenge);
+            this.targetInformation = ArrayUtils.copyOf(targetInformation);
+            this.clientChallenge = ArrayUtils.copyOf(clientChallenge);
+            this.clientChallenge2 = ArrayUtils.copyOf(clientChallenge2);
+            this.secondaryKey = ArrayUtils.copyOf(secondaryKey);
+            this.timestamp = ArrayUtils.copyOf(timestamp);
         }
 
         public CipherGen(final String domain, final String user, final String password, final byte[] challenge, final String target,
