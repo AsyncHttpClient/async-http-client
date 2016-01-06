@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * to track how many bytes has been transferred and to properly adjust the file's write position.
  * <br>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.
+ * 
+ * Beware that it registers a shutdown hook, that will cause a ClassLoader leak when used in an appserver and only redeploying the application.
  */
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
