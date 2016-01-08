@@ -47,6 +47,13 @@ public class AsyncHttpClientConfigHelper {
             try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(file)) {
                 if (is != null) {
                     props.load(is);
+                } else {
+                   //Try loading from this class classloader instead, e.g. for OSGi environments.
+                    try(InputStream is2 = this.getClass().getClassLoader().getResourceAsStream(file)) {
+                        if (is2 != null) {
+                            props.load(is2);
+                        }
+                    }
                 }
             } catch (IOException e) {
                 throw new IllegalArgumentException("Can't parse file", e);
