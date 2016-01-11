@@ -32,6 +32,43 @@ public interface ChannelPoolPartitioning {
         }
 
         @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((proxyHost == null) ? 0 : proxyHost.hashCode());
+            result = prime * result + proxyPort;
+            result = prime * result + (secured ? 1231 : 1237);
+            result = prime * result + ((targetHostBaseUrl == null) ? 0 : targetHostBaseUrl.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ProxyPartitionKey other = (ProxyPartitionKey) obj;
+            if (proxyHost == null) {
+                if (other.proxyHost != null)
+                    return false;
+            } else if (!proxyHost.equals(other.proxyHost))
+                return false;
+            if (proxyPort != other.proxyPort)
+                return false;
+            if (secured != other.secured)
+                return false;
+            if (targetHostBaseUrl == null) {
+                if (other.targetHostBaseUrl != null)
+                    return false;
+            } else if (!targetHostBaseUrl.equals(other.targetHostBaseUrl))
+                return false;
+            return true;
+        }
+
+        @Override
         public String toString() {
             return new StringBuilder()//
                     .append("ProxyPartitionKey(proxyHost=").append(proxyHost)//
