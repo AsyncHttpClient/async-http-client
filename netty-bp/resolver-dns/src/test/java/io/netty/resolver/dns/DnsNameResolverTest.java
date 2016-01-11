@@ -376,8 +376,7 @@ public class DnsNameResolverTest {
 
             boolean typeMatches = false;
             for (InternetProtocolFamily f: resolver.resolvedAddressTypes()) {
-                Class<?> resolvedType = resolved.getClass();
-                if (f.addressType().isAssignableFrom(resolvedType)) {
+                if (DnsNameResolver.addressMatchFamily(resolved, f)) {
                     typeMatches = true;
                 }
             }

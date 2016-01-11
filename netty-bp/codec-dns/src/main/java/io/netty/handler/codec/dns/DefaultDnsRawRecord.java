@@ -103,18 +103,6 @@ public class DefaultDnsRawRecord extends AbstractDnsRecord implements DnsRawReco
     }
 
     @Override
-    public DnsRawRecord touch() {
-        content().touch();
-        return this;
-    }
-
-    @Override
-    public DnsRawRecord touch(Object hint) {
-        content().touch(hint);
-        return this;
-    }
-
-    @Override
     public String toString() {
         final StringBuilder buf = new StringBuilder(64).append(StringUtil.simpleClassName(this)).append('(');
         final DnsRecordType type = type();

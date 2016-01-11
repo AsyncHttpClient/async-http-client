@@ -76,7 +76,7 @@ public class DnsResponseTest {
         for (byte[] p: packets) {
             ByteBuf packet = embedder.alloc().buffer(512).writeBytes(p);
             embedder.writeInbound(new DatagramPacket(packet, null, new InetSocketAddress(0)));
-            AddressedEnvelope<DnsResponse, InetSocketAddress> envelope = embedder.readInbound();
+            AddressedEnvelope<DnsResponse, InetSocketAddress> envelope = (AddressedEnvelope<DnsResponse, InetSocketAddress>) embedder.readInbound();
             assertThat(envelope, is(instanceOf(DatagramDnsResponse.class)));
             DnsResponse response = envelope.content();
             assertThat(response, is(sameInstance((Object) envelope)));

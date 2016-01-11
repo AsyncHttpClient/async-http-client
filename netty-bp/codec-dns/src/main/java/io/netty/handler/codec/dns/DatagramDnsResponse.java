@@ -156,16 +156,6 @@ public class DatagramDnsResponse extends DefaultDnsResponse
     }
 
     @Override
-    public DatagramDnsResponse touch() {
-        return (DatagramDnsResponse) super.touch();
-    }
-
-    @Override
-    public DatagramDnsResponse touch(Object hint) {
-        return (DatagramDnsResponse) super.touch(hint);
-    }
-
-    @Override
     public DatagramDnsResponse retain() {
         return (DatagramDnsResponse) super.retain();
     }

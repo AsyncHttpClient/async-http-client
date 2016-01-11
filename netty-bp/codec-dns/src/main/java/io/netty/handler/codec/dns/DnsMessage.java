@@ -143,12 +143,6 @@ public interface DnsMessage extends ReferenceCounted {
     DnsMessage clear();
 
     @Override
-    DnsMessage touch();
-
-    @Override
-    DnsMessage touch(Object hint);
-
-    @Override
     DnsMessage retain();
 
     @Override

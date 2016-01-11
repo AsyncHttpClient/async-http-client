@@ -47,12 +47,6 @@ public interface DnsQuery extends DnsMessage {
     DnsQuery clear();
 
     @Override
-    DnsQuery touch();
-
-    @Override
-    DnsQuery touch(Object hint);
-
-    @Override
     DnsQuery retain();
 
     @Override

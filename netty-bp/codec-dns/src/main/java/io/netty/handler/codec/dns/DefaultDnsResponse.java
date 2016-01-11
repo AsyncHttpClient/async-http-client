@@ -149,16 +149,6 @@ public class DefaultDnsResponse extends AbstractDnsMessage implements DnsRespons
     }
 
     @Override
-    public DnsResponse touch() {
-        return (DnsResponse) super.touch();
-    }
-
-    @Override
-    public DnsResponse touch(Object hint) {
-        return (DnsResponse) super.touch(hint);
-    }
-
-    @Override
     public DnsResponse retain() {
         return (DnsResponse) super.retain();
     }

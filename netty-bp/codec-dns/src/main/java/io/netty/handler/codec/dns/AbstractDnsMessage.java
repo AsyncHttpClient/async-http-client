@@ -350,19 +350,6 @@ public abstract class AbstractDnsMessage extends AbstractReferenceCounted implem
     }
 
     @Override
-    public DnsMessage touch() {
-        return (DnsMessage) super.touch();
-    }
-
-    @Override
-    public DnsMessage touch(Object hint) {
-        if (leak != null) {
-            leak.record(hint);
-        }
-        return this;
-    }
-
-    @Override
     public DnsMessage retain() {
         return (DnsMessage) super.retain();
     }

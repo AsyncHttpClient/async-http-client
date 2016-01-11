@@ -32,10 +32,4 @@ public interface DnsRawRecord extends DnsRecord, ByteBufHolder {
 
     @Override
     DnsRawRecord retain(int increment);
-
-    @Override
-    DnsRawRecord touch();
-
-    @Override
-    DnsRawRecord touch(Object hint);
 }

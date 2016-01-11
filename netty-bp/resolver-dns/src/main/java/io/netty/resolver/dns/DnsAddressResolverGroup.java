@@ -16,7 +16,7 @@
 
 package io.netty.resolver.dns;
 
-import io.netty.channel.ChannelFactory;
+import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.ReflectiveChannelFactory;
 import io.netty.channel.socket.DatagramChannel;

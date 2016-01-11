@@ -85,16 +85,6 @@ public class DefaultDnsQuery extends AbstractDnsMessage implements DnsQuery {
     }
 
     @Override
-    public DnsQuery touch() {
-        return (DnsQuery) super.touch();
-    }
-
-    @Override
-    public DnsQuery touch(Object hint) {
-        return (DnsQuery) super.touch(hint);
-    }
-
-    @Override
     public DnsQuery retain() {
         return (DnsQuery) super.retain();
     }

@@ -100,12 +100,6 @@ public interface DnsResponse extends DnsMessage {
     DnsResponse clear();
 
     @Override
-    DnsResponse touch();
-
-    @Override
-    DnsResponse touch(Object hint);
-
-    @Override
     DnsResponse retain();
 
     @Override

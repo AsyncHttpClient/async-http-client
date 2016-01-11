@@ -172,8 +172,8 @@ final class DnsMessageUtil {
         final int count = message.count(section);
         for (int i = 0; i < count; i ++) {
             buf.append(StringUtil.NEWLINE)
-               .append(StringUtil.TAB)
-               .append(message.recordAt(section, i));
+               .append('\t')
+               .append(message.recordAt(section, i).toString());
         }
     }
 

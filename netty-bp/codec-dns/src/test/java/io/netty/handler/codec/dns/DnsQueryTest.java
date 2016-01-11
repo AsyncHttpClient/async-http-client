@@ -59,7 +59,7 @@ public class DnsQueryTest {
 
             embedder.writeOutbound(query);
 
-            DatagramPacket packet = embedder.readOutbound();
+            DatagramPacket packet = (DatagramPacket) embedder.readOutbound();
             Assert.assertTrue(packet.content().isReadable());
             packet.release();
             Assert.assertNull(embedder.readOutbound());

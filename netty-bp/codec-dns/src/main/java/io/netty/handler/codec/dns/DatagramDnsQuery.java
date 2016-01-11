@@ -122,16 +122,6 @@ public class DatagramDnsQuery extends DefaultDnsQuery
     }
 
     @Override
-    public DatagramDnsQuery touch() {
-        return (DatagramDnsQuery) super.touch();
-    }
-
-    @Override
-    public DatagramDnsQuery touch(Object hint) {
-        return (DatagramDnsQuery) super.touch(hint);
-    }
-
-    @Override
     public DatagramDnsQuery retain() {
         return (DatagramDnsQuery) super.retain();
     }
