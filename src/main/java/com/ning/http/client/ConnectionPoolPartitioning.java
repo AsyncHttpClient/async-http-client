@@ -27,6 +27,37 @@ public interface ConnectionPoolPartitioning {
         }
 
         @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((proxyUrl == null) ? 0 : proxyUrl.hashCode());
+            result = prime * result + ((targetHostBaseUrl == null) ? 0 : targetHostBaseUrl.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (!(obj instanceof ProxyPartitionKey))
+                return false;
+            ProxyPartitionKey other = (ProxyPartitionKey) obj;
+            if (proxyUrl == null) {
+                if (other.proxyUrl != null)
+                    return false;
+            } else if (!proxyUrl.equals(other.proxyUrl))
+                return false;
+            if (targetHostBaseUrl == null) {
+                if (other.targetHostBaseUrl != null)
+                    return false;
+            } else if (!targetHostBaseUrl.equals(other.targetHostBaseUrl))
+                return false;
+            return true;
+        }
+
+        @Override
         public String toString() {
             return new StringBuilder()//
                     .append("ProxyPartitionKey(proxyUrl=").append(proxyUrl)//
