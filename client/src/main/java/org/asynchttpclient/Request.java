@@ -17,6 +17,7 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.resolver.NameResolver;
 
 import java.io.File;
 import java.io.InputStream;
@@ -30,7 +31,6 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -204,5 +204,5 @@ public interface Request {
 
     ChannelPoolPartitioning getChannelPoolPartitioning();
 
-    NameResolver getNameResolver();
+    NameResolver<InetAddress> getNameResolver();
 }

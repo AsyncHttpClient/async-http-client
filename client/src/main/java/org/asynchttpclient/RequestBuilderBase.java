@@ -19,6 +19,9 @@ import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.resolver.DefaultNameResolver;
+import io.netty.resolver.NameResolver;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import java.io.File;
 import java.io.InputStream;
@@ -37,8 +40,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.resolver.JdkNameResolver;
-import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UriEncoder;
 import org.reactivestreams.Publisher;
@@ -51,6 +52,8 @@ import org.slf4j.LoggerFactory;
  * @param <T> the builder type
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
+    
+    public static NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
 
     private final static Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
 
@@ -86,7 +89,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected long rangeOffset;
     protected Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
-    protected NameResolver nameResolver = JdkNameResolver.INSTANCE;
+    protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
         this(method, disableUrlEncoding, true);
@@ -426,7 +429,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setNameResolver(NameResolver nameResolver) {
+    public T setNameResolver(NameResolver<InetAddress> nameResolver) {
         this.nameResolver = nameResolver;
         return asDerivedType();
     }

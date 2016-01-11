@@ -459,8 +459,8 @@ public final class NettyRequestSender {
         if (asyncHandler instanceof WebSocketUpgradeHandler) {
             if (!isWs)
                 throw new IllegalArgumentException("WebSocketUpgradeHandler but scheme isn't ws or wss: " + uri.getScheme());
-            else if (!request.getMethod().equals(GET))
-                throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET: " + request.getMethod());
+            else if (!request.getMethod().equals(GET) && !request.getMethod().equals(CONNECT))
+                throw new IllegalArgumentException("WebSocketUpgradeHandler but method isn't GET or CONNECT: " + request.getMethod());
         } else if (isWs) {
             throw new IllegalArgumentException("No WebSocketUpgradeHandler but scheme is " + uri.getScheme());
         }

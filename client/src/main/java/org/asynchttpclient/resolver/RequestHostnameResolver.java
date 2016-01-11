@@ -18,7 +18,9 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,12 +38,11 @@ public enum RequestHostnameResolver {
     public Future<List<InetSocketAddress>> resolve(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
 
         Uri uri = request.getUri();
+        final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
         if (request.getAddress() != null) {
             List<InetSocketAddress> resolved = Collections.singletonList(new InetSocketAddress(request.getAddress(), uri.getExplicitPort()));
-            Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
             return promise.setSuccess(resolved);
-
         }
 
         // don't notify on explicit address
@@ -60,30 +61,31 @@ public enum RequestHostnameResolver {
         if (asyncHandlerExtensions != null)
             asyncHandlerExtensions.onHostnameResolutionAttempt(name);
 
-        final Future<List<InetSocketAddress>> whenResolved = request.getNameResolver().resolve(name, port);
+        final Future<List<InetAddress>> whenResolved = request.getNameResolver().resolveAll(name);
 
-        if (asyncHandlerExtensions == null)
-            return whenResolved;
+            whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
 
-        else {
-            Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
-            
-            whenResolved.addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
-                
                 @Override
-                protected void onSuccess(List<InetSocketAddress> addresses) throws Exception {
-                    asyncHandlerExtensions.onHostnameResolutionSuccess(name, addresses);
-                    promise.setSuccess(addresses);
+                protected void onSuccess(List<InetAddress> value) throws Exception {
+                    ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
+                    for (InetAddress a : value) {
+                        socketAddresses.add(new InetSocketAddress(a, port));
+                    }
+                    if (asyncHandlerExtensions != null) {
+                        asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
+                    }
+                    promise.trySuccess(socketAddresses);
                 }
-                
+
                 @Override
                 protected void onFailure(Throwable t) throws Exception {
-                    asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
-                    promise.setFailure(t);
+                    if (asyncHandlerExtensions != null) {
+                        asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                    }
+                    promise.tryFailure(t);
                 }
             });
-            
+
             return promise;
-        }
     }
 }
