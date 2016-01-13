@@ -265,15 +265,15 @@ public class DnsNameResolverTest {
     private static final TestDnsServer dnsServer = new TestDnsServer();
     private static final EventLoopGroup group = new NioEventLoopGroup(1);
 
-    private DnsNameResolverBuilder newResolver() {
-        return new DnsNameResolverBuilder(group.next())
+    private DnsNameResolverBuilder<?> newResolver() {
+        return new DefaultDnsNameResolverBuilder(group.next())
                 .channelType(NioDatagramChannel.class)
                 .nameServerAddresses(DnsServerAddresses.singleton(dnsServer.localAddress()))
                 .maxQueriesPerResolve(1)
                 .optResourceEnabled(false);
     }
 
-    private DnsNameResolverBuilder newResolver(InternetProtocolFamily... resolvedAddressTypes) {
+    private DnsNameResolverBuilder<?> newResolver(InternetProtocolFamily... resolvedAddressTypes) {
         return newResolver()
                 .resolvedAddressTypes(resolvedAddressTypes);
     }

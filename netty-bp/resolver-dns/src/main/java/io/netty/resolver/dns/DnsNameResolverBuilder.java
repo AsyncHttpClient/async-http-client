@@ -16,7 +16,6 @@
 package io.netty.resolver.dns;
 
 import static io.netty.util.internal.ObjectUtil2.*;
-
 import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.ReflectiveChannelFactory;
@@ -33,24 +32,24 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
 /**
  * A {@link DnsNameResolver} builder.
  */
-public final class DnsNameResolverBuilder {
+public abstract class DnsNameResolverBuilder<T extends DnsNameResolverBuilder<T>> {
 
-    private final EventLoop eventLoop;
-    private ChannelFactory<? extends DatagramChannel> channelFactory;
-    private InetSocketAddress localAddress = DnsNameResolver.ANY_LOCAL_ADDR;
-    private DnsServerAddresses nameServerAddresses;
-    private DnsCache resolveCache;
-    private Integer minTtl;
-    private Integer maxTtl;
-    private Integer negativeTtl;
-    private long queryTimeoutMillis = 5000;
-    private InternetProtocolFamily[] resolvedAddressTypes = DnsNameResolver.DEFAULT_RESOLVE_ADDRESS_TYPES;
-    private boolean recursionDesired = true;
-    private int maxQueriesPerResolve = 3;
-    private boolean traceEnabled;
-    private int maxPayloadSize = 4096;
-    private boolean optResourceEnabled = true;
-    private HostsFileEntriesResolver hostsFileEntriesResolver = HostsFileEntriesResolver.DEFAULT;
+    protected final EventLoop eventLoop;
+    protected ChannelFactory<? extends DatagramChannel> channelFactory;
+    protected InetSocketAddress localAddress = DnsNameResolver.ANY_LOCAL_ADDR;
+    protected DnsServerAddresses nameServerAddresses = DnsServerAddresses.defaultAddresses();
+    protected DnsCache resolveCache;
+    protected Integer minTtl;
+    protected Integer maxTtl;
+    protected Integer negativeTtl;
+    protected long queryTimeoutMillis = 5000;
+    protected InternetProtocolFamily[] resolvedAddressTypes = DnsNameResolver.DEFAULT_RESOLVE_ADDRESS_TYPES;
+    protected boolean recursionDesired = true;
+    protected int maxQueriesPerResolve = 3;
+    protected boolean traceEnabled;
+    protected int maxPayloadSize = 4096;
+    protected boolean optResourceEnabled = true;
+    protected HostsFileEntriesResolver hostsFileEntriesResolver = HostsFileEntriesResolver.DEFAULT;
 
     /**
      * Creates a new builder.
@@ -62,15 +61,20 @@ public final class DnsNameResolverBuilder {
         this.eventLoop = eventLoop;
     }
 
+    @SuppressWarnings("unchecked")
+    private T cast() {
+        return (T) this;
+    }
+    
     /**
      * Sets the {@link ChannelFactory} that will create a {@link DatagramChannel}.
      *
      * @param channelFactory the {@link ChannelFactory}
      * @return {@code this}
      */
-    public DnsNameResolverBuilder channelFactory(ChannelFactory<? extends DatagramChannel> channelFactory) {
+    public T channelFactory(ChannelFactory<? extends DatagramChannel> channelFactory) {
         this.channelFactory = channelFactory;
-        return this;
+        return cast();
     }
 
     /**
@@ -80,7 +84,7 @@ public final class DnsNameResolverBuilder {
      * @param channelType
      * @return {@code this}
      */
-    public DnsNameResolverBuilder channelType(Class<? extends DatagramChannel> channelType) {
+    public T channelType(Class<? extends DatagramChannel> channelType) {
         return channelFactory(new ReflectiveChannelFactory<DatagramChannel>(channelType));
     }
 
@@ -90,9 +94,9 @@ public final class DnsNameResolverBuilder {
      * @param localAddress the local address
      * @return {@code this}
      */
-    public DnsNameResolverBuilder localAddress(InetSocketAddress localAddress) {
+    public T localAddress(InetSocketAddress localAddress) {
         this.localAddress = localAddress;
-        return this;
+        return cast();
     }
 
     /**
@@ -101,9 +105,9 @@ public final class DnsNameResolverBuilder {
      * @param nameServerAddresses the DNS server addresses
      * @return {@code this}
      */
-    public DnsNameResolverBuilder nameServerAddresses(DnsServerAddresses nameServerAddresses) {
+    public T nameServerAddresses(DnsServerAddresses nameServerAddresses) {
         this.nameServerAddresses = nameServerAddresses;
-        return this;
+        return cast();
     }
 
     /**
@@ -112,9 +116,9 @@ public final class DnsNameResolverBuilder {
      * @param resolveCache the DNS resolution results cache
      * @return {@code this}
      */
-    public DnsNameResolverBuilder resolveCache(DnsCache resolveCache) {
+    public T resolveCache(DnsCache resolveCache) {
         this.resolveCache  = resolveCache;
-        return this;
+        return cast();
     }
 
     /**
@@ -129,10 +133,10 @@ public final class DnsNameResolverBuilder {
      * @param maxTtl the maximum TTL
      * @return {@code this}
      */
-    public DnsNameResolverBuilder ttl(int minTtl, int maxTtl) {
+    public T ttl(int minTtl, int maxTtl) {
         this.maxTtl = maxTtl;
         this.minTtl = minTtl;
-        return this;
+        return cast();
     }
 
     /**
@@ -141,9 +145,9 @@ public final class DnsNameResolverBuilder {
      * @param negativeTtl the TTL for failed cached queries
      * @return {@code this}
      */
-    public DnsNameResolverBuilder negativeTtl(int negativeTtl) {
+    public T negativeTtl(int negativeTtl) {
         this.negativeTtl = negativeTtl;
-        return this;
+        return cast();
     }
 
     /**
@@ -152,9 +156,9 @@ public final class DnsNameResolverBuilder {
      * @param queryTimeoutMillis the query timeout
      * @return {@code this}
      */
-    public DnsNameResolverBuilder queryTimeoutMillis(long queryTimeoutMillis) {
+    public T queryTimeoutMillis(long queryTimeoutMillis) {
         this.queryTimeoutMillis = queryTimeoutMillis;
-        return this;
+        return cast();
     }
 
     /**
@@ -166,7 +170,7 @@ public final class DnsNameResolverBuilder {
      * @param resolvedAddressTypes the address types
      * @return {@code this}
      */
-    public DnsNameResolverBuilder resolvedAddressTypes(InternetProtocolFamily... resolvedAddressTypes) {
+    public T resolvedAddressTypes(InternetProtocolFamily... resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolvedAddressTypes");
 
         final List<InternetProtocolFamily> list =
@@ -191,7 +195,7 @@ public final class DnsNameResolverBuilder {
 
         this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily[list.size()]);
 
-        return this;
+        return cast();
     }
 
     /**
@@ -203,7 +207,7 @@ public final class DnsNameResolverBuilder {
      * @param resolvedAddressTypes the address types
      * @return {@code this}
      */
-    public DnsNameResolverBuilder resolvedAddressTypes(Iterable<InternetProtocolFamily> resolvedAddressTypes) {
+    public T resolvedAddressTypes(Iterable<InternetProtocolFamily> resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolveAddressTypes");
 
         final List<InternetProtocolFamily> list =
@@ -228,7 +232,7 @@ public final class DnsNameResolverBuilder {
 
         this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily[list.size()]);
 
-        return this;
+        return cast();
     }
 
     /**
@@ -237,9 +241,9 @@ public final class DnsNameResolverBuilder {
      * @param recursionDesired true if recursion is desired
      * @return {@code this}
      */
-    public DnsNameResolverBuilder recursionDesired(boolean recursionDesired) {
+    public T recursionDesired(boolean recursionDesired) {
         this.recursionDesired = recursionDesired;
-        return this;
+        return cast();
     }
 
     /**
@@ -248,9 +252,9 @@ public final class DnsNameResolverBuilder {
      * @param maxQueriesPerResolve the max number of queries
      * @return {@code this}
      */
-    public DnsNameResolverBuilder maxQueriesPerResolve(int maxQueriesPerResolve) {
+    public T maxQueriesPerResolve(int maxQueriesPerResolve) {
         this.maxQueriesPerResolve = maxQueriesPerResolve;
-        return this;
+        return cast();
     }
 
     /**
@@ -260,9 +264,9 @@ public final class DnsNameResolverBuilder {
      * @param traceEnabled true if trace is enabled
      * @return {@code this}
      */
-    public DnsNameResolverBuilder traceEnabled(boolean traceEnabled) {
+    public T traceEnabled(boolean traceEnabled) {
         this.traceEnabled = traceEnabled;
-        return this;
+        return cast();
     }
 
     /**
@@ -271,9 +275,9 @@ public final class DnsNameResolverBuilder {
      * @param maxPayloadSize the capacity of the datagram packet buffer
      * @return {@code this}
      */
-    public DnsNameResolverBuilder maxPayloadSize(int maxPayloadSize) {
+    public T maxPayloadSize(int maxPayloadSize) {
         this.maxPayloadSize = maxPayloadSize;
-        return this;
+        return cast();
     }
 
     /**
@@ -284,9 +288,9 @@ public final class DnsNameResolverBuilder {
      * @param optResourceEnabled if optional records inclusion is enabled
      * @return {@code this}
      */
-    public DnsNameResolverBuilder optResourceEnabled(boolean optResourceEnabled) {
+    public T optResourceEnabled(boolean optResourceEnabled) {
         this.optResourceEnabled = optResourceEnabled;
-        return this;
+        return cast();
     }
 
     /**
@@ -294,9 +298,9 @@ public final class DnsNameResolverBuilder {
      *                                 if the hostname is locally aliased.
      * @return {@code this}
      */
-    public DnsNameResolverBuilder hostsFileEntriesResolver(HostsFileEntriesResolver hostsFileEntriesResolver) {
+    public T hostsFileEntriesResolver(HostsFileEntriesResolver hostsFileEntriesResolver) {
         this.hostsFileEntriesResolver = hostsFileEntriesResolver;
-        return this;
+        return cast();
     }
 
     /**
@@ -313,19 +317,8 @@ public final class DnsNameResolverBuilder {
         DnsCache cache = resolveCache != null ? resolveCache :
                 new DefaultDnsCache(intValue(minTtl, 0), intValue(maxTtl, Integer.MAX_VALUE), intValue(negativeTtl, 0));
 
-        return new DnsNameResolver(
-                eventLoop,
-                channelFactory,
-                localAddress,
-                nameServerAddresses,
-                cache,
-                queryTimeoutMillis,
-                resolvedAddressTypes,
-                recursionDesired,
-                maxQueriesPerResolve,
-                traceEnabled,
-                maxPayloadSize,
-                optResourceEnabled,
-                hostsFileEntriesResolver);
+        return build0(cache);
     }
+    
+    protected abstract DnsNameResolver build0(DnsCache cache);
 }
