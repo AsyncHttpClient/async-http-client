@@ -37,9 +37,9 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     public static final String HEADERS_WRITTEN_EVENT = "HeadersWritten";
     public static final String CONTENT_WRITTEN_EVENT = "ContentWritten";
     public static final String CONNECTION_OPEN_EVENT = "ConnectionOpen";
-    public static final String DNS_RESOLUTION_EVENT = "DnsResolution";
-    public static final String DNS_RESOLUTION_SUCCESS_EVENT = "DnsResolutionSuccess";
-    public static final String DNS_RESOLUTION_FAILURE_EVENT = "DnsResolutionFailure";
+    public static final String HOSTNAME_RESOLUTION_EVENT = "HostnameResolution";
+    public static final String HOSTNAME_RESOLUTION_SUCCESS_EVENT = "HostnameResolutionSuccess";
+    public static final String HOSTNAME_RESOLUTION_FAILURE_EVENT = "HostnameResolutionFailure";
     public static final String CONNECTION_SUCCESS_EVENT = "ConnectionSuccess";
     public static final String CONNECTION_FAILURE_EVENT = "ConnectionFailure";
     public static final String TLS_HANDSHAKE_EVENT = "TlsHandshake";
@@ -95,7 +95,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onTcpConnect(InetSocketAddress address) {
+    public void onTcpConnectAttempt(InetSocketAddress address) {
         firedEvents.add(CONNECTION_OPEN_EVENT);
     }
 
@@ -110,22 +110,22 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onDnsResolution(String name) {
-        firedEvents.add(DNS_RESOLUTION_EVENT);
+    public void onHostnameResolutionAttempt(String name) {
+        firedEvents.add(HOSTNAME_RESOLUTION_EVENT);
     }
 
     @Override
-    public void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses) {
-        firedEvents.add(DNS_RESOLUTION_SUCCESS_EVENT);
+    public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+        firedEvents.add(HOSTNAME_RESOLUTION_SUCCESS_EVENT);
     }
 
     @Override
-    public void onDnsResolutionFailure(String name, Throwable cause) {
-        firedEvents.add(DNS_RESOLUTION_FAILURE_EVENT);
+    public void onHostnameResolutionFailure(String name, Throwable cause) {
+        firedEvents.add(HOSTNAME_RESOLUTION_FAILURE_EVENT);
     }
 
     @Override
-    public void onTlsHandshake() {
+    public void onTlsHandshakeAttempt() {
         firedEvents.add(TLS_HANDSHAKE_EVENT);
     }
 
@@ -140,7 +140,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public void onConnectionPool() {
+    public void onConnectionPoolAttempt() {
         firedEvents.add(CONNECTION_POOL_EVENT);
     }
 

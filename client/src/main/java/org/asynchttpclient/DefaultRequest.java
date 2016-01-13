@@ -15,6 +15,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.resolver.NameResolver;
 
 import java.io.File;
 import java.io.InputStream;
@@ -31,7 +32,6 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 
 public class DefaultRequest implements Request {
@@ -60,7 +60,7 @@ public class DefaultRequest implements Request {
     private final long rangeOffset;
     private final Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
-    private final NameResolver nameResolver;
+    private final NameResolver<InetAddress> nameResolver;
     // lazily loaded
     private List<Param> queryParams;
 
@@ -88,7 +88,7 @@ public class DefaultRequest implements Request {
             long rangeOffset,//
             Charset charset,//
             ChannelPoolPartitioning channelPoolPartitioning,//
-            NameResolver nameResolver) {
+            NameResolver<InetAddress> nameResolver) {
         this.method = method;
         this.uri = uri;
         this.address = address;
@@ -242,7 +242,7 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public NameResolver getNameResolver() {
+    public NameResolver<InetAddress> getNameResolver() {
         return nameResolver;
     }
 

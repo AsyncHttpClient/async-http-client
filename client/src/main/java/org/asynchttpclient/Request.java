@@ -17,13 +17,13 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.resolver.NameResolver;
 
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Collection;
 import java.util.List;
 
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -31,7 +31,6 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.resolver.NameResolver;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -74,11 +73,11 @@ public interface Request {
     HttpHeaders getHeaders();
 
     /**
-     * Return Coookie.
+     * Return cookies.
      *
      * @return an unmodifiable Collection of Cookies
      */
-    Collection<Cookie> getCookies();
+    List<Cookie> getCookies();
 
     /**
      * Return the current request's body as a byte array
@@ -205,5 +204,5 @@ public interface Request {
 
     ChannelPoolPartitioning getChannelPoolPartitioning();
 
-    NameResolver getNameResolver();
+    NameResolver<InetAddress> getNameResolver();
 }

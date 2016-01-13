@@ -138,8 +138,8 @@ public class BasicHttpsTest extends AbstractBasicHttpsTest {
 
             Object[] expectedEvents = new Object[] { //
             CONNECTION_POOL_EVENT,//
-                    DNS_RESOLUTION_EVENT,//
-                    DNS_RESOLUTION_SUCCESS_EVENT,//
+                    HOSTNAME_RESOLUTION_EVENT,//
+                    HOSTNAME_RESOLUTION_SUCCESS_EVENT,//
                     CONNECTION_OPEN_EVENT,//
                     CONNECTION_SUCCESS_EVENT,//
                     TLS_HANDSHAKE_EVENT,//

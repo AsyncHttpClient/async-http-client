@@ -50,16 +50,17 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         ByteBuf buffer = ctx.alloc().buffer(chunkSize);
         Body.BodyState state = body.transferTo(buffer);
         switch (state) {
-            case STOP:
-                endOfInput = true;
-                return buffer;
-            case SUSPEND:
-                //this will suspend the stream in ChunkedWriteHandler
-                return null;
-            case CONTINUE:
-                return buffer;
-            default:
-                throw new IllegalStateException("Unknown state: " + state);
+        case STOP:
+            endOfInput = true;
+            return buffer;
+        case SUSPEND:
+            // this will suspend the stream in ChunkedWriteHandler
+            buffer.release();
+            return null;
+        case CONTINUE:
+            return buffer;
+        default:
+            throw new IllegalStateException("Unknown state: " + state);
         }
     }
 

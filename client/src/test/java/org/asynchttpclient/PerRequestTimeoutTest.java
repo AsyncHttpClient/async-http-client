@@ -44,9 +44,9 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
     private void checkTimeoutMessage(String message) {
-        assertTrue(message.startsWith("Request timed out"), "error message indicates reason of error");
-        assertTrue(message.contains("localhost"), "error message contains remote ip address");
-        assertTrue(message.contains("of 100 ms"), "error message contains timeout configuration value");
+        assertTrue(message.startsWith("Request timeout"), "error message indicates reason of error but got: " + message);
+        assertTrue(message.contains("localhost"), "error message contains remote host address but got: " + message);
+        assertTrue(message.contains("after 100ms"), "error message contains timeout configuration value but got: " + message);
     }
 
     @Override

@@ -17,7 +17,6 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.request.body.Body;
 import org.reactivestreams.Publisher;
@@ -31,11 +30,11 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     private final Publisher<ByteBuffer> publisher;
     private final FeedableBodyGenerator feedableBodyGenerator;
-    private final AtomicReference<FeedListener> feedListener = new AtomicReference<>(null);
+    private volatile FeedListener feedListener;
 
     public ReactiveStreamsBodyGenerator(Publisher<ByteBuffer> publisher) {
         this.publisher = publisher;
-        this.feedableBodyGenerator = new SimpleFeedableBodyGenerator();
+        this.feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
     }
 
     public Publisher<ByteBuffer> getPublisher() {
@@ -43,13 +42,13 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     }
 
     @Override
-    public void feed(ByteBuffer buffer, boolean isLast) {
-        feedableBodyGenerator.feed(buffer, isLast);
+    public boolean feed(ByteBuffer buffer, boolean isLast) throws Exception {
+        return feedableBodyGenerator.feed(buffer, isLast);
     }
 
     @Override
     public void setListener(FeedListener listener) {
-        feedListener.set(listener);
+        feedListener = listener;
         feedableBodyGenerator.setListener(listener);
     }
 
@@ -81,7 +80,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         @Override
         public BodyState transferTo(ByteBuf target) throws IOException {
-            if(initialized.compareAndSet(false, true))
+            if (initialized.compareAndSet(false, true))
                 publisher.subscribe(subscriber);
 
             return body.transferTo(target);
@@ -101,21 +100,22 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         @Override
         public void onSubscribe(Subscription s) {
-            if (s == null) throw null;
+            if (s == null)
+                throw null;
 
             // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
-            if (this.subscription != null) { 
+            if (this.subscription != null) {
                 s.cancel(); // Cancel the additional subscription
-            }
-            else {
-              subscription = s;
-              subscription.request(Long.MAX_VALUE);
+            } else {
+                subscription = s;
+                subscription.request(Long.MAX_VALUE);
             }
         }
 
         @Override
         public void onNext(ByteBuffer t) {
-            if (t == null) throw null;
+            if (t == null)
+                throw null;
             try {
                 feeder.feed(t, false);
             } catch (Exception e) {
@@ -126,18 +126,19 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         @Override
         public void onError(Throwable t) {
-            if (t == null) throw null;
+            if (t == null)
+                throw null;
             LOGGER.debug("Error occurred while consuming body stream.", t);
-            FeedListener listener = feedListener.get();
-            if(listener != null) listener.onError(t);
+            FeedListener listener = feedListener;
+            if (listener != null)
+                listener.onError(t);
         }
 
         @Override
         public void onComplete() {
             try {
-              feeder.feed(EMPTY, true);
-            } 
-            catch (Exception e) {
+                feeder.feed(EMPTY, true);
+            } catch (Exception e) {
                 LOGGER.info("Ignoring exception occurred while completing stream processing.", e);
                 this.subscription.cancel();
             }

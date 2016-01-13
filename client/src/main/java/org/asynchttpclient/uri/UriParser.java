@@ -243,7 +243,7 @@ final class UriParser {
             path = path.substring(0, path.length() - 1);
     }
 
-    private void initRelativePath() {
+    private void handleRelativePath() {
         int lastSlashPosition = path.lastIndexOf('/');
         String pathEnd = urlWithoutQuery.substring(start, end);
 
@@ -286,11 +286,6 @@ final class UriParser {
         }
     }
 
-    private void handleRelativePath() {
-        initRelativePath();
-        handlePathDots();
-    }
-
     private void computeRegularPath() {
         if (urlWithoutQuery.charAt(start) == '/')
             path = urlWithoutQuery.substring(start, end);
@@ -302,6 +297,7 @@ final class UriParser {
             String pathEnd = urlWithoutQuery.substring(start, end);
             path = authority != null ? "/" + pathEnd : pathEnd;
         }
+        handlePathDots();
     }
 
     private void computeQueryOnlyPath() {

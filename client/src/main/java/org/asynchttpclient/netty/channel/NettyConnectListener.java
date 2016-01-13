@@ -24,7 +24,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
-import org.asynchttpclient.netty.SimpleGenericFutureListener;
+import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
@@ -90,9 +90,9 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
             final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
 
             if (asyncHandlerExtensions != null)
-                asyncHandlerExtensions.onTlsHandshake();
+                asyncHandlerExtensions.onTlsHandshakeAttempt();
 
-            sslHandler.handshakeFuture().addListener(new SimpleGenericFutureListener<Channel>() {
+            sslHandler.handshakeFuture().addListener(new SimpleFutureListener<Channel>() {
 
                 @Override
                 protected void onSuccess(Channel value) throws Exception {

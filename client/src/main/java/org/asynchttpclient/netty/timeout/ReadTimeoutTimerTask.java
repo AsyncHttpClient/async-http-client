@@ -22,17 +22,14 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
-    private final long requestTimeoutInstant;
 
     public ReadTimeoutTimerTask(//
             NettyResponseFuture<?> nettyResponseFuture,//
             NettyRequestSender requestSender,//
             TimeoutsHolder timeoutsHolder,//
-            long requestTimeout,//
             long readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
-        requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
     public void run(Timeout timeout) throws Exception {
@@ -52,20 +49,15 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectTimeout reached
-            String message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            String message = "Read timeout to " + timeoutsHolder.remoteAddress() + " after " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
             // cancel request timeout sibling
             timeoutsHolder.cancel();
 
-        } else if (currentReadTimeoutInstant < requestTimeoutInstant) {
-            // reschedule
-            done.set(false);
-            timeoutsHolder.readTimeout = requestSender.newTimeout(this, durationBeforeCurrentReadTimeout);
-
         } else {
-            // otherwise, no need to reschedule: requestTimeout will happen sooner
-            timeoutsHolder.readTimeout = null;
+            done.set(false);
+            timeoutsHolder.startReadTimeout(this);
         }
     }
 }

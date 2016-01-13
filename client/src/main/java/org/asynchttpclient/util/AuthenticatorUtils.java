@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.util;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -29,11 +30,11 @@ import org.asynchttpclient.uri.Uri;
 
 public final class AuthenticatorUtils {
 
-    private static final String PROXY_AUTHORIZATION_HEADER = "Proxy-Authorization";
+    public static final String NEGOTIATE = "Negotiate";
 
     public static String getHeaderWithPrefix(List<String> authenticateHeaders, String prefix) {
         if (authenticateHeaders != null) {
-            for (String authenticateHeader: authenticateHeaders) {
+            for (String authenticateHeader : authenticateHeaders) {
                 if (authenticateHeader.regionMatches(true, 0, prefix, 0, prefix.length()))
                     return authenticateHeader;
             }
@@ -41,7 +42,7 @@ public final class AuthenticatorUtils {
 
         return null;
     }
-    
+
     public static String computeBasicAuthentication(Realm realm) {
         return realm != null ? computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset()) : null;
     }
@@ -101,10 +102,6 @@ public final class AuthenticatorUtils {
         return builder.append(", ");
     }
 
-    private static List<String> getProxyAuthorizationHeader(Request request) {
-        return request.getHeaders().getAll(PROXY_AUTHORIZATION_HEADER);
-    }
-
     public static String perConnectionProxyAuthorizationHeader(Request request, Realm proxyRealm) {
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
@@ -112,7 +109,7 @@ public final class AuthenticatorUtils {
             case NTLM:
             case KERBEROS:
             case SPNEGO:
-                List<String> auth = getProxyAuthorizationHeader(request);
+                List<String> auth = request.getHeaders().getAll(PROXY_AUTHORIZATION);
                 if (getHeaderWithPrefix(auth, "NTLM") == null) {
                     String msg = NtlmEngine.INSTANCE.generateType1Msg();
                     proxyAuthorization = "NTLM " + msg;
@@ -125,12 +122,12 @@ public final class AuthenticatorUtils {
 
         return proxyAuthorization;
     }
-    
+
     public static String perRequestProxyAuthorizationHeader(Realm proxyRealm) {
 
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
-    
+
             switch (proxyRealm.getScheme()) {
             case BASIC:
                 proxyAuthorization = computeBasicAuthentication(proxyRealm);
@@ -173,7 +170,7 @@ public final class AuthenticatorUtils {
                     host = request.getUri().getHost();
 
                 try {
-                    authorizationHeader = "Negotiate " + SpnegoEngine.instance().generateToken(host);
+                    authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance().generateToken(host);
                 } catch (SpnegoEngineException e) {
                     throw new RuntimeException(e);
                 }

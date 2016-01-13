@@ -48,7 +48,7 @@ public class NettyChannelConnector {
         final InetSocketAddress remoteAddress = remoteAddresses.get(i);
         
         if (asyncHandlerExtensions != null)
-            asyncHandlerExtensions.onTcpConnect(remoteAddress);
+            asyncHandlerExtensions.onTcpConnectAttempt(remoteAddress);
 
         final ChannelFuture future = localAddress != null ? bootstrap.connect(remoteAddress, localAddress) : bootstrap.connect(remoteAddress);
 

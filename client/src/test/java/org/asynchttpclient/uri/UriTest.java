@@ -14,8 +14,7 @@ package org.asynchttpclient.uri;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 public class UriTest {
 
@@ -213,5 +212,108 @@ public class UriTest {
         assertEquals(url.getPort(), -1);
         assertEquals(url.getPath(), "/../other/content/img.png");
         assertNull(url.getQuery());
+    }
+
+    @Test
+    public void testCreateAndToUrl() {
+        String url = "https://hello.com/level1/level2/level3";
+        Uri uri = Uri.create(url);
+        assertEquals(uri.toUrl(), url, "url used to create uri and url returned from toUrl do not match");
+    }
+
+    @Test
+    public void testToUrlWithUserInfoPortPathAndQuery() {
+        Uri uri = new Uri("http", "user", "example.com", 44, "/path/path2", "query=4");
+        assertEquals(uri.toUrl(), "http://user@example.com:44/path/path2?query=4", "toUrl returned incorrect url");
+    }
+
+    @Test
+    public void testWithNewScheme() {
+        Uri uri = new Uri("http", "user", "example.com", 44, "/path/path2", "query=4");
+        Uri newUri = uri.withNewScheme("https");
+        assertEquals(newUri.getScheme(), "https");
+        assertEquals(newUri.toUrl(), "https://user@example.com:44/path/path2?query=4", "toUrl returned incorrect url");
+    }
+
+    @Test
+    public void testWithNewQuery() {
+        Uri uri = new Uri("http", "user", "example.com", 44, "/path/path2", "query=4");
+        Uri newUri = uri.withNewQuery("query2=10&query3=20");
+        assertEquals(newUri.getQuery(), "query2=10&query3=20");
+        assertEquals(newUri.toUrl(), "http://user@example.com:44/path/path2?query2=10&query3=20", "toUrl returned incorrect url");
+    }
+
+    @Test
+    public void testToRelativeUrl() {
+        Uri uri = new Uri("http", "user", "example.com", 44, "/path/path2", "query=4");
+        String relativeUrl = uri.toRelativeUrl();
+        assertEquals(relativeUrl, "/path/path2?query=4", "toRelativeUrl returned incorrect url");
+    }
+    
+    @Test
+    public void testToRelativeUrlWithEmptyPath() {
+        Uri uri = new Uri("http", "user", "example.com", 44, null, "query=4");
+        String relativeUrl = uri.toRelativeUrl();
+        assertEquals(relativeUrl, "/?query=4", "toRelativeUrl returned incorrect url");
+    }
+    
+    @Test
+    public void tsetGetSchemeDefaultPortHttpScheme(){
+        String url = "https://hello.com/level1/level2/level3";
+        Uri uri = Uri.create(url);       
+        assertEquals(uri.getSchemeDefaultPort(), 443, "schema default port should be 443 for https url");
+
+        String url2 = "http://hello.com/level1/level2/level3";
+        Uri uri2 = Uri.create(url2);       
+        assertEquals(uri2.getSchemeDefaultPort(), 80, "schema default port should be 80 for http url");
+    }
+    
+    @Test
+    public void tsetGetSchemeDefaultPortWebSocketScheme(){
+        String url = "wss://hello.com/level1/level2/level3";
+        Uri uri = Uri.create(url);       
+        assertEquals(uri.getSchemeDefaultPort(), 443, "schema default port should be 443 for wss url");
+
+        String url2 = "ws://hello.com/level1/level2/level3";
+        Uri uri2 = Uri.create(url2);       
+        assertEquals(uri2.getSchemeDefaultPort(), 80, "schema default port should be 80 for ws url");
+    }
+    
+    @Test
+    public void testGetExplicitPort(){
+        String url = "http://hello.com/level1/level2/level3";
+        Uri uri = Uri.create(url);
+        assertEquals(uri.getExplicitPort(), 80, "getExplicitPort should return port 80 for http url when port is not specified in url");
+        
+        String url2 = "http://hello.com:8080/level1/level2/level3";
+        Uri uri2 = Uri.create(url2);
+        assertEquals(uri2.getExplicitPort(), 8080, "getExplicitPort should return the port given in the url");
+    }
+    
+    @Test
+    public void testEquals() {
+        String url = "http://user@hello.com:8080/level1/level2/level3?q=1";
+        Uri createdUri = Uri.create(url);
+        Uri constructedUri = new Uri("http", "user", "hello.com", 8080, "/level1/level2/level3", "q=1");
+        assertTrue(createdUri.equals(constructedUri), "The equals method returned false for two equal urls");
+    }
+    
+    @Test
+    public void testIsWebsocket() {
+        String url = "http://user@hello.com:8080/level1/level2/level3?q=1";
+        Uri uri = Uri.create(url);
+        assertFalse(uri.isWebSocket(), "isWebSocket should return false for http url");
+        
+        url = "https://user@hello.com:8080/level1/level2/level3?q=1";
+        uri = Uri.create(url);
+        assertFalse(uri.isWebSocket(), "isWebSocket should return false for https url");
+        
+        url = "ws://user@hello.com:8080/level1/level2/level3?q=1";
+        uri = Uri.create(url);
+        assertTrue(uri.isWebSocket(), "isWebSocket should return true for ws url");
+        
+        url = "wss://user@hello.com:8080/level1/level2/level3?q=1";
+        uri = Uri.create(url);
+        assertTrue(uri.isWebSocket(), "isWebSocket should return true for wss url");
     }
 }

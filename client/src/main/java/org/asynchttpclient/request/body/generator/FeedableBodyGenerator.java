@@ -17,15 +17,11 @@ import java.nio.ByteBuffer;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
- * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
+ * If it happens, client becomes responsible for providing the rest of the chunks.
  */
 public interface FeedableBodyGenerator extends BodyGenerator {
-    void feed(ByteBuffer buffer, boolean isLast);
+
+    boolean feed(ByteBuffer buffer, boolean isLast) throws Exception;
 
     void setListener(FeedListener listener);
-
-    interface FeedListener {
-        void onContentAdded();
-        void onError(Throwable t);
-    }
 }

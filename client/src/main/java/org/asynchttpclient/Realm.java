@@ -101,7 +101,6 @@ public class Realm {
     }
 
     public AuthScheme getScheme() {
-
         return scheme;
     }
 

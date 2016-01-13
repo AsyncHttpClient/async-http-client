@@ -257,6 +257,8 @@ public interface AsyncHttpClientConfig {
 
     boolean isValidateResponseHeaders();
 
+    boolean isUsePooledMemory();
+
     interface AdditionalChannelInitializer {
 
         void initChannel(Channel channel) throws Exception;

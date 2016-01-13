@@ -78,7 +78,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultUseProxyProperties() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useProxyProperties");
     }
-    
+
     public static boolean defaultValidateResponseHeaders() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "validateResponseHeaders");
     }
@@ -161,5 +161,9 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultUseNativeTransport() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useNativeTransport");
+    }
+
+    public static boolean defaultUsePooledMemory() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "usePooledMemory");
     }
 }

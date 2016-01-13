@@ -19,7 +19,7 @@ AsyncHttpClient v1.9 is a preview of v2, so it comes with some breaking changes.
   * `allowPoolingConnection` becomes `allowPoolingConnections`
   * `allowSslConnectionPool` becomes `allowPoolingSslConnections`
   * `connectionTimeout` becomes `connectTimeout`
-  * `compressionEnabled` becomes `compressionEnforced` (default true) so it's always enabled and can honor user defined Accept-Encoding
+  * `compressionEnabled` becomes `compressionEnforced`. Default false, so AHC only honors user defined Accept-Encoding.
   * `requestCompressionLevel` was dropped, as it wasn't working
   * `SSLEngineFactory` was moved to Netty config as only Netty honors it
   * `useRawUrl` becomes `disableUrlEncodingForBoundedRequests`, as it's only honored by bound requests

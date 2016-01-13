@@ -243,13 +243,28 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isTtlExpired(channel, now))
             return false;
 
-        boolean added = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedQueue<>()).add(new IdleChannel(channel, now));
-        if (added)
-            channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionKey));
+        boolean offered = offer0(channel, partitionKey,now);
+        if (offered) {
+            registerChannelCreation(channel, partitionKey, now);
+        }
 
-        return added;
+        return offered;
     }
-
+    
+    private boolean offer0(Channel channel, Object partitionKey, long now) {
+        ConcurrentLinkedQueue<IdleChannel> partition = partitions.get(partitionKey);
+        if (partition == null) {
+            partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedQueue<>());
+        }
+        return partition.add(new IdleChannel(channel, now));
+    }
+    
+    private void registerChannelCreation(Channel channel, Object partitionKey, long now) {
+        if (channelId2Creation.containsKey(partitionKey)) {
+            channelId2Creation.putIfAbsent(channelId(channel), new ChannelCreation(now, partitionKey));
+        }
+    }
+    
     /**
      * {@inheritDoc}
      */

@@ -67,7 +67,7 @@ import org.asynchttpclient.util.StringUtils;
 public final class NettyRequestFactory {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
-    
+
     private final AsyncHttpClientConfig config;
 
     public NettyRequestFactory(AsyncHttpClientConfig config) {
@@ -141,9 +141,7 @@ public final class NettyRequestFactory {
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
 
-        boolean allowConnectionPooling = config.isKeepAlive();
-
-        HttpVersion httpVersion = !allowConnectionPooling || (connect && proxyServer.isForceHttp10()) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        HttpVersion httpVersion = HttpVersion.HTTP_1_1;
         String requestUri = requestUri(uri, proxyServer, connect);
 
         NettyBody body = body(request, connect);
@@ -170,7 +168,7 @@ public final class NettyRequestFactory {
         if (connect) {
             // assign proxy-auth as configured on request
             headers.set(PROXY_AUTHORIZATION, request.getHeaders().getAll(PROXY_AUTHORIZATION));
-        
+
         } else {
             // assign headers as configured on request
             headers.set(request.getHeaders());
@@ -201,7 +199,7 @@ public final class NettyRequestFactory {
                     .set(SEC_WEBSOCKET_VERSION, "13");
 
         } else if (!headers.contains(CONNECTION)) {
-            String connectionHeaderValue = connectionHeader(allowConnectionPooling, httpVersion);
+            String connectionHeaderValue = connectionHeader(config.isKeepAlive(), httpVersion);
             if (connectionHeaderValue != null)
                 headers.set(CONNECTION, connectionHeaderValue);
         }
@@ -223,7 +221,7 @@ public final class NettyRequestFactory {
 
         return nettyRequest;
     }
-    
+
     private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
         if (connect)
             // proxy tunnelling, connect need host and explicit port
@@ -243,12 +241,11 @@ public final class NettyRequestFactory {
         }
     }
 
-    private String connectionHeader(boolean allowConnectionPooling, HttpVersion httpVersion) {
-        
+    private String connectionHeader(boolean keepAlive, HttpVersion httpVersion) {
         if (httpVersion.isKeepAliveDefault()) {
-            return allowConnectionPooling ? null : HttpHeaders.Values.CLOSE;
+            return keepAlive ? null : HttpHeaders.Values.CLOSE;
         } else {
-            return allowConnectionPooling ? HttpHeaders.Values.KEEP_ALIVE : null;
+            return keepAlive ? HttpHeaders.Values.KEEP_ALIVE : null;
         }
     }
 }

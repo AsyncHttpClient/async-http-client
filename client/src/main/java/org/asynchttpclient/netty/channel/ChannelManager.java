@@ -16,6 +16,7 @@ package org.asynchttpclient.netty.channel;
 import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -30,11 +31,13 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 
 import java.io.IOException;
 import java.util.Map.Entry;
@@ -59,8 +62,8 @@ import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
-import org.asynchttpclient.netty.handler.HttpProtocol;
-import org.asynchttpclient.netty.handler.WebSocketProtocol;
+import org.asynchttpclient.netty.handler.HttpHandler;
+import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -82,6 +85,7 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
     public static final String AHC_HTTP_HANDLER = "ahc-http";
     public static final String AHC_WS_HANDLER = "ahc-ws";
+    public static final String LOGGING_HANDLER = "logging";
 
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
@@ -192,7 +196,7 @@ public class ChannelManager {
         @SuppressWarnings("deprecation")
         Bootstrap bootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)//
+                .option(ChannelOption.ALLOCATOR, config.isUsePooledMemory() ? PooledByteBufAllocator.DEFAULT : UnpooledByteBufAllocator.DEFAULT)//
                 .option(ChannelOption.TCP_NODELAY, true)//
                 .option(ChannelOption.AUTO_CLOSE, false);
 
@@ -227,23 +231,26 @@ public class ChannelManager {
 
     public void configureBootstraps(NettyRequestSender requestSender) {
 
-        HttpProtocol httpProtocol = new HttpProtocol(this, config, requestSender);
-        final AsyncHttpClientHandler httpHandler = new AsyncHttpClientHandler(config, this, requestSender, httpProtocol);
-
-        WebSocketProtocol wsProtocol = new WebSocketProtocol(this, config, requestSender);
-        wsHandler = new AsyncHttpClientHandler(config, this, requestSender, wsProtocol);
+        final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
+        wsHandler = new WebSocketHandler(config, this, requestSender);
 
         final NoopHandler pinnedEntry = new NoopHandler();
+
+        final LoggingHandler loggingHandler = new LoggingHandler();
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
+                ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
+
+                if (LOGGER.isDebugEnabled()) {
+                    pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+                }
 
                 if (config.getHttpAdditionalChannelInitializer() != null)
                     config.getHttpAdditionalChannelInitializer().initChannel(ch);
@@ -253,10 +260,14 @@ public class ChannelManager {
         wsBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()//
+                ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(AHC_WS_HANDLER, wsHandler);
+
+                if (LOGGER.isDebugEnabled()) {
+                    pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+                }
 
                 if (config.getWsAdditionalChannelInitializer() != null)
                     config.getWsAdditionalChannelInitializer().initChannel(ch);
@@ -341,14 +352,13 @@ public class ChannelManager {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void close() {
         if (allowReleaseEventLoopGroup) {
-            io.netty.util.concurrent.Future whenEventLoopGroupClosed = eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(),
-                    TimeUnit.MILLISECONDS);
-
-            whenEventLoopGroupClosed.addListener((GenericFutureListener<?>) new GenericFutureListener<io.netty.util.concurrent.Future<?>>() {
-                public void operationComplete(io.netty.util.concurrent.Future<?> future) throws Exception {
-                    doClose();
-                };
-            });
+            eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
+                    .addListener(new FutureListener() {
+                        @Override
+                        public void operationComplete(Future future) throws Exception {
+                            doClose();
+                        }
+                    });
         } else
             doClose();
     }

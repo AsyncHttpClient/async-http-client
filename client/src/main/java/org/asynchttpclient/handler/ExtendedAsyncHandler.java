@@ -24,19 +24,19 @@ import org.asynchttpclient.netty.request.NettyRequest;
 public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncHandlerExtensions {
 
     @Override
-    public void onDnsResolution(String name) {
+    public void onHostnameResolutionAttempt(String name) {
     }
 
     @Override
-    public void onDnsResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+    public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
     }
 
     @Override
-    public void onDnsResolutionFailure(String name, Throwable cause) {
+    public void onHostnameResolutionFailure(String name, Throwable cause) {
     }
 
     @Override
-    public void onTcpConnect(InetSocketAddress address) {
+    public void onTcpConnectAttempt(InetSocketAddress address) {
     }
 
     @Override
@@ -48,7 +48,7 @@ public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncH
     }
 
     @Override
-    public void onTlsHandshake() {
+    public void onTlsHandshakeAttempt() {
     }
 
     @Override
@@ -60,7 +60,7 @@ public abstract class ExtendedAsyncHandler<T> implements AsyncHandler<T>, AsyncH
     }
 
     @Override
-    public void onConnectionPool() {
+    public void onConnectionPoolAttempt() {
     }
 
     @Override

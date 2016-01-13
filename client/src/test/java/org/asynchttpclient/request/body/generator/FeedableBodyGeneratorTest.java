@@ -28,12 +28,12 @@ import org.testng.annotations.Test;
 
 public class FeedableBodyGeneratorTest {
 
-    private SimpleFeedableBodyGenerator feedableBodyGenerator;
+    private UnboundedQueueFeedableBodyGenerator feedableBodyGenerator;
     private TestFeedListener listener;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        feedableBodyGenerator = new SimpleFeedableBodyGenerator();
+        feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
         listener = new TestFeedListener();
         feedableBodyGenerator.setListener(listener);
     }
@@ -73,7 +73,7 @@ public class FeedableBodyGeneratorTest {
         return readBytes;
     }
 
-    private static class TestFeedListener implements SimpleFeedableBodyGenerator.FeedListener {
+    private static class TestFeedListener implements FeedListener {
 
         private int calls;
 

@@ -32,5 +32,4 @@ public class JsseSslEngineFactory extends SslEngineFactoryBase {
         configureSslEngine(sslEngine, config);
         return sslEngine;
     }
-
 }
