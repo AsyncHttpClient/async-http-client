@@ -14,28 +14,28 @@ package org.asynchttpclient.handler.resumable;
  */
 
 import static org.asynchttpclient.Dsl.get;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
-import org.asynchttpclient.netty.NettyResponseHeaders;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.Test;
-
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
 
 /**
  * @author Benjamin Hanzelmann
@@ -88,7 +88,8 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
         when(mockResponseStatus.getStatusCode()).thenReturn(200);
         when(mockResponseStatus.getUri()).thenReturn(mock(Uri.class));
 
-        AsyncHandler decoratedAsyncHandler = mock(AsyncHandler.class);
+        @SuppressWarnings("unchecked")
+        AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
         State mockState = mock(State.class);
         when(decoratedAsyncHandler.onStatusReceived(mockResponseStatus)).thenReturn(mockState);
 
@@ -142,7 +143,8 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
         ByteBuffer buffer = ByteBuffer.allocate(0);
         when(bodyPart.getBodyByteBuffer()).thenReturn(buffer);
 
-        AsyncHandler decoratedAsyncHandler = mock(AsyncHandler.class);
+        @SuppressWarnings("unchecked")
+        AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
         State mockState = mock(State.class);
         when(decoratedAsyncHandler.onBodyPartReceived(bodyPart)).thenReturn(mockState);
 
@@ -165,7 +167,7 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
     public void testOnHeadersReceived() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
-        HttpResponseHeaders headers = new NettyResponseHeaders(responseHeaders);
+        HttpResponseHeaders headers = new HttpResponseHeaders(responseHeaders);
         State status = handler.onHeadersReceived(headers);
         assertEquals(status, AsyncHandler.State.CONTINUE, "State should be CONTINUE for a successful onHeadersReceived");
     }
@@ -173,9 +175,10 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
     @Test
     public void testOnHeadersReceivedWithDecoratedAsyncHandler() throws Exception {
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
-        HttpResponseHeaders headers = new NettyResponseHeaders(responseHeaders);
+        HttpResponseHeaders headers = new HttpResponseHeaders(responseHeaders);
 
-        AsyncHandler decoratedAsyncHandler = mock(AsyncHandler.class);
+        @SuppressWarnings("unchecked")
+        AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
         State mockState = mock(State.class);
         when(decoratedAsyncHandler.onHeadersReceived(headers)).thenReturn(mockState);
 
@@ -189,7 +192,7 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
         responseHeaders.add(HttpHeaders.Names.CONTENT_LENGTH, -1);
-        HttpResponseHeaders headers = new NettyResponseHeaders(responseHeaders);
+        HttpResponseHeaders headers = new HttpResponseHeaders(responseHeaders);
         State status = handler.onHeadersReceived(headers);
         assertEquals(status, AsyncHandler.State.ABORT, "State should be ABORT for content length -1");
     }

@@ -117,31 +117,6 @@ public class HttpUtilsTest {
     }
 
     @Test
-    public void testGetRequestTimeoutInRequest() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setRequestTimeout(1000).build();
-        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
-        int timeout = HttpUtils.requestTimeout(config, request);
-        assertEquals(timeout, 1000, "Timeout should be taken from request when specified in builder");
-    }
-
-    @Test
-    public void testGetRequestTimeoutInConfig() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").build();
-        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(2000).build();
-        int timeout = HttpUtils.requestTimeout(config, request);
-        assertEquals(timeout, 2000, "Timeout should be taken from config when not specfied in request");
-    }
-
-    @Test
-    public void testGetRequestTimeoutPriortyGivenToRequest() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setRequestTimeout(2300).build();
-        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(2000).build();
-        int timeout = HttpUtils.requestTimeout(config, request);
-        assertEquals(timeout, 2300,
-                "Timeout specified in request should be given priority and timeout value should be same as value set in request");
-    }
-
-    @Test
     public void testDefaultFollowRedirect() {
         Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setVirtualHost("example.com").build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();

@@ -1,15 +1,15 @@
 package org.asynchttpclient.netty.util;
 
 import static org.testng.Assert.assertEquals;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.asynchttpclient.util.ByteBufUtils;
 import org.testng.annotations.Test;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 public class ByteBufUtilsTest {
 
@@ -32,7 +32,7 @@ public class ByteBufUtilsTest {
 
     @Test
     public void testByteBufs2BytesEmptyList() {
-        byte[] output = ByteBufUtils.byteBufs2Bytes(Collections.EMPTY_LIST);
+        byte[] output = ByteBufUtils.byteBufs2Bytes(Collections.emptyList());
         assertEquals(output, ByteBufUtils.EMPTY_BYTE_ARRAY,
                 "When an empty list is passed to byteBufs2Bytes, an empty byte array should be returned");
     }

@@ -15,7 +15,8 @@ package org.asynchttpclient.ntlm;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
-import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,14 +31,12 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.netty.util.ByteBufUtils;
+import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
 import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.ByteBufUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 public class NtlmTest extends AbstractBasicTest {
 
