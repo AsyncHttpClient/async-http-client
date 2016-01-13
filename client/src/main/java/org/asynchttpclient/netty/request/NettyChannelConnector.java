@@ -25,18 +25,21 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 
 public class NettyChannelConnector {
 
     private final AsyncHandlerExtensions asyncHandlerExtensions;
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
+    private final TimeoutsHolder timeoutsHolder;
     private volatile int i = 0;
 
-    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler) {
+    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, TimeoutsHolder timeoutsHolder) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
+        this.timeoutsHolder = timeoutsHolder;
     }
 
     private boolean pickNextRemoteAddress() {
@@ -46,7 +49,7 @@ public class NettyChannelConnector {
 
     public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
         final InetSocketAddress remoteAddress = remoteAddresses.get(i);
-        
+
         if (asyncHandlerExtensions != null)
             asyncHandlerExtensions.onTcpConnectAttempt(remoteAddress);
 
@@ -56,9 +59,10 @@ public class NettyChannelConnector {
 
             @Override
             public void onSuccess(Channel channel) throws Exception {
-                if (asyncHandlerExtensions != null)
+                if (asyncHandlerExtensions != null) {
                     asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, future.channel());
-
+                }
+                timeoutsHolder.initRemoteAddress(remoteAddress);
                 connectListener.onSuccess(channel);
             }
 

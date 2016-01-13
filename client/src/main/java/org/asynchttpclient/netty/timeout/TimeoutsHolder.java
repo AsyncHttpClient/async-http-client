@@ -14,12 +14,11 @@
 package org.asynchttpclient.netty.timeout;
 
 import static org.asynchttpclient.util.DateUtils.millisTime;
-import io.netty.channel.Channel;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -61,19 +60,11 @@ public class TimeoutsHolder {
         }
     }
 
-    private void initRemoteAddress() {
-        Channel channel = nettyResponseFuture.channel();
-        if (channel != null) {
-            SocketAddress sa = channel.remoteAddress();
-            if (sa != null) {
-                remoteAddress = sa.toString();
-            }
-        }
+    public void initRemoteAddress(InetSocketAddress address) {
+        remoteAddress = address.toString();
     }
 
     public void startReadTimeout() {
-        // we should be connected now
-        initRemoteAddress();
         if (readTimeoutValue != -1) {
             startReadTimeout(null);
         }
