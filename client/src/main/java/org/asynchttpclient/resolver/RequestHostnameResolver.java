@@ -63,29 +63,29 @@ public enum RequestHostnameResolver {
 
         final Future<List<InetAddress>> whenResolved = request.getNameResolver().resolveAll(name);
 
-            whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
+        whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
 
-                @Override
-                protected void onSuccess(List<InetAddress> value) throws Exception {
-                    ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
-                    for (InetAddress a : value) {
-                        socketAddresses.add(new InetSocketAddress(a, port));
-                    }
-                    if (asyncHandlerExtensions != null) {
-                        asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
-                    }
-                    promise.trySuccess(socketAddresses);
+            @Override
+            protected void onSuccess(List<InetAddress> value) throws Exception {
+                ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
+                for (InetAddress a : value) {
+                    socketAddresses.add(new InetSocketAddress(a, port));
                 }
-
-                @Override
-                protected void onFailure(Throwable t) throws Exception {
-                    if (asyncHandlerExtensions != null) {
-                        asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
-                    }
-                    promise.tryFailure(t);
+                if (asyncHandlerExtensions != null) {
+                    asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
                 }
-            });
+                promise.trySuccess(socketAddresses);
+            }
 
-            return promise;
+            @Override
+            protected void onFailure(Throwable t) throws Exception {
+                if (asyncHandlerExtensions != null) {
+                    asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                }
+                promise.tryFailure(t);
+            }
+        });
+
+        return promise;
     }
 }
