@@ -18,13 +18,21 @@ package org.asynchttpclient;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.get;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.testng.annotations.Test;
+
+import io.netty.handler.codec.http.HttpMethod;
 
 public class RequestBuilderTest {
 
@@ -106,5 +114,41 @@ public class RequestBuilderTest {
         assertEquals(req.getCharset(), UTF_8);
         final Request req2 = get("http://localhost").setHeader("Content-Type", "application/json; charset=\"utf-8\"").build();
         assertEquals(req2.getCharset(), UTF_8);
+    }
+    
+    @Test
+    public void testDefaultMethod() {
+        RequestBuilder requestBuilder = new RequestBuilder();
+        String defaultMethodName = HttpMethod.GET.name();
+        assertEquals(requestBuilder.method, defaultMethodName, "Default HTTP method should be " + defaultMethodName);
+    }
+
+    @Test
+    public void testSetHeaders() {
+        RequestBuilder requestBuilder = new RequestBuilder();
+        assertTrue(requestBuilder.headers.isEmpty(), "Headers should be empty by default.");
+
+        Map<String, Collection<String>> headers = new HashMap<>();
+        headers.put("Content-Type", Collections.singleton("application/json"));
+        requestBuilder.setHeaders(headers);
+        assertTrue(requestBuilder.headers.contains("Content-Type"), "headers set by setHeaders have not been set");
+        assertEquals(requestBuilder.headers.get("Content-Type"), "application/json", "header value incorrect");
+    }
+
+    public void testAddOrReplaceCookies() {
+        RequestBuilder requestBuilder = new RequestBuilder();
+        Cookie cookie = new Cookie("name", "value", false, "google.com", "/", 1000, true, true);
+        requestBuilder.addOrReplaceCookie(cookie);
+        assertEquals(requestBuilder.cookies.size(), 1, "cookies size should be 1 after adding one cookie");
+        assertEquals(requestBuilder.cookies.get(0), cookie, "cookie does not match");
+
+        Cookie cookie2 = new Cookie("name", "value2", true, "google2.com", "/path", 1001, false, false);
+        requestBuilder.addOrReplaceCookie(cookie2);
+        assertEquals(requestBuilder.cookies.size(), 1, "cookies size should remain 1 as we just replaced a cookie with same name");
+        assertEquals(requestBuilder.cookies.get(0), cookie2, "cookie does not match");
+
+        Cookie cookie3 = new Cookie("name", "value", false, "google.com", "/", 1000, true, true);
+        requestBuilder.addOrReplaceCookie(cookie3);
+        assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
     }
 }

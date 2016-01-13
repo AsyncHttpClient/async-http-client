@@ -37,4 +37,17 @@ public class PropertiesBasedResumableProcesserTest {
         assertEquals(m.get("http://localhost/test.url"), Long.valueOf(15L));
         assertEquals(m.get("http://localhost/test2.url"), Long.valueOf(50L));
     }
+    
+    @Test
+    public void testRemove() {
+        PropertiesBasedResumableProcessor propertiesProcessor = new PropertiesBasedResumableProcessor();
+        propertiesProcessor.put("http://localhost/test.url", 15L);
+        propertiesProcessor.put("http://localhost/test2.url", 50L);
+        propertiesProcessor.remove("http://localhost/test.url");
+        propertiesProcessor.save(null);
+        propertiesProcessor = new PropertiesBasedResumableProcessor();
+        Map<String, Long> propertiesMap = propertiesProcessor.load();
+        assertEquals(propertiesMap.size(), 1);
+        assertEquals(propertiesMap.get("http://localhost/test2.url"), Long.valueOf(50L));
+    }
 }
