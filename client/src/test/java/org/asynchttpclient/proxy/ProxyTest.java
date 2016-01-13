@@ -71,6 +71,33 @@ public class ProxyTest extends AbstractBasicTest {
         return new ProxyHandler();
     }
 
+    // @Test
+    // public void asyncDoPostProxyTest() throws Throwable {
+    // try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
+    // HttpHeaders h = new DefaultHttpHeaders();
+    // h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+    // StringBuilder sb = new StringBuilder();
+    // for (int i = 0; i < 5; i++) {
+    // sb.append("param_").append(i).append("=value_").append(i).append("&");
+    // }
+    // sb.setLength(sb.length() - 1);
+    //
+    // Response response = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandler<Response>() {
+    // @Override
+    // public Response onCompleted(Response response) throws Throwable {
+    // return response;
+    // }
+    //
+    // @Override
+    // public void onThrowable(Throwable t) {
+    // }
+    // }).get();
+    //
+    // assertEquals(response.getStatusCode(), 200);
+    // assertEquals(response.getHeader("X-" + CONTENT_TYPE), APPLICATION_X_WWW_FORM_URLENCODED);
+    // }
+    // }
+    
     @Test(groups = "standalone")
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient()) {
