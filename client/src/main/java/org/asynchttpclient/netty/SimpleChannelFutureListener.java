@@ -29,7 +29,7 @@ public abstract class SimpleChannelFutureListener implements ChannelFutureListen
         }
     }
 
-    public abstract void onSuccess(Channel channel) throws Exception;
+    public abstract void onSuccess(Channel channel);
 
-    public abstract void onFailure(Channel channel, Throwable cause) throws Exception;
+    public abstract void onFailure(Channel channel, Throwable cause);
 }

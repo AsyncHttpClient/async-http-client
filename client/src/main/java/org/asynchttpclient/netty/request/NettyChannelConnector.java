@@ -20,6 +20,8 @@ import io.netty.channel.ChannelFuture;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
@@ -33,13 +35,16 @@ public class NettyChannelConnector {
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
     private final TimeoutsHolder timeoutsHolder;
+    private final AtomicBoolean closed;
     private volatile int i = 0;
 
-    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, TimeoutsHolder timeoutsHolder) {
+    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, TimeoutsHolder timeoutsHolder,
+            AtomicBoolean closed) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
         this.timeoutsHolder = timeoutsHolder;
+        this.closed = closed;
     }
 
     private boolean pickNextRemoteAddress() {
@@ -53,12 +58,24 @@ public class NettyChannelConnector {
         if (asyncHandlerExtensions != null)
             asyncHandlerExtensions.onTcpConnectAttempt(remoteAddress);
 
-        final ChannelFuture future = localAddress != null ? bootstrap.connect(remoteAddress, localAddress) : bootstrap.connect(remoteAddress);
+        try {
+            connect0(bootstrap, connectListener, remoteAddress);
+        } catch (RejectedExecutionException e) {
+            if (closed.get()) {
+                connectListener.onFailure(null, e);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
+        final ChannelFuture future = bootstrap.connect(remoteAddress, localAddress);
 
         future.addListener(new SimpleChannelFutureListener() {
 
             @Override
-            public void onSuccess(Channel channel) throws Exception {
+            public void onSuccess(Channel channel) {
                 if (asyncHandlerExtensions != null) {
                     asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, future.channel());
                 }
@@ -67,7 +84,7 @@ public class NettyChannelConnector {
             }
 
             @Override
-            public void onFailure(Channel channel, Throwable t) throws Exception {
+            public void onFailure(Channel channel, Throwable t) {
                 if (asyncHandlerExtensions != null)
                     asyncHandlerExtensions.onTcpConnectFailure(remoteAddress, t);
                 boolean retry = pickNextRemoteAddress();

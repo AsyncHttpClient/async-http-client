@@ -78,7 +78,7 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
     }
 
     @Override
-    public void onSuccess(Channel channel) throws Exception {
+    public void onSuccess(Channel channel) {
 
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
@@ -115,8 +115,8 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
     }
 
     @Override
-    public void onFailure(Channel channel, Throwable cause) throws Exception {
-
+    public void onFailure(Channel channel, Throwable cause) {
+        //beware, channel can be null
         abortChannelPreemption();
 
         boolean canRetry = future.canRetry();
