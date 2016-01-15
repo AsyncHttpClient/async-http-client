@@ -179,7 +179,7 @@ Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfi
 
 ```java
 AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
-    S.setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
+    .setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
 AsyncHttpClient c = new AsyncHttpClient(cf);
 ```
 
