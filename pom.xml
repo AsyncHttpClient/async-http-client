@@ -131,9 +131,6 @@
 						</goals>
 						<configuration>
 							<rules>
-								<requireMavenVersion>
-									<version>2.0.9</version>
-								</requireMavenVersion>
 								<requireJavaVersion>
 									<version>${source.property}</version>
 								</requireJavaVersion>
