@@ -492,17 +492,17 @@ public class DnsNameResolverTest {
         }
     }
 
-    @Test
-    public void testResolveIp() {
-        DnsNameResolver resolver = newResolver().build();
-        try {
-            InetAddress address = resolver.resolve("10.0.0.1").syncUninterruptibly().getNow();
-
-            assertEquals("10.0.0.1", address.getHostName());
-        } finally {
-            resolver.close();
-        }
-    }
+//    @Test
+//    public void testResolveIp() {
+//        DnsNameResolver resolver = newResolver().build();
+//        try {
+//            InetAddress address = resolver.resolve("10.0.0.1").syncUninterruptibly().getNow();
+//
+//            assertEquals("10.0.0.1", address.getHostName());
+//        } finally {
+//            resolver.close();
+//        }
+//    }
 
     private void resolve(DnsNameResolver resolver, Map<String, Future<InetAddress>> futures, String hostname) {
 
