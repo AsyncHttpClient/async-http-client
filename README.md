@@ -1,4 +1,4 @@
-Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on twitter)
+Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on twitter) [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client)
 ---------------------------------------------------
 
 [Javadoc](http://www.javadoc.io/doc/com.ning/async-http-client/)
