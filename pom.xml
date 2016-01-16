@@ -396,7 +396,7 @@
 			<version>${rxjava-reactive-streams.version}</version>
 			<scope>test</scope>
 		</dependency>
-                 <dependency>
+		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-testng</artifactId>
 			<version>${powermock.version}</version>
@@ -407,7 +407,7 @@
 			<artifactId>powermock-api-mockito</artifactId>
 			<version>${powermock.version}</version>
 			<scope>test</scope>
-		</dependency>  
+		</dependency>
 	</dependencies>
 	<properties>
 		<distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
