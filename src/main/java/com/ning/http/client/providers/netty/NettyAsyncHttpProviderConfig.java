@@ -97,7 +97,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     /**
      * Enable Netty DeadLockChecker
      */
-    private boolean useDeadLockChecker;
+    private boolean useDeadLockChecker = true;
 
     /**
      * Allow configuring the Netty's boss executor service.
