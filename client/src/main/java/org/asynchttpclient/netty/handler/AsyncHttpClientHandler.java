@@ -105,7 +105,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                     }
                 } else {
                     logger.info("Received unexpected message while expecting a chunk: " + msg);
-                    ctx.pipeline().remove((StreamedResponsePublisher) attribute);
+                    ctx.pipeline().remove(publisher);
                     Channels.setDiscard(channel);
                 }
             } else if (attribute != DiscardEvent.INSTANCE) {
