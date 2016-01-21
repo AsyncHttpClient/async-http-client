@@ -257,6 +257,16 @@ public interface AsyncHttpClientConfig {
 
     boolean isValidateResponseHeaders();
 
+    boolean isTcpNoDelay();
+
+    boolean isSoReuseAddress();
+
+    int getSoLinger();
+
+    int getSoSndBuf();
+
+    int getSoRcvBuf();
+
     boolean isUsePooledMemory();
 
     interface AdditionalChannelInitializer {

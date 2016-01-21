@@ -115,6 +115,26 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "sslSessionTimeout");
     }
 
+    public static boolean defaultTcpNoDelay() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "tcpNoDelay");
+    }
+
+    public static boolean defaultSoReuseAddress() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "soReuseAddress");
+    }
+
+    public static int defaultSoLinger() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "soLinger");
+    }
+
+    public static int defaultSoSndBuf() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "soSndBuf");
+    }
+
+    public static int defaultSoRcvBuf() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "soRcvBuf");
+    }
+
     public static int defaultHttpClientCodecMaxInitialLineLength() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxInitialLineLength");
     }

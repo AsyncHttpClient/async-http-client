@@ -119,6 +119,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final EventLoopGroup eventLoopGroup;
     private final boolean useNativeTransport;
     private final boolean usePooledMemory;
+    private final boolean tcpNoDelay;
+    private final boolean soReuseAddress;
+    private final int soLinger;
+    private final int soSndBuf;
+    private final int soRcvBuf;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
     private final AdditionalChannelInitializer httpAdditionalChannelInitializer;
@@ -171,6 +176,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             List<RequestFilter> requestFilters,//
             List<ResponseFilter> responseFilters,//
             List<IOExceptionFilter> ioExceptionFilters,//
+
+            // tuning
+            boolean tcpNoDelay,//
+            boolean soReuseAddress,//
+            int soLinger, //
+            int soSndBuf, //
+            int soRcvBuf, //
 
             // internals
             String threadPoolName,//
@@ -235,6 +247,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
+
+        // tuning
+        this.tcpNoDelay = tcpNoDelay;
+        this.soReuseAddress = soReuseAddress;
+        this.soLinger = soLinger;
+        this.soSndBuf = soSndBuf;
+        this.soRcvBuf = soRcvBuf;
 
         // internals
         this.threadPoolName = threadPoolName;
@@ -446,6 +465,32 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return ioExceptionFilters;
     }
 
+    // tuning
+    @Override
+    public boolean isTcpNoDelay() {
+        return tcpNoDelay;
+    }
+
+    @Override
+    public boolean isSoReuseAddress() {
+        return soReuseAddress;
+    }
+
+    @Override
+    public int getSoLinger() {
+        return soLinger;
+    }
+
+    @Override
+    public int getSoSndBuf() {
+        return soSndBuf;
+    }
+
+    @Override
+    public int getSoRcvBuf() {
+        return soRcvBuf;
+    }
+
     // internals
     @Override
     public String getThreadPoolName() {
@@ -580,6 +625,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private final List<ResponseFilter> responseFilters = new LinkedList<>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<>();
 
+        // tuning
+        private boolean tcpNoDelay = defaultTcpNoDelay();
+        private boolean soReuseAddress = defaultSoReuseAddress();
+        private int soLinger = defaultSoLinger();
+        private int soSndBuf = defaultSoSndBuf();
+        private int soRcvBuf = defaultSoRcvBuf();
+
         // internals
         private String threadPoolName = defaultThreadPoolName();
         private int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
@@ -645,6 +697,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             requestFilters.addAll(config.getRequestFilters());
             responseFilters.addAll(config.getResponseFilters());
             ioExceptionFilters.addAll(config.getIoExceptionFilters());
+
+            // tuning
+            tcpNoDelay = config.isTcpNoDelay();
+            soReuseAddress = config.isSoReuseAddress();
+            soLinger = config.getSoLinger();
+            soSndBuf = config.getSoSndBuf();
+            soRcvBuf = config.getSoRcvBuf();
 
             // internals
             threadPoolName = config.getThreadPoolName();
@@ -890,6 +949,32 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        // tuning
+        public Builder setTcpNoDelay(boolean tcpNoDelay) {
+            this.tcpNoDelay = tcpNoDelay;
+            return this;
+        }
+
+        public Builder setSoReuseAddress(boolean soReuseAddress) {
+            this.soReuseAddress = soReuseAddress;
+            return this;
+        }
+
+        public Builder setSoLinger(int soLinger) {
+            this.soLinger = soLinger;
+            return this;
+        }
+
+        public Builder setSoSndBuf(int soSndBuf) {
+            this.soSndBuf = soSndBuf;
+            return this;
+        }
+
+        public Builder setSoRcvBuf(int soRcvBuf) {
+            this.soRcvBuf = soRcvBuf;
+            return this;
+        }
+
         // internals
         public Builder setThreadPoolName(String threadPoolName) {
             this.threadPoolName = threadPoolName;
@@ -1024,6 +1109,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters), //
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),//
                     ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),//
+                    tcpNoDelay, //
+                    soReuseAddress, //
+                    soLinger, //
+                    soSndBuf, //
+                    soRcvBuf, //
                     threadPoolName, //
                     httpClientCodecMaxInitialLineLength, //
                     httpClientCodecMaxHeaderSize, //

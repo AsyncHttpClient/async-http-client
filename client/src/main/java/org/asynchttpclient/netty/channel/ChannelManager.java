@@ -197,11 +197,24 @@ public class ChannelManager {
         Bootstrap bootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
                 .option(ChannelOption.ALLOCATOR, config.isUsePooledMemory() ? PooledByteBufAllocator.DEFAULT : UnpooledByteBufAllocator.DEFAULT)//
-                .option(ChannelOption.TCP_NODELAY, true)//
+                .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())//
+                .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())//
                 .option(ChannelOption.AUTO_CLOSE, false);
 
         if (config.getConnectTimeout() > 0) {
             bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        }
+
+        if (config.getSoLinger() >= 0) {
+            bootstrap.option(ChannelOption.SO_LINGER, config.getSoLinger());
+        }
+
+        if (config.getSoSndBuf() >= 0) {
+            bootstrap.option(ChannelOption.SO_SNDBUF, config.getSoSndBuf());
+        }
+
+        if (config.getSoRcvBuf() >= 0) {
+            bootstrap.option(ChannelOption.SO_RCVBUF, config.getSoRcvBuf());
         }
 
         for (Entry<ChannelOption<Object>, Object> entry : config.getChannelOptions().entrySet()) {
