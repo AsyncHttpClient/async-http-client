@@ -31,8 +31,7 @@ import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.StringUtils;
 
 /**
- * This class is required when authentication is needed. The class support
- * DIGEST and BASIC.
+ * This class is required when authentication is needed. The class support BASIC, DIGEST, NTLM, SPNEGO and KERBEROS.
  */
 public class Realm {
 
@@ -64,16 +63,33 @@ public class Realm {
         BASIC, DIGEST, NTLM, SPNEGO, KERBEROS;
     }
 
-    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
-            Uri uri, String method, boolean usePreemptiveAuth, String ntlmDomain, Charset charset, String host, String opaque, boolean useAbsoluteURI, boolean omitQuery) {
+    private Realm(AuthScheme scheme,//
+            String principal,//
+            String password,//
+            String realmName,//
+            String nonce,//
+            String algorithm,//
+            String response,//
+            String opaque,//
+            String qop,//
+            String nc,//
+            String cnonce,//
+            Uri uri,//
+            String methodName,//
+            boolean usePreemptiveAuth,//
+            Charset charset,//
+            String ntlmDomain,//
+            String ntlmHost,//
+            boolean useAbsoluteURI,//
+            boolean omitQuery) {
 
         assertNotNull(scheme, "scheme");
         assertNotNull(principal, "principal");
         assertNotNull(password, "password");
 
+        this.scheme = scheme;
         this.principal = principal;
         this.password = password;
-        this.scheme = scheme;
         this.realmName = realmName;
         this.nonce = nonce;
         this.algorithm = algorithm;
@@ -83,11 +99,11 @@ public class Realm {
         this.nc = nc;
         this.cnonce = cnonce;
         this.uri = uri;
-        this.methodName = method;
+        this.methodName = methodName;
         this.usePreemptiveAuth = usePreemptiveAuth;
-        this.ntlmDomain = ntlmDomain;
-        this.ntlmHost = host;
         this.charset = charset;
+        this.ntlmDomain = ntlmDomain;
+        this.ntlmHost = ntlmHost;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
     }
@@ -493,8 +509,25 @@ public class Realm {
                 newResponse(md);
             }
 
-            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName, usePreemptive, ntlmDomain, charset, ntlmHost,
-                    opaque, useAbsoluteURI, omitQuery);
+            return new Realm(scheme,//
+                    principal,//
+                    password,//
+                    realmName,//
+                    nonce, //
+                    algorithm, //
+                    response,//
+                    opaque, //
+                    qop, //
+                    nc, //
+                    cnonce, //
+                    uri, //
+                    methodName, //
+                    usePreemptive, //
+                    charset, //
+                    ntlmDomain,//
+                    ntlmHost, //
+                    useAbsoluteURI, //
+                    omitQuery);
         }
     }
 }
