@@ -225,6 +225,12 @@ public class MultipartBody implements RandomAccessBody {
 
     private int writeCurrentBytes(ByteBuffer buffer, int length) throws IOException {
 
+        if (currentBytes.length == 0) {
+            currentBytesPosition = -1;
+            currentBytes = null;
+            return 0;
+        }
+
         int available = currentBytes.length - currentBytesPosition;
 
         int writeLength = Math.min(available, length);
