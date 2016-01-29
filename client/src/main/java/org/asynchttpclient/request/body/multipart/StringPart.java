@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
@@ -28,7 +28,7 @@ public class StringPart extends PartBase {
     /**
      * Default charset of string parameters
      */
-    public static final Charset DEFAULT_CHARSET = US_ASCII;
+    public static final Charset DEFAULT_CHARSET = UTF_8;
 
     /**
      * Default transfer encoding of string parameters
