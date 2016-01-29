@@ -47,8 +47,8 @@ public class MiscUtils {
         return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
     }
 
-    public static <T> T withDefault(T value, T defaults) {
-        return value != null ? value : value;
+    public static <T> T withDefault(T value, T def) {
+        return value == null ? def : value;
     }
 
     public static void closeSilently(Closeable closeable) {

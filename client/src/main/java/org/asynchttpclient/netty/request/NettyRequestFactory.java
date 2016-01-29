@@ -13,25 +13,10 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT;
-import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_ENCODING;
-import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.ORIGIN;
-import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_KEY;
-import static io.netty.handler.codec.http.HttpHeaders.Names.SEC_WEBSOCKET_VERSION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
-import static io.netty.handler.codec.http.HttpHeaders.Names.UPGRADE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpUtils.*;
-import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
-import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -78,7 +63,7 @@ public final class NettyRequestFactory {
         NettyBody nettyBody = null;
         if (!connect) {
 
-            Charset bodyCharset = request.getCharset() == null ? DEFAULT_CHARSET : request.getCharset();
+            Charset bodyCharset = withDefault(request.getCharset(), DEFAULT_CHARSET);
 
             if (request.getByteData() != null)
                 nettyBody = new NettyByteArrayBody(request.getByteData());

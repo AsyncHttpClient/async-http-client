@@ -14,6 +14,7 @@ package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 import java.nio.charset.Charset;
 
@@ -40,15 +41,15 @@ public class StringPart extends PartBase {
     private final String value;
 
     private static Charset charsetOrDefault(Charset charset) {
-        return charset == null ? DEFAULT_CHARSET : charset;
+        return withDefault(charset, DEFAULT_CHARSET);
     }
 
     private static String contentTypeOrDefault(String contentType) {
-        return contentType == null ? DEFAULT_CONTENT_TYPE : contentType;
+        return withDefault(contentType, DEFAULT_CONTENT_TYPE);
     }
 
     private static String transferEncodingOrDefault(String transferEncoding) {
-        return transferEncoding == null ? DEFAULT_TRANSFER_ENCODING : transferEncoding;
+        return withDefault(transferEncoding, DEFAULT_TRANSFER_ENCODING);
     }
 
     public StringPart(String name, String value) {

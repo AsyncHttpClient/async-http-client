@@ -13,7 +13,7 @@
 package org.asynchttpclient.extras.simple;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
+import static org.asynchttpclient.util.MiscUtils.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.ssl.SslContext;
 
@@ -660,7 +660,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             if (proxyHost != null) {
                 Realm realm = null;
                 if (proxyPrincipal != null) {
-                    AuthScheme proxyAuthScheme = this.proxyAuthScheme == null ? AuthScheme.BASIC : this.proxyAuthScheme;
+                    AuthScheme proxyAuthScheme = withDefault(this.proxyAuthScheme, AuthScheme.BASIC);
                     realm = realm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
 

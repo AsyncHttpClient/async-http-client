@@ -15,6 +15,7 @@ package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
+import static org.asynchttpclient.util.MiscUtils.withDefault;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -212,7 +213,7 @@ public class Unauthorized401Interceptor {
             NettyResponseFuture<?> future) throws SpnegoEngineException {
 
         Uri uri = request.getUri();
-        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
+        String host = withDefault(request.getVirtualHost(), uri.getHost());
         String challengeHeader = SpnegoEngine.instance().generateToken(host);
         headers.set(HttpHeaders.Names.AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
     }

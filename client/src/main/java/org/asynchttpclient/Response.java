@@ -16,10 +16,6 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.netty.NettyResponse;
-import org.asynchttpclient.uri.Uri;
-
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.InputStream;
@@ -28,6 +24,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.netty.NettyResponse;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * Represents the asynchronous HTTP response callback for an {@link AsyncCompletionHandler}
