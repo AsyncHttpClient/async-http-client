@@ -111,11 +111,10 @@ public final class Utf8UrlEncoder {
     }
 
     public static String encodePath(String input) {
-        StringBuilder sb = new StringBuilder(input.length() + 6);
-        appendEncoded(sb, input, BUILT_PATH_UNTOUCHED_CHARS, false);
-        return sb.toString();
+        StringBuilder sb = lazyAppendEncoded(null, input, BUILT_PATH_UNTOUCHED_CHARS, false);
+        return sb == null? input : sb.toString();
     }
-    
+
     public static StringBuilder encodeAndAppendQuery(StringBuilder sb, String query) {
         return appendEncoded(sb, query, BUILT_QUERY_UNTOUCHED_CHARS, false);
     }
@@ -134,17 +133,52 @@ public final class Utf8UrlEncoder {
         return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, true);
     }
 
+    private static StringBuilder lazyInitStringBuilder(CharSequence input, int firstNonUsAsciiPosition) {
+        StringBuilder sb = new StringBuilder(input.length() + 6);
+        for (int i = 0; i < firstNonUsAsciiPosition; i++) {
+            sb.append(input.charAt(i));
+        }
+        return sb;
+    }
+    
+    private static StringBuilder lazyAppendEncoded(StringBuilder sb, CharSequence input, BitSet dontNeedEncoding, boolean encodeSpaceAsPlus) {
+        int c;
+        for (int i = 0; i < input.length(); i+= Character.charCount(c)) {
+            c = Character.codePointAt(input, i);
+            if (c <= 127) {
+                if (dontNeedEncoding.get(c)) {
+                    if (sb != null) {
+                        sb.append((char) c);
+                    }
+                } else {
+                    if (sb == null) {
+                        sb = lazyInitStringBuilder(input, i);
+                    }
+                    appendSingleByteEncoded(sb, c, encodeSpaceAsPlus);
+                }
+            } else {
+                if (sb == null) {
+                    sb = lazyInitStringBuilder(input, i);
+                }
+                appendMultiByteEncoded(sb, c);
+            }
+        }
+        return sb;
+    }
+    
     private static StringBuilder appendEncoded(StringBuilder sb, CharSequence input, BitSet dontNeedEncoding, boolean encodeSpaceAsPlus) {
         int c;
         for (int i = 0; i < input.length(); i+= Character.charCount(c)) {
             c = Character.codePointAt(input, i);
-            if (c <= 127)
-                if (dontNeedEncoding.get(c))
+            if (c <= 127) {
+                if (dontNeedEncoding.get(c)) {
                     sb.append((char) c);
-                else
+                } else {
                     appendSingleByteEncoded(sb, c, encodeSpaceAsPlus);
-            else
+                }
+            } else {
                 appendMultiByteEncoded(sb, c);
+            }
         }
         return sb;
     }
