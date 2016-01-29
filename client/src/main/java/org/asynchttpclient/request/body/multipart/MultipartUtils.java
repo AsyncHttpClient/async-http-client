@@ -14,6 +14,7 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static io.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -29,11 +30,6 @@ import org.asynchttpclient.request.body.multipart.part.MultipartPart;
 import org.asynchttpclient.util.StringUtils;
 
 public class MultipartUtils {
-
-    /**
-     * The Content-Type for multipart/form-data.
-     */
-    private static final String MULTIPART_FORM_CONTENT_TYPE = "multipart/form-data";
 
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
@@ -67,7 +63,7 @@ public class MultipartUtils {
             }
         } else {
             boundary = generateBoundary();
-            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE, boundary);
+            contentType = computeContentType(MULTIPART_FORM_DATA, boundary);
         }
 
         List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
