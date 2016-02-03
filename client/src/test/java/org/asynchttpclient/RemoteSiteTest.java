@@ -48,15 +48,6 @@ public class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "online")
-    public void testMailGoogleCom() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().setRequestTimeout(10000))) {
-            Response response = c.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-        }
-    }
-
     @Test(groups = "online", enabled = false)
     // FIXME
     public void testMicrosoftCom() throws Exception {
