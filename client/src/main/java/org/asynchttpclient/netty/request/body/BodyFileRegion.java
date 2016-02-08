@@ -33,8 +33,7 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
     private long transfered;
 
     public BodyFileRegion(RandomAccessBody body) {
-        assertNotNull(body, "body");
-        this.body = body;
+        this.body = assertNotNull(body, "body");
     }
 
     @Override

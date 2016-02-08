@@ -18,8 +18,7 @@ public class Cookie {
 
     public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
 
-        assertNotNull(name, "name");
-        name = name.trim();
+        name = assertNotNull(name, "name").trim();
         assertNotEmpty(name, "name");
 
         for (int i = 0; i < name.length(); i++) {
@@ -47,11 +46,7 @@ public class Cookie {
             throw new IllegalArgumentException("name starting with '$' not allowed: " + name);
         }
 
-        assertNotNull(value, "value");
-        domain = validateValue("domain", domain);
-        path = validateValue("path", path);
-
-        return new Cookie(name, value, wrap, domain, path, maxAge, secure, httpOnly);
+        return new Cookie(name, assertNotNull(value, "value"), wrap, validateValue("domain", domain), validateValue("path", path), maxAge, secure, httpOnly);
     }
 
     private static String validateValue(String name, String value) {

@@ -32,8 +32,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
-        assertNotNull(body, "body");
-        this.body = body;
+        this.body = assertNotNull(body, "body");
         long contentLength = body.getContentLength();
         if (contentLength <= 0)
             chunkSize = DEFAULT_CHUNK_SIZE;

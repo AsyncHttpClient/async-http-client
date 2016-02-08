@@ -83,13 +83,9 @@ public class Realm {
             boolean useAbsoluteURI,//
             boolean omitQuery) {
 
-        assertNotNull(scheme, "scheme");
-        assertNotNull(principal, "principal");
-        assertNotNull(password, "password");
-
-        this.scheme = scheme;
-        this.principal = principal;
-        this.password = password;
+        this.scheme = assertNotNull(scheme, "scheme");
+        this.principal = assertNotNull(principal, "principal");
+        this.password = assertNotNull(password, "password");
         this.realmName = realmName;
         this.nonce = nonce;
         this.algorithm = algorithm;

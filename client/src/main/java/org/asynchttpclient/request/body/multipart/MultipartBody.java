@@ -42,10 +42,9 @@ public class MultipartBody implements RandomAccessBody {
     private AtomicBoolean closed = new AtomicBoolean();
 
     public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
-        assertNotNull(parts, "parts");
         this.boundary = boundary;
         this.contentType = contentType;
-        this.parts = parts;
+        this.parts = assertNotNull(parts, "parts");
         this.contentLength = computeContentLength();
     }
 

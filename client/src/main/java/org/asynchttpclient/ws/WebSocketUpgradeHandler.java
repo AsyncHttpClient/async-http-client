@@ -95,8 +95,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
             throw e;
         }
 
-        assertNotNull(webSocket, "webSocket");
-        return webSocket;
+        return assertNotNull(webSocket, "webSocket");
     }
 
     /**

@@ -18,13 +18,16 @@ public final class Assertions {
     private Assertions() {
     }
 
-    public static void assertNotNull(Object value, String name) {
+    public static <T> T assertNotNull(T value, String name) {
         if (value == null)
             throw new NullPointerException(name);
+        return value;
+
     }
 
-    public static void assertNotEmpty(String value, String name) {
+    public static String assertNotEmpty(String value, String name) {
         if (value.length() == 0)
             throw new IllegalArgumentException("empty " + name);
+        return value;
     }
 }

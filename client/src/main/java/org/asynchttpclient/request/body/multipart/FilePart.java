@@ -43,8 +43,7 @@ public class FilePart extends FileLikePart {
 
     public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, contentId, transferEncoding);
-        assertNotNull(file, "file");
-        if (!file.isFile())
+        if (!assertNotNull(file, "file").isFile())
             throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
         if (!file.canRead())
             throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());

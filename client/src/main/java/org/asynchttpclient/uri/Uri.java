@@ -60,11 +60,9 @@ public class Uri {
             String path,//
             String query) {
 
-        assertNotNull(scheme, "scheme");
-        assertNotNull(host, "host");
-        this.scheme = scheme;
+        this.scheme = assertNotNull(scheme, "scheme");
         this.userInfo = userInfo;
-        this.host = host;
+        this.host = assertNotNull(host, "host");
         this.port = port;
         this.path = path;
         this.query = query;

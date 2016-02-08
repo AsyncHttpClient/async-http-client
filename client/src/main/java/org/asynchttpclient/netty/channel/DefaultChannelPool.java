@@ -99,8 +99,7 @@ public final class DefaultChannelPool implements ChannelPool {
         final long start;
 
         IdleChannel(Channel channel, long start) {
-            assertNotNull(channel, "channel");
-            this.channel = channel;
+            this.channel = assertNotNull(channel, "channel");
             this.start = start;
         }
 

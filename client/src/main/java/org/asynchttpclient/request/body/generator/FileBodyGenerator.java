@@ -32,8 +32,7 @@ public final class FileBodyGenerator implements BodyGenerator {
     }
 
     public FileBodyGenerator(File file, long regionSeek, long regionLength) {
-        assertNotNull(file, "file");
-        this.file = file;
+        this.file = assertNotNull(file, "file");
         this.regionLength = regionLength;
         this.regionSeek = regionSeek;
     }
