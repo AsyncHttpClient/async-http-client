@@ -13,6 +13,7 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -43,7 +44,7 @@ public class NettyChannelConnector {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
-        this.timeoutsHolder = timeoutsHolder;
+        this.timeoutsHolder = assertNotNull(timeoutsHolder, "timeoutsHolder");
         this.closed = closed;
     }
 
