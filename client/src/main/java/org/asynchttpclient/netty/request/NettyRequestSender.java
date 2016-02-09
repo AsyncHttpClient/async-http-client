@@ -277,7 +277,7 @@ public final class NettyRequestSender {
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {
                         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, channelPreempted, partitionKey);
-                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), closed).connect(bootstrap, connectListener);
+                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), closed, config).connect(bootstrap, connectListener);
                     }
 
                     @Override

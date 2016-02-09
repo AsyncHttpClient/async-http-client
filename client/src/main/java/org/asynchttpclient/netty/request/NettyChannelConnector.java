@@ -25,8 +25,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 
@@ -37,15 +39,21 @@ public class NettyChannelConnector {
     private final List<InetSocketAddress> remoteAddresses;
     private final TimeoutsHolder timeoutsHolder;
     private final AtomicBoolean closed;
+    private final boolean connectionTtlEnabled;
     private volatile int i = 0;
 
-    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, TimeoutsHolder timeoutsHolder,
-            AtomicBoolean closed) {
+    public NettyChannelConnector(InetAddress localAddress,//
+            List<InetSocketAddress> remoteAddresses,//
+            AsyncHandler<?> asyncHandler,//
+            TimeoutsHolder timeoutsHolder,//
+            AtomicBoolean closed,//
+            AsyncHttpClientConfig config) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
         this.timeoutsHolder = assertNotNull(timeoutsHolder, "timeoutsHolder");
         this.closed = closed;
+        this.connectionTtlEnabled = config.getConnectionTtl() > 0;
     }
 
     private boolean pickNextRemoteAddress() {
@@ -81,6 +89,9 @@ public class NettyChannelConnector {
                     asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, future.channel());
                 }
                 timeoutsHolder.initRemoteAddress(remoteAddress);
+                if (connectionTtlEnabled) {
+                    Channels.initChannelId(channel);
+                }
                 connectListener.onSuccess(channel);
             }
 

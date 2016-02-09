@@ -16,6 +16,7 @@ package org.asynchttpclient.netty.channel;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.DateUtils.millisTime;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelId;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
@@ -44,11 +45,11 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
 
     private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<IdleChannel>> partitions = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, ChannelCreation> channelId2Creation;
+    private final ConcurrentHashMap<ChannelId, ChannelCreation> channelId2Creation;
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
-    private final int maxConnectionTtl;
-    private final boolean maxConnectionTtlEnabled;
+    private final int connectionTtl;
+    private final boolean connectionTtlEnabled;
     private final int maxIdleTime;
     private final boolean maxIdleTimeEnabled;
     private final long cleanerPeriod;
@@ -59,8 +60,8 @@ public final class DefaultChannelPool implements ChannelPool {
                 hashedWheelTimer);
     }
 
-    private int channelId(Channel channel) {
-        return channel.hashCode();
+    private ChannelId channelId(Channel channel) {
+        return Channels.getChannelId(channel);
     }
 
     private int cleanerPeriod(int ttl) {
@@ -68,19 +69,19 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     public DefaultChannelPool(int maxIdleTime,//
-            int maxConnectionTtl,//
+            int connectionTtl,//
             Timer nettyTimer) {
         this.maxIdleTime = (int) maxIdleTime;
-        this.maxConnectionTtl = maxConnectionTtl;
-        maxConnectionTtlEnabled = maxConnectionTtl > 0;
-        channelId2Creation = maxConnectionTtlEnabled ? new ConcurrentHashMap<>() : null;
+        this.connectionTtl = connectionTtl;
+        connectionTtlEnabled = connectionTtl > 0;
+        channelId2Creation = connectionTtlEnabled ? new ConcurrentHashMap<>() : null;
         this.nettyTimer = nettyTimer;
         maxIdleTimeEnabled = maxIdleTime > 0;
 
         // period is half
-        cleanerPeriod = Math.min(maxConnectionTtlEnabled ? cleanerPeriod(maxConnectionTtl) : Integer.MAX_VALUE, maxIdleTimeEnabled ? cleanerPeriod(maxIdleTime) : Long.MAX_VALUE);
+        cleanerPeriod = Math.min(connectionTtlEnabled ? cleanerPeriod(connectionTtl) : Integer.MAX_VALUE, maxIdleTimeEnabled ? cleanerPeriod(maxIdleTime) : Long.MAX_VALUE);
 
-        if (maxConnectionTtlEnabled || maxIdleTimeEnabled)
+        if (connectionTtlEnabled || maxIdleTimeEnabled)
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
     }
 
@@ -120,11 +121,11 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private boolean isTtlExpired(Channel channel, long now) {
-        if (!maxConnectionTtlEnabled)
+        if (!connectionTtlEnabled)
             return false;
 
         ChannelCreation creation = channelId2Creation.get(channelId(channel));
-        return creation != null && now - creation.creationTime >= maxConnectionTtl;
+        return creation != null && now - creation.creationTime >= connectionTtl;
     }
 
     private boolean isRemotelyClosed(Channel channel) {
@@ -213,7 +214,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 List<IdleChannel> closedChannels = closeChannels(expiredChannels(partition, start));
 
                 if (!closedChannels.isEmpty()) {
-                    if (maxConnectionTtlEnabled) {
+                    if (connectionTtlEnabled) {
                         for (IdleChannel closedChannel : closedChannels)
                             channelId2Creation.remove(channelId(closedChannel.channel));
                     }
@@ -245,7 +246,7 @@ public final class DefaultChannelPool implements ChannelPool {
             return false;
 
         boolean offered = offer0(channel, partitionKey, now);
-        if (maxConnectionTtlEnabled && offered) {
+        if (connectionTtlEnabled && offered) {
             registerChannelCreation(channel, partitionKey, now);
         }
 
@@ -293,7 +294,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = maxConnectionTtlEnabled ? channelId2Creation.remove(channelId(channel)) : null;
+        ChannelCreation creation = connectionTtlEnabled ? channelId2Creation.remove(channelId(channel)) : null;
         return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(channel);
     }
 
@@ -317,7 +318,7 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         partitions.clear();
-        if (maxConnectionTtlEnabled) {
+        if (connectionTtlEnabled) {
             channelId2Creation.clear();
         }
     }
@@ -325,7 +326,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private void close(Channel channel) {
         // FIXME pity to have to do this here
         Channels.setDiscard(channel);
-        if (maxConnectionTtlEnabled) {
+        if (connectionTtlEnabled) {
             channelId2Creation.remove(channelId(channel));
         }
         Channels.silentlyCloseChannel(channel);
