@@ -25,6 +25,7 @@ import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -385,10 +386,15 @@ public class AsyncHttpClientConfig {
      * @return the {@link HostnameVerifier}
      */
     public HostnameVerifier getHostnameVerifier() {
-        if (hostnameVerifier == null && !acceptAnyCertificate) {
-            synchronized(this) {
+        if (hostnameVerifier == null) {
+            synchronized (this) {
                 if (hostnameVerifier == null)
-                    hostnameVerifier = new DefaultHostnameVerifier();
+                    hostnameVerifier = acceptAnyCertificate ? new HostnameVerifier() {
+                        @Override
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                    } : new DefaultHostnameVerifier();
             }
         }
         return hostnameVerifier;
@@ -926,12 +932,12 @@ public class AsyncHttpClientConfig {
             this.sslSessionCacheSize = sslSessionCacheSize;
             return this;
         }
-        
+
         public Builder setSslSessionTimeout(Integer sslSessionTimeout) {
             this.sslSessionTimeout = sslSessionTimeout;
             return this;
         }
-        
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
