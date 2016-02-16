@@ -54,18 +54,6 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    // We don't need to synchronize as replacing the "ws-decoder" will
-    // process using the same thread.
-    private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
-        if (!h.touchSuccess()) {
-            try {
-                h.onSuccess(new NettyWebSocket(channel, config));
-            } catch (Exception ex) {
-                logger.warn("onSuccess unexpected exception", ex);
-            }
-        }
-    }
-
     private class UpgradeCallback extends Callback {
 
         private final Channel channel;
@@ -82,6 +70,18 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             this.handler = handler;
             this.status = status;
             this.responseHeaders = responseHeaders;
+        }
+
+        // We don't need to synchronize as replacing the "ws-decoder" will
+        // process using the same thread.
+        private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
+            if (!h.touchSuccess()) {
+                try {
+                    h.onSuccess(new NettyWebSocket(channel, config));
+                } catch (Exception ex) {
+                    logger.warn("onSuccess unexpected exception", ex);
+                }
+            }
         }
 
         @Override
@@ -116,14 +116,16 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 requestSender.abort(channel, future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
 
+            // set back the future so the protocol gets notified of frames
+            // removing the HttpClientCodec from the pipeline might trigger a read with a WebSocket message
+            // if it comes in the same frame as the HTTP Upgrade response
+            Channels.setAttribute(channel, future);
+
             channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
             invokeOnSucces(channel, handler);
             future.done();
-            // set back the future so the protocol gets notified of frames
-            Channels.setAttribute(channel, future);
         }
-
     }
 
     @Override
@@ -144,40 +146,58 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 Channels.setAttribute(channel, new UpgradeCallback(future, channel, response, handler, status, responseHeaders));
             }
 
-
         } else if (e instanceof WebSocketFrame) {
-
             final WebSocketFrame frame = (WebSocketFrame) e;
             WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
 
             if (webSocket != null) {
-                if (frame instanceof CloseWebSocketFrame) {
-                    Channels.setDiscard(channel);
-                    CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-                    webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
-                } else {
-                    ByteBuf buf = frame.content();
-                    if (buf != null && buf.readableBytes() > 0) {
-                        HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                        handler.onBodyPartReceived(part);
-
-                        if (frame instanceof BinaryWebSocketFrame) {
-                            webSocket.onBinaryFragment(part);
-                        } else if (frame instanceof TextWebSocketFrame) {
-                            webSocket.onTextFragment(part);
-                        } else if (frame instanceof PingWebSocketFrame) {
-                            webSocket.onPing(part);
-                        } else if (frame instanceof PongWebSocketFrame) {
-                            webSocket.onPong(part);
-                        }
-                    }
-                }
+                handleFrame(channel, frame, handler, webSocket);
             } else {
-                logger.debug("UpgradeHandler returned a null NettyWebSocket");
+                logger.debug("Frame received but WebSocket is not available yet, buffering frame");
+                frame.retain();
+                Runnable bufferedFrame = new Runnable() {
+                    public void run() {
+                        try {
+                            // WebSocket is now not null
+                            NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
+                            handleFrame(channel, frame, handler, webSocket);
+                        } catch (Exception e) {
+                            logger.debug("Failure while handling buffered frame", e);
+                            handler.onFailure(e);
+                        } finally {
+                            frame.release();
+                        }
+                    };
+                };
+                handler.bufferFrame(bufferedFrame);
             }
         } else {
             logger.error("Invalid message {}", e);
+        }
+    }
+
+    private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) throws Exception {
+        if (frame instanceof CloseWebSocketFrame) {
+            Channels.setDiscard(channel);
+            CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
+            webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
+        } else {
+            ByteBuf buf = frame.content();
+            if (buf != null && buf.readableBytes() > 0) {
+                HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                handler.onBodyPartReceived(part);
+
+                if (frame instanceof BinaryWebSocketFrame) {
+                    webSocket.onBinaryFragment(part);
+                } else if (frame instanceof TextWebSocketFrame) {
+                    webSocket.onTextFragment(part);
+                } else if (frame instanceof PingWebSocketFrame) {
+                    webSocket.onPing(part);
+                } else if (frame instanceof PongWebSocketFrame) {
+                    webSocket.onPong(part);
+                }
+            }
         }
     }
 

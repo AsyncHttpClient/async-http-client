@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +28,24 @@ import org.asynchttpclient.HttpResponseStatus;
  */
 public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
 
+    private static final int SWITCHING_PROTOCOLS = io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS.code();
+
     private WebSocket webSocket;
     private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
     private boolean onSuccessCalled;
     private int status;
+    private List<Runnable> bufferedFrames;
 
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
+    }
+
+    public void bufferFrame(Runnable bufferedFrame) {
+        if (bufferedFrames == null) {
+            bufferedFrames = new ArrayList<>();
+        }
+        bufferedFrames.add(bufferedFrame);
     }
 
     /**
@@ -66,11 +76,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
-        if (responseStatus.getStatusCode() == 101) {
-            return State.UPGRADE;
-        } else {
-            return State.ABORT;
-        }
+        return status == SWITCHING_PROTOCOLS ? State.UPGRADE : State.ABORT;
     }
 
     /**
@@ -87,7 +93,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public final WebSocket onCompleted() throws Exception {
 
-        if (status != 101) {
+        if (status != SWITCHING_PROTOCOLS) {
             IllegalStateException e = new IllegalStateException("Invalid Status Code " + status);
             for (WebSocketListener listener : listeners) {
                 listener.onError(e);
@@ -95,7 +101,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
             throw e;
         }
 
-        return assertNotNull(webSocket, "webSocket");
+        return webSocket;
     }
 
     /**
@@ -107,6 +113,12 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         for (WebSocketListener listener : listeners) {
             webSocket.addWebSocketListener(listener);
             listener.onOpen(webSocket);
+        }
+        if (isNonEmpty(bufferedFrames)) {
+            for (Runnable bufferedFrame : bufferedFrames) {
+                bufferedFrame.run();
+            }
+            bufferedFrames = null;
         }
         ok.set(true);
     }
