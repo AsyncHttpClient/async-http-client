@@ -148,13 +148,13 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         } else if (e instanceof WebSocketFrame) {
 
             final WebSocketFrame frame = (WebSocketFrame) e;
-            WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
-            NettyWebSocket webSocket = NettyWebSocket.class.cast(handler.onCompleted());
+            WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
+            NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
 
             if (webSocket != null) {
                 if (frame instanceof CloseWebSocketFrame) {
                     Channels.setDiscard(channel);
-                    CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
+                    CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
                     webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
                 } else {
                     ByteBuf buf = frame.content();
@@ -174,7 +174,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                     }
                 }
             } else {
-                logger.debug("UpgradeHandler returned a null NettyWebSocket ");
+                logger.debug("UpgradeHandler returned a null NettyWebSocket");
             }
         } else {
             logger.error("Invalid message {}", e);
