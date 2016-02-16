@@ -150,7 +150,6 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             final WebSocketFrame frame = (WebSocketFrame) e;
             WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
             NettyWebSocket webSocket = NettyWebSocket.class.cast(handler.onCompleted());
-            invokeOnSucces(channel, handler);
 
             if (webSocket != null) {
                 if (frame instanceof CloseWebSocketFrame) {
