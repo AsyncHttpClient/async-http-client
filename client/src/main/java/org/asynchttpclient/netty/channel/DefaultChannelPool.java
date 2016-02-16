@@ -64,10 +64,6 @@ public final class DefaultChannelPool implements ChannelPool {
         return Channels.getChannelId(channel);
     }
 
-    private int cleanerPeriod(int ttl) {
-        return (int) Math.ceil(ttl / 2.0);
-    }
-
     public DefaultChannelPool(int maxIdleTime,//
             int connectionTtl,//
             Timer nettyTimer) {
@@ -78,8 +74,7 @@ public final class DefaultChannelPool implements ChannelPool {
         this.nettyTimer = nettyTimer;
         maxIdleTimeEnabled = maxIdleTime > 0;
 
-        // period is half
-        cleanerPeriod = Math.min(connectionTtlEnabled ? cleanerPeriod(connectionTtl) : Integer.MAX_VALUE, maxIdleTimeEnabled ? cleanerPeriod(maxIdleTime) : Long.MAX_VALUE);
+        cleanerPeriod = Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE, maxIdleTimeEnabled ? maxIdleTime : Long.MAX_VALUE);
 
         if (connectionTtlEnabled || maxIdleTimeEnabled)
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
