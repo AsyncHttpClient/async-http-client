@@ -22,7 +22,7 @@ First, in order to add it to your Maven project, simply add this dependency:
 
 You can also download the artifact
 
-[Maven Search](http://search.maven.org)
+[Maven Search](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22async-http-client%22)
 
 AHC is an abstraction layer that can work on top of the bare JDK, Netty and Grizzly.
 Note that the JDK implementation is very limited and you should **REALLY** use the other *real* providers.
