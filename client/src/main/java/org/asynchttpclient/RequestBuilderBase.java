@@ -252,7 +252,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public void resetQuery() {
         queryParams = null;
-        this.uri = this.uri.withNewQuery(null);
+        if (this.uri != null)
+            this.uri = this.uri.withNewQuery(null);
     }
 
     public void resetFormParams() {
@@ -344,7 +345,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setQueryParams(List<Param> params) {
         // reset existing query
-        if (isNonEmpty(this.uri.getQuery()))
+        if (this.uri != null && isNonEmpty(this.uri.getQuery()))
             this.uri = this.uri.withNewQuery(null);
         queryParams = params;
         return asDerivedType();
