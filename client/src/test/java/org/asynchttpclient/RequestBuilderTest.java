@@ -16,17 +16,14 @@
 package org.asynchttpclient;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static org.asynchttpclient.Dsl.get;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import org.asynchttpclient.cookie.Cookie;
@@ -150,5 +147,14 @@ public class RequestBuilderTest {
         Cookie cookie3 = new Cookie("name", "value", false, "google.com", "/", 1000, true, true);
         requestBuilder.addOrReplaceCookie(cookie3);
         assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
+    }
+
+    @Test
+    public void testSettingQueryParamsBeforeUrlShouldNotProduceNPE() {
+        RequestBuilder requestBuilder = new RequestBuilder();
+        requestBuilder.setQueryParams(singletonList(new Param("key", "value")));
+        requestBuilder.setUrl("http://localhost");
+        Request request = requestBuilder.build();
+        assertEquals(request.getUrl(), "http://localhost?key=value");
     }
 }
