@@ -1,0 +1,284 @@
+/*
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
+package org.asynchttpclient.extras.rxjava.single;
+
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
+
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.handler.ProgressAsyncHandler;
+import org.mockito.InOrder;
+import org.testng.annotations.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import rx.Single;
+import rx.exceptions.CompositeException;
+import rx.observers.TestSubscriber;
+
+public class AsyncHttpSingleTest {
+
+    @Test(groups = "standalone", expectedExceptions = { NullPointerException.class })
+    public void testFailsOnNullRequest() {
+        AsyncHttpSingle.create((BoundRequestBuilder) null);
+    }
+
+    @Test(groups = "standalone", expectedExceptions = { NullPointerException.class })
+    public void testFailsOnNullHandlerSupplier() {
+        AsyncHttpSingle.create(mock(BoundRequestBuilder.class), null);
+    }
+
+    @Test(groups = "standalone")
+    public void testSuccessfulCompletion() throws Exception {
+
+        final AsyncHandler<Object> handler = mock(AsyncHandler.class);
+        when(handler.onCompleted()).thenReturn(handler);
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            try {
+                assertThat(bridge, is(not(instanceOf(ProgressAsyncHandler.class))));
+
+                bridge.onStatusReceived(null);
+                verify(handler).onStatusReceived(null);
+
+                bridge.onHeadersReceived(null);
+                verify(handler).onHeadersReceived(null);
+
+                bridge.onBodyPartReceived(null);
+                verify(handler).onBodyPartReceived(null);
+
+                bridge.onCompleted();
+                verify(handler).onCompleted();
+            } catch (final Throwable t) {
+                bridge.onThrowable(t);
+            }
+        } , () -> handler);
+
+        final TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        underTest.subscribe(subscriber);
+
+        verifyNoMoreInteractions(handler);
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertTerminalEvent();
+        subscriber.assertCompleted();
+        subscriber.assertNoErrors();
+        subscriber.assertValue(handler);
+    }
+
+    @Test(groups = "standalone")
+    public void testSuccessfulCompletionWithProgress() throws Exception {
+
+        final ProgressAsyncHandler<Object> handler = mock(ProgressAsyncHandler.class);
+        when(handler.onCompleted()).thenReturn(handler);
+        final InOrder inOrder = inOrder(handler);
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            try {
+                assertThat(bridge, is(instanceOf(ProgressAsyncHandler.class)));
+
+                final ProgressAsyncHandler<?> progressBridge = (ProgressAsyncHandler<?>) bridge;
+
+                progressBridge.onHeadersWritten();
+                inOrder.verify(handler).onHeadersWritten();
+
+                progressBridge.onContentWriteProgress(60, 40, 100);
+                inOrder.verify(handler).onContentWriteProgress(60, 40, 100);
+
+                progressBridge.onContentWritten();
+                inOrder.verify(handler).onContentWritten();
+
+                progressBridge.onStatusReceived(null);
+                inOrder.verify(handler).onStatusReceived(null);
+
+                progressBridge.onHeadersReceived(null);
+                inOrder.verify(handler).onHeadersReceived(null);
+
+                progressBridge.onBodyPartReceived(null);
+                inOrder.verify(handler).onBodyPartReceived(null);
+
+                progressBridge.onCompleted();
+                inOrder.verify(handler).onCompleted();
+            } catch (final Throwable t) {
+                bridge.onThrowable(t);
+            }
+        } , () -> handler);
+
+        final TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        underTest.subscribe(subscriber);
+
+        inOrder.verifyNoMoreInteractions();
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertTerminalEvent();
+        subscriber.assertCompleted();
+        subscriber.assertNoErrors();
+        subscriber.assertValue(handler);
+    }
+
+    @Test(groups = "standalone")
+    public void testNewRequestForEachSubscription() throws Exception {
+        final BoundRequestBuilder builder = mock(BoundRequestBuilder.class);
+
+        final Single<?> underTest = AsyncHttpSingle.create(builder);
+        underTest.subscribe(new TestSubscriber<>());
+        underTest.subscribe(new TestSubscriber<>());
+
+        verify(builder, times(2)).execute(any());
+        verifyNoMoreInteractions(builder);
+    }
+
+    @Test(groups = "standalone")
+    public void testErrorPropagation() throws Exception {
+
+        final RuntimeException expectedException = new RuntimeException("expected");
+        final AsyncHandler<Object> handler = mock(AsyncHandler.class);
+        when(handler.onCompleted()).thenReturn(handler);
+        final InOrder inOrder = inOrder(handler);
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            try {
+                bridge.onStatusReceived(null);
+                inOrder.verify(handler).onStatusReceived(null);
+
+                bridge.onHeadersReceived(null);
+                inOrder.verify(handler).onHeadersReceived(null);
+
+                bridge.onBodyPartReceived(null);
+                inOrder.verify(handler).onBodyPartReceived(null);
+
+                bridge.onThrowable(expectedException);
+                inOrder.verify(handler).onThrowable(expectedException);
+
+                // test that no further events are invoked after terminal events
+                bridge.onCompleted();
+                inOrder.verify(handler, never()).onCompleted();
+            } catch (final Throwable t) {
+                bridge.onThrowable(t);
+            }
+        } , () -> handler);
+
+        final TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        underTest.subscribe(subscriber);
+
+        inOrder.verifyNoMoreInteractions();
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertTerminalEvent();
+        subscriber.assertNoValues();
+        subscriber.assertError(expectedException);
+    }
+
+    @Test(groups = "standalone")
+    public void testErrorInOnCompletedPropagation() throws Exception {
+
+        final RuntimeException expectedException = new RuntimeException("expected");
+        final AsyncHandler<Object> handler = mock(AsyncHandler.class);
+        when(handler.onCompleted()).thenThrow(expectedException);
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            try {
+                bridge.onCompleted();
+            } catch (final Throwable t) {
+                throw new AssertionError(t);
+            }
+        } , () -> handler);
+
+        final TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        underTest.subscribe(subscriber);
+
+        verify(handler).onCompleted();
+        verifyNoMoreInteractions(handler);
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertTerminalEvent();
+        subscriber.assertNoValues();
+        subscriber.assertError(expectedException);
+    }
+
+    @Test(groups = "standalone")
+    public void testErrorInOnThrowablePropagation() throws Exception {
+
+        final RuntimeException processingException = new RuntimeException("processing");
+        final RuntimeException thrownException = new RuntimeException("thrown");
+        final AsyncHandler<Object> handler = mock(AsyncHandler.class);
+        doThrow(thrownException).when(handler).onThrowable(processingException);
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            try {
+                bridge.onThrowable(processingException);
+            } catch (final Throwable t) {
+                throw new AssertionError(t);
+            }
+        } , () -> handler);
+
+        final TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        underTest.subscribe(subscriber);
+
+        verify(handler).onThrowable(processingException);
+        verifyNoMoreInteractions(handler);
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertTerminalEvent();
+        subscriber.assertNoValues();
+
+        final List<Throwable> errorEvents = subscriber.getOnErrorEvents();
+        assertEquals(errorEvents.size(), 1);
+        assertThat(errorEvents.get(0), is(instanceOf(CompositeException.class)));
+        final CompositeException error = (CompositeException) errorEvents.get(0);
+        assertEquals(error.getExceptions(), Arrays.asList(processingException, thrownException));
+    }
+
+    @Test(groups = "standalone")
+    public void testAbort() throws Exception {
+        final TestSubscriber<Response> subscriber = new TestSubscriber<>();
+
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            final Single<Response> underTest = AsyncHttpSingle.create(client.prepareGet("http://github.com"),
+                    () -> new AsyncCompletionHandlerBase() {
+                        @Override
+                        public State onStatusReceived(HttpResponseStatus status) {
+                            return State.ABORT;
+                        }
+                    });
+            underTest.subscribe(subscriber);
+            subscriber.awaitTerminalEvent(30, TimeUnit.SECONDS);
+        }
+
+        subscriber.assertTerminalEvent();
+        subscriber.assertCompleted();
+        subscriber.assertNoErrors();
+        subscriber.assertValue(null);
+    }
+
+}
