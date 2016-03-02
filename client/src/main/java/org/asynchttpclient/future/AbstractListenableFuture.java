@@ -48,7 +48,23 @@ import org.asynchttpclient.ListenableFuture;
 public abstract class AbstractListenableFuture<V> implements ListenableFuture<V> {
 
     // The execution list to hold our executors.
-    private final ExecutionList executionList = new ExecutionList();
+    // lazy fields
+    private volatile boolean executionListInitialized;
+    private ExecutionList executionList;
+
+    private ExecutionList lazyExecutionList() {
+        synchronized (this) {
+            if (!executionListInitialized) {
+                executionList = new ExecutionList();
+                executionListInitialized = true;
+            }
+        }
+        return executionList;
+    }
+
+    private ExecutionList executionList() {
+        return executionListInitialized ? executionList : lazyExecutionList();
+    }
 
     /*
     * Adds a listener/executor pair to execution list to execute when this task
@@ -56,7 +72,7 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     */
 
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
-        executionList.add(listener, exec);
+        executionList().add(listener, exec);
         return this;
     }
 
@@ -64,6 +80,6 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     * Execute the execution list.
     */
     protected void runListeners() {
-        executionList.run();
+        executionList().run();
     }
 }
