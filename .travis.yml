@@ -1,13 +1,20 @@
 language: java
 jdk:
   - oraclejdk8
-before_script: "[[ $TRAVIS_PULL_REQUEST == \"false\" ]] && ./make_credentials.py"
+before_script: |
+  if ([ $TRAVIS_PULL_REQUEST = "false" ] && [ $TRAVIS_BRANCH = "master" ]); then
+    ./make_credentials.py
+  fi
+
 script: 
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
 # If building master, Publish to Sonatype
-after_success: "[[ $TRAVIS_PULL_REQUEST == \"false\" ]] && mvn deploy"
+after_success: |
+  if ([ $TRAVIS_PULL_REQUEST = "false" ] && [ $TRAVIS_BRANCH = "master" ]); then
+    mvn deploy
+  fi
 
 sudo: false
 
@@ -15,8 +22,3 @@ sudo: false
 cache:
   directories:
     - $HOME/.m2/repository
-
-# whitelist
-branches:
-  only:
-    - master
