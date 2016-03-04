@@ -17,11 +17,9 @@ package org.asynchttpclient.util;
 
 import java.util.BitSet;
 
-/**
- * Convenience class that encapsulates details of "percent encoding" (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
- */
 public final class Utf8UrlEncoder {
 
+    // see http://tools.ietf.org/html/rfc3986#section-3.4
     // ALPHA / DIGIT / "-" / "." / "_" / "~"
     private static final BitSet RFC3986_UNRESERVED_CHARS = new BitSet(256);
     static {
@@ -139,7 +137,7 @@ public final class Utf8UrlEncoder {
     }
 
     public static StringBuilder encodeAndAppendQueryElement(StringBuilder sb, CharSequence input) {
-        return appendEncoded(sb, input, RFC3986_UNRESERVED_CHARS, false);
+        return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, false);
     }
 
     public static StringBuilder encodeAndAppendFormElement(StringBuilder sb, CharSequence input) {
