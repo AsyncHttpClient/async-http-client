@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2016 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -151,7 +151,10 @@ final class AsyncHttpClientFilter extends BaseFilter {
         }
 
         HttpRequestPacket requestPacket;
-        final PayloadGenerator payloadGenerator = isPayloadAllowed(method) ? PayloadGenFactory.getPayloadGenerator(ahcRequest) : null;
+        final PayloadGenerator payloadGenerator = isPayloadAllowed(method)
+                ? PayloadGenFactory.getPayloadGenerator(ahcRequest)
+                : null;
+        
         if (payloadGenerator != null) {
             final long contentLength = ahcRequest.getContentLength();
             if (contentLength >= 0) {
@@ -196,7 +199,13 @@ final class AsyncHttpClientFilter extends BaseFilter {
         ctx.notifyDownstream(new SSLSwitchingEvent(connection, secure,
                 uri.getHost(), uri.getPort()));
 
-        return sendRequest(httpTxCtx, ctx, requestPacket, wrapWithExpectHandlerIfNeeded(payloadGenerator, requestPacket));
+       final boolean isFullySent = sendRequest(httpTxCtx, ctx, requestPacket,
+                wrapWithExpectHandlerIfNeeded(payloadGenerator, requestPacket));
+       if (isFullySent) {
+           httpTxCtx.onRequestFullySent();
+       }
+       
+       return isFullySent;
     }
 
     private boolean establishConnectTunnel(final ProxyServer proxy,
@@ -284,7 +293,9 @@ final class AsyncHttpClientFilter extends BaseFilter {
         // check if we need to wrap the PayloadGenerator with ExpectWrapper
         final MimeHeaders headers = requestPacket.getHeaders();
         final int expectHeaderIdx = headers.indexOf(Header.Expect, 0);
-        return expectHeaderIdx != -1 && headers.getValue(expectHeaderIdx).equalsIgnoreCase("100-Continue") ? PayloadGenFactory.wrapWithExpect(payloadGenerator) : payloadGenerator;
+        return expectHeaderIdx != -1 && headers.getValue(expectHeaderIdx).equalsIgnoreCase("100-Continue")
+                ? PayloadGenFactory.wrapWithExpect(payloadGenerator)
+                : payloadGenerator;
     }
 
     private boolean isPayloadAllowed(final Method method) {

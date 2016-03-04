@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2016 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -21,9 +21,12 @@ import com.ning.http.client.ws.WebSocket;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
 import org.glassfish.grizzly.Closeable;
+import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -80,6 +83,11 @@ public final class HttpTransactionContext {
     // the pool
     boolean isReuseConnection;
 
+    /**
+     * <tt>true</tt> if the request is fully sent, or <tt>false</tt>otherwise.
+     */
+    volatile boolean isRequestFullySent;
+    Set<CompletionHandler<HttpTransactionContext>> reqFullySentHandlers;
     
     private final CloseListener listener = new CloseListener<Closeable, CloseType>() {
         @Override
@@ -111,16 +119,30 @@ public final class HttpTransactionContext {
         REQUEST_STATE_ATTR.set(httpCtx, httpTxContext);
     }
 
-    static HttpTransactionContext cleanupTransaction(final HttpContext httpCtx) {
+    static void cleanupTransaction(final HttpContext httpCtx,
+            final CompletionHandler<HttpTransactionContext> completionHandler) {
         final HttpTransactionContext httpTxContext = currentTransaction(httpCtx);
-        if (httpTxContext != null) {
-            httpCtx.getCloseable().removeCloseListener(httpTxContext.listener);
-            REQUEST_STATE_ATTR.remove(httpCtx);
-        }
         
-        return httpTxContext;
+        assert httpTxContext != null;
+        
+        if (httpTxContext.isRequestFullySent) {
+            cleanupTransaction(httpCtx, httpTxContext);
+            completionHandler.completed(httpTxContext);
+        } else {
+            httpTxContext.addRequestSentCompletionHandler(completionHandler);
+            if (httpTxContext.isRequestFullySent &&
+                    httpTxContext.removeRequestSentCompletionHandler(completionHandler)) {
+                completionHandler.completed(httpTxContext);
+            }
+        }
     }
 
+    static void cleanupTransaction(final HttpContext httpCtx,
+            final HttpTransactionContext httpTxContext) {
+        httpCtx.getCloseable().removeCloseListener(httpTxContext.listener);
+        REQUEST_STATE_ATTR.remove(httpCtx);
+    }
+    
     static HttpTransactionContext currentTransaction(
             final HttpHeader httpHeader) {
         return currentTransaction(httpHeader.getProcessingState().getHttpContext());
@@ -171,7 +193,7 @@ public final class HttpTransactionContext {
 
     ProxyServer getProxyServer() {
         return proxyServer;
-    }    
+    }
     
     // ----------------------------------------------------- Private Methods
 
@@ -245,5 +267,46 @@ public final class HttpTransactionContext {
 
     void closeConnection() {
         connection.closeSilently();
+    }
+
+    private synchronized void addRequestSentCompletionHandler(
+            final CompletionHandler<HttpTransactionContext> completionHandler) {
+        if (reqFullySentHandlers == null) {
+            reqFullySentHandlers = new HashSet<>();
+        }
+        reqFullySentHandlers.add(completionHandler);
+    }
+
+    private synchronized boolean removeRequestSentCompletionHandler(
+            final CompletionHandler<HttpTransactionContext> completionHandler) {
+        return reqFullySentHandlers != null
+                ? reqFullySentHandlers.remove(completionHandler)
+                : false;
+    }
+    
+    boolean isRequestFullySent() {
+        return isRequestFullySent;
+    }
+    
+    @SuppressWarnings("unchecked")
+    void onRequestFullySent() {
+        this.isRequestFullySent = true;
+        
+        Object[] handlers = null;
+        synchronized (this) {
+            if (reqFullySentHandlers != null) {
+                handlers = reqFullySentHandlers.toArray();
+                reqFullySentHandlers = null;
+            }
+        }
+        
+        if (handlers != null) {
+            for (Object o : handlers) {
+                try {
+                    ((CompletionHandler<HttpTransactionContext>) o).completed(this);
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 } // END HttpTransactionContext

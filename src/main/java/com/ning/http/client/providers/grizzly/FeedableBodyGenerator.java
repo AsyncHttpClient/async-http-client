@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2016 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -306,10 +306,10 @@ public class FeedableBodyGenerator implements BodyGenerator {
      * an implementation for the contract defined by the {@link #feed} method.
      */
     public static abstract class BaseFeeder implements Feeder {
-
+        
         protected final FeedableBodyGenerator feedableBodyGenerator;
-
-
+        
+        private boolean wasLastSent;
         // -------------------------------------------------------- Constructors
 
 
@@ -329,15 +329,35 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 throw new IllegalArgumentException(
                         "Buffer argument cannot be null.");
             }
+            
             if (!feedableBodyGenerator.asyncTransferInitiated) {
                 throw new IllegalStateException("Asynchronous transfer has not been initiated.");
             }
+            
+            if (wasLastSent) {
+                if (buffer.hasRemaining()) {
+                    throw new IOException("Last chunk was alredy written");
+                }
+                
+                return;
+            }
+            
             blockUntilQueueFree(feedableBodyGenerator.context.getConnection());
             final HttpContent content =
                     feedableBodyGenerator.contentBuilder.content(buffer).last(last).build();
             final CompletionHandler<WriteResult> handler =
                     ((last) ? new LastPacketCompletionHandler() : null);
             feedableBodyGenerator.context.write(content, handler);
+            
+            if (last) {
+                wasLastSent = true;
+                final HttpTransactionContext currentTransaction =
+                        HttpTransactionContext.currentTransaction(
+                                feedableBodyGenerator.requestPacket);
+                if (currentTransaction != null) {
+                    currentTransaction.onRequestFullySent();
+                }
+            }
         }
 
         /**
