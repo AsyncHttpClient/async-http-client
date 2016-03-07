@@ -13,17 +13,14 @@
 package org.asynchttpclient.extras.rxjava;
 
 /**
- * Indicates that an {@code Observer} unsubscribed during the processing of a
- * HTTP request.
+ * Indicates that an {@code Observer} unsubscribed during the processing of a HTTP request.
  */
 public class UnsubscribedException extends RuntimeException {
 
     public UnsubscribedException() {
-        super();
     }
 
     public UnsubscribedException(final Throwable cause) {
         super(cause);
     }
-
 }
