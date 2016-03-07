@@ -33,14 +33,10 @@ import java.util.concurrent.Executor;
 import org.asynchttpclient.ListenableFuture;
 
 /**
- * An abstract base implementation of the listener support provided by
- * {@link ListenableFuture}. This class uses an {@link ExecutionList} to
- * guarantee that all registered listeners will be executed. Listener/Executor
- * pairs are stored in the execution list and executed in the order in which
- * they were added, but because of thread scheduling issues there is no
- * guarantee that the JVM will execute them in order. In addition, listeners
- * added after the task is complete will be executed immediately, even if some
- * previously added listeners have not yet been executed.
+ * An abstract base implementation of the listener support provided by {@link ListenableFuture}. This class uses an {@link ExecutionList} to guarantee that all registered listeners
+ * will be executed. Listener/Executor pairs are stored in the execution list and executed in the order in which they were added, but because of thread scheduling issues there is
+ * no guarantee that the JVM will execute them in order. In addition, listeners added after the task is complete will be executed immediately, even if some previously added
+ * listeners have not yet been executed.
  *
  * @author Sven Mawson
  * @since 1
@@ -67,9 +63,8 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     }
 
     /*
-    * Adds a listener/executor pair to execution list to execute when this task
-    * is completed.
-    */
+     * Adds a listener/executor pair to execution list to execute when this task is completed.
+     */
 
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
         executionList().add(listener, exec);
@@ -77,9 +72,11 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     }
 
     /*
-    * Execute the execution list.
-    */
+     * Execute the execution list.
+     */
     protected void runListeners() {
-        executionList().run();
+        if (executionListInitialized) {
+            executionList().run();
+        }
     }
 }
