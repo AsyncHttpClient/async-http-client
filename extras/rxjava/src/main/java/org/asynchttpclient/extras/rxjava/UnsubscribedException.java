@@ -15,6 +15,7 @@ package org.asynchttpclient.extras.rxjava;
 /**
  * Indicates that an {@code Observer} unsubscribed during the processing of a HTTP request.
  */
+@SuppressWarnings("serial")
 public class UnsubscribedException extends RuntimeException {
 
     public UnsubscribedException() {
