@@ -295,7 +295,7 @@ final class UriParser {
 
         else {
             String pathEnd = urlWithoutQuery.substring(start, end);
-            path = authority != null ? "/" + pathEnd : pathEnd;
+            path = isNonEmpty(pathEnd) && pathEnd.charAt(0) != '/' ? "/" + pathEnd : pathEnd;
         }
         handlePathDots();
     }

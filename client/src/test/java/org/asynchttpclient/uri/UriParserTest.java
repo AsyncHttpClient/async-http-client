@@ -110,7 +110,7 @@ public class UriParserTest {
         assertEquals(parser.path, "/relative/", "Path should be equal to the relative URL path with the trailing dots appropriately removed");
         assertEquals(parser.query, null, "Query should be null if the relative URL does not have a query");
     }
-    
+
     @Test
     public void testRelativeURLWithOneTrailingDot() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2");
