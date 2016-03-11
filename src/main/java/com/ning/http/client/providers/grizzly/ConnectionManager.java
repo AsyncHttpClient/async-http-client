@@ -32,6 +32,7 @@ import org.glassfish.grizzly.ConnectorHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.attributes.Attribute;
+import org.glassfish.grizzly.connectionpool.ConnectionInfo;
 import org.glassfish.grizzly.connectionpool.Endpoint;
 import org.glassfish.grizzly.connectionpool.MultiEndpointPool;
 import org.glassfish.grizzly.connectionpool.SingleEndpointPool;
@@ -209,6 +210,11 @@ class ConnectionManager {
         pool.close();
     }
 
+    boolean isReadyInPool(final Connection c) {
+        final ConnectionInfo<SocketAddress> ci = pool.getConnectionInfo(c);
+        return ci != null && ci.isReady();
+    }
+    
     static boolean isKeepAlive(final Connection connection) {
         return !IS_NOT_KEEP_ALIVE.isSet(connection);
     }
