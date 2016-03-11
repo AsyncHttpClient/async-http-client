@@ -15,19 +15,19 @@ Latest `version`: [![Maven][mavenImg]][mavenLink]
 
 ## Installation
 
-First, in order to add it to your Maven project, simply add this dependency:
+First, in order to add it to your Maven project, simply add this dependency -- see [mvnrepository](http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client) for latest version:
 
 ```xml
 <dependency>
-  <groupId>com.ning</groupId>
-  <artifactId>async-http-client</artifactId>
-  <version>version</version>
+	<groupId>org.asynchttpclient</groupId>
+	<artifactId>async-http-client</artifactId>
+	<version>2.0.0-RC12</version>
 </dependency>
 ```
 
 You can also download the artifact
 
-[Maven Search](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22async-http-client%22)
+[Maven Search](http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client)
 
 AHC is an abstraction layer that can work on top of the bare JDK, Netty and Grizzly.
 Note that the JDK implementation is very limited and you should **REALLY** use the other *real* providers.
@@ -66,11 +66,11 @@ Check [migration guide](MIGRATION.md) for migrating from 1.8 to 1.9.
 Then in your code you can simply do
 
 ```java
-import com.ning.http.client.*;
+import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
 AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
+Future<Response> f = asyncHttpClient.prepareGet("http://www.example.com/").execute();
 Response r = f.get();
 ```
 
@@ -79,11 +79,11 @@ Note that in this case all the content must be read fully in memory, even if you
 You can also accomplish asynchronous (non-blocking) operation without using a Future if you want to receive and process the response in your handler:
 
 ```java
-import com.ning.http.client.*;
+import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
 AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
+asyncHttpClient.prepareGet("http://www.example.com/").execute(new AsyncCompletionHandler<Response>(){
     
     @Override
     public Response onCompleted(Response response) throws Exception{
@@ -104,11 +104,11 @@ asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHa
 You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
 
 ```java
-import com.ning.http.client.*;
+import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
 AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(
+Future<Integer> f = asyncHttpClient.prepareGet("http://www.example.com/").execute(
    new AsyncCompletionHandler<Integer>(){
     
     @Override
@@ -131,11 +131,11 @@ which is something you want to do for large responses: this way you can process 
  You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
 
 ```java
-import com.ning.http.client.*;
+import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
 AsyncHttpClient c = new AsyncHttpClient();
-Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
+Future<String> f = c.prepareGet("http://www.example.com/").execute(new AsyncHandler<String>() {
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
     @Override
