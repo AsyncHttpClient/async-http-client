@@ -296,9 +296,13 @@ public class ChannelManager {
         if (channel.isConnected() && keepAlive && channel.isReadable()) {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
-            channelPool.offer(channel, partitionKey);
-            if (maxConnectionsPerHostEnabled)
-                channelId2PartitionKey.putIfAbsent(channel.getId(), partitionKey);
+            if (channelPool.offer(channel, partitionKey)) {
+                if (maxConnectionsPerHostEnabled)
+                    channelId2PartitionKey.putIfAbsent(channel.getId(), partitionKey);
+            } else {
+                // rejected by pool
+                closeChannel(channel);
+            }
         } else {
             // not offered
             closeChannel(channel);

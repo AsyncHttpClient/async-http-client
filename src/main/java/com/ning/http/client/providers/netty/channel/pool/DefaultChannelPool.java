@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.channel.Channels;
 import com.ning.http.client.providers.netty.chmv8.ConcurrentHashMapV8;
-import com.ning.http.client.providers.netty.future.NettyResponseFuture;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -104,6 +103,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final class IdleChannel {
         final Channel channel;
         final long start;
+        final AtomicBoolean owned = new AtomicBoolean(false);
 
         IdleChannel(Channel channel, long start) {
             if (channel == null)
@@ -112,6 +112,10 @@ public final class DefaultChannelPool implements ChannelPool {
             this.start = start;
         }
 
+        public boolean takeOwnership() {
+            return owned.compareAndSet(false, true);
+        }
+        
         @Override
         // only depends on channel
         public boolean equals(Object o) {
@@ -154,26 +158,16 @@ public final class DefaultChannelPool implements ChannelPool {
             return idleTimeoutChannels != null ? idleTimeoutChannels : Collections.<IdleChannel> emptyList();
         }
 
-        private boolean isChannelCloseable(Channel channel) {
-            Object attribute = Channels.getAttribute(channel);
-            if (attribute instanceof NettyResponseFuture) {
-                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-                if (!future.isDone()) {
-                    LOGGER.error("Future not in appropriate state %s, not closing", future);
-                    return false;
-                }
-            }
-            return true;
-        }
-
         private final List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
 
             // lazy create, only if we have a non-closeable channel
             List<IdleChannel> closedChannels = null;
 
             for (int i = 0; i < candidates.size(); i++) {
+                // We call takeOwnership here to avoid closing a channel that has just been taken out
+                // of the pool, otherwise we risk closing an active connection.
                 IdleChannel idleChannel = candidates.get(i);
-                if (isChannelCloseable(idleChannel.channel)) {
+                if (idleChannel.takeOwnership()) {
                     LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
                     close(idleChannel.channel);
                     if (closedChannels != null) {
@@ -260,12 +254,15 @@ public final class DefaultChannelPool implements ChannelPool {
             while (idleChannel == null) {
                 idleChannel = partition.poll();
 
-                if (idleChannel == null)
+                if (idleChannel == null) {
                     // pool is empty
                     break;
-                else if (!Channels.isChannelValid(idleChannel.channel)) {
+                } else if (!Channels.isChannelValid(idleChannel.channel)) {
                     idleChannel = null;
                     LOGGER.trace("Channel not connected or not opened, probably remotely closed!");
+                } else if (!idleChannel.takeOwnership()) {
+                    idleChannel = null;
+                    LOGGER.trace("Couldn't take ownership of channel, probably in the process of being expired!");
                 }
             }
         }
