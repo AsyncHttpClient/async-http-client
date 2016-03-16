@@ -306,9 +306,13 @@ public class ChannelManager {
             Channels.setDiscard(channel);
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOffer(channel);
-            channelPool.offer(channel, partitionKey);
-            if (maxConnectionsPerHostEnabled)
-                channelId2PartitionKey.putIfAbsent(channel, partitionKey);
+            if (channelPool.offer(channel, partitionKey)) {
+                if (maxConnectionsPerHostEnabled)
+                    channelId2PartitionKey.putIfAbsent(channel, partitionKey);
+            } else {
+                // rejected by pool
+                closeChannel(channel);
+            }
         } else {
             // not offered
             closeChannel(channel);
