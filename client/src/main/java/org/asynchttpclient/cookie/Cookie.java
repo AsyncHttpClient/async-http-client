@@ -12,64 +12,12 @@
  */
 package org.asynchttpclient.cookie;
 
-import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.cookie.CookieUtil.*;
 
 public class Cookie {
 
     public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
-
-        name = assertNotNull(name, "name").trim();
-        assertNotEmpty(name, "name");
-
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (c > 127) {
-                throw new IllegalArgumentException("name contains non-ascii character: " + name);
-            }
-
-            // Check prohibited characters.
-            switch (c) {
-            case '\t':
-            case '\n':
-            case 0x0b:
-            case '\f':
-            case '\r':
-            case ' ':
-            case ',':
-            case ';':
-            case '=':
-                throw new IllegalArgumentException("name contains one of the following prohibited characters: " + "=,; \\t\\r\\n\\v\\f: " + name);
-            }
-        }
-
-        if (name.charAt(0) == '$') {
-            throw new IllegalArgumentException("name starting with '$' not allowed: " + name);
-        }
-
-        return new Cookie(name, assertNotNull(value, "value"), wrap, validateValue("domain", domain), validateValue("path", path), maxAge, secure, httpOnly);
-    }
-
-    private static String validateValue(String name, String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.trim();
-        if (value.length() == 0) {
-            return null;
-        }
-
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            switch (c) {
-            case '\r':
-            case '\n':
-            case '\f':
-            case 0x0b:
-            case ';':
-                throw new IllegalArgumentException(name + " contains one of the following prohibited characters: " + ";\\r\\n\\f\\v (" + value + ')');
-            }
-        }
-        return value;
+        return new Cookie(validateCookieName(name), validateCookieValue(value), wrap, validateCookieAttribute("domain", domain), validateCookieAttribute("path", path), maxAge, secure, httpOnly);
     }
 
     private final String name;

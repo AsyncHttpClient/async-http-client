@@ -12,14 +12,33 @@
  */
 package org.asynchttpclient.cookie;
 
+import static org.asynchttpclient.util.Assertions.*;
+
 import java.util.BitSet;
 import java.util.Date;
 
 public class CookieUtil {
 
-    private static final BitSet VALID_COOKIE_VALUE_OCTETS = validCookieValueOctets();
-
     private static final BitSet VALID_COOKIE_NAME_OCTETS = validCookieNameOctets();
+    private static final BitSet VALID_COOKIE_VALUE_OCTETS = validCookieValueOctets();
+    private static final BitSet VALID_COOKIE_ATTRIBUTE_VALUE_OCTETS = validCookieAttributeValueOctets();
+    
+    // token = 1*<any CHAR except CTLs or separators>
+    // separators = "(" | ")" | "<" | ">" | "@"
+    // | "," | ";" | ":" | "\" | <">
+    // | "/" | "[" | "]" | "?" | "="
+    // | "{" | "}" | SP | HT
+    private static BitSet validCookieNameOctets() {
+        BitSet bits = new BitSet();
+        for (int i = 32; i < 127; i++) {
+            bits.set(i);
+        }
+        int[] separators = new int[] { '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}', ' ', '\t' };
+        for (int separator : separators) {
+            bits.set(separator, false);
+        }
+        return bits;
+    }
 
     // cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
     // US-ASCII characters excluding CTLs, whitespace, DQUOTE, comma, semicolon, and backslash
@@ -40,28 +59,51 @@ public class CookieUtil {
         }
         return bits;
     }
-
-    // token = 1*<any CHAR except CTLs or separators>
-    // separators = "(" | ")" | "<" | ">" | "@"
-    // | "," | ";" | ":" | "\" | <">
-    // | "/" | "[" | "]" | "?" | "="
-    // | "{" | "}" | SP | HT
-    private static BitSet validCookieNameOctets() {
+    
+    private static BitSet validCookieAttributeValueOctets() {
         BitSet bits = new BitSet();
         for (int i = 32; i < 127; i++) {
             bits.set(i);
         }
-        int[] separators = new int[] { '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}', ' ', '\t' };
-        for (int separator : separators) {
-            bits.set(separator, false);
-        }
+        bits.set(';', false);
         return bits;
     }
 
-    static int firstInvalidCookieNameOctet(CharSequence cs) {
-        return firstInvalidOctet(cs, VALID_COOKIE_NAME_OCTETS);
+    static String validateCookieName(String name) {
+        name = assertNotNull(name, "name").trim();
+        assertNotEmpty(name, "name");
+        int i = firstInvalidOctet(name, VALID_COOKIE_NAME_OCTETS);
+        if (i != -1) {
+            throw new IllegalArgumentException("name contains prohibited character: " + name.charAt(i));
+        }
+        return name;
     }
 
+    static String validateCookieValue(String value) {
+        value = assertNotNull(value, "name").trim();
+        CharSequence unwrappedValue = unwrapValue(value);
+        int i = firstInvalidOctet(unwrappedValue, VALID_COOKIE_VALUE_OCTETS);
+        if (i != -1) {
+            throw new IllegalArgumentException("value contains prohibited character: " + unwrappedValue.charAt(i));
+        }
+        return value;
+    }
+
+    static String validateCookieAttribute(String name, String value) {
+        if (value == null) {
+            return null;
+        }
+        value = value.trim();
+        if (value.length() == 0) {
+            return null;
+        }
+        int i = firstInvalidOctet(value, VALID_COOKIE_ATTRIBUTE_VALUE_OCTETS);
+        if (i != -1) {
+            throw new IllegalArgumentException(name + " contains prohibited character: " + value.charAt(i));
+        }
+        return value;
+    }
+    
     static int firstInvalidCookieValueOctet(CharSequence cs) {
         return firstInvalidOctet(cs, VALID_COOKIE_VALUE_OCTETS);
     }
