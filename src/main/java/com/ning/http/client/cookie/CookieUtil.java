@@ -22,35 +22,46 @@ public class CookieUtil {
 
     private static final BitSet VALID_COOKIE_NAME_OCTETS = validCookieNameOctets(VALID_COOKIE_VALUE_OCTETS);
 
+    // cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
     // US-ASCII characters excluding CTLs, whitespace, DQUOTE, comma, semicolon, and backslash
     private static BitSet validCookieValueOctets() {
-
         BitSet bits = new BitSet(8);
-        for (int i = 35; i < 127; i++) {
-            // US-ASCII characters excluding CTLs (%x00-1F / %x7F)
+        bits.set(0x21);
+        for (int i = 0x23; i <= 0x2B; i++) {
             bits.set(i);
         }
-        bits.set('"', false);  // exclude DQUOTE = %x22
-        bits.set(',', false);  // exclude comma = %x2C
-        bits.set(';', false);  // exclude semicolon = %x3B
-        bits.set('\\', false); // exclude backslash = %x5C
+        for (int i = 0x2D; i <= 0x3A; i++) {
+            bits.set(i);
+        }
+        for (int i = 0x3C; i <= 0x5B; i++) {
+            bits.set(i);
+        }
+        for (int i = 0x5D; i <= 0x7E; i++) {
+            bits.set(i);
+        }
         return bits;
     }
 
-    //    token          = 1*<any CHAR except CTLs or separators>
-    //    separators     = "(" | ")" | "<" | ">" | "@"
-    //                   | "," | ";" | ":" | "\" | <">
-    //                   | "/" | "[" | "]" | "?" | "="
-    //                   | "{" | "}" | SP | HT
+    // token = 1*<any CHAR except CTLs or separators>
+    // separators = "(" | ")" | "<" | ">" | "@"
+    // | "," | ";" | ":" | "\" | <">
+    // | "/" | "[" | "]" | "?" | "="
+    // | "{" | "}" | SP | HT
     private static BitSet validCookieNameOctets(BitSet validCookieValueOctets) {
         BitSet bits = new BitSet(8);
-        bits.or(validCookieValueOctets);
+        for (int i = 32; i < 127; i++) {
+            bits.set(i);
+        }
         bits.set('(', false);
         bits.set(')', false);
         bits.set('<', false);
         bits.set('>', false);
         bits.set('@', false);
+        bits.set(',', false);
+        bits.set(';', false);
         bits.set(':', false);
+        bits.set('\\', false);
+        bits.set('"', false);
         bits.set('/', false);
         bits.set('[', false);
         bits.set(']', false);
@@ -62,7 +73,7 @@ public class CookieUtil {
         bits.set('\t', false);
         return bits;
     }
-    
+
     static int firstInvalidCookieNameOctet(CharSequence cs) {
         return firstInvalidOctet(cs, VALID_COOKIE_NAME_OCTETS);
     }
@@ -103,10 +114,10 @@ public class CookieUtil {
                 return maxAgeMillis / 1000 + (maxAgeMillis % 1000 != 0 ? 1 : 0);
             }
         }
-        
+
         return Long.MIN_VALUE;
     }
-    
+
     private CookieUtil() {
         // Unused
     }
