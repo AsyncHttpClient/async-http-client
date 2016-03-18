@@ -51,25 +51,10 @@ public class CookieUtil {
         for (int i = 32; i < 127; i++) {
             bits.set(i);
         }
-        bits.set('(', false);
-        bits.set(')', false);
-        bits.set('<', false);
-        bits.set('>', false);
-        bits.set('@', false);
-        bits.set(',', false);
-        bits.set(';', false);
-        bits.set(':', false);
-        bits.set('\\', false);
-        bits.set('"', false);
-        bits.set('/', false);
-        bits.set('[', false);
-        bits.set(']', false);
-        bits.set('?', false);
-        bits.set('=', false);
-        bits.set('{', false);
-        bits.set('}', false);
-        bits.set(' ', false);
-        bits.set('\t', false);
+        int[] separators = new int[] { '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}', ' ', '\t' };
+        for (int separator : separators) {
+            bits.set(separator, false);
+        }
         return bits;
     }
 
