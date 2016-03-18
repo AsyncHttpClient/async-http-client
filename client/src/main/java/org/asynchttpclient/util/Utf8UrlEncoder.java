@@ -21,7 +21,7 @@ public final class Utf8UrlEncoder {
 
     // see http://tools.ietf.org/html/rfc3986#section-3.4
     // ALPHA / DIGIT / "-" / "." / "_" / "~"
-    private static final BitSet RFC3986_UNRESERVED_CHARS = new BitSet(256);
+    private static final BitSet RFC3986_UNRESERVED_CHARS = new BitSet();
     static {
         for (int i = 'a'; i <= 'z'; ++i) {
             RFC3986_UNRESERVED_CHARS.set(i);
@@ -39,7 +39,7 @@ public final class Utf8UrlEncoder {
     }
 
     // gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"
-    private static final BitSet RFC3986_GENDELIM_CHARS = new BitSet(256);
+    private static final BitSet RFC3986_GENDELIM_CHARS = new BitSet();
     static {
         RFC3986_GENDELIM_CHARS.set(':');
         RFC3986_GENDELIM_CHARS.set('/');
@@ -51,7 +51,7 @@ public final class Utf8UrlEncoder {
     }
 
     // "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
-    private static final BitSet RFC3986_SUBDELIM_CHARS = new BitSet(256);
+    private static final BitSet RFC3986_SUBDELIM_CHARS = new BitSet();
     static {
         RFC3986_SUBDELIM_CHARS.set('!');
         RFC3986_SUBDELIM_CHARS.set('$');
@@ -67,14 +67,14 @@ public final class Utf8UrlEncoder {
     }
 
     // gen-delims / sub-delims
-    private static final BitSet RFC3986_RESERVED_CHARS = new BitSet(256);
+    private static final BitSet RFC3986_RESERVED_CHARS = new BitSet();
     static {
         RFC3986_RESERVED_CHARS.or(RFC3986_GENDELIM_CHARS);
         RFC3986_RESERVED_CHARS.or(RFC3986_SUBDELIM_CHARS);
     }
 
     // unreserved / pct-encoded / sub-delims / ":" / "@"
-    private static final BitSet RFC3986_PCHARS = new BitSet(256);
+    private static final BitSet RFC3986_PCHARS = new BitSet();
     static {
         RFC3986_PCHARS.or(RFC3986_UNRESERVED_CHARS);
         RFC3986_PCHARS.or(RFC3986_SUBDELIM_CHARS);
@@ -82,14 +82,14 @@ public final class Utf8UrlEncoder {
         RFC3986_PCHARS.set('@');
     }
 
-    private static final BitSet BUILT_PATH_UNTOUCHED_CHARS = new BitSet(256);
+    private static final BitSet BUILT_PATH_UNTOUCHED_CHARS = new BitSet();
     static {
         BUILT_PATH_UNTOUCHED_CHARS.or(RFC3986_PCHARS);
         BUILT_PATH_UNTOUCHED_CHARS.set('%');
         BUILT_PATH_UNTOUCHED_CHARS.set('/');
     }
 
-    private static final BitSet BUILT_QUERY_UNTOUCHED_CHARS = new BitSet(256);
+    private static final BitSet BUILT_QUERY_UNTOUCHED_CHARS = new BitSet();
     static {
         BUILT_QUERY_UNTOUCHED_CHARS.or(RFC3986_PCHARS);
         BUILT_QUERY_UNTOUCHED_CHARS.set('%');
@@ -98,7 +98,7 @@ public final class Utf8UrlEncoder {
     }
 
     // http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-    private static final BitSet FORM_URL_ENCODED_SAFE_CHARS = new BitSet(256);
+    private static final BitSet FORM_URL_ENCODED_SAFE_CHARS = new BitSet();
     static {
         for (int i = 'a'; i <= 'z'; ++i) {
             FORM_URL_ENCODED_SAFE_CHARS.set(i);
