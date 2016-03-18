@@ -19,7 +19,7 @@ public class CookieUtil {
 
     private static final BitSet VALID_COOKIE_VALUE_OCTETS = validCookieValueOctets();
 
-    private static final BitSet VALID_COOKIE_NAME_OCTETS = validCookieNameOctets(VALID_COOKIE_VALUE_OCTETS);
+    private static final BitSet VALID_COOKIE_NAME_OCTETS = validCookieNameOctets();
 
     // cookie-octet = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
     // US-ASCII characters excluding CTLs, whitespace, DQUOTE, comma, semicolon, and backslash
@@ -46,7 +46,7 @@ public class CookieUtil {
     // | "," | ";" | ":" | "\" | <">
     // | "/" | "[" | "]" | "?" | "="
     // | "{" | "}" | SP | HT
-    private static BitSet validCookieNameOctets(BitSet validCookieValueOctets) {
+    private static BitSet validCookieNameOctets() {
         BitSet bits = new BitSet(8);
         for (int i = 32; i < 127; i++) {
             bits.set(i);
