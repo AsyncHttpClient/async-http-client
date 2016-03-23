@@ -43,7 +43,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     public void bufferFrame(Runnable bufferedFrame) {
         if (bufferedFrames == null) {
-            bufferedFrames = new ArrayList<>();
+            bufferedFrames = new ArrayList<>(1);
         }
         bufferedFrames.add(bufferedFrame);
     }
@@ -157,7 +157,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     public final static class Builder {
 
-        private List<WebSocketListener> listeners = new ArrayList<>();
+        private List<WebSocketListener> listeners = new ArrayList<>(1);
 
         /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}

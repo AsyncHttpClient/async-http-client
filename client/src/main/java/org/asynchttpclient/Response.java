@@ -170,7 +170,7 @@ public interface Response {
     SocketAddress getLocalAddress();
 
     class ResponseBuilder {
-        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>();
+        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>(1);
         private HttpResponseStatus status;
         private HttpResponseHeaders headers;
 
