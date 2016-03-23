@@ -173,7 +173,7 @@ final class DnsMessageUtil {
         for (int i = 0; i < count; i ++) {
             buf.append(StringUtil.NEWLINE)
                .append('\t')
-               .append(message.recordAt(section, i).toString());
+               .append(message.<DnsRecord> recordAt(section, i));
         }
     }
 

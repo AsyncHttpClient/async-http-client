@@ -81,7 +81,7 @@ public class DnsAddressResolverGroup extends AddressResolverGroup<InetSocketAddr
             EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory,
             InetSocketAddress localAddress, DnsServerAddresses nameServerAddresses) throws Exception {
 
-        return new DefaultDnsNameResolverBuilder(eventLoop)
+        return new DnsNameResolverBuilder(eventLoop)
                 .channelFactory(channelFactory)
                 .localAddress(localAddress)
                 .nameServerAddresses(nameServerAddresses)

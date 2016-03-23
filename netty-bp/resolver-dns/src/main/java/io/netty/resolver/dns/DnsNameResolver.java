@@ -16,8 +16,8 @@
 package io.netty.resolver.dns;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.AddressedEnvelope;
 import io.netty.bootstrap.ChannelFactory;
+import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -29,6 +29,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.DatagramDnsQueryEncoder;
 import io.netty.handler.codec.dns.DatagramDnsResponse;
+import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DatagramDnsResponseDecoder;
 import io.netty.handler.codec.dns.DnsQuestion;
 import io.netty.handler.codec.dns.DnsResponse;
@@ -507,11 +508,19 @@ public class DnsNameResolver extends InetNameResolver {
     }
 
     /**
+     * Sends a DNS query with the specified question with additional records.
+     */
+    public Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query(
+            DnsQuestion question, Iterable<DnsRecord> additional) {
+        return query(nextNameServerAddress(), question, additional);
+    }
+
+    /**
      * Sends a DNS query with the specified question.
      */
     public Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query(
             DnsQuestion question, Promise<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>> promise) {
-        return query(nextNameServerAddress(), question, promise);
+        return query(nextNameServerAddress(), question, Collections.<DnsRecord>emptyList(), promise);
     }
 
     private InetSocketAddress nextNameServerAddress() {
@@ -524,9 +533,18 @@ public class DnsNameResolver extends InetNameResolver {
     public Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query(
             InetSocketAddress nameServerAddr, DnsQuestion question) {
 
-        return query0(checkNotNull(nameServerAddr, "nameServerAddr"),
-                      checkNotNull(question, "question"),
-                      ch.eventLoop().<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>>newPromise());
+        return query0(nameServerAddr, question, Collections.<DnsRecord>emptyList(),
+                ch.eventLoop().<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>>newPromise());
+    }
+
+    /**
+     * Sends a DNS query with the specified question with additional records using the specified name server list.
+     */
+    public Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query(
+            InetSocketAddress nameServerAddr, DnsQuestion question, Iterable<DnsRecord> additional) {
+
+        return query0(nameServerAddr, question, additional,
+                ch.eventLoop().<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>>newPromise());
     }
 
     /**
@@ -536,18 +554,29 @@ public class DnsNameResolver extends InetNameResolver {
             InetSocketAddress nameServerAddr, DnsQuestion question,
             Promise<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>> promise) {
 
-        return query0(checkNotNull(nameServerAddr, "nameServerAddr"),
-                      checkNotNull(question, "question"),
-                      checkNotNull(promise, "promise"));
+        return query0(nameServerAddr, question, Collections.<DnsRecord>emptyList(), promise);
+    }
+
+    /**
+     * Sends a DNS query with the specified question with additional records using the specified name server list.
+     */
+    public Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query(
+            InetSocketAddress nameServerAddr, DnsQuestion question,
+            Iterable<DnsRecord> additional,
+            Promise<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>> promise) {
+
+        return query0(nameServerAddr, question, additional, promise);
     }
 
     private Future<AddressedEnvelope<DnsResponse, InetSocketAddress>> query0(
             InetSocketAddress nameServerAddr, DnsQuestion question,
+            Iterable<DnsRecord> additional,
             Promise<AddressedEnvelope<? extends DnsResponse, InetSocketAddress>> promise) {
 
-        final Promise<AddressedEnvelope<DnsResponse, InetSocketAddress>> castPromise = cast(promise);
+        final Promise<AddressedEnvelope<DnsResponse, InetSocketAddress>> castPromise = cast(
+                checkNotNull(promise, "promise"));
         try {
-            new DnsQueryContext(this, nameServerAddr, question, castPromise).query();
+            new DnsQueryContext(this, nameServerAddr, question, additional, castPromise).query();
             return castPromise;
         } catch (Exception e) {
             return castPromise.setFailure(e);

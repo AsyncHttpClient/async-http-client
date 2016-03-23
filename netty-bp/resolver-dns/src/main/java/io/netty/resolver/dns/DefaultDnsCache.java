@@ -27,7 +27,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import static io.netty.util.internal.ObjectUtil2.*;
+import static io.netty.util.internal.ObjectUtil.checkNotNull;
+import static io.netty.util.internal.ObjectUtil2.checkPositiveOrZero;
 
 /**
  * Default implementation of {@link DnsCache}, backed by a {@link ConcurrentMap}.
