@@ -77,7 +77,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
             if (!h.touchSuccess()) {
                 try {
-                    h.onSuccess(new NettyWebSocket(channel, config));
+                    h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders(), config));
                 } catch (Exception ex) {
                     logger.warn("onSuccess unexpected exception", ex);
                 }

@@ -17,6 +17,7 @@ import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -50,6 +51,7 @@ public class NettyWebSocket implements WebSocket {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyWebSocket.class);
 
     protected final Channel channel;
+    protected final HttpHeaders upgradeHeaders;
     protected final Collection<WebSocketListener> listeners;
     protected final int maxBufferSize;
     private int bufferSize;
@@ -57,14 +59,20 @@ public class NettyWebSocket implements WebSocket {
     private volatile boolean interestedInByteMessages;
     private volatile boolean interestedInTextMessages;
 
-    public NettyWebSocket(Channel channel, AsyncHttpClientConfig config) {
-        this(channel, config, new ConcurrentLinkedQueue<WebSocketListener>());
+    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config) {
+        this(channel, upgradeHeaders, config, new ConcurrentLinkedQueue<WebSocketListener>());
     }
 
-    public NettyWebSocket(Channel channel, AsyncHttpClientConfig config, Collection<WebSocketListener> listeners) {
+    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config, Collection<WebSocketListener> listeners) {
         this.channel = channel;
+        this.upgradeHeaders = upgradeHeaders;
         this.listeners = listeners;
         maxBufferSize = config.getWebSocketMaxBufferSize();
+    }
+
+    @Override
+    public HttpHeaders getUpgradeHeaders() {
+        return upgradeHeaders;
     }
 
     @Override

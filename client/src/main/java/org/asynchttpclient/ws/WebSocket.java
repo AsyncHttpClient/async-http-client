@@ -12,27 +12,32 @@
  */
 package org.asynchttpclient.ws;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.Closeable;
 import java.net.SocketAddress;
 
 /**
- * A Websocket client
+ * A WebSocket client
  */
 public interface WebSocket extends Closeable {
 
     /**
+     * @return the headers received in the Upgrade response
+     */
+    HttpHeaders getUpgradeHeaders();
+
+    /**
      * Get remote address client initiated request to.
      * 
-     * @return remote address client initiated request to, may be {@code null}
-     *         if asynchronous provider is unable to provide the remote address
+     * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
      */
     SocketAddress getRemoteAddress();
 
     /**
      * Get local address client initiated request from.
      * 
-     * @return local address client initiated request from, may be {@code null}
-     *         if asynchronous provider is unable to provide the local address
+     * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
      */
     SocketAddress getLocalAddress();
 
@@ -83,8 +88,7 @@ public interface WebSocket extends Closeable {
     WebSocket stream(String fragment, boolean last);
 
     /**
-     * Send a <code>ping</code> with an optional payload
-     * (limited to 125 bytes or less).
+     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
      * 
      * @param payload the ping payload.
      * @return this
@@ -92,8 +96,7 @@ public interface WebSocket extends Closeable {
     WebSocket sendPing(byte[] payload);
 
     /**
-     * Send a <code>ping</code> with an optional payload
-     * (limited to 125 bytes or less).
+     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
      * 
      * @param payload the pong payload.
      * @return this
