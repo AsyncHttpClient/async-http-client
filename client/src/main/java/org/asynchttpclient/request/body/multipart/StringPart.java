@@ -21,19 +21,9 @@ import java.nio.charset.Charset;
 public class StringPart extends PartBase {
 
     /**
-     * Default content encoding of string parameters.
-     */
-    public static final String DEFAULT_CONTENT_TYPE = "text/plain";
-
-    /**
      * Default charset of string parameters
      */
     public static final Charset DEFAULT_CHARSET = UTF_8;
-
-    /**
-     * Default transfer encoding of string parameters
-     */
-    public static final String DEFAULT_TRANSFER_ENCODING = "8bit";
 
     /**
      * Contents of this StringPart.
@@ -42,14 +32,6 @@ public class StringPart extends PartBase {
 
     private static Charset charsetOrDefault(Charset charset) {
         return withDefault(charset, DEFAULT_CHARSET);
-    }
-
-    private static String contentTypeOrDefault(String contentType) {
-        return withDefault(contentType, DEFAULT_CONTENT_TYPE);
-    }
-
-    private static String transferEncodingOrDefault(String transferEncoding) {
-        return withDefault(transferEncoding, DEFAULT_TRANSFER_ENCODING);
     }
 
     public StringPart(String name, String value) {
@@ -69,7 +51,7 @@ public class StringPart extends PartBase {
     }
 
     public StringPart(String name, String value, String contentType, Charset charset, String contentId, String transferEncoding) {
-        super(name, contentTypeOrDefault(contentType), charsetOrDefault(charset), contentId, transferEncodingOrDefault(transferEncoding));
+        super(name, contentType, charsetOrDefault(charset), contentId, transferEncoding);
         assertNotNull(value, "value");
 
         if (value.indexOf(0) != -1)

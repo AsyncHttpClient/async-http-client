@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import static io.netty.handler.codec.http.HttpHeaders.Values.MULTIPART_FORM_DATA;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static io.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -27,6 +27,7 @@ import org.asynchttpclient.request.body.multipart.part.ByteArrayMultipartPart;
 import org.asynchttpclient.request.body.multipart.part.FileMultipartPart;
 import org.asynchttpclient.request.body.multipart.part.MessageEndMultipartPart;
 import org.asynchttpclient.request.body.multipart.part.MultipartPart;
+import org.asynchttpclient.request.body.multipart.part.StringMultipartPart;
 import org.asynchttpclient.util.StringUtils;
 
 public class MultipartUtils {
@@ -81,19 +82,7 @@ public class MultipartUtils {
                 multipartParts.add(new ByteArrayMultipartPart((ByteArrayPart) part, boundary));
 
             } else if (part instanceof StringPart) {
-                // convert to a byte array
-                StringPart stringPart = (StringPart) part;
-                byte[] bytes = stringPart.getValue().getBytes(stringPart.getCharset());
-                ByteArrayPart byteArrayPart = new ByteArrayPart(//
-                        stringPart.getName(),//
-                        bytes, //
-                        stringPart.getContentType(), //
-                        stringPart.getCharset(), //
-                        null, //
-                        stringPart.getContentId(), //
-                        stringPart.getTransferEncoding());
-                byteArrayPart.setCustomHeaders(stringPart.getCustomHeaders());
-                multipartParts.add(new ByteArrayMultipartPart(byteArrayPart, boundary));
+                multipartParts.add(new StringMultipartPart((StringPart) part, boundary));
 
             } else {
                 throw new IllegalArgumentException("Unknown part type: " + part);

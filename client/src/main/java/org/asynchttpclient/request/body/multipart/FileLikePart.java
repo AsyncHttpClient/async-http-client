@@ -13,40 +13,58 @@
 package org.asynchttpclient.request.body.multipart;
 
 import static org.asynchttpclient.util.MiscUtils.withDefault;
-import static io.netty.handler.codec.http.HttpHeaders.Values.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
+
+import javax.activation.MimetypesFileTypeMap;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
  */
 public abstract class FileLikePart extends PartBase {
 
+    private static final MimetypesFileTypeMap MIME_TYPES_FILE_TYPE_MAP;
+
+    static {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("ahc-mime.types")) {
+            MIME_TYPES_FILE_TYPE_MAP = new MimetypesFileTypeMap(is);
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
     /**
      * Default content encoding of file attachments.
      */
-    public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-
     private String fileName;
+
+    private static String computeContentType(String contentType, String fileName) {
+        if (contentType == null) {
+            // TODO use a ThreadLocal to get work around synchronized?
+            contentType = MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
+        }
+
+        return contentType;
+    }
 
     /**
      * FilePart Constructor.
      * 
      * @param name the name for this part
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param contentType the content type for this part, if <code>null</code> try to figure out from the fileName mime type
      * @param charset the charset encoding for this part
+     * @param fileName the fileName
      * @param contentId the content id
      * @param transfertEncoding the transfer encoding
      */
-    public FileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
+    public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transfertEncoding) {
         super(name,//
-                withDefault(contentType, DEFAULT_CONTENT_TYPE),//
+                computeContentType(contentType, fileName),//
                 charset,//
                 contentId,//
-                withDefault(transfertEncoding, BINARY));
-    }
-
-    public final void setFileName(String fileName) {
+                transfertEncoding);
         this.fileName = fileName;
     }
 

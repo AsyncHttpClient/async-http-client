@@ -19,20 +19,20 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
-import org.asynchttpclient.request.body.multipart.ByteArrayPart;
+import org.asynchttpclient.request.body.multipart.StringPart;
 
-public class ByteArrayMultipartPart extends FileLikeMultipartPart<ByteArrayPart> {
+public class StringMultipartPart extends MultipartPart<StringPart> {
 
     private final ByteBuf contentBuffer;
 
-    public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
+    public StringMultipartPart(StringPart part, byte[] boundary) {
         super(part, boundary);
-        contentBuffer = Unpooled.wrappedBuffer(part.getBytes());
+        contentBuffer = Unpooled.wrappedBuffer(part.getValue().getBytes(part.getCharset()));
     }
 
     @Override
     protected long getContentLength() {
-        return part.getBytes().length;
+        return contentBuffer.capacity();
     }
 
     @Override

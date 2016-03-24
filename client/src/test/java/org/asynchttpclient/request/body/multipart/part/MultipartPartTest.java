@@ -202,8 +202,7 @@ public class MultipartPartTest {
 
         public TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding,
                 String fileName) {
-            super(name, contentType, charset, contentId, transfertEncoding);
-            setFileName(fileName);
+            super(name, contentType, charset, fileName, contentId, transfertEncoding);
         }
     }
 
@@ -211,7 +210,7 @@ public class MultipartPartTest {
      * Concrete implementation of MultipartPart for use in unit tests.
      *
      */
-    private class TestMultipartPart extends MultipartPart<TestFileLikePart> {
+    private class TestMultipartPart extends FileLikeMultipartPart<TestFileLikePart> {
 
         public TestMultipartPart(TestFileLikePart part, byte[] boundary) {
             super(part, boundary);

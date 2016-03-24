@@ -41,9 +41,8 @@ public class ByteArrayPart extends FileLikePart {
     }
 
     public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
-        super(name, contentType, charset, contentId, transferEncoding);
+        super(name, contentType, charset, fileName, contentId, transferEncoding);
         this.bytes = assertNotNull(bytes, "bytes");
-        setFileName(fileName);
     }
 
     public byte[] getBytes() {

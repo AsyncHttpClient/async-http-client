@@ -26,11 +26,11 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.asynchttpclient.Param;
-import org.asynchttpclient.request.body.multipart.FileLikePart;
+import org.asynchttpclient.request.body.multipart.PartBase;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.ByteBufVisitor;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.CounterPartVisitor;
 
-public abstract class MultipartPart<T extends FileLikePart> implements Closeable {
+public abstract class MultipartPart<T extends PartBase> implements Closeable {
 
     /**
      * Carriage return/linefeed as a byte array
@@ -40,7 +40,7 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
     /**
      * Content disposition as a byte
      */
-    private static final byte QUOTE_BYTE = '\"';
+    protected static final byte QUOTE_BYTE = '\"';
 
     /**
      * Extra characters as a byte array
@@ -81,11 +81,6 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
      * Content type header as a byte array
      */
     private static final byte[] CONTENT_ID_BYTES = "Content-ID: ".getBytes(US_ASCII);
-
-    /**
-     * Attachment's file name as a byte array
-     */
-    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(US_ASCII);
 
     protected final T part;
     protected final byte[] boundary;
@@ -267,12 +262,6 @@ public abstract class MultipartPart<T extends FileLikePart> implements Closeable
             visitor.withBytes(NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
             visitor.withBytes(part.getName().getBytes(US_ASCII));
-            visitor.withByte(QUOTE_BYTE);
-        }
-        if (part.getFileName() != null) {
-            visitor.withBytes(FILE_NAME_BYTES);
-            visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(part.getFileName().getBytes(part.getCharset() != null ? part.getCharset() : US_ASCII));
             visitor.withByte(QUOTE_BYTE);
         }
     }

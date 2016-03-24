@@ -25,7 +25,7 @@ import java.nio.channels.WritableByteChannel;
 import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.multipart.FilePart;
 
-public class FileMultipartPart extends MultipartPart<FilePart> {
+public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     private final FileChannel channel;
     private final long length;
