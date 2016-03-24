@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -99,7 +100,7 @@ public class TestUtils {
     }
 
     public static synchronized int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
+        try (ServerSocket socket = ServerSocketFactory.getDefault().createServerSocket(0)) {
             return socket.getLocalPort();
         }
     }
