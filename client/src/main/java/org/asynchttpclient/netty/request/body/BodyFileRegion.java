@@ -30,7 +30,7 @@ import java.nio.channels.WritableByteChannel;
 public class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
 
     private final RandomAccessBody body;
-    private long transfered;
+    private long transferred;
 
     public BodyFileRegion(RandomAccessBody body) {
         this.body = assertNotNull(body, "body");
@@ -48,14 +48,14 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     public long transfered() {
-        return transfered;
+        return transferred;
     }
 
     @Override
     public long transferTo(WritableByteChannel target, long position) throws IOException {
         long written = body.transferTo(target);
         if (written > 0) {
-            transfered += written;
+            transferred += written;
         }
         return written;
     }
