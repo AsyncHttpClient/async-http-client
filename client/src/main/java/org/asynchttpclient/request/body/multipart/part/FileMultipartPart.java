@@ -59,7 +59,9 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     @Override
     protected long transferContentTo(WritableByteChannel target) throws IOException {
-        long transferred = channel.transferTo(channel.position(), BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
+        // WARN: don't use channel.position(), it's always 0 here
+        // from FileChannel javadoc: "This method does not modify this channel's position."
+        long transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
         position += transferred;
         if (position == length) {
             state = MultipartState.POST_CONTENT;
