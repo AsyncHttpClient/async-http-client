@@ -174,7 +174,7 @@ public class AsyncHttpProviderUtils {
     public final static int getPort(URI uri) {
         int port = uri.getPort();
         if (port == -1)
-            port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
+            port = uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("ws") ? 80 : 443;
         return port;
     }
 
