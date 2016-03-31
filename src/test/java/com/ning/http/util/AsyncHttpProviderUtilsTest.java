@@ -42,4 +42,12 @@ public class AsyncHttpProviderUtilsTest {
         URI uri = AsyncHttpProviderUtils.getRedirectUri(URI.create("http://www.ebay.de"), url);
         Assert.assertEquals("http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505", uri.toString());
     }
+
+    @Test(groups = "fast")
+    public void getPortShouldHandleAnyCaseScheme() {
+        Assert.assertEquals(AsyncHttpProviderUtils.getPort(URI.create("HTTP://WWW.URI.COM")), 80);
+        Assert.assertEquals(AsyncHttpProviderUtils.getPort(URI.create("http://www.uri.com")), 80);
+        Assert.assertEquals(AsyncHttpProviderUtils.getPort(URI.create("HTTPS://WWW.URI.COM")), 443);
+        Assert.assertEquals(AsyncHttpProviderUtils.getPort(URI.create("https://www.uri.com")), 443);
+    }
 }
