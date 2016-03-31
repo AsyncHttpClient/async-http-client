@@ -217,7 +217,7 @@ public final class NettyRequestFactory {
             return uri.toUrl();
 
         else {
-            // direct connection to target host: only path and query
+            // direct connection to target host or tunnel already connected: only path and query
             String path = getNonEmptyPath(uri);
             if (isNonEmpty(uri.getQuery()))
                 return path + "?" + uri.getQuery();
