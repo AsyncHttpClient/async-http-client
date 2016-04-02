@@ -59,15 +59,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
-    public void testMailGoogleCom() throws Throwable {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
-            Response response = client.prepareGet("http://mail.google.com/").execute().get(10, TimeUnit.SECONDS);
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-        }
-    }
-
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testMicrosoftCom() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build())) {
