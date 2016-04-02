@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2016 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,43 +13,47 @@
  */
 package com.ning.http.client.multipart;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.multipart.ByteArrayPart;
-import com.ning.http.client.multipart.FilePart;
-import com.ning.http.client.multipart.Part;
-import com.ning.http.client.multipart.StringPart;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MultipartBodyTest {
 
-    @Test(groups = "fast")
-    public void testBasics() {
-        final List<Part> parts = new ArrayList<>();
+    @Test
+    public void transferWithCopy() throws IOException {
+        try (MultipartBody multipartBody = buildMultipart()) {
+            long tranferred = transferWithCopy(multipartBody);
+            Assert.assertEquals(tranferred, multipartBody.getContentLength());
+        }
+    }
 
-        // add a file
-        final File testFile = getTestfile();
-        parts.add(new FilePart("filePart", testFile));
+    @Test
+    public void transferZeroCopy() throws IOException {
+        try (MultipartBody multipartBody = buildMultipart()) {
+            long tranferred = transferZeroCopy(multipartBody);
+            Assert.assertEquals(tranferred, multipartBody.getContentLength());
+        }
+    }
 
-        // add a byte array
+    private static MultipartBody buildMultipart() {
+        List<Part> parts = new ArrayList<>();
+        parts.add(new FilePart("filePart", getTestfile()));
         parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
-
-        // add a string
         parts.add(new StringPart("stringPart", "testString"));
-
-        compareContentLength(parts);
+        return MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
     }
 
     private static File getTestfile() {
@@ -64,35 +69,49 @@ public class MultipartBodyTest {
         return file;
     }
 
-    private static void compareContentLength(final List<Part> parts) {
-        Assert.assertNotNull(parts);
-        // get expected values
-        final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
-        final long expectedContentLength = multipartBody.getContentLength();
-        try {
-            final ByteBuffer buffer = ByteBuffer.allocate(8192);
-            boolean last = false;
-            long totalBytes = 0;
-            while (!last) {
-                long readBytes = 0;
-                try {
-                    readBytes = multipartBody.read(buffer);
-                } catch (IOException ie) {
-                    Assert.fail("read failure");
-                }
-                if (readBytes >= 0) {
-                    totalBytes += readBytes;
-                } else {
-                    last = true;
-                }
-                buffer.clear();
+    private static long transferWithCopy(MultipartBody multipartBody) throws IOException {
+
+        final ByteBuffer buffer = ByteBuffer.allocate(8192);
+        long totalBytes = 0;
+        while (true) {
+            long readBytes = multipartBody.read(buffer);
+            if (readBytes < 0) {
+                break;
             }
-            Assert.assertEquals(totalBytes, expectedContentLength);
-        } finally {
-            try {
-                multipartBody.close();
-            } catch (IOException ignore) {
-            }
+            buffer.clear();
+            totalBytes += readBytes;
         }
+        return totalBytes;
+    }
+
+    private static long transferZeroCopy(MultipartBody multipartBody) throws IOException {
+
+        final ByteBuffer buffer = ByteBuffer.allocate(8192);
+        final AtomicLong transferred = new AtomicLong();
+
+        WritableByteChannel mockChannel = new WritableByteChannel() {
+            @Override
+            public boolean isOpen() {
+                return true;
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+
+            @Override
+            public int write(ByteBuffer src) throws IOException {
+                int written = src.remaining();
+                transferred.set(transferred.get() + written);
+                src.position(src.limit());
+                return written;
+            }
+        };
+
+        while (transferred.get() < multipartBody.getContentLength()) {
+            multipartBody.transferTo(0, mockChannel);
+            buffer.clear();
+        }
+        return transferred.get();
     }
 }
