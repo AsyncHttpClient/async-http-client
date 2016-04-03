@@ -108,21 +108,21 @@ public class FilePart extends AbstractFilePart {
         RandomAccessFile raf = new RandomAccessFile(file, "r");
         FileChannel fc = raf.getChannel();
 
-        long l = file.length();
-        int fileLength = 0;
-        long nWrite = 0;
+        long actualFileLength = file.length();
+        long transferredFileBytes = 0;
         // FIXME why sync?
         try {
             synchronized (fc) {
-                while (fileLength != l) {
+                while (transferredFileBytes != actualFileLength) {
+                    long written = 0;
+                    
                     if (handler.isFailed()) {
                         LOGGER.debug("Stalled error");
                         throw new FileUploadStalledException();
                     }
                     try {
-                        nWrite = fc.transferTo(fileLength, l, target);
-
-                        if (nWrite == 0) {
+                        written = fc.transferTo(transferredFileBytes, actualFileLength, target);
+                        if (written == 0) {
                             LOGGER.info("Waiting for writing...");
                             try {
                                 fc.wait(50);
@@ -148,7 +148,7 @@ public class FilePart extends AbstractFilePart {
                             throw ex;
                         }
                     }
-                    fileLength += nWrite;
+                    transferredFileBytes += written;
                 }
             }
         } finally {
@@ -156,6 +156,7 @@ public class FilePart extends AbstractFilePart {
             raf.close();
         }
 
+        length += transferredFileBytes;
         length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
 
         return length;

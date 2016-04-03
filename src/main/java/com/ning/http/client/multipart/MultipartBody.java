@@ -77,7 +77,7 @@ public class MultipartBody implements RandomAccessBody {
     public long transferTo(long position, WritableByteChannel target) throws IOException {
 
         if (transfertDone) {
-            return -1;
+            throw new UnsupportedOperationException("Transfer is already done");
         }
 
         long overallLength = 0;
