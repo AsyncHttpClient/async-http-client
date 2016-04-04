@@ -45,6 +45,7 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
 
     // The execution list to hold our executors.
     // lazy fields
+    private volatile boolean hasRun;
     private volatile boolean executionListInitialized;
     private ExecutionList executionList;
 
@@ -62,19 +63,20 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
         return executionListInitialized ? executionList : lazyExecutionList();
     }
 
-    /*
-     * Adds a listener/executor pair to execution list to execute when this task is completed.
-     */
-
+    @Override
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
         executionList().add(listener, exec);
+        if (hasRun) {
+            runListeners();
+        }
         return this;
     }
 
-    /*
+    /**
      * Execute the execution list.
      */
     protected void runListeners() {
+        hasRun = true;
         if (executionListInitialized) {
             executionList().run();
         }

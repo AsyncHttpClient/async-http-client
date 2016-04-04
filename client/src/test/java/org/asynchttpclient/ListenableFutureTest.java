@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
@@ -48,5 +48,34 @@ public class ListenableFutureTest extends AbstractBasicTest {
             latch.await(10, TimeUnit.SECONDS);
             assertEquals(statusCode.get(), 200);
         }
+    }
+
+    @Test(groups = "standalone")
+    public void testListenableFutureAfterCompletion() throws Exception {
+
+        AtomicInteger counter = new AtomicInteger(1);
+
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
+            final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+            future.get();
+            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
+        }
+        assertEquals(0, counter.get());
+    }
+
+    @Test(groups = "standalone")
+    public void testListenableFutureBeforeAndAfterCompletion() throws Exception {
+
+        AtomicInteger counter = new AtomicInteger(2);
+
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
+            final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+
+            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
+
+            future.get();
+            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
+        }
+        assertEquals(0, counter.get());
     }
 }
