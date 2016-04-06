@@ -18,6 +18,7 @@ import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.*;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -101,7 +102,7 @@ public final class NettyRequestFactory {
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
             else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator)
-                nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher());
+                nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher(), request.getContentLength());
             else if (request.getBodyGenerator() != null)
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }

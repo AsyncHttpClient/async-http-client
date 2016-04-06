@@ -41,14 +41,20 @@ public class NettyReactiveStreamsBody implements NettyBody {
     private static final String NAME_IN_CHANNEL_PIPELINE = "request-body-streamer";
 
     private final Publisher<ByteBuffer> publisher;
+    private final long contentLength;
+
+    public NettyReactiveStreamsBody(Publisher<ByteBuffer> publisher, long contentLength) {
+        this.publisher = publisher;
+        this.contentLength = contentLength;
+    }
 
     public NettyReactiveStreamsBody(Publisher<ByteBuffer> publisher) {
-        this.publisher = publisher;
+        this(publisher, -1L);
     }
 
     @Override
     public long getContentLength() {
-        return -1L;
+        return this.contentLength;
     }
 
     @Override
@@ -70,30 +76,34 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     private static class SubscriberAdapter implements Subscriber<ByteBuffer> {
         private volatile Subscriber<HttpContent> subscriber;
-        
+
         public SubscriberAdapter(Subscriber<HttpContent> subscriber) {
             this.subscriber = subscriber;
         }
+
         @Override
         public void onSubscribe(Subscription s) {
-           subscriber.onSubscribe(s);
+            subscriber.onSubscribe(s);
         }
+
         @Override
         public void onNext(ByteBuffer t) {
             ByteBuf buffer = Unpooled.wrappedBuffer(t.array());
             HttpContent content = new DefaultHttpContent(buffer);
             subscriber.onNext(content);
         }
+
         @Override
         public void onError(Throwable t) {
             subscriber.onError(t);
         }
+
         @Override
         public void onComplete() {
             subscriber.onComplete();
-        }        
+        }
     }
-    
+
     private static class NettySubscriber extends HandlerSubscriber<HttpContent> {
         private static final Logger LOGGER = LoggerFactory.getLogger(NettySubscriber.class);
 
@@ -124,7 +134,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
         @Override
         protected void error(Throwable error) {
-            if(error == null) throw null;
+            if (error == null) throw null;
             removeFromPipeline();
             future.abort(error);
         }
