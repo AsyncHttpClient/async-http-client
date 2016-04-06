@@ -12,10 +12,10 @@
  */
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.providers.grizzly.events.GracefulCloseEvent;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
+import com.ning.http.client.providers.grizzly.events.GracefulCloseEvent;
 import com.ning.http.client.uri.Uri;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.util.AsyncHttpProviderUtils;
@@ -28,6 +28,7 @@ import org.glassfish.grizzly.CloseType;
 import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
@@ -132,7 +133,15 @@ public final class HttpTransactionContext {
             httpTxContext.addRequestSentCompletionHandler(completionHandler);
             if (httpTxContext.isRequestFullySent &&
                     httpTxContext.removeRequestSentCompletionHandler(completionHandler)) {
+                cleanupTransaction(httpCtx, httpTxContext);
                 completionHandler.completed(httpTxContext);
+            } else {
+                httpTxContext.addRequestSentCompletionHandler(new EmptyCompletionHandler<HttpTransactionContext>() {
+                    @Override
+                    public void completed(HttpTransactionContext result) {
+                        cleanupTransaction(httpCtx, httpTxContext);
+                    }
+                });
             }
         }
     }
