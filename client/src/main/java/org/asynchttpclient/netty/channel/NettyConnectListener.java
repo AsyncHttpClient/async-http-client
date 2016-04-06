@@ -69,6 +69,7 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
 
         if (future.isDone()) {
             abortChannelPreemption();
+            Channels.silentlyCloseChannel(channel);
             return;
         }
 
