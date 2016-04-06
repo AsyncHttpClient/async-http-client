@@ -450,11 +450,7 @@ final class AhcEventFilter extends HttpClientFilter {
                 if (!context.isReuseConnection()) {
                     final Connection c = (Connection) httpContext.getCloseable();
                     if (!httpContext.getRequest().getProcessingState().isStayAlive()) {
-                        if (notKeepAliveReason == null) {
-                            notKeepAliveReason
-                                    = new IOException("HTTP keep-alive was disabled for this connection");
-                        }
-                        c.closeWithReason(notKeepAliveReason);
+                        c.closeSilently();
                     } else {
                         final ConnectionManager cm = context.provider.getConnectionManager();
                         cm.returnConnection(c);
