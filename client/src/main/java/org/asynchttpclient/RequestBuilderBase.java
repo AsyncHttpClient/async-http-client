@@ -308,7 +308,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(Publisher<ByteBuffer> publisher) {
-        return setBody(new ReactiveStreamsBodyGenerator(publisher));
+        return setBody(publisher, -1L);
+    }
+
+    public T setBody(Publisher<ByteBuffer> publisher, long contentLength) {
+        return setBody(new ReactiveStreamsBodyGenerator(publisher, contentLength));
     }
 
     public T setBody(BodyGenerator bodyGenerator) {

@@ -31,10 +31,20 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     private final Publisher<ByteBuffer> publisher;
     private final FeedableBodyGenerator feedableBodyGenerator;
     private volatile FeedListener feedListener;
+    private final long contentLength;
 
-    public ReactiveStreamsBodyGenerator(Publisher<ByteBuffer> publisher) {
+    /**
+     *  Creates a Streamable Body which takes a Content-Length.
+     *  If the contentLength parameter is -1L a Http Header of Transfer-Encoding: chunked will be set.
+     *  Otherwise it will set the Content-Length header to the value provided
+     *
+     * @param publisher Body as a Publisher
+     * @param contentLength Content-Length of the Body
+     */
+    public ReactiveStreamsBodyGenerator(Publisher<ByteBuffer> publisher, long contentLength) {
         this.publisher = publisher;
         this.feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
+        this.contentLength = contentLength;
     }
 
     public Publisher<ByteBuffer> getPublisher() {
@@ -52,9 +62,13 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         feedableBodyGenerator.setListener(listener);
     }
 
+    public long getContentLength() {
+        return contentLength;
+    }
+
     @Override
     public Body createBody() {
-        return new StreamedBody(publisher, feedableBodyGenerator);
+        return new StreamedBody(publisher, feedableBodyGenerator, contentLength);
     }
 
     private class StreamedBody implements Body {
@@ -63,9 +77,12 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         private final SimpleSubscriber subscriber;
         private final Body body;
 
-        public StreamedBody(Publisher<ByteBuffer> publisher, FeedableBodyGenerator bodyGenerator) {
+        private final long contentLength;
+
+        public StreamedBody(Publisher<ByteBuffer> publisher, FeedableBodyGenerator bodyGenerator, long contentLength) {
             this.body = bodyGenerator.createBody();
             this.subscriber = new SimpleSubscriber(bodyGenerator);
+            this.contentLength = contentLength;
         }
 
         @Override
@@ -75,7 +92,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         @Override
         public long getContentLength() {
-            return body.getContentLength();
+            return contentLength;
         }
 
         @Override
