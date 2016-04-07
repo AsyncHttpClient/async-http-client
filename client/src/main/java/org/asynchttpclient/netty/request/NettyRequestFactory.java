@@ -65,45 +65,49 @@ public final class NettyRequestFactory {
 
             Charset bodyCharset = withDefault(request.getCharset(), DEFAULT_CHARSET);
 
-            if (request.getByteData() != null)
+            if (request.getByteData() != null) {
                 nettyBody = new NettyByteArrayBody(request.getByteData());
 
-            else if (request.getCompositeByteData() != null)
+            } else if (request.getCompositeByteData() != null) {
                 nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
 
-            else if (request.getStringData() != null)
+            } else if (request.getStringData() != null) {
                 nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
 
-            else if (request.getByteBufferData() != null)
+            } else if (request.getByteBufferData() != null) {
                 nettyBody = new NettyByteBufferBody(request.getByteBufferData());
 
-            else if (request.getStreamData() != null)
+            } else if (request.getStreamData() != null) {
                 nettyBody = new NettyInputStreamBody(request.getStreamData());
 
-            else if (isNonEmpty(request.getFormParams())) {
+            } else if (isNonEmpty(request.getFormParams())) {
 
                 String contentType = null;
-                if (!request.getHeaders().contains(CONTENT_TYPE))
+                if (!request.getHeaders().contains(CONTENT_TYPE)) {
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
+                }
 
                 nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
 
-            } else if (isNonEmpty(request.getBodyParts()))
+            } else if (isNonEmpty(request.getBodyParts())) {
                 nettyBody = new NettyMultipartBody(request.getBodyParts(), request.getHeaders(), config);
 
-            else if (request.getFile() != null)
+            } else if (request.getFile() != null) {
                 nettyBody = new NettyFileBody(request.getFile(), config);
 
-            else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
+            } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
                 nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
 
-            } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator)
+            } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
-            else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator)
+
+            } else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator) {
                 nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher());
-            else if (request.getBodyGenerator() != null)
+
+            } else if (request.getBodyGenerator() != null) {
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
+            }
         }
 
         return nettyBody;
