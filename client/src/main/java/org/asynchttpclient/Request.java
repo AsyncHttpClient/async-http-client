@@ -120,13 +120,6 @@ public interface Request {
     BodyGenerator getBodyGenerator();
 
     /**
-     * Return the current size of the content-lenght header based on the body's size.
-     *
-     * @return the current size of the content-lenght header based on the body's size.
-     */
-    long getContentLength();
-
-    /**
      * Return the current form parameters.
      *
      * @return the form parameters.

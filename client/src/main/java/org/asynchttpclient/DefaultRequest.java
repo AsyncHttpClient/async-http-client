@@ -51,7 +51,6 @@ public class DefaultRequest implements Request {
     private final List<Param> formParams;
     private final List<Part> bodyParts;
     private final String virtualHost;
-    private final long contentLength;
     public final ProxyServer proxyServer;
     private final Realm realm;
     private final File file;
@@ -79,7 +78,6 @@ public class DefaultRequest implements Request {
             List<Param> formParams,//
             List<Part> bodyParts,//
             String virtualHost,//
-            long contentLength,//
             ProxyServer proxyServer,//
             Realm realm,//
             File file,//
@@ -104,7 +102,6 @@ public class DefaultRequest implements Request {
         this.formParams = formParams;
         this.bodyParts = bodyParts;
         this.virtualHost = virtualHost;
-        this.contentLength = contentLength;
         this.proxyServer = proxyServer;
         this.realm = realm;
         this.file = file;
@@ -194,11 +191,6 @@ public class DefaultRequest implements Request {
     @Override
     public String getVirtualHost() {
         return virtualHost;
-    }
-
-    @Override
-    public long getContentLength() {
-        return contentLength;
     }
 
     @Override

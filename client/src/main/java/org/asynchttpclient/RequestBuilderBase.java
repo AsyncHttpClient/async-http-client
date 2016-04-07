@@ -80,7 +80,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected List<Param> formParams;
     protected List<Part> bodyParts;
     protected String virtualHost;
-    protected long contentLength = -1;
     protected ProxyServer proxyServer;
     protected Realm realm;
     protected File file;
@@ -129,7 +128,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             this.bodyParts = new ArrayList<>(prototype.getBodyParts());
         }
         this.virtualHost = prototype.getVirtualHost();
-        this.contentLength = prototype.getContentLength();
         this.proxyServer = prototype.getProxyServer();
         this.realm = prototype.getRealm();
         this.file = prototype.getFile();
@@ -204,11 +202,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setContentLength(int contentLength) {
-        this.contentLength = contentLength;
-        return asDerivedType();
-    }
-
     private void lazyInitCookies() {
         if (this.cookies == null)
             this.cookies = new ArrayList<>(3);
@@ -267,7 +260,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         this.stringData = null;
         this.streamData = null;
         this.bodyGenerator = null;
-        this.contentLength = -1;
     }
 
     public void resetMultipartData() {
@@ -472,7 +464,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.streamData = this.streamData;
         rb.bodyGenerator = this.bodyGenerator;
         rb.virtualHost = this.virtualHost;
-        rb.contentLength = this.contentLength;
         rb.proxyServer = this.proxyServer;
         rb.realm = this.realm;
         rb.file = this.file;
@@ -508,22 +499,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return this.charset;
     }
 
-    private long computeRequestContentLength() {
-        if (this.contentLength < 0 && this.streamData == null) {
-            // can't concatenate content-length
-            final String contentLength = this.headers.get(HttpHeaders.Names.CONTENT_LENGTH);
-
-            if (contentLength != null) {
-                try {
-                    return Long.parseLong(contentLength);
-                } catch (NumberFormatException e) {
-                    // NoOp -- we won't specify length so it will be chunked?
-                }
-            }
-        }
-        return this.contentLength;
-    }
-
     private Uri computeUri() {
 
         Uri tempUri = this.uri;
@@ -541,7 +516,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         RequestBuilderBase<?> rb = executeSignatureCalculator();
         Uri finalUri = rb.computeUri();
         Charset finalCharset = rb.computeCharset();
-        long finalContentLength = rb.computeRequestContentLength();
 
         // make copies of mutable internal collections
         List<Cookie> cookiesCopy = rb.cookies == null ? Collections.emptyList() : new ArrayList<>(rb.cookies);
@@ -563,7 +537,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 formParamsCopy,//
                 bodyPartsCopy,//
                 rb.virtualHost,//
-                finalContentLength,//
                 rb.proxyServer,//
                 rb.realm,//
                 rb.file,//
