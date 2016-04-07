@@ -42,13 +42,16 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     private final Publisher<ByteBuffer> publisher;
 
-    public NettyReactiveStreamsBody(Publisher<ByteBuffer> publisher) {
+    private final long contentLength;
+
+    public NettyReactiveStreamsBody(Publisher<ByteBuffer> publisher, long contentLength) {
         this.publisher = publisher;
+        this.contentLength = contentLength;
     }
 
     @Override
     public long getContentLength() {
-        return -1L;
+        return contentLength;
     }
 
     @Override

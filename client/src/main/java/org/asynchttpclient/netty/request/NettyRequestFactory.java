@@ -103,7 +103,8 @@ public final class NettyRequestFactory {
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
 
             } else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator) {
-                nettyBody = new NettyReactiveStreamsBody(ReactiveStreamsBodyGenerator.class.cast(request.getBodyGenerator()).getPublisher());
+                ReactiveStreamsBodyGenerator reactiveStreamsBodyGenerator = (ReactiveStreamsBodyGenerator)request.getBodyGenerator();
+                nettyBody = new NettyReactiveStreamsBody(reactiveStreamsBodyGenerator.getPublisher(), reactiveStreamsBodyGenerator.getContentLength());
 
             } else if (request.getBodyGenerator() != null) {
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
