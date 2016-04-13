@@ -1,12 +1,14 @@
 Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on twitter) [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client)
 ---------------------------------------------------
 
-[Javadoc](http://www.javadoc.io/doc/com.ning/async-http-client/)
+[Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/)
 
 [Getting](https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/) [started](https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/), and use [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
 
-Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
+The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
 The library also supports the WebSocket Protocol. The Async HTTP Client library is simple to use.
+
+I's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
 
 Latest `version`: [![Maven][mavenImg]][mavenLink]
 
@@ -21,45 +23,13 @@ First, in order to add it to your Maven project, simply add this dependency -- s
 <dependency>
 	<groupId>org.asynchttpclient</groupId>
 	<artifactId>async-http-client</artifactId>
-	<version>2.0.0-RC12</version>
+	<version>LATEST_VERSION</version>
 </dependency>
 ```
 
 You can also download the artifact
 
 [Maven Search](http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client)
-
-AHC is an abstraction layer that can work on top of the bare JDK, Netty and Grizzly.
-Note that the JDK implementation is very limited and you should **REALLY** use the other *real* providers.
-
-You then have to add the Netty or Grizzly jars in the classpath.
-
-For Netty:
-
-```xml
-<dependency>
-    <groupId>io.netty</groupId>
-    <artifactId>netty</artifactId>
-    <version>LATEST_NETTY_3_VERSION</version>
-</dependency>
-```
-
-For Grizzly:
-
-```xml
-<dependency>
-    <groupId>org.glassfish.grizzly</groupId>
-    <artifactId>connection-pool</artifactId>
-    <version>LATEST_GRIZZLY_VERSION</version>
-</dependency>
-<dependency>
-    <groupId>org.glassfish.grizzly</groupId>
-    <artifactId>grizzly-websockets</artifactId>
-    <version>LATEST_GRIZZLY_VERSION</version>
-</dependency>
-```
-
-Check [migration guide](MIGRATION.md) for migrating from 1.8 to 1.9.
 
 ## Usage
 
@@ -217,13 +187,6 @@ WebSocket websocket = c.prepareGet(getTargetUrl())
       }).build()).get();
 ```
 
-The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of [Netty](http://www.jboss.org/netty), but the library exposes a configurable provider SPI which allows to easily plug in other frameworks like [Grizzly](http://grizzly.java.net)
-
-```java
-AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
-AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-```
-
 ## User Group
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
@@ -238,11 +201,8 @@ Here a the few rules we'd like you to respect if you do so:
 
 * Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
 * Respect the formatting rules:
-  * Ident with 4 spaces
-  * Use a 140 chars line max length
-  * Don't use * imports
-  * Stick to the org, com, javax, java imports order
+  * Indent with 4 spaces
 * Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash them into a single one
 * Regarding licensing:
   * You must be the original author of the code you suggest.
-  * If not, you have to prove that the original code was published under Apache License 2 and properly mention original copyrights.
+  * You must give the copyright to "the AsyncHttpClient Project"
