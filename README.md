@@ -17,7 +17,7 @@ Latest `version`: [![Maven][mavenImg]][mavenLink]
 
 ## Installation
 
-First, in order to add it to your Maven project, simply add this dependency:
+First, in order to add it to your Maven project, simply download from Maven central or add this dependency:
 
 ```xml
 <dependency>
@@ -26,10 +26,6 @@ First, in order to add it to your Maven project, simply add this dependency:
 	<version>LATEST_VERSION</version>
 </dependency>
 ```
-
-You can also download the artifact
-
-[Maven Search](http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client)
 
 ## Usage
 
