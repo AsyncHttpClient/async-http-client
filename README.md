@@ -12,12 +12,12 @@ I's built on top of [Netty](https://github.com/netty/netty) and currently requir
 
 Latest `version`: [![Maven][mavenImg]][mavenLink]
 
-[mavenImg]: https://img.shields.io/maven-central/v/com.ning/async-http-client.svg
-[mavenLink]: http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.ning%22%20AND%20a%3A%22async-http-client%22
+[mavenImg]: https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client.svg
+[mavenLink]: http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client
 
 ## Installation
 
-First, in order to add it to your Maven project, simply add this dependency -- see [mvnrepository](http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client) for latest version:
+First, in order to add it to your Maven project, simply add this dependency:
 
 ```xml
 <dependency>
