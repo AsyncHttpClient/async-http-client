@@ -26,7 +26,7 @@ import java.nio.channels.FileChannel;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.request.ProgressListener;
+import org.asynchttpclient.netty.request.WriteProgressListener;
 
 public class NettyFileBody implements NettyBody {
 
@@ -78,7 +78,7 @@ public class NettyFileBody implements NettyBody {
                 : new DefaultFileRegion(fileChannel, offset, length);
 
         channel.write(message, channel.newProgressivePromise())//
-                .addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()));
-        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+                .addListener(new WriteProgressListener(future, false, getContentLength()));
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
     }
 }

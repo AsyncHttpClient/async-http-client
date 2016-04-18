@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2016 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -14,12 +14,9 @@
 package org.asynchttpclient.netty.request;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelProgressiveFuture;
-import io.netty.channel.ChannelProgressiveFutureListener;
 
 import java.nio.channels.ClosedChannelException;
 
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelState;
@@ -28,33 +25,25 @@ import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProgressListener implements ChannelProgressiveFutureListener {
+public abstract class WriteListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProgressListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WriteListener.class);
+    protected final NettyResponseFuture<?> future;
+    protected final ProgressAsyncHandler<?> progressAsyncHandler;
+    protected final boolean notifyHeaders;
 
-    private final AsyncHandler<?> asyncHandler;
-    private final NettyResponseFuture<?> future;
-    private final boolean notifyHeaders;
-    private final long expectedTotal;
-    private long lastProgress = 0L;
-
-    public ProgressListener(AsyncHandler<?> asyncHandler,//
-            NettyResponseFuture<?> future,//
-            boolean notifyHeaders,//
-            long expectedTotal) {
-        this.asyncHandler = asyncHandler;
+    public WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
         this.future = future;
+        this.progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
         this.notifyHeaders = notifyHeaders;
-        this.expectedTotal = expectedTotal;
     }
 
-    private boolean abortOnThrowable(Throwable cause, Channel channel) {
-
+    private boolean abortOnThrowable(Channel channel, Throwable cause) {
         if (cause != null && future.getChannelState() != ChannelState.NEW) {
             if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
                 LOGGER.debug(cause.getMessage(), cause);
                 Channels.silentlyCloseChannel(channel);
-                
+
             } else {
                 future.abort(cause);
             }
@@ -64,42 +53,29 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
         return false;
     }
 
-    @Override
-    public void operationComplete(ChannelProgressiveFuture cf) {
+    protected void operationComplete(Channel channel, Throwable cause) {
+        future.touch();
+
         // The write operation failed. If the channel was cached, it means it got asynchronously closed.
         // Let's retry a second time.
-        if (!abortOnThrowable(cf.cause(), cf.channel())) {
+        if (abortOnThrowable(channel, cause)) {
+            return;
+        }
 
-            future.touch();
-
+        if (progressAsyncHandler != null) {
             /**
-             * We need to make sure we aren't in the middle of an authorization
-             * process before publishing events as we will re-publish again the
-             * same event after the authorization, causing unpredictable
-             * behavior.
+             * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+             * causing unpredictable behavior.
              */
             boolean startPublishing = !future.getInAuth().get() && !future.getInProxyAuth().get();
-            
-            if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
-                ProgressAsyncHandler<?> progressAsyncHandler = (ProgressAsyncHandler<?>) asyncHandler;
+            if (startPublishing) {
+                
                 if (notifyHeaders) {
                     progressAsyncHandler.onHeadersWritten();
                 } else {
                     progressAsyncHandler.onContentWritten();
                 }
             }
-        }
-    }
-
-    @Override
-    public void operationProgressed(ChannelProgressiveFuture f, long progress, long total) {
-        future.touch();
-        if (!notifyHeaders && asyncHandler instanceof ProgressAsyncHandler) {
-            long lastLastProgress = lastProgress;
-            lastProgress = progress;
-            if (total < 0)
-                total = expectedTotal;
-            ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(progress - lastLastProgress, progress, total);
         }
     }
 }

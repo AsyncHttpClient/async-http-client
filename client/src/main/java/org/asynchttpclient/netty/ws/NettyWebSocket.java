@@ -87,43 +87,43 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket sendMessage(byte[] message) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(wrappedBuffer(message)));
+        channel.writeAndFlush(new BinaryWebSocketFrame(wrappedBuffer(message)), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket stream(byte[] fragment, boolean last) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)));
+        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset, len)));
+        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset, len)), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket sendMessage(String message) {
-        channel.writeAndFlush(new TextWebSocketFrame(message));
+        channel.writeAndFlush(new TextWebSocketFrame(message), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket stream(String fragment, boolean last) {
-        channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment));
+        channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket sendPing(byte[] payload) {
-        channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)));
+        channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
         return this;
     }
 
     @Override
     public WebSocket sendPong(byte[] payload) {
-        channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)));
+        channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
         return this;
     }
 

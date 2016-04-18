@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.request.ProgressListener;
+import org.asynchttpclient.netty.request.WriteProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
@@ -75,19 +75,21 @@ public class NettyBodyBody implements NettyBody {
                     public void onContentAdded() {
                         chunkedWriteHandler.resumeTransfer();
                     }
+
                     @Override
-                    public void onError(Throwable t) {}
+                    public void onError(Throwable t) {
+                    }
                 });
             }
         }
-        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
 
-        writeFuture.addListener(new ProgressListener(future.getAsyncHandler(), future, false, getContentLength()) {
+        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
+        writeFuture.addListener(new WriteProgressListener(future, false, getContentLength()) {
             public void operationComplete(ChannelProgressiveFuture cf) {
                 closeSilently(body);
                 super.operationComplete(cf);
             }
         });
-        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
     }
 }

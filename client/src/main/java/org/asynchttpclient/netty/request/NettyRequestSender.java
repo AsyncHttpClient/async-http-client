@@ -22,6 +22,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressivePromise;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -277,7 +278,8 @@ public final class NettyRequestSender {
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {
                         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, channelPreempted, partitionKey);
-                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), closed, config).connect(bootstrap, connectListener);
+                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), closed, config).connect(bootstrap,
+                                connectListener);
                     }
 
                     @Override
@@ -327,12 +329,21 @@ public final class NettyRequestSender {
             boolean writeBody = !future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT && nettyRequest.getBody() != null;
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
-                if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
-                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSend(nettyRequest);
+                if (handler instanceof AsyncHandlerExtensions) {
+                    AsyncHandlerExtensions.class.cast(handler).onRequestSend(nettyRequest);
+                }
 
-                ChannelProgressivePromise promise = channel.newProgressivePromise();
-                ChannelFuture f = writeBody ? channel.write(httpRequest, promise) : channel.writeAndFlush(httpRequest, promise);
-                f.addListener(new ProgressListener(future.getAsyncHandler(), future, true, 0L));
+                // if the request has a body, we want to track progress
+                if (writeBody) {
+                    ChannelProgressivePromise promise = channel.newProgressivePromise();
+                    ChannelFuture f = channel.write(httpRequest, promise);
+                    f.addListener(new WriteProgressListener(future, true, 0L));
+                } else {
+                    // we can just track write completion
+                    ChannelPromise promise = channel.newPromise();
+                    ChannelFuture f = channel.writeAndFlush(httpRequest, promise);
+                    f.addListener(new WriteCompleteListener(future));
+                }
             }
 
             if (writeBody)
@@ -388,7 +399,7 @@ public final class NettyRequestSender {
         } else if (retry(future)) {
             future.pendingException = null;
         } else {
-            abort(channel, future, future.pendingException != null? future.pendingException : RemotelyClosedException.INSTANCE);
+            abort(channel, future, future.pendingException != null ? future.pendingException : RemotelyClosedException.INSTANCE);
         }
     }
 
