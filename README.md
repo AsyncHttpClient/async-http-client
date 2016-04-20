@@ -35,7 +35,7 @@ Then in your code you can simply do
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
 Future<Response> f = asyncHttpClient.prepareGet("http://www.example.com/").execute();
 Response r = f.get();
 ```
@@ -48,7 +48,7 @@ You can also accomplish asynchronous (non-blocking) operation without using a Fu
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
 asyncHttpClient.prepareGet("http://www.example.com/").execute(new AsyncCompletionHandler<Response>(){
     
     @Override
