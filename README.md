@@ -73,7 +73,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
 Future<Integer> f = asyncHttpClient.prepareGet("http://www.example.com/").execute(
    new AsyncCompletionHandler<Integer>(){
     
@@ -100,7 +100,7 @@ which is something you want to do for large responses: this way you can process 
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient c = new AsyncHttpClient();
+AsyncHttpClient c = new DefaultAsyncHttpClient();
 Future<String> f = c.prepareGet("http://www.example.com/").execute(new AsyncHandler<String>() {
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
