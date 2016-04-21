@@ -191,7 +191,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
             state = sourceFullyWrittenState;
             return sourceRemaining;
         } else {
-            target.writeBytes(source, targetRemaining - sourceRemaining);
+            target.writeBytes(source, targetRemaining);
             return targetRemaining;
         }
     }

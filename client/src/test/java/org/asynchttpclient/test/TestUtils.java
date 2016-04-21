@@ -105,7 +105,7 @@ public class TestUtils {
         }
     }
 
-    private static File resourceAsFile(String path) throws URISyntaxException, IOException {
+    public static File resourceAsFile(String path) throws URISyntaxException, IOException {
         ClassLoader cl = TestUtils.class.getClassLoader();
         URI uri = cl.getResource(path).toURI();
         if (uri.isAbsolute() && !uri.isOpaque()) {
