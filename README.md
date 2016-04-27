@@ -149,9 +149,10 @@ String bodyResponse = f.get();
 Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfig object:
 
 ```java
-AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
-    .setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
-AsyncHttpClient c = new AsyncHttpClient(cf);
+AsyncHttpClientConfig cf = new DefaultAsyncHttpClientConfig.Builder()
+    .setProxyServer(new ProxyServer.Builder("127.0.0.1", 38080)).build();
+
+AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
 ```
 
 ## WebSocket
