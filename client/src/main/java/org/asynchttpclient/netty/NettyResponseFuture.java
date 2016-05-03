@@ -425,7 +425,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return reuseChannel;
     }
 
-    public boolean canRetry() {
+    public boolean incRetryAndCheck() {
         return maxRetry > 0 && CURRENT_RETRY_UPDATER.incrementAndGet(this) <= maxRetry;
     }
 
@@ -444,7 +444,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplayed() {
-        return !isDone() && canRetry() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !inAuth.get() && !inProxyAuth.get();
+        return !isDone() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && !inAuth.get() && !inProxyAuth.get();
     }
 
     public long getStart() {

@@ -120,7 +120,7 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
         //beware, channel can be null
         abortChannelPreemption();
 
-        boolean canRetry = future.canRetry();
+        boolean canRetry = future.incRetryAndCheck();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
         if (canRetry//
                 && cause != null // FIXME when can we have a null cause?
