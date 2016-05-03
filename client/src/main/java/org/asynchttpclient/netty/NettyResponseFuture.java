@@ -425,7 +425,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return reuseChannel;
     }
 
-    public boolean incRetryAndCheck() {
+    public boolean incrementRetryAndCheck() {
         return maxRetry > 0 && CURRENT_RETRY_UPDATER.incrementAndGet(this) <= maxRetry;
     }
 

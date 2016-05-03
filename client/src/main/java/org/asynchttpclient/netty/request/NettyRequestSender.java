@@ -396,7 +396,7 @@ public final class NettyRequestSender {
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
         if (future.isDone()) {
             channelManager.closeChannel(channel);
-        } else if (future.incRetryAndCheck() && retry(future)) {
+        } else if (future.incrementRetryAndCheck() && retry(future)) {
             future.pendingException = null;
         } else {
             abort(channel, future, future.pendingException != null ? future.pendingException : RemotelyClosedException.INSTANCE);
@@ -447,7 +447,7 @@ public final class NettyRequestSender {
             }
         }
 
-        if (fc.replayRequest() && future.canBeReplayed() && future.incRetryAndCheck()) {
+        if (fc.replayRequest() && future.incrementRetryAndCheck() && future.canBeReplayed()) {
             replayRequest(future, fc, channel);
             replayed = true;
         }
