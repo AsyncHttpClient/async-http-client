@@ -45,6 +45,8 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
+import org.asynchttpclient.handler.RetryHandler;
+import org.asynchttpclient.handler.ExponentialRetryHandler;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -186,12 +188,22 @@ public final class NettyRequestSender {
             proxyRealm = proxy.getRealm();
         }
 
+        RetryHandler retryHandler = null;
+        if(asyncHandler instanceof RetryHandler) {
+            retryHandler = RetryHandler.class.cast(asyncHandler);
+        } else if (config.isExpBackoffEnabled()) {
+            retryHandler = new ExponentialRetryHandler(config.getExpBackoffInitialInterval(),
+                            config.getExpBackoffMaxInterval(),
+                            config.getExpBackoffMultiplier());
+        }
+
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, forceConnect, proxy, realm, proxyRealm);
 
         if (originalFuture == null) {
             NettyResponseFuture<T> future = newNettyResponseFuture(request, asyncHandler, nettyRequest, proxy);
             future.setRealm(realm);
             future.setProxyRealm(proxyRealm);
+            future.setRetryHandler(retryHandler);
             return future;
         } else {
             originalFuture.setNettyRequest(nettyRequest);
@@ -380,6 +392,13 @@ public final class NettyRequestSender {
         }
     }
 
+    private void scheduleRetryTimeout(NettyResponseFuture<?> nettyResponseFuture) {
+        TimeoutsHolder timeoutsHolder = nettyResponseFuture.getTimeoutsHolder();
+        if (timeoutsHolder != null) {
+            timeoutsHolder.startRetryTimeout();
+        }
+    }
+
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
 
         if (channel != null)
@@ -396,40 +415,43 @@ public final class NettyRequestSender {
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
         if (future.isDone()) {
             channelManager.closeChannel(channel);
-        } else if (future.incrementRetryAndCheck() && retry(future)) {
+        } else if (future.incrementRetryAndCheck() && future.canBeReplayed() && !isClosed()) {
+            retry(future);
             future.pendingException = null;
         } else {
             abort(channel, future, future.pendingException != null ? future.pendingException : RemotelyClosedException.INSTANCE);
         }
     }
 
-    public boolean retry(NettyResponseFuture<?> future) {
+    private void scheduleRetryRequst(NettyResponseFuture<?> future) {
+        scheduleRetryTimeout(future);
+    }
 
-        if (isClosed())
-            return false;
+    public void sendRetryRequest(NettyResponseFuture<?> future) {
+        // FIXME should we set future.setReuseChannel(false); ?
+        future.setChannelState(ChannelState.RECONNECTED);
+        future.getAndSetStatusReceived(false);
 
-        if (future.canBeReplayed()) {
-            // FIXME should we set future.setReuseChannel(false); ?
-            future.setChannelState(ChannelState.RECONNECTED);
-            future.getAndSetStatusReceived(false);
-
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
-            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
-            }
-
-            try {
-                sendNextRequest(future.getCurrentRequest(), future);
-                return true;
-
-            } catch (Exception e) {
-                abort(future.channel(), future, e);
-                return false;
-            }
-        } else {
-            LOGGER.debug("Unable to recover future {}\n", future);
-            return false;
+        LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
         }
+
+        try {
+            sendNextRequest(future.getCurrentRequest(), future);
+        } catch (Exception e) {
+            abort(future.channel(), future, e);
+        }
+    }
+
+    public void retry(NettyResponseFuture<?> future) {
+
+        if(future.getRetryHandler() != null) {
+            scheduleRetryRequst(future);
+        } else {
+            sendRetryRequest(future);
+        }
+
     }
 
     public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e, Channel channel) {

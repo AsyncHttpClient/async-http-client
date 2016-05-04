@@ -255,6 +255,14 @@ public interface AsyncHttpClientConfig {
 
     KeepAliveStrategy getKeepAliveStrategy();
 
+    boolean isExpBackoffEnabled();
+
+    int getExpBackoffInitialInterval();
+
+    int getExpBackoffMaxInterval();
+
+    float getExpBackoffMultiplier();
+
     boolean isValidateResponseHeaders();
 
     boolean isTcpNoDelay();

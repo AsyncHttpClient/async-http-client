@@ -34,7 +34,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
     public void run(Timeout timeout) throws Exception {
 
-        if (done.getAndSet(true) || requestSender.isClosed())
+        if (done.getAndSet(true) || requestSender.isClosed() || timeout.isCancelled())
             return;
 
         // in any case, cancel possible readTimeout sibling

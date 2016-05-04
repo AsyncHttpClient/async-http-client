@@ -25,9 +25,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TimeoutsHolder {
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(TimeoutsHolder.class);
     private final AtomicBoolean cancelled = new AtomicBoolean();
 
     private final Timer nettyTimer;
@@ -36,8 +38,9 @@ public class TimeoutsHolder {
     private final int readTimeoutValue;
 
     private volatile NettyResponseFuture<?> nettyResponseFuture;
-    public final Timeout requestTimeout;
-    public volatile Timeout readTimeout;
+    private final Timeout requestTimeout;
+    private volatile Timeout readTimeout;
+    private volatile Timeout retryTimeout;
     private volatile String remoteAddress = "not-connected";
 
     public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config) {
@@ -70,6 +73,21 @@ public class TimeoutsHolder {
         }
     }
 
+    public void startRetryTimeout() {
+
+        if (retryTimeout != null) {
+            retryTimeout.cancel();
+            RetryTimerTask.class.cast(retryTimeout.task()).clean();
+        }
+
+        final long nextDelayMs = nettyResponseFuture.getRetryHandler().nextRetryMillis();
+        retryTimeout = newTimeout(new RetryTimerTask(nettyResponseFuture, requestSender, this),
+                        nextDelayMs);
+
+        LOGGER.debug("New RetryTask {} will be ran after {}ms", nettyResponseFuture, nextDelayMs);
+
+    }
+
     void startReadTimeout(ReadTimeoutTimerTask task) {
         if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue > (requestTimeoutMillisTime - millisTime()))) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
@@ -95,6 +113,10 @@ public class TimeoutsHolder {
             if (readTimeout != null) {
                 readTimeout.cancel();
                 ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
+            }
+            if(retryTimeout != null) {
+                retryTimeout.cancel();
+                RetryTimerTask.class.cast(retryTimeout.task()).clean();
             }
         }
     }
