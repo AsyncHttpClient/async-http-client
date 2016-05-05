@@ -109,10 +109,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final List<IOExceptionFilter> ioExceptionFilters;
 
     //backoff handlers
-    private boolean expBackoffEnabled;
-    private int expBackoffInitialInterval;
-    private int expBackoffMaxInterval;
-    private float expBackoffMultiplier;
+    private boolean expBackoffRetryEnabled;
+    private int expBackoffRetryInitialInterval;
+    private int expBackoffRetryMaxInterval;
+    private float expBackoffRetryMultiplier;
 
     // internals
     private final String threadPoolName;
@@ -185,10 +185,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             List<IOExceptionFilter> ioExceptionFilters,//
 
             //backoff handler
-            boolean expBackoffEnabled,
-            int expBackoffInitialInterval,
-            int expBackoffMaxInterval,
-            float expBackoffMultiplier,
+            boolean expBackoffRetryEnabled,
+            int expBackoffRetryInitialInterval,
+            int expBackoffRetryMaxInterval,
+            float expBackoffRetryMultiplier,
 
             // tuning
             boolean tcpNoDelay,//
@@ -262,10 +262,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.ioExceptionFilters = ioExceptionFilters;
 
         //handlers
-        this.expBackoffEnabled = expBackoffEnabled;
-        this.expBackoffInitialInterval = expBackoffInitialInterval;
-        this.expBackoffMaxInterval = expBackoffMaxInterval;
-        this.expBackoffMultiplier = expBackoffMultiplier;
+        this.expBackoffRetryEnabled = expBackoffRetryEnabled;
+        this.expBackoffRetryInitialInterval = expBackoffRetryInitialInterval;
+        this.expBackoffRetryMaxInterval = expBackoffRetryMaxInterval;
+        this.expBackoffRetryMultiplier = expBackoffRetryMultiplier;
 
         // tuning
         this.tcpNoDelay = tcpNoDelay;
@@ -417,24 +417,20 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return keepAliveStrategy;
     }
 
-    @Override
-    public boolean isExpBackoffEnabled() {
-        return expBackoffEnabled;
+    public boolean isExpBackoffRetryEnabled() {
+        return expBackoffRetryEnabled;
     }
 
-    @Override
-    public int getExpBackoffInitialInterval() {
-        return expBackoffInitialInterval;
+    public int getExpBackoffRetryInitialInterval() {
+        return expBackoffRetryInitialInterval;
     }
 
-    @Override
-    public int getExpBackoffMaxInterval() {
-        return expBackoffMaxInterval;
+    public int getExpBackoffRetryMaxInterval() {
+        return expBackoffRetryMaxInterval;
     }
 
-    @Override
-    public float getExpBackoffMultiplier() {
-        return expBackoffMultiplier;
+    public float getExpBackoffRetryMultiplier() {
+        return expBackoffRetryMultiplier;
     }
 
     @Override
@@ -665,10 +661,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<>();
 
         //backoff handlers;
-        private boolean expBackoffEnabled = defaultExponentialBackoffEnabled();
-        private int expBackoffInitialInterval = defaultExponentialBackoffInitialValue();
-        private int expBackoffMaxInterval = defaultExponentialBackoffMaxIntervalValue();
-        private float expBackoffMultiplier = defaultExponentialBackoffMultiplierValue();
+        private boolean expBackoffRetryEnabled = defaultExponentialBackoffRetryEnabled();
+        private int expBackoffRetryInitialInterval = defaultExponentialBackoffRetryInitialValue();
+        private int expBackoffRetryMaxInterval = defaultExponentialBackoffRetryMaxIntervalValue();
+        private float expBackoffRetryMultiplier = defaultExponentialBackoffRetryMultiplierValue();
 
         // tuning
         private boolean tcpNoDelay = defaultTcpNoDelay();
@@ -744,10 +740,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             ioExceptionFilters.addAll(config.getIoExceptionFilters());
 
             //Backoff handlers
-            expBackoffEnabled = config.isExpBackoffEnabled();
-            expBackoffInitialInterval = config.getExpBackoffInitialInterval();
-            expBackoffMaxInterval = config.getExpBackoffMaxInterval();
-            expBackoffMultiplier = config.getExpBackoffMultiplier();
+            expBackoffRetryEnabled = config.isExpBackoffRetryEnabled();
+            expBackoffRetryInitialInterval = config.getExpBackoffRetryInitialInterval();
+            expBackoffRetryMaxInterval = config.getExpBackoffRetryMaxInterval();
+            expBackoffRetryMultiplier = config.getExpBackoffRetryMultiplier();
 
             // tuning
             tcpNoDelay = config.isTcpNoDelay();
@@ -1001,23 +997,23 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         //Backoff handler
-        public Builder setExpBackoffEnabled(boolean expBackoffEnabled) {
-            this.expBackoffEnabled = expBackoffEnabled;
+        public Builder setExpBackoffRetryEnabled(boolean expBackoffRetryEnabled) {
+            this.expBackoffRetryEnabled = expBackoffRetryEnabled;
             return this;
         }
 
-        public Builder setExpBackoffInitialInterval(int expBackoffInitialInterval) {
-            this.expBackoffInitialInterval = expBackoffInitialInterval;
+        public Builder setExpBackoffRetryInitialInterval(int expBackoffRetryInitialInterval) {
+            this.expBackoffRetryInitialInterval = expBackoffRetryInitialInterval;
             return this;
         }
 
-        public Builder setExpBackoffMaxInterval(int expBackoffMaxInterval) {
-            this.expBackoffMaxInterval = expBackoffMaxInterval;
+        public Builder setExpBackoffRetryMaxInterval(int expBackoffRetryMaxInterval) {
+            this.expBackoffRetryMaxInterval = expBackoffRetryMaxInterval;
             return this;
         }
 
-        public Builder setExpBackoffMultiplier(float expBackoffMultiplier) {
-            this.expBackoffMultiplier = expBackoffMultiplier;
+        public Builder setExpBackoffRetryMultiplier(float expBackoffRetryMultiplier) {
+            this.expBackoffRetryMultiplier = expBackoffRetryMultiplier;
             return this;
         }
 
@@ -1181,10 +1177,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters), //
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),//
                     ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),//
-                    expBackoffEnabled, //
-                    expBackoffInitialInterval, //
-                    expBackoffMaxInterval, //
-                    expBackoffMultiplier, //
+                    expBackoffRetryEnabled, //
+                    expBackoffRetryInitialInterval, //
+                    expBackoffRetryMaxInterval, //
+                    expBackoffRetryMultiplier, //
                     tcpNoDelay, //
                     soReuseAddress, //
                     soLinger, //

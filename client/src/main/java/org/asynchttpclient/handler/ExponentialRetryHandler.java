@@ -16,13 +16,15 @@ public class ExponentialRetryHandler implements RetryHandler {
 
     @Override public long nextRetryMillis() {
 
+        final int currentInterval = interval;
+
         if(interval >= maxIntervalMs / multiplier) {
             interval = maxIntervalMs;
         } else {
             interval = (int)(interval * multiplier);
         }
 
-        return interval;
+        return currentInterval;
     }
 
     @Override public void reset() {

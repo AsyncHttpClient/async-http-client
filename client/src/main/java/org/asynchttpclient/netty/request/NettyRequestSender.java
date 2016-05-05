@@ -191,10 +191,10 @@ public final class NettyRequestSender {
         RetryHandler retryHandler = null;
         if(asyncHandler instanceof RetryHandler) {
             retryHandler = RetryHandler.class.cast(asyncHandler);
-        } else if (config.isExpBackoffEnabled()) {
-            retryHandler = new ExponentialRetryHandler(config.getExpBackoffInitialInterval(),
-                            config.getExpBackoffMaxInterval(),
-                            config.getExpBackoffMultiplier());
+        } else if (config.isExpBackoffRetryEnabled()) {
+            retryHandler = new ExponentialRetryHandler(config.getExpBackoffRetryInitialInterval(),
+                            config.getExpBackoffRetryMaxInterval(),
+                            config.getExpBackoffRetryMultiplier());
         }
 
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, forceConnect, proxy, realm, proxyRealm);

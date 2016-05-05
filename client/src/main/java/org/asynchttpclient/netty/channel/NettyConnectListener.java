@@ -126,7 +126,7 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
                 && cause != null // FIXME when can we have a null cause?
                 && future.canBeReplayed()
                 && !requestSender.isClosed()
-                && future.getRetryHandler() != null || future.getChannelState() != ChannelState.NEW || StackTraceInspector.recoverOnNettyDisconnectException(cause)) {
+                && (future.getRetryHandler() != null || future.getChannelState() != ChannelState.NEW || StackTraceInspector.recoverOnNettyDisconnectException(cause))) {
 
             requestSender.retry(future);
 
