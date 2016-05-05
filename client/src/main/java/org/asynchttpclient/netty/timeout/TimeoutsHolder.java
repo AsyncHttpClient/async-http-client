@@ -67,18 +67,7 @@ public class TimeoutsHolder {
         remoteAddress = address.toString();
     }
 
-    public void startReadTimeout() {
-        if (readTimeoutValue != -1) {
-            startReadTimeout(null);
-        }
-    }
-
     public void startRetryTimeout() {
-
-        if (retryTimeout != null) {
-            retryTimeout.cancel();
-            RetryTimerTask.class.cast(retryTimeout.task()).clean();
-        }
 
         final long nextDelayMs = nettyResponseFuture.getRetryHandler().nextRetryMillis();
         retryTimeout = newTimeout(new RetryTimerTask(nettyResponseFuture, requestSender, this),
@@ -88,43 +77,58 @@ public class TimeoutsHolder {
 
     }
 
-    void startReadTimeout(ReadTimeoutTimerTask task) {
-        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue > (requestTimeoutMillisTime - millisTime()))) {
-            // only schedule a new readTimeout if the requestTimeout doesn't happen first
-            if (task == null) {
-                // first call triggered from outside (else is read timeout is re-scheduling itself)
-                task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
-            }
-            Timeout readTimeout = newTimeout(task, readTimeoutValue);
-            this.readTimeout = readTimeout;
+    public void stopRetryTimeout() {
+        if (retryTimeout != null) {
+            retryTimeout.cancel();
+            RetryTimerTask.class.cast(retryTimeout.task()).clean();
+        }
+    }
 
-        } else if (task != null) {
-            // read timeout couldn't re-scheduling itself, clean up
-            task.clean();
+    public void startReadTimeout() {
+        if (readTimeoutValue == -1) {
+            return;
+        }
+
+        if (requestTimeout == null ||
+                        (!requestTimeout.isExpired() && !existScheduledRetryTimeout())) {
+            // only schedule a new readTimeout if the requestTimeout doesn't happen first and no scheduled retry timeout exists
+            this.readTimeout =
+                            newTimeout(new ReadTimeoutTimerTask(nettyResponseFuture, requestSender,
+                                            this, readTimeoutValue), readTimeoutValue);
+
+        }
+    }
+
+    public void stopReadTimeout() {
+        if (this.readTimeout != null) {
+            readTimeout.cancel();
+            ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
         }
     }
 
     public void cancel() {
         if (cancelled.compareAndSet(false, true)) {
-            if (requestTimeout != null) {
-                requestTimeout.cancel();
-                RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
-            }
-            if (readTimeout != null) {
-                readTimeout.cancel();
-                ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
-            }
-            if(retryTimeout != null) {
-                retryTimeout.cancel();
-                RetryTimerTask.class.cast(retryTimeout.task()).clean();
-            }
+            stopRequestTimeout();
+            stopReadTimeout();
+            stopRetryTimeout();
         }
     }
 
     private Timeout newTimeout(TimerTask task, long delay) {
         return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     }
-    
+
+    private void stopRequestTimeout() {
+        if (requestTimeout != null) {
+            requestTimeout.cancel();
+            RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
+        }
+    }
+
+    private boolean existScheduledRetryTimeout() {
+        return retryTimeout != null && !retryTimeout.isExpired();
+    }
+
     String remoteAddress() {
         return remoteAddress;
     }

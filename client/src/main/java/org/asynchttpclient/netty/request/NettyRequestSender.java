@@ -388,6 +388,7 @@ public final class NettyRequestSender {
             // on very fast requests, it's entirely possible that the response has already been completed
             // by the time we try to schedule the read timeout
             nettyResponseFuture.touch();
+            timeoutsHolder.stopReadTimeout(); //Stop existing readTimeout
             timeoutsHolder.startReadTimeout();
         }
     }
@@ -445,8 +446,17 @@ public final class NettyRequestSender {
     }
 
     public void retry(NettyResponseFuture<?> future) {
+        //Close the channel
+        if(future.channel() != null) {
+            channelManager.closeChannel(future.channel());
+        }
+
+        //Now we need to retry, stop ReadTimeout and RetryTimeout (if any)
+        future.getTimeoutsHolder().stopReadTimeout();
 
         if(future.getRetryHandler() != null) {
+            //Stop RetryTimeout (if any)
+            future.getTimeoutsHolder().stopRetryTimeout();
             scheduleRetryRequst(future);
         } else {
             sendRetryRequest(future);
