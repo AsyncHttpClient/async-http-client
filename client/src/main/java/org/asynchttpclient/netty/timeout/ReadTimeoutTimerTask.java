@@ -52,8 +52,13 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             String message = "Read timeout to " + timeoutsHolder.remoteAddress() + " after " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
 
-            if(nettyResponseFuture.incrementRetryAndCheck() && !requestSender.isClosed()) {
+            if(!nettyResponseFuture.getInAuth().get()
+                            && !nettyResponseFuture.getInProxyAuth().get()
+                            && nettyResponseFuture.incrementRetryAndCheck()
+                            && !requestSender.isClosed()) {
+
                 requestSender.retry(nettyResponseFuture);
+                
             } else {
                 expire(message, durationSinceLastTouch);
                 // cancel request timeout sibling

@@ -166,7 +166,7 @@ public interface AsyncHttpClientConfig {
      * Return the number of time the library will retry in following conditions
      *  1. an {@link java.io.IOException} is thrown by the remote server
      *  2. an ConnectionException is thrown
-     *  3. an ReadTimeout is happened.
+     *  3. a ReadTimeout is happened.
      *
      * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
      */
