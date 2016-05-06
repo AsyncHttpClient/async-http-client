@@ -5,9 +5,6 @@ import org.asynchttpclient.handler.RetryHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-/**
- * Created by charlie.chang on 5/5/16.
- */
 public class ExponentialRetryHandlerTest {
 
     @Test

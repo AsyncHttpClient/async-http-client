@@ -2,8 +2,6 @@ package org.asynchttpclient.netty;
 
 import org.asynchttpclient.*;
 import org.asynchttpclient.handler.ExtendedAsyncHandler;
-import org.asynchttpclient.test.EchoHandler;
-import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
@@ -13,14 +11,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-
-/**
- * Created by charlie.chang on 5/5/16.
- */
 
 public class RetryOnReadTimeoutTest extends AbstractBasicTest {
 
