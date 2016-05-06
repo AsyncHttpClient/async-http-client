@@ -446,8 +446,8 @@ public final class NettyRequestSender {
     }
 
     public void retry(NettyResponseFuture<?> future) {
-        //Close the channel
-        if(future.channel() != null) {
+        if(future.channel() != null && !future.reuseChannel()) {
+            //Close channel if we don't need to reuse it
             channelManager.closeChannel(future.channel());
         }
 
