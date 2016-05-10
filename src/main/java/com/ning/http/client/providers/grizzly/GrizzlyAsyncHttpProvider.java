@@ -56,7 +56,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
+import org.glassfish.grizzly.websockets.WebSocketClientFilter;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.*;
 
@@ -343,7 +343,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             doDefaultTransportConfig();
         }
-        fcb.add(new WebSocketFilter());
+        fcb.add(new WebSocketClientFilter());
         
         clientTransport.setProcessor(fcb.build());
 
