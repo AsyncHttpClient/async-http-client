@@ -199,7 +199,10 @@ public final class NettyRequestFactory {
 
         // don't override authorization but append
         addAuthorizationHeader(headers, perRequestAuthorizationHeader(realm));
-        setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(proxyRealm));
+        // only set proxy auth on request over plain HTTP, or when performing CONNECT
+        if (!uri.isSecured() || connect) {
+            setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(proxyRealm));
+        }
 
         // Add default accept headers
         if (!headers.contains(ACCEPT))
