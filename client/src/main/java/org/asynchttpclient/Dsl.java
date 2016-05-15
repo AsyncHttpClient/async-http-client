@@ -58,7 +58,7 @@ public final class Dsl {
         return request(OPTIONS, url);
     }
 
-    public static RequestBuilder path(String url) {
+    public static RequestBuilder patch(String url) {
         return request(PATCH, url);
     }
 
