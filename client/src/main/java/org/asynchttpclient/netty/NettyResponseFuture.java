@@ -486,7 +486,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     @Override
     public String toString() {
         return "NettyResponseFuture{" + //
-                "hashCode=" + Integer.toHexString(hashCode()) +
                 ",\n\tcurrentRetry=" + currentRetry + //
                 ",\n\tisDone=" + isDone + //
                 ",\n\tisCancelled=" + isCancelled + //
