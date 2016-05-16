@@ -428,7 +428,7 @@ public final class NettyRequestSender {
         scheduleRetryTimeout(future);
     }
 
-    public void sendRetryRequest(NettyResponseFuture<?> future) {
+    public void retryImmediately(NettyResponseFuture<?> future) {
         // FIXME should we set future.setReuseChannel(false); ?
         future.setChannelState(ChannelState.RECONNECTED);
         future.getAndSetStatusReceived(false);
@@ -459,7 +459,7 @@ public final class NettyRequestSender {
             future.getTimeoutsHolder().stopRetryTimeout();
             scheduleRetryRequst(future);
         } else {
-            sendRetryRequest(future);
+            retryImmediately(future);
         }
 
     }

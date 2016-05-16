@@ -23,6 +23,6 @@ public class RetryTimerTask extends TimeoutTimerTask {
             return;
         }
 
-        requestSender.sendRetryRequest(nettyResponseFuture);
+        requestSender.retryImmediately(nettyResponseFuture);
     }
 }
