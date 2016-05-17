@@ -35,7 +35,7 @@ public class RetryTest extends AbstractBasicTest {
                         .setExpBackoffRetryEnabled(true)
                         .build();
 
-        final AsyncRetryHandler handler = new AsyncRetryHandler(
+        final AsyncRetryHandler<Void> handler = new AsyncRetryHandler<>(
                         new ExponentialRetryHandler(initialValue, maxValue, multipler));
         final AtomicBoolean stoped = new AtomicBoolean(false);
         final InputStream inputStream = new InputStream() {
@@ -83,7 +83,7 @@ public class RetryTest extends AbstractBasicTest {
                         .setExpBackoffRetryEnabled(true)
                         .build();
 
-        final AsyncRetryHandler handler = new AsyncRetryHandler(
+        final AsyncRetryHandler<Void> handler = new AsyncRetryHandler<>(
                         new ExponentialRetryHandler(initialValue, maxValue, multipler));
 
         try (final AsyncHttpClient httpClient = new DefaultAsyncHttpClient(config)) {

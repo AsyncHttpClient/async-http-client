@@ -38,7 +38,7 @@ public class RetryOnReadTimeoutTest extends AbstractBasicTest {
                         .setExpBackoffRetryEnabled(true)
                         .build();
 
-        final AsyncRetryHandler handler = new AsyncRetryHandler();
+        final AsyncRetryHandler<Void> handler = new AsyncRetryHandler<>();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             client.prepareGet(getTargetUrl()).execute(handler).get();
