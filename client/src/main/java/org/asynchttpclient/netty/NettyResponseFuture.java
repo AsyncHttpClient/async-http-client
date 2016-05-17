@@ -107,7 +107,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public Throwable pendingException;
 
     //Backoff Handler
-    RetryHandler retryHandler;
+    private RetryHandler retryHandler;
 
     public NettyResponseFuture(Request originalRequest,//
             AsyncHandler<V> asyncHandler,//
