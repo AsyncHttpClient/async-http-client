@@ -429,6 +429,10 @@ public final class NettyRequestSender {
     }
 
     public void retryImmediately(NettyResponseFuture<?> future) {
+        if(future.channel() != null && !future.reuseChannel()) {
+            channelManager.closeChannel(future.channel());
+        }
+
         // FIXME should we set future.setReuseChannel(false); ?
         future.setChannelState(ChannelState.RECONNECTED);
         future.getAndSetStatusReceived(false);
