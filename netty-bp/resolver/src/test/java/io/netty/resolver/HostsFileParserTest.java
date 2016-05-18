@@ -44,7 +44,7 @@ public class HostsFileParserTest {
 
         Map<String, InetAddress> entries = HostsFileParser.parse(new BufferedReader(new StringReader(hostsString)));
 
-        assertEquals("Expected 6 entries", 6, entries.size());
+        assertEquals("Expected 7 entries", 7, entries.size());
         assertEquals("127.0.0.1", entries.get("host1").getHostAddress());
         assertEquals("192.168.0.1", entries.get("host2").getHostAddress());
         assertEquals("192.168.0.2", entries.get("host3").getHostAddress());
