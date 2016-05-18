@@ -95,7 +95,7 @@ public class EchoHandler extends AbstractHandler {
             }
         }
 
-        httpResponse.setStatus(200);
+        request.setHandled(true);
         httpResponse.getOutputStream().flush();
         httpResponse.getOutputStream().close();
     }
