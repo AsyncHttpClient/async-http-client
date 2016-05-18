@@ -85,6 +85,10 @@ public class AsyncHttpClientConfigHelper {
             return Integer.parseInt(getString(key));
         }
 
+        public float getFloat(String key) {
+            return Float.parseFloat(getString(key));
+        }
+
         public long getLong(String key) {
             return Long.parseLong(getString(key));
         }

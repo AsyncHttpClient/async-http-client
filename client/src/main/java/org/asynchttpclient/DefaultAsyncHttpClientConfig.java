@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
@@ -40,6 +39,8 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
+
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
@@ -106,6 +107,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final List<RequestFilter> requestFilters;
     private final List<ResponseFilter> responseFilters;
     private final List<IOExceptionFilter> ioExceptionFilters;
+
+    //backoff handlers
+    private boolean expBackoffRetryEnabled;
+    private int expBackoffRetryInitialInterval;
+    private int expBackoffRetryMaxInterval;
+    private float expBackoffRetryMultiplier;
 
     // internals
     private final String threadPoolName;
@@ -177,6 +184,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             List<ResponseFilter> responseFilters,//
             List<IOExceptionFilter> ioExceptionFilters,//
 
+            //backoff handler
+            boolean expBackoffRetryEnabled,
+            int expBackoffRetryInitialInterval,
+            int expBackoffRetryMaxInterval,
+            float expBackoffRetryMultiplier,
+
             // tuning
             boolean tcpNoDelay,//
             boolean soReuseAddress,//
@@ -247,6 +260,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
+
+        //handlers
+        this.expBackoffRetryEnabled = expBackoffRetryEnabled;
+        this.expBackoffRetryInitialInterval = expBackoffRetryInitialInterval;
+        this.expBackoffRetryMaxInterval = expBackoffRetryMaxInterval;
+        this.expBackoffRetryMultiplier = expBackoffRetryMultiplier;
 
         // tuning
         this.tcpNoDelay = tcpNoDelay;
@@ -396,6 +415,22 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public KeepAliveStrategy getKeepAliveStrategy() {
         return keepAliveStrategy;
+    }
+
+    public boolean isExpBackoffRetryEnabled() {
+        return expBackoffRetryEnabled;
+    }
+
+    public int getExpBackoffRetryInitialInterval() {
+        return expBackoffRetryInitialInterval;
+    }
+
+    public int getExpBackoffRetryMaxInterval() {
+        return expBackoffRetryMaxInterval;
+    }
+
+    public float getExpBackoffRetryMultiplier() {
+        return expBackoffRetryMultiplier;
     }
 
     @Override
@@ -625,6 +660,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private final List<ResponseFilter> responseFilters = new LinkedList<>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<>();
 
+        //backoff handlers;
+        private boolean expBackoffRetryEnabled = defaultExponentialBackoffRetryEnabled();
+        private int expBackoffRetryInitialInterval = defaultExponentialBackoffRetryInitialValue();
+        private int expBackoffRetryMaxInterval = defaultExponentialBackoffRetryMaxIntervalValue();
+        private float expBackoffRetryMultiplier = defaultExponentialBackoffRetryMultiplierValue();
+
         // tuning
         private boolean tcpNoDelay = defaultTcpNoDelay();
         private boolean soReuseAddress = defaultSoReuseAddress();
@@ -697,6 +738,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             requestFilters.addAll(config.getRequestFilters());
             responseFilters.addAll(config.getResponseFilters());
             ioExceptionFilters.addAll(config.getIoExceptionFilters());
+
+            //Backoff handlers
+            expBackoffRetryEnabled = config.isExpBackoffRetryEnabled();
+            expBackoffRetryInitialInterval = config.getExpBackoffRetryInitialInterval();
+            expBackoffRetryMaxInterval = config.getExpBackoffRetryMaxInterval();
+            expBackoffRetryMultiplier = config.getExpBackoffRetryMultiplier();
 
             // tuning
             tcpNoDelay = config.isTcpNoDelay();
@@ -949,6 +996,27 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        //Backoff handler
+        public Builder setExpBackoffRetryEnabled(boolean expBackoffRetryEnabled) {
+            this.expBackoffRetryEnabled = expBackoffRetryEnabled;
+            return this;
+        }
+
+        public Builder setExpBackoffRetryInitialInterval(int expBackoffRetryInitialInterval) {
+            this.expBackoffRetryInitialInterval = expBackoffRetryInitialInterval;
+            return this;
+        }
+
+        public Builder setExpBackoffRetryMaxInterval(int expBackoffRetryMaxInterval) {
+            this.expBackoffRetryMaxInterval = expBackoffRetryMaxInterval;
+            return this;
+        }
+
+        public Builder setExpBackoffRetryMultiplier(float expBackoffRetryMultiplier) {
+            this.expBackoffRetryMultiplier = expBackoffRetryMultiplier;
+            return this;
+        }
+
         // tuning
         public Builder setTcpNoDelay(boolean tcpNoDelay) {
             this.tcpNoDelay = tcpNoDelay;
@@ -1109,6 +1177,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters), //
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),//
                     ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),//
+                    expBackoffRetryEnabled, //
+                    expBackoffRetryInitialInterval, //
+                    expBackoffRetryMaxInterval, //
+                    expBackoffRetryMultiplier, //
                     tcpNoDelay, //
                     soReuseAddress, //
                     soLinger, //

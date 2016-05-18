@@ -45,6 +45,8 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
+import org.asynchttpclient.handler.RetryHandler;
+import org.asynchttpclient.handler.ExponentialRetryHandler;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.Callback;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -186,12 +188,22 @@ public final class NettyRequestSender {
             proxyRealm = proxy.getRealm();
         }
 
+        RetryHandler retryHandler = null;
+        if(asyncHandler instanceof RetryHandler) {
+            retryHandler = RetryHandler.class.cast(asyncHandler);
+        } else if (config.isExpBackoffRetryEnabled()) {
+            retryHandler = new ExponentialRetryHandler(config.getExpBackoffRetryInitialInterval(),
+                            config.getExpBackoffRetryMaxInterval(),
+                            config.getExpBackoffRetryMultiplier());
+        }
+
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, forceConnect, proxy, realm, proxyRealm);
 
         if (originalFuture == null) {
             NettyResponseFuture<T> future = newNettyResponseFuture(request, asyncHandler, nettyRequest, proxy);
             future.setRealm(realm);
             future.setProxyRealm(proxyRealm);
+            future.setRetryHandler(retryHandler);
             return future;
         } else {
             originalFuture.setNettyRequest(nettyRequest);
@@ -376,7 +388,15 @@ public final class NettyRequestSender {
             // on very fast requests, it's entirely possible that the response has already been completed
             // by the time we try to schedule the read timeout
             nettyResponseFuture.touch();
+            timeoutsHolder.stopReadTimeout(); //Stop existing readTimeout
             timeoutsHolder.startReadTimeout();
+        }
+    }
+
+    private void scheduleRetryTimeout(NettyResponseFuture<?> nettyResponseFuture) {
+        TimeoutsHolder timeoutsHolder = nettyResponseFuture.getTimeoutsHolder();
+        if (timeoutsHolder != null) {
+            timeoutsHolder.startRetryTimeout();
         }
     }
 
@@ -396,40 +416,56 @@ public final class NettyRequestSender {
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
         if (future.isDone()) {
             channelManager.closeChannel(channel);
-        } else if (future.incrementRetryAndCheck() && retry(future)) {
+        } else if (future.incrementRetryAndCheck() && future.canBeReplayed() && !isClosed()) {
+            retry(future);
             future.pendingException = null;
         } else {
             abort(channel, future, future.pendingException != null ? future.pendingException : RemotelyClosedException.INSTANCE);
         }
     }
 
-    public boolean retry(NettyResponseFuture<?> future) {
+    private void scheduleRetryRequst(NettyResponseFuture<?> future) {
+        scheduleRetryTimeout(future);
+    }
 
-        if (isClosed())
-            return false;
-
-        if (future.canBeReplayed()) {
-            // FIXME should we set future.setReuseChannel(false); ?
-            future.setChannelState(ChannelState.RECONNECTED);
-            future.getAndSetStatusReceived(false);
-
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
-            if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
-                AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
-            }
-
-            try {
-                sendNextRequest(future.getCurrentRequest(), future);
-                return true;
-
-            } catch (Exception e) {
-                abort(future.channel(), future, e);
-                return false;
-            }
-        } else {
-            LOGGER.debug("Unable to recover future {}\n", future);
-            return false;
+    public void retryImmediately(NettyResponseFuture<?> future) {
+        if(future.channel() != null && !future.reuseChannel()) {
+            channelManager.closeChannel(future.channel());
         }
+
+        // FIXME should we set future.setReuseChannel(false); ?
+        future.setChannelState(ChannelState.RECONNECTED);
+        future.getAndSetStatusReceived(false);
+
+        LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+        }
+
+        try {
+            sendNextRequest(future.getCurrentRequest(), future);
+        } catch (Exception e) {
+            abort(future.channel(), future, e);
+        }
+    }
+
+    public void retry(NettyResponseFuture<?> future) {
+        if(future.channel() != null && !future.reuseChannel()) {
+            //Close channel if we don't need to reuse it
+            channelManager.closeChannel(future.channel());
+        }
+
+        //Now we need to retry, stop ReadTimeout and RetryTimeout (if any)
+        future.getTimeoutsHolder().stopReadTimeout();
+
+        if(future.getRetryHandler() != null) {
+            //Stop RetryTimeout (if any)
+            future.getTimeoutsHolder().stopRetryTimeout();
+            scheduleRetryRequst(future);
+        } else {
+            retryImmediately(future);
+        }
+
     }
 
     public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e, Channel channel) {

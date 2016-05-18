@@ -35,6 +35,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.future.AbstractListenableFuture;
+import org.asynchttpclient.handler.RetryHandler;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequest;
@@ -104,6 +105,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private Realm realm;
     private Realm proxyRealm;
     public Throwable pendingException;
+
+    //Backoff Handler
+    private RetryHandler retryHandler;
 
     public NettyResponseFuture(Request originalRequest,//
             AsyncHandler<V> asyncHandler,//
@@ -471,10 +475,18 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.proxyRealm = proxyRealm;
     }
 
+    public void setRetryHandler(RetryHandler retryHandler) {
+        this.retryHandler = retryHandler;
+    }
+
+    public RetryHandler getRetryHandler() {
+        return retryHandler;
+    }
+
     @Override
     public String toString() {
         return "NettyResponseFuture{" + //
-                "currentRetry=" + currentRetry + //
+                ",\n\tcurrentRetry=" + currentRetry + //
                 ",\n\tisDone=" + isDone + //
                 ",\n\tisCancelled=" + isCancelled + //
                 ",\n\tasyncHandler=" + asyncHandler + //

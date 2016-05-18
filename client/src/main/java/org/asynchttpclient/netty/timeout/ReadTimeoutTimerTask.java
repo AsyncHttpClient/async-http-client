@@ -51,13 +51,23 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             // idleConnectTimeout reached
             String message = "Read timeout to " + timeoutsHolder.remoteAddress() + " after " + readTimeout + " ms";
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-            expire(message, durationSinceLastTouch);
-            // cancel request timeout sibling
-            timeoutsHolder.cancel();
+
+            if(!nettyResponseFuture.getInAuth().get()
+                            && !nettyResponseFuture.getInProxyAuth().get()
+                            && nettyResponseFuture.incrementRetryAndCheck()
+                            && !requestSender.isClosed()) {
+
+                requestSender.retry(nettyResponseFuture);
+                
+            } else {
+                expire(message, durationSinceLastTouch);
+                // cancel request timeout sibling
+                timeoutsHolder.cancel();
+            }
 
         } else {
             done.set(false);
-            timeoutsHolder.startReadTimeout(this);
+            timeoutsHolder.startReadTimeout();
         }
     }
 }

@@ -186,4 +186,20 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultUsePooledMemory() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "usePooledMemory");
     }
+
+    public static boolean defaultExponentialBackoffRetryEnabled() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "expBackoffRetryEnabled");
+    }
+
+    public static int defaultExponentialBackoffRetryInitialValue() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "expBackoffRetryInitialValue");
+    }
+
+    public static int defaultExponentialBackoffRetryMaxIntervalValue() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "expBackoffRetryMaxIntervalValue");
+    }
+
+    public static float defaultExponentialBackoffRetryMultiplierValue() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getFloat(ASYNC_CLIENT_CONFIG_ROOT + "expBackoffRetryMultiplierValue");
+    }
 }
