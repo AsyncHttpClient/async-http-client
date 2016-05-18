@@ -123,7 +123,7 @@ public final class AuthenticatorUtils {
 
         String proxyAuthorization = null;
 
-        if (!connect && proxyServer != null && proxyServer.getPrincipal() != null
+        if (connect && proxyServer != null && proxyServer.getPrincipal() != null
                 && proxyServer.getScheme() == Realm.AuthScheme.BASIC) {
             proxyAuthorization = computeBasicAuthentication(proxyServer);
 
