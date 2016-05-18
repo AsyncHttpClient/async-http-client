@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * @param <T> the builder type
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
-    
+
     public static NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
 
     private final static Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
@@ -388,6 +388,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setProxyServer(ProxyServer.Builder proxyServerBuilder) {
         this.proxyServer = proxyServerBuilder.build();
+        return asDerivedType();
+    }
+
+    public T setRealm(Realm.Builder realm) {
+        this.realm = realm.build();
         return asDerivedType();
     }
 
