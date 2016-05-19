@@ -78,7 +78,7 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     protected void runListeners() {
         hasRun = true;
         if (executionListInitialized) {
-            executionList().run();
+            executionList().execute();
         }
     }
 }
