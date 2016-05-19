@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  *
  * <p>
  * Exceptions thrown by a listener will be propagated up to the executor. Any exception thrown during {@code Executor.execute} (e.g., a {@code RejectedExecutionException} or an
- * exception thrown by {@linkplain MoreExecutors#directExecutor direct execution}) will be caught and logged.
+ * exception thrown by a directExecutor direct execution) will be caught and logged.
  *
  * @author Nishant Thakkar
  * @author Sven Mawson
@@ -49,13 +49,9 @@ public final class ExecutionList {
     public ExecutionList() {
     }
 
-    /**
-     * Adds the {@code Runnable} and accompanying {@code Executor} to the list of listeners to execute. If execution has already begun, the listener is executed immediately.
-     *
-     * <p>
-     * When selecting an executor, note that {@code directExecutor} is dangerous in some cases. See the discussion in the {@link ListenableFuture#addListener
-     * ListenableFuture.addListener} documentation.
-     */
+    // Adds the {@code Runnable} and accompanying {@code Executor} to the list of listeners to execute. If execution has already begun, the listener is executed immediately.
+    // When selecting an executor, note that {@code directExecutor} is dangerous in some cases. See the discussion in the {@link org.asynchttpclient.ListenableFuture#addListener
+    // ListenableFuture.addListener} documentation.
     public void add(Runnable runnable, Executor executor) {
         // Fail fast on a null. We throw NPE here because the contract of Executor states that it
         // throws NPE on null listener, so we propagate that contract up into the add method as well.
