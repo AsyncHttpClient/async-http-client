@@ -476,7 +476,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
             boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
             if (!avoidProxy) {
-                urlConnection.setRequestProperty("Connection", ka);
                 if (proxyServer.getPrincipal() != null) {
                     urlConnection.setRequestProperty("Proxy-Authorization", AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
