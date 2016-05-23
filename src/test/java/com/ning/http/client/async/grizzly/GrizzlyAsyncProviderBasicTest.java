@@ -18,6 +18,7 @@ import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderCon
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -50,5 +51,10 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected String generatedAcceptEncodingHeader() {
         return "gzip";
+    }
+
+    @Test(enabled = false)
+    public void requestingPlainHttpEndpointOverHttpsThrowsSslException() throws Throwable {
+        super.requestingPlainHttpEndpointOverHttpsThrowsSslException();
     }
 }

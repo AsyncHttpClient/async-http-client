@@ -60,20 +60,22 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
             client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
             handler.waitForCompletion();
 
-            List<String> expectedEvents = Arrays.asList(
-                    "PoolConnection",
-                    "OpenConnection",
-                    "DnsResolved",
-                    "ConnectionOpen",
-                    "SendRequest",
-                    "HeaderWriteCompleted",
-                    "StatusReceived",
-                    "HeadersReceived",
+            List<String> expectedEvents = Arrays.asList("PoolConnection",//
+                    "OpenConnection",//
+                    "DnsResolved",//
+                    "ConnectionOpen",//
+                    "SendRequest",//
+                    "HeaderWriteCompleted",//
+                    "StatusReceived",//
+                    "HeadersReceived",//
                     "Completed");
 
-            assertEquals(handler.firedEvents, expectedEvents,
-                    "Got: " + Joiner.on(", ").join(handler.firedEvents));
+            assertEquals(handler.firedEvents, expectedEvents, "Got: " + Joiner.on(", ").join(handler.firedEvents));
         }
+    }
 
+    @Test(enabled = false)
+    public void requestingPlainHttpEndpointOverHttpsThrowsSslException() throws Throwable {
+        super.requestingPlainHttpEndpointOverHttpsThrowsSslException();
     }
 }

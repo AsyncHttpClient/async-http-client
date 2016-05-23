@@ -15,10 +15,14 @@
  */
 package com.ning.http.client.async;
 
-import static java.nio.charset.StandardCharsets.*;
 import static com.ning.http.util.DateUtils.millisTime;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
-import static org.testng.Assert.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -38,6 +42,8 @@ import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.multipart.Part;
 import com.ning.http.client.multipart.StringPart;
+
+import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -486,7 +492,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBodyIsoTest() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
-            Response r = client.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("\u017D\u017D\u017D\u017D\u017D\u017D").execute().get();
+            Response r = client.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("\u017D\u017D\u017D\u017D\u017D\u017D")
+                    .execute().get();
             assertEquals(r.getResponseBody().getBytes(ISO_8859_1), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(ISO_8859_1));
         }
     }
@@ -641,7 +648,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     protected abstract String generatedAcceptEncodingHeader();
-    
+
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Throwable {
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnforced(true).build();
@@ -694,16 +701,17 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
             sb.setLength(sb.length() - 1);
 
-            Response response = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandler<Response>() {
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-                    return response;
-                }
+            Response response = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                    .execute(new AsyncCompletionHandler<Response>() {
+                        @Override
+                        public Response onCompleted(Response response) throws Exception {
+                            return response;
+                        }
 
-                @Override
-                public void onThrowable(Throwable t) {
-                }
-            }).get();
+                        @Override
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get();
 
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Connection"), "keep-alive");
@@ -720,7 +728,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m).setVirtualHost("localhost:" + port1).build();
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m)
+                    .setVirtualHost("localhost:" + port1).build();
 
             Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter()).get();
 
@@ -748,7 +757,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
             sb.setLength(sb.length() - 1);
 
-            Response response = client.preparePut(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter()).get();
+            Response response = client.preparePut(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                    .execute(new AsyncCompletionHandlerAdapter()).get();
 
             assertEquals(response.getStatusCode(), 200);
         }
@@ -803,11 +813,12 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             StringBuilder sb = new StringBuilder();
             sb.append("LockThread=true");
 
-            Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
-                @Override
-                public void onThrowable(Throwable t) {
-                }
-            });
+            Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                    .execute(new AsyncCompletionHandlerAdapter() {
+                        @Override
+                        public void onThrowable(Throwable t) {
+                        }
+                    });
 
             // Make sure we are connected before cancelling. I know, Thread.sleep
             // sucks!
@@ -827,12 +838,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             sb.append("LockThread=true");
 
             try {
-                Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
+                Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                        .execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                t.printStackTrace();
+                            }
+                        });
 
                 future.get(10, TimeUnit.SECONDS);
             } catch (ExecutionException ex) {
@@ -862,7 +874,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
             sb.setLength(sb.length() - 1);
 
-            Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
+            Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                    .execute(new AsyncCompletionHandlerAdapter());
 
             Response response = future.get();
             Assert.assertNotNull(response);
@@ -912,12 +925,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             final AtomicInteger count = new AtomicInteger();
             for (int i = 0; i < 20; i++) {
                 try {
-                    Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                        @Override
-                        public void onThrowable(Throwable t) {
-                            count.incrementAndGet();
-                        }
-                    }).get();
+                    Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort))
+                            .execute(new AsyncCompletionHandlerAdapter() {
+                                @Override
+                                public void onThrowable(Throwable t) {
+                                    count.incrementAndGet();
+                                }
+                            }).get();
                     assertNull(response, "Should have thrown ExecutionException");
                 } catch (ExecutionException ex) {
                     Throwable cause = ex.getCause();
@@ -935,12 +949,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
             int dummyPort = findFreePort();
             try {
-                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        t.printStackTrace();
-                    }
-                }).get();
+                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", dummyPort))
+                        .execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                t.printStackTrace();
+                            }
+                        }).get();
                 assertNull(response, "Should have thrown ExecutionException");
             } catch (ExecutionException ex) {
                 Throwable cause = ex.getCause();
@@ -958,12 +973,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             int port = findFreePort();
 
             try {
-                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        t.printStackTrace();
-                    }
-                }).get();
+                Response response = client.preparePost(String.format("http://127.0.0.1:%d/", port))
+                        .execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                t.printStackTrace();
+                            }
+                        }).get();
                 assertNull(response, "No ExecutionException was thrown");
             } catch (ExecutionException ex) {
                 assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -994,7 +1010,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider", "async" }, expectedExceptions = { ConnectException.class, UnresolvedAddressException.class, UnknownHostException.class })
+    @Test(groups = { "online", "default_provider", "async" }, expectedExceptions = { ConnectException.class,
+            UnresolvedAddressException.class, UnknownHostException.class })
     public void asyncConnectInvalidHandlerHost() throws Throwable {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
 
@@ -1027,15 +1044,16 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             int port = findFreePort();
 
             try {
-                Response response = client.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        called.set(true);
-                        if (t instanceof ConnectException) {
-                            rightCause.set(true);
-                        }
-                    }
-                }).get();
+                Response response = client.prepareGet(String.format("http://127.0.0.1:%d/", port))
+                        .execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                called.set(true);
+                                if (t instanceof ConnectException) {
+                                    rightCause.set(true);
+                                }
+                            }
+                        }).get();
                 assertNull(response, "No ExecutionException was thrown");
             } catch (ExecutionException ex) {
                 assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -1383,7 +1401,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void idleRequestTimeoutTest() throws Exception {
-        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(5000).setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setPooledConnectionIdleTimeout(5000)
+                .setRequestTimeout(10000).build())) {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
             h.add("LockThread", "true");
@@ -1420,17 +1439,18 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             final AtomicReference<CancellationException> ex = new AtomicReference<>();
             ex.set(null);
             try {
-                Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
+                Future<Response> future = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString())
+                        .execute(new AsyncCompletionHandlerAdapter() {
 
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        if (t instanceof CancellationException) {
-                            ex.set((CancellationException) t);
-                        }
-                        t.printStackTrace();
-                    }
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                if (t instanceof CancellationException) {
+                                    ex.set((CancellationException) t);
+                                }
+                                t.printStackTrace();
+                            }
 
-                });
+                        });
 
                 Thread.sleep(1000);
                 future.cancel(true);
@@ -1444,7 +1464,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     protected String getBrokenTargetUrl() {
         return String.format("http:127.0.0.1:%d/foo/test", port1);
     }
-    
+
     @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { NullPointerException.class })
     public void invalidUri() throws Exception {
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
@@ -1476,6 +1496,19 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             Response r = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
             assertEquals(r.getStatusCode(), 200);
             assertEquals(new String(r.getResponseBodyAsBytes(), "UTF-8"), "MIRROR");
+        }
+    }
+
+    @Test
+    public void requestingPlainHttpEndpointOverHttpsThrowsSslException() throws Throwable {
+        try (AsyncHttpClient client = getAsyncHttpClient(null)) {
+            client.prepareGet(getTargetUrl().replace("http", "https")).execute().get();
+            fail("Request shouldn't succeed");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            assertTrue(cause instanceof ConnectException, "Cause should be a ConnectException but got a " + cause.getClass().getName());
+            Throwable rootCause = e.getCause().getCause();
+            assertTrue(rootCause instanceof SSLException, "Root cause should be a SslException but got a " + rootCause.getClass().getName());
         }
     }
 
