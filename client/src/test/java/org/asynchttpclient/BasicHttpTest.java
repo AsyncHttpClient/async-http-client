@@ -15,7 +15,7 @@ package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
@@ -40,6 +40,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.net.ssl.SSLException;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.handler.MaxRedirectException;
@@ -890,6 +892,22 @@ public class BasicHttpTest extends HttpTest {
                         COMPLETED_EVENT };
 
                 assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+            });
+        });
+    }
+
+    @Test
+    public void requestingPlainHttpEndpointOverHttpsThrowsSslException() throws Throwable {
+        withClient().run(client -> {
+            withServer(server).run(server -> {
+                server.enqueueEcho();
+                try {
+                    client.prepareGet(getTargetUrl().replace("http", "https")).execute().get();
+                    fail("Request shouldn't succeed");
+                } catch (ExecutionException e) {
+                    assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
+                    assertTrue(e.getCause().getCause() instanceof SSLException, "Root cause should be a SslException");
+                }
             });
         });
     }
