@@ -1,8 +1,3 @@
-package org.asynchttpclient.util;
-
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
-
 /*
  * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
@@ -16,6 +11,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
+package org.asynchttpclient.util;
+
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
+
 public final class HttpConstants {
 
     public static final class Methods {
