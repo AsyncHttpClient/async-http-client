@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.channel;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
 import io.netty.util.Timeout;
@@ -190,7 +190,7 @@ public final class DefaultChannelPool implements ChannelPool {
                     LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
                 }
 
-            long start = millisTime();
+            long start = unpreciseMillisTime();
             int closedCount = 0;
             int totalCount = 0;
 
@@ -215,7 +215,7 @@ public final class DefaultChannelPool implements ChannelPool {
             }
 
             if (LOGGER.isDebugEnabled()) {
-                long duration = millisTime() - start;
+                long duration = unpreciseMillisTime() - start;
                 LOGGER.debug("Closed {} connections out of {} in {}ms", closedCount, totalCount, duration);
             }
 
@@ -230,7 +230,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isClosed.get())
             return false;
 
-        long now = millisTime();
+        long now = unpreciseMillisTime();
 
         if (isTtlExpired(channel, now))
             return false;

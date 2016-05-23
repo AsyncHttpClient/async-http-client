@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import io.netty.util.Timeout;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -44,7 +44,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
             return;
 
         String message = "Request timeout to " + timeoutsHolder.remoteAddress() + " after " + requestTimeout + "ms";
-        long age = millisTime() - nettyResponseFuture.getStart();
+        long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
         expire(message, age);
     }
 }

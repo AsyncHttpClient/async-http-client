@@ -16,7 +16,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -149,13 +149,13 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
                 @Override
                 public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    times[0] = millisTime();
+                    times[0] = unpreciseMillisTime();
                     return super.onBodyPartReceived(content);
                 }
 
                 @Override
                 public void onThrowable(Throwable t) {
-                    times[1] = millisTime();
+                    times[1] = unpreciseMillisTime();
                     super.onThrowable(t);
                 }
             });

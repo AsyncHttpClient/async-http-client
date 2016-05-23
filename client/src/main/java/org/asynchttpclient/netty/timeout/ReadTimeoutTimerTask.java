@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import io.netty.util.Timeout;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -42,7 +42,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             return;
         }
 
-        long now = millisTime();
+        long now = unpreciseMillisTime();
 
         long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
         long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;

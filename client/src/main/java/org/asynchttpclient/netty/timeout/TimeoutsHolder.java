@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
@@ -52,7 +52,7 @@ public class TimeoutsHolder {
         }
 
         if (requestTimeoutInMs != -1) {
-            requestTimeoutMillisTime = millisTime() + requestTimeoutInMs;
+            requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
             requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;
@@ -71,7 +71,7 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(ReadTimeoutTimerTask task) {
-        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue > (requestTimeoutMillisTime - millisTime()))) {
+        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue > (requestTimeoutMillisTime - unpreciseMillisTime()))) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)

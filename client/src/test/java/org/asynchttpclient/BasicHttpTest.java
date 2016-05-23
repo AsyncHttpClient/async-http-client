@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -661,11 +661,11 @@ public class BasicHttpTest extends HttpTest {
                 h.add("X-Delay", 2_000);
 
                 server.enqueueEcho();
-                long start = millisTime();
+                long start = unpreciseMillisTime();
                 try {
                     client.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
                 } catch (Throwable ex) {
-                    final long elapsedTime = millisTime() - start;
+                    final long elapsedTime = unpreciseMillisTime() - start;
                     assertTrue(elapsedTime >= 1_000 && elapsedTime <= 1_500);
                     throw ex.getCause();
                 }

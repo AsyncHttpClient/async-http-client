@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.util.DateUtils.millisTime;
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static io.netty.util.internal.PlatformDependent.*;
 import io.netty.channel.Channel;
@@ -62,7 +62,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     // FIXME see https://github.com/netty/netty/pull/4669
     private static final AtomicReferenceFieldUpdater<NettyResponseFuture, ExecutionException> EX_EX_UPDATER = newAtomicReferenceFieldUpdater(NettyResponseFuture.class, "exEx");
 
-    private final long start = millisTime();
+    private final long start = unpreciseMillisTime();
     private final ChannelPoolPartitioning connectionPoolPartitioning;
     private final ProxyServer proxyServer;
     private final int maxRetry;
@@ -85,7 +85,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private volatile ExecutionException exEx;
 
     // volatile where we don't need CAS ops
-    private volatile long touch = millisTime();
+    private volatile long touch = unpreciseMillisTime();
     private volatile TimeoutsHolder timeoutsHolder;
     private volatile ChannelState channelState = ChannelState.NEW;
 
@@ -254,7 +254,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     @Override
     public void touch() {
-        touch = millisTime();
+        touch = unpreciseMillisTime();
     }
 
     @Override
