@@ -266,7 +266,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             public void run() {
                 ExecutionException e = EX_EX_UPDATER.get(NettyResponseFuture.this);
                 if (e != null)
-                    completable.completeExceptionally(e);
+                    completable.completeExceptionally(e.getCause());
                 else
                     completable.complete((V) CONTENT_UPDATER.get(NettyResponseFuture.this));
             }
