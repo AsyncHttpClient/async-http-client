@@ -143,7 +143,7 @@ public class MultipartPartTest {
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, new byte[0])) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitCustomHeaders(counterVisitor);
-            assertEquals(counterVisitor.getCount(), 27, "CounterPartVisitor count for visitCustomHeaders should include the length of the custom headers");
+            assertEquals(counterVisitor.getCount(), 29, "CounterPartVisitor count for visitCustomHeaders should include the length of the custom headers");
         }
     }
 
@@ -164,7 +164,7 @@ public class MultipartPartTest {
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, new byte[0])) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitPreContent(counterVisitor);
-            assertEquals(counterVisitor.getCount(), 214, "CounterPartVisitor count for visitPreContent should " + "be equal to the sum of the lengths of precontent");
+            assertEquals(counterVisitor.getCount(), 216, "CounterPartVisitor count for visitPreContent should " + "be equal to the sum of the lengths of precontent");
         }
     }
 
@@ -265,7 +265,5 @@ public class MultipartPartTest {
         protected long transferContentTo(WritableByteChannel target) throws IOException {
             return 0;
         }
-
     }
-
 }

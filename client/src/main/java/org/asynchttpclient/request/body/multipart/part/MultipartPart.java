@@ -76,6 +76,11 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
      * Content type header as a byte array
      */
     private static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = "Content-Transfer-Encoding: ".getBytes(US_ASCII);
+    
+    /**
+     * Content type header as a byte array
+     */
+    private static final byte[] HEADER_NAME_VALUE_SEPARATOR_BYTES = ": ".getBytes(US_ASCII);
 
     /**
      * Content type header as a byte array
@@ -303,6 +308,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
             for (Param param : part.getCustomHeaders()) {
                 visitor.withBytes(CRLF_BYTES);
                 visitor.withBytes(param.getName().getBytes(US_ASCII));
+                visitor.withBytes(HEADER_NAME_VALUE_SEPARATOR_BYTES);
                 visitor.withBytes(param.getValue().getBytes(US_ASCII));
             }
         }
