@@ -527,7 +527,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         Charset finalCharset = rb.computeCharset();
 
         // make copies of mutable internal collections
-        List<Cookie> cookiesCopy = rb.cookies == null ? Collections.emptyList() : new ArrayList<>(rb.cookies);
+        List<Cookie> cookiesCopy = rb.cookies == null ? new ArrayList<>() : new ArrayList<>(rb.cookies);
         List<Param> formParamsCopy = rb.formParams == null ? Collections.emptyList() : new ArrayList<>(rb.formParams);
         List<Part> bodyPartsCopy = rb.bodyParts == null ? Collections.emptyList() : new ArrayList<>(rb.bodyParts);
 

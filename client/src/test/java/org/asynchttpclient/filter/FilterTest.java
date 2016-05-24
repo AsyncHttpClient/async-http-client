@@ -32,6 +32,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.cookie.Cookie;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -66,6 +67,21 @@ public class FilterTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void basicTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
+            Response response = c.preparePost(getTargetUrl()).execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void addCookieTest() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new RequestFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+                ctx.getRequest().getCookies().add(Cookie.newValidCookie("test","x",false,null,null,500000,false,true));
+                return ctx;
+            }
+        }))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
