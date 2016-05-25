@@ -1954,7 +1954,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private static final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        if (request.getMethod() != "GET" || !(asyncHandler instanceof WebSocketUpgradeHandler)) {
+        if (!("GET".equals(request.getMethod())) || !(asyncHandler instanceof WebSocketUpgradeHandler)) {
             return false;
         }
         return true;
