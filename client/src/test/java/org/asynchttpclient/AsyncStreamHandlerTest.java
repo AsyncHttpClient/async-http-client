@@ -421,7 +421,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                 final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
-                final String[] expected = { "GET", "HEAD", "OPTIONS", "POST", "TRACE" };
+                final String[] expected = { "GET", "HEAD", "OPTIONS", "POST" };
                 Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
                     @Override

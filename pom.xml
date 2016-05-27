@@ -9,7 +9,7 @@
 	<groupId>org.asynchttpclient</groupId>
 	<artifactId>async-http-client-project</artifactId>
 	<name>Asynchronous Http Client Project</name>
-	<version>2.0.12-SNAPSHOT</version>
+	<version>2.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<description>
         The Async Http Client (AHC) library's purpose is to allow Java
@@ -212,7 +212,6 @@
 		</repository>
 	</repositories>
 	<modules>
-		<module>netty-bp</module>
 		<module>client</module>
 		<module>extras</module>
 	</modules>
@@ -249,6 +248,11 @@
 				<classifier>linux-x86_64</classifier>
 				<version>${netty.version}</version>
 				<optional>true</optional>
+			</dependency>
+			<dependency>
+			    <groupId>io.netty</groupId>
+			    <artifactId>netty-resolver-dns</artifactId>
+			    <version>${netty.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -373,7 +377,7 @@
 		<surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
 		<source.property>1.8</source.property>
 		<target.property>1.8</target.property>
-		<netty.version>4.0.40.Final</netty.version>
+		<netty.version>4.1.4.Final</netty.version>
 		<slf4j.version>1.7.21</slf4j.version>
 		<logback.version>1.1.7</logback.version>
 		<testng.version>6.9.10</testng.version>

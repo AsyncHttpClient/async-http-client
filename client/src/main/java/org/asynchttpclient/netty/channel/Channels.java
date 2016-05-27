@@ -14,8 +14,6 @@
 package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelId;
-import io.netty.channel.DefaultChannelId;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -28,7 +26,6 @@ public class Channels {
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
-    private static final AttributeKey<ChannelId> CHANNEL_ID_ATTRIBUTE = AttributeKey.valueOf("channelId");
 
     public static Object getAttribute(Channel channel) {
         Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
@@ -45,15 +42,6 @@ public class Channels {
 
     public static boolean isChannelValid(Channel channel) {
         return channel != null && channel.isActive();
-    }
-
-    public static ChannelId getChannelId(Channel channel) {
-        Attribute<ChannelId> attr = channel.attr(CHANNEL_ID_ATTRIBUTE);
-        return attr != null ? attr.get() : null;
-    }
-
-    public static void initChannelId(Channel channel) {
-        channel.attr(CHANNEL_ID_ATTRIBUTE).set(new DefaultChannelId());
     }
 
     public static void silentlyCloseChannel(Channel channel) {
