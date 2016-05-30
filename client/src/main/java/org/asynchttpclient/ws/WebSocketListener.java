@@ -25,7 +25,7 @@ public interface WebSocketListener {
     void onOpen(WebSocket websocket);
 
     /**
-     * Invoked when the {@link WebSocket} is close.
+     * Invoked when the {@link WebSocket} is closed.
      *
      * @param websocket the WebSocket
      */
