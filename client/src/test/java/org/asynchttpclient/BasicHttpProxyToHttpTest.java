@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.test.EchoHandler;
-import org.eclipse.jetty.proxy.AsyncProxyServlet;
+import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -54,7 +54,7 @@ public class BasicHttpProxyToHttpTest {
     private Server proxy;
 
     @SuppressWarnings("serial")
-    public static class BasicAuthProxyServlet extends AsyncProxyServlet {
+    public static class BasicAuthProxyServlet extends ProxyServlet {
 
         @Override
         public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
