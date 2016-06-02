@@ -1,6 +1,7 @@
 language: java
 jdk:
   - oraclejdk8
+
 before_script: |
   if ([ $TRAVIS_PULL_REQUEST = "false" ] && [ $TRAVIS_BRANCH = "master" ]); then
     ./make_credentials.py
