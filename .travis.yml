@@ -8,6 +8,7 @@ before_script: |
   fi
 
 script: 
+  - mvn test
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
