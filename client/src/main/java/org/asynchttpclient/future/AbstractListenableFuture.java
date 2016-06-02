@@ -43,24 +43,23 @@ import org.asynchttpclient.ListenableFuture;
  */
 public abstract class AbstractListenableFuture<V> implements ListenableFuture<V> {
 
-    // The execution list to hold our executors.
-    // lazy fields
     private volatile boolean hasRun;
     private volatile boolean executionListInitialized;
-    private ExecutionList executionList;
-
-    private ExecutionList lazyExecutionList() {
-        synchronized (this) {
-            if (!executionListInitialized) {
-                executionList = new ExecutionList();
-                executionListInitialized = true;
-            }
-        }
-        return executionList;
-    }
+    private volatile ExecutionList executionList;
 
     private ExecutionList executionList() {
-        return executionListInitialized ? executionList : lazyExecutionList();
+        ExecutionList localExecutionList = executionList;
+        if (localExecutionList == null) {
+            synchronized (this) {
+                localExecutionList = executionList;
+                if (localExecutionList == null) {
+                    localExecutionList = new ExecutionList();
+                    executionList = localExecutionList;
+                    executionListInitialized = true;
+                }
+            }
+        }
+        return localExecutionList;
     }
 
     @Override
