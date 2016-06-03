@@ -22,8 +22,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -57,29 +55,26 @@ public class BasicHttpProxyToHttpTest {
     public static class BasicAuthProxyServlet extends ProxyServlet {
 
         @Override
-        public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+        protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
             LOGGER.debug(">>> got a request !");
 
-            HttpServletRequest httpReq = (HttpServletRequest) req;
-            HttpServletResponse httpRes = (HttpServletResponse) res;
-
-            String authorization = httpReq.getHeader(PROXY_AUTHORIZATION);
+            String authorization = request.getHeader(PROXY_AUTHORIZATION);
             if (authorization == null) {
-                httpRes.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
-                httpRes.setHeader(PROXY_AUTHENTICATE, "Basic realm=\"Fake Realm\"");
-                httpRes.getOutputStream().flush();
+                response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
+                response.setHeader(PROXY_AUTHENTICATE, "Basic realm=\"Fake Realm\"");
+                response.getOutputStream().flush();
 
             } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
-                super.service(req, res);
+                super.service(request, response);
 
             } else {
-                httpRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                httpRes.getOutputStream().flush();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getOutputStream().flush();
             }
         }
     }
 
-    @BeforeClass(alwaysRun = true)
+    @BeforeClass
     public void setUpGlobal() throws Exception {
 
         httpPort = findFreePort();
@@ -92,7 +87,7 @@ public class BasicHttpProxyToHttpTest {
         proxy = new Server(proxyPort);
         ServletHandler servletHandler = new ServletHandler();
         ServletHolder servletHolder = servletHandler.addServletWithMapping(BasicAuthProxyServlet.class, "/*");
-        servletHolder.setInitParameter("maxThreads", "5");
+        servletHolder.setInitParameter("maxThreads", "20");
         proxy.setHandler(servletHandler);
         proxy.start();
 
@@ -101,8 +96,20 @@ public class BasicHttpProxyToHttpTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
-        httpServer.stop();
-        proxy.stop();
+        if (proxy != null) {
+            try {
+                proxy.stop();
+            } catch (Exception e) {
+                LOGGER.error("Failed to properly close proxy", e);
+            }
+        }
+        if (httpServer != null) {
+            try {
+                httpServer.stop();
+            } catch (Exception e) {
+                LOGGER.error("Failed to properly close server", e);
+            }
+        }
     }
 
     @Test
@@ -111,7 +118,7 @@ public class BasicHttpProxyToHttpTest {
             String targetUrl = "http://localhost:" + httpPort + "/foo/bar";
             Request request = get(targetUrl)//
                     .setProxyServer(proxyServer("127.0.0.1", proxyPort).setRealm(realm(AuthScheme.BASIC, "johndoe", "pass")))//
-                    //.setRealm(realm(AuthScheme.BASIC, "user", "passwd"))//
+                    // .setRealm(realm(AuthScheme.BASIC, "user", "passwd"))//
                     .build();
             Future<Response> responseFuture = client.executeRequest(request);
             Response response = responseFuture.get();
