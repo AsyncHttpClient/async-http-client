@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -249,7 +250,7 @@ public class ChannelManager {
 
         final NoopHandler pinnedEntry = new NoopHandler();
 
-        final LoggingHandler loggingHandler = new LoggingHandler();
+        final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.TRACE);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -261,7 +262,7 @@ public class ChannelManager {
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
 
-                if (LOGGER.isDebugEnabled()) {
+                if (LOGGER.isTraceEnabled()) {
                     pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
                 }
 
