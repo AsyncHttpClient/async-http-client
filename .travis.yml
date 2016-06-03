@@ -2,21 +2,17 @@ language: java
 jdk:
   - oraclejdk8
 
-before_script: |
-  if ([ $TRAVIS_PULL_REQUEST = "false" ] && [ $TRAVIS_BRANCH = "master" ]); then
-    ./make_credentials.py
-  fi
+before_script:
+  - travis/before_script.sh
 
 script: 
-  - mvn test
+  - mvn test -Ptest-output
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
 # If building master, Publish to Sonatype
-after_success: |
-  if ([ $TRAVIS_PULL_REQUEST = "false" ] && [ $TRAVIS_BRANCH = "master" ]); then
-    mvn deploy
-  fi
+after_success: 
+  - travis/after_success.sh
 
 sudo: false
 
