@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.extras.registry;
 
+import java.io.IOException;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.extras.registry.AsyncHttpClientFactory;
@@ -49,49 +51,56 @@ public class AsyncHttpClientRegistryTest {
     }
 
     @Test(groups = "standalone")
-    public void testGetAndRegister() {
-        AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
-        Assert.assertNotNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+    public void testGetAndRegister() throws IOException {
+        try(AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
+            Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+            Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
+            Assert.assertNotNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+        }
     }
 
     @Test(groups = "standalone")
-    public void testDeRegister() {
-        AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
-        Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+    public void testDeRegister() throws IOException {
+        try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
+            Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
+            Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
+            Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
+            Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+        }
     }
 
     @Test(groups = "standalone")
-    public void testRegisterIfNew() {
-        AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
-        AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient();
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
-        Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().registerIfNew(TEST_AHC, ahc2));
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC) == ahc);
-        Assert.assertNotNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc2));
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC) == ahc2);
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().registerIfNew(TEST_AHC + 1, ahc));
-        Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 1) == ahc);
+    public void testRegisterIfNew() throws IOException {
+        try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
+            try (AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient()) {
+                Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
+                Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().registerIfNew(TEST_AHC, ahc2));
+                Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC) == ahc);
+                Assert.assertNotNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc2));
+                Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC) == ahc2);
+                Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().registerIfNew(TEST_AHC + 1, ahc));
+                Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 1) == ahc);
+            }
+        }
     }
 
     @Test(groups = "standalone")
-    public void testClearAllInstances() {
-        AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
-        AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient();
-        AsyncHttpClient ahc3 = AsyncHttpClientFactory.getAsyncHttpClient();
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC + 2, ahc2));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC + 3, ahc3));
-        Assert.assertEquals(3, AsyncHttpClientRegistryImpl.getInstance().getAllRegisteredNames().size());
-        AsyncHttpClientRegistryImpl.getInstance().clearAllInstances();
-        Assert.assertEquals(0, AsyncHttpClientRegistryImpl.getInstance().getAllRegisteredNames().size());
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 2));
-        Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 3));
+    public void testClearAllInstances() throws IOException {
+        try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
+            try (AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient()) {
+                try (AsyncHttpClient ahc3 = AsyncHttpClientFactory.getAsyncHttpClient()) {
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC, ahc));
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC + 2, ahc2));
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().addOrReplace(TEST_AHC + 3, ahc3));
+                    Assert.assertEquals(3, AsyncHttpClientRegistryImpl.getInstance().getAllRegisteredNames().size());
+                    AsyncHttpClientRegistryImpl.getInstance().clearAllInstances();
+                    Assert.assertEquals(0, AsyncHttpClientRegistryImpl.getInstance().getAllRegisteredNames().size());
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 2));
+                    Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC + 3));
+                }
+            }
+        }
     }
 
     @Test(groups = "standalone")
