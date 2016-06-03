@@ -199,9 +199,11 @@
 						<artifactId>maven-surefire-plugin</artifactId>
 						<configuration>
 							<groups>standalone, online</groups>
-							<redirectTestOutputToFile>
-								${surefire.redirectTestOutputToFile}
-							</redirectTestOutputToFile>
+							<redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+							<systemPropertyVariables>
+								<org.asynchttpclient.shutdownQuietPeriod>1</org.asynchttpclient.shutdownQuietPeriod>
+								<org.asynchttpclient.shutdownTimeout>100</org.asynchttpclient.shutdownTimeout>
+							</systemPropertyVariables>
 						</configuration>
 					</plugin>
 				</plugins>
