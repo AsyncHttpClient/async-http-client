@@ -129,13 +129,10 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testDerive() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
-        SimpleAsyncHttpClient derived = client.derive().build();
-        try {
-            assertNotSame(derived, client);
-        } finally {
-            client.close();
-            derived.close();
+        try(SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build()) {
+            try(SimpleAsyncHttpClient derived = client.derive().build()) {
+                assertNotSame(derived, client);
+            }
         }
     }
 
@@ -220,7 +217,6 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         };
 
         try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                //
                 .setUrl(getTargetUrl())//
                 .setHeader("Custom", "custom")//
                 .setListener(listener).build()) {
@@ -268,16 +264,17 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = "standalone", expectedExceptions = IllegalStateException.class)
     public void testCloseMasterInvalidDerived() throws Throwable {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
-        SimpleAsyncHttpClient derived = client.derive().build();
-
-        client.close();
-
-        try {
-            derived.get().get();
-            fail("Expected closed AHC");
-        } catch (ExecutionException e) {
-            throw e.getCause();
+        try (SimpleAsyncHttpClient derived = client.derive().build()) {
+            client.close();
+            
+            try {
+                derived.get().get();
+                fail("Expected closed AHC");
+            } catch (ExecutionException e) {
+                throw e.getCause();
+            }
         }
+
     }
 
     @Test(groups = "standalone")
