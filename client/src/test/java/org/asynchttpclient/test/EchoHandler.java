@@ -2,6 +2,8 @@ package org.asynchttpclient.test;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -12,10 +14,14 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 public class EchoHandler extends AbstractHandler {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(EchoHandler.class);
 
     @Override
     public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
+        LOGGER.debug("Echo received request {} on path {}", request, pathInContext);
+        
         if (httpRequest.getHeader("X-HEAD") != null) {
             httpResponse.setContentLength(1);
         }
