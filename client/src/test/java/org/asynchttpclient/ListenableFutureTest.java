@@ -60,7 +60,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
             future.get();
             future.addListener(() -> counter.decrementAndGet(), Runnable::run);
         }
-        assertEquals(0, counter.get());
+        assertEquals(counter.get(), 0);
     }
 
     @Test(groups = "standalone")
@@ -76,6 +76,6 @@ public class ListenableFutureTest extends AbstractBasicTest {
             future.get();
             future.addListener(() -> counter.decrementAndGet(), Runnable::run);
         }
-        assertEquals(0, counter.get());
+        assertEquals(counter.get(), 0);
     }
 }
