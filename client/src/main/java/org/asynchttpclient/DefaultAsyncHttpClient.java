@@ -105,17 +105,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (!closed.get()) {
-                LOGGER.error("AsyncHttpClient.close() hasn't been invoked, which may produce file descriptor leaks");
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
-    @Override
     public boolean isClosed() {
         return closed.get();
     }
