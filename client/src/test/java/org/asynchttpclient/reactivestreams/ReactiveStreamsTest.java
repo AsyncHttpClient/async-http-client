@@ -52,7 +52,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = "standalone", enabled = false)
     public void testConnectionDoesNotGetClosed() throws Exception {
         // test that we can stream the same request multiple times
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
