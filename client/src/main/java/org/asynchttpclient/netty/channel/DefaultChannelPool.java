@@ -305,11 +305,6 @@ public final class DefaultChannelPool implements ChannelPool {
         if (isClosed.getAndSet(true))
             return;
 
-        for (ConcurrentLinkedDeque<IdleChannel> partition : partitions.values()) {
-            for (IdleChannel idleChannel : partition)
-                close(idleChannel.channel);
-        }
-
         partitions.clear();
         if (connectionTtlEnabled) {
             channelId2Creation.clear();

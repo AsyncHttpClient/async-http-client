@@ -354,12 +354,17 @@ public class ChannelManager {
         }
     }
 
+    private void doClose() {
+        openChannels.close();
+        channelPool.destroy();
+    }
+
     public void close() {
         if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
-                    .addListener(future -> openChannels.close());
+                    .addListener(future -> doClose());
         } else
-            openChannels.close();
+            doClose();
     }
 
     public void closeChannel(Channel channel) {
