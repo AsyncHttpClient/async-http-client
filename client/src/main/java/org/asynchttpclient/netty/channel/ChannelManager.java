@@ -38,8 +38,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.io.IOException;
@@ -356,16 +354,10 @@ public class ChannelManager {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void close() {
         if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
-                    .addListener(new FutureListener() {
-                        @Override
-                        public void operationComplete(Future future) throws Exception {
-                            openChannels.close();
-                        }
-                    });
+                    .addListener(future -> openChannels.close());
         } else
             openChannels.close();
     }

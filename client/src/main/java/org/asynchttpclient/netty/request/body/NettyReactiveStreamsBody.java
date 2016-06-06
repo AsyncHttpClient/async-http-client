@@ -28,8 +28,6 @@ import com.typesafe.netty.HandlerSubscriber;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -112,22 +110,13 @@ public class NettyReactiveStreamsBody implements NettyBody {
         @Override
         protected void complete() {
             EventExecutor executor = channel.eventLoop();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture future) throws Exception {
-                            removeFromPipeline();
-                        }
-                    });
-                }
-            });
+            executor.execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(future -> removeFromPipeline()));
         }
 
         @Override
         protected void error(Throwable error) {
-            if(error == null) throw null;
+            if (error == null)
+                throw null;
             removeFromPipeline();
             future.abort(error);
         }
