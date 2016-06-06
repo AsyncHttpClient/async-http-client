@@ -25,23 +25,20 @@ import org.testng.annotations.Test;
 
 public class ListenableFutureTest extends AbstractBasicTest {
 
-    @Test(groups = "standalone")
+    @Test
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-            future.addListener(new Runnable() {
-
-                public void run() {
-                    try {
-                        statusCode.set(future.get().getStatusCode());
-                        latch.countDown();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    }
+            future.addListener(() -> {
+                try {
+                    statusCode.set(future.get().getStatusCode());
+                    latch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }, Executors.newFixedThreadPool(1));
 
@@ -50,32 +47,32 @@ public class ListenableFutureTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test
     public void testListenableFutureAfterCompletion() throws Exception {
 
-        AtomicInteger counter = new AtomicInteger(1);
+        final CountDownLatch latch = new CountDownLatch(1);
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
             future.get();
-            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
+            future.addListener(() -> latch.countDown(), Runnable::run);
         }
-        assertEquals(counter.get(), 0);
+
+        latch.await(10, TimeUnit.SECONDS);
     }
 
-    @Test(groups = "standalone")
+    @Test
     public void testListenableFutureBeforeAndAfterCompletion() throws Exception {
 
-        AtomicInteger counter = new AtomicInteger(2);
+        final CountDownLatch latch = new CountDownLatch(2);
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-
-            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
-
+            future.addListener(() -> latch.countDown(), Runnable::run);
             future.get();
-            future.addListener(() -> counter.decrementAndGet(), Runnable::run);
+            future.addListener(() -> latch.countDown(), Runnable::run);
         }
-        assertEquals(counter.get(), 0);
+
+        latch.await(10, TimeUnit.SECONDS);
     }
 }
