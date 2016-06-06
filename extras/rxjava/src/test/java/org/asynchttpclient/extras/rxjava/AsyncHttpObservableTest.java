@@ -18,12 +18,10 @@ import static org.testng.Assert.*;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
 
 import rx.Observable;
-import rx.functions.Func0;
 import rx.observers.TestSubscriber;
 
 public class AsyncHttpObservableTest {
@@ -33,12 +31,7 @@ public class AsyncHttpObservableTest {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.toObservable(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com");
-                }
-            });
+            Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("http://gatling.io"));
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
@@ -58,12 +51,7 @@ public class AsyncHttpObservableTest {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.toObservable(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com/ttfn");
-                }
-            });
+            Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("http://gatling.io/ttfn"));
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
@@ -83,12 +71,7 @@ public class AsyncHttpObservableTest {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com");
-                }
-            });
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("http://gatling.io"));
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
@@ -108,12 +91,7 @@ public class AsyncHttpObservableTest {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com/ttfn");
-                }
-            });
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("http://gatling.io/ttfn"));
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
@@ -133,24 +111,9 @@ public class AsyncHttpObservableTest {
         final TestSubscriber<Response> tester = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Observable<Response> o1 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.ning.com");
-                }
-            });
-            Observable<Response> o2 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.wisc.edu").setFollowRedirect(true);
-                }
-            });
-            Observable<Response> o3 = AsyncHttpObservable.observe(new Func0<BoundRequestBuilder>() {
-                @Override
-                public BoundRequestBuilder call() {
-                    return client.prepareGet("http://www.umn.edu").setFollowRedirect(true);
-                }
-            });
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("http://gatling.io"));
+            Observable<Response> o2 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.wisc.edu").setFollowRedirect(true));
+            Observable<Response> o3 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.umn.edu").setFollowRedirect(true));
             Observable<Response> all = Observable.merge(o1, o2, o3);
             all.subscribe(tester);
             tester.awaitTerminalEvent();
