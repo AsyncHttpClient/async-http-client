@@ -111,10 +111,11 @@ public class ChannelManager {
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
         this.config = config;
+        this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory();
         try {
-            this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory(config);
+            this.sslEngineFactory.init(config);
         } catch (SSLException e) {
-            throw new ExceptionInInitializerError(e);
+            throw new RuntimeException("Could not initialize sslEngineFactory", e);
         }
 
         ChannelPool channelPool = config.getChannelPool();

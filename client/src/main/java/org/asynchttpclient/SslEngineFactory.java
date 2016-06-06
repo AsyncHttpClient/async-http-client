@@ -14,6 +14,7 @@
 package org.asynchttpclient;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 
 public interface SslEngineFactory {
 
@@ -26,4 +27,16 @@ public interface SslEngineFactory {
      * @return new engine
      */
     SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort);
+
+    /**
+     * Perform any necessary one-time configuration. This will be called just once before {@code newSslEngine} is called
+     * for the first time.
+     *
+     * @param config the client config
+     * @throws SSLException if initialization fails. If an exception is thrown, the instance will not be used as client
+     *                      creation will fail.
+     */
+    default void init(AsyncHttpClientConfig config) throws SSLException {
+        // no op
+    }
 }
