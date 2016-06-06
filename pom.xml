@@ -93,9 +93,11 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.18.1</version>
 				<configuration>
-					<redirectTestOutputToFile>
-						${surefire.redirectTestOutputToFile}
-					</redirectTestOutputToFile>
+					<redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+					<systemPropertyVariables>
+						<org.asynchttpclient.shutdownQuietPeriod>10</org.asynchttpclient.shutdownQuietPeriod>
+						<org.asynchttpclient.shutdownTimeout>100</org.asynchttpclient.shutdownTimeout>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -171,40 +173,6 @@
 								</goals>
 							</execution>
 						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>offline-testing</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<groups>standalone</groups>
-							<redirectTestOutputToFile>
-								${surefire.redirectTestOutputToFile}
-							</redirectTestOutputToFile>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>online-testing</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<groups>standalone, online</groups>
-							<redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
-							<systemPropertyVariables>
-								<org.asynchttpclient.shutdownQuietPeriod>1</org.asynchttpclient.shutdownQuietPeriod>
-								<org.asynchttpclient.shutdownTimeout>100</org.asynchttpclient.shutdownTimeout>
-							</systemPropertyVariables>
-						</configuration>
 					</plugin>
 				</plugins>
 			</build>
@@ -410,4 +378,3 @@
 		<powermock.version>1.6.4</powermock.version>
 	</properties>
 </project>
-
