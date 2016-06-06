@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitionSelector;
-import org.asynchttpclient.netty.NettyResponseFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
