@@ -13,13 +13,17 @@
  */
 package org.asynchttpclient.testserver;
 
+import static org.asynchttpclient.Dsl.*;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-
-import static org.asynchttpclient.Dsl.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class HttpTest {
+    
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected static final String COMPLETED_EVENT = "Completed";
     protected static final String STATUS_RECEIVED_EVENT = "StatusReceived";

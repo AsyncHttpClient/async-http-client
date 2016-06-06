@@ -59,6 +59,7 @@ public class BasicHttpsTest extends HttpTest {
 
     @Test
     public void postBodyOverHttps() throws Throwable {
+        logger.debug(">>> postBodyOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
@@ -69,17 +70,18 @@ public class BasicHttpsTest extends HttpTest {
                 assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
             });
         });
+        logger.debug("<<< postBodyOverHttps");
     }
 
     @Test
     public void multipleSequentialPostRequestsOverHttps() throws Throwable {
+        logger.debug(">>> multipleSequentialPostRequestsOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 server.enqueueEcho();
 
                 String body = "hello there";
-
                 Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
                 assertEquals(response.getResponseBody(), body);
 
@@ -87,10 +89,12 @@ public class BasicHttpsTest extends HttpTest {
                 assertEquals(response.getResponseBody(), body);
             });
         });
+        logger.debug("<<< multipleSequentialPostRequestsOverHttps");
     }
 
     @Test
     public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy() throws Throwable {
+        logger.debug(">>> multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
 
         KeepAliveStrategy keepAliveStrategy = new KeepAliveStrategy() {
             @Override
@@ -114,14 +118,17 @@ public class BasicHttpsTest extends HttpTest {
                 assertEquals(response.getResponseBody(), body);
             });
         });
+
+        logger.debug("<<< multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
     }
 
     @Test
     public void reconnectAfterFailedCertificationPath() throws Throwable {
+        logger.debug(">>> reconnectAfterFailedCertificationPath");
 
         AtomicBoolean trust = new AtomicBoolean();
 
-        withClient(config().setSslEngineFactory(createSslEngineFactory(trust))).run(client -> {
+        withClient(config().setMaxRequestRetry(0).setSslEngineFactory(createSslEngineFactory(trust))).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 server.enqueueEcho();
@@ -144,11 +151,14 @@ public class BasicHttpsTest extends HttpTest {
                     assertEquals(response.getResponseBody(), body);
                 });
         });
+        logger.debug("<<< reconnectAfterFailedCertificationPath");
     }
 
     @Test(timeOut = 2000, expectedExceptions = SSLHandshakeException.class)
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
-        withClient(config().setRequestTimeout(2000)).run(client -> {
+        logger.debug(">>> failInstantlyIfNotAllowedSelfSignedCertificate");
+
+        withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 try {
@@ -158,10 +168,14 @@ public class BasicHttpsTest extends HttpTest {
                 }
             });
         });
+        logger.debug("<<< failInstantlyIfNotAllowedSelfSignedCertificate");
+
     }
 
     @Test(groups = "standalone")
     public void testNormalEventsFired() throws Throwable {
+        logger.debug(">>> testNormalEventsFired");
+
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
             withServer(server).run(server -> {
                 EventCollectingHandler handler = new EventCollectingHandler();
@@ -188,5 +202,6 @@ public class BasicHttpsTest extends HttpTest {
                 assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
             });
         });
+        logger.debug("<<< testNormalEventsFired");
     }
 }
