@@ -26,13 +26,9 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
-    private final SslContext sslContext;
+    private volatile SslContext sslContext;
 
-    public DefaultSslEngineFactory(AsyncHttpClientConfig config) throws SSLException {
-        this.sslContext = getSslContext(config);
-    }
-
-    private SslContext getSslContext(AsyncHttpClientConfig config) throws SSLException {
+    private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
         if (config.getSslContext() != null)
             return config.getSslContext();
 
@@ -44,7 +40,7 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
         if (config.isAcceptAnyCertificate())
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
 
-        return sslContextBuilder.build();
+        return configureSslContextBuilder(sslContextBuilder).build();
     }
 
     @Override
@@ -54,4 +50,22 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
         configureSslEngine(sslEngine, config);
         return sslEngine;
     }
+
+    @Override
+    public void init(AsyncHttpClientConfig config) throws SSLException {
+        sslContext = buildSslContext(config);
+    }
+
+    /**
+     * The last step of configuring the SslContextBuilder used to create an SslContext when no context is provided in
+     * the {@link AsyncHttpClientConfig}. This defaults to no-op and is intended to be overridden as needed.
+     *
+     * @param builder builder with normal configuration applied
+     * @return builder to be used to build context (can be the same object as the input)
+     */
+    protected SslContextBuilder configureSslContextBuilder(SslContextBuilder builder) {
+        // default to no op
+        return builder;
+    }
+
 }
