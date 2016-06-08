@@ -17,7 +17,7 @@
 package org.asynchttpclient.channel;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -35,6 +35,8 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -119,16 +121,15 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
     @Override
     @BeforeClass
     public void setUpGlobal() throws Exception {
-
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
-
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         server.setHandler(context);
         context.addServlet(new ServletHolder(new MockTimeoutHttpServlet()), "/timeout/*");
 
         server.start();
+        port1 = connector.getLocalPort();
     }
 
     public String getTargetUrl() {

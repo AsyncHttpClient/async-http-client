@@ -14,7 +14,7 @@
 package org.asynchttpclient.ws;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -27,6 +27,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
@@ -39,11 +41,10 @@ public class RedirectTest extends AbstractBasicTest {
     @BeforeClass
     @Override
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        port2 = findFreePort();
 
-        server = newJettyHttpServer(port1);
-        addHttpConnector(server, port2);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
+        ServerConnector connector2 = addHttpConnector(server);
 
         HandlerList list = new HandlerList();
         list.addHandler(new AbstractHandler() {
@@ -58,6 +59,8 @@ public class RedirectTest extends AbstractBasicTest {
         server.setHandler(list);
 
         server.start();
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 

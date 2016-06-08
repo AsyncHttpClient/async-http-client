@@ -16,12 +16,11 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.fail;
 
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,19 +34,20 @@ public abstract class AbstractBasicTest {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected Server server;
-    protected int port1;
-    protected int port2;
+    protected int port1 = -1;
+    protected int port2  =-1;
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
-        port1 = findFreePort();
-        port2 = findFreePort();
-
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
         server.setHandler(configureHandler());
-        addHttpConnector(server, port2);
+        ServerConnector connector2 = addHttpConnector(server);
         server.start();
+        
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
     }

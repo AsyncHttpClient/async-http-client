@@ -29,6 +29,7 @@ import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -77,19 +78,20 @@ public class BasicHttpProxyToHttpTest {
     @BeforeClass
     public void setUpGlobal() throws Exception {
 
-        httpPort = findFreePort();
-        proxyPort = findFreePort();
-
-        httpServer = newJettyHttpServer(httpPort);
+        httpServer = new Server();
+        ServerConnector connector1 = addHttpConnector(httpServer);
         httpServer.setHandler(new EchoHandler());
         httpServer.start();
+        httpPort = connector1.getLocalPort();
 
-        proxy = new Server(proxyPort);
+        proxy = new Server();
+        ServerConnector connector2 = addHttpConnector(proxy);
         ServletHandler servletHandler = new ServletHandler();
         ServletHolder servletHolder = servletHandler.addServletWithMapping(BasicAuthProxyServlet.class, "/*");
         servletHolder.setInitParameter("maxThreads", "20");
         proxy.setHandler(servletHandler);
         proxy.start();
+        proxyPort = connector2.getLocalPort();
 
         LOGGER.info("Local HTTP Server (" + httpPort + "), Proxy (" + proxyPort + ") started successfully");
     }

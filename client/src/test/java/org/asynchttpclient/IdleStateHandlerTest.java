@@ -27,6 +27,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -50,10 +52,11 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(new IdleStateHandler());
         server.start();
+        port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 

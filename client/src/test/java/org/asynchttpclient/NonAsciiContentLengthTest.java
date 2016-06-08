@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -36,8 +38,8 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(new AbstractHandler() {
 
             public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -60,6 +62,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
             }
         });
         server.start();
+        port1 = connector.getLocalPort();
     }
 
     @Test(groups = "standalone")

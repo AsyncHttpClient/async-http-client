@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -42,16 +43,18 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     @Override
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        port2 = findFreePort();
 
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
         server.start();
+        port1 = connector1.getLocalPort();
 
-        server2 = newJettyHttpServer(port2);
+        server2 = new Server();
+        ServerConnector connector2 = addHttpConnector(server2);
         addDigestAuthHandler(server2, configureHandler());
         server2.start();
+        port2 = connector2.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
     }

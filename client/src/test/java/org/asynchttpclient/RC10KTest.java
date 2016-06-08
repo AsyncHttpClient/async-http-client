@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -47,14 +48,19 @@ public class RC10KTest extends AbstractBasicTest {
     private static final int C10K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;
-    protected List<Server> servers = new ArrayList<>(SRV_COUNT);
-    private int[] ports;
+    protected Server[] servers = new Server[SRV_COUNT];
+    private int[] ports = new int[SRV_COUNT];
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         ports = new int[SRV_COUNT];
         for (int i = 0; i < SRV_COUNT; i++) {
-            ports[i] = createServer();
+            Server server = new Server();
+            ServerConnector connector = addHttpConnector(server);
+            server.setHandler(configureHandler());
+            server.start();
+            servers[i] = server;
+            ports[i] = connector.getLocalPort();
         }
         logger.info("Local HTTP servers started successfully");
     }
@@ -64,15 +70,6 @@ public class RC10KTest extends AbstractBasicTest {
         for (Server srv : servers) {
             srv.stop();
         }
-    }
-
-    private int createServer() throws Exception {
-        int port = findFreePort();
-        Server srv = newJettyHttpServer(port);
-        srv.setHandler(configureHandler());
-        srv.start();
-        servers.add(srv);
-        return port;
     }
 
     @Override

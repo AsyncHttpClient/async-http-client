@@ -13,7 +13,6 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaders;
 
@@ -33,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.net.ServerSocketFactory;
+
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -45,11 +46,10 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     private ServerSocket serverSocket;
     private Future<?> voidFuture;
 
-    @BeforeClass(alwaysRun = true)
+    @BeforeClass
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-
-        serverSocket = new ServerSocket(port1);
+        serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
+        port1 = serverSocket.getLocalPort();
         executorService = Executors.newFixedThreadPool(1);
         voidFuture = executorService.submit(new Callable<Void>() {
             public Void call() throws Exception {

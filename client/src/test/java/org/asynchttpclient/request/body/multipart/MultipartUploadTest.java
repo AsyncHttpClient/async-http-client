@@ -49,6 +49,8 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -65,15 +67,13 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
     @BeforeClass
     public void setUp() throws Exception {
-        port1 = findFreePort();
-
-        server = newJettyHttpServer(port1);
-
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.addServlet(new ServletHolder(new MockMultipartUploadServlet()), "/upload/*");
-
         server.setHandler(context);
         server.start();
+        port1 = connector.getLocalPort();
     }
 
     /**

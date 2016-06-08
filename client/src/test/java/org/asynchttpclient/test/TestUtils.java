@@ -176,25 +176,13 @@ public class TestUtils {
         }
     }
 
-    public static Server newJettyHttpServer(int port) {
-        Server server = new Server();
-        addHttpConnector(server, port);
-        return server;
-    }
-
-    public static void addHttpConnector(Server server, int port) {
+    public static ServerConnector addHttpConnector(Server server) {
         ServerConnector connector = new ServerConnector(server);
-        connector.setPort(port);
         server.addConnector(connector);
+        return connector;
     }
 
-    public static Server newJettyHttpsServer(int port) throws IOException, URISyntaxException {
-        Server server = new Server();
-        addHttpsConnector(server, port);
-        return server;
-    }
-
-    public static void addHttpsConnector(Server server, int port) throws IOException, URISyntaxException {
+    public static ServerConnector addHttpsConnector(Server server) throws IOException, URISyntaxException {
 
         String keyStoreFile = resourceAsFile("ssltest-keystore.jks").getAbsolutePath();
         SslContextFactory sslContextFactory = new SslContextFactory(keyStoreFile);
@@ -206,13 +194,13 @@ public class TestUtils {
 
         HttpConfiguration httpsConfig = new HttpConfiguration();
         httpsConfig.setSecureScheme("https");
-        httpsConfig.setSecurePort(port);
         httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
         ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpsConfig));
-        connector.setPort(port);
 
         server.addConnector(connector);
+
+        return connector;
     }
 
     public static void addBasicAuthHandler(Server server, Handler handler) {
@@ -280,7 +268,7 @@ public class TestUtils {
         tmf.init(ks);
         return tmf.getTrustManagers();
     }
-    
+
     public static SslEngineFactory createSslEngineFactory() throws SSLException {
         return createSslEngineFactory(new AtomicBoolean(true));
     }

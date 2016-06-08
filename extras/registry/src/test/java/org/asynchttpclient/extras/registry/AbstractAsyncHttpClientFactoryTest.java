@@ -22,8 +22,9 @@ import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.test.EchoHandler;
-import org.asynchttpclient.test.TestUtils;
+import static org.asynchttpclient.test.TestUtils.*;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -49,10 +50,11 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpBeforeTest() throws Exception {
-        port = TestUtils.findFreePort();
-        server = TestUtils.newJettyHttpServer(port);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(new EchoHandler());
         server.start();
+        port = connector.getLocalPort();
     }
 
     @AfterClass(alwaysRun = true)

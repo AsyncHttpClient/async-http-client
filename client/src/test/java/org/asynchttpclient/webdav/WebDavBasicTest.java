@@ -13,7 +13,6 @@
 package org.asynchttpclient.webdav;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.testng.Assert.*;
 
 import java.io.File;
@@ -44,7 +43,6 @@ public class WebDavBasicTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
-        port1 = findFreePort();
         embedded = new Embedded();
         String path = new File(".").getAbsolutePath();
         embedded.setCatalinaHome(path);
@@ -68,11 +66,12 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.addChild(w);
         host.addChild(c);
 
-        Connector connector = embedded.createConnector("localhost", port1, Http11NioProtocol.class.getName());
+        Connector connector = embedded.createConnector("localhost", 0, Http11NioProtocol.class.getName());
         connector.setContainer(host);
         embedded.addEngine(engine);
         embedded.addConnector(connector);
         embedded.start();
+        port1 = connector.getLocalPort();
     }
 
     @AfterClass(alwaysRun = true)
@@ -135,7 +134,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
             response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 207);
-            assertTrue(response.getResponseBody().contains("<status>HTTP/1.1 200 OK</status>"));
+            assertTrue(response.getResponseBody().contains("HTTP/1.1 200 OK"), "Got " + response.getResponseBody());
         }
     }
 
@@ -163,8 +162,8 @@ public class WebDavBasicTest extends AbstractBasicTest {
                 }
             }).get();
 
-            assertNotNull(webDavResponse);
-            assertEquals(webDavResponse.getStatusCode(), 200);
+            assertEquals(webDavResponse.getStatusCode(), 207);
+            assertTrue(webDavResponse.getResponseBody().contains("HTTP/1.1 200 OK"), "Got " + response.getResponseBody());
         }
     }
 }

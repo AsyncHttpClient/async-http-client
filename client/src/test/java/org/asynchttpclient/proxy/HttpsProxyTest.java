@@ -24,6 +24,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -42,16 +43,17 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
         server.start();
+        port1 = connector.getLocalPort();
 
-        port2 = findFreePort();
-
-        server2 = newJettyHttpsServer(port2);
+        server2 = new Server();
+        ServerConnector connector2 = addHttpsConnector(server2);
         server2.setHandler(new EchoHandler());
         server2.start();
+        port2 = connector2.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
     }

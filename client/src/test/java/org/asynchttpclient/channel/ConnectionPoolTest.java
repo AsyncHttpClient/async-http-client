@@ -39,6 +39,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.test.EventCollectingHandler;
+import org.eclipse.jetty.server.ServerConnector;
 import org.testng.annotations.Test;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
@@ -90,6 +91,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone", invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(2);
@@ -100,7 +102,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
                 @Override
                 public Response onCompleted(Response response) throws Exception {
-                    System.out.println("ON COMPLETED INVOKED " + response.getHeader("X-KEEP-ALIVE"));
+                    logger.debug("ON COMPLETED INVOKED " + response.getHeader("X-KEEP-ALIVE"));
                     try {
                         assertEquals(response.getStatusCode(), 200);
                         remoteAddresses.put(response.getHeader("X-KEEP-ALIVE"), true);
@@ -113,6 +115,11 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
             client.prepareGet(getTargetUrl()).execute(handler).get();
             server.stop();
+
+            // make sure connector will restart with the port as it's originally dynamically allocated
+            ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+            connector.setPort(port1);
+
             server.start();
             client.prepareGet(getTargetUrl()).execute(handler);
 
@@ -173,9 +180,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     /**
-     * This test just make sure the hack used to catch disconnected channel
-     * under win7 doesn't throw any exception. The onComplete method must be
-     * only called once.
+     * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception. The onComplete method must be only called once.
      * 
      * @throws Exception if something wrong happens.
      */

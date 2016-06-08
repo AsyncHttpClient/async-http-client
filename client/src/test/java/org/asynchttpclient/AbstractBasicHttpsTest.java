@@ -15,19 +15,21 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpsServer;
+import static org.asynchttpclient.test.TestUtils.*;
 
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractBasicHttpsTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpsServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
         server.start();
+        port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 }

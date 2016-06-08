@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
@@ -46,8 +48,8 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
 
     @BeforeClass
     public void setUp() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.addServlet(new ServletHolder(new MockRedirectHttpServlet()), "/redirect/*");
@@ -55,6 +57,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
         server.setHandler(context);
 
         server.start();
+        port1 = connector.getLocalPort();
 
         BASE_URL = "http://localhost" + ":" + port1;
         servletEndpointRedirectUrl = BASE_URL + "/redirect";

@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -69,13 +71,13 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        port2 = findFreePort();
-
-        server = newJettyHttpServer(port1);
-        addHttpsConnector(server, port2);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
+        ServerConnector connector2 = addHttpsConnector(server);
         server.setHandler(new Relative302Handler());
         server.start();
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 

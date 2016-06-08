@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 public class HttpServer implements Closeable {
@@ -38,10 +39,10 @@ public class HttpServer implements Closeable {
     private int httpsPort;
     private Server server;
     private final ConcurrentLinkedQueue<Handler> handlers = new ConcurrentLinkedQueue<>();
-    
+
     @FunctionalInterface
     public interface HttpServletResponseConsumer {
-        
+
         public void apply(HttpServletResponse response) throws IOException, ServletException;
     }
 
@@ -54,16 +55,23 @@ public class HttpServer implements Closeable {
     }
 
     public void start() throws Exception {
-        if (httpPort == 0) {
-            httpPort = findFreePort();
+        server = new Server();
+
+        ServerConnector httpConnector = addHttpConnector(server);
+        if (httpPort != 0) {
+            httpConnector.setPort(httpPort);
         }
-        if (httpsPort == 0) {
-            httpsPort = findFreePort();
-        }
-        server = newJettyHttpServer(httpPort);
+
         server.setHandler(new QueueHandler());
-        addHttpsConnector(server, httpsPort);
+        ServerConnector httpsConnector = addHttpsConnector(server);
+        if (httpsPort != 0) {
+            httpsConnector.setPort(httpsPort);
+        }
+
         server.start();
+
+        httpPort = httpConnector.getLocalPort();
+        httpsPort = httpsConnector.getLocalPort();
     }
 
     public void enqueue(Handler handler) {

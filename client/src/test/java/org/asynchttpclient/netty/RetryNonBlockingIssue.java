@@ -36,6 +36,8 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
@@ -46,15 +48,16 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         context.addServlet(new ServletHolder(new MockExceptionServlet()), "/*");
-
         server.setHandler(context);
+        
         server.start();
+        port1 = connector.getLocalPort();
     }
 
     protected String getTargetUrl() {

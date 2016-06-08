@@ -12,9 +12,10 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.asynchttpclient.test.TestUtils.newJettyHttpServer;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -23,12 +24,11 @@ public abstract class AbstractBasicTest extends org.asynchttpclient.AbstractBasi
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(getWebSocketHandler());
-
         server.start();
+        port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 

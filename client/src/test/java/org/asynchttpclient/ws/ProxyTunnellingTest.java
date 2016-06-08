@@ -23,6 +23,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.AfterMethod;
@@ -36,16 +37,18 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
     private Server server2;
 
     public void setUpServers(boolean targetHttps) throws Exception {
-        port1 = findFreePort();
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
         server.setHandler(new ConnectHandler());
         server.start();
+        port1 = connector.getLocalPort();
 
-        port2 = findFreePort();
-
-        server2 = targetHttps ? newJettyHttpsServer(port2) : newJettyHttpServer(port2);
+        server2 = new Server();
+        @SuppressWarnings("resource")
+        ServerConnector connector2 = targetHttps ? addHttpsConnector(server2) : addHttpConnector(server2);
         server2.setHandler(getWebSocketHandler());
         server2.start();
+        port2 = connector2.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
     }

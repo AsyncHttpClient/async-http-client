@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,23 +53,25 @@ public class BasicAuthTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     @Override
     public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-        port2 = findFreePort();
-        portNoAuth = findFreePort();
 
-        server = newJettyHttpServer(port1);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
         server.start();
+        port1 = connector1.getLocalPort();
 
-        server2 = newJettyHttpServer(port2);
+        server2 = new Server();
+        ServerConnector connector2 = addHttpConnector(server2);
         addBasicAuthHandler(server2, new RedirectHandler());
         server2.start();
+        port2 = connector2.getLocalPort();
 
-        // need noAuth server to verify the preemptive auth mode (see
-        // basicAuthTestPreemtiveTest)
-        serverNoAuth = newJettyHttpServer(portNoAuth);
+        // need noAuth server to verify the preemptive auth mode (see basicAuthTestPreemtiveTest)
+        serverNoAuth = new Server();
+        ServerConnector connectorNoAuth = addHttpConnector(serverNoAuth);
         serverNoAuth.setHandler(new SimpleHandler());
         serverNoAuth.start();
+        portNoAuth = connectorNoAuth.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
     }
