@@ -100,9 +100,9 @@ public class TimeoutsHolder {
     }
 
     private Timeout newTimeout(TimerTask task, long delay) {
-        return nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
+        return requestSender.isClosed() ? null : nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
     }
-    
+
     String remoteAddress() {
         return remoteAddress;
     }
