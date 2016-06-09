@@ -46,6 +46,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
                 ServletException {
             
             String authorization = httpRequest.getHeader("Proxy-Authorization");
+
             boolean asExpected = false;
             
             switch (state.getAndIncrement()) {
@@ -67,7 +68,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
                     
                 case 2:
                     if (authorization
-                            .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAGkAZwBoAHQAQwBpAHQAeQA=")) {
+                            .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAEkARwBIAFQAQwBJAFQAWQA=")) {
                         httpResponse.setStatus(HttpStatus.OK_200);
                         asExpected = true;
                     }

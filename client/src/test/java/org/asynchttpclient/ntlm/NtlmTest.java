@@ -56,7 +56,7 @@ public class NtlmTest extends AbstractBasicTest {
                 httpResponse.setHeader("WWW-Authenticate", "NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
 
             } else if (authorization
-                    .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAGkAZwBoAHQAQwBpAHQAeQA=")) {
+                    .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAEkARwBIAFQAQwBJAFQAWQA=")) {
                 httpResponse.setStatus(200);
             } else {
                 httpResponse.setStatus(401);
@@ -108,14 +108,14 @@ public class NtlmTest extends AbstractBasicTest {
     @Test(expectedExceptions = NtlmEngineException.class)
     public void testGenerateType3MsgThrowsExceptionWhenChallengeTooShort() {
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "passowrd", "localhost", "workstattion", Base64.encode("a".getBytes()));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode("a".getBytes()));
         fail("An NtlmEngineException must have occurred as challenge length is too short");
     }
 
     @Test(expectedExceptions = NtlmEngineException.class)
     public void testGenerateType3MsgThrowsExceptionWhenChallengeDoesNotFollowCorrectFormat() {
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "passowrd", "localhost", "workstattion", Base64.encode("challenge".getBytes()));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode("challenge".getBytes()));
         fail("An NtlmEngineException must have occurred as challenge format is not correct");
     }
 
@@ -128,7 +128,7 @@ public class NtlmTest extends AbstractBasicTest {
         buf.writeByte(3).writeByte(0).writeByte(0).writeByte(0);
         buf.writeBytes("challenge".getBytes());
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "passowrd", "localhost", "workstation", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
         fail("An NtlmEngineException must have occurred as type 2 indicator is incorrect");
     }
 
@@ -145,7 +145,7 @@ public class NtlmTest extends AbstractBasicTest {
         buf.writeByte(0).writeByte(0).writeByte(0);
         buf.writeLong(1);// challenge
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "passowrd", "localhost", "workstattion", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
         fail("An NtlmEngineException must have occurred as unicode support is not indicated");
     }
 
@@ -168,10 +168,10 @@ public class NtlmTest extends AbstractBasicTest {
         buf.writeByte(0).writeByte(0).writeByte(0);
         buf.writeLong(1);// challenge
         NtlmEngine engine = new NtlmEngine();
-        String type3Msg = engine.generateType3Msg("username", "passowrd", "localhost", "workstattion",
+        String type3Msg = engine.generateType3Msg("username", "password", "localhost", "workstation",
                 Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
         assertEquals(type3Msg,
-                "TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABIAEgB4AAAAEAAQAIoAAAAYABgAmgAAAAAAAACyAAAAAQAAAgUBKAoAAAAPmr/wN76Y0WPoSFkHghgpi0yh7/UexwVlCeoo1CQEl9d2alfPRld8KYeOkS0GdTuMTABPAEMAQQBMAEgATwBTAFQAdQBzAGUAcgBuAGEAbQBlAHcAbwByAGsAcwB0AGEAdAB0AGkAbwBuAA==",
+                "TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABIAEgB4AAAAEAAQAIoAAAAWABYAmgAAAAAAAACwAAAAAQAAAgUBKAoAAAAP1g6lqqN1HZ0wSSxeQ5riQkyh7/UexwVlCPQm0SHU2vsDQm2wM6NbT2zPonPzLJL0TABPAEMAQQBMAEgATwBTAFQAdQBzAGUAcgBuAGEAbQBlAFcATwBSAEsAUwBUAEEAVABJAE8ATgA=",
                 "Incorrect type3 message generated");
     }
 
