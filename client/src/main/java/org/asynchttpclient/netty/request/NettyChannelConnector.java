@@ -21,7 +21,6 @@ import io.netty.channel.ChannelFuture;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
@@ -31,8 +30,12 @@ import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NettyChannelConnector {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
 
     private final AsyncHandlerExtensions asyncHandlerExtensions;
     private final InetSocketAddress localAddress;
@@ -69,11 +72,12 @@ public class NettyChannelConnector {
 
         try {
             connect0(bootstrap, connectListener, remoteAddress);
-        } catch (RejectedExecutionException e) {
+        } catch (Throwable e) {
+            // workaround for https://github.com/netty/netty/issues/5387
             if (closed.get()) {
                 connectListener.onFailure(null, e);
             } else {
-                throw e;
+                LOGGER.info("Connect crash but engine is shutting down");
             }
         }
     }
