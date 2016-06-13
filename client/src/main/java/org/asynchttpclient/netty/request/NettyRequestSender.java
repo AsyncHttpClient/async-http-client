@@ -32,10 +32,10 @@ import io.netty.util.Timer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -68,17 +68,17 @@ public final class NettyRequestSender {
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
     private final Timer nettyTimer;
-    private final AtomicBoolean closed;
+    private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
             ChannelManager channelManager,//
             Timer nettyTimer,//
-            AtomicBoolean closed) {
+            AsyncHttpClientState clientState) {
         this.config = config;
         this.channelManager = channelManager;
         this.nettyTimer = nettyTimer;
-        this.closed = closed;
+        this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
     }
 
@@ -278,7 +278,7 @@ public final class NettyRequestSender {
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {
                         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, channelPreempted, partitionKey);
-                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), closed, config).connect(bootstrap,
+                        new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, future.getTimeoutsHolder(), clientState, config).connect(bootstrap,
                                 connectListener);
                     }
 
@@ -509,7 +509,7 @@ public final class NettyRequestSender {
     }
 
     public boolean isClosed() {
-        return closed.get();
+        return clientState.isClosed();
     }
 
     public final Callback newExecuteNextRequestCallback(final NettyResponseFuture<?> future, final Request nextRequest) {

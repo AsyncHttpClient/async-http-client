@@ -79,7 +79,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
 
         channelManager = new ChannelManager(config, nettyTimer);
-        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, closed);
+        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
         channelManager.configureBootstraps(requestSender);
     }
 
