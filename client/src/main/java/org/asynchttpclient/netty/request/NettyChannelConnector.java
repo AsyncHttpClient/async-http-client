@@ -21,10 +21,10 @@ import io.netty.channel.ChannelFuture;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.channel.Channels;
@@ -41,7 +41,7 @@ public class NettyChannelConnector {
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
     private final TimeoutsHolder timeoutsHolder;
-    private final AtomicBoolean closed;
+    private final AsyncHttpClientState clientState;
     private final boolean connectionTtlEnabled;
     private volatile int i = 0;
 
@@ -49,13 +49,13 @@ public class NettyChannelConnector {
             List<InetSocketAddress> remoteAddresses,//
             AsyncHandler<?> asyncHandler,//
             TimeoutsHolder timeoutsHolder,//
-            AtomicBoolean closed,//
+            AsyncHttpClientState clientState,//
             AsyncHttpClientConfig config) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
         this.timeoutsHolder = assertNotNull(timeoutsHolder, "timeoutsHolder");
-        this.closed = closed;
+        this.clientState = clientState;
         this.connectionTtlEnabled = config.getConnectionTtl() > 0;
     }
 
@@ -74,7 +74,7 @@ public class NettyChannelConnector {
             connect0(bootstrap, connectListener, remoteAddress);
         } catch (Throwable e) {
             // workaround for https://github.com/netty/netty/issues/5387
-            if (closed.get()) {
+            if (clientState.isClosed()) {
                 connectListener.onFailure(null, e);
             } else {
                 LOGGER.info("Connect crash but engine is shutting down");
