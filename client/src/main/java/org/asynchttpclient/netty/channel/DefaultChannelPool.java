@@ -21,10 +21,7 @@ import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +49,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private final int maxIdleTime;
     private final boolean maxIdleTimeEnabled;
     private final long cleanerPeriod;
+    private final PoolLeaseStrategy poolLeaseStrategy;
 
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
         this(config.getPooledConnectionIdleTimeout(),//
@@ -66,12 +64,23 @@ public final class DefaultChannelPool implements ChannelPool {
     public DefaultChannelPool(int maxIdleTime,//
             int connectionTtl,//
             Timer nettyTimer) {
+        this(maxIdleTime,//
+                connectionTtl,//
+                PoolLeaseStrategy.LIFO,//
+                nettyTimer);
+    }
+
+    public DefaultChannelPool(int maxIdleTime,//
+            int connectionTtl,//
+            PoolLeaseStrategy poolLeaseStrategy,//
+            Timer nettyTimer) {
         this.maxIdleTime = (int) maxIdleTime;
         this.connectionTtl = connectionTtl;
         connectionTtlEnabled = connectionTtl > 0;
         channelId2Creation = connectionTtlEnabled ? new ConcurrentHashMap<>() : null;
         this.nettyTimer = nettyTimer;
         maxIdleTimeEnabled = maxIdleTime > 0;
+        this.poolLeaseStrategy = poolLeaseStrategy;
 
         cleanerPeriod = Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE, maxIdleTimeEnabled ? maxIdleTime : Long.MAX_VALUE);
 
@@ -266,7 +275,7 @@ public final class DefaultChannelPool implements ChannelPool {
         ConcurrentLinkedDeque<IdleChannel> partition = partitions.get(partitionKey);
         if (partition != null) {
             while (idleChannel == null) {
-                idleChannel = partition.pollFirst();
+                idleChannel = poolLeaseStrategy.lease(partition);
 
                 if (idleChannel == null)
                     // pool is empty
@@ -341,5 +350,20 @@ public final class DefaultChannelPool implements ChannelPool {
             if (selector.select(partitionKey))
                 flushPartition(partitionKey, partitionsEntry.getValue());
         }
+    }
+
+    public enum PoolLeaseStrategy {
+        LIFO {
+            public <E> E lease(Deque<E> d) {
+                return d.pollFirst();
+            }
+        },
+        FIFO {
+            public <E> E lease(Deque<E> d) {
+                return d.pollLast();
+            }
+        };
+
+        abstract <E> E lease(Deque<E> d);
     }
 }
