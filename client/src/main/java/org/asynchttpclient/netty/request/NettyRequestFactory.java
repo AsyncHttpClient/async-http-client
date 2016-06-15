@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.request;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.*;
@@ -182,7 +183,7 @@ public final class NettyRequestFactory {
 
         // connection header and friends
         if (!connect && uri.isWebSocket()) {
-            headers.set(UPGRADE, HttpHeaders.Values.WEBSOCKET)//
+            headers.set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET)//
                     .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
                     .set(ORIGIN, "http://" + uri.getHost() + ":" + uri.getExplicitPort())//
                     .set(SEC_WEBSOCKET_KEY, getKey())//
@@ -236,9 +237,9 @@ public final class NettyRequestFactory {
 
     private String connectionHeader(boolean keepAlive, HttpVersion httpVersion) {
         if (httpVersion.isKeepAliveDefault()) {
-            return keepAlive ? null : HttpHeaders.Values.CLOSE;
+            return keepAlive ? null : CLOSE;
         } else {
-            return keepAlive ? HttpHeaders.Values.KEEP_ALIVE : null;
+            return keepAlive ? KEEP_ALIVE : null;
         }
     }
 }
