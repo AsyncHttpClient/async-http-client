@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
@@ -72,7 +73,7 @@ public class Unauthorized401Interceptor {
             return false;
         }
 
-        List<String> wwwAuthHeaders = response.headers().getAll(HttpHeaders.Names.WWW_AUTHENTICATE);
+        List<String> wwwAuthHeaders = response.headers().getAll(WWW_AUTHENTICATE);
 
         if (wwwAuthHeaders.isEmpty()) {
             LOGGER.info("Can't handle 401 as response doesn't contain WWW-Authenticate headers");
@@ -193,7 +194,7 @@ public class Unauthorized401Interceptor {
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            requestHeaders.set(AUTHORIZATION, "NTLM " + challengeHeader);
             future.getInAuth().set(false);
 
         } else {
@@ -201,7 +202,7 @@ public class Unauthorized401Interceptor {
             String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(realm.getPrincipal(), realm.getPassword(), realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            requestHeaders.set(AUTHORIZATION, "NTLM " + challengeHeader);
         }
     }
 
@@ -215,6 +216,6 @@ public class Unauthorized401Interceptor {
         Uri uri = request.getUri();
         String host = withDefault(request.getVirtualHost(), uri.getHost());
         String challengeHeader = SpnegoEngine.instance().generateToken(host);
-        headers.set(HttpHeaders.Names.AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
+        headers.set(AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
     }
 }
