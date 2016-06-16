@@ -19,14 +19,15 @@ import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslHandler;
 
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 
 import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Non Blocking connect.
  */
-public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
+public final class NettyConnectListener<T> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
 
@@ -56,33 +57,50 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
         this.partitionKey = partitionKey;
     }
 
-    private void abortChannelPreemption() {
-        if (channelPreempted)
+    public void abortChannelPreemption(Channel channel) {
+        if (channelPreempted) {
             channelManager.abortChannelPreemption(partitionKey);
+        }
+
+        Channels.silentlyCloseChannel(channel);
+    }
+
+    private boolean futureIsAlreadyCancelled(Channel channel) {
+        // FIXME should we only check isCancelled?
+        if (future.isDone()) {
+            abortChannelPreemption(channel);
+            return true;
+        }
+        return false;
     }
 
     private void writeRequest(Channel channel) {
 
+        if (futureIsAlreadyCancelled(channel)) {
+            return;
+        }
+
         LOGGER.debug("Using non-cached Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
 
         Channels.setAttribute(channel, future);
-
-        if (future.isDone()) {
-            abortChannelPreemption();
-            Channels.silentlyCloseChannel(channel);
-            return;
-        }
 
         channelManager.registerOpenChannel(channel, partitionKey);
         future.attachChannel(channel, false);
         requestSender.writeRequest(future, channel);
     }
 
-    @Override
-    public void onSuccess(Channel channel) {
+    public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
+
+        TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
+
+        if (futureIsAlreadyCancelled(channel)) {
+            return;
+        }
 
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
+
+        timeoutsHolder.initRemoteAddress(remoteAddress);
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
         if (future.getProxyServer() == null && uri.isSecured()) {
@@ -115,10 +133,10 @@ public final class NettyConnectListener<T> extends SimpleChannelFutureListener {
         }
     }
 
-    @Override
     public void onFailure(Channel channel, Throwable cause) {
-        //beware, channel can be null
-        abortChannelPreemption();
+
+        // beware, channel can be null
+        abortChannelPreemption(channel);
 
         boolean canRetry = future.incrementRetryAndCheck();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);

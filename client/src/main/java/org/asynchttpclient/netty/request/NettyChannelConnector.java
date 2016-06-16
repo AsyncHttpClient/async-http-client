@@ -13,10 +13,8 @@
 package org.asynchttpclient.netty.request;
 
 import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -29,18 +27,16 @@ import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
-import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NettyChannelConnector {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
 
     private final AsyncHandlerExtensions asyncHandlerExtensions;
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
-    private final TimeoutsHolder timeoutsHolder;
     private final AsyncHttpClientState clientState;
     private final boolean connectionTtlEnabled;
     private volatile int i = 0;
@@ -48,13 +44,11 @@ public class NettyChannelConnector {
     public NettyChannelConnector(InetAddress localAddress,//
             List<InetSocketAddress> remoteAddresses,//
             AsyncHandler<?> asyncHandler,//
-            TimeoutsHolder timeoutsHolder,//
             AsyncHttpClientState clientState,//
             AsyncHttpClientConfig config) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
-        this.timeoutsHolder = assertNotNull(timeoutsHolder, "timeoutsHolder");
         this.clientState = clientState;
         this.connectionTtlEnabled = config.getConnectionTtl() > 0;
     }
@@ -83,32 +77,31 @@ public class NettyChannelConnector {
     }
 
     private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
-        final ChannelFuture future = bootstrap.connect(remoteAddress, localAddress);
 
-        future.addListener(new SimpleChannelFutureListener() {
+        bootstrap.connect(remoteAddress, localAddress)//
+                .addListener(new SimpleChannelFutureListener() {
 
-            @Override
-            public void onSuccess(Channel channel) {
-                if (asyncHandlerExtensions != null) {
-                    asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, future.channel());
-                }
-                timeoutsHolder.initRemoteAddress(remoteAddress);
-                if (connectionTtlEnabled) {
-                    Channels.initChannelId(channel);
-                }
-                connectListener.onSuccess(channel);
-            }
+                    @Override
+                    public void onSuccess(Channel channel) {
+                        if (asyncHandlerExtensions != null) {
+                            asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, channel);
+                        }
+                        if (connectionTtlEnabled) {
+                            Channels.initChannelId(channel);
+                        }
+                        connectListener.onSuccess(channel, remoteAddress);
+                    }
 
-            @Override
-            public void onFailure(Channel channel, Throwable t) {
-                if (asyncHandlerExtensions != null)
-                    asyncHandlerExtensions.onTcpConnectFailure(remoteAddress, t);
-                boolean retry = pickNextRemoteAddress();
-                if (retry)
-                    NettyChannelConnector.this.connect(bootstrap, connectListener);
-                else
-                    connectListener.onFailure(channel, t);
-            }
-        });
+                    @Override
+                    public void onFailure(Channel channel, Throwable t) {
+                        if (asyncHandlerExtensions != null)
+                            asyncHandlerExtensions.onTcpConnectFailure(remoteAddress, t);
+                        boolean retry = pickNextRemoteAddress();
+                        if (retry)
+                            NettyChannelConnector.this.connect(bootstrap, connectListener);
+                        else
+                            connectListener.onFailure(channel, t);
+                    }
+                });
     }
 }
