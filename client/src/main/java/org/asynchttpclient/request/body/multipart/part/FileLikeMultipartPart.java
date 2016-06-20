@@ -1,6 +1,6 @@
 package org.asynchttpclient.request.body.multipart.part;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.*;
 
 import org.asynchttpclient.request.body.multipart.FileLikePart;
 
@@ -20,7 +20,7 @@ public abstract class FileLikeMultipartPart<T extends FileLikePart> extends Mult
         if (part.getFileName() != null) {
             visitor.withBytes(FILE_NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(part.getFileName().getBytes(part.getCharset() != null ? part.getCharset() : US_ASCII));
+            visitor.withBytes(part.getFileName().getBytes(part.getCharset() != null ? part.getCharset() : UTF_8));
             visitor.withByte(QUOTE_BYTE);
         }
     }
