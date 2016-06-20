@@ -217,7 +217,10 @@ public final class NettyRequestSender {
         future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
-        LOGGER.debug("Using open Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
+        if (LOGGER.isDebugEnabled()) {
+            HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
+            LOGGER.debug("Using open Channel {} for {} '{}'", channel, httpRequest.getMethod(), httpRequest.getUri());
+        }
 
         // channelInactive might be called between isChannelValid and writeRequest
         // so if we don't store the Future now, channelInactive won't perform handleUnexpectedClosedChannel
