@@ -217,6 +217,12 @@ public class Realm {
                 }
             }
         };
+        
+        private static MessageDigest getMessageDigest() {
+            MessageDigest md = DIGEST_TL.get();
+            md.reset();
+            return md;
+        }
 
         private final String principal;
         private final String password;
@@ -500,7 +506,7 @@ public class Realm {
 
             // Avoid generating
             if (isNonEmpty(nonce)) {
-                MessageDigest md = DIGEST_TL.get();
+                MessageDigest md = getMessageDigest();
                 newCnonce(md);
                 newResponse(md);
             }
