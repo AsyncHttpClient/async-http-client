@@ -16,6 +16,7 @@ package org.asynchttpclient.netty.channel;
 import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslHandler;
 
 import java.net.ConnectException;
@@ -80,7 +81,10 @@ public final class NettyConnectListener<T> {
             return;
         }
 
-        LOGGER.debug("Using non-cached Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
+        if (LOGGER.isDebugEnabled()) {
+            HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
+            LOGGER.debug("Using new Channel '{}' for '{}' to '{}'", channel, httpRequest.getMethod(), httpRequest.getUri());
+        }
 
         Channels.setAttribute(channel, future);
 

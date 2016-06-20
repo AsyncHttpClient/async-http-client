@@ -491,7 +491,7 @@ public final class NettyRequestSender {
         final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
 
         if (channel != null) {
-            LOGGER.debug("Using polled Channel {}\n for uri {}\n", channel, uri);
+            LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
         }
         return channel;
     }
