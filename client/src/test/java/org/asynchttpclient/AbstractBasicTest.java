@@ -80,7 +80,6 @@ public abstract class AbstractBasicTest {
         @Override
         public void onThrowable(Throwable t) {
             t.printStackTrace();
-            fail("Unexpected exception: " + t.getMessage(), t);
         }
     }
 
