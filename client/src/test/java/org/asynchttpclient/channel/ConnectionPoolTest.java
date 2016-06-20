@@ -89,7 +89,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone", invocationCount = 10)
+    @Test(groups = "standalone", invocationCount = 100)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -110,6 +110,15 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                         l.countDown();
                     }
                     return response;
+                }
+
+                @Override
+                public void onThrowable(Throwable t) {
+                    try {
+                        super.onThrowable(t);
+                    } finally {
+                        l.countDown();
+                    }
                 }
             };
 
