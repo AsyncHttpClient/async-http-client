@@ -94,12 +94,15 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         if (closed.compareAndSet(false, true)) {
             try {
                 channelManager.close();
-
-                if (allowStopNettyTimer)
-                    nettyTimer.stop();
-
             } catch (Throwable t) {
-                LOGGER.warn("Unexpected error on close", t);
+                LOGGER.warn("Unexpected error on ChannelManager close", t);
+            }
+            if (allowStopNettyTimer) {
+                try {
+                    nettyTimer.stop();
+                } catch (Throwable t) {
+                    LOGGER.warn("Unexpected error on HashedWheelTimer close", t);
+                }
             }
         }
     }
