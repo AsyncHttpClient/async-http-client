@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.oauth;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
@@ -277,7 +278,7 @@ public class OAuthSignatureCalculatorTest {
         //signature: tR3+Ty81lMeYAr/Fid0kMTYa/WM=
         //Authorization header: OAuth realm="",oauth_version="1.0",oauth_consumer_key="dpf43f3p2l4k3l03",oauth_token="nnch734d00sl2jdk",oauth_timestamp="1191242096",oauth_nonce="kllo9940pd9333jh",oauth_signature_method="HMAC-SHA1",oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D"
 
-        String authHeader = req.getHeaders().get("Authorization");
+        String authHeader = req.getHeaders().get(AUTHORIZATION);
         Matcher m = Pattern.compile("oauth_signature=\"(.+?)\"").matcher(authHeader);
         assertEquals(m.find(), true);
         String encodedSig = m.group(1);
@@ -290,6 +291,7 @@ public class OAuthSignatureCalculatorTest {
 
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
+        assertEquals(authHeader, "OAuth oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
     }
 
     @Test(groups = "standalone")
