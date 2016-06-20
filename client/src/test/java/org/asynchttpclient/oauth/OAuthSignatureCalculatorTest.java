@@ -34,9 +34,7 @@ import org.testng.annotations.Test;
 /**
  * Tests the OAuth signature behavior.
  *
- * See <a href=
- * "https://oauth.googlecode.com/svn/code/javascript/example/signature.html"
- * >Signature Tester</a> for an online oauth signature checker.
+ * See <a href= "https://oauth.googlecode.com/svn/code/javascript/example/signature.html" >Signature Tester</a> for an online oauth signature checker.
  *
  */
 public class OAuthSignatureCalculatorTest {
@@ -273,10 +271,13 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(params.size(), 2);
 
         // From the signature tester, the URL should look like:
-        //normalized parameters: file=vacation.jpg&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0&size=original
-        //signature base string: GET&http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dkllo9940pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d00sl2jdk%26oauth_version%3D1.0%26size%3Doriginal
-        //signature: tR3+Ty81lMeYAr/Fid0kMTYa/WM=
-        //Authorization header: OAuth realm="",oauth_version="1.0",oauth_consumer_key="dpf43f3p2l4k3l03",oauth_token="nnch734d00sl2jdk",oauth_timestamp="1191242096",oauth_nonce="kllo9940pd9333jh",oauth_signature_method="HMAC-SHA1",oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D"
+        // normalized parameters:
+        // file=vacation.jpg&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0&size=original
+        // signature base string:
+        // GET&http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dkllo9940pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d00sl2jdk%26oauth_version%3D1.0%26size%3Doriginal
+        // signature: tR3+Ty81lMeYAr/Fid0kMTYa/WM=
+        // Authorization header: OAuth
+        // realm="",oauth_version="1.0",oauth_consumer_key="dpf43f3p2l4k3l03",oauth_token="nnch734d00sl2jdk",oauth_timestamp="1191242096",oauth_nonce="kllo9940pd9333jh",oauth_signature_method="HMAC-SHA1",oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D"
 
         String authHeader = req.getHeaders().get(AUTHORIZATION);
         Matcher m = Pattern.compile("oauth_signature=\"(.+?)\"").matcher(authHeader);
@@ -291,34 +292,36 @@ public class OAuthSignatureCalculatorTest {
 
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
-        assertEquals(authHeader, "OAuth oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
+        assertEquals(
+                authHeader,
+                "OAuth oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
     }
 
     @Test(groups = "standalone")
     public void testWithNullRequestToken() {
-      String url = "http://photos.example.net/photos?file=vacation.jpg&size=original";
-      ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);
-      RequestToken user = new RequestToken(null, null);
-      OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+        String url = "http://photos.example.net/photos?file=vacation.jpg&size=original";
+        ConsumerKey consumer = new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET);
+        RequestToken user = new RequestToken(null, null);
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
 
-      final Request request = get(url)//
-          .setSignatureCalculator(calc)//
-          .build();
+        final Request request = get(url)//
+                .setSignatureCalculator(calc)//
+                .build();
 
-      String signatureBaseString = calc.signatureBaseString(//
-          request.getMethod(),//
-          request.getUri(),//
-          137131201,//
-          "ZLc92RAkooZcIO/0cctl0Q==",//
-          request.getFormParams(),//
-          request.getQueryParams()).toString();
+        String signatureBaseString = calc.signatureBaseString(//
+                request.getMethod(),//
+                request.getUri(),//
+                137131201,//
+                "ZLc92RAkooZcIO/0cctl0Q==",//
+                request.getFormParams(),//
+                request.getQueryParams()).toString();
 
-      assertEquals(signatureBaseString, "GET&" + //
-          "http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26" + //
-          "oauth_consumer_key%3D9djdj82h48djs9d2%26" + //
-          "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" + //
-          "oauth_signature_method%3DHMAC-SHA1%26" + //
-          "oauth_timestamp%3D137131201%26" + //
-          "oauth_version%3D1.0%26size%3Doriginal");
+        assertEquals(signatureBaseString, "GET&" + //
+                "http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26" + //
+                "oauth_consumer_key%3D9djdj82h48djs9d2%26" + //
+                "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" + //
+                "oauth_signature_method%3DHMAC-SHA1%26" + //
+                "oauth_timestamp%3D137131201%26" + //
+                "oauth_version%3D1.0%26size%3Doriginal");
     }
 }
