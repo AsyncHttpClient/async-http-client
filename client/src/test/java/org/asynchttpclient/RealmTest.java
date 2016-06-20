@@ -17,6 +17,7 @@ import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import org.asynchttpclient.uri.Uri;
@@ -101,7 +102,7 @@ public class RealmTest {
     private String getMd5(String what) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(what.getBytes("ISO-8859-1"));
+            md.update(what.getBytes(StandardCharsets.ISO_8859_1));
             byte[] hash = md.digest();
             BigInteger bi = new BigInteger(1, hash);
             String result = bi.toString(16);
