@@ -219,8 +219,11 @@ public final class NettyRequestSender {
 
         LOGGER.debug("Using open Channel {} for {} '{}'", channel, future.getNettyRequest().getHttpRequest().getMethod(), future.getNettyRequest().getHttpRequest().getUri());
 
+        // channelInactive might be called between isChannelValid and writeRequest
+        // so if we don't store the Future now, channelInactive won't perform handleUnexpectedClosedChannel
+        Channels.setAttribute(channel, future);
+
         if (Channels.isChannelValid(channel)) {
-            Channels.setAttribute(channel, future);
             writeRequest(future, channel);
         } else {
             // bad luck, the channel was closed in-between
