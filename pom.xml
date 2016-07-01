@@ -373,7 +373,7 @@
 		<surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
 		<source.property>1.8</source.property>
 		<target.property>1.8</target.property>
-		<netty.version>4.0.37.Final</netty.version>
+		<netty.version>4.0.38.Final</netty.version>
 		<slf4j.version>1.7.21</slf4j.version>
 		<logback.version>1.1.7</logback.version>
 		<testng.version>6.9.10</testng.version>
