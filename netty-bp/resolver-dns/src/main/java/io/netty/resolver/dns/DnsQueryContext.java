@@ -17,6 +17,7 @@ package io.netty.resolver.dns;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.AddressedEnvelope;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.dns.DatagramDnsQuery;
@@ -27,9 +28,10 @@ import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.handler.codec.dns.DnsResponse;
 import io.netty.handler.codec.dns.DnsSection;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.concurrent.ScheduledFuture;
-import io.netty.util.internal.OneTimeTask;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -108,12 +110,12 @@ final class DnsQueryContext {
     }
 
     private void sendQuery(final DnsQuery query) {
-        if (parent.bindFuture.isDone()) {
+        if (parent.channelFuture.isDone()) {
             writeQuery(query);
         } else {
-            parent.bindFuture.addListener(new ChannelFutureListener() {
+            parent.channelFuture.addListener(new GenericFutureListener<Future<? super Channel>>() {
                 @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
+                public void operationComplete(Future<? super Channel> future) throws Exception {
                     if (future.isSuccess()) {
                         writeQuery(query);
                     } else {
@@ -147,7 +149,7 @@ final class DnsQueryContext {
         // Schedule a query timeout task if necessary.
         final long queryTimeoutMillis = parent.queryTimeoutMillis();
         if (queryTimeoutMillis > 0) {
-            timeoutFuture = parent.ch.eventLoop().schedule(new OneTimeTask() {
+            timeoutFuture = parent.ch.eventLoop().schedule(new Runnable() {
                 @Override
                 public void run() {
                     if (promise.isDone()) {
