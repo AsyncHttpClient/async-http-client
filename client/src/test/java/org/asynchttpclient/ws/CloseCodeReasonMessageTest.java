@@ -47,7 +47,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
             websocket.close();
 
             latch.await();
-            assertTrue(text.get().startsWith("1000"));
+            assertTrue(text.get().startsWith("1000"), "Expected a 1000 code but got " + text.get());
         }
     }
 

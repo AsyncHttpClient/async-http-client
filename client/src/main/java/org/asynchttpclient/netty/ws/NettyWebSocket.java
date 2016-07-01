@@ -16,7 +16,6 @@ package org.asynchttpclient.netty.ws;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -135,7 +134,7 @@ public class NettyWebSocket implements WebSocket {
     @Override
     public void close() {
         if (channel.isOpen()) {
-            channel.writeAndFlush(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
+            channel.writeAndFlush(new CloseWebSocketFrame(1000, "normal closure"));
         }
     }
 

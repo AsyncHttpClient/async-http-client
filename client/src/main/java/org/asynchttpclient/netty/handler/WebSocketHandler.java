@@ -182,6 +182,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             Channels.setDiscard(channel);
             CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
             webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
+            Channels.silentlyCloseChannel(channel);
         } else {
             ByteBuf buf = frame.content();
             if (buf != null && buf.readableBytes() > 0) {
@@ -226,9 +227,9 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
-            logger.trace("Connection was closed abnormally (that is, with no close frame being sent).");
+            logger.trace("Connection was closed abnormally (that is, with no close frame being received).");
             if (webSocket != null)
-                webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
+                webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being received).");
         } catch (Throwable t) {
             logger.error("onError", t);
         }
