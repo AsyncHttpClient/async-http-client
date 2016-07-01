@@ -52,6 +52,7 @@ import org.asynchttpclient.util.StringUtils;
 
 public final class NettyRequestFactory {
 
+    public static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
     private final AsyncHttpClientConfig config;
@@ -167,8 +168,16 @@ public final class NettyRequestFactory {
             if (isNonEmpty(request.getCookies()))
                 headers.set(COOKIE, CookieEncoder.encode(request.getCookies()));
 
-            if (config.isCompressionEnforced() && !headers.contains(ACCEPT_ENCODING))
+            String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
+            if (userDefinedAcceptEncoding != null) {
+                // we don't support Brotly ATM
+                if (userDefinedAcceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
+                    headers.set(ACCEPT_ENCODING, userDefinedAcceptEncoding.subSequence(0, userDefinedAcceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length()));
+                }
+                
+            } else if (config.isCompressionEnforced()) {
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
+            }
         }
 
         if (body != null) {
