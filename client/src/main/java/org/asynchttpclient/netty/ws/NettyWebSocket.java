@@ -135,8 +135,6 @@ public class NettyWebSocket implements WebSocket {
     @Override
     public void close() {
         if (channel.isOpen()) {
-            onClose(1000, "Normal closure; the connection successfully completed whatever purpose for which it was created.");
-            listeners.clear();
             channel.writeAndFlush(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
         }
     }
