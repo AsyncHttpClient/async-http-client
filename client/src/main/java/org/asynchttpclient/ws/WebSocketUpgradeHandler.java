@@ -48,9 +48,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         bufferedFrames.add(bufferedFrame);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final void onThrowable(Throwable t) {
         onFailure(t);
@@ -62,37 +59,24 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         return prev;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         return State.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
         return status == SWITCHING_PROTOCOLS ? State.UPGRADE : State.ABORT;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         return State.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final WebSocket onCompleted() throws Exception {
-
         if (status != SWITCHING_PROTOCOLS) {
             IllegalStateException e = new IllegalStateException("Invalid Status Code " + status);
             for (WebSocketListener listener : listeners) {
@@ -104,9 +88,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         return webSocket;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
@@ -123,9 +104,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         ok.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final void onFailure(Throwable t) {
         for (WebSocketListener listener : listeners) {
@@ -133,22 +111,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
                 webSocket.addWebSocketListener(listener);
             }
             listener.onError(t);
-        }
-    }
-
-    public final void onClose(WebSocket webSocket, int status, String reasonPhrase) {
-        // Connect failure
-        if (this.webSocket == null)
-            this.webSocket = webSocket;
-
-        for (WebSocketListener listener : listeners) {
-            if (webSocket != null) {
-                webSocket.addWebSocketListener(listener);
-            }
-            listener.onClose(webSocket);
-            if (listener instanceof WebSocketCloseCodeReasonListener) {
-                WebSocketCloseCodeReasonListener.class.cast(listener).onClose(webSocket, status, reasonPhrase);
-            }
         }
     }
 
