@@ -224,7 +224,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
             if (LOGGER.isDebugEnabled()) {
                 long duration = unpreciseMillisTime() - start;
-                LOGGER.debug("Closed {} connections out of {} in {}ms", closedCount, totalCount, duration);
+                LOGGER.debug("Closed {} connections out of {} in {} ms", closedCount, totalCount, duration);
             }
 
             scheduleNewIdleChannelDetector(timeout.task());

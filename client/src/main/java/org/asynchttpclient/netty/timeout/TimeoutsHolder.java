@@ -71,7 +71,7 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(ReadTimeoutTimerTask task) {
-        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue > (requestTimeoutMillisTime - unpreciseMillisTime()))) {
+        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue < (requestTimeoutMillisTime - unpreciseMillisTime()))) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
