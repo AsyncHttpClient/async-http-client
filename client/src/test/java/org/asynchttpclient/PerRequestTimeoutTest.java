@@ -43,10 +43,13 @@ import org.testng.annotations.Test;
 public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
-    private void checkTimeoutMessage(String message) {
-        assertTrue(message.startsWith("Request timeout"), "error message indicates reason of error but got: " + message);
+    private void checkTimeoutMessage(String message, boolean requestTimeout) {
+        if (requestTimeout)
+            assertTrue(message.startsWith("Request timeout"), "error message indicates reason of error but got: " + message);
+        else
+            assertTrue(message.startsWith("Read timeout"), "error message indicates reason of error but got: " + message);
         assertTrue(message.contains("localhost"), "error message contains remote host address but got: " + message);
-        assertTrue(message.contains("after 100ms"), "error message contains timeout configuration value but got: " + message);
+        assertTrue(message.contains("after 100 ms"), "error message contains timeout configuration value but got: " + message);
     }
 
     @Override
@@ -100,7 +103,23 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            checkTimeoutMessage(e.getCause().getMessage());
+            checkTimeoutMessage(e.getCause().getMessage(), true);
+        } catch (TimeoutException e) {
+            fail("Timeout.", e);
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void testReadTimeout() throws IOException {
+        try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(100))) {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
+            Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
+            assertNull(response);
+        } catch (InterruptedException e) {
+            fail("Interrupted.", e);
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TimeoutException);
+            checkTimeoutMessage(e.getCause().getMessage(), false);
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
@@ -116,7 +135,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            checkTimeoutMessage(e.getCause().getMessage());
+            checkTimeoutMessage(e.getCause().getMessage(), true);
         }
     }
 
@@ -130,7 +149,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            checkTimeoutMessage(e.getCause().getMessage());
+            checkTimeoutMessage(e.getCause().getMessage(), true);
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
