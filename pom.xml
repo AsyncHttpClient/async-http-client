@@ -215,6 +215,7 @@
 		<module>netty-bp</module>
 		<module>client</module>
 		<module>extras</module>
+		<module>example</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>
