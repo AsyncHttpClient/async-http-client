@@ -104,7 +104,8 @@ public final class HttpTransactionContext {
                 try {
                     closeable.assertOpen();
                 } catch (IOException ioe) {
-                    abort(ioe);
+                    // unwrap the exception as it was wrapped by assertOpen.
+                    abort(ioe.getCause());
                 }
             }
         }
