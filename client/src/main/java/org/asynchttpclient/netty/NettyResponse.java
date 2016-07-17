@@ -179,6 +179,7 @@ public class NettyResponse implements Response {
         for (HttpResponseBodyPart part : bodyParts)
             target.put(part.getBodyPartBytes());
 
+        target.flip();
         return target;
     }
 
