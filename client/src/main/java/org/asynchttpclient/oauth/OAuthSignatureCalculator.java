@@ -1,18 +1,15 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright (c) 2016 AsyncHttpClient Project. All rights reserved.
  *
- * This program is licensed to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package org.asynchttpclient.oauth;
 
@@ -24,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
@@ -35,12 +33,9 @@ import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
- * Simple OAuth signature calculator that can used for constructing client signatures
- * for accessing services that use OAuth for authorization.
- * <br>
- * Supports most common signature inclusion and calculation methods: HMAC-SHA1 for
- * calculation, and Header inclusion as inclusion method. Nonce generation uses
- * simple random numbers with base64 encoding.
+ * Simple OAuth signature calculator that can used for constructing client signatures for accessing services that use OAuth for authorization. <br>
+ * Supports most common signature inclusion and calculation methods: HMAC-SHA1 for calculation, and Header inclusion as inclusion method. Nonce generation uses simple random
+ * numbers with base64 encoding.
  *
  * @author tatu (tatu.saloranta@iki.fi)
  */
@@ -72,7 +67,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
     /**
      * @param consumerAuth Consumer key to use for signature calculation
-     * @param userAuth     Request/access token to use for signature calculation
+     * @param userAuth Request/access token to use for signature calculation
      */
     public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
         mac = new ThreadSafeHMAC(consumerAuth, userAuth);
@@ -84,47 +79,16 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = generateTimestamp();
-        String signature = calculateSignature(request.getMethod(), request.getUri(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
+        String signature = calculateSignature(request, timestamp, nonce);
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
 
-    private String baseUrl(Uri uri) {
-        /* 07-Oct-2010, tatu: URL may contain default port number; if so, need to extract
-         *   from base URL.
-         */
-        String scheme = uri.getScheme();
-
-        StringBuilder sb = StringUtils.stringBuilder();
-        sb.append(scheme).append("://").append(uri.getHost());
-        
-        int port = uri.getPort();
-        if (scheme.equals("http")) {
-            if (port == 80)
-                port = -1;
-        } else if (scheme.equals("https")) {
-            if (port == 443)
-                port = -1;
-        }
-
-        if (port != -1)
-            sb.append(':').append(port);
-
-        if (isNonEmpty(uri.getPath()))
-            sb.append(uri.getPath());
-        
-        return sb.toString();
-    }
-
     private String encodedParams(long oauthTimestamp, String nonce, List<Param> formParams, List<Param> queryParams) {
         /**
-         * List of all query and form parameters added to this request; needed
-         * for calculating request signature
+         * List of all query and form parameters added to this request; needed for calculating request signature
          */
-        int allParametersSize = 5
-                + (userAuth.getKey() != null ? 1 : 0)
-                + (formParams != null ? formParams.size() : 0)
-                + (queryParams != null ? queryParams.size() : 0);
+        int allParametersSize = 5 + (userAuth.getKey() != null ? 1 : 0) + (formParams != null ? formParams.size() : 0) + (queryParams != null ? queryParams.size() : 0);
         OAuthParameterSet allParameters = new OAuthParameterSet(allParametersSize);
 
         // start with standard OAuth parameters we need
@@ -145,47 +109,72 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         }
         if (queryParams != null) {
             for (Param param : queryParams) {
-             // queryParams are already encoded
-                allParameters.add(param.getName(), param.getValue());
+                // queryParams are already form-url-encoded
+                // but OAuth1 uses RFC3986_UNRESERVED_CHARS so * and + have to be encoded
+                allParameters.add(percentEncodeAlreadyFormUrlEncoded(param.getName()), percentEncodeAlreadyFormUrlEncoded(param.getValue()));
             }
         }
         return allParameters.sortAndConcat();
     }
 
-    StringBuilder signatureBaseString(String method, Uri uri, long oauthTimestamp, String nonce,
-                                     List<Param> formParams, List<Param> queryParams) {
-        
-        // beware: must generate first as we're using pooled StringBuilder
-        String baseUrl = baseUrl(uri);
-        String encodedParams = encodedParams(oauthTimestamp, nonce, formParams, queryParams);
+    private String baseUrl(Uri uri) {
+        /*
+         * 07-Oct-2010, tatu: URL may contain default port number; if so, need to remove from base URL.
+         */
+        String scheme = uri.getScheme();
 
         StringBuilder sb = StringUtils.stringBuilder();
-        sb.append(method); // POST / GET etc (nothing to URL encode)
+        sb.append(scheme).append("://").append(uri.getHost());
+
+        int port = uri.getPort();
+        if (scheme.equals("http")) {
+            if (port == 80)
+                port = -1;
+        } else if (scheme.equals("https")) {
+            if (port == 443)
+                port = -1;
+        }
+
+        if (port != -1)
+            sb.append(':').append(port);
+
+        if (isNonEmpty(uri.getPath()))
+            sb.append(uri.getPath());
+
+        return sb.toString();
+    }
+
+    private static final Pattern STAR_CHAR_PATTERN = Pattern.compile("*", Pattern.LITERAL);
+    private static final Pattern PLUS_CHAR_PATTERN = Pattern.compile("+", Pattern.LITERAL);
+    private static final Pattern ENCODED_TILDE_PATTERN = Pattern.compile("%7E", Pattern.LITERAL);
+
+    private String percentEncodeAlreadyFormUrlEncoded(String s) {
+        s = STAR_CHAR_PATTERN.matcher(s).replaceAll("%2A");
+        s = PLUS_CHAR_PATTERN.matcher(s).replaceAll("%20");
+        s = ENCODED_TILDE_PATTERN.matcher(s).replaceAll("~");
+        return s;
+    }
+
+    StringBuilder signatureBaseString(Request request, long oauthTimestamp, String nonce) {
+
+        // beware: must generate first as we're using pooled StringBuilder
+        String baseUrl = baseUrl(request.getUri());
+        String encodedParams = encodedParams(oauthTimestamp, nonce, request.getFormParams(), request.getQueryParams());
+
+        StringBuilder sb = StringUtils.stringBuilder();
+        sb.append(request.getMethod()); // POST / GET etc (nothing to URL encode)
         sb.append('&');
         Utf8UrlEncoder.encodeAndAppendQueryElement(sb, baseUrl);
-
 
         // and all that needs to be URL encoded (... again!)
         sb.append('&');
         Utf8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
         return sb;
     }
-    
-    /**
-     * Method for calculating OAuth signature using HMAC/SHA-1 method.
-     * 
-     * @param method the request methode
-     * @param uri the request Uri
-     * @param oauthTimestamp the timestamp
-     * @param nonce the nonce
-     * @param formParams the formParams
-     * @param queryParams the query params
-     * @return the signature
-     */
-    public String calculateSignature(String method, Uri uri, long oauthTimestamp, String nonce,
-                                     List<Param> formParams, List<Param> queryParams) {
 
-        StringBuilder sb = signatureBaseString(method, uri, oauthTimestamp, nonce, formParams, queryParams);
+    String calculateSignature(Request request, long oauthTimestamp, String nonce) {
+
+        StringBuilder sb = signatureBaseString(request, oauthTimestamp, nonce);
 
         ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
@@ -225,16 +214,13 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
-//      return String.valueOf(Math.abs(random.nextLong()));
+        // return String.valueOf(Math.abs(random.nextLong()));
     }
 
     /**
-     * Container for parameters used for calculating OAuth signature.
-     * About the only confusing aspect is that of whether entries are to be sorted
-     * before encoded or vice versa: if my reading is correct, encoding is to occur
-     * first, then sorting; although this should rarely matter (since sorting is primary
-     * by key, which usually has nothing to encode)... of course, rarely means that
-     * when it would occur it'd be harder to track down.
+     * Container for parameters used for calculating OAuth signature. About the only confusing aspect is that of whether entries are to be sorted before encoded or vice versa: if
+     * my reading is correct, encoding is to occur first, then sorting; although this should rarely matter (since sorting is primary by key, which usually has nothing to encode)...
+     * of course, rarely means that when it would occur it'd be harder to track down.
      */
     final static class OAuthParameterSet {
         private final ArrayList<Parameter> allParameters;
@@ -269,6 +255,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
      * Helper class for sorting query and form parameters that we need
      */
     final static class Parameter implements Comparable<Parameter> {
+
         private final String key, value;
 
         public Parameter(String key, String value) {
@@ -300,13 +287,17 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             Parameter parameter = (Parameter) o;
 
-            if (!key.equals(parameter.key)) return false;
-            if (!value.equals(parameter.value)) return false;
+            if (!key.equals(parameter.key))
+                return false;
+            if (!value.equals(parameter.value))
+                return false;
 
             return true;
         }
