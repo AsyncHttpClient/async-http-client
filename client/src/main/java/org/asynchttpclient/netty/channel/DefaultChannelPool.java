@@ -54,7 +54,8 @@ public final class DefaultChannelPool implements ChannelPool {
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
         this(config.getPooledConnectionIdleTimeout(),//
                 config.getConnectionTtl(),//
-                hashedWheelTimer);
+                hashedWheelTimer,//
+                config.getConnectionPoolCleanerPeriod());
     }
 
     private ChannelId channelId(Channel channel) {
@@ -63,17 +64,20 @@ public final class DefaultChannelPool implements ChannelPool {
 
     public DefaultChannelPool(int maxIdleTime,//
             int connectionTtl,//
-            Timer nettyTimer) {
+            Timer nettyTimer,//
+            int cleanerPeriod) {
         this(maxIdleTime,//
                 connectionTtl,//
                 PoolLeaseStrategy.LIFO,//
-                nettyTimer);
+                nettyTimer,//
+                cleanerPeriod);
     }
 
     public DefaultChannelPool(int maxIdleTime,//
             int connectionTtl,//
             PoolLeaseStrategy poolLeaseStrategy,//
-            Timer nettyTimer) {
+            Timer nettyTimer,//
+            int cleanerPeriod) {
         this.maxIdleTime = (int) maxIdleTime;
         this.connectionTtl = connectionTtl;
         connectionTtlEnabled = connectionTtl > 0;
@@ -82,7 +86,7 @@ public final class DefaultChannelPool implements ChannelPool {
         maxIdleTimeEnabled = maxIdleTime > 0;
         this.poolLeaseStrategy = poolLeaseStrategy;
 
-        cleanerPeriod = Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE, maxIdleTimeEnabled ? maxIdleTime : Long.MAX_VALUE);
+        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE, maxIdleTimeEnabled ? maxIdleTime : Integer.MAX_VALUE));
 
         if (connectionTtlEnabled || maxIdleTimeEnabled)
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
@@ -153,7 +157,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 if (isIdleTimeoutExpired(idleChannel, now) || isRemotelyClosed(idleChannel.channel) || isTtlExpired(idleChannel.channel, now)) {
                     LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
                     if (idleTimeoutChannels == null)
-                        idleTimeoutChannels = new ArrayList<>();
+                        idleTimeoutChannels = new ArrayList<>(1);
                     idleTimeoutChannels.add(idleChannel);
                 }
             }
@@ -163,7 +167,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
         private final List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
 
-            // lazy create, only if we have a non-closeable channel
+            // lazy create, only if we hit a non-closeable channel
             List<IdleChannel> closedChannels = null;
             for (int i = 0; i < candidates.size(); i++) {
                 // We call takeOwnership here to avoid closing a channel that has just been taken out

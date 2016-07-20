@@ -85,6 +85,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // keep-alive
     private final boolean keepAlive;
     private final int pooledConnectionIdleTimeout;
+    private final int connectionPoolCleanerPeriod;
     private final int connectionTtl;
     private final int maxConnections;
     private final int maxConnectionsPerHost;
@@ -155,6 +156,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             // keep-alive
             boolean keepAlive,//
             int pooledConnectionIdleTimeout,//
+            int connectionPoolCleanerPeriod,//
             int connectionTtl,//
             int maxConnections,//
             int maxConnectionsPerHost,//
@@ -226,6 +228,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // keep-alive
         this.keepAlive = keepAlive;
         this.pooledConnectionIdleTimeout = pooledConnectionIdleTimeout;
+        this.connectionPoolCleanerPeriod = connectionPoolCleanerPeriod;
         this.connectionTtl = connectionTtl;
         this.maxConnections = maxConnections;
         this.maxConnectionsPerHost = maxConnectionsPerHost;
@@ -371,6 +374,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public int getPooledConnectionIdleTimeout() {
         return pooledConnectionIdleTimeout;
+    }
+
+    @Override
+    public int getConnectionPoolCleanerPeriod() {
+        return connectionPoolCleanerPeriod;
     }
 
     @Override
@@ -603,6 +611,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // keep-alive
         private boolean keepAlive = defaultKeepAlive();
         private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
+        private int connectionPoolCleanerPeriod = defaultConnectionPoolCleanerPeriod();
         private int connectionTtl = defaultConnectionTtl();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
@@ -1092,6 +1101,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     shutdownTimeout, //
                     keepAlive, //
                     pooledConnectionIdleTimeout, //
+                    connectionPoolCleanerPeriod, //
                     connectionTtl, //
                     maxConnections, //
                     maxConnectionsPerHost, //
