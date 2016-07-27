@@ -154,7 +154,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
             log.info(String.format("Executing request [%s] ...", requestUrl2));
             Response response = client.prepareGet(requestUrl2).execute().get();
-            Assert.assertEquals(response.getStatusCode(), 302);
+            Assert.assertTrue(response.getStatusCode() == 301 || response.getStatusCode() == 302);
         }
     }
 
