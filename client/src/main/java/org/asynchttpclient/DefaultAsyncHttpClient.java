@@ -17,6 +17,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
@@ -245,6 +246,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     public ChannelPool getChannelPool() {
         return channelManager.getChannelPool();
+    }
+
+    public EventLoopGroup getEventLoopGroup() {
+        return channelManager.getEventLoopGroup();
     }
 
     protected BoundRequestBuilder requestBuilder(String method, String url) {

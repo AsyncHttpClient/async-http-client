@@ -487,4 +487,8 @@ public class ChannelManager {
     public ChannelPool getChannelPool() {
         return channelPool;
     }
+
+    public EventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
+    }
 }
