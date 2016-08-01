@@ -70,6 +70,7 @@ abstract class DnsNameResolverContext<T> {
     private final DnsNameResolver parent;
     private final DnsServerAddressStream nameServerAddrs;
     private final String hostname;
+    protected String pristineHostname;
     private final DnsCache resolveCache;
     private final boolean traceEnabled;
     private final int maxAllowedQueries;
@@ -117,6 +118,7 @@ abstract class DnsNameResolverContext<T> {
                         String nextHostname = DnsNameResolverContext.this.hostname + "." + searchDomain;
                         DnsNameResolverContext<T> nextContext = newResolverContext(parent,
                             nextHostname, resolveCache);
+                        nextContext.pristineHostname = hostname;
                         nextContext.internalResolve(nextPromise);
                         nextPromise.addListener(this);
                     } else {
@@ -450,8 +452,13 @@ abstract class DnsNameResolverContext<T> {
         final int tries = maxAllowedQueries - allowedQueries;
         final StringBuilder buf = new StringBuilder(64);
 
-        buf.append("failed to resolve '")
-           .append(hostname).append('\'');
+        buf.append("failed to resolve '");
+        if (pristineHostname != null) {
+          buf.append(pristineHostname);
+        } else {
+          buf.append(hostname);
+        }
+        buf.append('\'');
         if (tries > 1) {
             if (tries < maxAllowedQueries) {
                 buf.append(" after ")
