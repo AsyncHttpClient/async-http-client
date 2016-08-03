@@ -8,7 +8,7 @@ Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on tw
 The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
 The library also supports the WebSocket Protocol. The Async HTTP Client library is simple to use.
 
-I's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
+It's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
 
 Latest `version`: [![Maven][mavenImg]][mavenLink]
 
