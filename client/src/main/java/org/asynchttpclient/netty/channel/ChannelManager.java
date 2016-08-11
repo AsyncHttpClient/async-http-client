@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.channel;
 
 import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.bootstrap.ChannelFactory;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -23,10 +22,12 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.oio.OioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -164,15 +165,15 @@ public class ChannelManager {
         // check if external EventLoopGroup is defined
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
         allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
-        ChannelFactory<? extends Channel> channelFactory;
+        Class<? extends Channel> channelClass;
         if (allowReleaseEventLoopGroup) {
             if (config.isUseNativeTransport()) {
                 eventLoopGroup = newEpollEventLoopGroup(threadFactory);
-                channelFactory = getEpollSocketChannelFactory();
+                channelClass = EpollSocketChannel.class;
 
             } else {
                 eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
-                channelFactory = NioSocketChannelFactory.INSTANCE;
+                channelClass = NioSocketChannel.class;
             }
 
         } else {
@@ -181,22 +182,22 @@ public class ChannelManager {
                 throw new IllegalArgumentException("Oio is not supported");
 
             if (eventLoopGroup instanceof NioEventLoopGroup) {
-                channelFactory = NioSocketChannelFactory.INSTANCE;
+                channelClass = NioSocketChannel.class;
             } else {
-                channelFactory = getEpollSocketChannelFactory();
+                channelClass = EpollSocketChannel.class;
             }
         }
 
-        httpBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
-        wsBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
+        httpBootstrap = newBootstrap(channelClass, eventLoopGroup, config);
+        wsBootstrap = newBootstrap(channelClass, eventLoopGroup, config);
 
         // for reactive streams
         httpBootstrap.option(ChannelOption.AUTO_READ, false);
     }
 
-    private Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
+    private Bootstrap newBootstrap(Class<? extends Channel> channelClass, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
         @SuppressWarnings("deprecation")
-        Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)//
+        Bootstrap bootstrap = new Bootstrap().channel(channelClass).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
                 .option(ChannelOption.ALLOCATOR, config.isUsePooledMemory() ? PooledByteBufAllocator.DEFAULT : UnpooledByteBufAllocator.DEFAULT)//
                 .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())//
@@ -230,15 +231,6 @@ public class ChannelManager {
         try {
             Class<?> epollEventLoopGroupClass = Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
             return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(0, threadFactory);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private ChannelFactory<? extends Channel> getEpollSocketChannelFactory() {
-        try {
-            return (ChannelFactory<? extends Channel>) Class.forName("org.asynchttpclient.netty.channel.EpollSocketChannelFactory").newInstance();
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
