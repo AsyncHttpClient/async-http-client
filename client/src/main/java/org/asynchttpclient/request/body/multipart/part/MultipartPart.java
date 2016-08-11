@@ -205,7 +205,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
 
         int transferred = 0;
         if (target instanceof GatheringByteChannel) {
-            transferred = source.readBytes((GatheringByteChannel) target, (int) source.readableBytes());
+            transferred = source.readBytes((GatheringByteChannel) target, source.readableBytes());
         } else {
             for (ByteBuffer byteBuffer : source.nioBuffers()) {
                 int len = byteBuffer.remaining();

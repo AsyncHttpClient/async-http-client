@@ -366,7 +366,7 @@ public class SimpleAsyncHttpClient implements Closeable {
          * Omit error documents. An error document will neither be available in
          * the response nor written via a {@link BodyConsumer}.
          */
-        OMIT;
+        OMIT
     }
 
     /**

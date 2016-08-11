@@ -113,7 +113,7 @@ public abstract class PartBase implements Part {
 
     public void addCustomHeader(String name, String value) {
         if (customHeaders == null) {
-            customHeaders = new ArrayList<Param>(2);
+            customHeaders = new ArrayList<>(2);
         }
         customHeaders.add(new Param(name, value));
     }

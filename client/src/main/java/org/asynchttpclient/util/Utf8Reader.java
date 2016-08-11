@@ -91,7 +91,7 @@ public class Utf8Reader {
                     char3 = b.getByte(readerIndex + count - 1);
                     if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
                         throw new UTFDataFormatException("malformed input around byte " + (count - 1));
-                    chararr[chararr_count++] = (char) (((char1 & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
+                    chararr[chararr_count++] = (char) (((char1 & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
                     break;
                 default:
                     /* 10xx xxxx, 1111 xxxx */

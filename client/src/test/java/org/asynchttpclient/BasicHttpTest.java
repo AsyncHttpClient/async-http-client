@@ -560,7 +560,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 final CountDownLatch latch = new CountDownLatch(1);
-                final AtomicReference<String> message = new AtomicReference<String>();
+                final AtomicReference<String> message = new AtomicReference<>();
 
                 server.enqueueOk();
                 client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {

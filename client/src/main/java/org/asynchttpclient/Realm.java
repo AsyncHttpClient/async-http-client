@@ -60,7 +60,7 @@ public class Realm {
 
     public enum AuthScheme {
 
-        BASIC, DIGEST, NTLM, SPNEGO, KERBEROS;
+        BASIC, DIGEST, NTLM, SPNEGO, KERBEROS
     }
 
     private Realm(AuthScheme scheme,//
@@ -475,9 +475,9 @@ public class Realm {
 
         private static String toHexString(byte[] data) {
             StringBuilder buffer = StringUtils.stringBuilder();
-            for (int i = 0; i < data.length; i++) {
-                buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
-                buffer.append(Integer.toHexString(data[i] & 0x0f));
+            for (byte aData : data) {
+                buffer.append(Integer.toHexString((aData & 0xf0) >>> 4));
+                buffer.append(Integer.toHexString(aData & 0x0f));
             }
             return buffer.toString();
         }

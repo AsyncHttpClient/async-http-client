@@ -168,7 +168,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                         } finally {
                             frame.release();
                         }
-                    };
+                    }
                 };
                 handler.bufferFrame(bufferedFrame);
             }

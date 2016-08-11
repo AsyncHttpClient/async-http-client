@@ -127,7 +127,7 @@ public class ProxyServer {
 
         public Builder setNonProxyHost(String nonProxyHost) {
             if (nonProxyHosts == null)
-                nonProxyHosts = new ArrayList<String>(1);
+                nonProxyHosts = new ArrayList<>(1);
             nonProxyHosts.add(nonProxyHost);
             return this;
         }

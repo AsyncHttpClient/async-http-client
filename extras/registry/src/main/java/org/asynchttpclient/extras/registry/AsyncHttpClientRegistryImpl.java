@@ -42,9 +42,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
                     else
                         _instance = new AsyncHttpClientRegistryImpl();
                 }
-            } catch (InstantiationException e) {
-                throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : " + e.getMessage(), e);
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : " + e.getMessage(), e);
             } finally {
                 lock.unlock();

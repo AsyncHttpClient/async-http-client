@@ -119,11 +119,11 @@ public enum UriEncoder {
 
     protected abstract String withoutQueryWithParams(final List<Param> queryParams);
 
-    private final String withQuery(final String query, final List<Param> queryParams) {
+    private String withQuery(final String query, final List<Param> queryParams) {
         return isNonEmpty(queryParams) ? withQueryWithParams(query, queryParams) : withQueryWithoutParams(query);
     }
 
-    private final String withoutQuery(final List<Param> queryParams) {
+    private String withoutQuery(final List<Param> queryParams) {
         return isNonEmpty(queryParams) ? withoutQueryWithParams(queryParams) : null;
     }
 
@@ -140,7 +140,7 @@ public enum UriEncoder {
 
     protected abstract String encodePath(String path);
 
-    private final String encodeQuery(final String query, final List<Param> queryParams) {
+    private String encodeQuery(final String query, final List<Param> queryParams) {
         return isNonEmpty(query) ? withQuery(query, queryParams) : withoutQuery(queryParams);
     }
 }

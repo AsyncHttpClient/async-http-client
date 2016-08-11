@@ -21,5 +21,5 @@ public enum MultipartState {
 
     POST_CONTENT,
 
-    DONE;
+    DONE
 }

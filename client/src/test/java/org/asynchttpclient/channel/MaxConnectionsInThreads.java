@@ -63,8 +63,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
         final AtomicInteger failedCount = new AtomicInteger();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            for (int i = 0; i < urls.length; i++) {
-                final String url = urls[i];
+            for (final String url : urls) {
                 Thread t = new Thread() {
                     public void run() {
                         client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
@@ -93,8 +92,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
 
             final CountDownLatch notInThreadsLatch = new CountDownLatch(2);
             failedCount.set(0);
-            for (int i = 0; i < urls.length; i++) {
-                final String url = urls[i];
+            for (final String url : urls) {
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
                     @Override
                     public Response onCompleted(Response response) throws Exception {

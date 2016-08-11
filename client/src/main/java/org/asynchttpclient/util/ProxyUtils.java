@@ -120,7 +120,7 @@ public final class ProxyUtils {
 
             String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {
-                proxyServer.setNonProxyHosts(new ArrayList<String>(Arrays.asList(nonProxyHosts.split("\\|"))));
+                proxyServer.setNonProxyHosts(new ArrayList<>(Arrays.asList(nonProxyHosts.split("\\|"))));
             }
 
             return createProxyServerSelector(proxyServer.build());

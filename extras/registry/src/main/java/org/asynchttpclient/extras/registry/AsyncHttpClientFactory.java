@@ -49,7 +49,7 @@ public class AsyncHttpClientFactory {
 
         try {
             if (attemptInstantiation())
-                return (AsyncHttpClient) asyncHttpClientImplClass.newInstance();
+                return asyncHttpClientImplClass.newInstance();
         } catch (InstantiationException e) {
             throw new AsyncHttpClientImplException("Unable to create the class specified by system property : "
                     + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);

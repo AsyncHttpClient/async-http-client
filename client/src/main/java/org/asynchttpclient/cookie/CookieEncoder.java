@@ -63,8 +63,7 @@ public final class CookieEncoder {
         } else {
             Cookie[] cookiesSorted = cookies.toArray(new Cookie[cookies.size()]);
             Arrays.sort(cookiesSorted, COOKIE_COMPARATOR);
-            for (int i = 0; i < cookiesSorted.length; i++) {
-                Cookie cookie = cookiesSorted[i];
+            for (Cookie cookie : cookiesSorted) {
                 if (cookie != null) {
                     add(sb, cookie.getName(), cookie.getValue(), cookie.isWrap());
                 }

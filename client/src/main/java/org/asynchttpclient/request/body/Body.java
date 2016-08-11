@@ -38,7 +38,7 @@ public interface Body extends Closeable {
         /**
          * There's nothing to read and input has to stop
          */
-        STOP;
+        STOP
     }
 
     /**

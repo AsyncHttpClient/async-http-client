@@ -73,7 +73,7 @@ public class MultipartUtils {
     }
 
     public static List<MultipartPart<? extends Part>> generateMultipartParts(List<Part> parts, byte[] boundary) {
-        List<MultipartPart<? extends Part>> multipartParts = new ArrayList<MultipartPart<? extends Part>>(parts.size());
+        List<MultipartPart<? extends Part>> multipartParts = new ArrayList<>(parts.size());
         for (Part part : parts) {
             if (part instanceof FilePart) {
                 multipartParts.add(new FileMultipartPart((FilePart) part, boundary));

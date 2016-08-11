@@ -43,7 +43,7 @@ public class HttpServer implements Closeable {
     @FunctionalInterface
     public interface HttpServletResponseConsumer {
 
-        public void apply(HttpServletResponse response) throws IOException, ServletException;
+        void apply(HttpServletResponse response) throws IOException, ServletException;
     }
 
     public HttpServer() {
@@ -240,7 +240,7 @@ public class HttpServer implements Closeable {
             Enumeration<String> parameterNames = request.getParameterNames();
             StringBuilder requestBody = new StringBuilder();
             while (parameterNames.hasMoreElements()) {
-                String param = parameterNames.nextElement().toString();
+                String param = parameterNames.nextElement();
                 response.addHeader("X-" + param, request.getParameter(param));
                 requestBody.append(param);
                 requestBody.append("_");
