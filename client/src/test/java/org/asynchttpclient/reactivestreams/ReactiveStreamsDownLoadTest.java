@@ -71,7 +71,7 @@ public class ReactiveStreamsDownLoadTest {
         private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
 
         public SimpleStreamedAsyncHandler() {
-            this(new SimpleSubscriber<HttpResponseBodyPart>());
+            this(new SimpleSubscriber<>());
         }
 
         public SimpleStreamedAsyncHandler(SimpleSubscriber<HttpResponseBodyPart> subscriber) {
@@ -128,7 +128,7 @@ public class ReactiveStreamsDownLoadTest {
     static protected class SimpleSubscriber<T> implements Subscriber<T> {
         private volatile Subscription subscription;
         private volatile Throwable error;
-        private final List<T> elements = Collections.synchronizedList(new ArrayList<T>());
+        private final List<T> elements = Collections.synchronizedList(new ArrayList<>());
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override

@@ -157,7 +157,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void testSimpleTransferListener() throws Exception {
 
-        final List<Error> errors = Collections.synchronizedList(new ArrayList<Error>());
+        final List<Error> errors = Collections.synchronizedList(new ArrayList<>());
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 

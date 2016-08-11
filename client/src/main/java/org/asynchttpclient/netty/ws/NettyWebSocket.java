@@ -59,7 +59,7 @@ public class NettyWebSocket implements WebSocket {
     private volatile boolean interestedInTextMessages;
 
     public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config) {
-        this(channel, upgradeHeaders, config, new ConcurrentLinkedQueue<WebSocketListener>());
+        this(channel, upgradeHeaders, config, new ConcurrentLinkedQueue<>());
     }
 
     public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config, Collection<WebSocketListener> listeners) {

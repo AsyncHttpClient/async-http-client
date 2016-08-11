@@ -31,23 +31,23 @@ public class HttpUtils {
 
     public final static Charset DEFAULT_CHARSET = ISO_8859_1;
 
-    public static final void validateSupportedScheme(Uri uri) {
+    public static void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();
         if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 
-    public final static String getBaseUrl(Uri uri) {
+    public static String getBaseUrl(Uri uri) {
         // getAuthority duplicate but we don't want to re-concatenate
         return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getExplicitPort();
     }
 
-    public final static String getAuthority(Uri uri) {
+    public static String getAuthority(Uri uri) {
         return uri.getHost() + ":" + uri.getExplicitPort();
     }
 
-    public final static boolean isSameBase(Uri uri1, Uri uri2) {
+    public static boolean isSameBase(Uri uri1, Uri uri2) {
         return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost()) && uri1.getExplicitPort() == uri2.getExplicitPort();
     }
 
@@ -55,7 +55,7 @@ public class HttpUtils {
      * @param uri the uri
      * @return the raw path or "/" if it's null
      */
-    public final static String getNonEmptyPath(Uri uri) {
+    public static String getNonEmptyPath(Uri uri) {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 
@@ -79,7 +79,7 @@ public class HttpUtils {
     }
 
     public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
-        return request.getFollowRedirect() != null ? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
+        return request.getFollowRedirect() != null ? request.getFollowRedirect() : config.isFollowRedirect();
     }
 
     private static StringBuilder urlEncodeFormParams0(List<Param> params) {

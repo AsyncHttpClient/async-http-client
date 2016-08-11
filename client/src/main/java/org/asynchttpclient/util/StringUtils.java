@@ -21,7 +21,7 @@ public final class StringUtils {
     private static final ThreadLocal<StringBuilder> STRING_BUILDERS = new ThreadLocal<StringBuilder>() {
         protected StringBuilder initialValue() {
             return new StringBuilder(512);
-        };
+        }
     };
 
     /**

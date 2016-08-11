@@ -35,9 +35,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
                 try {
                     statusCode.set(future.get().getStatusCode());
                     latch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }, Executors.newFixedThreadPool(1));

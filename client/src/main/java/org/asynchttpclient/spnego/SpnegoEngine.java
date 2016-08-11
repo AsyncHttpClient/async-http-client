@@ -81,7 +81,7 @@ public class SpnegoEngine {
     public String generateToken(String server) throws SpnegoEngineException {
         GSSContext gssContext = null;
         byte[] token = null; // base64 decoded challenge
-        Oid negotiationOid = null;
+        Oid negotiationOid;
 
         try {
             log.debug("init {}", server);
@@ -152,7 +152,7 @@ public class SpnegoEngine {
 
             gssContext.dispose();
 
-            String tokenstr = new String(Base64.encode(token));
+            String tokenstr = Base64.encode(token);
             log.debug("Sending response '{}' back to the server", tokenstr);
 
             return tokenstr;

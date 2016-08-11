@@ -47,7 +47,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
-    private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
+    private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * {@inheritDoc}

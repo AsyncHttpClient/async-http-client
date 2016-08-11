@@ -33,7 +33,7 @@ public class AsyncHttpClientConfigHelper {
         public static final String DEFAULT_AHC_PROPERTIES = "ahc-default.properties";
         public static final String CUSTOM_AHC_PROPERTIES = "ahc.properties";
 
-        private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<String, String>();
+        private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
         private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES);
         private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES);
 
@@ -65,9 +65,9 @@ public class AsyncHttpClientConfigHelper {
             return propsCache.computeIfAbsent(key, k -> {
                 String value = System.getProperty(k);
                 if (value == null)
-                    value = (String) customProperties.getProperty(k);
+                    value = customProperties.getProperty(k);
                 if (value == null)
-                    value = (String) defaultProperties.getProperty(k);
+                    value = defaultProperties.getProperty(k);
                 return value;
             });
         }

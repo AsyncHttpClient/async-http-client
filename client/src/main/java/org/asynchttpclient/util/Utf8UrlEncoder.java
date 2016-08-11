@@ -192,7 +192,7 @@ public final class Utf8UrlEncoder {
         return sb;
     }
 
-    private final static void appendSingleByteEncoded(StringBuilder sb, int value, boolean encodeSpaceAsPlus) {
+    private static void appendSingleByteEncoded(StringBuilder sb, int value, boolean encodeSpaceAsPlus) {
 
         if (value == ' ' && encodeSpaceAsPlus) {
             sb.append('+');
@@ -204,7 +204,7 @@ public final class Utf8UrlEncoder {
         sb.append(HEX[value & 0xF]);
     }
 
-    private final static void appendMultiByteEncoded(StringBuilder sb, int value) {
+    private static void appendMultiByteEncoded(StringBuilder sb, int value) {
         if (value < 0x800) {
             appendSingleByteEncoded(sb, (0xc0 | (value >> 6)), false);
             appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), false);

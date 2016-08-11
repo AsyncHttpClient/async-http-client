@@ -49,8 +49,8 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             List<ListenableFuture<Response>> futures = new ArrayList<>();
-            for (int i = 0; i < urls.length; i++) {
-                futures.add(client.prepareGet(urls[i]).execute());
+            for (String url : urls) {
+                futures.add(client.prepareGet(url).execute());
             }
 
             boolean caughtError = false;
