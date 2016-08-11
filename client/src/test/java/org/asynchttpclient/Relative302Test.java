@@ -72,6 +72,7 @@ public class Relative302Test extends AbstractBasicTest {
         server.start();
         port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
+        port2 = findFreePort();
     }
 
     @Test(groups = "online")
@@ -96,19 +97,22 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    // @Test(groups = "standalone")
+//     @Test(groups = "standalone")
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
+        
+        Exception e = null;
 
-        // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://localhost:%d/", port2)).execute().get();
-
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 404);
+            c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://localhost:%d/", port2)).execute().get();
         } catch (ExecutionException ex) {
-            assertEquals(ex.getCause().getClass(), ConnectException.class);
+            e = ex;
         }
+        
+        assertNotNull(e);
+        Throwable cause = e.getCause();
+        assertTrue(cause instanceof ConnectException);
+        assertTrue(cause.getMessage().contains(":" + port2));
     }
 
     // @Test(groups = "standalone")
