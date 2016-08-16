@@ -177,10 +177,10 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
     private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) throws Exception {
         if (frame instanceof TextWebSocketFrame) {
-            webSocket.onTextFragment((TextWebSocketFrame) frame);
+            webSocket.onTextFrame((TextWebSocketFrame) frame);
 
         } else if (frame instanceof BinaryWebSocketFrame) {
-            webSocket.onBinaryFragment((BinaryWebSocketFrame) frame);
+            webSocket.onBinaryFrame((BinaryWebSocketFrame) frame);
 
         } else if (frame instanceof CloseWebSocketFrame) {
             Channels.setDiscard(channel);

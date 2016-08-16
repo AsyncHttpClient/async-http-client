@@ -211,13 +211,13 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
-    public void onBinaryFragment(BinaryWebSocketFrame frame) {
+    public void onBinaryFrame(BinaryWebSocketFrame frame) {
         if (interestedInByteMessages) {
             notifyByteListeners(byteBuf2Bytes(frame.content()));
         }
     }
 
-    public void onTextFragment(TextWebSocketFrame frame) {
+    public void onTextFrame(TextWebSocketFrame frame) {
         if (interestedInTextMessages) {
             try {
                 notifyTextListeners(ByteBufUtils.byteBuf2Utf8String(frame.content()));
