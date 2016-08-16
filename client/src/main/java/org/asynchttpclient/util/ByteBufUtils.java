@@ -20,11 +20,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 
 public final class ByteBufUtils {
-
-    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private ByteBufUtils() {
     }
@@ -60,30 +57,5 @@ public final class ByteBufUtils {
         byte[] array = new byte[readable];
         buf.getBytes(readerIndex, array);
         return array;
-    }
-
-    public static byte[] byteBufs2Bytes(List<ByteBuf> bufs) {
-
-        if (bufs.isEmpty()) {
-            return EMPTY_BYTE_ARRAY;
-
-        } else if (bufs.size() == 1) {
-            return byteBuf2Bytes(bufs.get(0));
-
-        } else {
-            int totalSize = 0;
-            for (ByteBuf buf : bufs) {
-                totalSize += buf.readableBytes();
-            }
-
-            byte[] bytes = new byte[totalSize];
-            int offset = 0;
-            for (ByteBuf buf : bufs) {
-                int readable = buf.readableBytes();
-                buf.getBytes(buf.readerIndex(), bytes, offset, readable);
-                offset += readable;
-            }
-            return bytes;
-        }
     }
 }
