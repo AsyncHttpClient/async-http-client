@@ -16,13 +16,10 @@ package org.asynchttpclient.util;
 import io.netty.buffer.ByteBuf;
 
 import java.io.UTFDataFormatException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 
 public final class ByteBufUtils {
@@ -32,51 +29,23 @@ public final class ByteBufUtils {
     private ByteBufUtils() {
     }
 
-    public static String byteBuf2String(ByteBuf buf, Charset charset) throws UTFDataFormatException, IndexOutOfBoundsException, CharacterCodingException {
-
-        int byteLen = buf.readableBytes();
-
-        if (charset.equals(StandardCharsets.US_ASCII)) {
-            return Utf8Reader.readUtf8(buf, byteLen);
-        } else if (charset.equals(StandardCharsets.UTF_8)) {
-            try {
-                return Utf8Reader.readUtf8(buf.duplicate(), (int) (byteLen * 1.4));
-            } catch (IndexOutOfBoundsException e) {
-                // try again with 3 bytes per char
-                return Utf8Reader.readUtf8(buf, byteLen * 3);
-            }
-        } else {
-            return byteBuffersToString(buf.nioBuffers(), charset);
-        }
+    public static String byteBuf2Utf8String(ByteBuf buf) throws CharacterCodingException {
+        return Utf8ByteBufDecoder.getCachedDecoder().decode(Collections.singleton(buf));
     }
 
-    private static String byteBuffersToString(ByteBuffer[] bufs, Charset cs) throws CharacterCodingException {
+    public static String byteBuf2UsAsciiString(ByteBuf buf) throws CharacterCodingException {
+        return UsAsciiByteBufDecoder.getCachedDecoder().decode(Collections.singleton(buf));
+    }
 
-        CharsetDecoder cd = cs.newDecoder();
-        int len = 0;
-        for (ByteBuffer buf : bufs) {
-            len += buf.remaining();
+    public static String byteBuf2String(ByteBuf buf, Charset charset) throws UTFDataFormatException, IndexOutOfBoundsException, CharacterCodingException {
+
+        if (charset.equals(StandardCharsets.US_ASCII)) {
+            return byteBuf2UsAsciiString(buf);
+        } else if (charset.equals(StandardCharsets.UTF_8)) {
+            return byteBuf2Utf8String(buf);
+        } else {
+            return buf.toString(charset);
         }
-        int en = (int) (len * (double) cd.maxCharsPerByte());
-        char[] ca = new char[en];
-        cd.reset();
-        CharBuffer cb = CharBuffer.wrap(ca);
-
-        CoderResult cr = null;
-
-        for (int i = 0; i < bufs.length; i++) {
-
-            ByteBuffer buf = bufs[i];
-            cr = cd.decode(buf, cb, i < bufs.length - 1);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        }
-
-        cr = cd.flush(cb);
-        if (!cr.isUnderflow())
-            cr.throwException();
-
-        return new String(ca, 0, cb.position());
     }
 
     public static byte[] byteBuf2Bytes(ByteBuf buf) {

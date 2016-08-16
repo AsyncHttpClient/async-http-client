@@ -24,9 +24,11 @@ import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 import java.net.SocketAddress;
+import java.nio.charset.CharacterCodingException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.asynchttpclient.util.ByteBufUtils;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteListener;
 import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
@@ -217,7 +219,11 @@ public class NettyWebSocket implements WebSocket {
 
     public void onTextFragment(TextWebSocketFrame frame) {
         if (interestedInTextMessages) {
-            notifyTextListeners(frame.text());
+            try {
+                notifyTextListeners(ByteBufUtils.byteBuf2Utf8String(frame.content()));
+            } catch (CharacterCodingException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
