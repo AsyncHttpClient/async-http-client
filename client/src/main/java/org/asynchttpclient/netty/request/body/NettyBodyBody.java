@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request.body;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -83,13 +82,13 @@ public class NettyBodyBody implements NettyBody {
             }
         }
 
-        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
-        writeFuture.addListener(new WriteProgressListener(future, false, getContentLength()) {
-            public void operationComplete(ChannelProgressiveFuture cf) {
-                closeSilently(body);
-                super.operationComplete(cf);
-            }
-        });
+        channel.write(msg, channel.newProgressivePromise())//
+                .addListener(new WriteProgressListener(future, false, getContentLength()) {
+                    public void operationComplete(ChannelProgressiveFuture cf) {
+                        closeSilently(body);
+                        super.operationComplete(cf);
+                    }
+                });
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
     }
 }
