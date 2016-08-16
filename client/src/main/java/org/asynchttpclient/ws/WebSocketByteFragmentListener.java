@@ -17,7 +17,11 @@ import org.asynchttpclient.HttpResponseBodyPart;
 
 /**
  * Invoked when WebSocket binary fragments are received.
+ * 
+ * Actually doesn't do anything, as chunks as assembled into full WebSocket frames.
+ * Will be removed in 2.1.
  */
+@Deprecated
 public interface WebSocketByteFragmentListener extends WebSocketListener {
 
     /**

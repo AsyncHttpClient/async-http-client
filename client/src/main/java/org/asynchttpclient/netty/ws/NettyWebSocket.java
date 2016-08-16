@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.ws;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -23,24 +23,16 @@ import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketByteFragmentListener;
 import org.asynchttpclient.ws.WebSocketByteListener;
 import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketPingListener;
 import org.asynchttpclient.ws.WebSocketPongListener;
-import org.asynchttpclient.ws.WebSocketTextFragmentListener;
 import org.asynchttpclient.ws.WebSocketTextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,21 +44,17 @@ public class NettyWebSocket implements WebSocket {
     protected final Channel channel;
     protected final HttpHeaders upgradeHeaders;
     protected final Collection<WebSocketListener> listeners;
-    protected final int maxBufferSize;
-    private int bufferSize;
-    private List<byte[]> _fragments;
     private volatile boolean interestedInByteMessages;
     private volatile boolean interestedInTextMessages;
 
-    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config) {
-        this(channel, upgradeHeaders, config, new ConcurrentLinkedQueue<>());
+    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders) {
+        this(channel, upgradeHeaders, new ConcurrentLinkedQueue<>());
     }
 
-    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, AsyncHttpClientConfig config, Collection<WebSocketListener> listeners) {
+    public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, Collection<WebSocketListener> listeners) {
         this.channel = channel;
         this.upgradeHeaders = upgradeHeaders;
         this.listeners = listeners;
-        maxBufferSize = config.getWebSocketMaxBufferSize();
     }
 
     @Override
@@ -207,28 +195,6 @@ public class NettyWebSocket implements WebSocket {
         return this;
     }
 
-    private List<byte[]> fragments() {
-        if (_fragments == null)
-            _fragments = new ArrayList<>(2);
-        return _fragments;
-    }
-
-    private void bufferFragment(byte[] buffer) {
-        bufferSize += buffer.length;
-        if (bufferSize > maxBufferSize) {
-            onError(new Exception("Exceeded Netty Web Socket maximum buffer size of " + maxBufferSize));
-            reset();
-            close();
-        } else {
-            fragments().add(buffer);
-        }
-    }
-
-    private void reset() {
-        fragments().clear();
-        bufferSize = 0;
-    }
-
     private void notifyByteListeners(byte[] message) {
         for (WebSocketListener listener : listeners) {
             if (listener instanceof WebSocketByteListener)
@@ -236,89 +202,38 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
-    private void notifyTextListeners(byte[] bytes) {
-        String message = new String(bytes, UTF_8);
+    private void notifyTextListeners(String message) {
         for (WebSocketListener listener : listeners) {
             if (listener instanceof WebSocketTextListener)
                 WebSocketTextListener.class.cast(listener).onMessage(message);
         }
     }
 
-    public void onBinaryFragment(HttpResponseBodyPart part) {
-
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketByteFragmentListener)
-                WebSocketByteFragmentListener.class.cast(listener).onFragment(part);
-        }
-
+    public void onBinaryFragment(BinaryWebSocketFrame frame) {
         if (interestedInByteMessages) {
-            byte[] fragment = part.getBodyPartBytes();
-
-            if (part.isLast()) {
-                if (bufferSize == 0) {
-                    notifyByteListeners(fragment);
-
-                } else {
-                    bufferFragment(fragment);
-                    notifyByteListeners(fragmentsBytes());
-                }
-
-                reset();
-
-            } else
-                bufferFragment(fragment);
+            notifyByteListeners(byteBuf2Bytes(frame.content()));
         }
     }
 
-    private byte[] fragmentsBytes() {
-        ByteArrayOutputStream os = new ByteArrayOutputStream(bufferSize);
-        for (byte[] bytes : _fragments)
-            try {
-                os.write(bytes);
-            } catch (IOException e) {
-                // yeah, right
-            }
-        return os.toByteArray();
-    }
-
-    public void onTextFragment(HttpResponseBodyPart part) {
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketTextFragmentListener)
-                WebSocketTextFragmentListener.class.cast(listener).onFragment(part);
-        }
-
+    public void onTextFragment(TextWebSocketFrame frame) {
         if (interestedInTextMessages) {
-            byte[] fragment = part.getBodyPartBytes();
-
-            if (part.isLast()) {
-                if (bufferSize == 0) {
-                    notifyTextListeners(fragment);
-
-                } else {
-                    bufferFragment(fragment);
-                    notifyTextListeners(fragmentsBytes());
-                }
-
-                reset();
-
-            } else
-                bufferFragment(fragment);
+            notifyTextListeners(frame.text());
         }
     }
 
-    public void onPing(HttpResponseBodyPart part) {
+    public void onPing(PingWebSocketFrame frame) {
+        byte[] bytes = byteBuf2Bytes(frame.content());
         for (WebSocketListener listener : listeners) {
             if (listener instanceof WebSocketPingListener)
-                // bytes are cached in the part
-                WebSocketPingListener.class.cast(listener).onPing(part.getBodyPartBytes());
+                WebSocketPingListener.class.cast(listener).onPing(bytes);
         }
     }
 
-    public void onPong(HttpResponseBodyPart part) {
+    public void onPong(PongWebSocketFrame frame) {
+        byte[] bytes = byteBuf2Bytes(frame.content());
         for (WebSocketListener listener : listeners) {
             if (listener instanceof WebSocketPongListener)
-                // bytes are cached in the part
-                WebSocketPongListener.class.cast(listener).onPong(part.getBodyPartBytes());
+                WebSocketPongListener.class.cast(listener).onPong(bytes);
         }
     }
 }

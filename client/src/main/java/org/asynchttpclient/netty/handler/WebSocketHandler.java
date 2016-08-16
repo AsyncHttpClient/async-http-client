@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.handler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -33,7 +32,6 @@ import java.util.Locale;
 
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.Callback;
@@ -77,7 +75,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
             if (!h.touchSuccess()) {
                 try {
-                    h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders(), config));
+                    h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders()));
                 } catch (Exception ex) {
                     logger.warn("onSuccess unexpected exception", ex);
                 }
@@ -178,27 +176,23 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     }
 
     private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) throws Exception {
-        if (frame instanceof CloseWebSocketFrame) {
+        if (frame instanceof TextWebSocketFrame) {
+            webSocket.onTextFragment((TextWebSocketFrame) frame);
+
+        } else if (frame instanceof BinaryWebSocketFrame) {
+            webSocket.onBinaryFragment((BinaryWebSocketFrame) frame);
+
+        } else if (frame instanceof CloseWebSocketFrame) {
             Channels.setDiscard(channel);
             CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
             webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
             Channels.silentlyCloseChannel(channel);
-        } else {
-            ByteBuf buf = frame.content();
-            if (buf != null && buf.readableBytes() > 0) {
-                HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                handler.onBodyPartReceived(part);
 
-                if (frame instanceof BinaryWebSocketFrame) {
-                    webSocket.onBinaryFragment(part);
-                } else if (frame instanceof TextWebSocketFrame) {
-                    webSocket.onTextFragment(part);
-                } else if (frame instanceof PingWebSocketFrame) {
-                    webSocket.onPing(part);
-                } else if (frame instanceof PongWebSocketFrame) {
-                    webSocket.onPong(part);
-                }
-            }
+        } else if (frame instanceof PingWebSocketFrame) {
+            webSocket.onPing((PingWebSocketFrame) frame);
+
+        } else if (frame instanceof PongWebSocketFrame) {
+            webSocket.onPong((PongWebSocketFrame) frame);
         }
     }
 
