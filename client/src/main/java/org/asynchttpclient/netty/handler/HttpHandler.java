@@ -162,8 +162,6 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     @Override
     public void handleRead(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
 
-        future.touch();
-
         // future is already done because of an exception or a timeout
         if (future.isDone()) {
             // FIXME isn't the channel already properly closed?

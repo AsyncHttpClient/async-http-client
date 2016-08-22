@@ -79,11 +79,12 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
             } else if (attribute instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
+                future.touch();
                 handleRead(channel, future, msg);
 
             } else if (attribute instanceof StreamedResponsePublisher) {
-
                 StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
+                publisher.future().touch();
 
                 if (msg instanceof HttpContent) {
                     ByteBuf content = ((HttpContent) msg).content();
