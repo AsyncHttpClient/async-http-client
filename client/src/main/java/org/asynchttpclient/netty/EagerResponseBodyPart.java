@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.util.ByteBufUtils.byteBuf2Bytes;
+import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;

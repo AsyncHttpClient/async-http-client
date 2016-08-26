@@ -11,23 +11,23 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.util;
+package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.FastThreadLocal;
 
 public class UsAsciiByteBufDecoder {
 
-    private static final FastThreadLocal<UsAsciiByteBufDecoder> DECODERS = new FastThreadLocal<UsAsciiByteBufDecoder>() {
+    private static final FastThreadLocal<UsAsciiByteBufDecoder> POOL = new FastThreadLocal<UsAsciiByteBufDecoder>() {
         protected UsAsciiByteBufDecoder initialValue() {
             return new UsAsciiByteBufDecoder();
         };
     };
 
-    public static UsAsciiByteBufDecoder getCachedDecoder() {
-        UsAsciiByteBufDecoder cached = DECODERS.get();
-        cached.reset();
-        return cached;
+    public static UsAsciiByteBufDecoder pooled() {
+        UsAsciiByteBufDecoder decoder = POOL.get();
+        decoder.reset();
+        return decoder;
     }
 
     private StringBuilder sb = new StringBuilder();

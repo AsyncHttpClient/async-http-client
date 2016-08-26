@@ -17,7 +17,7 @@ import io.netty.buffer.ByteBuf;
 import java.nio.ByteBuffer;
 
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.util.ByteBufUtils;
+import org.asynchttpclient.netty.util.ByteBufUtils;
 
 /**
  * A callback class used when an HTTP response body is received.

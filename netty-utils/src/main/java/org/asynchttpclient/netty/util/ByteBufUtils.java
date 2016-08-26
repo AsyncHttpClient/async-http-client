@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.util;
+package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 
@@ -27,11 +27,11 @@ public final class ByteBufUtils {
     }
 
     public static String byteBuf2Utf8String(ByteBuf buf) throws CharacterCodingException {
-        return Utf8ByteBufDecoder.getCachedDecoder().decode(Collections.singleton(buf));
+        return Utf8ByteBufDecoder.pooled().decode(Collections.singleton(buf));
     }
 
     public static String byteBuf2UsAsciiString(ByteBuf buf) throws CharacterCodingException {
-        return UsAsciiByteBufDecoder.getCachedDecoder().decode(Collections.singleton(buf));
+        return UsAsciiByteBufDecoder.pooled().decode(Collections.singleton(buf));
     }
 
     public static String byteBuf2String(ByteBuf buf, Charset charset) throws UTFDataFormatException, IndexOutOfBoundsException, CharacterCodingException {

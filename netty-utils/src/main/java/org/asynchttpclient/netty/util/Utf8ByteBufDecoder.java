@@ -11,7 +11,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.util;
+package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.FastThreadLocal;
@@ -20,16 +20,16 @@ import java.nio.charset.CharacterCodingException;
 
 public class Utf8ByteBufDecoder extends Utf8Decoder {
 
-    private static final FastThreadLocal<Utf8ByteBufDecoder> DECODERS = new FastThreadLocal<Utf8ByteBufDecoder>() {
+    private static final FastThreadLocal<Utf8ByteBufDecoder> POOL = new FastThreadLocal<Utf8ByteBufDecoder>() {
         protected Utf8ByteBufDecoder initialValue() {
             return new Utf8ByteBufDecoder();
         };
     };
 
-    public static Utf8ByteBufDecoder getCachedDecoder() {
-        Utf8ByteBufDecoder cached = DECODERS.get();
-        cached.reset();
-        return cached;
+    public static Utf8ByteBufDecoder pooled() {
+        Utf8ByteBufDecoder decoder = POOL.get();
+        decoder.reset();
+        return decoder;
     }
 
     public String decode(Iterable<ByteBuf> bufs) throws CharacterCodingException {

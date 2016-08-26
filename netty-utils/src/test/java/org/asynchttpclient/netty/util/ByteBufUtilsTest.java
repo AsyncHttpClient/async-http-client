@@ -4,7 +4,6 @@ import static org.testng.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import org.asynchttpclient.util.ByteBufUtils;
 import org.testng.annotations.Test;
 
 public class ByteBufUtilsTest {

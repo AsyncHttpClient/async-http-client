@@ -14,7 +14,7 @@
 package org.asynchttpclient.netty.ws;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.asynchttpclient.util.ByteBufUtils.byteBuf2Bytes;
+import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -28,7 +28,7 @@ import java.nio.charset.CharacterCodingException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.util.ByteBufUtils;
+import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteListener;
 import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;

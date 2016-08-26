@@ -213,11 +213,17 @@
 	</repositories>
 	<modules>
 		<module>netty-bp</module>
+		<module>netty-utils</module>
 		<module>client</module>
 		<module>extras</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-buffer</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec-http</artifactId>

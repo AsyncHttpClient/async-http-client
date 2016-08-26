@@ -15,10 +15,9 @@ package org.asynchttpclient.ntlm;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -27,13 +26,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
 import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.ByteBufUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -97,7 +96,7 @@ public class NtlmTest extends AbstractBasicTest {
     public void preemptiveNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
         ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
     }
-    
+
     @Test
     public void testGenerateType1Msg() {
         NtlmEngine engine = new NtlmEngine();
@@ -119,73 +118,101 @@ public class NtlmTest extends AbstractBasicTest {
         fail("An NtlmEngineException must have occurred as challenge format is not correct");
     }
 
+    private static byte[] longToBytes(long x) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(x);
+        return buffer.array();
+    }
+
     @Test(expectedExceptions = NtlmEngineException.class)
-    public void testGenerateType3MsgThworsExceptionWhenType2IndicatorNotPresent() {
-        ByteBuf buf = Unpooled.directBuffer();
-        buf.writeBytes("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
-        buf.writeByte(0);
+    public void testGenerateType3MsgThworsExceptionWhenType2IndicatorNotPresent() throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
+        buf.write(0);
         // type 2 indicator
-        buf.writeByte(3).writeByte(0).writeByte(0).writeByte(0);
-        buf.writeBytes("challenge".getBytes());
+        buf.write(3);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+        buf.write("challenge".getBytes());
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+        buf.close();
         fail("An NtlmEngineException must have occurred as type 2 indicator is incorrect");
     }
 
     @Test(expectedExceptions = NtlmEngineException.class)
-    public void testGenerateType3MsgThrowsExceptionWhenUnicodeSupportNotIndicated() {
-        ByteBuf buf = Unpooled.directBuffer();
-        buf.writeBytes("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
-        buf.writeByte(0);
+    public void testGenerateType3MsgThrowsExceptionWhenUnicodeSupportNotIndicated() throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
+        buf.write(0);
         // type 2 indicator
-        buf.writeByte(2).writeByte(0).writeByte(0).writeByte(0);
-        buf.writeLong(1);
+        buf.write(2);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+
+        buf.write(longToBytes(1L)); // we want to write a Long
+
         // flags
-        buf.writeByte(0);// unicode support indicator
-        buf.writeByte(0).writeByte(0).writeByte(0);
-        buf.writeLong(1);// challenge
+        buf.write(0);// unicode support indicator
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+
+        buf.write(longToBytes(1L));// challenge
         NtlmEngine engine = new NtlmEngine();
-        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
+        engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+        buf.close();
         fail("An NtlmEngineException must have occurred as unicode support is not indicated");
     }
 
-    @Test(groups="standalone")
-    public void testGenerateType2Msg(){
+    @Test(groups = "standalone")
+    public void testGenerateType2Msg() {
         Type2Message type2Message = new Type2Message("TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
         Assert.assertEquals(type2Message.getMessageLength(), 40, "This is a sample challenge that should return 40");
     }
 
     @Test
-    public void testGenerateType3Msg() {
-        ByteBuf buf = Unpooled.directBuffer();
-        buf.writeBytes("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
-        buf.writeByte(0);
+    public void testGenerateType3Msg() throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
+        buf.write(0);
         // type 2 indicator
-        buf.writeByte(2).writeByte(0).writeByte(0).writeByte(0);
-        buf.writeLong(0);
+        buf.write(2);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+
+        buf.write(longToBytes(0L)); // we want to write a Long
+
         // flags
-        buf.writeByte(1);// unicode support indicator
-        buf.writeByte(0).writeByte(0).writeByte(0);
-        buf.writeLong(1);// challenge
+        buf.write(1);// unicode support indicator
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+
+        buf.write(longToBytes(1L));// challenge
         NtlmEngine engine = new NtlmEngine();
-        String type3Msg = engine.generateType3Msg("username", "password", "localhost", "workstation",
-                Base64.encode(ByteBufUtils.byteBuf2Bytes(buf)));
-        assertEquals(type3Msg,
+        String type3Msg = engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+        buf.close();
+        assertEquals(
+                type3Msg,
                 "TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABIAEgB4AAAAEAAQAIoAAAAWABYAmgAAAAAAAACwAAAAAQAAAgUBKAoAAAAP1g6lqqN1HZ0wSSxeQ5riQkyh7/UexwVlCPQm0SHU2vsDQm2wM6NbT2zPonPzLJL0TABPAEMAQQBMAEgATwBTAFQAdQBzAGUAcgBuAGEAbQBlAFcATwBSAEsAUwBUAEEAVABJAE8ATgA=",
                 "Incorrect type3 message generated");
     }
 
     @Test
     public void testWriteULong() {
-        //test different combinations so that different positions in the byte array will be written
+        // test different combinations so that different positions in the byte array will be written
         byte[] buffer = new byte[4];
         NtlmEngine.writeULong(buffer, 1, 0);
         assertEquals(buffer, new byte[] { 1, 0, 0, 0 }, "Unsigned long value 1 was not written correctly to the buffer");
-        
+
         buffer = new byte[4];
         NtlmEngine.writeULong(buffer, 257, 0);
         assertEquals(buffer, new byte[] { 1, 1, 0, 0 }, "Unsigned long value 257 was not written correctly to the buffer");
-        
+
         buffer = new byte[4];
         NtlmEngine.writeULong(buffer, 16777216, 0);
         assertEquals(buffer, new byte[] { 0, 0, 0, 1 }, "Unsigned long value 16777216 was not written correctly to the buffer");
