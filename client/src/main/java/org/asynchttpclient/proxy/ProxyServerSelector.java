@@ -18,10 +18,5 @@ public interface ProxyServerSelector {
     /**
      * A selector that always selects no proxy.
      */
-    ProxyServerSelector NO_PROXY_SELECTOR = new ProxyServerSelector() {
-        @Override
-        public ProxyServer select(Uri uri) {
-            return null;
-        }
-    };
+    ProxyServerSelector NO_PROXY_SELECTOR = uri -> null;
 }

@@ -800,13 +800,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         public Builder setProxyServer(ProxyServer proxyServer) {
-            this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
+            this.proxyServerSelector = uri -> proxyServer;
             return this;
         }
 
         public Builder setProxyServer(ProxyServer.Builder proxyServerBuilder) {
-            this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServerBuilder.build());
-            return this;
+            return setProxyServer(proxyServerBuilder.build());
         }
 
         public Builder setUseProxySelector(boolean useProxySelector) {

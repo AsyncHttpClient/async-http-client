@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class ProxyUtils {
 
-    private final static Logger log = LoggerFactory.getLogger(ProxyUtils.class);
+    private final static Logger logger = LoggerFactory.getLogger(ProxyUtils.class);
 
     /**
      * The host to use as proxy.
@@ -123,7 +123,8 @@ public final class ProxyUtils {
                 proxyServer.setNonProxyHosts(new ArrayList<>(Arrays.asList(nonProxyHosts.split("\\|"))));
             }
 
-            return createProxyServerSelector(proxyServer.build());
+            ProxyServer proxy = proxyServer.build();
+            return uri -> proxy;
         }
 
         return ProxyServerSelector.NO_PROXY_SELECTOR;
@@ -157,7 +158,7 @@ public final class ProxyUtils {
                             switch (proxy.type()) {
                             case HTTP:
                                 if (!(proxy.address() instanceof InetSocketAddress)) {
-                                    log.warn("Don't know how to connect to address " + proxy.address());
+                                    logger.warn("Don't know how to connect to address " + proxy.address());
                                     return null;
                                 } else {
                                     InetSocketAddress address = (InetSocketAddress) proxy.address();
@@ -166,30 +167,16 @@ public final class ProxyUtils {
                             case DIRECT:
                                 return null;
                             default:
-                                log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
+                                logger.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
                                 break;
                             }
                         }
                     }
                     return null;
                 } catch (URISyntaxException e) {
-                    log.warn(uri + " couldn't be turned into a java.net.URI", e);
+                    logger.warn(uri + " couldn't be turned into a java.net.URI", e);
                     return null;
                 }
-            }
-        };
-    }
-
-    /**
-     * Create a proxy server selector that always selects a single proxy server.
-     *
-     * @param proxyServer The proxy server to select.
-     * @return The proxy server selector.
-     */
-    public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
-        return new ProxyServerSelector() {
-            public ProxyServer select(Uri uri) {
-                return proxyServer;
             }
         };
     }
