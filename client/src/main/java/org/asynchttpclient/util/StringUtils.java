@@ -18,7 +18,7 @@ import java.nio.charset.Charset;
 
 public final class StringUtils {
 
-    private static final ThreadLocal<StringBuilder> STRING_BUILDERS = new ThreadLocal<StringBuilder>() {
+    private static final ThreadLocal<StringBuilder> STRING_BUILDER_POOL = new ThreadLocal<StringBuilder>() {
         protected StringBuilder initialValue() {
             return new StringBuilder(512);
         }
@@ -29,13 +29,12 @@ public final class StringUtils {
      * @return a pooled StringBuilder
      */
     public static StringBuilder stringBuilder() {
-        StringBuilder sb = STRING_BUILDERS.get();
+        StringBuilder sb = STRING_BUILDER_POOL.get();
         sb.setLength(0);
         return sb;
     }
     
     private StringUtils() {
-        // unused
     }
 
     public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
