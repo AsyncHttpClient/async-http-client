@@ -27,7 +27,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             NettyResponseFuture<?> nettyResponseFuture,//
             NettyRequestSender requestSender,//
             TimeoutsHolder timeoutsHolder,//
-            long readTimeout) {
+            int readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
     }
