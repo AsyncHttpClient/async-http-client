@@ -36,8 +36,8 @@ public abstract class Utf8Decoder {
     12, 36, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 //
     };
 
-    protected static final int UTF8_ACCEPT = 0;
-    protected static final int UTF8_REJECT = 12;
+    public static final int UTF8_ACCEPT = 0;
+    public static final int UTF8_REJECT = 12;
 
     protected StringBuilder sb = new StringBuilder();
     protected int state = UTF8_ACCEPT;
