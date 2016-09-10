@@ -13,35 +13,44 @@
  */
 package org.asynchttpclient.netty.util;
 
+import static java.nio.charset.StandardCharsets.*;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 
-import java.io.UTFDataFormatException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 public final class ByteBufUtils {
 
     private ByteBufUtils() {
     }
 
-    public static String byteBuf2Utf8String(ByteBuf buf) throws CharacterCodingException {
-        return Utf8ByteBufDecoder.pooled().decode(Collections.singleton(buf));
-    }
-
-    public static String byteBuf2UsAsciiString(ByteBuf buf) throws CharacterCodingException {
-        return UsAsciiByteBufDecoder.pooled().decode(Collections.singleton(buf));
-    }
-
-    public static String byteBuf2String(ByteBuf buf, Charset charset) throws UTFDataFormatException, IndexOutOfBoundsException, CharacterCodingException {
-
-        if (charset.equals(StandardCharsets.US_ASCII)) {
-            return byteBuf2UsAsciiString(buf);
-        } else if (charset.equals(StandardCharsets.UTF_8)) {
-            return byteBuf2Utf8String(buf);
+    public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
+        if (charset == UTF_8 || charset == US_ASCII) {
+            return Utf8ByteBufCharsetDecoder.decodeUtf8(buf);
         } else {
             return buf.toString(charset);
+        }
+    }
+
+    public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
+        if (charset == UTF_8 || charset == US_ASCII) {
+            return Utf8ByteBufCharsetDecoder.decodeUtf8(bufs);
+        } else {
+            CompositeByteBuf composite = Unpooled.compositeBuffer(bufs.length);
+
+            try {
+                for (ByteBuf buf : bufs) {
+                    buf.retain();
+                    composite.addComponent(buf);
+                }
+
+                return composite.toString(charset);
+
+            } finally {
+                composite.release();
+            }
         }
     }
 
