@@ -177,6 +177,9 @@ public class Utf8ByteBufCharsetDecoder {
     }
 
     public String decode(ByteBuf... bufs) throws CharacterCodingException {
+        if (bufs.length == 1) {
+            return decode(bufs[0]);
+        }
 
         int totalSize = 0;
         int totalNioBuffers = 0;
