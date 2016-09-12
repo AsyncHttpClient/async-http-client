@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
 
 public interface Part {
 
@@ -37,9 +39,16 @@ public interface Part {
     byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
 
     /**
-     * Content dispostion as a byte array
+     * Separator for header name-value pairs
      */
-    byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: ".getBytes(US_ASCII);
+    String NAME_VALUE_SEPARATOR = ": ";
+    byte[] NAME_VALUE_SEPARATOR_BYTES = NAME_VALUE_SEPARATOR.getBytes(US_ASCII);
+
+    /**
+     * Content dispostion
+     */
+    String CONTENT_DISPOSITION = "Content-Disposition";
+    byte[] CONTENT_DISPOSITION_BYTES = (CONTENT_DISPOSITION + NAME_VALUE_SEPARATOR).getBytes(US_ASCII);
 
     /**
      * form-data as a byte array
@@ -52,9 +61,10 @@ public interface Part {
     byte[] NAME_BYTES = "; name=".getBytes(US_ASCII);
 
     /**
-     * Content type header as a byte array
+     * Content type header
      */
-    byte[] CONTENT_TYPE_BYTES = "Content-Type: ".getBytes(US_ASCII);
+    String CONTENT_TYPE = "Content-Type";
+    byte[] CONTENT_TYPE_BYTES = (CONTENT_TYPE + NAME_VALUE_SEPARATOR).getBytes(US_ASCII);
 
     /**
      * Content charset as a byte array
@@ -62,14 +72,21 @@ public interface Part {
     byte[] CHARSET_BYTES = "; charset=".getBytes(US_ASCII);
 
     /**
-     * Content type header as a byte array
+     * Content transfer encoding
      */
-    byte[] CONTENT_TRANSFER_ENCODING_BYTES = "Content-Transfer-Encoding: ".getBytes(US_ASCII);
+    String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
+    byte[] CONTENT_TRANSFER_ENCODING_BYTES = (CONTENT_TRANSFER_ENCODING + NAME_VALUE_SEPARATOR).getBytes(US_ASCII);
 
     /**
-     * Content type header as a byte array
+     * Content ID
      */
-    byte[] CONTENT_ID_BYTES = "Content-ID: ".getBytes(US_ASCII);
+    String CONTENT_ID = "Content-Id";
+    byte[] CONTENT_ID_BYTES = (CONTENT_ID + NAME_VALUE_SEPARATOR).getBytes(US_ASCII);
+
+    /**
+     * Special headers shouldn't be used as custom headers, only in constructor or custom overrides
+     */
+    List<String> SPECIAL_HEADERS = Arrays.asList(CONTENT_DISPOSITION, CONTENT_TYPE, CONTENT_TRANSFER_ENCODING, CONTENT_ID);
 
     /**
      * Return the name of this part.

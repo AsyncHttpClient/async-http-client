@@ -66,7 +66,7 @@ public abstract class AbstractFilePart extends PartBase {
 
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
         super.visitDispositionHeader(visitor);
-        if (fileName != null) {
+        if (!hasCustomContentDisposition() && fileName != null) {
             visitor.withBytes(FILE_NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
             visitor.withBytes(fileName.getBytes(getCharset() != null ? getCharset(): US_ASCII));
