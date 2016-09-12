@@ -33,6 +33,9 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Default and threadsafe implementation of {@link AsyncHttpClient}.
+ */
 public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultAsyncHttpClient.class);
