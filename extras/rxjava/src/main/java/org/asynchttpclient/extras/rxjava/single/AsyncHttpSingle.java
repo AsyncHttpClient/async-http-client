@@ -20,10 +20,13 @@ import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 
+import java.util.concurrent.Future;
+
 import rx.Single;
 import rx.SingleSubscriber;
-import rx.functions.Action1;
 import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.subscriptions.Subscriptions;
 
 /**
  * Wraps HTTP requests into RxJava {@code Single} instances.
@@ -54,14 +57,17 @@ public final class AsyncHttpSingle {
      *
      * @param requestTemplate called to start the HTTP request with an
      *            {@code AysncHandler} that builds the HTTP response and
-     *            propagates results to the returned {@code Single}
+     *            propagates results to the returned {@code Single}. The
+     *            {@code Future} that is returned by {@code requestTemplate}
+     *            will be used to cancel the request when the {@code Single} is
+     *            unsubscribed.
      *
      * @return a {@code Single} that executes new requests on subscription by
      *         calling {@code requestTemplate} and that emits the response
      *
      * @throws NullPointerException if {@code requestTemplate} is {@code null}
      */
-    public static Single<Response> create(Action1<? super AsyncHandler<?>> requestTemplate) {
+    public static Single<Response> create(Func1<? super AsyncHandler<?>, ? extends Future<?>> requestTemplate) {
         return create(requestTemplate, AsyncCompletionHandlerBase::new);
     }
 
@@ -92,7 +98,10 @@ public final class AsyncHttpSingle {
      *
      * @param requestTemplate called to start the HTTP request with an
      *            {@code AysncHandler} that builds the HTTP response and
-     *            propagates results to the returned {@code Single}
+     *            propagates results to the returned {@code Single}.  The
+     *            {@code Future} that is returned by {@code requestTemplate}
+     *            will be used to cancel the request when the {@code Single} is
+     *            unsubscribed.
      * @param handlerSupplier supplies the desired {@code AsyncHandler}
      *            instances that are used to produce results
      *
@@ -104,13 +113,17 @@ public final class AsyncHttpSingle {
      * @throws NullPointerException if at least one of the parameters is
      *             {@code null}
      */
-    public static <T> Single<T> create(Action1<? super AsyncHandler<?>> requestTemplate,
+    public static <T> Single<T> create(Func1<? super AsyncHandler<?>, ? extends Future<?>> requestTemplate,
             Func0<? extends AsyncHandler<? extends T>> handlerSupplier) {
 
         requireNonNull(requestTemplate);
         requireNonNull(handlerSupplier);
 
-        return Single.create(subscriber -> requestTemplate.call(createBridge(subscriber, handlerSupplier.call())));
+        return Single.create(subscriber -> {
+            final AsyncHandler<?> bridge = createBridge(subscriber, handlerSupplier.call());
+            final Future<?> responseFuture = requestTemplate.call(bridge);
+            subscriber.add(Subscriptions.from(responseFuture));
+        });
     }
 
     static <T> AsyncHandler<?> createBridge(SingleSubscriber<? super T> subscriber, AsyncHandler<? extends T> handler) {

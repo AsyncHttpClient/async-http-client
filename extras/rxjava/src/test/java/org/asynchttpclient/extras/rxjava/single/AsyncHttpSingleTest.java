@@ -18,6 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
@@ -34,13 +36,16 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.extras.rxjava.UnsubscribedException;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.mockito.InOrder;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import rx.Single;
 import rx.exceptions.CompositeException;
@@ -82,6 +87,8 @@ public class AsyncHttpSingleTest {
             } catch (final Throwable t) {
                 bridge.onThrowable(t);
             }
+
+            return mock(Future.class);
         } , () -> handler);
 
         final TestSubscriber<Object> subscriber = new TestSubscriber<>();
@@ -132,6 +139,8 @@ public class AsyncHttpSingleTest {
             } catch (final Throwable t) {
                 bridge.onThrowable(t);
             }
+
+            return mock(Future.class);
         } , () -> handler);
 
         final TestSubscriber<Object> subscriber = new TestSubscriber<>();
@@ -186,6 +195,8 @@ public class AsyncHttpSingleTest {
             } catch (final Throwable t) {
                 bridge.onThrowable(t);
             }
+
+            return mock(Future.class);
         } , () -> handler);
 
         final TestSubscriber<Object> subscriber = new TestSubscriber<>();
@@ -209,6 +220,7 @@ public class AsyncHttpSingleTest {
         final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
             try {
                 bridge.onCompleted();
+                return mock(Future.class);
             } catch (final Throwable t) {
                 throw new AssertionError(t);
             }
@@ -237,6 +249,7 @@ public class AsyncHttpSingleTest {
         final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
             try {
                 bridge.onThrowable(processingException);
+                return mock(Future.class);
             } catch (final Throwable t) {
                 throw new AssertionError(t);
             }
@@ -281,4 +294,23 @@ public class AsyncHttpSingleTest {
         subscriber.assertValue(null);
     }
 
+    @Test(groups = "standalone")
+    public void testUnsubscribe() throws Exception {
+        final AsyncHandler<Object> handler = mock(AsyncHandler.class);
+        final Future<?> future = mock(Future.class);
+        final AtomicReference<AsyncHandler<?>> bridgeRef = new AtomicReference<>();
+
+        final Single<?> underTest = AsyncHttpSingle.create(bridge -> {
+            bridgeRef.set(bridge);
+            return future;
+        } , () -> handler);
+
+        underTest.subscribe().unsubscribe();
+        verify(future).cancel(true);
+        verifyZeroInteractions(handler);
+
+        assertThat(bridgeRef.get().onStatusReceived(null), is(AsyncHandler.State.ABORT));
+        verify(handler).onThrowable(isA(UnsubscribedException.class));
+        verifyNoMoreInteractions(handler);
+    }
 }
