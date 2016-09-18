@@ -12,16 +12,18 @@
  */
 package org.asynchttpclient.extras.rxjava;
 
+import java.util.concurrent.CancellationException;
+
 /**
  * Indicates that an {@code Observer} unsubscribed during the processing of a HTTP request.
  */
 @SuppressWarnings("serial")
-public class UnsubscribedException extends RuntimeException {
+public class UnsubscribedException extends CancellationException {
 
     public UnsubscribedException() {
     }
 
     public UnsubscribedException(final Throwable cause) {
-        super(cause);
+        initCause(cause);
     }
 }
