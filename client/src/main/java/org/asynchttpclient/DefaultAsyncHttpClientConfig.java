@@ -662,7 +662,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         public Builder() {
         }
 
-        public Builder(AsyncHttpClientConfig config) {
+        public Builder(final AsyncHttpClientConfig config) {
+            config(config);
+        }
+
+        public Builder config(final AsyncHttpClientConfig config) {
             // http
             followRedirect = config.isFollowRedirect();
             maxRedirects = config.getMaxRedirects();
@@ -731,6 +735,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
             wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
+            return this;
         }
 
         // http
