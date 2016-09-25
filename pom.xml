@@ -205,12 +205,6 @@
 			<url>${distMgmtSnapshotsUrl}</url>
 		</snapshotRepository>
 	</distributionManagement>
-	<repositories>
-		<repository>
-			<id>maven.java.net</id>
-			<url>https://maven.java.net/content/repositories/releases</url>
-		</repository>
-	</repositories>
 	<modules>
 		<module>netty-bp</module>
 		<module>netty-utils</module>
