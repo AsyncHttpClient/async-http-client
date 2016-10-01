@@ -64,7 +64,7 @@ public class Unauthorized401Interceptor {
             HttpRequest httpRequest) {
 
         if (realm == null) {
-            LOGGER.info("Can't handle 401 as there's no realm");
+            LOGGER.debug("Can't handle 401 as there's no realm");
             return false;
         }
 

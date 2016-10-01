@@ -68,7 +68,7 @@ public class ProxyUnauthorized407Interceptor {
         Realm proxyRealm = future.getProxyRealm();
 
         if (proxyRealm == null) {
-            LOGGER.info("Can't handle 407 as there's no proxyRealm");
+            LOGGER.debug("Can't handle 407 as there's no proxyRealm");
             return false;
         }
 
