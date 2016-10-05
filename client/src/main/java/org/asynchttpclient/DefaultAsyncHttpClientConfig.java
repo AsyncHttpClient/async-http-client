@@ -623,7 +623,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
         private int handshakeTimeout = defaultHandshakeTimeout();
         private String[] enabledProtocols = defaultEnabledProtocols();
-        private String[] enabledCipherSuites;
+        private String[] enabledCipherSuites = defaultEnabledCipherSuites();
         private int sslSessionCacheSize = defaultSslSessionCacheSize();
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private SslContext sslContext;
