@@ -67,6 +67,26 @@ asyncHttpClient.prepareGet("http://www.example.com/").execute(new AsyncCompletio
 
 (this will also fully read `Response` in memory before calling `onCompleted`)
 
+Alternatively you may use continuations (through Java 8 class `CompletableFuture<T>`) to accomplish asynchronous (non-blocking) solution. The equivalent continuation approach to the previous example is:
+
+```java
+import org.asynchttpclient.*;
+import java.util.concurrent.CompletableFuture;
+
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+
+AsyncHttpClient asyncHttpClient = asyncHttpClient();
+CompletableFuture<Response> promise = asyncHttpClient
+            .prepareGet("http://www.example.com/")
+            .execute()
+            .toCompletableFuture()
+            .exceptionally(t -> { /* Something wrong happened... */  } )
+            .thenApply(resp -> { /*  Do something with the Response */ return resp; });
+promise.join(); // wait for completion
+```
+
+You may get the complete maven project for this simple demo from [org.asynchttpclient.example](https://github.com/AsyncHttpClient/async-http-client/tree/master/example/src/main/java/org/asynchttpclient/example)
+
 You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
 
 ```java
