@@ -70,10 +70,10 @@ asyncHttpClient.prepareGet("http://www.example.com/").execute(new AsyncCompletio
 Alternatively you may use continuations (through Java 8 class `CompletableFuture<T>`) to accomplish asynchronous (non-blocking) solution. The equivalent continuation approach to the previous example is:
 
 ```java
+import static org.asynchttpclient.Dsl.*;
+
 import org.asynchttpclient.*;
 import java.util.concurrent.CompletableFuture;
-
-import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 AsyncHttpClient asyncHttpClient = asyncHttpClient();
 CompletableFuture<Response> promise = asyncHttpClient
@@ -117,10 +117,12 @@ which is something you want to do for large responses: this way you can process 
  You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
 
 ```java
+import static org.asynchttpclient.Dsl.*;
+
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient c = new DefaultAsyncHttpClient();
+AsyncHttpClient c = asyncHttpClient();
 Future<String> f = c.prepareGet("http://www.example.com/").execute(new AsyncHandler<String>() {
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
