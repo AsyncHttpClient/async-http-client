@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -66,8 +67,7 @@ public class NettyChannelConnector {
 
         try {
             connect0(bootstrap, connectListener, remoteAddress);
-        } catch (Throwable e) {
-            // workaround for https://github.com/netty/netty/issues/5387
+        } catch (RejectedExecutionException e) {
             if (clientState.isClosed()) {
                 connectListener.onFailure(null, e);
             } else {
