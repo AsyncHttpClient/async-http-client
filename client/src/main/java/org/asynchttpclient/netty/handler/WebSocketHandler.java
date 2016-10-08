@@ -198,7 +198,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
     @Override
     public void handleException(NettyResponseFuture<?> future, Throwable e) {
-        logger.warn("onError {}", e);
+        logger.warn("onError", e);
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
