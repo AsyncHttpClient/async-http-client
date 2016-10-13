@@ -168,7 +168,7 @@ public final class HttpTransactionContext {
     }
     
     public AsyncHandler getAsyncHandler() {
-        return future.getAsyncHandler();
+        return future != null ? future.getAsyncHandler() : null;
     }
     
     Request getAhcRequest() {
