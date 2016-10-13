@@ -36,166 +36,145 @@ import org.asynchttpclient.uri.Uri;
 /**
  * The Request class can be used to construct HTTP request:
  * <blockquote><pre>
- *   Request r = new RequestBuilder().setUrl("url")
- *                      .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
- *                      .setPassword(admin)
- *                      .setRealmName("MyRealm")
- *                      .setScheme(Realm.AuthScheme.DIGEST).build());
+ *   Request r = new RequestBuilder()
+ *      .setUrl("url")
+ *      .setRealm(
+ *          new Realm.Builder("principal", "password")
+ *              .setRealmName("MyRealm")
+ *              .setScheme(Realm.AuthScheme.BASIC)
+ *      ).build();
  * </pre></blockquote>
  */
 public interface Request {
 
     /**
-     * Return the request's method name (GET, POST, etc.)
-     *
-     * @return the request's method name (GET, POST, etc.)
+     * @return the request's HTTP method (GET, POST, etc.)
      */
     String getMethod();
 
+    /**
+     * 
+     * @return the uri
+     */
     Uri getUri();
 
+    /**
+     * @return the url (the uri's String form)
+     */
     String getUrl();
 
     /**
-     * Return the InetAddress to override
-     *
-     * @return the InetAddress
+     * @return the InetAddress to be used to bypass uri's hostname resolution
      */
     InetAddress getAddress();
 
+    /**
+     * @return the local address to bind from
+     */
     InetAddress getLocalAddress();
 
     /**
-     * Return the current set of Headers.
-     *
-     * @return a {@link HttpHeaders} contains headers.
+     * @return the HTTP headers
      */
     HttpHeaders getHeaders();
 
     /**
-     * Return cookies.
-     *
-     * @return an unmodifiable Collection of Cookies
+     * @return the HTTP cookies
      */
     List<Cookie> getCookies();
 
     /**
-     * Return the current request's body as a byte array
-     *
-     * @return a byte array of the current request's body.
+     * @return the request's body byte array (only non null if it was set this way)
      */
     byte[] getByteData();
 
     /**
-     * @return the current request's body as a composite of byte arrays
+     * @return the request's body array of byte arrays (only non null if it was set this way)
      */
     List<byte[]> getCompositeByteData();
     
     /**
-     * Return the current request's body as a string
-     *
-     * @return an String representation of the current request's body.
+     * @return the request's body string (only non null if it was set this way)
      */
     String getStringData();
 
     /**
-     * Return the current request's body as a ByteBuffer
-     * 
-     * @return a ByteBuffer
+     * @return the request's body ByteBuffer (only non null if it was set this way)
      */
     ByteBuffer getByteBufferData();
 
     /**
-     * Return the current request's body as an InputStream
-     *
-     * @return an InputStream representation of the current request's body.
+     * @return the request's body InputStream (only non null if it was set this way)
      */
     InputStream getStreamData();
 
     /**
-     * Return the current request's body generator.
-     *
-     * @return A generator for the request body.
+     * @return the request's body BodyGenerator (only non null if it was set this way)
      */
     BodyGenerator getBodyGenerator();
 
     /**
-     * Return the current form parameters.
-     *
-     * @return the form parameters.
+     * @return the request's form parameters
      */
     List<Param> getFormParams();
 
     /**
-     * Return the current {@link Part}
-     *
-     * @return the current {@link Part}
+     * @return the multipart parts
      */
     List<Part> getBodyParts();
 
     /**
-     * Return the virtual host value.
-     *
-     * @return the virtual host value.
+     * @return the virtual host to connect to
      */
     String getVirtualHost();
 
     /**
-     * Return the query params.
-     *
-     * @return the query parameters
+     * @return the query params resolved from the url/uri
      */
     List<Param> getQueryParams();
 
     /**
-     * Return the {@link ProxyServer}
-     *
-     * @return the {@link ProxyServer}
+     * @return the proxy server to be used to perform this request (overrides the one defined in config)
      */
     ProxyServer getProxyServer();
 
     /**
-     * Return the {@link Realm}
-     *
-     * @return the {@link Realm}
+     * @return the realm to be used to perform this request (overrides the one defined in config)
      */
     Realm getRealm();
 
     /**
-     * Return the {@link File} to upload.
-     *
-     * @return the {@link File} to upload.
+     * @return the file to be uploaded
      */
     File getFile();
 
     /**
-     * Return follow redirect
-     *
-     * @return {@link Boolean#TRUE} to follow redirect, {@link Boolean#FALSE} if NOT to follow whatever the client config, null otherwise.
+     * @return if this request is to follow redirects. Non null values means "override config value".
      */
     Boolean getFollowRedirect();
 
     /**
-     * Overrides the config default value
-     * @return the request timeout
+     * @return the request timeout. Non zero values means "override config value".
      */
     int getRequestTimeout();
 
     /**
-     * Return the HTTP Range header value, or
-     *
      * @return the range header value, or 0 is not set.
      */
     long getRangeOffset();
 
     /**
-     * Return the charset value used when decoding the request's body.
-     *
      * @return the charset value used when decoding the request's body.
      */
     Charset getCharset();
 
+    /**
+     * @return the strategy to compute ChannelPool's keys
+     */
     ChannelPoolPartitioning getChannelPoolPartitioning();
 
+    /**
+     * @return the NameResolver to be used to resolve hostnams's IP
+     */
     NameResolver<InetAddress> getNameResolver();
 }
