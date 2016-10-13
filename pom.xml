@@ -9,7 +9,7 @@
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>Asynchronous Http Client</name>
-    <version>1.9.40</version>
+    <version>1.9.41-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
