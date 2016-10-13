@@ -183,7 +183,7 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private boolean currentBytesFullyRead() {
-        return currentBytes == null || currentBytesPosition >= currentBytes.length - 1;
+        return currentBytes == null || currentBytesPosition == -1;
     }
 
     private void initializeFileBody(AbstractFilePart part) throws IOException {

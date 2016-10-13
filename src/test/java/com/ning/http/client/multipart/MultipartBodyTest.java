@@ -41,6 +41,16 @@ public class MultipartBodyTest {
     }
 
     @Test
+    public void transferWithCopy2() throws IOException {
+        try (final MultipartBody multipartBody = buildMultipart()) {
+            final long contentLength = multipartBody.getContentLength();
+            final int bufferSize = (int)contentLength - 1;
+            final long tranferred = transferWithCopy(multipartBody, bufferSize);
+            Assert.assertEquals(tranferred, contentLength);
+        }
+    }
+
+    @Test
     public void transferZeroCopy() throws IOException {
         try (MultipartBody multipartBody = buildMultipart()) {
             long tranferred = transferZeroCopy(multipartBody);
@@ -70,8 +80,11 @@ public class MultipartBodyTest {
     }
 
     private static long transferWithCopy(MultipartBody multipartBody) throws IOException {
+        return transferWithCopy(multipartBody, 8192);
+    }
 
-        final ByteBuffer buffer = ByteBuffer.allocate(8192);
+    private static long transferWithCopy(MultipartBody multipartBody, int bufferSize) throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         long totalBytes = 0;
         while (true) {
             long readBytes = multipartBody.read(buffer);
