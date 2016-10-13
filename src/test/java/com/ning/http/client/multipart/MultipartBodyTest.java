@@ -14,11 +14,7 @@
 package com.ning.http.client.multipart;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import static org.testng.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,57 +26,64 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.testng.annotations.Test;
+
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+
 public class MultipartBodyTest {
 
-    @Test
-    public void transferWithCopy() throws IOException {
-        try (MultipartBody multipartBody = buildMultipart()) {
-            long tranferred = transferWithCopy(multipartBody);
-            Assert.assertEquals(tranferred, multipartBody.getContentLength());
+    private static final List<Part> PARTS = new ArrayList<>();
+
+    static {
+        try {
+            PARTS.add(new FilePart("filePart", getTestfile()));
+        } catch (URISyntaxException e) {
+            throw new ExceptionInInitializerError(e);
         }
+        PARTS.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
+        PARTS.add(new StringPart("stringPart", "testString"));
     }
 
-    @Test
-    public void transferWithCopy2() throws IOException {
-        try (final MultipartBody multipartBody = buildMultipart()) {
-            final long contentLength = multipartBody.getContentLength();
-            final int bufferSize = (int)contentLength - 1;
-            final long tranferred = transferWithCopy(multipartBody, bufferSize);
-            Assert.assertEquals(tranferred, contentLength);
-        }
+    private static File getTestfile() throws URISyntaxException {
+        final ClassLoader cl = MultipartBodyTest.class.getClassLoader();
+        final URL url = cl.getResource("textfile.txt");
+        assertNotNull(url);
+        return new File(url.toURI());
     }
 
-    @Test
-    public void transferZeroCopy() throws IOException {
-        try (MultipartBody multipartBody = buildMultipart()) {
-            long tranferred = transferZeroCopy(multipartBody);
-            Assert.assertEquals(tranferred, multipartBody.getContentLength());
+    private static long MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE;
+
+    static {
+        try (MultipartBody dummyBody = buildMultipart()) {
+            // separator is random
+            MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE = dummyBody.getContentLength() + 100;
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
 
     private static MultipartBody buildMultipart() {
-        List<Part> parts = new ArrayList<>();
-        parts.add(new FilePart("filePart", getTestfile()));
-        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(UTF_8), "application/test", UTF_8, "fileName"));
-        parts.add(new StringPart("stringPart", "testString"));
-        return MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
+        return MultipartUtils.newMultipartBody(PARTS, new FluentCaseInsensitiveStringsMap());
     }
 
-    private static File getTestfile() {
-        final ClassLoader cl = MultipartBodyTest.class.getClassLoader();
-        final URL url = cl.getResource("textfile.txt");
-        Assert.assertNotNull(url);
-        File file = null;
-        try {
-            file = new File(url.toURI());
-        } catch (URISyntaxException use) {
-            Assert.fail("uri syntax error");
+    @Test
+    public void transferWithCopy() throws Exception {
+        for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
+            try (MultipartBody multipartBody = buildMultipart()) {
+                long tranferred = transferWithCopy(multipartBody, bufferLength);
+                assertEquals(tranferred, multipartBody.getContentLength());
+            }
         }
-        return file;
     }
 
-    private static long transferWithCopy(MultipartBody multipartBody) throws IOException {
-        return transferWithCopy(multipartBody, 8192);
+    @Test
+    public void transferZeroCopy() throws Exception {
+        for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
+            try (MultipartBody multipartBody = buildMultipart()) {
+                long tranferred = transferZeroCopy(multipartBody, bufferLength);
+                assertEquals(tranferred, multipartBody.getContentLength());
+            }
+        }
     }
 
     private static long transferWithCopy(MultipartBody multipartBody, int bufferSize) throws IOException {
@@ -97,9 +100,9 @@ public class MultipartBodyTest {
         return totalBytes;
     }
 
-    private static long transferZeroCopy(MultipartBody multipartBody) throws IOException {
+    private static long transferZeroCopy(MultipartBody multipartBody, int bufferSize) throws IOException {
 
-        final ByteBuffer buffer = ByteBuffer.allocate(8192);
+        final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         final AtomicLong transferred = new AtomicLong();
 
         WritableByteChannel mockChannel = new WritableByteChannel() {
