@@ -12,10 +12,10 @@
  */
 package org.asynchttpclient.ws;
 
-import io.netty.handler.codec.http.HttpHeaders;
-
 import java.io.Closeable;
 import java.net.SocketAddress;
+
+import io.netty.handler.codec.http.HttpHeaders;
 
 /**
  * A WebSocket client
@@ -50,6 +50,15 @@ public interface WebSocket extends Closeable {
     WebSocket sendMessage(byte[] message);
 
     /**
+     * Send a byte message.
+     *
+     * @param message a byte message
+     * @param listener is notified when a message was successfully processed by the channel or in case of failure
+     * @return this
+     */
+    WebSocket sendMessage(byte[] message, WebSocketWriteCompleteListener listener);
+
+    /**
      * Allows streaming of multiple binary fragments.
      * 
      * @param fragment binary fragment.
@@ -58,6 +67,17 @@ public interface WebSocket extends Closeable {
      * @return this
      */
     WebSocket stream(byte[] fragment, boolean last);
+
+    /**
+     * Allows streaming of multiple binary fragments.
+     *
+     * @param fragment binary fragment.
+     * @param last flag indicating whether or not this is the last fragment.
+     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
+     *
+     * @return this
+     */
+    WebSocket stream(byte[] fragment, boolean last, WebSocketWriteCompleteListener listener);
 
     /**
      * Allows streaming of multiple binary fragments.
@@ -71,12 +91,33 @@ public interface WebSocket extends Closeable {
     WebSocket stream(byte[] fragment, int offset, int len, boolean last);
 
     /**
+     * Allows streaming of multiple binary fragments.
+     *
+     * @param fragment binary fragment.
+     * @param offset starting offset.
+     * @param len length.
+     * @param last flag indicating whether or not this is the last fragment.
+     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
+     * @return this
+     */
+    WebSocket stream(byte[] fragment, int offset, int len, boolean last, WebSocketWriteCompleteListener listener);
+
+    /**
      * Send a text message
      * 
      * @param message a text message
      * @return this
      */
     WebSocket sendMessage(String message);
+
+    /**
+     * Send a text message
+     *
+     * @param message a text message
+     * @param listener is notified when a message was successfully processed by the channel or in case of failure
+     * @return this
+     */
+    WebSocket sendMessage(String message, WebSocketWriteCompleteListener listener);
 
     /**
      * Allows streaming of multiple text fragments.
@@ -88,6 +129,16 @@ public interface WebSocket extends Closeable {
     WebSocket stream(String fragment, boolean last);
 
     /**
+     * Allows streaming of multiple text fragments.
+     *
+     * @param fragment text fragment.
+     * @param last flag indicating whether or not this is the last fragment.
+     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
+     * @return this
+     */
+    WebSocket stream(String fragment, boolean last, WebSocketWriteCompleteListener listener);
+
+    /**
      * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
      * 
      * @param payload the ping payload.
@@ -97,11 +148,30 @@ public interface WebSocket extends Closeable {
 
     /**
      * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
-     * 
+     *
+     * @param payload the ping payload.
+     * @param listener is notified when the ping was successfully processed by the channel or in case of failure
+     * @return this
+     */
+    WebSocket sendPing(byte[] payload, WebSocketWriteCompleteListener listener);
+
+    /**
+     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
+     *
      * @param payload the pong payload.
      * @return this
      */
     WebSocket sendPong(byte[] payload);
+
+    /**
+     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
+     *
+     * @param payload the pong payload.
+     * @param listener is notified when the pong was successfully processed by the channel or in case of failure
+
+     * @return this
+     */
+    WebSocket sendPong(byte[] payload, WebSocketWriteCompleteListener listener);
 
     /**
      * Add a {@link WebSocketListener}
