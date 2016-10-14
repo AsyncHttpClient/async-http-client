@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
 import io.netty.channel.DefaultChannelId;
@@ -29,6 +31,7 @@ public class Channels {
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
     private static final AttributeKey<ChannelId> CHANNEL_ID_ATTRIBUTE = AttributeKey.valueOf("channelId");
+    private static final AttributeKey<AtomicBoolean> INACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("inactiveToken");
 
     public static Object getAttribute(Channel channel) {
         Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
@@ -45,6 +48,14 @@ public class Channels {
 
     public static boolean isChannelValid(Channel channel) {
         return channel != null && channel.isActive();
+    }
+    
+    public static void setInactiveToken(Channel channel) {
+        channel.attr(INACTIVE_TOKEN_ATTRIBUTE).set(new AtomicBoolean(true));
+    }
+    
+    public static boolean getInactiveToken(Channel channel) {
+        return channel != null && channel.attr(INACTIVE_TOKEN_ATTRIBUTE).get().getAndSet(false);
     }
 
     public static ChannelId getChannelId(Channel channel) {

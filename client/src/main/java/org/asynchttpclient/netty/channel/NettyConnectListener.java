@@ -95,6 +95,8 @@ public final class NettyConnectListener<T> {
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
 
+        Channels.setInactiveToken(channel);
+
         TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
 
         if (futureIsAlreadyCancelled(channel)) {
