@@ -20,6 +20,7 @@ import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.*;
 import static org.asynchttpclient.ws.WebSocketUtils.getKey;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -147,7 +148,7 @@ public final class NettyRequestFactory {
             nettyRequest = new NettyRequest(httpRequest, null);
 
         } else if (body == null) {
-            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
+            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, Unpooled.EMPTY_BUFFER);
             nettyRequest = new NettyRequest(httpRequest, null);
 
         } else {
