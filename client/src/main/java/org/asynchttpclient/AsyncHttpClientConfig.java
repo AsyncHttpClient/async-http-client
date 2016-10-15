@@ -14,6 +14,7 @@
 package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -285,7 +286,7 @@ public interface AsyncHttpClientConfig {
 
     int getSoRcvBuf();
 
-    boolean isUsePooledMemory();
+    ByteBufAllocator getAllocator();
 
     interface AdditionalChannelInitializer {
 

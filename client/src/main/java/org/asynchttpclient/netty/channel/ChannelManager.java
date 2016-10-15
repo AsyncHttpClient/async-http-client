@@ -16,8 +16,7 @@ package org.asynchttpclient.netty.channel;
 import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ChannelFactory;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -198,7 +197,7 @@ public class ChannelManager {
         @SuppressWarnings("deprecation")
         Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)//
                 // default to PooledByteBufAllocator
-                .option(ChannelOption.ALLOCATOR, config.isUsePooledMemory() ? PooledByteBufAllocator.DEFAULT : UnpooledByteBufAllocator.DEFAULT)//
+                .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)//
                 .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())//
                 .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())//
                 .option(ChannelOption.AUTO_CLOSE, false);

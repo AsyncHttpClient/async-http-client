@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
@@ -119,7 +120,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final EventLoopGroup eventLoopGroup;
     private final boolean useNativeTransport;
-    private final boolean usePooledMemory;
+    private final ByteBufAllocator allocator;
     private final boolean tcpNoDelay;
     private final boolean soReuseAddress;
     private final int soLinger;
@@ -197,7 +198,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             Map<ChannelOption<Object>, Object> channelOptions,//
             EventLoopGroup eventLoopGroup,//
             boolean useNativeTransport,//
-            boolean usePooledMemory,//
+            ByteBufAllocator allocator,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
             AdditionalChannelInitializer httpAdditionalChannelInitializer,//
@@ -269,7 +270,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
         this.useNativeTransport = useNativeTransport;
-        this.usePooledMemory = usePooledMemory;
+        this.allocator = allocator;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
         this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
@@ -551,8 +552,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isUsePooledMemory() {
-        return usePooledMemory;
+    public ByteBufAllocator getAllocator() {
+        return allocator;
     }
 
     @Override
@@ -650,7 +651,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
-        private boolean usePooledMemory = defaultUsePooledMemory();
+        private ByteBufAllocator allocator;
         private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private EventLoopGroup eventLoopGroup;
         private Timer nettyTimer;
@@ -725,7 +726,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
             useNativeTransport = config.isUseNativeTransport();
-            usePooledMemory = config.isUsePooledMemory();
+            allocator = config.getAllocator();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
             httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
@@ -1035,8 +1036,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setUsePooledMemory(boolean usePooledMemory) {
-            this.usePooledMemory = usePooledMemory;
+        public Builder setAllocator(ByteBufAllocator allocator) {
+            this.allocator = allocator;
             return this;
         }
 
@@ -1133,7 +1134,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),//
                     eventLoopGroup, //
                     useNativeTransport, //
-                    usePooledMemory, //
+                    allocator, //
                     nettyTimer, //
                     threadFactory, //
                     httpAdditionalChannelInitializer, //
