@@ -196,7 +196,6 @@ public class ChannelManager {
     private Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
         @SuppressWarnings("deprecation")
         Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)//
-                // default to PooledByteBufAllocator
                 .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)//
                 .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())//
                 .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())//
