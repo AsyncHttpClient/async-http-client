@@ -98,12 +98,12 @@ public class ChannelManager {
     private final IOException tooManyConnectionsPerHost;
 
     private final ChannelPool channelPool;
+    private final ChannelGroup openChannels;
+    private final ConcurrentHashMap<Channel, Object> channelId2PartitionKey = new ConcurrentHashMap<>();
     private final boolean maxTotalConnectionsEnabled;
     private final Semaphore freeChannels;
-    private final ChannelGroup openChannels;
     private final boolean maxConnectionsPerHostEnabled;
     private final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Channel, Object> channelId2PartitionKey = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
 
@@ -340,7 +340,7 @@ public class ChannelManager {
         return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(partitionKey).tryAcquire();
     }
 
-    public void preemptChannel(Object partitionKey) throws IOException {
+    public void acquireChannelLock(Object partitionKey) throws IOException {
         if (!channelPool.isOpen())
             throw PoolAlreadyClosedException.INSTANCE;
         if (!tryAcquireGlobal())
@@ -373,7 +373,7 @@ public class ChannelManager {
         Channels.silentlyCloseChannel(channel);
     }
 
-    public void abortChannelPreemption(Object partitionKey) {
+    public void releaseChannelLock(Object partitionKey) {
         if (maxTotalConnectionsEnabled)
             freeChannels.release();
         if (maxConnectionsPerHostEnabled)

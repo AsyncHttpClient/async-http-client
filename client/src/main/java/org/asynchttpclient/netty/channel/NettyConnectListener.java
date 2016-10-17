@@ -60,7 +60,7 @@ public final class NettyConnectListener<T> {
 
     public void abortChannelPreemption(Channel channel) {
         if (channelPreempted) {
-            channelManager.abortChannelPreemption(partitionKey);
+            channelManager.releaseChannelLock(partitionKey);
         }
 
         Channels.silentlyCloseChannel(channel);

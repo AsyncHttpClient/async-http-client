@@ -263,14 +263,14 @@ public final class NettyRequestSender {
         Object partitionKey = future.getPartitionKey();
 
         // we disable channelPreemption when performing next requests
-        final boolean channelPreempted = !performingNextRequest;
+        final boolean acquireChannelLock = !performingNextRequest;
 
         try {
             // Do not throw an exception when we need an extra connection for a
             // redirect.
-            if (channelPreempted) {
+            if (acquireChannelLock) {
                 // if there's an exception here, channel wasn't preempted and resolve won't happen
-                channelManager.preemptChannel(partitionKey);
+                channelManager.acquireChannelLock(partitionKey);
             }
         } catch (Throwable t) {
             abort(null, future, getCause(t));
@@ -285,19 +285,19 @@ public final class NettyRequestSender {
 
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {
-                        NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, channelPreempted, partitionKey);
+                        NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, acquireChannelLock, partitionKey);
                         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, config);
                         if (!future.isDone()) {
                             connector.connect(bootstrap, connectListener);
-                        } else if (channelPreempted) {
-                            channelManager.abortChannelPreemption(partitionKey);
+                        } else if (acquireChannelLock) {
+                            channelManager.releaseChannelLock(partitionKey);
                         }
                     }
 
                     @Override
                     protected void onFailure(Throwable cause) {
-                        if (channelPreempted) {
-                            channelManager.abortChannelPreemption(partitionKey);
+                        if (acquireChannelLock) {
+                            channelManager.releaseChannelLock(partitionKey);
                         }
                         abort(null, future, getCause(cause));
                     }
