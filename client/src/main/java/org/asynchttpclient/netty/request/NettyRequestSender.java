@@ -525,17 +525,12 @@ public final class NettyRequestSender {
         return clientState.isClosed();
     }
 
-    public final Callback newExecuteNextRequestCallback(final NettyResponseFuture<?> future, final Request nextRequest) {
-
-        return new Callback(future) {
+    public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
+        Channels.setAttribute(channel, new Callback(future) {
             @Override
             public void call() {
                 sendNextRequest(nextRequest, future);
             }
-        };
-    }
-
-    public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
-        Channels.setAttribute(channel, newExecuteNextRequestCallback(future, nextRequest));
+        });
     }
 }
