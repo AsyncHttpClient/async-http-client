@@ -367,7 +367,6 @@ public class ChannelManager {
     }
 
     public void closeChannel(Channel channel) {
-
         LOGGER.debug("Closing Channel {} ", channel);
         Channels.setDiscard(channel);
         removeAll(channel);
