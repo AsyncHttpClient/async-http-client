@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.netty;
 
-
 public abstract class Callback {
 
     protected final NettyResponseFuture<?> future;
