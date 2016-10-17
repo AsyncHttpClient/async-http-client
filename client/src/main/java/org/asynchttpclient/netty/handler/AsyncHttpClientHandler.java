@@ -127,12 +127,6 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         Channel channel = ctx.channel();
         channelManager.removeAll(channel);
 
-        try {
-            super.channelInactive(ctx);
-        } catch (Exception ex) {
-            logger.trace("super.channelClosed", ex);
-        }
-
         Object attribute = Channels.getAttribute(channel);
         logger.debug("Channel Closed: {} with attribute {}", channel, attribute);
         if (attribute instanceof StreamedResponsePublisher) {
