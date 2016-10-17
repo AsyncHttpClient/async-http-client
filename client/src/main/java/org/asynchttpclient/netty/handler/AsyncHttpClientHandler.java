@@ -133,7 +133,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             callback.call();
 
         } else if (attribute instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attribute);
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
             future.touch();
 
             if (hasIOExceptionFilters && requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel))
