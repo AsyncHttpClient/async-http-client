@@ -422,7 +422,6 @@ public final class NettyRequestSender {
             return false;
 
         if (future.canBeReplayed()) {
-            // FIXME should we set future.setReuseChannel(false); ?
             future.setChannelState(ChannelState.RECONNECTED);
             future.getAndSetStatusReceived(false);
 
@@ -468,12 +467,6 @@ public final class NettyRequestSender {
     }
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
-        // remove attribute in case the channel gets closed so it doesn't try to recover the previous future
-        Channel channel = future.channel();
-        if (channel != null) {
-            // channel can be null when it was closed by the server before it could be set
-            Channels.setAttribute(channel, null);
-        }
         sendRequest(request, future.getAsyncHandler(), future, true);
     }
 
