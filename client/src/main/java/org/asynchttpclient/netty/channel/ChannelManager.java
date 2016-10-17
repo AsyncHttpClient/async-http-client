@@ -59,7 +59,7 @@ import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
 import org.asynchttpclient.netty.handler.HttpHandler;
@@ -465,9 +465,9 @@ public class ChannelManager {
         pipeline.remove(HTTP_CLIENT_CODEC);
     }
 
-    public final Callback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final Object partitionKey) {
+    public final OnLastHttpContentCallback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final Object partitionKey) {
 
-        return new Callback(future) {
+        return new OnLastHttpContentCallback(future) {
             public void call() {
                 tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, partitionKey);
             }

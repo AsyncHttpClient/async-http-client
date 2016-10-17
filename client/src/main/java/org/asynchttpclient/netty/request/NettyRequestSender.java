@@ -46,7 +46,7 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.handler.TransferCompletionHandler;
-import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -526,7 +526,7 @@ public final class NettyRequestSender {
     }
 
     public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {
-        Channels.setAttribute(channel, new Callback(future) {
+        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
             @Override
             public void call() {
                 sendNextRequest(nextRequest, future);

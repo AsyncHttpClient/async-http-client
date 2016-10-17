@@ -34,7 +34,7 @@ import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -52,7 +52,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    private class UpgradeCallback extends Callback {
+    private class UpgradeCallback extends OnLastHttpContentCallback {
 
         private final Channel channel;
         private final HttpResponse response;

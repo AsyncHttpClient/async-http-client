@@ -29,7 +29,7 @@ import java.nio.channels.ClosedChannelException;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.exception.ChannelClosedException;
-import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.DiscardEvent;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -67,8 +67,8 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         Object attribute = Channels.getAttribute(channel);
 
         try {
-            if (attribute instanceof Callback && msg instanceof LastHttpContent) {
-                ((Callback) attribute).call();
+            if (attribute instanceof OnLastHttpContentCallback && msg instanceof LastHttpContent) {
+                ((OnLastHttpContentCallback) attribute).call();
 
             } else if (attribute instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
@@ -127,8 +127,8 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             // logic can kick-in
             attribute = ((StreamedResponsePublisher) attribute).future();
         }
-        if (attribute instanceof Callback) {
-            Callback callback = (Callback) attribute;
+        if (attribute instanceof OnLastHttpContentCallback) {
+            OnLastHttpContentCallback callback = (OnLastHttpContentCallback) attribute;
             Channels.setAttribute(channel, callback.future());
             callback.call();
 
@@ -186,8 +186,8 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                     future.pendingException = cause;
                     return;
                 }
-            } else if (attribute instanceof Callback) {
-                future = Callback.class.cast(attribute).future();
+            } else if (attribute instanceof OnLastHttpContentCallback) {
+                future = OnLastHttpContentCallback.class.cast(attribute).future();
             }
         } catch (Throwable t) {
             cause = t;

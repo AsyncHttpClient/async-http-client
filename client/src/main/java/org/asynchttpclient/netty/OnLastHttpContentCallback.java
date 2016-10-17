@@ -12,11 +12,11 @@
  */
 package org.asynchttpclient.netty;
 
-public abstract class Callback {
+public abstract class OnLastHttpContentCallback {
 
     protected final NettyResponseFuture<?> future;
 
-    public Callback(NettyResponseFuture<?> future) {
+    public OnLastHttpContentCallback(NettyResponseFuture<?> future) {
         this.future = future;
     }
 

@@ -17,7 +17,7 @@ import io.netty.channel.Channel;
 
 import java.io.IOException;
 
-import org.asynchttpclient.netty.Callback;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -34,7 +34,7 @@ public class Continue100Interceptor {
         future.setHeadersAlreadyWrittenOnContinue(true);
         future.setDontWriteBodyBecauseExpectContinue(false);
         // directly send the body
-        Channels.setAttribute(channel, new Callback(future) {
+        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
             @Override
             public void call() throws IOException {
                 Channels.setAttribute(channel, future);
