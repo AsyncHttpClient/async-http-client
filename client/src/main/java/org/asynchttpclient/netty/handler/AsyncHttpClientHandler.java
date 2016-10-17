@@ -67,15 +67,8 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         Object attribute = Channels.getAttribute(channel);
 
         try {
-            if (attribute instanceof Callback) {
-                Callback ac = (Callback) attribute;
-                if (msg instanceof LastHttpContent) {
-                    ac.call();
-                } else if (!(msg instanceof HttpContent)) {
-                    logger.info("Received unexpected message while expecting a chunk: " + msg);
-                    ac.call();
-                    Channels.setDiscard(channel);
-                }
+            if (attribute instanceof Callback && msg instanceof LastHttpContent) {
+                ((Callback) attribute).call();
 
             } else if (attribute instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
