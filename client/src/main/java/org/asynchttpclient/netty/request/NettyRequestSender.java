@@ -85,7 +85,7 @@ public final class NettyRequestSender {
     public <T> ListenableFuture<T> sendRequest(final Request request,//
             final AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
-            boolean reclaimCache) {
+            boolean performingNextRequest) {
 
         if (isClosed())
             throw new IllegalStateException("Closed");
@@ -98,13 +98,13 @@ public final class NettyRequestSender {
         if (proxyServer != null && (request.getUri().isSecured() || request.getUri().isWebSocket()) && !isConnectDone(request, future))
             if (future != null && future.isConnectAllowed())
                 // SSL proxy or websocket: CONNECT for sure
-                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, proxyServer, true);
+                return sendRequestWithCertainForceConnect(request, asyncHandler, future, performingNextRequest, proxyServer, true);
             else
                 // CONNECT will depend if we can pool or connection or if we have to open a new one
-                return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, proxyServer);
+                return sendRequestThroughSslProxy(request, asyncHandler, future, performingNextRequest, proxyServer);
         else
             // no CONNECT for sure
-            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, proxyServer, false);
+            return sendRequestWithCertainForceConnect(request, asyncHandler, future, performingNextRequest, proxyServer, false);
     }
 
     private boolean isConnectDone(Request request, NettyResponseFuture<?> future) {
@@ -122,7 +122,7 @@ public final class NettyRequestSender {
             Request request,//
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
-            boolean reclaimCache,//
+            boolean performingNextRequest,//
             ProxyServer proxyServer,//
             boolean forceConnect) {
 
@@ -133,7 +133,7 @@ public final class NettyRequestSender {
         if (Channels.isChannelValid(channel))
             return sendRequestWithOpenChannel(request, proxyServer, newFuture, asyncHandler, channel);
         else
-            return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, reclaimCache);
+            return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, performingNextRequest);
     }
 
     /**
@@ -144,7 +144,7 @@ public final class NettyRequestSender {
             Request request,//
             AsyncHandler<T> asyncHandler,//
             NettyResponseFuture<T> future,//
-            boolean reclaimCache,//
+            boolean performingNextRequest,//
             ProxyServer proxyServer) {
 
         NettyResponseFuture<T> newFuture = null;
@@ -164,7 +164,7 @@ public final class NettyRequestSender {
         }
 
         newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, true);
-        return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, reclaimCache);
+        return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, performingNextRequest);
     }
 
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture,
@@ -244,7 +244,7 @@ public final class NettyRequestSender {
             ProxyServer proxy,//
             NettyResponseFuture<T> future,//
             AsyncHandler<T> asyncHandler,//
-            boolean reclaimCache) {
+            boolean performingNextRequest) {
 
         // some headers are only set when performing the first request
         HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
@@ -262,7 +262,8 @@ public final class NettyRequestSender {
 
         Object partitionKey = future.getPartitionKey();
 
-        final boolean channelPreempted = !reclaimCache;
+        // we disable channelPreemption when performing next requests
+        final boolean channelPreempted = !performingNextRequest;
 
         try {
             // Do not throw an exception when we need an extra connection for a
