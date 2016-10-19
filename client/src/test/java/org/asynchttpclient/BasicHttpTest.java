@@ -25,6 +25,8 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -42,14 +44,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.handler.MaxRedirectException;
+import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.testserver.HttpServer;
+import org.asynchttpclient.testserver.HttpServer.EchoHandler;
 import org.asynchttpclient.testserver.HttpTest;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -908,6 +916,78 @@ public class BasicHttpTest extends HttpTest {
                     assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
                     assertTrue(e.getCause().getCause() instanceof SSLException, "Root cause should be a SslException");
                 }
+            });
+        });
+    }
+
+    @Test
+    public void postUnboundedInputStreamAsBodyStream() throws Throwable {
+        withClient().run(client -> {
+            withServer(server).run(server -> {
+                HttpHeaders h = new DefaultHttpHeaders();
+                h.add(CONTENT_TYPE, APPLICATION_JSON);
+                server.enqueue(new AbstractHandler() {
+                    EchoHandler chain = new EchoHandler();
+                    @Override
+                    public void handle(String target, org.eclipse.jetty.server.Request request,
+                                       HttpServletRequest httpServletRequest,
+                                       HttpServletResponse httpServletResponse) throws IOException, ServletException {
+                        assertEquals(request.getHeader(TRANSFER_ENCODING), CHUNKED);
+                        assertNull(request.getHeader(CONTENT_LENGTH));
+                        chain.handle(target, request, httpServletRequest, httpServletResponse);
+                    }
+                });
+                server.enqueueEcho();
+
+                client.preparePost(getTargetUrl())//
+                      .setHeaders(h)//
+                      .setBody(new ByteArrayInputStream("{}".getBytes(StandardCharsets.ISO_8859_1)))//
+                      .execute(new AsyncCompletionHandlerAdapter() {
+                          @Override
+                          public Response onCompleted(Response response) throws Exception {
+                              assertEquals(response.getStatusCode(), 200);
+                              assertEquals(response.getResponseBody(), "{}");
+                              return response;
+                          }
+                      }).get(TIMEOUT, SECONDS);
+            });
+        });
+    }
+
+    @Test
+    public void postInputStreamWithContentLengthAsBodyGenerator() throws Throwable {
+        withClient().run(client -> {
+            withServer(server).run(server -> {
+                HttpHeaders h = new DefaultHttpHeaders();
+                h.add(CONTENT_TYPE, APPLICATION_JSON);
+                server.enqueue(new AbstractHandler() {
+                    EchoHandler chain = new EchoHandler();
+                    @Override
+                    public void handle(String target, org.eclipse.jetty.server.Request request,
+                                       HttpServletRequest httpServletRequest,
+                                       HttpServletResponse httpServletResponse) throws IOException, ServletException {
+                        assertNull(request.getHeader(TRANSFER_ENCODING));
+                        assertEquals(request.getHeader(CONTENT_LENGTH),//
+                                     Integer.toString("{}".getBytes(StandardCharsets.ISO_8859_1).length));
+                        chain.handle(target, request, httpServletRequest, httpServletResponse);
+                    }
+                });
+
+                byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
+                InputStream bodyStream = new ByteArrayInputStream(bodyBytes);
+
+                client.preparePost(getTargetUrl())//
+                      .setHeaders(h)//
+                      .setBody(new InputStreamBodyGenerator(bodyStream, bodyBytes.length))//
+                      .execute(new AsyncCompletionHandlerAdapter() {
+
+                          @Override
+                          public Response onCompleted(Response response) throws Exception {
+                              assertEquals(response.getStatusCode(), 200);
+                              assertEquals(response.getResponseBody(), "{}");
+                              return response;
+                          }
+                      }).get(TIMEOUT, SECONDS);
             });
         });
     }

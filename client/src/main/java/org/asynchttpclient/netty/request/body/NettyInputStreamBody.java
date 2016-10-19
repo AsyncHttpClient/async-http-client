@@ -33,9 +33,15 @@ public class NettyInputStreamBody implements NettyBody {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
     private final InputStream inputStream;
+    private final long contentLength;
 
     public NettyInputStreamBody(InputStream inputStream) {
+        this(inputStream, -1L);
+    }
+
+    public NettyInputStreamBody(InputStream inputStream, long contentLength) {
         this.inputStream = inputStream;
+        this.contentLength = contentLength;
     }
 
     public InputStream getInputStream() {
@@ -44,7 +50,7 @@ public class NettyInputStreamBody implements NettyBody {
 
     @Override
     public long getContentLength() {
-        return -1L;
+        return contentLength;
     }
 
     @Override
