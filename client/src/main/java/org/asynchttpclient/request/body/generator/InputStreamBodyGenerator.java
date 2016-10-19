@@ -32,13 +32,23 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
+    private final long contentLength;
 
     public InputStreamBodyGenerator(InputStream inputStream) {
+        this(inputStream, -1L);
+    }
+
+    public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
         this.inputStream = inputStream;
+        this.contentLength = contentLength;
     }
 
     public InputStream getInputStream() {
         return inputStream;
+    }
+
+    public long getContentLength() {
+        return contentLength;
     }
 
     /**
@@ -46,20 +56,22 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
      */
     @Override
     public Body createBody() {
-        return new InputStreamBody(inputStream);
+        return new InputStreamBody(inputStream, contentLength);
     }
 
     private class InputStreamBody implements Body {
 
         private final InputStream inputStream;
+        private final long contentLength;
         private byte[] chunk;
 
-        private InputStreamBody(InputStream inputStream) {
+        private InputStreamBody(InputStream inputStream, long contentLength) {
             this.inputStream = inputStream;
+            this.contentLength = contentLength;
         }
 
         public long getContentLength() {
-            return -1L;
+            return contentLength;
         }
 
         public BodyState transferTo(ByteBuf target) throws IOException {
