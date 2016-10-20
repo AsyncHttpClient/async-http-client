@@ -197,4 +197,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static boolean defaultUseNativeTransport() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useNativeTransport");
     }
+
+    public static int defaultIoThreadsCount() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "ioThreadsCount");
+    }
 }

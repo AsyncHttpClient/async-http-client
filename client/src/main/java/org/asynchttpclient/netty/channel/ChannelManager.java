@@ -166,11 +166,11 @@ public class ChannelManager {
         ChannelFactory<? extends Channel> channelFactory;
         if (allowReleaseEventLoopGroup) {
             if (config.isUseNativeTransport()) {
-                eventLoopGroup = newEpollEventLoopGroup(threadFactory);
+                eventLoopGroup = newEpollEventLoopGroup(config.getIoThreadsCount(), threadFactory);
                 channelFactory = getEpollSocketChannelFactory();
 
             } else {
-                eventLoopGroup = new NioEventLoopGroup(0, threadFactory);
+                eventLoopGroup = new NioEventLoopGroup(config.getIoThreadsCount(), threadFactory);
                 channelFactory = NioSocketChannelFactory.INSTANCE;
             }
 
@@ -224,10 +224,10 @@ public class ChannelManager {
         return bootstrap;
     }
 
-    private EventLoopGroup newEpollEventLoopGroup(ThreadFactory threadFactory) {
+    private EventLoopGroup newEpollEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         try {
             Class<?> epollEventLoopGroupClass = Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
-            return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(0, threadFactory);
+            return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(ioThreadsCount, threadFactory);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }

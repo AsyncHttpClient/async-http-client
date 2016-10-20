@@ -288,6 +288,8 @@ public interface AsyncHttpClientConfig {
 
     ByteBufAllocator getAllocator();
 
+    int getIoThreadsCount();
+
     interface AdditionalChannelInitializer {
 
         void initChannel(Channel channel) throws Exception;

@@ -131,6 +131,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final AdditionalChannelInitializer httpAdditionalChannelInitializer;
     private final AdditionalChannelInitializer wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
+    private final int ioThreadsCount;
 
     private DefaultAsyncHttpClientConfig(//
             // http
@@ -203,7 +204,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             ThreadFactory threadFactory,//
             AdditionalChannelInitializer httpAdditionalChannelInitializer,//
             AdditionalChannelInitializer wsAdditionalChannelInitializer,//
-            ResponseBodyPartFactory responseBodyPartFactory) {
+            ResponseBodyPartFactory responseBodyPartFactory,//
+            int ioThreadsCount) {
 
         // http
         this.followRedirect = followRedirect;
@@ -276,6 +278,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
         this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
+        this.ioThreadsCount = ioThreadsCount;
     }
 
     @Override
@@ -581,6 +584,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return responseBodyPartFactory;
     }
 
+    @Override
+    public int getIoThreadsCount() {
+        return ioThreadsCount;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -659,6 +667,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private AdditionalChannelInitializer httpAdditionalChannelInitializer;
         private AdditionalChannelInitializer wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
+        private int ioThreadsCount = defaultIoThreadsCount();
 
         public Builder() {
         }
@@ -732,6 +741,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
             wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
+            ioThreadsCount = config.getIoThreadsCount();
         }
 
         // http
@@ -1066,6 +1076,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setIoThreadsCount(int ioThreadsCount) {
+            this.ioThreadsCount = ioThreadsCount;
+            return this;
+        }
+
         private ProxyServerSelector resolveProxyServerSelector() {
             if (proxyServerSelector != null)
                 return proxyServerSelector;
@@ -1139,7 +1154,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     threadFactory, //
                     httpAdditionalChannelInitializer, //
                     wsAdditionalChannelInitializer, //
-                    responseBodyPartFactory);
+                    responseBodyPartFactory, //
+                    ioThreadsCount);
         }
     }
 }
