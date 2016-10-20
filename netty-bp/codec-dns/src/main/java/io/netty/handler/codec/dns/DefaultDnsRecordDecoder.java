@@ -90,10 +90,10 @@ public class DefaultDnsRecordDecoder implements DnsRecordDecoder {
 
         if (type == DnsRecordType.PTR) {
             in.setIndex(offset, offset + length);
-            return new DefaultDnsPtrRecord(name, dnsClass, timeToLive, decodeName0(in));
+            return new DefaultDnsPtrRecord(name, dnsClass, timeToLive, decodeName0(in.slice(offset, length)));
         }
         return new DefaultDnsRawRecord(
-                name, type, dnsClass, timeToLive, in.duplicate().setIndex(offset, offset + length).retain());
+                name, type, dnsClass, timeToLive, in.slice(offset, length).retain());
     }
 
     /**
