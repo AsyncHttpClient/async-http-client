@@ -67,6 +67,9 @@ public interface ListenableFuture<V> extends Future<V> {
      * to the executor} for execution when the {@code Future}'s computation is
      * {@linkplain Future#isDone() complete}.
      * <br>
+     * Executor can be <code>null</code>, in that case executor will be executed
+     * in the thread where completion happens.
+     * <br>
      * There is no guaranteed ordering of execution of listeners, they may get
      * called in the order they were added and they may get called out of order,
      * but any listener added through this method is guaranteed to be called once
@@ -131,7 +134,11 @@ public interface ListenableFuture<V> extends Future<V> {
 
         @Override
         public ListenableFuture<T> addListener(Runnable listener, Executor exec) {
-            exec.execute(listener);
+            if (exec != null) {
+                exec.execute(listener);
+            } else {
+                listener.run();
+            }
             return this;
         }
         
