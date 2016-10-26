@@ -68,7 +68,7 @@ public class Unauthorized401Interceptor {
             return false;
         }
 
-        if (future.getInAuth().getAndSet(true)) {
+        if (future.getAndSetInAuth(true)) {
             LOGGER.info("Can't handle 401 as auth was already performed");
             return false;
         }
@@ -195,7 +195,7 @@ public class Unauthorized401Interceptor {
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             requestHeaders.set(AUTHORIZATION, "NTLM " + challengeHeader);
-            future.getInAuth().set(false);
+            future.setInAuth(false);
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
