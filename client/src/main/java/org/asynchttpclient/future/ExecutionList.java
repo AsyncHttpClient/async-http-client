@@ -56,7 +56,6 @@ public final class ExecutionList {
         // Fail fast on a null. We throw NPE here because the contract of Executor states that it
         // throws NPE on null listener, so we propagate that contract up into the add method as well.
         assertNotNull(runnable, "runnable");
-        assertNotNull(executor, "executor");
 
         // Lock while we check state. We must maintain the lock while adding the new pair so that
         // another thread can't run the list out from under us. We only add to the list if we have not
@@ -120,9 +119,13 @@ public final class ExecutionList {
     /**
      * Submits the given runnable to the given {@link Executor} catching and logging all {@linkplain RuntimeException runtime exceptions} thrown by the executor.
      */
-    private static void executeListener(Runnable runnable, Executor executor) {
+    static void executeListener(Runnable runnable, Executor executor) {
         try {
-            executor.execute(runnable);
+            if (executor != null) {
+                executor.execute(runnable);
+            } else {
+                runnable.run();
+            }
         } catch (RuntimeException e) {
             // Log it and keep going, bad runnable and/or executor. Don't punish the other runnables if
             // we're given a bad one. We only catch RuntimeException because we want Errors to propagate

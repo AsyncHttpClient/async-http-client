@@ -29,6 +29,7 @@
 package org.asynchttpclient.future;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.asynchttpclient.ListenableFuture;
 
@@ -43,31 +44,33 @@ import org.asynchttpclient.ListenableFuture;
  */
 public abstract class AbstractListenableFuture<V> implements ListenableFuture<V> {
 
-    private volatile boolean hasRun;
-    private volatile boolean executionListInitialized;
     private volatile ExecutionList executionList;
 
+    private static final AtomicReferenceFieldUpdater<AbstractListenableFuture, ExecutionList> executionListField =
+            AtomicReferenceFieldUpdater.newUpdater(AbstractListenableFuture.class, ExecutionList.class, "executionList");
+
     private ExecutionList executionList() {
-        ExecutionList localExecutionList = executionList;
-        if (localExecutionList == null) {
-            synchronized (this) {
-                localExecutionList = executionList;
-                if (localExecutionList == null) {
-                    localExecutionList = new ExecutionList();
-                    executionList = localExecutionList;
-                    executionListInitialized = true;
-                }
-            }
+        ExecutionList executionListLocal = this.executionList;
+        if (executionListLocal != null) {
+            return executionListLocal;
         }
-        return localExecutionList;
+
+        ExecutionList r = new ExecutionList();
+        if (executionListField.compareAndSet(this, null, r)) {
+            return r;
+        } else {
+            return this.executionList;
+        }
     }
 
     @Override
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
-        executionList().add(listener, exec);
-        if (hasRun) {
-            runListeners();
+        if (executionList == null) {
+            ExecutionList.executeListener(listener, exec);
+            return this;
         }
+
+        executionList().add(listener, exec);
         return this;
     }
 
@@ -75,9 +78,10 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
      * Execute the execution list.
      */
     protected void runListeners() {
-        hasRun = true;
-        if (executionListInitialized) {
-            executionList().execute();
+        if (executionList == null) {
+            return;
         }
+
+        executionList().execute();
     }
 }
