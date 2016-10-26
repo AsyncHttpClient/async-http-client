@@ -120,7 +120,7 @@ public final class ExecutionList {
     /**
      * Submits the given runnable to the given {@link Executor} catching and logging all {@linkplain RuntimeException runtime exceptions} thrown by the executor.
      */
-    private static void executeListener(Runnable runnable, Executor executor) {
+    static void executeListener(Runnable runnable, Executor executor) {
         try {
             executor.execute(runnable);
         } catch (RuntimeException e) {
