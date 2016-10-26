@@ -271,12 +271,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                     completable.complete((V) CONTENT_UPDATER.get(NettyResponseFuture.this));
             }
 
-        }, new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        });
+        }, null);
 
         return completable;
     }
