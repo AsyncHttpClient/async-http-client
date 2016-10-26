@@ -29,12 +29,13 @@
 package org.asynchttpclient.future;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.asynchttpclient.ListenableFuture;
 
 /**
- * An abstract base implementation of the listener support provided by {@link ListenableFuture}. This class uses an {@link ExecutionList} to guarantee that all registered listeners
- * will be executed. Listener/Executor pairs are stored in the execution list and executed in the order in which they were added, but because of thread scheduling issues there is
+ * An abstract base implementation of the listener support provided by {@link ListenableFuture}.
+ * Listener/Executor pairs are stored in the {@link RunnableExecutorPair} linked list in the order in which they were added, but because of thread scheduling issues there is
  * no guarantee that the JVM will execute them in order. In addition, listeners added after the task is complete will be executed immediately, even if some previously added
  * listeners have not yet been executed.
  *
@@ -43,41 +44,49 @@ import org.asynchttpclient.ListenableFuture;
  */
 public abstract class AbstractListenableFuture<V> implements ListenableFuture<V> {
 
-    private volatile boolean hasRun;
-    private volatile boolean executionListInitialized;
-    private volatile ExecutionList executionList;
+    /**
+     * Marks that execution is already done, and new runnables
+     * should be executed right away instead of begin added to the list.
+     */
+    private static final RunnableExecutorPair executedMarker = new RunnableExecutorPair();
 
-    private ExecutionList executionList() {
-        ExecutionList localExecutionList = executionList;
-        if (localExecutionList == null) {
-            synchronized (this) {
-                localExecutionList = executionList;
-                if (localExecutionList == null) {
-                    localExecutionList = new ExecutionList();
-                    executionList = localExecutionList;
-                    executionListInitialized = true;
-                }
-            }
-        }
-        return localExecutionList;
-    }
+    /**
+     * Linked list of executions or a {@link #executedMarker}.
+     */
+    private volatile RunnableExecutorPair executionList;
+    private static final AtomicReferenceFieldUpdater<AbstractListenableFuture, RunnableExecutorPair> executionListField =
+            AtomicReferenceFieldUpdater.newUpdater(AbstractListenableFuture.class, RunnableExecutorPair.class, "executionList");
 
     @Override
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
-        executionList().add(listener, exec);
-        if (hasRun) {
-            runListeners();
+        for (;;) {
+            RunnableExecutorPair executionListLocal = this.executionList;
+            if (executionListLocal == executedMarker) {
+                RunnableExecutorPair.executeListener(listener, exec);
+                return this;
+            }
+
+            RunnableExecutorPair pair = new RunnableExecutorPair(listener, exec, executionListLocal);
+            if (executionListField.compareAndSet(this, executionListLocal, pair)) {
+                return this;
+            }
         }
-        return this;
     }
 
     /**
      * Execute the execution list.
      */
     protected void runListeners() {
-        hasRun = true;
-        if (executionListInitialized) {
-            executionList().execute();
+        RunnableExecutorPair execution = executionListField.getAndSet(this, executedMarker);
+        if (execution == executedMarker) {
+            return;
+        }
+
+        RunnableExecutorPair reversedList = RunnableExecutorPair.reverseList(execution);
+
+        while (reversedList != null) {
+            RunnableExecutorPair.executeListener(reversedList.runnable, reversedList.executor);
+            reversedList = reversedList.next;
         }
     }
 }
