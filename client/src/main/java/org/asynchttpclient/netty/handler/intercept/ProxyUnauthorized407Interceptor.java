@@ -60,7 +60,7 @@ public class ProxyUnauthorized407Interceptor {
             ProxyServer proxyServer,//
             HttpRequest httpRequest) {
 
-        if (future.getInProxyAuth().getAndSet(true)) {
+        if (future.getAndSetInProxyAuth(true)) {
             LOGGER.info("Can't handle 407 as auth was already performed");
             return false;
         }
@@ -210,7 +210,7 @@ public class ProxyUnauthorized407Interceptor {
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             requestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
-            future.getInProxyAuth().set(false);
+            future.setInProxyAuth(false);
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();

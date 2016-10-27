@@ -79,8 +79,8 @@ public class Redirect30xInterceptor {
 
             } else {
                 // We must allow auth handling again.
-                future.getInAuth().set(false);
-                future.getInProxyAuth().set(false);
+                future.setInAuth(false);
+                future.setInProxyAuth(false);
 
                 String originalMethod = request.getMethod();
                 boolean switchToGet = !originalMethod.equals(GET)
