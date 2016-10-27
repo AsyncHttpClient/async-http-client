@@ -54,6 +54,7 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
      * Linked list of executions or a {@link #executedMarker}.
      */
     private volatile RunnableExecutorPair executionList;
+    @SuppressWarnings("rawtypes")
     private static final AtomicReferenceFieldUpdater<AbstractListenableFuture, RunnableExecutorPair> executionListField =
             AtomicReferenceFieldUpdater.newUpdater(AbstractListenableFuture.class, RunnableExecutorPair.class, "executionList");
 
