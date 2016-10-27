@@ -86,7 +86,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             HttpResponse response, AsyncHandler<?> handler,//
             NettyResponseStatus status,//
             HttpRequest httpRequest) throws IOException, Exception {
-        return !future.getAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE;
+        return !future.isAndSetStatusReceived(true) && handler.onStatusReceived(status) != State.CONTINUE;
     }
 
     private boolean exitAfterHandlingHeaders(//

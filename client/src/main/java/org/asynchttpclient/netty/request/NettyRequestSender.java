@@ -203,7 +203,7 @@ public final class NettyRequestSender {
 
     private Channel getOpenChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
 
-        if (future != null && future.reuseChannel() && Channels.isChannelValid(future.channel()))
+        if (future != null && future.isReuseChannel() && Channels.isChannelValid(future.channel()))
             return future.channel();
         else
             return pollPooledChannel(request, proxyServer, asyncHandler);
@@ -422,9 +422,9 @@ public final class NettyRequestSender {
         if (isClosed())
             return false;
 
-        if (future.canBeReplayed()) {
+        if (future.isReplayPossible()) {
             future.setChannelState(ChannelState.RECONNECTED);
-            future.getAndSetStatusReceived(false);
+            future.isAndSetStatusReceived(false);
 
             LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
             if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
@@ -460,7 +460,7 @@ public final class NettyRequestSender {
             }
         }
 
-        if (fc.replayRequest() && future.incrementRetryAndCheck() && future.canBeReplayed()) {
+        if (fc.replayRequest() && future.incrementRetryAndCheck() && future.isReplayPossible()) {
             replayRequest(future, fc, channel);
             replayed = true;
         }

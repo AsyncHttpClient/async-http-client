@@ -73,23 +73,18 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private volatile int inAuth = 0;
     private volatile int inProxyAuth = 0;
     private volatile int statusReceived = 0;
+    @SuppressWarnings("unused")
     private volatile int contentProcessed = 0;
+    @SuppressWarnings("unused")
     private volatile int onThrowableCalled = 0;
 
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isDoneField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isDone");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isCancelledField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isCancelled");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inAuthField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inAuth");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inProxyAuthField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inProxyAuth");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> statusReceivedField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "statusReceived");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField =
-            AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "onThrowableCalled");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> isDoneField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "isDone");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> isCancelledField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "isCancelled");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> inAuthField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "inAuth");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> inProxyAuthField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "inProxyAuth");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> statusReceivedField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "statusReceived");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> contentProcessedField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "contentProcessed");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> onThrowableCalledField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "onThrowableCalled");
 
     // volatile where we need CAS ops
     private volatile int redirectCount = 0;
@@ -109,7 +104,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private Request currentRequest;
     private NettyRequest nettyRequest;
     private AsyncHandler<V> asyncHandler;
-    private boolean streamWasAlreadyConsumed;
+    private boolean streamAlreadyConsumed;
     private boolean reuseChannel;
     private boolean headersAlreadyWrittenOnContinue;
     private boolean dontWriteBodyBecauseExpectContinue;
@@ -354,7 +349,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return timeoutsHolder;
     }
 
-    public boolean getInAuth() {
+    public boolean isInAuth() {
         return inAuth != 0;
     }
 
@@ -362,11 +357,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.inAuth = inAuth ? 1 : 0;
     }
 
-    public boolean getAndSetInAuth(boolean set) {
+    public boolean isAndSetInAuth(boolean set) {
         return inAuthField.getAndSet(this, set ? 1 : 0) != 0;
     }
 
-    public boolean getInProxyAuth() {
+    public boolean isInProxyAuth() {
         return inProxyAuth != 0;
     }
 
@@ -374,7 +369,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.inProxyAuth = inProxyAuth ? 1 : 0;
     }
 
-    public boolean getAndSetInProxyAuth(boolean inProxyAuth) {
+    public boolean isAndSetInProxyAuth(boolean inProxyAuth) {
         return inProxyAuthField.getAndSet(this, inProxyAuth ? 1 : 0) != 0;
     }
 
@@ -386,16 +381,16 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.channelState = channelState;
     }
 
-    public boolean getAndSetStatusReceived(boolean sr) {
+    public boolean isAndSetStatusReceived(boolean sr) {
         return statusReceivedField.getAndSet(this, sr ? 1 : 0) != 0;
     }
 
-    public boolean isStreamWasAlreadyConsumed() {
-        return streamWasAlreadyConsumed;
+    public boolean isStreamConsumed() {
+        return streamAlreadyConsumed;
     }
 
-    public void setStreamWasAlreadyConsumed(boolean streamWasAlreadyConsumed) {
-        this.streamWasAlreadyConsumed = streamWasAlreadyConsumed;
+    public void setStreamConsumed(boolean streamConsumed) {
+        this.streamAlreadyConsumed = streamConsumed;
     }
 
     public long getLastTouch() {
@@ -445,7 +440,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return channel;
     }
 
-    public boolean reuseChannel() {
+    public boolean isReuseChannel() {
         return reuseChannel;
     }
 
@@ -467,10 +462,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
-    public boolean canBeReplayed() {
-        return !isDone() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https"))
-                && inAuth == 0
-                && inProxyAuth == 0;
+    public boolean isReplayPossible() {
+        return !isDone() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && inAuth == 0 && inProxyAuth == 0;
     }
 
     public long getStart() {

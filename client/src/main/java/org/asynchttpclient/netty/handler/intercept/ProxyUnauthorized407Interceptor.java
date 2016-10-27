@@ -60,7 +60,7 @@ public class ProxyUnauthorized407Interceptor {
             ProxyServer proxyServer,//
             HttpRequest httpRequest) {
 
-        if (future.getAndSetInProxyAuth(true)) {
+        if (future.isAndSetInProxyAuth(true)) {
             LOGGER.info("Can't handle 407 as auth was already performed");
             return false;
         }

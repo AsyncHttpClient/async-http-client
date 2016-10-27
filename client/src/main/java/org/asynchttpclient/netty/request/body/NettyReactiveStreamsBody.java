@@ -59,10 +59,10 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
-        if (future.isStreamWasAlreadyConsumed()) {
+        if (future.isStreamConsumed()) {
             LOGGER.warn("Stream has already been consumed and cannot be reset");
         } else {
-            future.setStreamWasAlreadyConsumed(true);
+            future.setStreamConsumed(true);
             NettySubscriber subscriber = new NettySubscriber(channel, future);
             channel.pipeline().addLast(NAME_IN_CHANNEL_PIPELINE, subscriber);
             publisher.subscribe(new SubscriberAdapter(subscriber));

@@ -62,7 +62,7 @@ public class NettyInputStreamBody implements NettyBody {
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         final InputStream is = inputStream;
 
-        if (future.isStreamWasAlreadyConsumed()) {
+        if (future.isStreamConsumed()) {
             if (is.markSupported())
                 is.reset();
             else {
@@ -70,7 +70,7 @@ public class NettyInputStreamBody implements NettyBody {
                 return;
             }
         } else {
-            future.setStreamWasAlreadyConsumed(true);
+            future.setStreamConsumed(true);
         }
 
         channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(

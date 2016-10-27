@@ -67,7 +67,7 @@ public abstract class WriteListener {
              * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
              * causing unpredictable behavior.
              */
-            boolean startPublishing = !future.getInAuth() && !future.getInProxyAuth();
+            boolean startPublishing = !future.isInAuth() && !future.isInProxyAuth();
             if (startPublishing) {
                 
                 if (notifyHeaders) {

@@ -68,7 +68,7 @@ public class Unauthorized401Interceptor {
             return false;
         }
 
-        if (future.getAndSetInAuth(true)) {
+        if (future.isAndSetInAuth(true)) {
             LOGGER.info("Can't handle 401 as auth was already performed");
             return false;
         }
