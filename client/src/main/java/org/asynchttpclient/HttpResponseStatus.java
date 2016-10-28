@@ -99,4 +99,12 @@ public abstract class HttpResponseStatus {
      *         if asynchronous provider is unable to provide the local address
      */
     public abstract SocketAddress getLocalAddress();
+
+    /**
+     * Code followed by text.
+     */
+    @Override
+    public String toString() {
+        return getStatusCode() + " " + getStatusText();
+    }
 }
