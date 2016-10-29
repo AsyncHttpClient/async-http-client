@@ -66,6 +66,7 @@ public class AsyncHttpSingleTest {
     @Test(groups = "standalone")
     public void testSuccessfulCompletion() throws Exception {
 
+        @SuppressWarnings("unchecked")
         final AsyncHandler<Object> handler = mock(AsyncHandler.class);
         when(handler.onCompleted()).thenReturn(handler);
 
@@ -106,6 +107,7 @@ public class AsyncHttpSingleTest {
     @Test(groups = "standalone")
     public void testSuccessfulCompletionWithProgress() throws Exception {
 
+        @SuppressWarnings("unchecked")
         final ProgressAsyncHandler<Object> handler = mock(ProgressAsyncHandler.class);
         when(handler.onCompleted()).thenReturn(handler);
         final InOrder inOrder = inOrder(handler);
@@ -171,6 +173,7 @@ public class AsyncHttpSingleTest {
     public void testErrorPropagation() throws Exception {
 
         final RuntimeException expectedException = new RuntimeException("expected");
+        @SuppressWarnings("unchecked")
         final AsyncHandler<Object> handler = mock(AsyncHandler.class);
         when(handler.onCompleted()).thenReturn(handler);
         final InOrder inOrder = inOrder(handler);
@@ -214,6 +217,7 @@ public class AsyncHttpSingleTest {
     public void testErrorInOnCompletedPropagation() throws Exception {
 
         final RuntimeException expectedException = new RuntimeException("expected");
+        @SuppressWarnings("unchecked")
         final AsyncHandler<Object> handler = mock(AsyncHandler.class);
         when(handler.onCompleted()).thenThrow(expectedException);
 
@@ -243,6 +247,7 @@ public class AsyncHttpSingleTest {
 
         final RuntimeException processingException = new RuntimeException("processing");
         final RuntimeException thrownException = new RuntimeException("thrown");
+        @SuppressWarnings("unchecked")
         final AsyncHandler<Object> handler = mock(AsyncHandler.class);
         doThrow(thrownException).when(handler).onThrowable(processingException);
 
@@ -296,6 +301,7 @@ public class AsyncHttpSingleTest {
 
     @Test(groups = "standalone")
     public void testUnsubscribe() throws Exception {
+        @SuppressWarnings("unchecked")
         final AsyncHandler<Object> handler = mock(AsyncHandler.class);
         final Future<?> future = mock(Future.class);
         final AtomicReference<AsyncHandler<?>> bridgeRef = new AtomicReference<>();
