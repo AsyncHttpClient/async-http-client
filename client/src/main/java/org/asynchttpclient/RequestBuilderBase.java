@@ -15,13 +15,22 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.HttpUtils.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.resolver.DefaultNameResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.ImmediateEventExecutor;
+import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.request.body.generator.BodyGenerator;
+import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
+import org.asynchttpclient.request.body.multipart.Part;
+import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.UriEncoder;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -34,17 +43,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.asynchttpclient.channel.ChannelPoolPartitioning;
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.request.body.generator.BodyGenerator;
-import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
-import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.UriEncoder;
-import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.util.HttpUtils.parseCharset;
+import static org.asynchttpclient.util.HttpUtils.validateSupportedScheme;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
  * Builder for {@link Request}
@@ -194,11 +195,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setHeaders(Map<String, Collection<String>> headers) {
         this.headers.clear();
         if (headers != null) {
-            for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
-                String headerName = entry.getKey();
-                this.headers.add(headerName, entry.getValue());
-            }
+            headers.forEach((name, values) -> this.headers.add(name, values));
         }
+        return asDerivedType();
+    }
+
+    public T setSingleHeaders(Map<String, String> headers) {
+        this.headers.clear();
+        headers.forEach((name, value) -> this.headers.add(name, value));
         return asDerivedType();
     }
 
