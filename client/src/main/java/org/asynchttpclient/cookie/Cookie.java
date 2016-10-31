@@ -12,9 +12,55 @@
  */
 package org.asynchttpclient.cookie;
 
-import static org.asynchttpclient.cookie.CookieUtil.*;
+import static org.asynchttpclient.cookie.CookieUtil.validateCookieAttribute;
+import static org.asynchttpclient.cookie.CookieUtil.validateCookieName;
+import static org.asynchttpclient.cookie.CookieUtil.validateCookieValue;
 
 public class Cookie {
+
+    /**
+     * Method to get a {@link org.asynchttpclient.cookie.Cookie} from {@code javax.servlet} package's {@link javax.servlet.http.Cookie}
+     *
+     * @param cookie base entity to convert
+     * @param wrap true if the value of this {@link Cookie} is to be wrapped with double quotes.
+     * @return converted {@link Cookie}
+     */
+    public static Cookie newCookie(javax.servlet.http.Cookie cookie, boolean wrap) {
+        return new Cookie(cookie.getName(), cookie.getValue(), wrap, cookie.getDomain(), cookie.getPath(), cookie.getMaxAge(), cookie.getSecure(), cookie.isHttpOnly());
+    }
+
+    /**
+     * Method to get a valid {@link org.asynchttpclient.cookie.Cookie} from {@code javax.servlet} package's {@link javax.servlet.http.Cookie}
+     *
+     * @param cookie base entity to convert
+     * @param wrap true if the value of this {@link Cookie} is to be wrapped with double quotes.
+     * @return converted {@link Cookie}
+     * @throws IllegalArgumentException if any part of {@code cookie} is invalid
+     */
+    public static Cookie newValidCookie(javax.servlet.http.Cookie cookie, boolean wrap) {
+        return new Cookie(validateCookieName(cookie.getName()), validateCookieValue(cookie.getValue()), wrap, validateCookieAttribute("domain", cookie.getDomain()), validateCookieAttribute("path", cookie.getPath()), cookie.getMaxAge(), cookie.getSecure(), cookie.isHttpOnly());
+    }
+
+    /**
+     * Method to get a {@link org.asynchttpclient.cookie.Cookie} from Netty's {@link io.netty.handler.codec.http.cookie.Cookie}
+     *
+     * @param cookie base entity to convert
+     * @return converted {@link Cookie}
+     */
+    public static Cookie newCookie(io.netty.handler.codec.http.cookie.Cookie cookie) {
+        return new Cookie(cookie.name(), cookie.value(), cookie.wrap(), cookie.domain(), cookie.path(), cookie.maxAge(), cookie.isSecure(), cookie.isHttpOnly());
+    }
+
+    /**
+     * Method to get a valid {@link org.asynchttpclient.cookie.Cookie} from Netty's {@link io.netty.handler.codec.http.cookie.Cookie}
+     *
+     * @param cookie base entity to convert
+     * @return converted {@link Cookie}
+     * @throws IllegalArgumentException if any part of {@code cookie} is invalid
+     */
+    public static Cookie newValidCookie(io.netty.handler.codec.http.cookie.Cookie cookie) {
+        return new Cookie(validateCookieName(cookie.name()), validateCookieValue(cookie.value()), cookie.wrap(), validateCookieAttribute("domain", cookie.domain()), validateCookieAttribute("path", cookie.path()), cookie.maxAge(), cookie.isSecure(), cookie.isHttpOnly());
+    }
 
     public static Cookie newValidCookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
         return new Cookie(validateCookieName(name), validateCookieValue(value), wrap, validateCookieAttribute("domain", domain), validateCookieAttribute("path", path), maxAge, secure, httpOnly);
@@ -22,6 +68,9 @@ public class Cookie {
 
     private final String name;
     private final String value;
+    /**
+     * If value should be wrapped with double quotes during serialization
+     */
     private final boolean wrap;
     private final String domain;
     private final String path;
@@ -52,6 +101,9 @@ public class Cookie {
         return value;
     }
 
+    /**
+     * @return true if the value of this {@link Cookie} is to be wrapped with double quotes.
+     */
     public boolean isWrap() {
         return wrap;
     }
