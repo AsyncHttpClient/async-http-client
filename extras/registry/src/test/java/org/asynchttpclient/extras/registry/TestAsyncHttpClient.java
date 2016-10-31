@@ -122,4 +122,8 @@ public class TestAsyncHttpClient implements AsyncHttpClient {
         return null;
     }
 
+    @Override
+    public ClientStats getClientStats() {
+        return null;
+    }
 }

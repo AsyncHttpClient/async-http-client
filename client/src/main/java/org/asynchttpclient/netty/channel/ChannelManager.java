@@ -51,6 +51,7 @@ import javax.net.ssl.SSLException;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ClientStats;
 import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -487,5 +488,12 @@ public class ChannelManager {
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
+    }
+
+    public ClientStats getClientStats() {
+        final long totalConnectionCount = openChannels.size();
+        final long idleConnectionCount = channelPool.getIdleChannelCount();
+        final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
+        return new ClientStats(activeConnectionCount, idleConnectionCount);
     }
 }

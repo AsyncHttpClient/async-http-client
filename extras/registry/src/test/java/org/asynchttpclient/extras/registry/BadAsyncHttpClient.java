@@ -125,4 +125,9 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
         return null;
     }
+
+    @Override
+    public ClientStats getClientStats() {
+        return null;
+    }
 }

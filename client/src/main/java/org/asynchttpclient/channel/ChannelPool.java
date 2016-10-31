@@ -70,4 +70,9 @@ public interface ChannelPool {
      * @param selector the selector
      */
     void flushPartitions(ChannelPoolPartitionSelector selector);
+
+    /**
+     * @return The number of idle channels.
+     */
+    long getIdleChannelCount();
 }

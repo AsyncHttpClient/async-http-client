@@ -356,6 +356,16 @@ public final class DefaultChannelPool implements ChannelPool {
         }
     }
 
+    @Override
+    public long getIdleChannelCount() {
+        return partitions.reduceValuesToLong(
+                Long.MAX_VALUE,
+                ConcurrentLinkedDeque::size,
+                0,
+                (left, right) -> left + right
+        );
+    }
+
     public enum PoolLeaseStrategy {
         LIFO {
             public <E> E lease(Deque<E> d) {

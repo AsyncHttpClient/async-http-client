@@ -55,8 +55,9 @@ public class EchoHandler extends AbstractHandler {
             param = e.nextElement().toString();
 
             if (param.startsWith("LockThread")) {
+                final int sleepTime = httpRequest.getIntHeader(param);
                 try {
-                    Thread.sleep(40 * 1000);
+                    Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
                 } catch (InterruptedException ex) {
                 }
             }
