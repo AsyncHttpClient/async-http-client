@@ -168,11 +168,48 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * Remove all added headers
+     *
+     * @return {@code this}
+     */
+    public T clearHeaders() {
+        this.headers.clear();
+        return asDerivedType();
+    }
+
+    /**
+     * Set uni-value header for the request
+     *
+     * @param name header name
+     * @param value header value to set
+     * @return {@code this}
+     */
     public T setHeader(CharSequence name, String value) {
         this.headers.set(name, value);
         return asDerivedType();
     }
 
+    /**
+     * Set multi-values header for the request
+     *
+     * @param name header name
+     * @param values {@code Iterable} with multiple header values to set
+     * @return {@code this}
+     */
+    public T setHeader(CharSequence name, Iterable<String> values) {
+        this.headers.set(name, values);
+        return asDerivedType();
+    }
+
+    /**
+     * Add a header value for the request. If a header with {@code name} was setup for this request already -
+     * call will add one more header value and convert it to multi-value header
+     *
+     * @param name header name
+     * @param value header value to add
+     * @return {@code this}
+     */
     public T addHeader(CharSequence name, String value) {
         if (value == null) {
             LOGGER.warn("Value was null, set to \"\"");
@@ -180,6 +217,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         this.headers.add(name, value);
+        return asDerivedType();
+    }
+
+    /**
+     * Add header values for the request. If a header with {@code name} was setup for this request already -
+     * call will add more header values and convert it to multi-value header
+     *
+     * @param name header name
+     * @param values {@code Iterable} with multiple header values to add
+     * @return {@code}
+     */
+    public T addHeader(CharSequence name, Iterable<String> values) {
+        this.headers.add(name, values);
         return asDerivedType();
     }
 
@@ -191,13 +241,32 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setHeaders(Map<String, Collection<String>> headers) {
-        this.headers.clear();
+    /**
+     * Set request headers using a map {@code headers} of pair (Header name, Header values)
+     * This method could be used to setup multi-valued headers
+     *
+     * @param headers map of header names as the map keys and header values {@link Iterable} as the map values
+     * @return {@code this}
+     */
+    public T setHeaders(Map<String, ? extends Iterable<String>> headers) {
+        clearHeaders();
         if (headers != null) {
-            for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
-                String headerName = entry.getKey();
-                this.headers.add(headerName, entry.getValue());
-            }
+            headers.forEach((name, values) -> this.headers.add(name, values));
+        }
+        return asDerivedType();
+    }
+
+    /**
+     * Set single-value request headers using a map {@code headers} of pairs (Header name, Header value).
+     * To set headers with multiple values use {@link #setHeaders(Map)}
+     *
+     * @param headers map of header names as the map keys and header values as the map values
+     * @return {@code this}
+     */
+    public T setSingleHeaders(Map<String, String> headers) {
+        clearHeaders();
+        if (headers != null) {
+            headers.forEach((name, value) -> this.headers.add(name, value));
         }
         return asDerivedType();
     }
