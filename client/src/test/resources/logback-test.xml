@@ -7,7 +7,7 @@
 
     <logger name="org.eclipse" level="INFO"/>
 
-    <root level="debug">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
