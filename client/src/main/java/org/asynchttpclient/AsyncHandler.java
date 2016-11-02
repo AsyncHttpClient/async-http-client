@@ -40,6 +40,10 @@ package org.asynchttpclient;
  *   client.prepareGet("http://...").execute(ah);
  * </pre></blockquote>
  * It is recommended to create a new instance instead.
+ * 
+ * Do NOT perform any blocking operation in there, typically trying to send another request and call get() on its future.
+ * There's a chance you might end up in a dead lock.
+ * If you really to perform blocking operation, executed it in a different dedicated thread pool.
  *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
