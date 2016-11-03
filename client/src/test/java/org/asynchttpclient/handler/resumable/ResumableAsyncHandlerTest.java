@@ -1,5 +1,3 @@
-package org.asynchttpclient.handler.resumable;
-
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
  *
@@ -12,6 +10,7 @@ package org.asynchttpclient.handler.resumable;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
+package org.asynchttpclient.handler.resumable;
 
 import static org.asynchttpclient.Dsl.get;
 import static org.mockito.Matchers.anyObject;

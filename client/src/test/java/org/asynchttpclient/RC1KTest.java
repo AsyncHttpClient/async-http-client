@@ -40,12 +40,12 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
- * Reverse C10K Problem test.
+ * Reverse C1K Problem test.
  * 
  * @author Hubert Iwaniuk
  */
-public class RC10KTest extends AbstractBasicTest {
-    private static final int C10K = 1000;
+public class RC1KTest extends AbstractBasicTest {
+    private static final int C1K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;
     protected Server[] servers = new Server[SRV_COUNT];
@@ -89,10 +89,10 @@ public class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C10K).setKeepAlive(true))) {
-            List<Future<Integer>> resps = new ArrayList<>(C10K);
+        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {
+            List<Future<Integer>> resps = new ArrayList<>(C1K);
             int i = 0;
-            while (i < C10K) {
+            while (i < C1K) {
                 resps.add(ahc.prepareGet(String.format("http://localhost:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
             }
             i = 0;
