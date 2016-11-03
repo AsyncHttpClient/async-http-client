@@ -125,6 +125,6 @@ public class TestAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public ClientStats getClientStats() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

@@ -1,3 +1,16 @@
+/*
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -6,6 +19,9 @@ import static org.testng.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.testng.annotations.Test;
 
@@ -16,7 +32,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testClientStatus() throws Throwable {
-        try (final DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();
@@ -26,11 +42,10 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(emptyStats.getIdleConnectionCount(), 0);
             assertEquals(emptyStats.getTotalConnectionCount(), 0);
 
-            final List<ListenableFuture<Response>> futures = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                logger.info("{} requesting url [{}]...", i, url);
-                futures.add(client.prepareGet(url).setHeader("LockThread", "6").execute());
-            }
+            final List<ListenableFuture<Response>> futures =
+                    Stream.generate(() -> client.prepareGet(url).setHeader("LockThread","6").execute())
+                            .limit(5)
+                            .collect(Collectors.toList());
 
             Thread.sleep(2000);
 
@@ -41,9 +56,7 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(activeStats.getIdleConnectionCount(), 0);
             assertEquals(activeStats.getTotalConnectionCount(), 5);
 
-            for (final ListenableFuture<Response> future : futures) {
-                future.get();
-            }
+            futures.forEach(future -> future.toCompletableFuture().join());
 
             Thread.sleep(1000);
 
@@ -56,11 +69,10 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             // Let's make sure the active count is correct when reusing cached connections.
 
-            final List<ListenableFuture<Response>> repeatedFutures = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                logger.info("{} requesting url [{}]...", i, url);
-                repeatedFutures.add(client.prepareGet(url).setHeader("LockThread", "6").execute());
-            }
+            final List<ListenableFuture<Response>> repeatedFutures =
+                    Stream.generate(() -> client.prepareGet(url).setHeader("LockThread","6").execute())
+                            .limit(3)
+                            .collect(Collectors.toList());
 
             Thread.sleep(2000);
 
@@ -71,9 +83,7 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(activeCachedStats.getIdleConnectionCount(), 2);
             assertEquals(activeCachedStats.getTotalConnectionCount(), 5);
 
-            for (final ListenableFuture<Response> future : repeatedFutures) {
-                future.get();
-            }
+            repeatedFutures.forEach(future -> future.toCompletableFuture().join());
 
             Thread.sleep(1000);
 
@@ -97,7 +107,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testClientStatusNoKeepalive() throws Throwable {
-        try (final DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config().setKeepAlive(false))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();
@@ -107,11 +117,10 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(emptyStats.getIdleConnectionCount(), 0);
             assertEquals(emptyStats.getTotalConnectionCount(), 0);
 
-            final List<ListenableFuture<Response>> futures = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                logger.info("{} requesting url [{}]...", i, url);
-                futures.add(client.prepareGet(url).setHeader("LockThread", "6").execute());
-            }
+            final List<ListenableFuture<Response>> futures =
+                    Stream.generate(() -> client.prepareGet(url).setHeader("LockThread","6").execute())
+                            .limit(5)
+                            .collect(Collectors.toList());
 
             Thread.sleep(2000);
 
@@ -122,9 +131,7 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(activeStats.getIdleConnectionCount(), 0);
             assertEquals(activeStats.getTotalConnectionCount(), 5);
 
-            for (final ListenableFuture<Response> future : futures) {
-                future.get();
-            }
+            futures.forEach(future -> future.toCompletableFuture().join());
 
             Thread.sleep(1000);
 
@@ -137,11 +144,10 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             // Let's make sure the active count is correct when reusing cached connections.
 
-            final List<ListenableFuture<Response>> repeatedFutures = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                logger.info("{} requesting url [{}]...", i, url);
-                repeatedFutures.add(client.prepareGet(url).setHeader("LockThread", "6").execute());
-            }
+            final List<ListenableFuture<Response>> repeatedFutures =
+                    Stream.generate(() -> client.prepareGet(url).setHeader("LockThread","6").execute())
+                            .limit(3)
+                            .collect(Collectors.toList());
 
             Thread.sleep(2000);
 
@@ -152,9 +158,7 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(activeCachedStats.getIdleConnectionCount(), 0);
             assertEquals(activeCachedStats.getTotalConnectionCount(), 3);
 
-            for (final ListenableFuture<Response> future : repeatedFutures) {
-                future.get();
-            }
+            repeatedFutures.forEach(future -> future.toCompletableFuture().join());
 
             Thread.sleep(1000);
 

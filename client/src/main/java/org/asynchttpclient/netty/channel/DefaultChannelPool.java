@@ -358,12 +358,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
     @Override
     public long getIdleChannelCount() {
-        return partitions.reduceValuesToLong(
-                Long.MAX_VALUE,
-                ConcurrentLinkedDeque::size,
-                0,
-                (left, right) -> left + right
-        );
+        return partitions.values().stream().mapToLong(ConcurrentLinkedDeque::size).sum();
     }
 
     public enum PoolLeaseStrategy {

@@ -129,6 +129,6 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public ClientStats getClientStats() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

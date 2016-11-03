@@ -55,6 +55,4 @@ public enum NoopChannelPool implements ChannelPool {
     public long getIdleChannelCount() {
         return 0;
     }
-
-
 }
