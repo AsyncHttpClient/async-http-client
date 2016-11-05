@@ -71,7 +71,7 @@ public class RealmTest {
         String ha2 = getMd5(method + ":" + uri.getPath());
         String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + ha2);
 
-        assertEquals(expectedResponse, orig.getResponse());
+        assertEquals(orig.getResponse(), expectedResponse);
     }
 
     @Test(groups = "standalone")
@@ -96,7 +96,7 @@ public class RealmTest {
         String ha2 = getMd5(method + ":" + uri.getPath());
         String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
 
-        assertEquals(expectedResponse, orig.getResponse());
+        assertEquals(orig.getResponse(), expectedResponse);
     }
 
     private String getMd5(String what) {
