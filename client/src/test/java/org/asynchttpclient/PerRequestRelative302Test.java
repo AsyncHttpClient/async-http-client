@@ -91,12 +91,12 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
-            Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "https://www.microsoft.com/").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
 
-            String anyMicrosoftPage = "http://www.microsoft.com[^:]*:80";
+            String anyMicrosoftPage = "https://www.microsoft.com[^:]*:443";
             String baseUrl = getBaseUrl(response.getUri());
 
             assertTrue(baseUrl.matches(anyMicrosoftPage), "response does not show redirection to " + anyMicrosoftPage);
