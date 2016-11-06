@@ -40,19 +40,23 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ClientStats;
-import org.asynchttpclient.SslEngineFactory;
+import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.channel.NoopChannelPool;
@@ -491,9 +495,26 @@ public class ChannelManager {
     }
 
     public ClientStats getClientStats() {
-        final long totalConnectionCount = openChannels.size();
-        final long idleConnectionCount = channelPool.getIdleChannelCount();
-        final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
-        return new ClientStats(activeConnectionCount, idleConnectionCount);
+        final Map<String, Long> totalConnectionsPerHost = openChannels
+                    .stream()
+                    .map(Channel::remoteAddress)
+                    .filter(a -> a.getClass() == InetSocketAddress.class)
+                    .map(a -> (InetSocketAddress) a)
+                    .map(InetSocketAddress::getHostName)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        final Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
+        final Map<String, HostStats> statsPerHost = totalConnectionsPerHost
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Entry::getKey,
+                        entry -> {
+                            final long totalConnectionCount = entry.getValue();
+                            final long idleConnectionCount = idleConnectionsPerHost.getOrDefault(entry.getKey(), 0L);
+                            final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
+                            return new HostStats(activeConnectionCount, idleConnectionCount);
+                        }
+                ));
+        return new ClientStats(statsPerHost);
     }
 }

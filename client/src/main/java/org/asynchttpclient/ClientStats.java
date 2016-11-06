@@ -13,50 +13,68 @@
  */
 package org.asynchttpclient;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * A record class representing the state of an (@link org.asynchttpclient.AsyncHttpClient)
+ * A record class representing the state of an (@link org.asynchttpclient.AsyncHttpClient).
  */
 public class ClientStats {
 
-    private final long activeConnectionCount;
-    private final long idleConnectionCount;
+    private final Map<String, HostStats> statsPerHost;
 
-    public ClientStats(long activeConnectionCount,
-                       long idleConnectionCount) {
-        this.activeConnectionCount = activeConnectionCount;
-        this.idleConnectionCount = idleConnectionCount;
+    public ClientStats(Map<String, HostStats> statsPerHost) {
+        this.statsPerHost = Collections.unmodifiableMap(statsPerHost);
     }
 
     /**
-     * @return The sum of {@link #getActiveConnectionCount()} and {@link #getIdleConnectionCount()},
+     * @return A map from hostname to statistics on that host's connections.
+     * The returned map is an {@link java.util.Collections.UnmodifiableMap}.
+     */
+    public Map<String, HostStats> getStatsPerHost() {
+        return statsPerHost;
+    }
+
+    /**
+     * @return The sum of {@link #getTotalActiveConnectionCount()} and {@link #getTotalIdleConnectionCount()},
      * a long representing the total number of connections in the connection pool.
      */
     public long getTotalConnectionCount() {
-        return activeConnectionCount + idleConnectionCount;
+        return statsPerHost
+                .values()
+                .stream()
+                .mapToLong(HostStats::getHostConnectionCount)
+                .sum();
     }
 
     /**
-     * @return A long representing the number of active connection in the connection pool.
+     * @return A long representing the number of active connections in the connection pool.
      */
-    public long getActiveConnectionCount() {
-        return activeConnectionCount;
+    public long getTotalActiveConnectionCount() {
+        return statsPerHost
+                .values()
+                .stream()
+                .mapToLong(HostStats::getHostActiveConnectionCount)
+                .sum();
     }
 
     /**
-     *
      * @return A long representing the number of idle connections in the connection pool.
      */
-    public long getIdleConnectionCount() {
-        return idleConnectionCount;
+    public long getTotalIdleConnectionCount() {
+        return statsPerHost
+                .values()
+                .stream()
+                .mapToLong(HostStats::getHostIdleConnectionCount)
+                .sum();
     }
 
     @Override
     public String toString() {
         return "There are " + getTotalConnectionCount() +
-                " total connections, " + getActiveConnectionCount() +
-                " are active and " + getIdleConnectionCount() + " are idle.";
+                " total connections, " + getTotalActiveConnectionCount() +
+                " are active and " + getTotalIdleConnectionCount() + " are idle.";
     }
 
     @Override
@@ -64,12 +82,11 @@ public class ClientStats {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ClientStats that = (ClientStats) o;
-        return activeConnectionCount == that.activeConnectionCount &&
-                idleConnectionCount == that.idleConnectionCount;
+        return Objects.equals(statsPerHost, that.statsPerHost);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(activeConnectionCount, idleConnectionCount);
+        return Objects.hashCode(statsPerHost);
     }
 }
