@@ -182,17 +182,17 @@ public class Utf8ByteBufCharsetDecoder {
 
         int totalSize = 0;
         int totalNioBuffers = 0;
-        boolean direct = false;
+        boolean withoutArray = false;
         for (ByteBuf buf : bufs) {
-            if (buf.isDirect()) {
-                direct = true;
+            if (!buf.hasArray()) {
+                withoutArray = true;
                 break;
             }
             totalSize += buf.readableBytes();
             totalNioBuffers += buf.nioBufferCount();
         }
 
-        if (direct) {
+        if (withoutArray) {
             return ByteBufUtils.decodeNonOptimized(UTF_8, bufs);
 
         } else {
