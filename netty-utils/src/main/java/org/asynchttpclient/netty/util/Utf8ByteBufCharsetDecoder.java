@@ -74,7 +74,7 @@ public class Utf8ByteBufCharsetDecoder {
 
     public void reset() {
         decoder.reset();
-        charBuffer.position(0);
+        charBuffer.clear();
     }
 
     private static int charSize(byte firstByte) throws CharacterCodingException {
