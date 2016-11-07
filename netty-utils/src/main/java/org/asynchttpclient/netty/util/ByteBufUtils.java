@@ -27,7 +27,7 @@ public final class ByteBufUtils {
     }
 
     public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
-        if (charset == UTF_8 || charset == US_ASCII) {
+        if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
             return Utf8ByteBufCharsetDecoder.decodeUtf8(buf);
         } else {
             return buf.toString(charset);
@@ -35,7 +35,7 @@ public final class ByteBufUtils {
     }
 
     public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
-        if (charset == UTF_8 || charset == US_ASCII) {
+        if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
             return Utf8ByteBufCharsetDecoder.decodeUtf8(bufs);
         } else {
             CompositeByteBuf composite = Unpooled.compositeBuffer(bufs.length);
