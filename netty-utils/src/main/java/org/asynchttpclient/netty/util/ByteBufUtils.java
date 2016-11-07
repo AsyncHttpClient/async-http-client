@@ -34,23 +34,28 @@ public final class ByteBufUtils {
         }
     }
 
+    public static String decodeNonOptimized(Charset charset, ByteBuf... bufs) {
+        
+        CompositeByteBuf composite = Unpooled.compositeBuffer(bufs.length);
+
+        try {
+            for (ByteBuf buf : bufs) {
+                buf.retain();
+                composite.addComponent(buf);
+            }
+
+            return composite.toString(charset);
+
+        } finally {
+            composite.release();
+        }
+    }
+    
     public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
         if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
             return Utf8ByteBufCharsetDecoder.decodeUtf8(bufs);
         } else {
-            CompositeByteBuf composite = Unpooled.compositeBuffer(bufs.length);
-
-            try {
-                for (ByteBuf buf : bufs) {
-                    buf.retain();
-                    composite.addComponent(buf);
-                }
-
-                return composite.toString(charset);
-
-            } finally {
-                composite.release();
-            }
+            return decodeNonOptimized(charset, bufs);
         }
     }
 

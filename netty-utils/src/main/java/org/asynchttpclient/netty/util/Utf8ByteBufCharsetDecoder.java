@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -194,12 +193,7 @@ public class Utf8ByteBufCharsetDecoder {
         }
 
         if (direct) {
-            ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(bufs);
-            try {
-                return wrappedBuffer.toString(UTF_8);
-            } finally {
-                wrappedBuffer.release();
-            }
+            return ByteBufUtils.decodeNonOptimized(UTF_8, bufs);
 
         } else {
             ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
