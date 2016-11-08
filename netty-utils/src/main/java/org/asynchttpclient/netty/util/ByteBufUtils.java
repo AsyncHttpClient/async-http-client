@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.util;
 
 import static java.nio.charset.StandardCharsets.*;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.nio.charset.CharacterCodingException;
@@ -35,22 +34,21 @@ public final class ByteBufUtils {
     }
 
     public static String decodeNonOptimized(Charset charset, ByteBuf... bufs) {
-        
-        CompositeByteBuf composite = Unpooled.compositeBuffer(bufs.length);
+
+        for (ByteBuf buf : bufs) {
+            buf.retain();
+        }
+
+        ByteBuf composite = Unpooled.wrappedBuffer(bufs);
 
         try {
-            for (ByteBuf buf : bufs) {
-                buf.retain();
-                composite.addComponent(buf);
-            }
-
             return composite.toString(charset);
 
         } finally {
             composite.release();
         }
     }
-    
+
     public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
         if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
             return Utf8ByteBufCharsetDecoder.decodeUtf8(bufs);
