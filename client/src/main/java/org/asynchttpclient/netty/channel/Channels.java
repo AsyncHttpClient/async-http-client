@@ -13,13 +13,11 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelId;
-import io.netty.channel.DefaultChannelId;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.netty.DiscardEvent;
 import org.slf4j.Logger;
@@ -30,7 +28,6 @@ public class Channels {
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
-    private static final AttributeKey<ChannelId> CHANNEL_ID_ATTRIBUTE = AttributeKey.valueOf("channelId");
     private static final AttributeKey<AtomicBoolean> INACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("inactiveToken");
 
     public static Object getAttribute(Channel channel) {
@@ -56,15 +53,6 @@ public class Channels {
     
     public static boolean getInactiveToken(Channel channel) {
         return channel != null && channel.attr(INACTIVE_TOKEN_ATTRIBUTE).get().getAndSet(false);
-    }
-
-    public static ChannelId getChannelId(Channel channel) {
-        Attribute<ChannelId> attr = channel.attr(CHANNEL_ID_ATTRIBUTE);
-        return attr != null ? attr.get() : null;
-    }
-
-    public static void initChannelId(Channel channel) {
-        channel.attr(CHANNEL_ID_ATTRIBUTE).set(new DefaultChannelId());
     }
 
     public static void silentlyCloseChannel(Channel channel) {

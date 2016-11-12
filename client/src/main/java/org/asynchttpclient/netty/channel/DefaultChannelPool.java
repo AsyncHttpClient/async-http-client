@@ -58,10 +58,6 @@ public final class DefaultChannelPool implements ChannelPool {
                 config.getConnectionPoolCleanerPeriod());
     }
 
-    private ChannelId channelId(Channel channel) {
-        return Channels.getChannelId(channel);
-    }
-
     public DefaultChannelPool(int maxIdleTime,//
             int connectionTtl,//
             Timer nettyTimer,//
@@ -136,7 +132,7 @@ public final class DefaultChannelPool implements ChannelPool {
         if (!connectionTtlEnabled)
             return false;
 
-        ChannelCreation creation = channelId2Creation.get(channelId(channel));
+        ChannelCreation creation = channelId2Creation.get(channel.id());
         return creation != null && now - creation.creationTime >= connectionTtl;
     }
 
@@ -218,7 +214,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 if (!closedChannels.isEmpty()) {
                     if (connectionTtlEnabled) {
                         for (IdleChannel closedChannel : closedChannels)
-                            channelId2Creation.remove(channelId(closedChannel.channel));
+                            channelId2Creation.remove(closedChannel.channel.id());
                     }
 
                     partition.removeAll(closedChannels);
@@ -264,7 +260,7 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void registerChannelCreation(Channel channel, Object partitionKey, long now) {
-        ChannelId id = channelId(channel);
+        ChannelId id = channel.id();
         if (!channelId2Creation.containsKey(id)) {
             channelId2Creation.putIfAbsent(id, new ChannelCreation(now, partitionKey));
         }
@@ -300,7 +296,7 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = connectionTtlEnabled ? channelId2Creation.remove(channelId(channel)) : null;
+        ChannelCreation creation = connectionTtlEnabled ? channelId2Creation.remove(channel.id()) : null;
         return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(channel);
     }
 
@@ -328,7 +324,7 @@ public final class DefaultChannelPool implements ChannelPool {
         // FIXME pity to have to do this here
         Channels.setDiscard(channel);
         if (connectionTtlEnabled) {
-            channelId2Creation.remove(channelId(channel));
+            channelId2Creation.remove(channel.id());
         }
         Channels.silentlyCloseChannel(channel);
     }

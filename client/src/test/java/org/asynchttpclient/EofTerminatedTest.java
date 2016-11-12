@@ -51,7 +51,8 @@ public class EofTerminatedTest extends AbstractBasicTest {
     @Test(enabled = false)
     public void testEolTerminatedResponse() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, GZIP_DEFLATE).setHeader(CONNECTION, CLOSE).build()).get();
+            //FIXME
+            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, "gzip, deflate").setHeader(CONNECTION, CLOSE).build()).get();
         }
     }
 }

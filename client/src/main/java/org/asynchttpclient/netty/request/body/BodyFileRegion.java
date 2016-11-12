@@ -24,6 +24,7 @@ import io.netty.util.AbstractReferenceCounted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
+
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
@@ -48,7 +49,34 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
 
     @Override
     public long transfered() {
+        return transferred();
+    }
+
+    @Override
+    public long transferred() {
         return transferred;
+    }
+
+    @Override
+    public FileRegion retain() {
+        super.retain();
+        return this;
+    }
+
+    @Override
+    public FileRegion retain(int arg0) {
+        super.retain(arg0);
+        return this;
+    }
+
+    @Override
+    public FileRegion touch() {
+        return this;
+    }
+
+    @Override
+    public FileRegion touch(Object arg0) {
+        return this;
     }
 
     @Override

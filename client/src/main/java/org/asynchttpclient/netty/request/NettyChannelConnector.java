@@ -26,7 +26,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
-import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,6 @@ public class NettyChannelConnector {
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
     private final AsyncHttpClientState clientState;
-    private final boolean connectionTtlEnabled;
     private volatile int i = 0;
 
     public NettyChannelConnector(InetAddress localAddress,//
@@ -51,7 +49,6 @@ public class NettyChannelConnector {
         this.remoteAddresses = remoteAddresses;
         this.asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
         this.clientState = clientState;
-        this.connectionTtlEnabled = config.getConnectionTtl() > 0;
     }
 
     private boolean pickNextRemoteAddress() {
@@ -85,9 +82,6 @@ public class NettyChannelConnector {
                     public void onSuccess(Channel channel) {
                         if (asyncHandlerExtensions != null) {
                             asyncHandlerExtensions.onTcpConnectSuccess(remoteAddress, channel);
-                        }
-                        if (connectionTtlEnabled) {
-                            Channels.initChannelId(channel);
                         }
                         connectListener.onSuccess(channel, remoteAddress);
                     }

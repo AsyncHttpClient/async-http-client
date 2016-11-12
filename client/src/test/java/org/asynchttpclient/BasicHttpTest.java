@@ -925,7 +925,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_JSON);
+                h.add(CONTENT_TYPE, "application/json"); //FIXME
                 server.enqueue(new AbstractHandler() {
                     EchoHandler chain = new EchoHandler();
                     @Override
@@ -959,7 +959,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_JSON);
+                h.add(CONTENT_TYPE, "application/json"); //FIXME
                 server.enqueue(new AbstractHandler() {
                     EchoHandler chain = new EchoHandler();
                     @Override
