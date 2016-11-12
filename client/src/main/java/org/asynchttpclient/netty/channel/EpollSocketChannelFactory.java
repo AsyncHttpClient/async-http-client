@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.bootstrap.ChannelFactory;
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.epoll.EpollSocketChannel;
 
 class EpollSocketChannelFactory implements ChannelFactory<EpollSocketChannel> {

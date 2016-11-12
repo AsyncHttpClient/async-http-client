@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -59,10 +59,10 @@ public class BasicHttpProxyToHttpTest {
         protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
             LOGGER.debug(">>> got a request !");
 
-            String authorization = request.getHeader(PROXY_AUTHORIZATION);
+            String authorization = request.getHeader(PROXY_AUTHORIZATION.toString());
             if (authorization == null) {
                 response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
-                response.setHeader(PROXY_AUTHENTICATE, "Basic realm=\"Fake Realm\"");
+                response.setHeader(PROXY_AUTHENTICATE.toString(), "Basic realm=\"Fake Realm\"");
                 response.getOutputStream().flush();
 
             } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {

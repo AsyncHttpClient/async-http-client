@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.request;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.*;
@@ -24,6 +25,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -46,8 +48,8 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.handler.TransferCompletionHandler;
-import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
@@ -110,7 +112,7 @@ public final class NettyRequestSender {
     private boolean isConnectDone(Request request, NettyResponseFuture<?> future) {
         return future != null //
                 && future.getNettyRequest() != null //
-                && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT //
+                && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT //
                 && !request.getMethod().equals(CONNECT);
     }
 
@@ -220,7 +222,7 @@ public final class NettyRequestSender {
 
         if (LOGGER.isDebugEnabled()) {
             HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-            LOGGER.debug("Using open Channel {} for {} '{}'", channel, httpRequest.getMethod(), httpRequest.getUri());
+            LOGGER.debug("Using open Channel {} for {} '{}'", channel, httpRequest.method(), httpRequest.uri());
         }
 
         // channelInactive might be called between isChannelValid and writeRequest
@@ -316,8 +318,8 @@ public final class NettyRequestSender {
                 request.getChannelPoolPartitioning(),//
                 proxyServer);
 
-        String expectHeader = request.getHeaders().get(HttpHeaders.Names.EXPECT);
-        if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE))
+        String expectHeader = request.getHeaders().get(EXPECT);
+        if (HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(expectHeader))
             future.setDontWriteBodyBecauseExpectContinue(true);
         return future;
     }
@@ -338,7 +340,7 @@ public final class NettyRequestSender {
             if (handler instanceof TransferCompletionHandler)
                 configureTransferAdapter(handler, httpRequest);
 
-            boolean writeBody = !future.isDontWriteBodyBecauseExpectContinue() && httpRequest.getMethod() != HttpMethod.CONNECT && nettyRequest.getBody() != null;
+            boolean writeBody = !future.isDontWriteBodyBecauseExpectContinue() && httpRequest.method() != HttpMethod.CONNECT && nettyRequest.getBody() != null;
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 if (handler instanceof AsyncHandlerExtensions) {

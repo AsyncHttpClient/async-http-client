@@ -83,7 +83,7 @@ public final class NettyConnectListener<T> {
 
         if (LOGGER.isDebugEnabled()) {
             HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-            LOGGER.debug("Using new Channel '{}' for '{}' to '{}'", channel, httpRequest.getMethod(), httpRequest.getUri());
+            LOGGER.debug("Using new Channel '{}' for '{}' to '{}'", channel, httpRequest.method(), httpRequest.uri());
         }
 
         Channels.setAttribute(channel, future);

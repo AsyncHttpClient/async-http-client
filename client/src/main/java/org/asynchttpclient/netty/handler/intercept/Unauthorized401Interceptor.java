@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 
 import java.util.List;
 
@@ -171,8 +172,8 @@ public class Unauthorized401Interceptor {
 
         LOGGER.debug("Sending authentication to {}", request.getUri());
         if (future.isKeepAlive()//
-                && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
-                && !HttpHeaders.isTransferEncodingChunked(response)) {
+                && !HttpUtil.isTransferEncodingChunked(httpRequest)//
+                && !HttpUtil.isTransferEncodingChunked(response)) {
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
         } else {

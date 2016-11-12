@@ -21,14 +21,14 @@ import java.nio.ByteBuffer;
 public class NettyByteBufferBody extends NettyDirectBody {
 
     private final ByteBuffer bb;
-    private final String contentType;
+    private final CharSequence contentType;
     private final long length;
 
     public NettyByteBufferBody(ByteBuffer bb) {
         this(bb, null);
     }
 
-    public NettyByteBufferBody(ByteBuffer bb, String contentType) {
+    public NettyByteBufferBody(ByteBuffer bb, CharSequence contentType) {
         this.bb = bb;
         length = bb.remaining();
         bb.mark();
@@ -41,7 +41,7 @@ public class NettyByteBufferBody extends NettyDirectBody {
     }
 
     @Override
-    public String getContentType() {
+    public CharSequence getContentType() {
         return contentType;
     }
 

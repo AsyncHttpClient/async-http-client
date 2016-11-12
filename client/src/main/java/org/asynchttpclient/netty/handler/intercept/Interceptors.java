@@ -65,7 +65,7 @@ public class Interceptors {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         ProxyServer proxyServer = future.getProxyServer();
-        int statusCode = response.getStatus().code();
+        int statusCode = response.status().code();
         Request request = future.getCurrentRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
@@ -85,7 +85,7 @@ public class Interceptors {
         } else if (Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
             return redirect30xInterceptor.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
 
-        } else if (httpRequest.getMethod() == HttpMethod.CONNECT && statusCode == OK_200) {
+        } else if (httpRequest.method() == HttpMethod.CONNECT && statusCode == OK_200) {
             return connectSuccessInterceptor.exitAfterHandlingConnect(channel, future, request, proxyServer, statusCode, httpRequest);
 
         }

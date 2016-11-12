@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.util;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;

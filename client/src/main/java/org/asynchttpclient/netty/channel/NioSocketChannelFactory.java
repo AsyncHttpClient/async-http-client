@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.bootstrap.ChannelFactory;
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 enum NioSocketChannelFactory implements ChannelFactory<NioSocketChannel> {

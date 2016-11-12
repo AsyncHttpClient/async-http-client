@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.Values.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.*;
+import io.netty.handler.codec.http.HttpHeaderValues;
 
 import java.io.IOException;
 
@@ -51,8 +51,8 @@ public class EofTerminatedTest extends AbstractBasicTest {
     @Test(enabled = false)
     public void testEolTerminatedResponse() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
-            //FIXME
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, "gzip, deflate").setHeader(CONNECTION, CLOSE).build()).get();
+            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
+                    .get();
         }
     }
 }

@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -160,7 +160,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                 public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
                     try {
                         int i = 0;
-                        for (String header : response.getHeaders().getAll(HttpHeaders.Names.CONTENT_LENGTH)) {
+                        for (String header : response.getHeaders().getAll(CONTENT_LENGTH)) {
                             clHeaders[i++] = header;
                         }
                     } finally {

@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.*;
-import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.util.Arrays;
@@ -86,7 +86,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 server.enqueueEcho();
 
                 String responseBody = client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)//
+                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
                         .addFormParam("param_1", "value_1")//
                         .execute(new AsyncHandlerAdapter() {
                             private StringBuilder builder = new StringBuilder();
@@ -127,7 +127,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 final AtomicBoolean onThrowable = new AtomicBoolean();
 
                 client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)//
+                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
                         .addFormParam("param_1", "value_1")//
                         .execute(new AsyncHandlerAdapter() {
 
@@ -250,7 +250,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
                 BoundRequestBuilder rb = client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)//
+                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
                         .addFormParam("param_1", "value_1");
 
                 Future<String> f = rb.execute(new AsyncHandlerAdapter() {
@@ -328,7 +328,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                 server.enqueueResponse(response -> {
                     response.setStatus(302);
-                    response.setHeader(LOCATION, redirectUrl);
+                    response.setHeader(LOCATION.toString(), redirectUrl);
                     response.getOutputStream().println("You are being asked to redirect to " + redirectUrl);
                 });
                 server.enqueueOk();

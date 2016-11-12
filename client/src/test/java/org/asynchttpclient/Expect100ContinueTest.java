@@ -15,10 +15,11 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderValues;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -63,7 +64,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + "/")//
-                    .setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE)//
+                    .setHeader(EXPECT, HttpHeaderValues.CONTINUE)//
                     .setBody(SIMPLE_TEXT_FILE)//
                     .execute();
             Response resp = f.get();

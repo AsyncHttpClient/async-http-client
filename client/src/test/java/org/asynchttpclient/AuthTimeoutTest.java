@@ -12,11 +12,11 @@
  */
 package org.asynchttpclient;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -73,7 +73,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
             OutputStream out = response.getOutputStream();
             if (request.getHeader("X-Content") != null) {
                 String content = request.getHeader("X-Content");
-                response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(content.getBytes(UTF_8).length));
+                response.setHeader(CONTENT_LENGTH.toString(), String.valueOf(content.getBytes(UTF_8).length));
                 out.write(content.substring(1).getBytes(UTF_8));
             } else {
                 response.setStatus(200);

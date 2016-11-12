@@ -23,7 +23,7 @@ public interface NettyBody {
 
     long getContentLength();
 
-    String getContentType();
+    CharSequence getContentType();
 
     void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
 }

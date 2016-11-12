@@ -13,8 +13,7 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.Values.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.*;
@@ -22,6 +21,7 @@ import static org.asynchttpclient.test.TestUtils.*;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
@@ -193,7 +193,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
 
                 Map<String, List<String>> m = new HashMap<>();
                 for (int i = 0; i < 5; i++) {
@@ -253,7 +253,7 @@ public class BasicHttpTest extends HttpTest {
                             @Override
                             public Response onCompleted(Response response) throws Exception {
                                 assertEquals(response.getStatusCode(), 200);
-                                assertEquals(response.getHeader(TRANSFER_ENCODING), CHUNKED);
+                                assertEquals(response.getHeader(TRANSFER_ENCODING), HttpHeaderValues.CHUNKED.toString());
                                 return response;
                             }
                         }).get(TIMEOUT, SECONDS);
@@ -302,7 +302,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
 
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < 5; i++) {
@@ -335,7 +335,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < 5; i++) {
                     sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -367,7 +367,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < 5; i++) {
                     sb.append("param_").append(i).append("=value_").append(i).append("&");
@@ -667,7 +667,7 @@ public class BasicHttpTest extends HttpTest {
         withClient(config().setRequestTimeout(1_000)).run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                 h.add("X-Delay", 2_000);
 
                 server.enqueueEcho();
@@ -822,7 +822,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                 h.add("X-Delay", 2_000);
 
                 CountDownLatch latch = new CountDownLatch(1);
@@ -925,15 +925,15 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, "application/json"); //FIXME
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                 server.enqueue(new AbstractHandler() {
                     EchoHandler chain = new EchoHandler();
                     @Override
                     public void handle(String target, org.eclipse.jetty.server.Request request,
                                        HttpServletRequest httpServletRequest,
                                        HttpServletResponse httpServletResponse) throws IOException, ServletException {
-                        assertEquals(request.getHeader(TRANSFER_ENCODING), CHUNKED);
-                        assertNull(request.getHeader(CONTENT_LENGTH));
+                        assertEquals(request.getHeader(TRANSFER_ENCODING.toString()), HttpHeaderValues.CHUNKED.toString());
+                        assertNull(request.getHeader(CONTENT_LENGTH.toString()));
                         chain.handle(target, request, httpServletRequest, httpServletResponse);
                     }
                 });
@@ -959,15 +959,15 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 HttpHeaders h = new DefaultHttpHeaders();
-                h.add(CONTENT_TYPE, "application/json"); //FIXME
+                h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                 server.enqueue(new AbstractHandler() {
                     EchoHandler chain = new EchoHandler();
                     @Override
                     public void handle(String target, org.eclipse.jetty.server.Request request,
                                        HttpServletRequest httpServletRequest,
                                        HttpServletResponse httpServletResponse) throws IOException, ServletException {
-                        assertNull(request.getHeader(TRANSFER_ENCODING));
-                        assertEquals(request.getHeader(CONTENT_LENGTH),//
+                        assertNull(request.getHeader(TRANSFER_ENCODING.toString()));
+                        assertEquals(request.getHeader(CONTENT_LENGTH.toString()),//
                                      Integer.toString("{}".getBytes(StandardCharsets.ISO_8859_1).length));
                         chain.handle(target, request, httpServletRequest, httpServletResponse);
                     }

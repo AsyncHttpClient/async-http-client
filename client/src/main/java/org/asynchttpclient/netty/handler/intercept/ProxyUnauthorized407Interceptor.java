@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
@@ -21,6 +22,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 
 import java.util.List;
 
@@ -72,7 +74,7 @@ public class ProxyUnauthorized407Interceptor {
             return false;
         }
 
-        List<String> proxyAuthHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
+        List<String> proxyAuthHeaders = response.headers().getAll(PROXY_AUTHENTICATE);
 
         if (proxyAuthHeaders.isEmpty()) {
             LOGGER.info("Can't handle 407 as response doesn't contain Proxy-Authenticate headers");
@@ -173,8 +175,8 @@ public class ProxyUnauthorized407Interceptor {
 
         LOGGER.debug("Sending proxy authentication to {}", request.getUri());
         if (future.isKeepAlive()//
-                && !HttpHeaders.isTransferEncodingChunked(httpRequest)//
-                && !HttpHeaders.isTransferEncodingChunked(response)) {
+                && !HttpUtil.isTransferEncodingChunked(httpRequest)//
+                && !HttpUtil.isTransferEncodingChunked(response)) {
             future.setConnectAllowed(true);
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
@@ -195,7 +197,7 @@ public class ProxyUnauthorized407Interceptor {
             NettyResponseFuture<?> future) throws SpnegoEngineException {
 
         String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
-        headers.set(HttpHeaders.Names.PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
+        headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
     }
 
     private void ntlmProxyChallenge(String authenticateHeader,//
@@ -209,7 +211,7 @@ public class ProxyUnauthorized407Interceptor {
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
+            requestHeaders.set(PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
             future.setInProxyAuth(false);
 
         } else {
@@ -218,7 +220,7 @@ public class ProxyUnauthorized407Interceptor {
                     proxyRealm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
-            requestHeaders.set(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
+            requestHeaders.set(PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
         }
     }
 }

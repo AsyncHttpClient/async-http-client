@@ -13,10 +13,11 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static io.netty.handler.codec.http.HttpHeaders.Values.MULTIPART_FORM_DATA;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public class MultipartUtils {
         byte[] boundary;
         String contentType;
 
-        String contentTypeHeader = requestHeaders.get(HttpHeaders.Names.CONTENT_TYPE);
+        String contentTypeHeader = requestHeaders.get(CONTENT_TYPE);
         if (isNonEmpty(contentTypeHeader)) {
             int boundaryLocation = contentTypeHeader.indexOf("boundary=");
             if (boundaryLocation != -1) {
@@ -64,7 +65,7 @@ public class MultipartUtils {
             }
         } else {
             boundary = generateBoundary();
-            contentType = computeContentType(MULTIPART_FORM_DATA, boundary);
+            contentType = computeContentType(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
         }
 
         List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
@@ -104,9 +105,9 @@ public class MultipartUtils {
         return bytes;
     }
 
-    private static String computeContentType(String base, byte[] boundary) {
+    private static String computeContentType(CharSequence base, byte[] boundary) {
         StringBuilder buffer = StringUtils.stringBuilder().append(base);
-        if (!base.endsWith(";"))
+        if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
             buffer.append(';');
         return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
     }

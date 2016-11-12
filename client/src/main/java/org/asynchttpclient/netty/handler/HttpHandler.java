@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                 exitAfterHandlingReactiveStreams(channel, future, response, handler, httpRequest);
 
         if (exit)
-            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) || HttpHeaders.isTransferEncodingChunked(response));
+            finishUpdate(future, channel, HttpUtil.isTransferEncodingChunked(httpRequest) || HttpUtil.isTransferEncodingChunked(response));
     }
 
     private boolean exitAfterHandlingStatus(//
@@ -173,7 +174,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         try {
             if (e instanceof HttpObject) {
                 HttpObject object = (HttpObject) e;
-                Throwable t = object.getDecoderResult().cause();
+                Throwable t = object.decoderResult().cause();
                 if (t != null) {
                     readFailed(channel, future, t);
                     return;

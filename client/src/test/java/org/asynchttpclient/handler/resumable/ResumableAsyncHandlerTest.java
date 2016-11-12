@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.handler.resumable;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.get;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
@@ -49,13 +50,13 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
         Request request = get("http://test/url").build();
         Request newRequest = handler.adjustRequestRange(request);
         assertEquals(newRequest.getUri(), request.getUri());
-        String rangeHeader = newRequest.getHeaders().get(HttpHeaders.Names.RANGE);
+        String rangeHeader = newRequest.getHeaders().get(RANGE);
         assertNull(rangeHeader);
 
         proc.put("http://test/url", 5000);
         newRequest = handler.adjustRequestRange(request);
         assertEquals(newRequest.getUri(), request.getUri());
-        rangeHeader = newRequest.getHeaders().get(HttpHeaders.Names.RANGE);
+        rangeHeader = newRequest.getHeaders().get(RANGE);
         assertEquals(rangeHeader, "bytes=5000-");
     }
 
@@ -190,7 +191,7 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
     public void testOnHeadersReceivedContentLengthMinus() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
-        responseHeaders.add(HttpHeaders.Names.CONTENT_LENGTH, -1);
+        responseHeaders.add(CONTENT_LENGTH, -1);
         HttpResponseHeaders headers = new HttpResponseHeaders(responseHeaders);
         State status = handler.onHeadersReceived(headers);
         assertEquals(status, AsyncHandler.State.ABORT, "State should be ABORT for content length -1");

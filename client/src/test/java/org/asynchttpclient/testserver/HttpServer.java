@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.testserver;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.test.TestUtils.*;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -93,7 +93,7 @@ public class HttpServer implements Closeable {
     public void enqueueRedirect(int status, String location) {
         enqueueResponse(response -> {
             response.setStatus(status);
-            response.setHeader(HttpHeaders.Names.LOCATION, location);
+            response.setHeader(LOCATION.toString(), location);
         });
     }
 

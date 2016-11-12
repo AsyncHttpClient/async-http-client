@@ -15,11 +15,11 @@
  */
 package org.asynchttpclient;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
-import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -120,7 +120,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                 LOGGER.info("got redirected" + request.getRequestURI());
                 response.setStatus(200);
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
-                response.addHeader("X-" + HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getContentLength()));
+                response.addHeader("X-" + CONTENT_LENGTH, String.valueOf(request.getContentLength()));
                 byte[] b = "content".getBytes(UTF_8);
                 response.setContentLength(b.length);
                 response.getOutputStream().write(b);
@@ -140,7 +140,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
             } else {
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
-                response.addHeader("X-" + HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getContentLength()));
+                response.addHeader("X-" + CONTENT_LENGTH, String.valueOf(request.getContentLength()));
                 response.setStatus(200);
 
                 int size = 10 * 1024;

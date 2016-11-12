@@ -12,6 +12,15 @@
  */
 package org.asynchttpclient.handler.resumable;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -23,15 +32,6 @@ import org.asynchttpclient.Response.ResponseBuilder;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.handler.codec.http.HttpHeaders;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An {@link AsyncHandler} which support resumable download, e.g when used with an {@link ResumableIOExceptionFilter},
@@ -179,7 +179,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     @Override
     public AsyncHandler.State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
-        String contentLengthHeader = headers.getHeaders().get(HttpHeaders.Names.CONTENT_LENGTH);
+        String contentLengthHeader = headers.getHeaders().get(CONTENT_LENGTH);
         if (contentLengthHeader != null) {
             if (Long.parseLong(contentLengthHeader) == -1L) {
                 return AsyncHandler.State.ABORT;
@@ -212,8 +212,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         }
 
         RequestBuilder builder = new RequestBuilder(request);
-        if (request.getHeaders().get(HttpHeaders.Names.RANGE) == null && byteTransferred.get() != 0) {
-            builder.setHeader(HttpHeaders.Names.RANGE, "bytes=" + byteTransferred.get() + "-");
+        if (request.getHeaders().get(RANGE) == null && byteTransferred.get() != 0) {
+            builder.setHeader(RANGE, "bytes=" + byteTransferred.get() + "-");
         }
         return builder.build();
     }

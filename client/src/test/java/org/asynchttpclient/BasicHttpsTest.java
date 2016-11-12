@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.*;

@@ -49,7 +49,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
      * @return the response status code
      */
     public int getStatusCode() {
-        return response.getStatus().code();
+        return response.status().code();
     }
 
     /**
@@ -58,27 +58,27 @@ public class NettyResponseStatus extends HttpResponseStatus {
      * @return the response status text
      */
     public String getStatusText() {
-        return response.getStatus().reasonPhrase();
+        return response.status().reasonPhrase();
     }
 
     @Override
     public String getProtocolName() {
-        return response.getProtocolVersion().protocolName();
+        return response.protocolVersion().protocolName();
     }
 
     @Override
     public int getProtocolMajorVersion() {
-        return response.getProtocolVersion().majorVersion();
+        return response.protocolVersion().majorVersion();
     }
 
     @Override
     public int getProtocolMinorVersion() {
-        return response.getProtocolVersion().minorVersion();
+        return response.protocolVersion().minorVersion();
     }
 
     @Override
     public String getProtocolText() {
-        return response.getProtocolVersion().text();
+        return response.protocolVersion().text();
     }
 
     @Override

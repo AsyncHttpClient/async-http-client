@@ -13,24 +13,24 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.*;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.handler.MaxRedirectException;
@@ -119,12 +119,12 @@ public class Redirect30xInterceptor {
                 final Object initialPartitionKey = future.getPartitionKey();
 
                 HttpHeaders responseHeaders = response.headers();
-                String location = responseHeaders.get(HttpHeaders.Names.LOCATION);
+                String location = responseHeaders.get(LOCATION);
                 Uri newUri = Uri.create(future.getUri(), location);
 
                 LOGGER.debug("Redirecting to {}", newUri);
 
-                for (String cookieStr : responseHeaders.getAll(HttpHeaders.Names.SET_COOKIE)) {
+                for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
                     Cookie c = CookieDecoder.decode(cookieStr);
                     if (c != null)
                         requestBuilder.addOrReplaceCookie(c);
@@ -142,7 +142,7 @@ public class Redirect30xInterceptor {
 
                 LOGGER.debug("Sending redirect to {}", newUri);
 
-                if (future.isKeepAlive() && !HttpHeaders.isTransferEncodingChunked(response)) {
+                if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(response)) {
 
                     if (sameBase) {
                         future.setReuseChannel(true);
@@ -168,11 +168,11 @@ public class Redirect30xInterceptor {
     private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
 
         HttpHeaders headers = request.getHeaders()//
-                .remove(HttpHeaders.Names.HOST)//
-                .remove(HttpHeaders.Names.CONTENT_LENGTH);
+                .remove(HOST)//
+                .remove(CONTENT_LENGTH);
 
         if (!keepBody) {
-            headers.remove(HttpHeaders.Names.CONTENT_TYPE);
+            headers.remove(CONTENT_TYPE);
         }
 
         if (realm != null && realm.getScheme() == AuthScheme.NTLM) {

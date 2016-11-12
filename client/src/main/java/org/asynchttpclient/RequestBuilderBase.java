@@ -15,10 +15,10 @@
  */
 package org.asynchttpclient;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.resolver.DefaultNameResolver;
 import io.netty.resolver.NameResolver;
@@ -560,7 +560,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private Charset computeCharset() {
         if (this.charset == null) {
             try {
-                final String contentType = this.headers.get(HttpHeaderNames.CONTENT_TYPE);
+                final String contentType = this.headers.get(CONTENT_TYPE);
                 if (contentType != null) {
                     final Charset charset = parseCharset(contentType);
                     if (charset != null) {

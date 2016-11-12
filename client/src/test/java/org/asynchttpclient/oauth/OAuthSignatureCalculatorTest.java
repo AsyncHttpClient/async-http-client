@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.oauth;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
 
