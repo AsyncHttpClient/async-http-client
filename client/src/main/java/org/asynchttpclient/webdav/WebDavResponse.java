@@ -75,11 +75,11 @@ public class WebDavResponse implements Response {
         return response.getContentType();
     }
 
-    public String getHeader(String name) {
+    public String getHeader(CharSequence name) {
         return response.getHeader(name);
     }
 
-    public List<String> getHeaders(String name) {
+    public List<String> getHeaders(CharSequence name) {
         return response.getHeaders(name);
     }
 

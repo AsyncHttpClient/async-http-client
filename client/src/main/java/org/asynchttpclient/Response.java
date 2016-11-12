@@ -101,7 +101,7 @@ public interface Response {
      * @param name the header name
      * @return the first response header value
      */
-    String getHeader(String name);
+    String getHeader(CharSequence name);
 
     /**
      * Return a {@link List} of the response header value.
@@ -109,7 +109,7 @@ public interface Response {
      * @param name the header name
      * @return the response header value
      */
-    List<String> getHeaders(String name);
+    List<String> getHeaders(CharSequence name);
 
     HttpHeaders getHeaders();
 

@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.resolver.DefaultNameResolver;
 import io.netty.resolver.NameResolver;
@@ -185,7 +186,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param value header value to set
      * @return {@code this}
      */
-    public T setHeader(CharSequence name, String value) {
+    public T setHeader(CharSequence name, Object value) {
         this.headers.set(name, value);
         return asDerivedType();
     }
@@ -197,7 +198,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param values {@code Iterable} with multiple header values to set
      * @return {@code this}
      */
-    public T setHeader(CharSequence name, Iterable<String> values) {
+    public T setHeader(CharSequence name, Iterable<?> values) {
         this.headers.set(name, values);
         return asDerivedType();
     }
@@ -210,7 +211,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param value header value to add
      * @return {@code this}
      */
-    public T addHeader(CharSequence name, String value) {
+    public T addHeader(CharSequence name, Object value) {
         if (value == null) {
             LOGGER.warn("Value was null, set to \"\"");
             value = "";
@@ -228,7 +229,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param values {@code Iterable} with multiple header values to add
      * @return {@code}
      */
-    public T addHeader(CharSequence name, Iterable<String> values) {
+    public T addHeader(CharSequence name, Iterable<?> values) {
         this.headers.add(name, values);
         return asDerivedType();
     }
@@ -248,7 +249,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param headers map of header names as the map keys and header values {@link Iterable} as the map values
      * @return {@code this}
      */
-    public T setHeaders(Map<String, ? extends Iterable<String>> headers) {
+    public T setHeaders(Map<CharSequence, ? extends Iterable<?>> headers) {
         clearHeaders();
         if (headers != null) {
             headers.forEach((name, values) -> this.headers.add(name, values));
@@ -263,7 +264,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @param headers map of header names as the map keys and header values as the map values
      * @return {@code this}
      */
-    public T setSingleHeaders(Map<String, String> headers) {
+    public T setSingleHeaders(Map<CharSequence, ?> headers) {
         clearHeaders();
         if (headers != null) {
             headers.forEach((name, value) -> this.headers.add(name, value));
@@ -559,7 +560,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private Charset computeCharset() {
         if (this.charset == null) {
             try {
-                final String contentType = this.headers.get(HttpHeaders.Names.CONTENT_TYPE);
+                final String contentType = this.headers.get(HttpHeaderNames.CONTENT_TYPE);
                 if (contentType != null) {
                     final Charset charset = parseCharset(contentType);
                     if (charset != null) {

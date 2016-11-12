@@ -391,17 +391,17 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setFormParams(Map<String, List<String>> params);
 
-        DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
+        DerivedBuilder setHeaders(Map<CharSequence, Collection<?>> headers);
 
         DerivedBuilder setHeaders(HttpHeaders headers);
 
-        DerivedBuilder setHeader(String name, String value);
+        DerivedBuilder setHeader(CharSequence name, Object value);
 
         DerivedBuilder addQueryParam(String name, String value);
 
         DerivedBuilder addFormParam(String key, String value);
 
-        DerivedBuilder addHeader(String name, String value);
+        DerivedBuilder addHeader(CharSequence name, Object value);
 
         DerivedBuilder addCookie(Cookie cookie);
 
@@ -451,7 +451,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder addHeader(String name, String value) {
+        public Builder addHeader(CharSequence name, Object value) {
             requestBuilder.addHeader(name, value);
             return this;
         }
@@ -466,7 +466,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setHeader(String name, String value) {
+        public Builder setHeader(CharSequence name, Object value) {
             requestBuilder.setHeader(name, value);
             return this;
         }
@@ -476,7 +476,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setHeaders(Map<String, Collection<String>> headers) {
+        public Builder setHeaders(Map<CharSequence, Collection<?>> headers) {
             requestBuilder.setHeaders(headers);
             return this;
         }
