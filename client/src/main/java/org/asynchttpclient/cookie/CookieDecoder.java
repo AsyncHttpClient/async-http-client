@@ -18,13 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.CharBuffer;
+import java.util.Date;
 
 import static org.asynchttpclient.cookie.CookieUtil.*;
 
 public class CookieDecoder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CookieDecoder.class);
-    
+
     /**
      * Decodes the specified HTTP header value into {@link Cookie}.
      * 
@@ -185,31 +186,23 @@ public class CookieDecoder {
             // max age has precedence over expires
             if (maxAge != Long.MIN_VALUE) {
                 return maxAge;
-            } else {
-                String expires = computeValue(expiresStart, expiresEnd);
-                if (expires != null) {
-                    long expiresMillis = computeExpires(expires);
-                    if (expiresMillis != Long.MIN_VALUE) {
-                        long maxAgeMillis = expiresMillis - System.currentTimeMillis();
-                        return maxAgeMillis / 1000 + (maxAgeMillis % 1000 != 0 ? 1 : 0);
-                    }
+            } else if (isValueDefined(expiresStart, expiresEnd)) {
+                Date expiresDate = HttpHeaderDateFormatter.parse(header, expiresStart, expiresEnd);
+                if (expiresDate != null) {
+                    long maxAgeMillis = expiresDate.getTime() - System.currentTimeMillis();
+                    return maxAgeMillis / 1000 + (maxAgeMillis % 1000 != 0 ? 1 : 0);
                 }
             }
             return Long.MIN_VALUE;
         }
-        
+
         /**
-         * Parse and store a key-value pair. First one is considered to be the
-         * cookie name/value. Unknown attribute names are silently discarded.
+         * Parse and store a key-value pair. First one is considered to be the cookie name/value. Unknown attribute names are silently discarded.
          *
-         * @param keyStart
-         *            where the key starts in the header
-         * @param keyEnd
-         *            where the key ends in the header
-         * @param valueStart
-         *            where the value starts in the header
-         * @param valueEnd
-         *            where the value ends in the header
+         * @param keyStart where the key starts in the header
+         * @param keyEnd where the key ends in the header
+         * @param valueStart where the value starts in the header
+         * @param valueEnd where the value ends in the header
          */
         public void appendAttribute(int keyStart, int keyEnd, int valueStart, int valueEnd) {
             setCookieAttribute(keyStart, keyEnd, valueStart, valueEnd);
@@ -263,10 +256,12 @@ public class CookieDecoder {
             }
         }
 
+        private static boolean isValueDefined(int valueStart, int valueEnd) {
+            return valueStart != -1 && valueStart != valueEnd;
+        }
+
         private String computeValue(int valueStart, int valueEnd) {
-            if (valueStart == -1 || valueStart == valueEnd) {
-                return null;
-            } else {
+            if (isValueDefined(valueStart, valueEnd)) {
                 while (valueStart < valueEnd && header.charAt(valueStart) <= ' ') {
                     valueStart++;
                 }
@@ -274,6 +269,8 @@ public class CookieDecoder {
                     valueEnd--;
                 }
                 return valueStart == valueEnd ? null : header.substring(valueStart, valueEnd);
+            } else {
+                return null;
             }
         }
     }

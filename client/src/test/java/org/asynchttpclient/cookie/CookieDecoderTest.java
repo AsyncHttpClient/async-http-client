@@ -12,9 +12,10 @@
  */
 package org.asynchttpclient.cookie;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaderDateFormat;
+
+import java.util.Date;
 
 import org.testng.annotations.Test;
 
@@ -50,5 +51,30 @@ public class CookieDecoderTest {
     public void testIgnoreEmptyDomain() {
         Cookie cookie = CookieDecoder.decode("sessionid=OTY4ZDllNTgtYjU3OC00MWRjLTkzMWMtNGUwNzk4MTY0MTUw;Domain=;Path=/");
         assertNull(cookie.getDomain());
+    }
+
+    @Test(groups = "standalone")
+    public void testDecodingSingleCookieV0() {
+        String cookieString = "myCookie=myValue;expires=XXX;path=/apathsomewhere;domain=.adomainsomewhere;secure;";
+        cookieString = cookieString.replace("XXX", HttpHeaderDateFormat.get().format(new Date(System.currentTimeMillis() + 50000)));
+
+        Cookie cookie = CookieDecoder.decode(cookieString);
+        assertNotNull(cookie);
+        assertEquals("myValue", cookie.getValue());
+        assertEquals(".adomainsomewhere", cookie.getDomain());
+
+        boolean fail = true;
+        for (int i = 40; i <= 60; i++) {
+            if (cookie.getMaxAge() == i) {
+                fail = false;
+                break;
+            }
+        }
+        if (fail) {
+            fail("expected: 50, actual: " + cookie.getMaxAge());
+        }
+
+        assertEquals(cookie.getPath(), "/apathsomewhere");
+        assertTrue(cookie.isSecure());
     }
 }

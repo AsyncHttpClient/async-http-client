@@ -15,7 +15,6 @@ package org.asynchttpclient.cookie;
 import static org.asynchttpclient.util.Assertions.*;
 
 import java.util.BitSet;
-import java.util.Date;
 
 public class CookieUtil {
 
@@ -130,16 +129,6 @@ public class CookieUtil {
             }
         }
         return cs;
-    }
-
-    static long computeExpires(String expires) {
-        if (expires != null) {
-            Date expiresDate = DateParser.parse(expires);
-            if (expiresDate != null)
-                return expiresDate.getTime();
-        }
-
-        return Long.MIN_VALUE;
     }
 
     private CookieUtil() {
