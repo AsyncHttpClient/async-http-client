@@ -15,6 +15,7 @@ package org.asynchttpclient.extras.registry;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.ClientStats;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -124,5 +125,10 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     @Override
     public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
         return null;
+    }
+
+    @Override
+    public ClientStats getClientStats() {
+        throw new UnsupportedOperationException();
     }
 }

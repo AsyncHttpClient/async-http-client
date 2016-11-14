@@ -21,11 +21,14 @@ import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.ChannelPool;
@@ -114,6 +117,10 @@ public final class DefaultChannelPool implements ChannelPool {
 
         public boolean takeOwnership() {
             return owned.compareAndSet(false, true);
+        }
+
+        public Channel getChannel() {
+            return channel;
         }
 
         @Override
@@ -350,6 +357,19 @@ public final class DefaultChannelPool implements ChannelPool {
             if (selector.select(partitionKey))
                 flushPartition(partitionKey, partitionsEntry.getValue());
         }
+    }
+
+    @Override
+    public Map<String, Long> getIdleChannelCountPerHost() {
+        return partitions
+                .values()
+                .stream()
+                .flatMap(ConcurrentLinkedDeque::stream)
+                .map(idle -> idle.getChannel().remoteAddress())
+                .filter(a -> a.getClass() == InetSocketAddress.class)
+                .map(a -> (InetSocketAddress) a)
+                .map(InetSocketAddress::getHostName)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
 
     public enum PoolLeaseStrategy {

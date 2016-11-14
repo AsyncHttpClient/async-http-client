@@ -255,6 +255,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         return channelManager.getEventLoopGroup();
     }
 
+    @Override
+    public ClientStats getClientStats() {
+        return channelManager.getClientStats();
+    }
+
     protected BoundRequestBuilder requestBuilder(String method, String url) {
         return new BoundRequestBuilder(this, method, config.isDisableUrlEncodingForBoundRequests()).setUrl(url).setSignatureCalculator(signatureCalculator);
     }

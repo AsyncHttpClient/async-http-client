@@ -13,6 +13,9 @@
  */
 package org.asynchttpclient.channel;
 
+import java.util.Collections;
+import java.util.Map;
+
 import io.netty.channel.Channel;
 
 public enum NoopChannelPool implements ChannelPool {
@@ -49,5 +52,10 @@ public enum NoopChannelPool implements ChannelPool {
 
     @Override
     public void flushPartitions(ChannelPoolPartitionSelector selector) {
+    }
+
+    @Override
+    public Map<String, Long> getIdleChannelCountPerHost() {
+        return Collections.emptyMap();
     }
 }

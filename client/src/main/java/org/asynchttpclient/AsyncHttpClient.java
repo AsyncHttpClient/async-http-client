@@ -266,4 +266,11 @@ public interface AsyncHttpClient extends Closeable {
      * @return a {@link Future} of type Response
      */
     ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder);
+
+    /***
+     * Return details about pooled connections.
+     *
+     * @return a {@link ClientStats}
+     */
+    ClientStats getClientStats();
 }

@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.channel;
 
+import java.util.Map;
+
 import io.netty.channel.Channel;
 
 public interface ChannelPool {
@@ -70,4 +72,9 @@ public interface ChannelPool {
      * @param selector the selector
      */
     void flushPartitions(ChannelPoolPartitionSelector selector);
+
+    /**
+     * @return The number of idle channels per host.
+     */
+    Map<String, Long> getIdleChannelCountPerHost();
 }
