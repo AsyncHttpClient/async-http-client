@@ -17,6 +17,7 @@ import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -37,6 +38,7 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketPingListener;
 import org.asynchttpclient.ws.WebSocketPongListener;
 import org.asynchttpclient.ws.WebSocketTextListener;
+import org.asynchttpclient.ws.WebSocketWriteCompleteListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,8 +84,24 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public WebSocket sendMessage(byte[] message, WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new BinaryWebSocketFrame(wrappedBuffer(message)), channelPromise);
+        return this;
+    }
+
+    @Override
     public WebSocket stream(byte[] fragment, boolean last) {
         channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)), channel.voidPromise());
+        return this;
+    }
+
+    @Override
+    public WebSocket stream(final byte[] fragment, final boolean last, final WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)), channelPromise);
         return this;
     }
 
@@ -94,8 +112,24 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public WebSocket stream(final byte[] fragment, final int offset, final int len, final boolean last, final WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset, len)), channelPromise);
+        return this;
+    }
+
+    @Override
     public WebSocket sendMessage(String message) {
         channel.writeAndFlush(new TextWebSocketFrame(message), channel.voidPromise());
+        return this;
+    }
+
+    @Override
+    public WebSocket sendMessage(String message, WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new TextWebSocketFrame(message), channelPromise);
         return this;
     }
 
@@ -106,14 +140,38 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public WebSocket stream(final String fragment, final boolean last, final WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment), channelPromise);
+        return this;
+    }
+
+    @Override
     public WebSocket sendPing(byte[] payload) {
         channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
         return this;
     }
 
     @Override
+    public WebSocket sendPing(final byte[] payload, final WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)), channelPromise);
+        return this;
+    }
+
+    @Override
     public WebSocket sendPong(byte[] payload) {
         channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
+        return this;
+    }
+
+    @Override
+    public WebSocket sendPong(final byte[] payload, final WebSocketWriteCompleteListener listener) {
+        final ChannelPromise channelPromise = channel.newPromise();
+        channelPromise.addListener(listener);
+        channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)), channelPromise);
         return this;
     }
 
