@@ -35,8 +35,8 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
-            tester.assertCompleted();
             tester.assertNoErrors();
+            tester.assertCompleted();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -55,8 +55,8 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
-            tester.assertCompleted();
             tester.assertNoErrors();
+            tester.assertCompleted();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -75,8 +75,8 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
-            tester.assertCompleted();
             tester.assertNoErrors();
+            tester.assertCompleted();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -95,8 +95,8 @@ public class AsyncHttpObservableTest {
             o1.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
-            tester.assertCompleted();
             tester.assertNoErrors();
+            tester.assertCompleted();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 1);
@@ -118,8 +118,8 @@ public class AsyncHttpObservableTest {
             all.subscribe(tester);
             tester.awaitTerminalEvent();
             tester.assertTerminalEvent();
-            tester.assertCompleted();
             tester.assertNoErrors();
+            tester.assertCompleted();
             List<Response> responses = tester.getOnNextEvents();
             assertNotNull(responses);
             assertEquals(responses.size(), 3);

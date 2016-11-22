@@ -44,7 +44,6 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import rx.Single;
@@ -99,8 +98,8 @@ public class AsyncHttpSingleTest {
 
         subscriber.awaitTerminalEvent();
         subscriber.assertTerminalEvent();
-        subscriber.assertCompleted();
         subscriber.assertNoErrors();
+        subscriber.assertCompleted();
         subscriber.assertValue(handler);
     }
 
@@ -152,8 +151,8 @@ public class AsyncHttpSingleTest {
 
         subscriber.awaitTerminalEvent();
         subscriber.assertTerminalEvent();
-        subscriber.assertCompleted();
         subscriber.assertNoErrors();
+        subscriber.assertCompleted();
         subscriber.assertValue(handler);
     }
 
@@ -289,13 +288,14 @@ public class AsyncHttpSingleTest {
                             return State.ABORT;
                         }
                     });
+
             underTest.subscribe(subscriber);
-            subscriber.awaitTerminalEvent(30, TimeUnit.SECONDS);
+            subscriber.awaitTerminalEvent();
         }
 
         subscriber.assertTerminalEvent();
-        subscriber.assertCompleted();
         subscriber.assertNoErrors();
+        subscriber.assertCompleted();
         subscriber.assertValue(null);
     }
 
