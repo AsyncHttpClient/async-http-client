@@ -13,6 +13,7 @@
 package com.ning.http.client.multipart;
 
 import static com.ning.http.util.MiscUtils.isNonEmpty;
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.ning.http.client.Param;
@@ -43,12 +44,22 @@ public abstract class PartBase implements Part {
     /**
      * The Content-Transfer-Encoding header value.
      */
-    private final String transferEncoding;
+    private String transferEncoding;
 
     /**
      * The Content-Id
      */
-    private final String contentId;
+    private String contentId;
+
+    /**
+     * The custom Content-Disposition override
+     */
+    private String customContentDisposition;
+
+    /**
+     * The custom Content-Type override
+     */
+    private String customContentType;
 
     /**
      * The disposition type (part of Content-Disposition)
@@ -89,16 +100,28 @@ public abstract class PartBase implements Part {
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
         visitor.withBytes(CRLF_BYTES);
         visitor.withBytes(CONTENT_DISPOSITION_BYTES);
-        visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(US_ASCII) : FORM_DATA_DISPOSITION_TYPE_BYTES);
-        if (getName() != null) {
-            visitor.withBytes(NAME_BYTES);
-            visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(getName().getBytes(US_ASCII));
-            visitor.withByte(QUOTE_BYTE);
+
+        if (hasCustomContentDisposition()) {
+            visitor.withBytes(customContentDisposition.getBytes(US_ASCII));
+        } else {
+            visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(US_ASCII) : FORM_DATA_DISPOSITION_TYPE_BYTES);
+            if (getName() != null) {
+                visitor.withBytes(NAME_BYTES);
+                visitor.withByte(QUOTE_BYTE);
+                visitor.withBytes(getName().getBytes(US_ASCII));
+                visitor.withByte(QUOTE_BYTE);
+            }
         }
     }
 
     protected void visitContentTypeHeader(PartVisitor visitor) throws IOException {
+        if (hasCustomContentType()) {
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_TYPE_BYTES);
+            visitor.withBytes(customContentType.getBytes(US_ASCII));
+            return;
+        }
+
         String contentType = getContentType();
         if (contentType != null) {
             visitor.withBytes(CRLF_BYTES);
@@ -135,6 +158,7 @@ public abstract class PartBase implements Part {
             for (Param param: customHeaders) {
                 visitor.withBytes(CRLF_BYTES);
                 visitor.withBytes(param.getName().getBytes(US_ASCII));
+                visitor.withBytes(NAME_VALUE_SEPARATOR_BYTES);
                 visitor.withBytes(param.getValue().getBytes(US_ASCII));
             }
         }
@@ -254,14 +278,42 @@ public abstract class PartBase implements Part {
         this.dispositionType = dispositionType;
     }
 
+    public void setCustomContentDisposition(String customContentDisposition) {
+        this.customContentDisposition = customContentDisposition;
+    }
+
+    public boolean hasCustomContentDisposition() {
+        return customContentDisposition != null;
+    }
+
+    public void setCustomContentType(String customContentType) {
+        this.customContentType = customContentType;
+    }
+
+    public boolean hasCustomContentType() {
+        return customContentType != null;
+    }
+
     public void addCustomHeader(String name, String value) {
         if (customHeaders == null) {
             customHeaders = new ArrayList<Param>(2);
         }
+
+        // correctly handle special headers
+        for (String header : SPECIAL_HEADERS) {
+            if (name.equalsIgnoreCase(header)) {
+                throw new IllegalArgumentException("Trying to add special header " + header + " as custom (use constructor instead)");
+            }
+        }
+
         customHeaders.add(new Param(name, value));
     }
 
     public void setCustomHeaders(List<Param> customHeaders) {
-        this.customHeaders = customHeaders;
+        this.customHeaders = null;
+
+        for (Param header : customHeaders) {
+            addCustomHeader(header.getName(), header.getValue());
+        }
     }
 }
