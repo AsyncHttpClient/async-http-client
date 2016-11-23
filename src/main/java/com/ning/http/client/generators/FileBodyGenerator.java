@@ -66,11 +66,14 @@ public class FileBodyGenerator
 
         private final long length;
 
+        private final long regionBase;
+
         public FileBody(File file)
                 throws IOException {
             this.file = new RandomAccessFile(file, "r");
             channel = this.file.getChannel();
             length = file.length();
+            regionBase = 0L;
         }
 
         public FileBody(File file, long regionSeek, long regionLength)
@@ -79,7 +82,9 @@ public class FileBodyGenerator
             channel = this.file.getChannel();
             length = regionLength;
             if (regionSeek > 0) {
-                this.file.seek(regionSeek);
+                regionBase = regionSeek;
+            } else {
+                regionBase = 0L;
             }
         }
 
@@ -97,7 +102,7 @@ public class FileBodyGenerator
             if (count > length) {
                 count = length;
             }
-            return channel.transferTo(position, count, target);
+            return channel.transferTo(regionBase + position, count, target);
         }
 
         public void close()
