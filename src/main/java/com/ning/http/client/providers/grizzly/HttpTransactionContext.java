@@ -100,7 +100,7 @@ public final class HttpTransactionContext {
                         new GracefulCloseEvent(HttpTransactionContext.this), null);
             } else if (CloseType.REMOTELY.equals(type)) {
                 abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
-            } else {
+            } else if (!CloseType.LOCALLY.equals(type)) {
                 try {
                     closeable.assertOpen();
                 } catch (IOException ioe) {
