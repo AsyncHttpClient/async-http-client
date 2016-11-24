@@ -140,7 +140,7 @@ public class AsyncHttpProviderUtils {
 
     public static String parseCharset(String contentType) {
         for (String part : contentType.split(";")) {
-            if (part.trim().startsWith("charset=")) {
+            if (part.trim().startsWith("charset=") || part.trim().startsWith("encoding=")) {
                 String[] val = part.split("=");
                 if (val.length > 1) {
                     String charset = val[1].trim();
