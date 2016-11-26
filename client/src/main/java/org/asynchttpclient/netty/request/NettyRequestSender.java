@@ -175,7 +175,7 @@ public final class NettyRequestSender {
         Realm realm = null;
         if (request.getRealm() != null) {
             realm = request.getRealm();
-        } else if (originalFuture.getRealm() != null) {
+        } else if (originalFuture != null && originalFuture.getRealm() != null) {
             realm = originalFuture.getRealm();
         } else {
             realm = config.getRealm();
