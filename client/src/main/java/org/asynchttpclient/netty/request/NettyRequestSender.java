@@ -173,20 +173,19 @@ public final class NettyRequestSender {
             ProxyServer proxy, boolean forceConnect) {
 
         Realm realm = null;
-        if (originalFuture != null) {
+        if (request.getRealm() != null) {
+            realm = request.getRealm();
+        } else if (originalFuture.getRealm() != null) {
             realm = originalFuture.getRealm();
         } else {
-            realm = request.getRealm();
-            if (realm == null) {
-                realm = config.getRealm();
-            }
+            realm = config.getRealm();
         }
 
         Realm proxyRealm = null;
-        if (originalFuture != null) {
-            proxyRealm = originalFuture.getProxyRealm();
-        } else if (proxy != null) {
+        if (proxy != null) {
             proxyRealm = proxy.getRealm();
+        } else if (originalFuture != null) {
+            proxyRealm = originalFuture.getProxyRealm();
         }
 
         NettyRequest nettyRequest = requestFactory.newNettyRequest(request, forceConnect, proxy, realm, proxyRealm);
