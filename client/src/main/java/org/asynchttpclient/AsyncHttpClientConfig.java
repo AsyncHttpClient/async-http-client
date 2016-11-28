@@ -202,8 +202,6 @@ public interface AsyncHttpClientConfig {
     boolean isStrict302Handling();
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
-     *
      * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
      */
     int getConnectionTtl();
@@ -211,6 +209,11 @@ public interface AsyncHttpClientConfig {
     boolean isUseOpenSsl();
 
     boolean isUseInsecureTrustManager();
+
+    /**
+     * @return true to disable all HTTPS behaviors AT ONCE, such as hostname verification and SNI
+     */
+    boolean isDisableHttpsAlgorithm();
 
     /**
      * @return the array of enabled protocols

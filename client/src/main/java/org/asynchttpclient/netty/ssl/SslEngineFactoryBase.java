@@ -25,9 +25,11 @@ public abstract class SslEngineFactoryBase implements SslEngineFactory {
 
     protected void configureSslEngine(SSLEngine sslEngine, AsyncHttpClientConfig config) {
         sslEngine.setUseClientMode(true);
-        SSLParameters params = sslEngine.getSSLParameters();
-        params.setEndpointIdentificationAlgorithm("HTTPS");
-        sslEngine.setSSLParameters(params);
+        if (!config.isDisableHttpsAlgorithm()) {
+            SSLParameters params = sslEngine.getSSLParameters();
+            params.setEndpointIdentificationAlgorithm("HTTPS");
+            sslEngine.setSSLParameters(params);
+        }
 
         if (isNonEmpty(config.getEnabledProtocols()))
             sslEngine.setEnabledProtocols(config.getEnabledProtocols());

@@ -96,6 +96,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // ssl
     private final boolean useOpenSsl;
     private final boolean useInsecureTrustManager;
+    private final boolean disableHttpsAlgorithm;
     private final int handshakeTimeout;
     private final String[] enabledProtocols;
     private final String[] enabledCipherSuites;
@@ -168,6 +169,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             // ssl
             boolean useOpenSsl,//
             boolean useInsecureTrustManager,//
+            boolean disableHttpsAlgorithm,//
             int handshakeTimeout,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
@@ -241,6 +243,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // ssl
         this.useOpenSsl = useOpenSsl;
         this.useInsecureTrustManager = useInsecureTrustManager;
+        this.disableHttpsAlgorithm = disableHttpsAlgorithm;
         this.handshakeTimeout = handshakeTimeout;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
@@ -424,6 +427,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isUseInsecureTrustManager() {
         return useInsecureTrustManager;
+    }
+
+    @Override
+    public boolean isDisableHttpsAlgorithm() {
+        return disableHttpsAlgorithm;
     }
 
     @Override
@@ -630,6 +638,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // ssl
         private boolean useOpenSsl = defaultUseOpenSsl();
         private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
+        private boolean disableHttpsAlgorithm = defaultDisableHttpsAlgorithm();
         private int handshakeTimeout = defaultHandshakeTimeout();
         private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites = defaultEnabledCipherSuites();
@@ -902,6 +911,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setDisableHttpsAlgorithm(boolean disableHttpsAlgorithm) {
+            this.useInsecureTrustManager = disableHttpsAlgorithm;
+            return this;
+        }
+
         public Builder setHandshakeTimeout(int handshakeTimeout) {
             this.handshakeTimeout = handshakeTimeout;
             return this;
@@ -1124,6 +1138,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     keepAliveStrategy, //
                     useOpenSsl, //
                     useInsecureTrustManager, //
+                    disableHttpsAlgorithm, //
                     handshakeTimeout, //
                     enabledProtocols, //
                     enabledCipherSuites, //

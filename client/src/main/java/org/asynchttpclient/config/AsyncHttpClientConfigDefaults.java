@@ -79,7 +79,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static String[] defaultEnabledProtocols() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + "enabledProtocols");
     }
-    
+
     public static String[] defaultEnabledCipherSuites() {
         String[] defaultEnabledCipherSuites = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + "enabledCipherSuites");
         Set<String> supportedCipherSuites = NettySslPackageAccessor.jdkSupportedCipherSuites();
@@ -120,6 +120,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultUseInsecureTrustManager() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useInsecureTrustManager");
+    }
+
+    public static boolean defaultDisableHttpsAlgorithm() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableHttpsAlgorithm");
     }
 
     public static int defaultSslSessionCacheSize() {
