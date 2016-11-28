@@ -648,7 +648,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
-            configBuilder.setAcceptAnyCertificate(acceptAnyCertificate);
+            configBuilder.setUseInsecureTrustManager(acceptAnyCertificate);
             return this;
         }
 

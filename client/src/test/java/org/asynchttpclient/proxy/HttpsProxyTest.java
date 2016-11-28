@@ -67,7 +67,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void testRequestProxy() throws Exception {
 
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true))) {
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
             Response r = asyncHttpClient.executeRequest(rb.build()).get();
             assertEquals(r.getStatusCode(), 200);
@@ -79,7 +79,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()//
                 .setFollowRedirect(true)//
                 .setProxyServer(proxyServer("localhost", port1).build())//
-                .setAcceptAnyCertificate(true)//
+                .setUseInsecureTrustManager(true)//
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
             Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
@@ -90,7 +90,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void testPooledConnectionsWithProxy() throws Exception {
 
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setAcceptAnyCertificate(true).setKeepAlive(true))) {
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
 
             Response r1 = asyncHttpClient.executeRequest(rb.build()).get();

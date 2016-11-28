@@ -210,7 +210,7 @@ public interface AsyncHttpClientConfig {
 
     boolean isUseOpenSsl();
 
-    boolean isAcceptAnyCertificate();
+    boolean isUseInsecureTrustManager();
 
     /**
      * @return the array of enabled protocols

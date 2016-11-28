@@ -96,7 +96,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = config()//
                 .setMaxRedirects(5)//
                 .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+                .setUseInsecureTrustManager(true)//
                 .build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
@@ -113,7 +113,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = config()//
                 .setMaxRedirects(5)//
                 .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+                .setUseInsecureTrustManager(true)//
                 .build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
@@ -136,7 +136,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = config()//
                 .setMaxRedirects(5)//
                 .setFollowRedirect(true)//
-                .setAcceptAnyCertificate(true)//
+                .setUseInsecureTrustManager(true)//
                 .build();
         try (AsyncHttpClient c = asyncHttpClient(cg)) {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();

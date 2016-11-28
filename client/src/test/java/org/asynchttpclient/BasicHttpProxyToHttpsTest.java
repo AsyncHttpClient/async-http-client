@@ -93,7 +93,7 @@ public class BasicHttpProxyToHttpsTest {
 
     @Test
     public void nonPreemptyProxyAuthWithHttpsTarget() throws IOException, InterruptedException, ExecutionException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setAcceptAnyCertificate(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true))) {
             String targetUrl = "https://localhost:" + httpPort + "/foo/bar";
             Request request = get(targetUrl)//
                     .setProxyServer(proxyServer("127.0.0.1", proxyPort).setRealm(realm(AuthScheme.BASIC, "johndoe", "pass")))//

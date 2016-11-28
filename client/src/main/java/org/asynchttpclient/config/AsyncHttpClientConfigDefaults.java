@@ -118,8 +118,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useOpenSsl");
     }
 
-    public static boolean defaultAcceptAnyCertificate() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "acceptAnyCertificate");
+    public static boolean defaultUseInsecureTrustManager() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useInsecureTrustManager");
     }
 
     public static int defaultSslSessionCacheSize() {

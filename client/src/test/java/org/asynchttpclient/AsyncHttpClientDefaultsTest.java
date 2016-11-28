@@ -110,9 +110,9 @@ public class AsyncHttpClientDefaultsTest {
         testBooleanSystemProperty("disableUrlEncodingForBoundRequests", "defaultDisableUrlEncodingForBoundRequests", "true");
     }
 
-    public void testDefaultAcceptAnyCertificate() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultAcceptAnyCertificate());
-        testBooleanSystemProperty("acceptAnyCertificate", "defaultAcceptAnyCertificate", "true");
+    public void testDefaultUseInsecureTrustManager() {
+        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager());
+        testBooleanSystemProperty("useInsecureTrustManager", "defaultUseInsecureTrustManager", "false");
     }
 
     private void testIntegerSystemProperty(String propertyName, String methodName, String value) {

@@ -95,7 +95,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // ssl
     private final boolean useOpenSsl;
-    private final boolean acceptAnyCertificate;
+    private final boolean useInsecureTrustManager;
     private final int handshakeTimeout;
     private final String[] enabledProtocols;
     private final String[] enabledCipherSuites;
@@ -167,7 +167,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
             // ssl
             boolean useOpenSsl,//
-            boolean acceptAnyCertificate,//
+            boolean useInsecureTrustManager,//
             int handshakeTimeout,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
@@ -240,7 +240,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         // ssl
         this.useOpenSsl = useOpenSsl;
-        this.acceptAnyCertificate = acceptAnyCertificate;
+        this.useInsecureTrustManager = useInsecureTrustManager;
         this.handshakeTimeout = handshakeTimeout;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
@@ -422,8 +422,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isAcceptAnyCertificate() {
-        return acceptAnyCertificate;
+    public boolean isUseInsecureTrustManager() {
+        return useInsecureTrustManager;
     }
 
     @Override
@@ -629,7 +629,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         // ssl
         private boolean useOpenSsl = defaultUseOpenSsl();
-        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
+        private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
         private int handshakeTimeout = defaultHandshakeTimeout();
         private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites = defaultEnabledCipherSuites();
@@ -703,7 +703,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             keepAliveStrategy = config.getKeepAliveStrategy();
 
             // ssl
-            acceptAnyCertificate = config.isAcceptAnyCertificate();
+            useInsecureTrustManager = config.isUseInsecureTrustManager();
             handshakeTimeout = config.getHandshakeTimeout();
             enabledProtocols = config.getEnabledProtocols();
             enabledCipherSuites = config.getEnabledCipherSuites();
@@ -897,8 +897,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
-            this.acceptAnyCertificate = acceptAnyCertificate;
+        public Builder setUseInsecureTrustManager(boolean useInsecureTrustManager) {
+            this.useInsecureTrustManager = useInsecureTrustManager;
             return this;
         }
 
@@ -1123,7 +1123,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     channelPool, //
                     keepAliveStrategy, //
                     useOpenSsl, //
-                    acceptAnyCertificate, //
+                    useInsecureTrustManager, //
                     handshakeTimeout, //
                     enabledProtocols, //
                     enabledCipherSuites, //

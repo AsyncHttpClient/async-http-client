@@ -87,7 +87,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
 
         // CONNECT happens over HTTP, not HTTPS
         ProxyServer ps = proxyServer("localhost", port1).build();
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setProxyServer(ps).setAcceptAnyCertificate(true))) {
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setProxyServer(ps).setUseInsecureTrustManager(true))) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 

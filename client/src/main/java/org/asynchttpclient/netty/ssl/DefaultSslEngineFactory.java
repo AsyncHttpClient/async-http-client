@@ -36,8 +36,9 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
                 .sessionCacheSize(config.getSslSessionCacheSize())//
                 .sessionTimeout(config.getSslSessionTimeout());
 
-        if (config.isAcceptAnyCertificate())
+        if (config.isUseInsecureTrustManager()) {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+        }
 
         return configureSslContextBuilder(sslContextBuilder).build();
     }
