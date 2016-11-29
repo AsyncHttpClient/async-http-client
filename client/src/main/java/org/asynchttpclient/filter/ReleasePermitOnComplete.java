@@ -3,6 +3,9 @@ package org.asynchttpclient.filter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import org.asynchttpclient.AsyncHandler;
@@ -18,7 +21,7 @@ public class ReleasePermitOnComplete {
    public static <T> AsyncHandler<T> wrap(final AsyncHandler<T> handler, final Semaphore available) {
       Class<?> handlerClass = handler.getClass();
       ClassLoader classLoader = handlerClass.getClassLoader();
-      Class<?>[] interfaces = handlerClass.getInterfaces();
+      Class<?>[] interfaces = allInterfaces(handlerClass);
 
       return (AsyncHandler<T>) Proxy.newProxyInstance(classLoader, interfaces, new InvocationHandler() {
          @Override
@@ -32,5 +35,20 @@ public class ReleasePermitOnComplete {
             }
          }
       });
+   }
+
+   /**
+    * Extract all interfaces of a class.
+    */
+   static Class<?>[] allInterfaces(Class<?> handlerClass) {
+      Set<Class<?>> allInterfaces = new HashSet<>();
+      Class<?> clazz = handlerClass;
+      while (clazz != null) {
+         Class<?>[] interfaces = clazz.getInterfaces();
+         if (interfaces.length != 0) {
+            allInterfaces.addAll(Arrays.asList(interfaces));
+         }
+      }
+      return allInterfaces.toArray(new Class[allInterfaces.size()]);
    }
 }
