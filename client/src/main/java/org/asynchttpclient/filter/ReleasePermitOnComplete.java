@@ -48,6 +48,7 @@ public class ReleasePermitOnComplete {
          if (interfaces.length != 0) {
             allInterfaces.addAll(Arrays.asList(interfaces));
          }
+         clazz = clazz.getSuperclass();
       }
       return allInterfaces.toArray(new Class[allInterfaces.size()]);
    }
