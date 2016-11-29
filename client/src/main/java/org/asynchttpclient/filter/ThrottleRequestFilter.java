@@ -12,13 +12,9 @@
  */
 package org.asynchttpclient.filter;
 
-import org.asynchttpclient.AsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -62,42 +58,8 @@ public class ThrottleRequestFilter implements RequestFilter {
                   ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
-        return new FilterContext.FilterContextBuilder<>(ctx).asyncHandler(wrap(ctx.getAsyncHandler())).build();
-    }
-
-    /**
-     * Wrap {@link AsyncHandler} to release the permit of {@link #available} on {@link AsyncHandler#onCompleted()}.
-     * This is done via a dynamic proxy to keep all interfaces of the wrapped handler.
-     */
-    protected <T> AsyncHandler<T> wrap(AsyncHandler<T> handler) {
-        Class<?> handlerClass = handler.getClass();
-        ClassLoader classLoader = handlerClass.getClassLoader();
-        Class<?>[] interfaces = handlerClass.getInterfaces();
-
-        return (AsyncHandler<T>) Proxy.newProxyInstance(classLoader, interfaces, new Wrapper(handler, available));
-    }
-
-    /**
-     * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}.
-     */
-    static final class Wrapper<T> implements InvocationHandler {
-        private final AsyncHandler<T> handler;
-        private final Semaphore available;
-
-        public Wrapper(AsyncHandler<T> handler, Semaphore available) {
-            this.handler = handler;
-            this.available = available;
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            try {
-                return method.invoke(handler, args);
-            } finally {
-                if ("onCompleted".equals(method.getName())) {
-                    available.release();
-                }
-            }
-        }
+        return new FilterContext.FilterContextBuilder<>(ctx)
+              .asyncHandler(ReleasePermitOnComplete.wrap(ctx.getAsyncHandler(), available))
+              .build();
     }
 }

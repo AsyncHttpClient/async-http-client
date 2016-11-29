@@ -1,8 +1,8 @@
 package org.asynchttpclient.extras.guava;
 
-import org.asynchttpclient.filter.AsyncHandlerWrapper;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.ReleasePermitOnComplete;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ThrottleRequestFilter;
 import org.slf4j.Logger;
@@ -56,8 +56,9 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
             throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
-        return new FilterContext.FilterContextBuilder<>(ctx).asyncHandler(new AsyncHandlerWrapper<>(ctx.getAsyncHandler(), available))
-                .build();
+        return new FilterContext.FilterContextBuilder<>(ctx)
+              .asyncHandler(ReleasePermitOnComplete.wrap(ctx.getAsyncHandler(), available))
+              .build();
     }
 
     private <T> void attemptRateLimitedPermitAcquistion(FilterContext<T> ctx, long startOfWait) throws FilterException {
