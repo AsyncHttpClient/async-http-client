@@ -3,7 +3,6 @@ package org.asynchttpclient.filter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -42,13 +41,10 @@ public class ReleasePermitOnComplete {
     */
    static Class<?>[] allInterfaces(Class<?> handlerClass) {
       Set<Class<?>> allInterfaces = new HashSet<>();
-      Class<?> clazz = handlerClass;
-      while (clazz != null) {
-         Class<?>[] interfaces = clazz.getInterfaces();
-         if (interfaces.length != 0) {
-            allInterfaces.addAll(Arrays.asList(interfaces));
+      for (Class<?> clazz = handlerClass; clazz != null; clazz = clazz.getSuperclass()) {
+         for (Class<?> i : clazz.getInterfaces()) {
+            allInterfaces.add(i);
          }
-         clazz = clazz.getSuperclass();
       }
       return allInterfaces.toArray(new Class[allInterfaces.size()]);
    }
