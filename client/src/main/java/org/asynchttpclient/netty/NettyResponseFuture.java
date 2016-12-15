@@ -14,7 +14,6 @@
 package org.asynchttpclient.netty;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
-import static io.netty.util.internal.PlatformDependent.*;
 import io.netty.channel.Channel;
 
 import java.util.concurrent.CancellationException;
@@ -49,8 +48,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> REDIRECT_COUNT_UPDATER = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "redirectCount");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> CURRENT_RETRY_UPDATER = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "currentRetry");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> REDIRECT_COUNT_UPDATER = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "redirectCount");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> CURRENT_RETRY_UPDATER = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "currentRetry");
 
     private final long start = unpreciseMillisTime();
     private final ChannelPoolPartitioning connectionPoolPartitioning;
@@ -70,13 +71,20 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     @SuppressWarnings("unused")
     private volatile int onThrowableCalled = 0;
 
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> isDoneField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "isDone");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> isCancelledField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "isCancelled");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> inAuthField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "inAuth");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> inProxyAuthField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "inProxyAuth");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> statusReceivedField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "statusReceived");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> contentProcessedField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "contentProcessed");
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture<?>> onThrowableCalledField = newAtomicIntegerFieldUpdater(NettyResponseFuture.class, "onThrowableCalled");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isDoneField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isDone");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isCancelledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isCancelled");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inAuthField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inAuth");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inProxyAuthField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inProxyAuth");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> statusReceivedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "statusReceived");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "onThrowableCalled");
 
     // volatile where we need CAS ops
     private volatile int redirectCount = 0;
