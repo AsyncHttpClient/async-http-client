@@ -92,7 +92,7 @@ public class BasicHttpProxyToHttpsTest {
     }
 
     @Test
-    public void nonPreemptyProxyAuthWithHttpsTarget() throws IOException, InterruptedException, ExecutionException {
+    public void nonPreemptiveProxyAuthWithHttpsTarget() throws IOException, InterruptedException, ExecutionException {
         try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true))) {
             String targetUrl = "https://localhost:" + httpPort + "/foo/bar";
             Request request = get(targetUrl)//

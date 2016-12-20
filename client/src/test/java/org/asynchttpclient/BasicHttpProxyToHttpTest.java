@@ -115,7 +115,7 @@ public class BasicHttpProxyToHttpTest {
     }
 
     @Test
-    public void nonPreemptyProxyAuthWithPlainHttpTarget() throws IOException, InterruptedException, ExecutionException {
+    public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws IOException, InterruptedException, ExecutionException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String targetUrl = "http://localhost:" + httpPort + "/foo/bar";
             Request request = get(targetUrl)//
