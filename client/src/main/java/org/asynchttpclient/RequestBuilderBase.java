@@ -86,6 +86,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected File file;
     protected Boolean followRedirect;
     protected int requestTimeout;
+    protected int readTimeout;
     protected long rangeOffset;
     protected Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
@@ -481,6 +482,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    public T setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+        return asDerivedType();
+    }
+
     public T setRangeOffset(long rangeOffset) {
         this.rangeOffset = rangeOffset;
         return asDerivedType();
@@ -621,6 +627,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.file,//
                 rb.followRedirect,//
                 rb.requestTimeout,//
+                rb.readTimeout,//
                 rb.rangeOffset,//
                 finalCharset,//
                 rb.channelPoolPartitioning,//

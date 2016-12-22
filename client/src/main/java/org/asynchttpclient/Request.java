@@ -159,6 +159,11 @@ public interface Request {
     int getRequestTimeout();
 
     /**
+     * @return the read timeout. Non zero values means "override config value".
+     */
+    int getReadTimeout();
+
+    /**
      * @return the range header value, or 0 is not set.
      */
     long getRangeOffset();
