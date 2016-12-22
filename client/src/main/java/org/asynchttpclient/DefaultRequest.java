@@ -56,6 +56,7 @@ public class DefaultRequest implements Request {
     private final File file;
     private final Boolean followRedirect;
     private final int requestTimeout;
+    private final int readTimeout;
     private final long rangeOffset;
     private final Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
@@ -83,6 +84,7 @@ public class DefaultRequest implements Request {
             File file,//
             Boolean followRedirect,//
             int requestTimeout,//
+            int readTimeout,//
             long rangeOffset,//
             Charset charset,//
             ChannelPoolPartitioning channelPoolPartitioning,//
@@ -107,6 +109,7 @@ public class DefaultRequest implements Request {
         this.file = file;
         this.followRedirect = followRedirect;
         this.requestTimeout = requestTimeout;
+        this.readTimeout = readTimeout;
         this.rangeOffset = rangeOffset;
         this.charset = charset;
         this.channelPoolPartitioning = channelPoolPartitioning;
@@ -216,6 +219,11 @@ public class DefaultRequest implements Request {
     @Override
     public int getRequestTimeout() {
         return requestTimeout;
+    }
+
+    @Override
+    public int getReadTimeout() {
+        return readTimeout;
     }
 
     @Override

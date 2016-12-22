@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
@@ -44,9 +45,13 @@ public class TimeoutsHolder {
         this.nettyTimer = nettyTimer;
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
-        this.readTimeoutValue = config.getReadTimeout();
 
-        int requestTimeoutInMs = nettyResponseFuture.getTargetRequest().getRequestTimeout();
+        final Request targetRequest = nettyResponseFuture.getTargetRequest();
+
+        final int readTimeoutInMs = targetRequest.getReadTimeout();
+        this.readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
+
+        int requestTimeoutInMs = targetRequest.getRequestTimeout();
         if (requestTimeoutInMs == 0) {
             requestTimeoutInMs = config.getRequestTimeout();
         }
