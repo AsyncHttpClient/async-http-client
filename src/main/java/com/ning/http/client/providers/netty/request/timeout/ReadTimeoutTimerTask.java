@@ -14,6 +14,7 @@ package com.ning.http.client.providers.netty.request.timeout;
 
 import static com.ning.http.util.DateUtils.millisTime;
 
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.util.Timeout;
 
 import com.ning.http.client.providers.netty.future.NettyResponseFuture;
@@ -23,6 +24,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
     private final long requestTimeoutInstant;
+    private final HttpRequest httpRequest;
 
     public ReadTimeoutTimerTask(//
             NettyResponseFuture<?> nettyResponseFuture,//
@@ -30,8 +32,19 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             TimeoutsHolder timeoutsHolder,//
             long requestTimeout,//
             long readTimeout) {
+        this(nettyResponseFuture, requestSender, timeoutsHolder, requestTimeout, readTimeout, null);
+    }
+
+    public ReadTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            NettyRequestSender requestSender,//
+            TimeoutsHolder timeoutsHolder,//
+            long requestTimeout,//
+            long readTimeout,//
+            HttpRequest httpRequest) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
+        this.httpRequest = httpRequest;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;
     }
 
@@ -52,7 +65,12 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // readTimeout reached
-            String message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            String message;
+            if (httpRequest == null) {
+                message = "Read timeout to " + remoteAddress + " of " + readTimeout + " ms";
+            } else {
+                message = "Read timeout to " + httpRequest.getUri() + " of " + readTimeout + " ms";
+            }
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
             // cancel request timeout sibling
