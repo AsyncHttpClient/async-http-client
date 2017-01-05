@@ -14,12 +14,12 @@ package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
-import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
+import static io.netty.util.internal.ThrowableUtil.*;
 
 @SuppressWarnings("serial")
 public final class ChannelClosedException extends IOException {
 
-    public static final ChannelClosedException INSTANCE = trimStackTrace(new ChannelClosedException());
+    public static final ChannelClosedException INSTANCE = unknownStackTrace(new ChannelClosedException(), ChannelClosedException.class, "INSTANCE");
 
     private ChannelClosedException() {
         super("Channel closed");

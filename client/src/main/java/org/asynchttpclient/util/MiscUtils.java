@@ -59,11 +59,6 @@ public class MiscUtils {
             }
     }
 
-    public static <T extends Exception> T trimStackTrace(T e) {
-        e.setStackTrace(new StackTraceElement[] {});
-        return e;
-    }
-
     public static Throwable getCause(Throwable t) {
         Throwable cause = t.getCause();
         return cause != null ? getCause(cause) : t;

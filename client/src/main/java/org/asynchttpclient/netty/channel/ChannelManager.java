@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
+import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -53,7 +53,11 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 
-import org.asynchttpclient.*;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ClientStats;
+import org.asynchttpclient.HostStats;
+import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.channel.NoopChannelPool;
@@ -61,8 +65,8 @@ import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
-import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
@@ -129,8 +133,9 @@ public class ChannelManager {
         }
         this.channelPool = channelPool;
 
-        tooManyConnections = trimStackTrace(new TooManyConnectionsException(config.getMaxConnections()));
-        tooManyConnectionsPerHost = trimStackTrace(new TooManyConnectionsPerHostException(config.getMaxConnectionsPerHost()));
+        
+        tooManyConnections = unknownStackTrace(new TooManyConnectionsException(config.getMaxConnections()), ChannelManager.class, "acquireChannelLock");
+        tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(config.getMaxConnectionsPerHost()), ChannelManager.class, "acquireChannelLock");
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 

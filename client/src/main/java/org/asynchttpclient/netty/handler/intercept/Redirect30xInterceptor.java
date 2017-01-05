@@ -14,10 +14,11 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
-import static org.asynchttpclient.util.MiscUtils.*;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -50,21 +51,22 @@ public class Redirect30xInterceptor {
         REDIRECT_STATUSES.add(SEE_OTHER_303);
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
     }
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xInterceptor.class);
 
     private final ChannelManager channelManager;
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final MaxRedirectException maxRedirectException;
-    
+
     public Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
-        maxRedirectException = trimStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()));
+        maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()), Redirect30xInterceptor.class,
+                "exitAfterHandlingRedirect");
     }
-    
+
     public boolean exitAfterHandlingRedirect(//
             Channel channel,//
             NettyResponseFuture<?> future,//
@@ -164,7 +166,7 @@ public class Redirect30xInterceptor {
         }
         return false;
     }
-    
+
     private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
 
         HttpHeaders headers = request.getHeaders()//

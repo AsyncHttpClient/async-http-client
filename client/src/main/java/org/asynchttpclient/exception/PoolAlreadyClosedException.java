@@ -12,14 +12,14 @@
  */
 package org.asynchttpclient.exception;
 
-import java.io.IOException;
+import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 
-import static org.asynchttpclient.util.MiscUtils.trimStackTrace;
+import java.io.IOException;
 
 @SuppressWarnings("serial")
 public class PoolAlreadyClosedException extends IOException {
 
-    public static final PoolAlreadyClosedException INSTANCE = trimStackTrace(new PoolAlreadyClosedException());
+    public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
 
     private PoolAlreadyClosedException() {
         super("Pool is already closed");
