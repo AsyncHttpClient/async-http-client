@@ -23,6 +23,8 @@ import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 
+import static io.netty.util.internal.ThrowableUtil.*;
+
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -217,7 +219,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                     @Override
                     public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                        throw new RuntimeException("FOO");
+                        throw unknownStackTrace(new RuntimeException("FOO"), AsyncStreamHandlerTest.class, "asyncStreamThrowableRefusedTest");
                     }
 
                     @Override
