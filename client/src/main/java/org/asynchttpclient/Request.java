@@ -17,6 +17,7 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
 
 import java.io.File;
@@ -27,7 +28,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;

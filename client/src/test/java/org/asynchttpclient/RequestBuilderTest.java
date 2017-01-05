@@ -18,18 +18,21 @@ package org.asynchttpclient;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.asynchttpclient.Dsl.get;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.asynchttpclient.cookie.Cookie;
 import org.testng.annotations.Test;
-
-import io.netty.handler.codec.http.HttpMethod;
 
 public class RequestBuilderTest {
 
@@ -134,17 +137,33 @@ public class RequestBuilderTest {
 
     public void testAddOrReplaceCookies() {
         RequestBuilder requestBuilder = new RequestBuilder();
-        Cookie cookie = new Cookie("name", "value", false, "google.com", "/", 1000, true, true);
+        Cookie cookie = new DefaultCookie("name", "value");
+        cookie.setDomain("google.com");
+        cookie.setPath("/");
+        cookie.setMaxAge(1000);
+        cookie.setSecure(true);
+        cookie.setHttpOnly(true);
         requestBuilder.addOrReplaceCookie(cookie);
         assertEquals(requestBuilder.cookies.size(), 1, "cookies size should be 1 after adding one cookie");
         assertEquals(requestBuilder.cookies.get(0), cookie, "cookie does not match");
 
-        Cookie cookie2 = new Cookie("name", "value2", true, "google2.com", "/path", 1001, false, false);
+        Cookie cookie2 = new DefaultCookie("name", "value");
+        cookie2.setDomain("google2.com");
+        cookie2.setPath("/path");
+        cookie2.setMaxAge(1001);
+        cookie2.setSecure(false);
+        cookie2.setHttpOnly(false);
+                
         requestBuilder.addOrReplaceCookie(cookie2);
         assertEquals(requestBuilder.cookies.size(), 1, "cookies size should remain 1 as we just replaced a cookie with same name");
         assertEquals(requestBuilder.cookies.get(0), cookie2, "cookie does not match");
 
-        Cookie cookie3 = new Cookie("name", "value", false, "google.com", "/", 1000, true, true);
+        Cookie cookie3 = new DefaultCookie("name", "value");
+        cookie3.setDomain("google.com");
+        cookie3.setPath("/");
+        cookie3.setMaxAge(1000);
+        cookie3.setSecure(true);
+        cookie3.setHttpOnly(true);
         requestBuilder.addOrReplaceCookie(cookie3);
         assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
     }

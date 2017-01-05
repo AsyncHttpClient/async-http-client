@@ -19,6 +19,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -26,7 +28,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
-import org.asynchttpclient.cookie.Cookie;
 import org.testng.annotations.Test;
 
 /**
@@ -168,11 +169,15 @@ public class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = "online")
     public void evilCoookieTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
+            Cookie cookie = new DefaultCookie("evilcookie", "test");
+            cookie.setDomain(".google.com");
+            cookie.setPath("/");
+
             RequestBuilder builder = get("http://localhost")//
                     .setFollowRedirect(true)//
                     .setUrl("http://www.google.com/")//
                     .addHeader("Content-Type", "text/plain")//
-                    .addCookie(new Cookie("evilcookie", "test", false, ".google.com", "/", Long.MIN_VALUE, false, false));
+                    .addCookie(cookie);
 
             Response response = c.executeRequest(builder.build()).get();
             assertNotNull(response);

@@ -16,6 +16,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.util.MiscUtils.*;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.ssl.SslContext;
 
 import java.io.Closeable;
@@ -41,7 +42,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SslEngineFactory;
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.handler.resumable.ResumableIOExceptionFilter;

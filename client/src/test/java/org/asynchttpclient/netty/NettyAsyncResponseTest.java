@@ -15,6 +15,7 @@ package org.asynchttpclient.netty;
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,7 +24,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.cookie.Cookie;
 import org.testng.annotations.Test;
 
 public class NettyAsyncResponseTest {
@@ -44,7 +44,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertTrue(cookie.getMaxAge() >= 58 && cookie.getMaxAge() <= 60);
+        assertTrue(cookie.maxAge() >= 58 && cookie.maxAge() <= 60);
     }
 
     @Test(groups = "standalone")
@@ -57,7 +57,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getMaxAge(), 60);
+        assertEquals(cookie.maxAge(), 60);
     }
 
     @Test(groups = "standalone")
@@ -70,6 +70,6 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getMaxAge(), Long.MIN_VALUE);
+        assertEquals(cookie.maxAge(), Long.MIN_VALUE);
     }
 }

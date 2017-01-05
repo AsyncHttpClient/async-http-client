@@ -22,6 +22,8 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -31,8 +33,6 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -125,7 +125,7 @@ public class Redirect30xInterceptor {
                 LOGGER.debug("Redirecting to {}", newUri);
 
                 for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
-                    Cookie c = CookieDecoder.decode(cookieStr);
+                    Cookie c = ClientCookieDecoder.STRICT.decode(cookieStr);
                     if (c != null)
                         requestBuilder.addOrReplaceCookie(c);
                 }

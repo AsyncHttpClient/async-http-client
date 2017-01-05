@@ -18,6 +18,8 @@ import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -33,8 +35,6 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.uri.Uri;
 
 /**
@@ -66,7 +66,7 @@ public class NettyResponse implements Response {
         if (isNonEmpty(setCookieHeaders)) {
             List<Cookie> cookies = new ArrayList<>(1);
             for (String value : setCookieHeaders) {
-                Cookie c = CookieDecoder.decode(value);
+                Cookie c = ClientCookieDecoder.STRICT.decode(value);
                 if (c != null)
                     cookies.add(c);
             }

@@ -27,13 +27,13 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 
 import java.nio.charset.Charset;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.cookie.CookieEncoder;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyBodyBody;
 import org.asynchttpclient.netty.request.body.NettyByteArrayBody;
@@ -168,7 +168,7 @@ public final class NettyRequestFactory {
             headers.set(request.getHeaders());
 
             if (isNonEmpty(request.getCookies()))
-                headers.set(COOKIE, CookieEncoder.encode(request.getCookies()));
+                headers.set(COOKIE, ClientCookieEncoder.STRICT.encode(request.getCookies()));
 
             String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
             if (userDefinedAcceptEncoding != null) {

@@ -13,6 +13,7 @@
 package org.asynchttpclient.webdav;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -21,7 +22,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.asynchttpclient.Response;
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 import org.w3c.dom.Document;
 

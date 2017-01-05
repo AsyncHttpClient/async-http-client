@@ -23,6 +23,8 @@ import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -48,7 +50,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
@@ -61,6 +62,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
 
 public class BasicHttpTest extends HttpTest {
 
@@ -265,7 +267,9 @@ public class BasicHttpTest extends HttpTest {
     public void getWithCookies() throws Throwable {
         withClient().run(client -> {
             withServer(server).run(server -> {
-                final Cookie coo = Cookie.newValidCookie("foo", "value", false, "/", "/", Long.MIN_VALUE, false, false);
+                final Cookie coo = new DefaultCookie("foo", "value");
+                coo.setDomain("/");
+                coo.setPath("/");
                 server.enqueueEcho();
 
                 client.prepareGet(getTargetUrl())//

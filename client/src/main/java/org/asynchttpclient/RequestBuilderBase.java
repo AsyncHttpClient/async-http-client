@@ -20,6 +20,7 @@ import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.DefaultNameResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
@@ -290,12 +290,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addOrReplaceCookie(Cookie cookie) {
-        String cookieKey = cookie.getName();
+        String cookieKey = cookie.name();
         boolean replace = false;
         int index = 0;
         lazyInitCookies();
         for (Cookie c : this.cookies) {
-            if (c.getName().equals(cookieKey)) {
+            if (c.name().equals(cookieKey)) {
                 replace = true;
                 break;
             }

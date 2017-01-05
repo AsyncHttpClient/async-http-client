@@ -15,6 +15,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
 
 import java.io.File;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
-import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
