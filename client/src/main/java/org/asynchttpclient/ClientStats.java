@@ -30,7 +30,7 @@ public class ClientStats {
 
     /**
      * @return A map from hostname to statistics on that host's connections.
-     * The returned map is an {@link java.util.Collections.UnmodifiableMap}.
+     * The returned map is unmodifiable.
      */
     public Map<String, HostStats> getStatsPerHost() {
         return statsPerHost;

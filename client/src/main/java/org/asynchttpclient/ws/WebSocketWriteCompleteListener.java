@@ -67,17 +67,20 @@ public interface WebSocketWriteCompleteListener extends FutureListener<Void> {
         }
 
         /**
-         * @return the exception in case the write operation failed, @{@code null} otherwise.
+         * Return the exception in case the write operation failed, @{@code null} otherwise.
+         * @return the exception
          */
         Throwable getFailure();
 
         /**
-         * @return @{@code true} if the operation succeeded, {@code false} otherwise.
+         * Return @{@code true} if the operation succeeded, {@code false} otherwise.
+         * @return true if success.
          */
         boolean isSuccess();
 
         /**
-         * @return @{@code true} if the operation failed, {@code false} otherwise.
+         * Return @{@code true} if the operation failed, {@code false} otherwise.
+         * @return true if failed.
          */
         boolean isFailed();
     }
