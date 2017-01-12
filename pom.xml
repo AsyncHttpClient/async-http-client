@@ -36,19 +36,6 @@
 		</mailingList>
 	</mailingLists>
 
-	<repositories>
-		<repository>
-			<id>sonatype-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
 	<prerequisites>
 		<maven>3.0.0</maven>
 	</prerequisites>
@@ -391,7 +378,7 @@
 		<surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
 		<source.property>1.8</source.property>
 		<target.property>1.8</target.property>
-		<netty.version>4.1.7.Final-SNAPSHOT</netty.version>
+		<netty.version>4.1.7.Final</netty.version>
 		<slf4j.version>1.7.22</slf4j.version>
 		<logback.version>1.1.8</logback.version>
 		<testng.version>6.9.10</testng.version>
