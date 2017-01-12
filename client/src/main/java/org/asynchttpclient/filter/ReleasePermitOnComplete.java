@@ -11,13 +11,16 @@ import java.util.concurrent.Semaphore;
 import org.asynchttpclient.AsyncHandler;
 
 /**
- * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}.
- * This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
+ * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}. This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
  */
 public class ReleasePermitOnComplete {
 
     /**
      * Wrap handler to release the permit of the semaphore on {@link AsyncHandler#onCompleted()}.
+     * 
+     * @param handler the handler to be wrapped
+     * @param available the Semaphore to be released when the wrapped handler is completed
+     * @return the wrapped handler
      */
     @SuppressWarnings("unchecked")
     public static <T> AsyncHandler<T> wrap(final AsyncHandler<T> handler, final Semaphore available) {
@@ -31,8 +34,11 @@ public class ReleasePermitOnComplete {
                 try {
                     return method.invoke(handler, args);
                 } finally {
-                    if ("onCompleted".equals(method.getName())) {
+                    switch (method.getName()) {
+                    case "onCompleted":
+                    case "onThrowable":
                         available.release();
+                    default:
                     }
                 }
             }
@@ -41,6 +47,8 @@ public class ReleasePermitOnComplete {
 
     /**
      * Extract all interfaces of a class.
+     * @param handlerClass the handler class
+     * @return all interfaces implemented by this class
      */
     static Class<?>[] allInterfaces(Class<?> handlerClass) {
         Set<Class<?>> allInterfaces = new HashSet<>();
