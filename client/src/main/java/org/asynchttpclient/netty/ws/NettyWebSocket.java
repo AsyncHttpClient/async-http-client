@@ -14,7 +14,6 @@
 package org.asynchttpclient.netty.ws;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
@@ -30,7 +29,7 @@ import java.nio.charset.CharacterCodingException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.asynchttpclient.netty.util.ByteBufUtils;
+import org.asynchttpclient.netty.util.Utf8ByteBufCharsetDecoder;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteListener;
 import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
@@ -279,9 +278,9 @@ public class NettyWebSocket implements WebSocket {
     public void onTextFrame(TextWebSocketFrame frame) {
         if (interestedInTextMessages) {
             try {
-                notifyTextListeners(ByteBufUtils.byteBuf2String(UTF_8, frame.content()));
+                notifyTextListeners(Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content()));
             } catch (CharacterCodingException e) {
-                throw new IllegalStateException(e);
+                throw new IllegalArgumentException(e);
             }
         }
     }
