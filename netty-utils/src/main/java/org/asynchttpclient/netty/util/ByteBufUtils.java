@@ -25,15 +25,15 @@ public final class ByteBufUtils {
     private ByteBufUtils() {
     }
 
-    public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
-        if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
-            return Utf8ByteBufCharsetDecoder.decodeUtf8(buf);
-        } else {
-            return buf.toString(charset);
-        }
+    public static boolean isUtf8OrUsAscii(Charset charset) {
+        return charset.equals(UTF_8) || charset.equals(US_ASCII);
     }
 
-    public static String decodeNonOptimized(Charset charset, ByteBuf... bufs) {
+    public static String byteBuf2StringDefault(Charset charset, ByteBuf... bufs) {
+
+        if (bufs.length == 1) {
+            return bufs[0].toString(charset);
+        }
 
         for (ByteBuf buf : bufs) {
             buf.retain();
@@ -43,18 +43,17 @@ public final class ByteBufUtils {
 
         try {
             return composite.toString(charset);
-
         } finally {
             composite.release();
         }
     }
 
+    public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
+        return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(buf) : buf.toString(charset);
+    }
+
     public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
-        if (charset.equals(UTF_8) || charset.equals(US_ASCII)) {
-            return Utf8ByteBufCharsetDecoder.decodeUtf8(bufs);
-        } else {
-            return decodeNonOptimized(charset, bufs);
-        }
+        return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(bufs) : byteBuf2StringDefault(charset, bufs);
     }
 
     public static byte[] byteBuf2Bytes(ByteBuf buf) {

@@ -193,7 +193,7 @@ public class Utf8ByteBufCharsetDecoder {
         }
 
         if (withoutArray) {
-            return ByteBufUtils.decodeNonOptimized(UTF_8, bufs);
+            return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs);
 
         } else {
             ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
