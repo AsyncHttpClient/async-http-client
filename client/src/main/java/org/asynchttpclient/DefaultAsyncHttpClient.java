@@ -57,7 +57,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     /**
      * Create a new HTTP Asynchronous Client using the default
      * {@link DefaultAsyncHttpClientConfig} configuration. The default
-     * {@link AsyncHttpClient} that will be used will be based on the classpath
+     * {@link AsyncHttpClient} that will be based on the classpath
      * configuration.
      *
      * If none of those providers are found, then the engine will throw an
