@@ -24,6 +24,9 @@ import java.nio.charset.CoderResult;
 
 public class Utf8ByteBufCharsetDecoder {
 
+    private static final int INITIAL_CHAR_BUFFER_SIZE = 1024;
+    private static final int UTF_8_MAX_BYTES_PER_CHAR = 4;
+
     private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = new ThreadLocal<Utf8ByteBufCharsetDecoder>() {
         protected Utf8ByteBufCharsetDecoder initialValue() {
             return new Utf8ByteBufCharsetDecoder();
@@ -45,15 +48,8 @@ public class Utf8ByteBufCharsetDecoder {
     }
 
     private final CharsetDecoder decoder = UTF_8.newDecoder();
-    protected CharBuffer charBuffer = allocateCharBuffer(1024);
-    private ByteBuffer splitCharBuffer;
-
-    protected void initSplitCharBuffer() {
-        if (splitCharBuffer == null) {
-            // UTF-8 chars are 4 bytes max
-            splitCharBuffer = ByteBuffer.allocate(4);
-        }
-    }
+    protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
+    private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
 
     protected CharBuffer allocateCharBuffer(int l) {
         return CharBuffer.allocate(l);
@@ -75,6 +71,7 @@ public class Utf8ByteBufCharsetDecoder {
     public void reset() {
         decoder.reset();
         charBuffer.clear();
+        splitCharBuffer.clear();
     }
 
     private static int charSize(byte firstByte) throws CharacterCodingException {
@@ -119,8 +116,6 @@ public class Utf8ByteBufCharsetDecoder {
             if (res.isError()) {
                 res.throwException();
             }
-
-            splitCharBuffer.position(0);
         }
     }
 
@@ -135,7 +130,6 @@ public class Utf8ByteBufCharsetDecoder {
             CoderResult res = decoder.decode(nioBuffer, charBuffer, endOfInput);
             if (res.isUnderflow()) {
                 if (nioBuffer.remaining() > 0) {
-                    initSplitCharBuffer();
                     splitCharBuffer.put(nioBuffer);
                 }
             } else if (res.isError()) {
