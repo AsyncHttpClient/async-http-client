@@ -522,7 +522,7 @@ public class BasicHttpTest extends HttpTest {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 try {
-                    client.prepareGet("http://null.gatling.io").execute(new AsyncCompletionHandlerAdapter() {
+                    client.prepareGet("http://null.gatling.i").execute(new AsyncCompletionHandlerAdapter() {
                         @Override
                         public void onThrowable(Throwable t) {
                         }
