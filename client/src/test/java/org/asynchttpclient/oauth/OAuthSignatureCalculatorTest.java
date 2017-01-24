@@ -309,4 +309,26 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_version%3D1.0%26"//
                 + "testvalue%3D%252A");
     }
+
+    @Test
+    public void testWithAsteriskInPath() {
+        ConsumerKey consumer = new ConsumerKey("key", "secret");
+        RequestToken user = new RequestToken(null, null);
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+
+        final Request request = get("http://term.ie/oauth/example/*testpathwithasterisk").build();
+
+        String signatureBaseString = calc.signatureBaseString(//
+                request,//
+                1469019732,//
+                "ZLc92RAkooZcIO/0cctl0Q==").toString();
+
+        assertEquals(signatureBaseString, "GET&" +
+                "http%3A%2F%2Fterm.ie%2Foauth%2Fexample%2F%2Atestpathwithasterisk&" +
+                "oauth_consumer_key%3Dkey%26" +
+                "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" +
+                "oauth_signature_method%3DHMAC-SHA1%26" +
+                "oauth_timestamp%3D1469019732%26" +
+                "oauth_version%3D1.0");
+    }
 }
