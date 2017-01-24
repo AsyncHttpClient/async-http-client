@@ -142,6 +142,16 @@ public final class Utf8UrlEncoder {
         return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, true);
     }
 
+    public static String percentEncodeQueryElement(String input) {
+        StringBuilder sb = new StringBuilder(input.length() + 6);
+        encodeAndAppendPercentEncoded(sb, input);
+        return sb.toString();
+    }
+
+    public static StringBuilder encodeAndAppendPercentEncoded(StringBuilder sb, CharSequence input) {
+        return appendEncoded(sb, input, RFC3986_UNRESERVED_CHARS, false);
+    }
+
     private static StringBuilder lazyInitStringBuilder(CharSequence input, int firstNonUsAsciiPosition) {
         StringBuilder sb = new StringBuilder(input.length() + 6);
         for (int i = 0; i < firstNonUsAsciiPosition; i++) {
