@@ -26,4 +26,12 @@ public class TestUTF8UrlCodec {
         assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
         assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
     }
+
+    @Test(groups = "standalone")
+    public void testPercentageEncoding() {
+        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foobar"), "foobar");
+        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");
+        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"), "foo~b_ar");
+    }
+
 }
