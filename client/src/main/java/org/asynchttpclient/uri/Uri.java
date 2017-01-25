@@ -13,6 +13,7 @@
 package org.asynchttpclient.uri;
 
 import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,12 +22,12 @@ import org.asynchttpclient.util.MiscUtils;
 import org.asynchttpclient.util.StringUtils;
 
 public class Uri {
-    
+
     public static final String HTTP = "http";
     public static final String HTTPS = "https";
     public static final String WS = "ws";
     public static final String WSS = "wss";
-    
+
     public static Uri create(String originalUrl) {
         return create(null, originalUrl);
     }
@@ -101,7 +102,7 @@ public class Uri {
     public boolean isWebSocket() {
         return webSocket;
     }
-    
+
     public URI toJavaNetURI() throws URISyntaxException {
         return new URI(toUrl());
     }
@@ -131,6 +132,21 @@ public class Uri {
             sb.setLength(0);
         }
         return url;
+    }
+
+    /**
+     * @return <scheme>://<hostname>(:<port>). Port is ommitted if it matches the scheme's default one.
+     */
+    public String toBaseUrl() {
+        StringBuilder sb = StringUtils.stringBuilder();
+        sb.append(scheme).append("://").append(host);
+        if (port != -1 && port != getSchemeDefaultPort()) {
+            sb.append(':').append(port);
+        }
+        if (isNonEmpty(path)) {
+            sb.append(path);
+        }
+        return sb.toString();
     }
 
     public String toRelativeUrl() {
