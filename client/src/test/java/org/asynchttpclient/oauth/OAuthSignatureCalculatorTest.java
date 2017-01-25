@@ -309,4 +309,22 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_version%3D1.0%26"//
                 + "testvalue%3D%252A");
     }
+
+    @Test
+    public void testSignatureGenerationWithAsteriskInPath() {
+        ConsumerKey consumer = new ConsumerKey("key", "secret");
+        String someNonce = "6ad17f97334700f3ec2df0631d5b7511";
+        long someTimestamp = 1469019732;
+        String urlWithAsterisksInPath = "http://example.com/oauth/example/*path/wi*th/asterisks*";
+
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, new RequestToken(null, null));
+        final Request request = get(urlWithAsterisksInPath).build();
+
+        String expectedSignature = "cswi/v3ZqhVkTyy5MGqW841BxDA=";
+        String actualSignature = calc.calculateSignature(request, someTimestamp, someNonce);
+        assertEquals(actualSignature, expectedSignature);
+
+        String generatedAuthHeader = calc.constructAuthHeader(actualSignature, someNonce, someTimestamp);
+        assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));
+    }
 }

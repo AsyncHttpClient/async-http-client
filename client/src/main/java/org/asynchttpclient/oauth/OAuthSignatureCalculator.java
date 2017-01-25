@@ -92,19 +92,19 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         OAuthParameterSet allParameters = new OAuthParameterSet(allParametersSize);
 
         // start with standard OAuth parameters we need
-        allParameters.add(KEY_OAUTH_CONSUMER_KEY, Utf8UrlEncoder.encodeQueryElement(consumerAuth.getKey()));
-        allParameters.add(KEY_OAUTH_NONCE, Utf8UrlEncoder.encodeQueryElement(nonce));
+        allParameters.add(KEY_OAUTH_CONSUMER_KEY, Utf8UrlEncoder.percentEncodeQueryElement(consumerAuth.getKey()));
+        allParameters.add(KEY_OAUTH_NONCE, Utf8UrlEncoder.percentEncodeQueryElement(nonce));
         allParameters.add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD);
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         if (userAuth.getKey() != null) {
-            allParameters.add(KEY_OAUTH_TOKEN, Utf8UrlEncoder.encodeQueryElement(userAuth.getKey()));
+            allParameters.add(KEY_OAUTH_TOKEN, Utf8UrlEncoder.percentEncodeQueryElement(userAuth.getKey()));
         }
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
             for (Param param : formParams) {
                 // formParams are not already encoded
-                allParameters.add(Utf8UrlEncoder.encodeQueryElement(param.getName()), Utf8UrlEncoder.encodeQueryElement(param.getValue()));
+                allParameters.add(Utf8UrlEncoder.percentEncodeQueryElement(param.getName()), Utf8UrlEncoder.percentEncodeQueryElement(param.getValue()));
             }
         }
         if (queryParams != null) {
@@ -164,11 +164,11 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         StringBuilder sb = StringUtils.stringBuilder();
         sb.append(request.getMethod()); // POST / GET etc (nothing to URL encode)
         sb.append('&');
-        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, baseUrl);
+        Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, baseUrl);
 
         // and all that needs to be URL encoded (... again!)
         sb.append('&');
-        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, encodedParams);
+        Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, encodedParams);
         return sb;
     }
 
@@ -182,7 +182,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return Base64.encode(rawSignature);
     }
 
-    private String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
+    String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
         StringBuilder sb = StringUtils.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
@@ -193,23 +193,23 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         // careful: base64 has chars that need URL encoding:
         sb.append(KEY_OAUTH_SIGNATURE).append("=\"");
-        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, signature).append("\", ");
+        Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, signature).append("\", ");
         sb.append(KEY_OAUTH_TIMESTAMP).append("=\"").append(oauthTimestamp).append("\", ");
 
         // also: nonce may contain things that need URL encoding (esp. when using base64):
         sb.append(KEY_OAUTH_NONCE).append("=\"");
-        Utf8UrlEncoder.encodeAndAppendQueryElement(sb, nonce);
+        Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, nonce);
         sb.append("\", ");
 
         sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");
         return sb.toString();
     }
 
-    protected long generateTimestamp() {
+    long generateTimestamp() {
         return System.currentTimeMillis() / 1000L;
     }
 
-    protected String generateNonce() {
+    String generateNonce() {
         byte[] nonceBuffer = NONCE_BUFFER.get();
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
