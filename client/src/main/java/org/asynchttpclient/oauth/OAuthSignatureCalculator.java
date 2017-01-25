@@ -182,7 +182,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return Base64.encode(rawSignature);
     }
 
-    private String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
+    String constructAuthHeader(String signature, String nonce, long oauthTimestamp) {
         StringBuilder sb = StringUtils.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
@@ -205,11 +205,11 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         return sb.toString();
     }
 
-    protected long generateTimestamp() {
+    long generateTimestamp() {
         return System.currentTimeMillis() / 1000L;
     }
 
-    protected String generateNonce() {
+    String generateNonce() {
         byte[] nonceBuffer = NONCE_BUFFER.get();
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals

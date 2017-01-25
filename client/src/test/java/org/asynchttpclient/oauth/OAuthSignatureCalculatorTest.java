@@ -311,24 +311,20 @@ public class OAuthSignatureCalculatorTest {
     }
 
     @Test
-    public void testWithAsteriskInPath() {
+    public void testSignatureGenerationWithAsteriskInPath() {
         ConsumerKey consumer = new ConsumerKey("key", "secret");
-        RequestToken user = new RequestToken(null, null);
-        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+        String someNonce = "6ad17f97334700f3ec2df0631d5b7511";
+        long someTimestamp = 1469019732;
+        String urlWithAsterisksInPath = "http://example.com/oauth/example/*path/wi*th/asterisks*";
 
-        final Request request = get("http://term.ie/oauth/example/*testpathwithasterisk").build();
+        OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, new RequestToken(null, null));
+        final Request request = get(urlWithAsterisksInPath).build();
 
-        String signatureBaseString = calc.signatureBaseString(//
-                request,//
-                1469019732,//
-                "ZLc92RAkooZcIO/0cctl0Q==").toString();
+        String expectedSignature = "cswi/v3ZqhVkTyy5MGqW841BxDA=";
+        String actualSignature = calc.calculateSignature(request, someTimestamp, someNonce);
+        assertEquals(actualSignature, expectedSignature);
 
-        assertEquals(signatureBaseString, "GET&" +
-                "http%3A%2F%2Fterm.ie%2Foauth%2Fexample%2F%2Atestpathwithasterisk&" +
-                "oauth_consumer_key%3Dkey%26" +
-                "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" +
-                "oauth_signature_method%3DHMAC-SHA1%26" +
-                "oauth_timestamp%3D1469019732%26" +
-                "oauth_version%3D1.0");
+        String generatedAuthHeader = calc.constructAuthHeader(actualSignature, someNonce, someTimestamp);
+        assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));
     }
 }
