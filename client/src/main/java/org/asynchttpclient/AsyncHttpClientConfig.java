@@ -197,7 +197,7 @@ public interface AsyncHttpClientConfig {
      * In the case of a POST/Redirect/Get scenario where the server uses a 302 for the redirect, should AHC respond to the redirect with a GET or whatever the original method was.
      * Unless configured otherwise, for a 302, AHC, will use a GET for this case.
      *
-     * @return <code>true</code> if string 302 handling is to be used, otherwise <code>false</code>.
+     * @return <code>true</code> if strict 302 handling is to be used, otherwise <code>false</code>.
      */
     boolean isStrict302Handling();
 
