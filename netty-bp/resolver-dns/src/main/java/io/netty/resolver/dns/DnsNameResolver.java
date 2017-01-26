@@ -37,7 +37,7 @@ import io.netty.handler.codec.dns.DnsQuestion;
 import io.netty.handler.codec.dns.DnsResponse;
 import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.resolver.InetNameResolver;
-import io.netty.util.NetUtil;
+import io.netty.util.NetUtil2;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.Future;
@@ -69,21 +69,24 @@ public class DnsNameResolver extends InetNameResolver {
     private static final String LOCALHOST = "localhost";
     private static final InetAddress LOCALHOST_ADDRESS;
 
-    static final InternetProtocolFamily[] DEFAULT_RESOLVE_ADDRESS_TYPES = new InternetProtocolFamily[2];
+    static final InternetProtocolFamily[] DEFAULT_RESOLVE_ADDRESS_TYPES;
     static final String[] DEFAULT_SEACH_DOMAINS;
 
     static {
-        // Note that we did not use SystemPropertyUtil.getBoolean() here to emulate the behavior of JDK.
-        if (Boolean.getBoolean("java.net.preferIPv6Addresses")) {
-            DEFAULT_RESOLVE_ADDRESS_TYPES[0] = InternetProtocolFamily.IPv6;
-            DEFAULT_RESOLVE_ADDRESS_TYPES[1] = InternetProtocolFamily.IPv4;
-            LOCALHOST_ADDRESS = NetUtil.LOCALHOST6;
-            logger.debug("-Djava.net.preferIPv6Addresses: true");
+        if (NetUtil2.isIpV4StackPreferred()) {
+            DEFAULT_RESOLVE_ADDRESS_TYPES = new InternetProtocolFamily[] { InternetProtocolFamily.IPv4 };
+            LOCALHOST_ADDRESS = NetUtil2.LOCALHOST4;
         } else {
-            DEFAULT_RESOLVE_ADDRESS_TYPES[0] = InternetProtocolFamily.IPv4;
-            DEFAULT_RESOLVE_ADDRESS_TYPES[1] = InternetProtocolFamily.IPv6;
-            LOCALHOST_ADDRESS = NetUtil.LOCALHOST4;
-            logger.debug("-Djava.net.preferIPv6Addresses: false");
+            DEFAULT_RESOLVE_ADDRESS_TYPES = new InternetProtocolFamily[2];
+            if (NetUtil2.isIpV6AddressesPreferred()) {
+                DEFAULT_RESOLVE_ADDRESS_TYPES[0] = InternetProtocolFamily.IPv6;
+                DEFAULT_RESOLVE_ADDRESS_TYPES[1] = InternetProtocolFamily.IPv4;
+                LOCALHOST_ADDRESS = NetUtil2.LOCALHOST6;
+            } else {
+                DEFAULT_RESOLVE_ADDRESS_TYPES[0] = InternetProtocolFamily.IPv4;
+                DEFAULT_RESOLVE_ADDRESS_TYPES[1] = InternetProtocolFamily.IPv6;
+                LOCALHOST_ADDRESS = NetUtil2.LOCALHOST4;
+            }
         }
     }
 
@@ -343,7 +346,7 @@ public class DnsNameResolver extends InetNameResolver {
     protected void doResolve(String inetHost,
                              Promise<InetAddress> promise,
                              DnsCache resolveCache) throws Exception {
-        final byte[] bytes = NetUtil.createByteArrayFromIpAddressString(inetHost);
+        final byte[] bytes = NetUtil2.createByteArrayFromIpAddressString(inetHost);
         if (bytes != null) {
             // The inetHost is actually an ipaddress.
             promise.setSuccess(InetAddress.getByAddress(bytes));
@@ -461,7 +464,7 @@ public class DnsNameResolver extends InetNameResolver {
                                 Promise<List<InetAddress>> promise,
                                 DnsCache resolveCache) throws Exception {
 
-        final byte[] bytes = NetUtil.createByteArrayFromIpAddressString(inetHost);
+        final byte[] bytes = NetUtil2.createByteArrayFromIpAddressString(inetHost);
         if (bytes != null) {
             // The unresolvedAddress was created via a String that contains an ipaddress.
             promise.setSuccess(Collections.singletonList(InetAddress.getByAddress(bytes)));
