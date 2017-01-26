@@ -21,7 +21,7 @@ import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.ReflectiveChannelFactory;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.InternetProtocolFamily2;
 import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.util.internal.InternalThreadLocalMap;
 
@@ -42,7 +42,7 @@ public final class DnsNameResolverBuilder {
     private Integer maxTtl;
     private Integer negativeTtl;
     private long queryTimeoutMillis = 5000;
-    private InternetProtocolFamily[] resolvedAddressTypes = DnsNameResolver.DEFAULT_RESOLVE_ADDRESS_TYPES;
+    private InternetProtocolFamily2[] resolvedAddressTypes = DnsNameResolver.DEFAULT_RESOLVE_ADDRESS_TYPES;
     private boolean recursionDesired = true;
     private int maxQueriesPerResolve = 16;
     private boolean traceEnabled;
@@ -148,20 +148,20 @@ public final class DnsNameResolverBuilder {
 
     /**
      * Sets the list of the protocol families of the address resolved.
-     * Usually, both {@link InternetProtocolFamily#IPv4} and {@link InternetProtocolFamily#IPv6} are specified in
+     * Usually, both {@link InternetProtocolFamily2#IPv4} and {@link InternetProtocolFamily2#IPv6} are specified in
      * the order of preference.  To enforce the resolve to retrieve the address of a specific protocol family,
-     * specify only a single {@link InternetProtocolFamily}.
+     * specify only a single {@link InternetProtocolFamily2}.
      *
      * @param resolvedAddressTypes the address types
      * @return {@code this}
      */
-    public DnsNameResolverBuilder resolvedAddressTypes(InternetProtocolFamily... resolvedAddressTypes) {
+    public DnsNameResolverBuilder resolvedAddressTypes(InternetProtocolFamily2... resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolvedAddressTypes");
 
-        final List<InternetProtocolFamily> list =
-                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily.values().length);
+        final List<InternetProtocolFamily2> list =
+                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily2.values().length);
 
-        for (InternetProtocolFamily f : resolvedAddressTypes) {
+        for (InternetProtocolFamily2 f : resolvedAddressTypes) {
             if (f == null) {
                 break;
             }
@@ -178,27 +178,27 @@ public final class DnsNameResolverBuilder {
             throw new IllegalArgumentException("no protocol family specified");
         }
 
-        this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily[list.size()]);
+        this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily2[list.size()]);
 
         return this;
     }
 
     /**
      * Sets the list of the protocol families of the address resolved.
-     * Usually, both {@link InternetProtocolFamily#IPv4} and {@link InternetProtocolFamily#IPv6} are specified in
+     * Usually, both {@link InternetProtocolFamily2#IPv4} and {@link InternetProtocolFamily2#IPv6} are specified in
      * the order of preference.  To enforce the resolve to retrieve the address of a specific protocol family,
-     * specify only a single {@link InternetProtocolFamily}.
+     * specify only a single {@link InternetProtocolFamily2}.
      *
      * @param resolvedAddressTypes the address types
      * @return {@code this}
      */
-    public DnsNameResolverBuilder resolvedAddressTypes(Iterable<InternetProtocolFamily> resolvedAddressTypes) {
+    public DnsNameResolverBuilder resolvedAddressTypes(Iterable<InternetProtocolFamily2> resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolveAddressTypes");
 
-        final List<InternetProtocolFamily> list =
-                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily.values().length);
+        final List<InternetProtocolFamily2> list =
+                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily2.values().length);
 
-        for (InternetProtocolFamily f : resolvedAddressTypes) {
+        for (InternetProtocolFamily2 f : resolvedAddressTypes) {
             if (f == null) {
                 break;
             }
@@ -215,7 +215,7 @@ public final class DnsNameResolverBuilder {
             throw new IllegalArgumentException("no protocol family specified");
         }
 
-        this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily[list.size()]);
+        this.resolvedAddressTypes = list.toArray(new InternetProtocolFamily2[list.size()]);
 
         return this;
     }

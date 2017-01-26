@@ -16,6 +16,8 @@
 package io.netty.resolver.dns;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.util.internal.UnstableApi;
 
 import java.net.InetAddress;
 import java.util.Collections;
@@ -24,6 +26,7 @@ import java.util.List;
 /**
  * A noop DNS cache that actually never caches anything.
  */
+@UnstableApi
 public final class NoopDnsCache implements DnsCache {
 
     public static final NoopDnsCache INSTANCE = new NoopDnsCache();
@@ -44,16 +47,17 @@ public final class NoopDnsCache implements DnsCache {
     }
 
     @Override
-    public List<DnsCacheEntry> get(String hostname) {
+    public List<DnsCacheEntry> get(String hostname, DnsRecord[] additionals) {
         return Collections.emptyList();
     }
 
     @Override
-    public void cache(String hostname, InetAddress address, long originalTtl, EventLoop loop) {
+    public void cache(String hostname, DnsRecord[] additional,
+                      InetAddress address, long originalTtl, EventLoop loop) {
     }
 
     @Override
-    public void cache(String hostname, Throwable cause, EventLoop loop) {
+    public void cache(String hostname, DnsRecord[] additional, Throwable cause, EventLoop loop) {
     }
 
     @Override

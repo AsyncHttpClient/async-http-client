@@ -17,8 +17,12 @@ package io.netty.handler.codec.dns;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.socket.InternetProtocolFamily2;
 import io.netty.util.internal.StringUtil;
+import io.netty.util.internal.ThreadLocalRandom;
 import org.junit.Test;
+
+import java.net.InetAddress;
 
 import static org.junit.Assert.assertEquals;
 
@@ -62,72 +66,82 @@ public class DefaultDnsRecordEncoderTest {
             expectedBuf.release();
         }
     }
-    
+
     @Test
-    public void testDecodeMessageCompression() throws Exception {
-        // See https://www.ietf.org/rfc/rfc1035 [4.1.4. Message compression]
-        DefaultDnsRecordDecoder decoder = new DefaultDnsRecordDecoder();
-        byte[] rfcExample = new byte[] { 1, 'F', 3, 'I', 'S', 'I', 4, 'A', 'R', 'P', 'A',
-                0, 3, 'F', 'O', 'O',
-                (byte) 0xC0, 0, // this is 20 in the example
-                (byte) 0xC0, 6, // this is 26 in the example
-        };
-        DefaultDnsRawRecord rawPlainRecord = null;
-        DefaultDnsRawRecord rawUncompressedRecord = null;
-        DefaultDnsRawRecord rawUncompressedIndexedRecord = null;
-        ByteBuf buffer = Unpooled.wrappedBuffer(rfcExample);
-        try {
-            // First lets test that our utility funciton can correctly handle index references and decompression.
-            String plainName = DefaultDnsRecordDecoder.decodeName(buffer.duplicate());
-            assertEquals("F.ISI.ARPA.", plainName);
-            String uncompressedPlainName = DefaultDnsRecordDecoder.decodeName(buffer.duplicate().setIndex(16, 20));
-            assertEquals(plainName, uncompressedPlainName);
-            String uncompressedIndexedName = DefaultDnsRecordDecoder.decodeName(buffer.duplicate().setIndex(12, 20));
-            assertEquals("FOO." + plainName, uncompressedIndexedName);
+    public void testOptEcsRecordIpv4() throws Exception {
+        testOptEcsRecordIp(InetAddress.getByName("1.2.3.4"));
+    }
 
-            // Now lets make sure out object parsing produces the same results for non PTR type (just use CNAME).
-            rawPlainRecord = (DefaultDnsRawRecord) decoder.decodeRecord(
-                    plainName, DnsRecordType.CNAME, DnsRecord.CLASS_IN, 60, buffer, 0, 11);
-            assertEquals(plainName, rawPlainRecord.name());
-            assertEquals(plainName, DefaultDnsRecordDecoder.decodeName(rawPlainRecord.content()));
+    @Test
+    public void testOptEcsRecordIpv6() throws Exception {
+        testOptEcsRecordIp(InetAddress.getByName("::0"));
+    }
 
-            rawUncompressedRecord = (DefaultDnsRawRecord) decoder.decodeRecord(
-                    uncompressedPlainName, DnsRecordType.CNAME, DnsRecord.CLASS_IN, 60, buffer, 16, 4);
-            assertEquals(uncompressedPlainName, rawUncompressedRecord.name());
-            assertEquals(uncompressedPlainName, DefaultDnsRecordDecoder.decodeName(rawUncompressedRecord.content()));
-
-            rawUncompressedIndexedRecord = (DefaultDnsRawRecord) decoder.decodeRecord(
-                    uncompressedIndexedName, DnsRecordType.CNAME, DnsRecord.CLASS_IN, 60, buffer, 12, 8);
-            assertEquals(uncompressedIndexedName, rawUncompressedIndexedRecord.name());
-            assertEquals(uncompressedIndexedName,
-                         DefaultDnsRecordDecoder.decodeName(rawUncompressedIndexedRecord.content()));
-
-            // Now lets make sure out object parsing produces the same results for PTR type.
-            DnsPtrRecord ptrRecord = (DnsPtrRecord) decoder.decodeRecord(
-                    plainName, DnsRecordType.PTR, DnsRecord.CLASS_IN, 60, buffer, 0, 11);
-            assertEquals(plainName, ptrRecord.name());
-            assertEquals(plainName, ptrRecord.hostname());
-
-            ptrRecord = (DnsPtrRecord) decoder.decodeRecord(
-                    uncompressedPlainName, DnsRecordType.PTR, DnsRecord.CLASS_IN, 60, buffer, 16, 4);
-            assertEquals(uncompressedPlainName, ptrRecord.name());
-            assertEquals(uncompressedPlainName, ptrRecord.hostname());
-
-            ptrRecord = (DnsPtrRecord) decoder.decodeRecord(
-                    uncompressedIndexedName, DnsRecordType.PTR, DnsRecord.CLASS_IN, 60, buffer, 12, 8);
-            assertEquals(uncompressedIndexedName, ptrRecord.name());
-            assertEquals(uncompressedIndexedName, ptrRecord.hostname());
-        } finally {
-            if (rawPlainRecord != null) {
-                rawPlainRecord.release();
-            }
-            if (rawUncompressedRecord != null) {
-                rawUncompressedRecord.release();
-            }
-            if (rawUncompressedIndexedRecord != null) {
-                rawUncompressedIndexedRecord.release();
-            }
-            buffer.release();
+    private static void testOptEcsRecordIp(InetAddress address) throws Exception {
+        int addressBits = address.getAddress().length * Byte.SIZE;
+        for (int i = 0; i <= addressBits; ++i) {
+            testIp(address, i);
         }
+    }
+
+    private static void testIp(InetAddress address, int prefix) throws Exception {
+        int lowOrderBitsToPreserve = prefix % Byte.SIZE;
+
+        ByteBuf addressPart = Unpooled.wrappedBuffer(address.getAddress(), 0,
+                DefaultDnsRecordEncoder.calculateEcsAddressLength(prefix, lowOrderBitsToPreserve));
+
+        if (lowOrderBitsToPreserve > 0) {
+            // Pad the leftover of the last byte with zeros.
+            int idx = addressPart.writerIndex() - 1;
+            byte lastByte = addressPart.getByte(idx);
+            addressPart.setByte(idx, DefaultDnsRecordEncoder.padWithZeros(lastByte, lowOrderBitsToPreserve));
+        }
+
+        int payloadSize = nextInt(Short.MAX_VALUE);
+        int extendedRcode = nextInt(Byte.MAX_VALUE * 2); // Unsigned
+        int version = nextInt(Byte.MAX_VALUE * 2); // Unsigned
+
+        DefaultDnsRecordEncoder encoder = new DefaultDnsRecordEncoder();
+        ByteBuf out = Unpooled.buffer();
+        try {
+            DnsOptEcsRecord record = new DefaultDnsOptEcsRecord(
+                    payloadSize, extendedRcode, version, prefix, address.getAddress());
+            encoder.encodeRecord(record, out);
+
+            assertEquals(0, out.readByte()); // Name
+            assertEquals(DnsRecordType.OPT.intValue(), out.readUnsignedShort()); // Opt
+            assertEquals(payloadSize, out.readUnsignedShort()); // payload
+            assertEquals(record.timeToLive(), out.getUnsignedInt(out.readerIndex()));
+
+            // Read unpacked TTL.
+            assertEquals(extendedRcode, out.readUnsignedByte());
+            assertEquals(version, out.readUnsignedByte());
+            assertEquals(extendedRcode, record.extendedRcode());
+            assertEquals(version, record.version());
+            assertEquals(0, record.flags());
+
+            assertEquals(0, out.readShort());
+
+            int payloadLength = out.readUnsignedShort();
+            assertEquals(payloadLength, out.readableBytes());
+
+            assertEquals(8, out.readShort()); // As defined by RFC.
+
+            int rdataLength = out.readUnsignedShort();
+            assertEquals(rdataLength, out.readableBytes());
+
+            assertEquals((short) InternetProtocolFamily2.of(address).addressNumber(), out.readShort());
+
+            assertEquals(prefix, out.readUnsignedByte());
+            assertEquals(0, out.readUnsignedByte()); // This must be 0 for requests.
+            assertEquals(addressPart, out);
+        } finally {
+            addressPart.release();
+            out.release();
+        }
+    }
+
+    private static int nextInt(int max) {
+        return ThreadLocalRandom.current().nextInt(0, max);
     }
 }

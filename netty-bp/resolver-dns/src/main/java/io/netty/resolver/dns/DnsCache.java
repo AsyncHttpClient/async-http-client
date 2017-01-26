@@ -16,6 +16,8 @@
 package io.netty.resolver.dns;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.util.internal.UnstableApi;
 
 import java.net.InetAddress;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.List;
 /**
  * A cache for DNS resolution entries.
  */
+@UnstableApi
 public interface DnsCache {
 
     /**
@@ -43,24 +46,27 @@ public interface DnsCache {
     /**
      * Return the cached entries for the given hostname.
      * @param hostname the hostname
+     * @param additionals the additional records
      * @return the cached entries
      */
-    List<DnsCacheEntry> get(String hostname);
+    List<DnsCacheEntry> get(String hostname, DnsRecord[] additionals);
 
     /**
      * Cache a resolved address for a given hostname.
      * @param hostname the hostname
+     * @param additionals the additional records
      * @param address the resolved adresse
      * @param originalTtl the TLL as returned by the DNS server
      * @param loop the {@link EventLoop} used to register the TTL timeout
      */
-    void cache(String hostname, InetAddress address, long originalTtl, EventLoop loop);
+    void cache(String hostname, DnsRecord[] additionals, InetAddress address, long originalTtl, EventLoop loop);
 
     /**
      * Cache the resolution failure for a given hostname.
      * @param hostname the hostname
+     * @param additionals the additional records
      * @param cause the resolution failure
      * @param loop the {@link EventLoop} used to register the TTL timeout
      */
-    void cache(String hostname, Throwable cause, EventLoop loop);
+    void cache(String hostname, DnsRecord[] additionals, Throwable cause, EventLoop loop);
 }

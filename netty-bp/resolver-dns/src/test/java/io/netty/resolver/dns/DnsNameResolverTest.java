@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.InternetProtocolFamily2;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.dns.DefaultDnsQuestion;
 import io.netty.handler.codec.dns.DnsRecord;
@@ -28,6 +28,7 @@ import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.handler.codec.dns.DnsResponse;
 import io.netty.handler.codec.dns.DnsResponseCode;
 import io.netty.handler.codec.dns.DnsSection;
+import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
@@ -166,7 +167,8 @@ public class DnsNameResolverTest {
             "cnet.com",
             "vimeo.com",
             "redtube.com",
-            "blogspot.in")));
+            "blogspot.in",
+            "localhost")));
 
     /**
      * The list of the domain names to exclude from {@link #testResolveAorAAAA()}.
@@ -232,6 +234,7 @@ public class DnsNameResolverTest {
                 "people.com.cn",
                 "googleusercontent.com",
                 "blogspot.in",
+                "localhost",
                 StringUtil.EMPTY_STRING);
     }
 
@@ -246,12 +249,12 @@ public class DnsNameResolverTest {
                 .optResourceEnabled(false);
     }
 
-    private static DnsNameResolverBuilder newResolver(InternetProtocolFamily... resolvedAddressTypes) {
+    private static DnsNameResolverBuilder newResolver(InternetProtocolFamily2... resolvedAddressTypes) {
         return newResolver()
                 .resolvedAddressTypes(resolvedAddressTypes);
     }
 
-    private static DnsNameResolverBuilder newNonCachedResolver(InternetProtocolFamily... resolvedAddressTypes) {
+    private static DnsNameResolverBuilder newNonCachedResolver(InternetProtocolFamily2... resolvedAddressTypes) {
         return newResolver()
                 .resolveCache(NoopDnsCache.INSTANCE)
                 .resolvedAddressTypes(resolvedAddressTypes);
@@ -269,7 +272,7 @@ public class DnsNameResolverTest {
 
     @Test
     public void testResolveAorAAAA() throws Exception {
-        DnsNameResolver resolver = newResolver(InternetProtocolFamily.IPv4, InternetProtocolFamily.IPv6).build();
+        DnsNameResolver resolver = newResolver(InternetProtocolFamily2.IPv4, InternetProtocolFamily2.IPv6).build();
         try {
             testResolve0(resolver, EXCLUSIONS_RESOLVE_A);
         } finally {
@@ -279,7 +282,7 @@ public class DnsNameResolverTest {
 
     @Test
     public void testResolveAAAAorA() throws Exception {
-        DnsNameResolver resolver = newResolver(InternetProtocolFamily.IPv6, InternetProtocolFamily.IPv4).build();
+        DnsNameResolver resolver = newResolver(InternetProtocolFamily2.IPv6, InternetProtocolFamily2.IPv4).build();
         try {
             testResolve0(resolver, EXCLUSIONS_RESOLVE_A);
         } finally {
@@ -289,7 +292,7 @@ public class DnsNameResolverTest {
 
     @Test
     public void  testResolveA() throws Exception {
-        DnsNameResolver resolver = newResolver(InternetProtocolFamily.IPv4)
+        DnsNameResolver resolver = newResolver(InternetProtocolFamily2.IPv4)
                 // Cache for eternity
                 .ttl(Integer.MAX_VALUE, Integer.MAX_VALUE)
                 .build();
@@ -320,7 +323,7 @@ public class DnsNameResolverTest {
 
     @Test
     public void testResolveAAAA() throws Exception {
-        DnsNameResolver resolver = newResolver(InternetProtocolFamily.IPv6).build();
+        DnsNameResolver resolver = newResolver(InternetProtocolFamily2.IPv6).build();
         try {
             testResolve0(resolver, EXCLUSIONS_RESOLVE_AAAA);
         } finally {
@@ -330,7 +333,7 @@ public class DnsNameResolverTest {
 
     @Test
     public void testNonCachedResolve() throws Exception {
-        DnsNameResolver resolver = newNonCachedResolver(InternetProtocolFamily.IPv4).build();
+        DnsNameResolver resolver = newNonCachedResolver(InternetProtocolFamily2.IPv4).build();
         try {
             testResolve0(resolver, EXCLUSIONS_RESOLVE_A);
         } finally {
@@ -364,8 +367,9 @@ public class DnsNameResolverTest {
             assertThat(resolved.getHostName(), is(unresolved));
 
             boolean typeMatches = false;
-            for (InternetProtocolFamily f: resolver.resolvedAddressTypes()) {
-                if (DnsNameResolver.addressMatchFamily(resolved, f)) {
+            for (InternetProtocolFamily2 f: resolver.resolvedAddressTypes()) {
+                Class<?> resolvedType = resolved.getClass();
+                if (f.addressType().isAssignableFrom(resolvedType)) {
                     typeMatches = true;
                 }
             }
@@ -488,6 +492,67 @@ public class DnsNameResolverTest {
             InetAddress address = resolver.resolve("10.0.0.1").syncUninterruptibly().getNow();
 
             assertEquals("10.0.0.1", address.getHostAddress());
+        } finally {
+            resolver.close();
+        }
+    }
+
+    @Test
+    public void testResolveEmptyIpv4() {
+        testResolve0(InternetProtocolFamily2.IPv4, NetUtil.LOCALHOST4, StringUtil.EMPTY_STRING);
+    }
+
+    @Test
+    public void testResolveEmptyIpv6() {
+        testResolve0(InternetProtocolFamily2.IPv6, NetUtil.LOCALHOST6, StringUtil.EMPTY_STRING);
+    }
+
+    @Test
+    public void testResolveNullIpv4() {
+        testResolve0(InternetProtocolFamily2.IPv4, NetUtil.LOCALHOST4, null);
+    }
+
+    @Test
+    public void testResolveNullIpv6() {
+        testResolve0(InternetProtocolFamily2.IPv6, NetUtil.LOCALHOST6, null);
+    }
+
+    private static void testResolve0(InternetProtocolFamily2 family, InetAddress expectedAddr, String name) {
+        DnsNameResolver resolver = newResolver(family).build();
+        try {
+            InetAddress address = resolver.resolve(name).syncUninterruptibly().getNow();
+            assertEquals(expectedAddr, address);
+        } finally {
+            resolver.close();
+        }
+    }
+
+    @Test
+    public void testResolveAllEmptyIpv4() {
+        testResolveAll0(InternetProtocolFamily2.IPv4, NetUtil.LOCALHOST4, StringUtil.EMPTY_STRING);
+    }
+
+    @Test
+    public void testResolveAllEmptyIpv6() {
+        testResolveAll0(InternetProtocolFamily2.IPv6, NetUtil.LOCALHOST6, StringUtil.EMPTY_STRING);
+    }
+
+    @Test
+    public void testResolveAllNullIpv4() {
+        testResolveAll0(InternetProtocolFamily2.IPv4, NetUtil.LOCALHOST4, null);
+    }
+
+    @Test
+    public void testResolveAllNullIpv6() {
+        testResolveAll0(InternetProtocolFamily2.IPv6, NetUtil.LOCALHOST6, null);
+    }
+
+    private static void testResolveAll0(InternetProtocolFamily2 family, InetAddress expectedAddr, String name) {
+        DnsNameResolver resolver = newResolver(family).build();
+        try {
+            List<InetAddress> addresses = resolver.resolveAll(name).syncUninterruptibly().getNow();
+            assertEquals(1, addresses.size());
+            assertEquals(expectedAddr, addresses.get(0));
         } finally {
             resolver.close();
         }
