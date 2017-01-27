@@ -125,7 +125,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(future.getTargetRequest(), httpRequest, response));
 
-        NettyResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
+        NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {

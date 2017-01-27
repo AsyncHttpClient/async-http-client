@@ -38,7 +38,7 @@ public class NettyAsyncResponseTest {
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
-        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), responseHeaders, null);
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
@@ -52,7 +52,7 @@ public class NettyAsyncResponseTest {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
         
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
-        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), responseHeaders, null);
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
 
@@ -64,7 +64,7 @@ public class NettyAsyncResponseTest {
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
-        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null, null), responseHeaders, null);
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);

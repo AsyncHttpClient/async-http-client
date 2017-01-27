@@ -151,7 +151,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         private final int statusCode;
 
         public HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
-            super(wrapper.getUri(), null);
+            super(wrapper.getUri());
             this.wrapped = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;

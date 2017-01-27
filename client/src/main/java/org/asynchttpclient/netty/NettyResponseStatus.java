@@ -18,7 +18,6 @@ import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.SocketAddress;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.uri.Uri;
 
@@ -31,8 +30,8 @@ public class NettyResponseStatus extends HttpResponseStatus {
     private final SocketAddress remoteAddress;
     private final SocketAddress localAddress;
 
-    public NettyResponseStatus(Uri uri, AsyncHttpClientConfig config, HttpResponse response, Channel channel) {
-        super(uri, config);
+    public NettyResponseStatus(Uri uri, HttpResponse response, Channel channel) {
+        super(uri);
         this.response = response;
         if (channel != null) {
             remoteAddress = channel.remoteAddress();

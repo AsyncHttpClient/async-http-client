@@ -26,11 +26,9 @@ import org.asynchttpclient.uri.Uri;
 public abstract class HttpResponseStatus {
 
     private final Uri uri;
-    protected final AsyncHttpClientConfig config;
 
-    public HttpResponseStatus(Uri uri, AsyncHttpClientConfig config) {
+    public HttpResponseStatus(Uri uri) {
         this.uri = uri;
-        this.config = config;
     }
 
     /**

@@ -136,7 +136,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             }
 
             WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
-            HttpResponseStatus status = new NettyResponseStatus(future.getUri(), config, response, channel);
+            HttpResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
             if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
