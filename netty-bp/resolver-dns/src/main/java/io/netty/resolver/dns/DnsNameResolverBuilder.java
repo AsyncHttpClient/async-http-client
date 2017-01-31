@@ -15,7 +15,7 @@
  */
 package io.netty.resolver.dns;
 
-import static io.netty.util.internal.ObjectUtil2.intValue;
+import static io.netty.util.internal.ObjectUtil.intValue;
 
 import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.EventLoop;
@@ -23,8 +23,9 @@ import io.netty.channel.ReflectiveChannelFactory;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily2;
 import io.netty.resolver.HostsFileEntriesResolver;
-import io.netty.util.internal.InternalThreadLocalMap;
+import io.netty.util.internal.UnstableApi;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
@@ -32,6 +33,7 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
 /**
  * A {@link DnsNameResolver} builder.
  */
+@UnstableApi
 public final class DnsNameResolverBuilder {
 
     private final EventLoop eventLoop;
@@ -51,6 +53,7 @@ public final class DnsNameResolverBuilder {
     private HostsFileEntriesResolver hostsFileEntriesResolver = HostsFileEntriesResolver.DEFAULT;
     private String[] searchDomains = DnsNameResolver.DEFAULT_SEACH_DOMAINS;
     private int ndots = 1;
+    private boolean decodeIdn = true;
 
     /**
      * Creates a new builder.
@@ -158,8 +161,8 @@ public final class DnsNameResolverBuilder {
     public DnsNameResolverBuilder resolvedAddressTypes(InternetProtocolFamily2... resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolvedAddressTypes");
 
-        final List<InternetProtocolFamily2> list =
-                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily2.values().length);
+        final List<InternetProtocolFamily2> list = new ArrayList<InternetProtocolFamily2>(
+                InternetProtocolFamily2.values().length);
 
         for (InternetProtocolFamily2 f : resolvedAddressTypes) {
             if (f == null) {
@@ -195,8 +198,8 @@ public final class DnsNameResolverBuilder {
     public DnsNameResolverBuilder resolvedAddressTypes(Iterable<InternetProtocolFamily2> resolvedAddressTypes) {
         checkNotNull(resolvedAddressTypes, "resolveAddressTypes");
 
-        final List<InternetProtocolFamily2> list =
-                InternalThreadLocalMap.get().arrayList(InternetProtocolFamily2.values().length);
+        final List<InternetProtocolFamily2> list = new ArrayList<InternetProtocolFamily2>(
+                InternetProtocolFamily2.values().length);
 
         for (InternetProtocolFamily2 f : resolvedAddressTypes) {
             if (f == null) {
@@ -297,8 +300,7 @@ public final class DnsNameResolverBuilder {
     public DnsNameResolverBuilder searchDomains(Iterable<String> searchDomains) {
         checkNotNull(searchDomains, "searchDomains");
 
-        final List<String> list =
-            InternalThreadLocalMap.get().arrayList(4);
+        final List<String> list = new ArrayList<String>(4);
 
         for (String f : searchDomains) {
             if (f == null) {
@@ -330,6 +332,18 @@ public final class DnsNameResolverBuilder {
     }
 
     /**
+     * Set if domain / host names should be decoded to unicode when received.
+     * See <a href="https://tools.ietf.org/html/rfc3492">rfc3492</a>.
+     *
+     * @param decodeIdn if should get decoded
+     * @return {@code this}
+     */
+    public DnsNameResolverBuilder decodeIdn(boolean decodeIdn) {
+        this.decodeIdn = decodeIdn;
+        return this;
+    }
+
+    /**
      * Returns a new {@link DnsNameResolver} instance.
      *
      * @return a {@link DnsNameResolver}
@@ -357,6 +371,7 @@ public final class DnsNameResolverBuilder {
                 optResourceEnabled,
                 hostsFileEntriesResolver,
                 searchDomains,
-                ndots);
+                ndots,
+                decodeIdn);
     }
 }
