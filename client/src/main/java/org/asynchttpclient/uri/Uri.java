@@ -12,14 +12,14 @@
  */
 package org.asynchttpclient.uri;
 
-import static org.asynchttpclient.util.Assertions.*;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.asynchttpclient.util.MiscUtils;
-import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.StringBuilderPool;
 
 public class Uri {
 
@@ -117,7 +117,7 @@ public class Uri {
 
     public String toUrl() {
         if (url == null) {
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             sb.append(scheme).append("://");
             if (userInfo != null)
                 sb.append(userInfo).append('@');
@@ -138,7 +138,7 @@ public class Uri {
      * @return [scheme]://[hostname](:[port]). Port is ommitted if it matches the scheme's default one.
      */
     public String toBaseUrl() {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append(scheme).append("://").append(host);
         if (port != -1 && port != getSchemeDefaultPort()) {
             sb.append(':').append(port);
@@ -150,7 +150,7 @@ public class Uri {
     }
 
     public String toRelativeUrl() {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         if (MiscUtils.isNonEmpty(path))
             sb.append(path);
         else

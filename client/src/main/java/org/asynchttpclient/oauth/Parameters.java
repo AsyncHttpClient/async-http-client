@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.StringBuilderPool;
 
 class Parameters {
 
@@ -37,7 +37,7 @@ class Parameters {
         Collections.sort(parameters);
 
         // and build parameter section using pre-encoded pieces:
-        StringBuilder encodedParams = StringUtils.stringBuilder();
+        StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
         for (int i = 0; i < parameters.size(); i++) {
             Parameter param = parameters.get(i);
             encodedParams.append(param.key).append('=').append(param.value).append('&');

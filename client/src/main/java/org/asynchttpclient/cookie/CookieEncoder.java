@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
-import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.StringBuilderPool;
 
 public final class CookieEncoder {
 
@@ -49,7 +49,7 @@ public final class CookieEncoder {
     }
 
     public static String encode(Collection<Cookie> cookies) {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
 
         if (cookies.isEmpty()) {
             return "";

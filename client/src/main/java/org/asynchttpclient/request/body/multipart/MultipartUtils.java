@@ -28,7 +28,7 @@ import org.asynchttpclient.request.body.multipart.part.FileMultipartPart;
 import org.asynchttpclient.request.body.multipart.part.MessageEndMultipartPart;
 import org.asynchttpclient.request.body.multipart.part.MultipartPart;
 import org.asynchttpclient.request.body.multipart.part.StringMultipartPart;
-import org.asynchttpclient.util.StringUtils;
+import org.asynchttpclient.util.StringBuilderPool;
 
 public class MultipartUtils {
 
@@ -105,7 +105,7 @@ public class MultipartUtils {
     }
 
     private static String computeContentType(CharSequence base, byte[] boundary) {
-        StringBuilder buffer = StringUtils.stringBuilder().append(base);
+        StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder().append(base);
         if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
             buffer.append(';');
         return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
