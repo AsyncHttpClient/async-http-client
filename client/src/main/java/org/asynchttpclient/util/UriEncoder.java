@@ -44,7 +44,7 @@ public enum UriEncoder {
 
         protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             encodeAndAppendQuery(sb, query);
             sb.append('&');
             encodeAndAppendQueryParams(sb, queryParams);
@@ -54,14 +54,14 @@ public enum UriEncoder {
 
         protected String withQueryWithoutParams(final String query) {
             // encode query
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             encodeAndAppendQuery(sb, query);
             return sb.toString();
         }
 
         protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate encoded query params
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             encodeAndAppendQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
@@ -88,7 +88,7 @@ public enum UriEncoder {
 
         protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             sb.append(query);
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
@@ -102,7 +102,7 @@ public enum UriEncoder {
 
         protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate raw queryParams
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();

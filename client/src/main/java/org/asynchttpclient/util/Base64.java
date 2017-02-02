@@ -13,59 +13,55 @@
 package org.asynchttpclient.util;
 
 /**
- * Implements the "base64" binary encoding scheme as defined by
- * <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a>.
- * <br>
+ * Implements the "base64" binary encoding scheme as defined by <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a>. <br>
  * Portions of code here are taken from Apache Pivot
  */
 public final class Base64 {
-    private static final char[] lookup = new char[64];
-    private static final byte[] reverseLookup = new byte[256];
+    private static final StringBuilderPool SB_POOL = new StringBuilderPool();
+    private static final char[] LOOKUP = new char[64];
+    private static final byte[] REVERSE_LOOKUP = new byte[256];
 
     static {
         // Populate the lookup array
 
         for (int i = 0; i < 26; i++) {
-            lookup[i] = (char) ('A' + i);
+            LOOKUP[i] = (char) ('A' + i);
         }
 
         for (int i = 26, j = 0; i < 52; i++, j++) {
-            lookup[i] = (char) ('a' + j);
+            LOOKUP[i] = (char) ('a' + j);
         }
 
         for (int i = 52, j = 0; i < 62; i++, j++) {
-            lookup[i] = (char) ('0' + j);
+            LOOKUP[i] = (char) ('0' + j);
         }
 
-        lookup[62] = '+';
-        lookup[63] = '/';
+        LOOKUP[62] = '+';
+        LOOKUP[63] = '/';
 
         // Populate the reverse lookup array
 
         for (int i = 0; i < 256; i++) {
-            reverseLookup[i] = -1;
+            REVERSE_LOOKUP[i] = -1;
         }
 
         for (int i = 'Z'; i >= 'A'; i--) {
-            reverseLookup[i] = (byte) (i - 'A');
+            REVERSE_LOOKUP[i] = (byte) (i - 'A');
         }
 
         for (int i = 'z'; i >= 'a'; i--) {
-            reverseLookup[i] = (byte) (i - 'a' + 26);
+            REVERSE_LOOKUP[i] = (byte) (i - 'a' + 26);
         }
 
         for (int i = '9'; i >= '0'; i--) {
-            reverseLookup[i] = (byte) (i - '0' + 52);
+            REVERSE_LOOKUP[i] = (byte) (i - '0' + 52);
         }
 
-        reverseLookup['+'] = 62;
-        reverseLookup['/'] = 63;
-        reverseLookup['='] = 0;
+        REVERSE_LOOKUP['+'] = 62;
+        REVERSE_LOOKUP['/'] = 63;
+        REVERSE_LOOKUP['='] = 0;
     }
 
-    /**
-     * This class is not instantiable.
-     */
     private Base64() {
     }
 
@@ -76,30 +72,29 @@ public final class Base64 {
      * @return the encoded data
      */
     public static String encode(byte[] bytes) {
-        // always sequence of 4 characters for each 3 bytes; padded with '='s as necessary:
-        StringBuilder buf = new StringBuilder(((bytes.length + 2) / 3) * 4);
+        StringBuilder buf = SB_POOL.stringBuilder();
 
         // first, handle complete chunks (fast loop)
         int i = 0;
         for (int end = bytes.length - 2; i < end;) {
             int chunk = ((bytes[i++] & 0xFF) << 16) | ((bytes[i++] & 0xFF) << 8) | (bytes[i++] & 0xFF);
-            buf.append(lookup[chunk >> 18]);
-            buf.append(lookup[(chunk >> 12) & 0x3F]);
-            buf.append(lookup[(chunk >> 6) & 0x3F]);
-            buf.append(lookup[chunk & 0x3F]);
+            buf.append(LOOKUP[chunk >> 18]);
+            buf.append(LOOKUP[(chunk >> 12) & 0x3F]);
+            buf.append(LOOKUP[(chunk >> 6) & 0x3F]);
+            buf.append(LOOKUP[chunk & 0x3F]);
         }
 
         // then leftovers, if any
         int len = bytes.length;
         if (i < len) { // 1 or 2 extra bytes?
             int chunk = ((bytes[i++] & 0xFF) << 16);
-            buf.append(lookup[chunk >> 18]);
+            buf.append(LOOKUP[chunk >> 18]);
             if (i < len) { // 2 bytes
                 chunk |= ((bytes[i] & 0xFF) << 8);
-                buf.append(lookup[(chunk >> 12) & 0x3F]);
-                buf.append(lookup[(chunk >> 6) & 0x3F]);
+                buf.append(LOOKUP[(chunk >> 12) & 0x3F]);
+                buf.append(LOOKUP[(chunk >> 6) & 0x3F]);
             } else { // 1 byte
-                buf.append(lookup[(chunk >> 12) & 0x3F]);
+                buf.append(LOOKUP[(chunk >> 12) & 0x3F]);
                 buf.append('=');
             }
             buf.append('=');
@@ -124,10 +119,10 @@ public final class Base64 {
         byte[] bytes = new byte[length];
 
         for (int i = 0, index = 0, n = encoded.length(); i < n; i += 4) {
-            int word = reverseLookup[encoded.charAt(i)] << 18;
-            word += reverseLookup[encoded.charAt(i + 1)] << 12;
-            word += reverseLookup[encoded.charAt(i + 2)] << 6;
-            word += reverseLookup[encoded.charAt(i + 3)];
+            int word = REVERSE_LOOKUP[encoded.charAt(i)] << 18;
+            word += REVERSE_LOOKUP[encoded.charAt(i + 1)] << 12;
+            word += REVERSE_LOOKUP[encoded.charAt(i + 2)] << 6;
+            word += REVERSE_LOOKUP[encoded.charAt(i + 3)];
 
             for (int j = 0; j < 3 && index + j < length; j++) {
                 bytes[index + j] = (byte) (word >> (8 * (2 - j)));

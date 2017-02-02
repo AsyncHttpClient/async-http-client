@@ -83,7 +83,7 @@ public class HttpUtils {
     }
 
     private static StringBuilder urlEncodeFormParams0(List<Param> params) {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         for (Param param : params) {
             encodeAndAppendFormParam(sb, param.getName(), param.getValue());
         }

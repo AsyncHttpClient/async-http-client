@@ -16,10 +16,10 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.Assertions.*;
-
 import static java.nio.charset.StandardCharsets.*;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.StringUtils.*;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AuthenticatorUtils;
+import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
 
 /**
@@ -459,7 +460,7 @@ public class Realm {
             // BEWARE: compute first as it used the cached StringBuilder
             String digestUri = AuthenticatorUtils.computeRealmURI(uri, useAbsoluteURI, omitQuery);
 
-            StringBuilder sb = StringUtils.stringBuilder();
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
 
             // WARNING: DON'T MOVE, BUFFER IS RECYCLED!!!!
             byte[] secretDigest = secretDigest(sb, md);
@@ -471,30 +472,6 @@ public class Realm {
 
             byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
             response = toHexString(responseDigest);
-        }
-
-        private static String toHexString(byte[] data) {
-            StringBuilder buffer = StringUtils.stringBuilder();
-            for (byte aData : data) {
-                buffer.append(Integer.toHexString((aData & 0xf0) >>> 4));
-                buffer.append(Integer.toHexString(aData & 0x0f));
-            }
-            return buffer.toString();
-        }
-
-        private static void appendBase16(StringBuilder buf, byte[] bytes) {
-            int base = 16;
-            for (byte b : bytes) {
-                int bi = 0xff & b;
-                int c = '0' + (bi / base) % base;
-                if (c > '9')
-                    c = 'a' + (c - '0' - 10);
-                buf.append((char) c);
-                c = '0' + bi % base;
-                if (c > '9')
-                    c = 'a' + (c - '0' - 10);
-                buf.append((char) c);
-            }
         }
 
         /**

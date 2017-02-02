@@ -31,6 +31,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.Utf8UrlEncoder;
 
@@ -103,7 +104,7 @@ class OAuthSignatureCalculatorInstance {
         String baseUrl = request.getUri().toBaseUrl();
         String encodedParams = encodedParams(consumerAuth, userAuth, oauthTimestamp, nonce, request.getFormParams(), request.getQueryParams());
 
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append(request.getMethod()); // POST / GET etc (nothing to URL encode)
         sb.append('&');
         Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, baseUrl);
@@ -154,7 +155,7 @@ class OAuthSignatureCalculatorInstance {
     }
 
     private byte[] digest(ConsumerKey consumerAuth, RequestToken userAuth, ByteBuffer message) throws InvalidKeyException {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         Utf8UrlEncoder.encodeAndAppendQueryElement(sb, consumerAuth.getSecret());
         sb.append('&');
         if (userAuth != null && userAuth.getSecret() != null) {
@@ -170,7 +171,7 @@ class OAuthSignatureCalculatorInstance {
     }
 
     String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, String nonce, long oauthTimestamp) {
-        StringBuilder sb = StringUtils.stringBuilder();
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
         if (userAuth.getKey() != null) {
