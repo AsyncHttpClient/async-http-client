@@ -104,9 +104,9 @@ public class MultipartUtils {
         return bytes;
     }
 
-    private static String computeContentType(String base, byte[] boundary) {
+    private static String computeContentType(CharSequence base, byte[] boundary) {
         StringBuilder buffer = StringUtils.stringBuilder().append(base);
-        if (!base.endsWith(";"))
+        if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
             buffer.append(';');
         return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
     }
