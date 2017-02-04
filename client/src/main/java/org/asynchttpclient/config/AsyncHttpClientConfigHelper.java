@@ -49,9 +49,12 @@ public class AsyncHttpClientConfigHelper {
                     props.load(is);
                 } else {
                    //Try loading from this class classloader instead, e.g. for OSGi environments.
-                    try(InputStream is2 = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                        if (is2 != null) {
-                            props.load(is2);
+                    ClassLoader classLoader = this.getClass().getClassLoader();
+                    if(classLoader != null) {
+                        try(InputStream is2 = classLoader.getResourceAsStream(file)) {
+                            if (is2 != null) {
+                                props.load(is2);
+                            }
                         }
                     }
                 }
