@@ -2,6 +2,8 @@ package org.asynchttpclient.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,10 +20,8 @@ public class AsyncHttpClientConfigHelper {
     }
 
     /**
-     * This method invalidates the property caches. So if a system property has
-     * been changed and the effect of this change is to be seen then call
-     * reloadProperties() and then getAsyncHttpClientConfig() to get the new
-     * property values.
+     * This method invalidates the property caches. So if a system property has been changed and the effect of this change is to be seen then call reloadProperties() and then
+     * getAsyncHttpClientConfig() to get the new property values.
      */
     public static void reloadProperties() {
         if (config != null)
@@ -34,30 +34,50 @@ public class AsyncHttpClientConfigHelper {
         public static final String CUSTOM_AHC_PROPERTIES = "ahc.properties";
 
         private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
-        private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES);
-        private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES);
+        private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES, true);
+        private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
 
         public void reload() {
-            customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES);
+            customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
             propsCache.clear();
         }
 
-        private Properties parsePropertiesFile(String file) {
+        private Properties parsePropertiesFile(String file, boolean required) {
             Properties props = new Properties();
-            try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(file)) {
-                if (is != null) {
-                    props.load(is);
-                } else {
-                   //Try loading from this class classloader instead, e.g. for OSGi environments.
-                    try(InputStream is2 = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                        if (is2 != null) {
-                            props.load(is2);
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Can't parse file", e);
+
+            List<ClassLoader> cls = new ArrayList<>();
+
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl != null) {
+                cls.add(cl);
             }
+            cl = getClass().getClassLoader();
+            if (cl != null) {
+                cls.add(cl);
+            }
+            cl = ClassLoader.getSystemClassLoader();
+            if (cl != null) {
+                cls.add(cl);
+            }
+
+            InputStream is = null;
+            for (ClassLoader classLoader : cls) {
+                is = classLoader.getResourceAsStream(file);
+                if (is != null) {
+                    break;
+                }
+            }
+
+            if (is != null) {
+                try {
+                    props.load(is);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("Can't parse config file " + file, e);
+                }
+            } else if (required) {
+                throw new IllegalArgumentException("Can't locate config file " + file);
+            }
+
             return props;
         }
 
