@@ -20,6 +20,7 @@ public class ReleasePermitOnComplete {
      * 
      * @param handler the handler to be wrapped
      * @param available the Semaphore to be released when the wrapped handler is completed
+     * @param <T> the handler result type
      * @return the wrapped handler
      */
     @SuppressWarnings("unchecked")
