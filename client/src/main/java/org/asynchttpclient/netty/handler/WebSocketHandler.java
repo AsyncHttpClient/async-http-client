@@ -87,8 +87,6 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             boolean validStatus = response.status().equals(SWITCHING_PROTOCOLS);
             boolean validUpgrade = response.headers().get(UPGRADE) != null;
             String connection = response.headers().get(CONNECTION);
-            if (connection == null)
-                connection = response.headers().get(CONNECTION);
             boolean validConnection = HttpHeaderValues.UPGRADE.contentEqualsIgnoreCase(connection);
             boolean statusReceived = handler.onStatusReceived(status) == State.CONTINUE;
 
