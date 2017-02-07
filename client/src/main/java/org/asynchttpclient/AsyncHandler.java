@@ -58,11 +58,7 @@ public interface AsyncHandler<T> {
         /**
          * Continue the processing
          */
-        CONTINUE,
-        /**
-         * Upgrade the protocol.
-         */
-        UPGRADE
+        CONTINUE
     }
 
     /**

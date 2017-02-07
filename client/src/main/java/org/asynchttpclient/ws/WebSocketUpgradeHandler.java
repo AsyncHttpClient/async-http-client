@@ -67,7 +67,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         status = responseStatus.getStatusCode();
-        return status == SWITCHING_PROTOCOLS ? State.UPGRADE : State.ABORT;
+        return status == SWITCHING_PROTOCOLS ? State.CONTINUE : State.ABORT;
     }
 
     @Override
