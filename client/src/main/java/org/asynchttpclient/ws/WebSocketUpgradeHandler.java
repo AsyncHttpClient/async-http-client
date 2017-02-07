@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2017 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,11 +13,8 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -26,42 +24,20 @@ import org.asynchttpclient.HttpResponseStatus;
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade. Use the Builder for configuring WebSocket options.
  */
-public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
+public class WebSocketUpgradeHandler implements AsyncHandler<WebSocket> {
 
     private static final int SWITCHING_PROTOCOLS = io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS.code();
 
     private WebSocket webSocket;
     private final List<WebSocketListener> listeners;
-    private final AtomicBoolean ok = new AtomicBoolean(false);
-    private int status;
-    private List<Runnable> bufferedFrames;
 
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
     }
 
-    public void bufferFrame(Runnable bufferedFrame) {
-        if (bufferedFrames == null) {
-            bufferedFrames = new ArrayList<>(1);
-        }
-        bufferedFrames.add(bufferedFrame);
-    }
-
-    @Override
-    public final void onThrowable(Throwable t) {
-        onFailure(t);
-    }
-
-
-    @Override
-    public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-        return State.CONTINUE;
-    }
-
     @Override
     public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-        status = responseStatus.getStatusCode();
-        return status == SWITCHING_PROTOCOLS ? State.CONTINUE : State.ABORT;
+        return responseStatus.getStatusCode() == SWITCHING_PROTOCOLS ? State.CONTINUE : State.ABORT;
     }
 
     @Override
@@ -70,41 +46,30 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     }
 
     @Override
-    public final WebSocket onCompleted() throws Exception {
-        if (status != SWITCHING_PROTOCOLS) {
-            IllegalStateException e = new IllegalStateException("Invalid Status Code " + status);
-            for (WebSocketListener listener : listeners) {
-                listener.onError(e);
-            }
-            throw e;
-        }
+    public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+        return State.CONTINUE;
+    }
 
+    @Override
+    public final WebSocket onCompleted() throws Exception {
         return webSocket;
     }
 
     @Override
-    public final void onSuccess(WebSocket webSocket) {
+    public final void onThrowable(Throwable t) {
+        for (WebSocketListener listener : listeners) {
+            if (webSocket != null) {
+                webSocket.addWebSocketListener(listener);
+            }
+            listener.onError(t);
+        }
+    }
+
+    public final void openWebSocket(WebSocket webSocket) {
         this.webSocket = webSocket;
         for (WebSocketListener listener : listeners) {
             webSocket.addWebSocketListener(listener);
             listener.onOpen(webSocket);
-        }
-        if (isNonEmpty(bufferedFrames)) {
-            for (Runnable bufferedFrame : bufferedFrames) {
-                bufferedFrame.run();
-            }
-            bufferedFrames = null;
-        }
-        ok.set(true);
-    }
-
-    @Override
-    public final void onFailure(Throwable t) {
-        for (WebSocketListener listener : listeners) {
-            if (!ok.get() && webSocket != null) {
-                webSocket.addWebSocketListener(listener);
-            }
-            listener.onError(t);
         }
     }
 

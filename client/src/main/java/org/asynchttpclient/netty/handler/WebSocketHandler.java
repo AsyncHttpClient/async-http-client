@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -36,7 +37,6 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
-import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -52,71 +52,45 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    private class UpgradeCallback extends OnLastHttpContentCallback {
-
-        private final Channel channel;
-        private final HttpResponse response;
-        private final WebSocketUpgradeHandler handler;
-        private final HttpResponseStatus status;
-        private final HttpResponseHeaders responseHeaders;
-
-        public UpgradeCallback(NettyResponseFuture<?> future, Channel channel, HttpResponse response, WebSocketUpgradeHandler handler, HttpResponseStatus status,
-                HttpResponseHeaders responseHeaders) {
-            super(future);
-            this.channel = channel;
-            this.response = response;
-            this.handler = handler;
-            this.status = status;
-            this.responseHeaders = responseHeaders;
+    private void upgrade(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponse response, HttpResponseHeaders responseHeaders)
+            throws Exception {
+        boolean validStatus = response.status().equals(SWITCHING_PROTOCOLS);
+        boolean validUpgrade = response.headers().get(UPGRADE) != null;
+        String connection = response.headers().get(CONNECTION);
+        boolean validConnection = HttpHeaderValues.UPGRADE.contentEqualsIgnoreCase(connection);
+        final boolean headerOK = handler.onHeadersReceived(responseHeaders) == State.CONTINUE;
+        if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
+            requestSender.abort(channel, future, new IOException("Invalid handshake response"));
+            return;
         }
+
+        String accept = response.headers().get(SEC_WEBSOCKET_ACCEPT);
+        String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(SEC_WEBSOCKET_KEY));
+        if (accept == null || !accept.equals(key)) {
+            requestSender.abort(channel, future, new IOException("Invalid challenge. Actual: " + accept + ". Expected: " + key));
+        }
+
+        // set back the future so the protocol gets notified of frames
+        // removing the HttpClientCodec from the pipeline might trigger a read with a WebSocket message
+        // if it comes in the same frame as the HTTP Upgrade response
+        Channels.setAttribute(channel, future);
+
+        channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
         // We don't need to synchronize as replacing the "ws-decoder" will
         // process using the same thread.
-        private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
-            try {
-                h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders()));
-            } catch (Exception ex) {
-                logger.warn("onSuccess unexpected exception", ex);
-            }
+        try {
+            handler.openWebSocket(new NettyWebSocket(channel, responseHeaders.getHeaders()));
+        } catch (Exception ex) {
+            logger.warn("onSuccess unexpected exception", ex);
         }
+        future.done();
+    }
 
-        @Override
-        public void call() throws Exception {
-            boolean validStatus = response.status().equals(SWITCHING_PROTOCOLS);
-            boolean validUpgrade = response.headers().get(UPGRADE) != null;
-            String connection = response.headers().get(CONNECTION);
-            boolean validConnection = HttpHeaderValues.UPGRADE.contentEqualsIgnoreCase(connection);
-            boolean statusReceived = handler.onStatusReceived(status) == State.CONTINUE;
-
-            if (!statusReceived) {
-                try {
-                    handler.onCompleted();
-                } finally {
-                    future.done();
-                }
-                return;
-            }
-
-            final boolean headerOK = handler.onHeadersReceived(responseHeaders) == State.CONTINUE;
-            if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
-                requestSender.abort(channel, future, new IOException("Invalid handshake response"));
-                return;
-            }
-
-            String accept = response.headers().get(SEC_WEBSOCKET_ACCEPT);
-            String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(SEC_WEBSOCKET_KEY));
-            if (accept == null || !accept.equals(key)) {
-                requestSender.abort(channel, future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
-            }
-
-            // set back the future so the protocol gets notified of frames
-            // removing the HttpClientCodec from the pipeline might trigger a read with a WebSocket message
-            // if it comes in the same frame as the HTTP Upgrade response
-            Channels.setAttribute(channel, future);
-
-            channelManager.upgradePipelineForWebSockets(channel.pipeline());
-
-            invokeOnSucces(channel, handler);
+    private void abort(NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponseStatus status) throws Exception {
+        try {
+            handler.onThrowable(new IOException("Invalid Status code=" + status.getStatusCode() + " text=" + status.getStatusText()));
+        } finally {
             future.done();
         }
     }
@@ -136,36 +110,23 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
             if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-                Channels.setAttribute(channel, new UpgradeCallback(future, channel, response, handler, status, responseHeaders));
+                switch (handler.onStatusReceived(status)) {
+                case CONTINUE:
+                    upgrade(channel, future, handler, response, responseHeaders);
+                    break;
+                default:
+                    abort(future, handler, status);
+                }
             }
 
         } else if (e instanceof WebSocketFrame) {
             final WebSocketFrame frame = (WebSocketFrame) e;
             WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
+            handleFrame(channel, frame, handler, webSocket);
 
-            if (webSocket != null) {
-                handleFrame(channel, frame, handler, webSocket);
-            } else {
-                logger.debug("Frame received but WebSocket is not available yet, buffering frame");
-                frame.retain();
-                Runnable bufferedFrame = new Runnable() {
-                    public void run() {
-                        try {
-                            // WebSocket is now not null
-                            NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
-                            handleFrame(channel, frame, handler, webSocket);
-                        } catch (Exception e) {
-                            logger.debug("Failure while handling buffered frame", e);
-                            handler.onFailure(e);
-                        } finally {
-                            frame.release();
-                        }
-                    }
-                };
-                handler.bufferFrame(bufferedFrame);
-            }
-        } else {
+        } else if (!(e instanceof LastHttpContent)) {
+            // ignore, end of handshake response
             logger.error("Invalid message {}", e);
         }
     }
@@ -197,7 +158,6 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
-
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
             if (webSocket != null) {
                 webSocket.onError(e.getCause());

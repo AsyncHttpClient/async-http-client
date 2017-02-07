@@ -12,9 +12,10 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.*;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -156,7 +157,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "online", timeOut = 60000, expectedExceptions = IllegalStateException.class)
+    @Test(groups = "online", timeOut = 60000, expectedExceptions = IOException.class)
     public void wrongProtocolCode() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
