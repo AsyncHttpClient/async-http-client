@@ -33,7 +33,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private WebSocket webSocket;
     private final List<WebSocketListener> listeners;
     private final AtomicBoolean ok = new AtomicBoolean(false);
-    private boolean onSuccessCalled;
     private int status;
     private List<Runnable> bufferedFrames;
 
@@ -53,11 +52,6 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         onFailure(t);
     }
 
-    public boolean touchSuccess() {
-        boolean prev = onSuccessCalled;
-        onSuccessCalled = true;
-        return prev;
-    }
 
     @Override
     public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {

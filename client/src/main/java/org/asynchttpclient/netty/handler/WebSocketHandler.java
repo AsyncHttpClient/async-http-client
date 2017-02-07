@@ -73,12 +73,10 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         // We don't need to synchronize as replacing the "ws-decoder" will
         // process using the same thread.
         private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
-            if (!h.touchSuccess()) {
-                try {
-                    h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders()));
-                } catch (Exception ex) {
-                    logger.warn("onSuccess unexpected exception", ex);
-                }
+            try {
+                h.onSuccess(new NettyWebSocket(channel, responseHeaders.getHeaders()));
+            } catch (Exception ex) {
+                logger.warn("onSuccess unexpected exception", ex);
             }
         }
 
