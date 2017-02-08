@@ -225,6 +225,25 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     private boolean isHandledByReactiveStreams(ChannelHandlerContext ctx) {
         return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
     }
+    
+    protected void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean keepAlive, boolean expectOtherChunks) throws IOException {
+        future.cancelTimeouts();
+        
+        if (!keepAlive) {
+            channelManager.closeChannel(channel);
+        } else if (expectOtherChunks) {
+            channelManager.drainChannelAndOffer(channel, future);
+        } else {
+            channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, future.getPartitionKey());
+        }
+
+        try {
+            future.done();
+        } catch (Exception t) {
+            // Never propagate exception once we know we are done.
+            logger.debug(t.getMessage(), t);
+        }
+    }
 
     public abstract void handleRead(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
 

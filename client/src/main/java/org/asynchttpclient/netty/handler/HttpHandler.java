@@ -21,7 +21,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
@@ -45,67 +44,22 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean expectOtherChunks) throws IOException {
-
-        future.cancelTimeouts();
-
-        boolean keepAlive = future.isKeepAlive();
-        if (expectOtherChunks && keepAlive)
-            channelManager.drainChannelAndOffer(channel, future);
-        else
-            channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, future.getPartitionKey());
-
-        try {
-            future.done();
-        } catch (Exception t) {
-            // Never propagate exception once we know we are done.
-            logger.debug(t.getMessage(), t);
-        }
-    }
-
-    private boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart bodyPart) throws Exception {
-        boolean interrupt = handler.onBodyPartReceived(bodyPart) != State.CONTINUE;
-        if (interrupt)
-            future.setKeepAlive(false);
-        return interrupt;
-    }
-
-    private void notifyHandler(Channel channel, NettyResponseFuture<?> future, HttpResponse response, AsyncHandler<?> handler, NettyResponseStatus status,
-            HttpRequest httpRequest, HttpResponseHeaders responseHeaders) throws IOException, Exception {
-
-        boolean exit = exitAfterHandlingStatus(channel, future, response, handler, status, httpRequest) || //
-                exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders, httpRequest) || //
-                exitAfterHandlingReactiveStreams(channel, future, response, handler, httpRequest);
-
-        if (exit)
-            finishUpdate(future, channel, HttpUtil.isTransferEncodingChunked(httpRequest) || HttpUtil.isTransferEncodingChunked(response));
-    }
-
-    private boolean exitAfterHandlingStatus(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
-            HttpResponse response, AsyncHandler<?> handler,//
-            NettyResponseStatus status,//
-            HttpRequest httpRequest) throws IOException, Exception {
-        return handler.onStatusReceived(status) != State.CONTINUE;
-    }
-
-    private boolean exitAfterHandlingHeaders(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
-            HttpResponse response,//
+    private boolean abortAfterHandlingStatus(//
             AsyncHandler<?> handler,//
-            HttpResponseHeaders responseHeaders,//
-            HttpRequest httpRequest) throws IOException, Exception {
-        return !response.headers().isEmpty() && handler.onHeadersReceived(responseHeaders) != State.CONTINUE;
+            NettyResponseStatus status) throws IOException, Exception {
+        return handler.onStatusReceived(status) == State.ABORT;
     }
 
-    private boolean exitAfterHandlingReactiveStreams(//
+    private boolean abortAfterHandlingHeaders(//
+            AsyncHandler<?> handler,//
+            HttpResponseHeaders responseHeaders) throws IOException, Exception {
+        return !responseHeaders.getHeaders().isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
+    }
+
+    private boolean abortAfterHandlingReactiveStreams(//
             Channel channel,//
             NettyResponseFuture<?> future,//
-            HttpResponse response,//
-            AsyncHandler<?> handler,//
-            HttpRequest httpRequest) throws IOException {
+            AsyncHandler<?> handler) throws IOException {
         if (handler instanceof StreamedAsyncHandler) {
             StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
             StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
@@ -113,7 +67,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             // FIXME move this to ChannelManager
             channel.pipeline().addLast(channel.eventLoop(), "streamedAsyncHandler", publisher);
             Channels.setAttribute(channel, publisher);
-            return streamedAsyncHandler.onStream(publisher) != State.CONTINUE;
+            return streamedAsyncHandler.onStream(publisher) == State.ABORT;
         }
         return false;
     }
@@ -129,7 +83,13 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-            notifyHandler(channel, future, response, handler, status, httpRequest, responseHeaders);
+            boolean abort = abortAfterHandlingStatus(handler, status) || //
+                    abortAfterHandlingHeaders(handler, responseHeaders) || //
+                    abortAfterHandlingReactiveStreams(channel, future, handler);
+
+            if (abort) {
+                finishUpdate(future, channel, false, false);
+            }
         }
     }
 
@@ -138,7 +98,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             final NettyResponseFuture<?> future,//
             AsyncHandler<?> handler) throws IOException, Exception {
 
-        boolean interrupt = false;
+        boolean abort = false;
         boolean last = chunk instanceof LastHttpContent;
 
         // Netty 4: the last chunk is not empty
@@ -146,18 +106,20 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             LastHttpContent lastChunk = (LastHttpContent) chunk;
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
-                interrupt = handler.onHeadersReceived(new HttpResponseHeaders(trailingHeaders, true)) != State.CONTINUE;
+                abort = handler.onHeadersReceived(new HttpResponseHeaders(trailingHeaders, true)) == State.ABORT;
             }
         }
 
         ByteBuf buf = chunk.content();
-        if (!interrupt && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
-            HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
-            interrupt = updateBodyAndInterrupt(future, handler, part);
+        if (!abort && !(handler instanceof StreamedAsyncHandler) && (buf.readableBytes() > 0 || last)) {
+            HttpResponseBodyPart bodyPart = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
+            abort = handler.onBodyPartReceived(bodyPart) == State.ABORT;
         }
 
-        if (interrupt || last)
-            finishUpdate(future, channel, !last);
+        if (abort || last) {
+            boolean keepAlive = !abort && future.isKeepAlive();
+            finishUpdate(future, channel, keepAlive, !last);
+        }
     }
 
     @Override
@@ -207,7 +169,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         } catch (Exception abortException) {
             logger.debug("Abort failed", abortException);
         } finally {
-            finishUpdate(future, channel, false);
+            finishUpdate(future, channel, false, false);
         }
     }
 
