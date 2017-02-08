@@ -10,10 +10,7 @@ The library also supports the WebSocket Protocol. The Async HTTP Client library 
 
 It's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
 
-Latest `version`: [![Maven][mavenImg]][mavenLink]
-
-[mavenImg]: https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client.svg
-[mavenLink]: http://mvnrepository.com/artifact/org.asynchttpclient/async-http-client
+Latest `version`: [![Maven](https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.asynchttpclient%22%20AND%20a%3A%22async-http-client%22)
 
 ## Installation
 
