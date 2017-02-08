@@ -281,7 +281,7 @@ public class AsyncHttpSingleTest {
         final TestSubscriber<Response> subscriber = new TestSubscriber<>();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            final Single<Response> underTest = AsyncHttpSingle.create(client.prepareGet("http://github.com"),
+            final Single<Response> underTest = AsyncHttpSingle.create(client.prepareGet("http://gatling.io"),
                     () -> new AsyncCompletionHandlerBase() {
                         @Override
                         public State onStatusReceived(HttpResponseStatus status) {
