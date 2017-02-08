@@ -160,7 +160,6 @@ public class BasicHttpsTest extends HttpTest {
 
         withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client -> {
             withServer(server).run(server -> {
-                server.enqueueEcho();
                 try {
                     client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, SECONDS);
                 } catch (ExecutionException e) {
