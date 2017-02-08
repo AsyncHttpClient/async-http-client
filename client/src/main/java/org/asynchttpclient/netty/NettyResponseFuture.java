@@ -80,8 +80,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inProxyAuthField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inProxyAuth");
     @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> statusReceivedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "statusReceived");
-    @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
     @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "onThrowableCalled");
@@ -358,10 +356,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setChannelState(ChannelState channelState) {
         this.channelState = channelState;
-    }
-
-    public boolean isAndSetStatusReceived(boolean sr) {
-        return statusReceivedField.getAndSet(this, sr ? 1 : 0) != 0;
     }
 
     public boolean isStreamConsumed() {
