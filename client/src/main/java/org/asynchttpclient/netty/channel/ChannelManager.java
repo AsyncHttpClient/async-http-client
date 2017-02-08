@@ -480,11 +480,11 @@ public class ChannelManager {
         };
     }
 
-    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future) {
+    public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future) {
         drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartitionKey());
     }
 
-    public void drainChannelAndOffer(final Channel channel, final NettyResponseFuture<?> future, boolean keepAlive, Object partitionKey) {
+    public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future, boolean keepAlive, Object partitionKey) {
         Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, partitionKey));
     }
 
@@ -497,15 +497,15 @@ public class ChannelManager {
     }
 
     public ClientStats getClientStats() {
-        final Map<String, Long> totalConnectionsPerHost = openChannels
+        Map<String, Long> totalConnectionsPerHost = openChannels
                     .stream()
                     .map(Channel::remoteAddress)
                     .filter(a -> a.getClass() == InetSocketAddress.class)
                     .map(a -> (InetSocketAddress) a)
                     .map(InetSocketAddress::getHostName)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        final Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
-        final Map<String, HostStats> statsPerHost = totalConnectionsPerHost
+        Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
+        Map<String, HostStats> statsPerHost = totalConnectionsPerHost
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(
