@@ -457,7 +457,7 @@ public class Realm {
         }
 
         private void newResponse(MessageDigest md) {
-            // BEWARE: compute first as it used the cached StringBuilder
+            // BEWARE: compute first as it uses the cached StringBuilder
             String digestUri = AuthenticatorUtils.computeRealmURI(uri, useAbsoluteURI, omitQuery);
 
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
