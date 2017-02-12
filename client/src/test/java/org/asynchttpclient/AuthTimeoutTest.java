@@ -16,18 +16,17 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
-import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.exception.RemotelyClosedException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -37,6 +36,10 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
+
+    private static final int REQUEST_TIMEOUT = 1000;
+    private static final int SHORT_FUTURE_TIMEOUT = 500; // shorter than REQUEST_TIMEOUT
+    private static final int LONG_FUTURE_TIMEOUT = 1500; // longer than REQUEST_TIMEOUT
 
     private Server server2;
 
@@ -83,113 +86,100 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void basicAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void basicAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server, false);
-            f.get();
-            fail("expected timeout");
+            execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            inspectException(e);
+            throw e.getCause();
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void basicPreemptiveAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void basicPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server, true);
-            f.get();
-            fail("expected timeout");
+            execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            inspectException(e);
+            throw e.getCause();
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void digestAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void digestAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server2, false);
-            f.get();
-            fail("expected timeout");
+            execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            inspectException(e);
+            throw e.getCause();
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void digestPreemptiveAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class, enabled = false)
+    public void digestPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server2, true);
-            f.get();
-            fail("expected timeout");
+            execute(client, false, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            inspectException(e);
+            throw e.getCause();
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void basicFutureAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void basicAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server, false);
-            f.get(1, TimeUnit.SECONDS);
-            fail("expected timeout");
-        } catch (Exception e) {
-            inspectException(e);
+            execute(client, true, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void basicPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server, true);
-            f.get(1, TimeUnit.SECONDS);
-            fail("expected timeout");
-        } catch (Exception e) {
-            inspectException(e);
+            execute(client, true, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void digestFutureAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class)
+    public void digestAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server2, false);
-            f.get(1, TimeUnit.SECONDS);
-            fail("expected timeout");
-        } catch (Exception e) {
-            inspectException(e);
+            execute(client, false, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         }
     }
 
-    @Test(groups = "standalone", enabled = false)
-    public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
+    @Test(expectedExceptions = TimeoutException.class, enabled = false)
+    public void digestPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            Future<Response> f = execute(client, server2, true);
-            f.get(1, TimeUnit.SECONDS);
-            fail("expected timeout");
-        } catch (Exception e) {
-            inspectException(e);
+            execute(client, false, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         }
-    }
-
-    protected void inspectException(Throwable t) {
-        assertEquals(t.getCause(), RemotelyClosedException.INSTANCE);
     }
 
     private AsyncHttpClient newClient() {
-        return asyncHttpClient(config().setPooledConnectionIdleTimeout(2000).setConnectTimeout(20000).setRequestTimeout(2000));
+        return asyncHttpClient(config().setRequestTimeout(REQUEST_TIMEOUT));
     }
 
-    protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {
-        return client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test").execute();
-    }
+    protected Future<Response> execute(AsyncHttpClient client, boolean basic, boolean preemptive) throws IOException {
+        Realm.Builder realm;
+        String url;
 
-    private Realm realm(boolean preemptive) {
-        return basicAuthRealm(USER, ADMIN).setUsePreemptiveAuth(preemptive).build();
+        if (basic) {
+            realm = basicAuthRealm(USER, ADMIN);
+            url = getTargetUrl();
+        } else {
+            realm = digestAuthRealm(USER, ADMIN);
+            url = getTargetUrl2();
+            if (preemptive) {
+                realm.setNonce("fFDVc60re9zt8fFDvht0tNrYuvqrcchN");
+            }
+        }
+
+        return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).setHeader("X-Content", "Test").execute();
     }
 
     @Override
     protected String getTargetUrl() {
         return "http://localhost:" + port1 + "/";
+    }
+
+    @Override
+    protected String getTargetUrl2() {
+        return "http://localhost:" + port2 + "/";
     }
 
     @Override
