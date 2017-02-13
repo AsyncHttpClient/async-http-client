@@ -57,6 +57,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
         ByteBuf buffer = alloc.buffer(chunkSize);
         Body.BodyState state = body.transferTo(buffer);
+        progress += buffer.writerIndex();
         switch (state) {
         case STOP:
             endOfInput = true;

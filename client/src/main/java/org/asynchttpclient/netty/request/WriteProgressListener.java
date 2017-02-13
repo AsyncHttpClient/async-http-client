@@ -45,7 +45,9 @@ public class WriteProgressListener extends WriteListener implements ChannelProgr
             if (total < 0) {
                 total = expectedTotal;
             }
-            progressAsyncHandler.onContentWriteProgress(progress - lastLastProgress, progress, total);
+            if (progress != lastLastProgress) {
+                progressAsyncHandler.onContentWriteProgress(progress - lastLastProgress, progress, total);
+            }
         }
     }
 }
