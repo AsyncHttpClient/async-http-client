@@ -13,6 +13,7 @@
 package org.asynchttpclient.handler;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_OCTET_STREAM;
 import static org.apache.commons.io.IOUtils.copy;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
@@ -51,7 +52,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
             httpResponse.setStatus(200);
             httpResponse.setContentLength(CONTENT_LENGTH_VALUE);
-            httpResponse.setContentType("application/octet-stream");
+            httpResponse.setContentType(APPLICATION_OCTET_STREAM.toString());
 
             httpResponse.flushBuffer();
 
@@ -121,7 +122,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = bdah.getResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("content-length"), String.valueOf(CONTENT_LENGTH_VALUE));
+            assertEquals(resp.getHeader(CONTENT_LENGTH), String.valueOf(CONTENT_LENGTH_VALUE));
             // we got headers only, it's probably not all yet here (we have BIG file
             // downloading)
             assertTrue(cos.getByteCount() <= CONTENT_LENGTH_VALUE);
@@ -179,7 +180,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = is.getAsapResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("content-length"), String.valueOf(CONTENT_LENGTH_VALUE));
+            assertEquals(resp.getHeader(CONTENT_LENGTH), String.valueOf(CONTENT_LENGTH_VALUE));
             // "consume" the body, but our code needs input stream
             CountingOutputStream cos = new CountingOutputStream();
             try {
@@ -196,8 +197,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
-    public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    @Test(groups = "standalone", expectedExceptions = RemotelyClosedException.class)
+    public void deferredInputStreamTrickWithFailure() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://localhost:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
@@ -211,7 +212,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = is.getAsapResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("content-length"), String.valueOf(CONTENT_LENGTH_VALUE));
+            assertEquals(resp.getHeader(CONTENT_LENGTH), String.valueOf(CONTENT_LENGTH_VALUE));
             // "consume" the body, but our code needs input stream
             CountingOutputStream cos = new CountingOutputStream();
             try {
@@ -221,9 +222,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                     is.close();
                     cos.close();
                 }
-                fail("InputStream consumption should fail with IOException!");
             } catch (IOException e) {
-                // good!
+                throw e.getCause();
             }
         }
     }
