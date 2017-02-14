@@ -116,12 +116,13 @@ public class Utf8ByteBufCharsetDecoder {
             if (res.isError()) {
                 res.throwException();
             }
+            splitCharBuffer.clear();
         }
     }
 
     protected void decodePartial(ByteBuffer nioBuffer, boolean endOfInput) throws CharacterCodingException {
         // deal with pending splitCharBuffer
-        if (splitCharBuffer != null && splitCharBuffer.position() > 0 && nioBuffer.hasRemaining()) {
+        if (splitCharBuffer.position() > 0 && nioBuffer.hasRemaining()) {
             handleSplitCharBuffer(nioBuffer, endOfInput);
         }
 

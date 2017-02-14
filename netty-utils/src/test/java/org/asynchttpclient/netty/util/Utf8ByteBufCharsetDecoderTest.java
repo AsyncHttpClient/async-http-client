@@ -20,7 +20,7 @@ import io.netty.buffer.Unpooled;
 
 import org.testng.annotations.Test;
 
-public class ByteBufUtilsTest {
+public class Utf8ByteBufCharsetDecoderTest {
 
     @Test
     public void testByteBuf2BytesHasBackingArray() {
