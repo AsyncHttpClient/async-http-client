@@ -381,7 +381,7 @@
 		<source.property>1.8</source.property>
 		<target.property>1.8</target.property>
 		<netty.version>4.1.8.Final</netty.version>
-		<slf4j.version>1.7.22</slf4j.version>
+		<slf4j.version>1.7.23</slf4j.version>
 		<logback.version>1.2.1</logback.version>
 		<testng.version>6.9.10</testng.version>
 		<jetty.version>9.3.12.v20160915</jetty.version>
