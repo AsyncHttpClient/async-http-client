@@ -41,12 +41,7 @@ public abstract class FileLikePart extends PartBase {
     private String fileName;
 
     private static String computeContentType(String contentType, String fileName) {
-        if (contentType == null) {
-            // TODO use a ThreadLocal to get work around synchronized?
-            contentType = MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
-        }
-
-        return contentType;
+        return contentType != null ? contentType : MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
     }
 
     /**
