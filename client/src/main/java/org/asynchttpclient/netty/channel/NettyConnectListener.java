@@ -110,7 +110,13 @@ public final class NettyConnectListener<T> {
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
         if (future.getProxyServer() == null && uri.isSecured()) {
-            SslHandler sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
+            SslHandler sslHandler = null;
+            try {
+                sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
+            } catch (Exception sslError) {
+                NettyConnectListener.this.onFailure(channel, sslError);
+                return;
+            }
 
             final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
 
