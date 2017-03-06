@@ -216,7 +216,8 @@ public final class NettyRequestSender {
         if (asyncHandler instanceof AsyncHandlerExtensions)
             AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionPooled(channel);
 
-        scheduleRequestTimeout(future);
+        TimeoutsHolder timeoutsHolder = scheduleRequestTimeout(future);
+        timeoutsHolder.initRemoteAddress((InetSocketAddress) channel.remoteAddress());
         future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
@@ -378,10 +379,11 @@ public final class NettyRequestSender {
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 
-    private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture) {
+    private TimeoutsHolder scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture) {
         nettyResponseFuture.touch();
         TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config);
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
+        return timeoutsHolder;
     }
 
     private void scheduleReadTimeout(NettyResponseFuture<?> nettyResponseFuture) {
