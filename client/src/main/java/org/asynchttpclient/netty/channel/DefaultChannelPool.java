@@ -154,8 +154,11 @@ public final class DefaultChannelPool implements ChannelPool {
             // lazy create
             List<IdleChannel> idleTimeoutChannels = null;
             for (IdleChannel idleChannel : partition) {
-                if (isIdleTimeoutExpired(idleChannel, now) || isRemotelyClosed(idleChannel.channel) || isTtlExpired(idleChannel.channel, now)) {
-                    LOGGER.debug("Adding Candidate expired Channel {}", idleChannel.channel);
+                boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleChannel, now);
+                boolean isRemotelyClosed = isRemotelyClosed(idleChannel.channel);
+                boolean isTtlExpired = isTtlExpired(idleChannel.channel, now);
+                if (isIdleTimeoutExpired || isRemotelyClosed || isTtlExpired) {
+                    LOGGER.debug("Adding Candidate expired Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}", idleChannel.channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
                     if (idleTimeoutChannels == null)
                         idleTimeoutChannels = new ArrayList<>(1);
                     idleTimeoutChannels.add(idleChannel);
@@ -199,7 +202,10 @@ public final class DefaultChannelPool implements ChannelPool {
 
             if (LOGGER.isDebugEnabled())
                 for (Object key : partitions.keySet()) {
-                    LOGGER.debug("Entry count for : {} : {}", key, partitions.get(key).size());
+                    int size = partitions.get(key).size();
+                    if (size > 0) {
+                        LOGGER.debug("Entry count for : {} : {}", key, size);
+                    }
                 }
 
             long start = unpreciseMillisTime();
@@ -228,7 +234,9 @@ public final class DefaultChannelPool implements ChannelPool {
 
             if (LOGGER.isDebugEnabled()) {
                 long duration = unpreciseMillisTime() - start;
-                LOGGER.debug("Closed {} connections out of {} in {} ms", closedCount, totalCount, duration);
+                if (closedCount > 0) {
+                    LOGGER.debug("Closed {} connections out of {} in {} ms", closedCount, totalCount, duration);
+                }
             }
 
             scheduleNewIdleChannelDetector(timeout.task());
