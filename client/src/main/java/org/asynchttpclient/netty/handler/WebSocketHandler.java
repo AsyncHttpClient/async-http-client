@@ -22,11 +22,6 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
@@ -123,15 +118,14 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         } else if (e instanceof WebSocketFrame) {
             final WebSocketFrame frame = (WebSocketFrame) e;
             WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
+            NettyWebSocket webSocket = handler.onCompleted();
             // retain because we might buffer the frame
-            frame.retain();
-            if (handler.isOpen()) {
-                handleFrame(channel, frame, handler, webSocket);
+            if (webSocket.isReady()) {
+                webSocket.handleFrame(frame);
             } else {
                 // WebSocket hasn't been open yet, but upgrading the pipeline triggered a read and a frame was sent along the HTTP upgrade response
                 // as we want to keep sequential order (but can't notify user of open before upgrading so he doesn't to try send immediately), we have to buffer
-                handler.bufferFrame(() -> handleFrame(channel, frame, handler, webSocket));
+                webSocket.bufferFrame(frame);
             }
 
         } else if (!(e instanceof LastHttpContent)) {
@@ -140,36 +134,13 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         }
     }
 
-    private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) {
-        if (frame instanceof TextWebSocketFrame) {
-            webSocket.onTextFrame((TextWebSocketFrame) frame);
-
-        } else if (frame instanceof BinaryWebSocketFrame) {
-            webSocket.onBinaryFrame((BinaryWebSocketFrame) frame);
-
-        } else if (frame instanceof CloseWebSocketFrame) {
-            Channels.setDiscard(channel);
-            CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-            webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
-            Channels.silentlyCloseChannel(channel);
-
-        } else if (frame instanceof PingWebSocketFrame) {
-            webSocket.onPing((PingWebSocketFrame) frame);
-
-        } else if (frame instanceof PongWebSocketFrame) {
-            webSocket.onPong((PongWebSocketFrame) frame);
-        }
-        // release because we had to retain in case the frame had to be buffered
-        frame.release();
-    }
-
     @Override
     public void handleException(NettyResponseFuture<?> future, Throwable e) {
         logger.warn("onError", e);
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
+            NettyWebSocket webSocket = h.onCompleted();
             if (webSocket != null) {
                 webSocket.onError(e.getCause());
                 webSocket.close();
@@ -185,7 +156,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
         try {
             WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
+            NettyWebSocket webSocket = h.onCompleted();
 
             logger.trace("Connection was closed abnormally (that is, with no close frame being received).");
             if (webSocket != null)

@@ -23,12 +23,16 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.net.SocketAddress;
 import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.util.Utf8ByteBufCharsetDecoder;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketByteListener;
@@ -50,6 +54,9 @@ public class NettyWebSocket implements WebSocket {
     protected final Collection<WebSocketListener> listeners;
     private volatile boolean interestedInByteMessages;
     private volatile boolean interestedInTextMessages;
+    // no need for volatile because only mutated in IO thread
+    private boolean ready;
+    private List<WebSocketFrame> bufferedFrames;
 
     public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders) {
         this(channel, upgradeHeaders, new ConcurrentLinkedQueue<>());
@@ -59,6 +66,59 @@ public class NettyWebSocket implements WebSocket {
         this.channel = channel;
         this.upgradeHeaders = upgradeHeaders;
         this.listeners = listeners;
+    }
+
+    public boolean isReady() {
+        return ready;
+    }
+
+    public void bufferFrame(WebSocketFrame frame) {
+        if (bufferedFrames == null) {
+            bufferedFrames = new ArrayList<>(1);
+        }
+        frame.retain();
+        bufferedFrames.add(frame);
+    }
+
+    private void releaseBufferedFrames() {
+        for (WebSocketFrame frame : bufferedFrames) {
+            frame.release();
+        }
+    }
+
+    public void processBufferedFrames() {
+        ready = true;
+        if (bufferedFrames != null) {
+            try {
+                for (WebSocketFrame frame : bufferedFrames) {
+                    handleFrame(frame);
+                }
+            } finally {
+                releaseBufferedFrames();
+            }
+            bufferedFrames = null;
+        }
+    }
+
+    public void handleFrame(WebSocketFrame frame) {
+        if (frame instanceof TextWebSocketFrame) {
+            onTextFrame((TextWebSocketFrame) frame);
+
+        } else if (frame instanceof BinaryWebSocketFrame) {
+            onBinaryFrame((BinaryWebSocketFrame) frame);
+
+        } else if (frame instanceof CloseWebSocketFrame) {
+            Channels.setDiscard(channel);
+            CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
+            onClose(closeFrame.statusCode(), closeFrame.reasonText());
+            Channels.silentlyCloseChannel(channel);
+
+        } else if (frame instanceof PingWebSocketFrame) {
+            onPing((PingWebSocketFrame) frame);
+
+        } else if (frame instanceof PongWebSocketFrame) {
+            onPong((PongWebSocketFrame) frame);
+        }
     }
 
     @Override
@@ -189,6 +249,7 @@ public class NettyWebSocket implements WebSocket {
     public void close(int statusCode, String reason) {
         onClose(statusCode, reason);
         listeners.clear();
+        releaseBufferedFrames();
     }
 
     public void onError(Throwable t) {
@@ -199,6 +260,7 @@ public class NettyWebSocket implements WebSocket {
                 LOGGER.error("WebSocketListener.onError crash", t2);
             }
         }
+        releaseBufferedFrames();
     }
 
     public void onClose(int code, String reason) {
