@@ -29,7 +29,9 @@ public class WebSocketUpgradeHandler implements AsyncHandler<WebSocket> {
     private static final int SWITCHING_PROTOCOLS = io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS.code();
 
     private WebSocket webSocket;
+    private boolean open;
     private final List<WebSocketListener> listeners;
+    private List<Runnable> bufferedFrames;
 
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
@@ -65,12 +67,33 @@ public class WebSocketUpgradeHandler implements AsyncHandler<WebSocket> {
         }
     }
 
-    public final void openWebSocket(WebSocket webSocket) {
+    public final void setWebSocket(WebSocket webSocket) {
         this.webSocket = webSocket;
+    }
+    
+    public final void onOpen() {
+        open = true;
         for (WebSocketListener listener : listeners) {
             webSocket.addWebSocketListener(listener);
             listener.onOpen(webSocket);
         }
+        if (bufferedFrames != null) {
+            for (Runnable bufferedFrame : bufferedFrames) {
+                bufferedFrame.run();
+            }
+            bufferedFrames = null;
+        }
+    }
+
+    public final boolean isOpen() {
+        return open;
+    }
+
+    public final void bufferFrame(Runnable bufferedFrame) {
+        if (bufferedFrames == null) {
+            bufferedFrames = new ArrayList<>(1);
+        }
+        bufferedFrames.add(bufferedFrame);
     }
 
     /**

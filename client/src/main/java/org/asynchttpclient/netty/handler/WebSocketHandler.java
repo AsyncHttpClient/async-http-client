@@ -75,12 +75,13 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         // if it comes in the same frame as the HTTP Upgrade response
         Channels.setAttribute(channel, future);
 
+        handler.setWebSocket(new NettyWebSocket(channel, responseHeaders.getHeaders()));
         channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
         // We don't need to synchronize as replacing the "ws-decoder" will
         // process using the same thread.
         try {
-            handler.openWebSocket(new NettyWebSocket(channel, responseHeaders.getHeaders()));
+            handler.onOpen();
         } catch (Exception ex) {
             logger.warn("onSuccess unexpected exception", ex);
         }
@@ -105,7 +106,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
             }
 
-            WebSocketUpgradeHandler handler = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+            WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
@@ -123,7 +124,15 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             final WebSocketFrame frame = (WebSocketFrame) e;
             WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
             NettyWebSocket webSocket = (NettyWebSocket) handler.onCompleted();
-            handleFrame(channel, frame, handler, webSocket);
+            // retain because we might buffer the frame
+            frame.retain();
+            if (handler.isOpen()) {
+                handleFrame(channel, frame, handler, webSocket);
+            } else {
+                // WebSocket hasn't been open yet, but upgrading the pipeline triggered a read and a frame was sent along the HTTP upgrade response
+                // as we want to keep sequential order (but can't notify user of open before upgrading so he doesn't to try send immediately), we have to buffer
+                handler.bufferFrame(() -> handleFrame(channel, frame, handler, webSocket));
+            }
 
         } else if (!(e instanceof LastHttpContent)) {
             // ignore, end of handshake response
@@ -131,7 +140,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         }
     }
 
-    private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) throws Exception {
+    private void handleFrame(Channel channel, WebSocketFrame frame, WebSocketUpgradeHandler handler, NettyWebSocket webSocket) {
         if (frame instanceof TextWebSocketFrame) {
             webSocket.onTextFrame((TextWebSocketFrame) frame);
 
@@ -150,6 +159,8 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         } else if (frame instanceof PongWebSocketFrame) {
             webSocket.onPong((PongWebSocketFrame) frame);
         }
+        // release because we had to retain in case the frame had to be buffered
+        frame.release();
     }
 
     @Override
