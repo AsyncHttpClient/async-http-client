@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.ListenableFuture;
@@ -70,6 +71,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile int contentProcessed = 0;
     @SuppressWarnings("unused")
     private volatile int onThrowableCalled = 0;
+    @SuppressWarnings("unused")
+    private volatile TimeoutsHolder timeoutsHolder;
 
     @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isDoneField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isDone");
@@ -85,6 +88,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
     @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "onThrowableCalled");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> timeoutsHolderField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class, TimeoutsHolder.class, "timeoutsHolder");
 
     // volatile where we need CAS ops
     private volatile int redirectCount = 0;
@@ -92,7 +97,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     // volatile where we don't need CAS ops
     private volatile long touch = unpreciseMillisTime();
-    private volatile TimeoutsHolder timeoutsHolder;
     private volatile ChannelState channelState = ChannelState.NEW;
 
     // state mutated only inside the event loop
@@ -282,9 +286,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void cancelTimeouts() {
-        if (timeoutsHolder != null) {
-            timeoutsHolder.cancel();
-            timeoutsHolder = null;
+        TimeoutsHolder ref = timeoutsHolderField.getAndSet(this, null);
+        if (ref != null) {
+            ref.cancel();
         }
     }
 
@@ -321,11 +325,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
-        this.timeoutsHolder = timeoutsHolder;
+        timeoutsHolderField.set(this, timeoutsHolder);
     }
 
     public TimeoutsHolder getTimeoutsHolder() {
-        return timeoutsHolder;
+        return timeoutsHolderField.get(this);
     }
 
     public boolean isInAuth() {
@@ -481,7 +485,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
                 ",\n\turi=" + getUri() + //
                 ",\n\tkeepAlive=" + keepAlive + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\ttimeoutsHolder=" + timeoutsHolder + //
+                ",\n\ttimeoutsHolder=" + timeoutsHolderField.get(this) + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //
