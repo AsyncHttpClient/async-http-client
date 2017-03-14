@@ -81,8 +81,10 @@ public class NettyWebSocket implements WebSocket {
     }
 
     private void releaseBufferedFrames() {
-        for (WebSocketFrame frame : bufferedFrames) {
-            frame.release();
+        if (bufferedFrames != null) {
+            for (WebSocketFrame frame : bufferedFrames) {
+                frame.release();
+            }
         }
     }
 
