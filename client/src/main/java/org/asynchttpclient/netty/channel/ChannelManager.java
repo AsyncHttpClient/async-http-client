@@ -45,7 +45,6 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -109,9 +108,9 @@ public class ChannelManager {
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
     private final boolean maxTotalConnectionsEnabled;
-    private final Semaphore freeChannels;
+    private final NonBlockingSemaphoreLike freeChannels;
     private final boolean maxConnectionsPerHostEnabled;
-    private final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Object, NonBlockingSemaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
 
@@ -141,18 +140,21 @@ public class ChannelManager {
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
+        freeChannels = maxTotalConnectionsEnabled ?
+                new NonBlockingSemaphore(config.getMaxConnections()) :
+                NonBlockingSemaphoreInfinite.INSTANCE;
+
         if (maxTotalConnectionsEnabled || maxConnectionsPerHostEnabled) {
             openChannels = new DefaultChannelGroup("asyncHttpClient", GlobalEventExecutor.INSTANCE) {
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
                     if (removed) {
-                        if (maxTotalConnectionsEnabled)
-                            freeChannels.release();
+                        freeChannels.release();
                         if (maxConnectionsPerHostEnabled) {
                             Object partitionKey = Channel.class.cast(o).attr(partitionKeyAttr).getAndSet(null);
                             if (partitionKey != null) {
-                                Semaphore hostFreeChannels = freeChannelsPerHost.get(partitionKey);
+                                NonBlockingSemaphore hostFreeChannels = freeChannelsPerHost.get(partitionKey);
                                 if (hostFreeChannels != null)
                                     hostFreeChannels.release();
                             }
@@ -161,10 +163,8 @@ public class ChannelManager {
                     return removed;
                 }
             };
-            freeChannels = new Semaphore(config.getMaxConnections());
         } else {
             openChannels = new DefaultChannelGroup("asyncHttpClient", GlobalEventExecutor.INSTANCE);
-            freeChannels = null;
         }
 
         handshakeTimeout = config.getHandshakeTimeout();
@@ -338,15 +338,17 @@ public class ChannelManager {
     }
 
     private boolean tryAcquireGlobal() {
-        return !maxTotalConnectionsEnabled || freeChannels.tryAcquire();
+        return freeChannels.tryAcquire();
     }
 
-    private Semaphore getFreeConnectionsForHost(Object partitionKey) {
-        return freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(config.getMaxConnectionsPerHost()));
+    private NonBlockingSemaphoreLike getFreeConnectionsForHost(Object partitionKey) {
+        return maxConnectionsPerHostEnabled ?
+                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new NonBlockingSemaphore(config.getMaxConnectionsPerHost())) :
+                NonBlockingSemaphoreInfinite.INSTANCE;
     }
 
     private boolean tryAcquirePerHost(Object partitionKey) {
-        return !maxConnectionsPerHostEnabled || getFreeConnectionsForHost(partitionKey).tryAcquire();
+        return getFreeConnectionsForHost(partitionKey).tryAcquire();
     }
 
     public void acquireChannelLock(Object partitionKey) throws IOException {
@@ -355,8 +357,7 @@ public class ChannelManager {
         if (!tryAcquireGlobal())
             throw tooManyConnections;
         if (!tryAcquirePerHost(partitionKey)) {
-            if (maxTotalConnectionsEnabled)
-                freeChannels.release();
+            freeChannels.release();
 
             throw tooManyConnectionsPerHost;
         }
@@ -383,10 +384,8 @@ public class ChannelManager {
     }
 
     public void releaseChannelLock(Object partitionKey) {
-        if (maxTotalConnectionsEnabled)
-            freeChannels.release();
-        if (maxConnectionsPerHostEnabled)
-            getFreeConnectionsForHost(partitionKey).release();
+        freeChannels.release();
+        getFreeConnectionsForHost(partitionKey).release();
     }
 
     public void registerOpenChannel(Channel channel, Object partitionKey) {
