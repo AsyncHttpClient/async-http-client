@@ -237,10 +237,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public final void abort(final Throwable t) {
 
-        future.completeExceptionally(t);
-
         if (terminateAndExit())
             return;
+
+        future.completeExceptionally(t);
 
         if (onThrowableCalledField.compareAndSet(this, 0, 1)) {
             try {
