@@ -258,6 +258,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     @Override
     public ListenableFuture<V> addListener(Runnable listener, Executor exec) {
+        if (exec == null) {
+            exec = Runnable::run;
+        }
         future.whenCompleteAsync((r, v) -> listener.run(), exec);
         return this;
     }
