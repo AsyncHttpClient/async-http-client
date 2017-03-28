@@ -35,6 +35,7 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -87,6 +88,8 @@ public class ChannelManager {
     public static final String AHC_WS_HANDLER = "ahc-ws";
     public static final String LOGGING_HANDLER = "logging";
 
+    private static final AttributeKey<Object> partitionKeyAttr = AttributeKey.valueOf("partitionKey");
+
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
@@ -99,7 +102,6 @@ public class ChannelManager {
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
-    private final ConcurrentHashMap<Channel, Object> channelId2PartitionKey = new ConcurrentHashMap<>();
     private final boolean maxTotalConnectionsEnabled;
     private final Semaphore freeChannels;
     private final boolean maxConnectionsPerHostEnabled;
@@ -141,7 +143,7 @@ public class ChannelManager {
                         if (maxTotalConnectionsEnabled)
                             freeChannels.release();
                         if (maxConnectionsPerHostEnabled) {
-                            Object partitionKey = channelId2PartitionKey.remove(Channel.class.cast(o));
+                            Object partitionKey = Channel.class.cast(o).attr(partitionKeyAttr).getAndSet(null);
                             if (partitionKey != null) {
                                 Semaphore hostFreeChannels = freeChannelsPerHost.get(partitionKey);
                                 if (hostFreeChannels != null)
@@ -308,7 +310,7 @@ public class ChannelManager {
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOffer(channel);
             if (channelPool.offer(channel, partitionKey)) {
                 if (maxConnectionsPerHostEnabled)
-                    channelId2PartitionKey.putIfAbsent(channel, partitionKey);
+                    channel.attr(partitionKeyAttr).setIfAbsent(partitionKey);
             } else {
                 // rejected by pool
                 closeChannel(channel);
@@ -383,7 +385,7 @@ public class ChannelManager {
     public void registerOpenChannel(Channel channel, Object partitionKey) {
         openChannels.add(channel);
         if (maxConnectionsPerHostEnabled) {
-            channelId2PartitionKey.put(channel, partitionKey);
+            channel.attr(partitionKeyAttr).set(partitionKey);
         }
     }
 
