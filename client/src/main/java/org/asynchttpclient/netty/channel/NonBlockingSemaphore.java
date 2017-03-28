@@ -45,4 +45,10 @@ class NonBlockingSemaphore implements NonBlockingSemaphoreLike {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        // mimic toString of Semaphore class
+        return super.toString() + "[Permits = " + permits + "]";
+    }
 }
