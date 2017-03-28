@@ -28,11 +28,11 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.ChannelPool;
-import org.asynchttpclient.channel.ChannelPoolPartitionSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -358,11 +358,11 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+    public void flushPartitions(Predicate<Object> selector) {
 
         for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> partitionsEntry : partitions.entrySet()) {
             Object partitionKey = partitionsEntry.getKey();
-            if (selector.select(partitionKey))
+            if (selector.test(partitionKey))
                 flushPartition(partitionKey, partitionsEntry.getValue());
         }
     }

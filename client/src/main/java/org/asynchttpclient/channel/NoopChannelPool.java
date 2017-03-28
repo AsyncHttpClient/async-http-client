@@ -13,10 +13,11 @@
  */
 package org.asynchttpclient.channel;
 
+import io.netty.channel.Channel;
+
 import java.util.Collections;
 import java.util.Map;
-
-import io.netty.channel.Channel;
+import java.util.function.Predicate;
 
 public enum NoopChannelPool implements ChannelPool {
 
@@ -51,7 +52,7 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartitions(ChannelPoolPartitionSelector selector) {
+    public void flushPartitions(Predicate<Object> selector) {
     }
 
     @Override
