@@ -49,6 +49,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLEngine;
@@ -520,5 +521,9 @@ public class ChannelManager {
                         }
                 ));
         return new ClientStats(statsPerHost);
+    }
+
+    public void flushChannelPoolPartitions(Predicate<Object> predicate) {
+        channelPool.flushPartitions(predicate);
     }
 }

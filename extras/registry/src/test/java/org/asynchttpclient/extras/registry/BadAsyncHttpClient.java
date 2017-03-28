@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.extras.registry;
 
+import java.util.function.Predicate;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
@@ -129,6 +131,11 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public ClientStats getClientStats() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void flushChannelPoolPartitions(Predicate<Object> predicate) {
         throw new UnsupportedOperationException();
     }
 }

@@ -61,18 +61,11 @@ public interface ChannelPool {
     void destroy();
 
     /**
-     * Flush a partition
+     * Flush partitions based on a predicate
      * 
-     * @param partitionKey the partition
+     * @param predicate the predicate
      */
-    void flushPartition(Object partitionKey);
-
-    /**
-     * Flush partitions based on a selector
-     * 
-     * @param selector the selector
-     */
-    void flushPartitions(Predicate<Object> selector);
+    void flushPartitions(Predicate<Object> predicate);
 
     /**
      * @return The number of idle channels per host.

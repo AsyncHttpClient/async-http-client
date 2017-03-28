@@ -22,6 +22,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.filter.FilterContext;
@@ -258,6 +259,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     @Override
     public ClientStats getClientStats() {
         return channelManager.getClientStats();
+    }
+    
+    @Override
+    public void flushChannelPoolPartitions(Predicate<Object> predicate) {
+        channelManager.flushChannelPoolPartitions(predicate);
     }
 
     protected BoundRequestBuilder requestBuilder(String method, String url) {

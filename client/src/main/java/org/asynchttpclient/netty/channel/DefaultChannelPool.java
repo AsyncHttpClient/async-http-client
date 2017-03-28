@@ -353,16 +353,10 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartition(Object partitionKey) {
-        flushPartition(partitionKey, partitions.get(partitionKey));
-    }
-
-    @Override
-    public void flushPartitions(Predicate<Object> selector) {
-
+    public void flushPartitions(Predicate<Object> predicate) {
         for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> partitionsEntry : partitions.entrySet()) {
             Object partitionKey = partitionsEntry.getKey();
-            if (selector.test(partitionKey))
+            if (predicate.test(partitionKey))
                 flushPartition(partitionKey, partitionsEntry.getValue());
         }
     }

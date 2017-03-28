@@ -48,11 +48,7 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     @Override
-    public void flushPartition(Object partitionKey) {
-    }
-
-    @Override
-    public void flushPartitions(Predicate<Object> selector) {
+    public void flushPartitions(Predicate<Object> predicate) {
     }
 
     @Override
