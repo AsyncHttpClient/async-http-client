@@ -263,7 +263,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     
     @Override
     public void flushChannelPoolPartitions(Predicate<Object> predicate) {
-        channelManager.flushChannelPoolPartitions(predicate);
+        getChannelPool().flushPartitions(predicate);
     }
 
     protected BoundRequestBuilder requestBuilder(String method, String url) {
