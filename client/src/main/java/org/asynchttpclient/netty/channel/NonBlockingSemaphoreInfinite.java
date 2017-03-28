@@ -31,4 +31,9 @@ enum NonBlockingSemaphoreInfinite implements NonBlockingSemaphoreLike {
     public boolean tryAcquire() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return NonBlockingSemaphore.class.getName();
+    }
 }
