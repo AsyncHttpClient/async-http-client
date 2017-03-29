@@ -58,7 +58,7 @@ public final class NettyConnectListener<T> {
         this.partitionKey = partitionKey;
     }
 
-    public void abortChannelPreemption(Channel channel) {
+    private void abortChannelPreemption(Channel channel) {
         if (channelPreempted) {
             channelManager.releaseChannelLock(partitionKey);
         }
