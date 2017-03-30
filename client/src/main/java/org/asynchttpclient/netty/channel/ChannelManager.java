@@ -133,9 +133,7 @@ public class ChannelManager {
         maxTotalConnectionsEnabled = config.getMaxConnections() > 0;
         maxConnectionsPerHostEnabled = config.getMaxConnectionsPerHost() > 0;
 
-        freeChannels = maxTotalConnectionsEnabled ?
-                new NonBlockingSemaphore(config.getMaxConnections()) :
-                NonBlockingSemaphoreInfinite.INSTANCE;
+        freeChannels = maxTotalConnectionsEnabled ? new NonBlockingSemaphore(config.getMaxConnections()) : NonBlockingSemaphoreInfinite.INSTANCE;
 
         if (maxTotalConnectionsEnabled || maxConnectionsPerHostEnabled) {
             openChannels = new DefaultChannelGroup("asyncHttpClient", GlobalEventExecutor.INSTANCE) {
@@ -309,16 +307,15 @@ public class ChannelManager {
             if (asyncHandler instanceof AsyncHandlerExtensions)
                 AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOffer(channel);
             if (channelPool.offer(channel, partitionKey)) {
-                if (maxConnectionsPerHostEnabled)
+                if (maxConnectionsPerHostEnabled) {
                     channel.attr(partitionKeyAttr).setIfAbsent(partitionKey);
-            } else {
-                // rejected by pool
-                closeChannel(channel);
+                }
+                return;
             }
-        } else {
-            // not offered
-            closeChannel(channel);
         }
+        // rejected by pool or not offered
+        releaseChannelLock(partitionKey);
+        closeChannel(channel);
     }
 
     public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
@@ -335,9 +332,8 @@ public class ChannelManager {
     }
 
     private NonBlockingSemaphoreLike getFreeConnectionsForHost(Object partitionKey) {
-        return maxConnectionsPerHostEnabled ?
-                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new NonBlockingSemaphore(config.getMaxConnectionsPerHost())) :
-                NonBlockingSemaphoreInfinite.INSTANCE;
+        return maxConnectionsPerHostEnabled ? freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new NonBlockingSemaphore(config.getMaxConnectionsPerHost()))
+                : NonBlockingSemaphoreInfinite.INSTANCE;
     }
 
     private boolean tryAcquirePerHost(Object partitionKey) {

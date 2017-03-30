@@ -49,10 +49,11 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         future.cancelTimeouts();
 
         boolean keepAlive = future.isKeepAlive();
-        if (expectOtherChunks && keepAlive)
+        if (expectOtherChunks && keepAlive) {
             channelManager.drainChannelAndOffer(channel, future);
-        else
+        } else {
             channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, future.getPartitionKey());
+        }
 
         try {
             future.done();
