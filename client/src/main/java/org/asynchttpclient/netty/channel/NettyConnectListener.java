@@ -22,6 +22,8 @@ import io.netty.handler.ssl.SslHandler;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -43,26 +45,22 @@ public final class NettyConnectListener<T> {
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
     private final ChannelManager channelManager;
-    private final boolean channelPreempted;
+    private final ConnectionSemaphore connectionSemaphore;
     private final Object partitionKey;
 
     public NettyConnectListener(NettyResponseFuture<T> future,//
             NettyRequestSender requestSender,//
             ChannelManager channelManager,//
-            boolean channelPreempted,//
+            ConnectionSemaphore connectionSemaphore,//
             Object partitionKey) {
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
-        this.channelPreempted = channelPreempted;
+        this.connectionSemaphore = connectionSemaphore;
         this.partitionKey = partitionKey;
     }
 
     private void abortChannelPreemption(Channel channel) {
-        if (channelPreempted) {
-            channelManager.releaseChannelLock(partitionKey);
-        }
-
         Channels.silentlyCloseChannel(channel);
     }
 
@@ -94,6 +92,20 @@ public final class NettyConnectListener<T> {
     }
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
+
+        {
+            // transfer lock from future to channel
+            Object partitionKeyLock = future.takePartitionKeyLock();
+
+            if (partitionKeyLock != null) {
+                channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+                    @Override
+                    public void operationComplete(Future<? super Void> future) throws Exception {
+                        connectionSemaphore.releaseChannelLock(partitionKeyLock);
+                    }
+                });
+            }
+        }
 
         Channels.setInactiveToken(channel);
 

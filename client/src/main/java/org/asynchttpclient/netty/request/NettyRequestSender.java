@@ -42,6 +42,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
@@ -54,6 +55,7 @@ import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
+import org.asynchttpclient.netty.channel.ConnectionSemaphore;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -69,16 +71,19 @@ public final class NettyRequestSender {
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
+    private final ConnectionSemaphore connectionSemaphore;
     private final Timer nettyTimer;
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
             ChannelManager channelManager,//
+            ConnectionSemaphore connectionSemaphore,//
             Timer nettyTimer,//
             AsyncHttpClientState clientState) {
         this.config = config;
         this.channelManager = channelManager;
+        this.connectionSemaphore = connectionSemaphore;
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
@@ -265,16 +270,14 @@ public final class NettyRequestSender {
 
         Object partitionKey = future.getPartitionKey();
 
-        // we disable channelPreemption when performing next requests
-        final boolean acquireChannelLock = !performingNextRequest;
-
         try {
+            if (!channelManager.isOpen()) {
+                throw PoolAlreadyClosedException.INSTANCE;
+            }
+
             // Do not throw an exception when we need an extra connection for a
             // redirect.
-            if (acquireChannelLock) {
-                // if there's an exception here, channel wasn't preempted and resolve won't happen
-                channelManager.acquireChannelLock(partitionKey);
-            }
+            future.acquirePartitionLockLazily();
         } catch (Throwable t) {
             abort(null, future, getCause(t));
             // exit and don't try to resolve address
@@ -288,20 +291,16 @@ public final class NettyRequestSender {
 
                     @Override
                     protected void onSuccess(List<InetSocketAddress> addresses) {
-                        NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, acquireChannelLock, partitionKey);
+                        NettyConnectListener<T> connectListener = new NettyConnectListener<>(
+                                future, NettyRequestSender.this, channelManager, connectionSemaphore, partitionKey);
                         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, config);
                         if (!future.isDone()) {
                             connector.connect(bootstrap, connectListener);
-                        } else if (acquireChannelLock) {
-                            channelManager.releaseChannelLock(partitionKey);
                         }
                     }
 
                     @Override
                     protected void onFailure(Throwable cause) {
-                        if (acquireChannelLock) {
-                            channelManager.releaseChannelLock(partitionKey);
-                        }
                         abort(null, future, getCause(cause));
                     }
                 });
@@ -317,6 +316,7 @@ public final class NettyRequestSender {
                 nettyRequest,//
                 config.getMaxRequestRetry(),//
                 request.getChannelPoolPartitioning(),//
+                connectionSemaphore,//
                 proxyServer);
 
         String expectHeader = request.getHeaders().get(EXPECT);
