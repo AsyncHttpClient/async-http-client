@@ -52,7 +52,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
     private boolean abortAfterHandlingHeaders(//
             AsyncHandler<?> handler,//
-            HttpResponseHeaders responseHeaders) throws IOException, Exception {
+            HttpResponseHeaders responseHeaders) throws Exception {
         return !responseHeaders.getHeaders().isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
