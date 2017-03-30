@@ -60,14 +60,10 @@ public final class NettyConnectListener<T> {
         this.partitionKey = partitionKey;
     }
 
-    private void abortChannelPreemption(Channel channel) {
-        Channels.silentlyCloseChannel(channel);
-    }
-
     private boolean futureIsAlreadyCancelled(Channel channel) {
         // FIXME should we only check isCancelled?
         if (future.isDone()) {
-            abortChannelPreemption(channel);
+            Channels.silentlyCloseChannel(channel);
             return true;
         }
         return false;
@@ -180,7 +176,7 @@ public final class NettyConnectListener<T> {
     public void onFailure(Channel channel, Throwable cause) {
 
         // beware, channel can be null
-        abortChannelPreemption(channel);
+        Channels.silentlyCloseChannel(channel);
 
         boolean canRetry = future.incrementRetryAndCheck();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
