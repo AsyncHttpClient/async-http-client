@@ -13,6 +13,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -268,8 +270,16 @@ public class ChannelManager {
         if (channel.isActive() && keepAlive) {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
-            if (asyncHandler instanceof AsyncHandlerExtensions)
-                AsyncHandlerExtensions.class.cast(asyncHandler).onConnectionOffer(channel);
+
+            final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
+            if (asyncHandlerExtensions != null) {
+                try {
+                    asyncHandlerExtensions.onConnectionOffer(channel);
+                } catch (Exception e) {
+                    LOGGER.error("onConnectionOffer crashed", e);
+                }
+            }
+
             if (!channelPool.offer(channel, partitionKey)) {
                 // rejected by pool
                 closeChannel(channel);
@@ -416,26 +426,15 @@ public class ChannelManager {
     }
 
     public ClientStats getClientStats() {
-        Map<String, Long> totalConnectionsPerHost = openChannels
-                    .stream()
-                    .map(Channel::remoteAddress)
-                    .filter(a -> a.getClass() == InetSocketAddress.class)
-                    .map(a -> (InetSocketAddress) a)
-                    .map(InetSocketAddress::getHostName)
-                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(a -> a.getClass() == InetSocketAddress.class)
+                .map(a -> (InetSocketAddress) a).map(InetSocketAddress::getHostName).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
-        Map<String, HostStats> statsPerHost = totalConnectionsPerHost
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> {
-                            final long totalConnectionCount = entry.getValue();
-                            final long idleConnectionCount = idleConnectionsPerHost.getOrDefault(entry.getKey(), 0L);
-                            final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
-                            return new HostStats(activeConnectionCount, idleConnectionCount);
-                        }
-                ));
+        Map<String, HostStats> statsPerHost = totalConnectionsPerHost.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> {
+            final long totalConnectionCount = entry.getValue();
+            final long idleConnectionCount = idleConnectionsPerHost.getOrDefault(entry.getKey(), 0L);
+            final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
+            return new HostStats(activeConnectionCount, idleConnectionCount);
+        }));
         return new ClientStats(statsPerHost);
     }
 

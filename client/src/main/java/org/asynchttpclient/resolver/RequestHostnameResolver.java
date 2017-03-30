@@ -30,6 +30,8 @@ import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public enum RequestHostnameResolver {
 
@@ -58,8 +60,15 @@ public enum RequestHostnameResolver {
             port = uri.getExplicitPort();
         }
 
-        if (asyncHandlerExtensions != null)
-            asyncHandlerExtensions.onHostnameResolutionAttempt(name);
+        if (asyncHandlerExtensions != null) {
+            try {
+                asyncHandlerExtensions.onHostnameResolutionAttempt(name);
+            } catch (Exception e) {
+                LOGGER.error("onHostnameResolutionAttempt crashed", e);
+                promise.tryFailure(e);
+                return promise;
+            }
+        }
 
         final Future<List<InetAddress>> whenResolved = request.getNameResolver().resolveAll(name);
 
@@ -72,7 +81,13 @@ public enum RequestHostnameResolver {
                     socketAddresses.add(new InetSocketAddress(a, port));
                 }
                 if (asyncHandlerExtensions != null) {
-                    asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
+                    try {
+                        asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
+                    } catch (Exception e) {
+                        LOGGER.error("onHostnameResolutionSuccess crashed", e);
+                        promise.tryFailure(e);
+                        return;
+                    }
                 }
                 promise.trySuccess(socketAddresses);
             }
@@ -80,7 +95,13 @@ public enum RequestHostnameResolver {
             @Override
             protected void onFailure(Throwable t) throws Exception {
                 if (asyncHandlerExtensions != null) {
-                    asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                    try {
+                        asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                    } catch (Exception e) {
+                        LOGGER.error("onHostnameResolutionFailure crashed", e);
+                        promise.tryFailure(e);
+                        return;
+                    }
                 }
                 promise.tryFailure(t);
             }
@@ -88,4 +109,6 @@ public enum RequestHostnameResolver {
 
         return promise;
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestHostnameResolver.class);
 }
