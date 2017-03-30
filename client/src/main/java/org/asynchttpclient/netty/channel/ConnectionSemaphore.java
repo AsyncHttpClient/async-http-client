@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 
