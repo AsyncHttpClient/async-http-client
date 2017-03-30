@@ -73,9 +73,9 @@ public class NettyChannelConnector {
             connect0(bootstrap, connectListener, remoteAddress);
         } catch (RejectedExecutionException e) {
             if (clientState.isClosed()) {
-                connectListener.onFailure(null, e);
-            } else {
                 LOGGER.info("Connect crash but engine is shutting down");
+            } else {
+                connectListener.onFailure(null, e);
             }
         }
     }
