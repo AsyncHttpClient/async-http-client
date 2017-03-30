@@ -165,6 +165,9 @@ public class AuthTimeoutTest extends AbstractBasicTest {
             realm = digestAuthRealm(USER, ADMIN);
             url = getTargetUrl2();
             if (preemptive) {
+                realm.setRealmName("MyRealm");
+                realm.setAlgorithm("MD5");
+                realm.setQop("auth");
                 realm.setNonce("fFDVc60re9zt8fFDvht0tNrYuvqrcchN");
             }
         }

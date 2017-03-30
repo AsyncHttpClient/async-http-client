@@ -14,6 +14,7 @@ package org.asynchttpclient.util;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
@@ -123,7 +124,7 @@ public final class AuthenticatorUtils {
         return proxyAuthorization;
     }
 
-    public static String perRequestProxyAuthorizationHeader(Realm proxyRealm) {
+    public static String perRequestProxyAuthorizationHeader(Request request, Realm proxyRealm) {
 
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
@@ -133,8 +134,14 @@ public final class AuthenticatorUtils {
                 proxyAuthorization = computeBasicAuthentication(proxyRealm);
                 break;
             case DIGEST:
-                if (isNonEmpty(proxyRealm.getNonce()))
+                if (isNonEmpty(proxyRealm.getNonce())) {
+                    // update realm with request information
+                    proxyRealm = realm(proxyRealm)//
+                            .setUri(request.getUri())//
+                            .setMethodName(request.getMethod())//
+                            .build();
                     proxyAuthorization = computeDigestAuthentication(proxyRealm);
+                }
                 break;
             case NTLM:
             case KERBEROS:
@@ -183,7 +190,7 @@ public final class AuthenticatorUtils {
         return authorizationHeader;
     }
 
-    public static String perRequestAuthorizationHeader(Realm realm) {
+    public static String perRequestAuthorizationHeader(Request request, Realm realm) {
 
         String authorizationHeader = null;
 
@@ -194,8 +201,14 @@ public final class AuthenticatorUtils {
                 authorizationHeader = computeBasicAuthentication(realm);
                 break;
             case DIGEST:
-                if (isNonEmpty(realm.getNonce()))
+                if (isNonEmpty(realm.getNonce())) {
+                    // update realm with request information
+                    realm = realm(realm)//
+                            .setUri(request.getUri())//
+                            .setMethodName(request.getMethod())//
+                            .build();
                     authorizationHeader = computeDigestAuthentication(realm);
+                }
                 break;
             case NTLM:
             case KERBEROS:

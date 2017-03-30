@@ -48,7 +48,6 @@ public class DigestAuthTest extends AbstractBasicTest {
 
     private static class SimpleHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-
             response.addHeader("X-Auth", request.getHeader("Authorization"));
             response.setStatus(200);
             response.getOutputStream().flush();

@@ -218,7 +218,7 @@ public class Realm {
                 }
             }
         };
-        
+
         private static MessageDigest getMessageDigest() {
             MessageDigest md = DIGEST_TL.get();
             md.reset();
@@ -457,21 +457,24 @@ public class Realm {
         }
 
         private void newResponse(MessageDigest md) {
-            // BEWARE: compute first as it uses the cached StringBuilder
-            String digestUri = AuthenticatorUtils.computeRealmURI(uri, useAbsoluteURI, omitQuery);
+            // when using preemptive auth, the request uri is missing
+            if (uri != null) {
+                // BEWARE: compute first as it uses the cached StringBuilder
+                String digestUri = AuthenticatorUtils.computeRealmURI(uri, useAbsoluteURI, omitQuery);
 
-            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
+                StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
 
-            // WARNING: DON'T MOVE, BUFFER IS RECYCLED!!!!
-            byte[] secretDigest = secretDigest(sb, md);
-            byte[] dataDigest = dataDigest(sb, digestUri, md);
+                // WARNING: DON'T MOVE, BUFFER IS RECYCLED!!!!
+                byte[] secretDigest = secretDigest(sb, md);
+                byte[] dataDigest = dataDigest(sb, digestUri, md);
 
-            appendBase16(sb, secretDigest);
-            appendDataBase(sb);
-            appendBase16(sb, dataDigest);
+                appendBase16(sb, secretDigest);
+                appendDataBase(sb);
+                appendBase16(sb, dataDigest);
 
-            byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
-            response = toHexString(responseDigest);
+                byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
+                response = toHexString(responseDigest);
+            }
         }
 
         /**
