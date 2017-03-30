@@ -59,10 +59,12 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
             BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER);
             Response response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getResponseBodyAsBytes().length, LARGE_IMAGE_BYTES.length);
             assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
 
             response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getResponseBodyAsBytes().length, LARGE_IMAGE_BYTES.length);
             assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
         }
     }
