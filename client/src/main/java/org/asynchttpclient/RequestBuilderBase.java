@@ -183,8 +183,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     /**
      * @see #setHeader(CharSequence, Object)
      */
-    public T setHeader(String name, Object value) {
-        return setHeader((CharSequence) name, value);
+    public T setHeader(CharSequence name, String value) {
+        return setHeader(name, (Object) value);
     }
 
     /**
@@ -200,13 +200,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
-     * @see #setHeader(CharSequence, Iterable)
-     */
-    public T setHeader(String name, Iterable<?> values) {
-        return setHeader((CharSequence) name, values);
-    }
-    
-    /**
      * Set multi-values header for the request
      *
      * @param name header name
@@ -221,8 +214,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     /**
      * @see #addHeader(CharSequence, Object)
      */
-    public T addHeader(String name, Object value) {
-        return addHeader((CharSequence) name, value);
+    public T addHeader(CharSequence name, String value) {
+        return addHeader(name, (Object) value);
     }
 
     /**
@@ -241,13 +234,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         this.headers.add(name, value);
         return asDerivedType();
-    }
-
-    /**
-     * @see #addHeader(CharSequence, Iterable)
-     */
-    public T addHeader(String name, Iterable<?> values) {
-        return addHeader((CharSequence) name, values);
     }
 
     /**
