@@ -150,12 +150,12 @@ public final class NtlmEngine {
 
     /** Convert host to standard form */
     private static String convertHost(final String host) {
-        return stripDotSuffix(host).toUpperCase();
+        return host != null ? stripDotSuffix(host).toUpperCase() : null;
     }
 
     /** Convert domain to standard form */
     private static String convertDomain(final String domain) {
-        return stripDotSuffix(domain).toUpperCase();
+        return domain != null ? stripDotSuffix(domain).toUpperCase() : null;
     }
 
     private static int readULong(final byte[] src, final int index) throws NtlmEngineException {
