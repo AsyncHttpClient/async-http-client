@@ -17,6 +17,7 @@
         <module>jdeferred</module>
         <module>registry</module>
         <module>rxjava</module>
+        <module>rxjava2</module>
         <module>simple</module>
     </modules>
 
