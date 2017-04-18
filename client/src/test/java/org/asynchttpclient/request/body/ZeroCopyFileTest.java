@@ -12,14 +12,15 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -117,7 +118,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
-            try (FileOutputStream stream = new FileOutputStream(tmp)) {
+            try (OutputStream stream = Files.newOutputStream(tmp.toPath())) {
                 Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {
                     }
@@ -150,7 +151,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
-            try (FileOutputStream stream = new FileOutputStream(tmp)) {
+            try (OutputStream stream = Files.newOutputStream(tmp.toPath())) {
                 Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                     public void onThrowable(Throwable t) {
                     }

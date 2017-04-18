@@ -46,7 +46,7 @@ import org.asynchttpclient.Response;
  * handling than "recommended" way. Some examples:
  * <br>
  * <pre>
- *     FileOutputStream fos = ...
+ *     OutputStream fos = ...
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(fos);
  *     // client executes async
  *     Future&lt;Response&gt; fr = client.prepareGet(&quot;http://foo.com/aresource&quot;).execute(

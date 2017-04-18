@@ -18,15 +18,16 @@ import static org.testng.Assert.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -137,7 +138,7 @@ public class TestUtils {
         long repeats = approxSize / TestUtils.PATTERN_BYTES.length + 1;
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP_DIR);
         tmpFile.deleteOnExit();
-        try (FileOutputStream out = new FileOutputStream(tmpFile)) {
+        try (OutputStream out = Files.newOutputStream(tmpFile.toPath())) {
             for (int i = 0; i < repeats; i++) {
                 out.write(PATTERN_BYTES);
             }

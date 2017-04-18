@@ -12,12 +12,13 @@
  */
 package org.asynchttpclient.handler.resumable;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,7 +60,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     @Override
     public void save(Map<String, Long> map) {
         log.debug("Saving current download state {}", properties.toString());
-        FileOutputStream os = null;
+        OutputStream os = null;
         try {
 
             if (!TMP.exists() && !TMP.mkdirs()) {
@@ -73,8 +74,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
                 throw new IllegalStateException();
             }
 
-            os = new FileOutputStream(f);
-
+            os = Files.newOutputStream(f.toPath());
             for (Map.Entry<String, Long> e : properties.entrySet()) {
                 os.write(append(e).getBytes(UTF_8));
             }
@@ -82,8 +82,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         } catch (Throwable e) {
             log.warn(e.getMessage(), e);
         } finally {
-            if (os != null)
-                closeSilently(os);
+            closeSilently(os);
         }
     }
 

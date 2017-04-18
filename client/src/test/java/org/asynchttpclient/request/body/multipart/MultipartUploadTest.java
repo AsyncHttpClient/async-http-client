@@ -20,7 +20,6 @@ import static org.testng.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -130,7 +129,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
         boolean tmpFileCreated = false;
         File tmpFile = File.createTempFile("textbytearray", ".txt");
-        try (FileOutputStream os = new FileOutputStream(tmpFile)) {
+        try (OutputStream os = Files.newOutputStream(tmpFile.toPath())) {
             IOUtils.write(expectedContents.getBytes(UTF_8), os);
             tmpFileCreated = true;
 
@@ -349,7 +348,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
                                 // Process the input stream
                                 File tmpFile = File.createTempFile(UUID.randomUUID().toString() + "_MockUploadServlet", ".tmp");
                                 tmpFile.deleteOnExit();
-                                try (OutputStream os = new FileOutputStream(tmpFile)) {
+                                try (OutputStream os = Files.newOutputStream(tmpFile.toPath())) {
                                     byte[] buffer = new byte[4096];
                                     int bytesRead;
                                     while ((bytesRead = stream.read(buffer)) != -1) {
