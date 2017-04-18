@@ -19,13 +19,13 @@ import static org.testng.Assert.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -215,7 +215,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] sourceBytes = null;
-                try (FileInputStream instream = new FileInputStream(sourceFile)) {
+                try (InputStream instream = Files.newInputStream(sourceFile.toPath())) {
                     byte[] buf = new byte[8092];
                     int len = 0;
                     while ((len = instream.read(buf)) > 0) {
@@ -237,7 +237,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
                 assertTrue(tmp.exists());
 
                 byte[] bytes;
-                try (FileInputStream instream = new FileInputStream(tmp)) {
+                try (InputStream instream = Files.newInputStream(tmp.toPath())) {
                     ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
                     byte[] buf = new byte[8092];
                     int len = 0;
@@ -253,7 +253,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
                     String helloString = new String(bytes);
                     assertEquals(helloString, expectedContents.get(i));
                 } else {
-                    try (FileInputStream instream = new FileInputStream(tmp)) {
+                    try (InputStream instream = Files.newInputStream(tmp.toPath())) {
                         ByteArrayOutputStream baos3 = new ByteArrayOutputStream();
                         GZIPInputStream deflater = new GZIPInputStream(instream);
                         try {

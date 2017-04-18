@@ -16,9 +16,9 @@ package org.asynchttpclient.request.body.multipart.part;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.buffer.ByteBuf;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -34,7 +34,7 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
     public FileMultipartPart(FilePart part, byte[] boundary) {
         super(part, boundary);
         try {
-            channel = new FileInputStream(part.getFile()).getChannel();
+            channel = new RandomAccessFile(part.getFile(), "r").getChannel();
         } catch (FileNotFoundException e) {
             throw new IllegalArgumentException("File part doesn't exist: " + part.getFile().getAbsolutePath(), e);
         }

@@ -81,8 +81,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     abstract public T onCompleted(Response response) throws Exception;
 
     /**
-     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
-     * written on the I/O socket.
+     * Invoked when the HTTP headers have been fully written on the I/O socket.
      *
      * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
      */
@@ -91,7 +90,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     }
 
     /**
-     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.InputStream} has been fully
      * written on the I/O socket.
      *
      * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE or ABORT the current processing.

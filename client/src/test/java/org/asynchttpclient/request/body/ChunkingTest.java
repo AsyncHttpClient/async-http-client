@@ -18,17 +18,16 @@ import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
 
 import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
@@ -41,47 +40,46 @@ public class ChunkingTest extends AbstractBasicTest {
     // and doesn't contain the chunked delimeters.
     @Test(groups = "standalone")
     public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
-        doTestWithInputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE), 400000));
+        doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath()), 400000));
     }
 
     @Test(groups = "standalone")
     public void testBufferSmallThanFileWithStreamBodyGenerator() throws Throwable {
-        doTestWithInputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE)));
+        doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath())));
     }
 
     @Test(groups = "standalone")
     public void testDirectFileWithStreamBodyGenerator() throws Throwable {
-        doTestWithInputStreamBodyGenerator(new FileInputStream(LARGE_IMAGE_FILE));
+        doTestWithInputStreamBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }
 
     @Test(groups = "standalone")
     public void testDirectFileWithFeedableBodyGenerator() throws Throwable {
-        doTestWithFeedableBodyGenerator(new FileInputStream(LARGE_IMAGE_FILE));
+        doTestWithFeedableBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }
 
     public void doTestWithInputStreamBodyGenerator(InputStream is) throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
-
-            RequestBuilder builder = post(getTargetUrl()).setBody(new InputStreamBodyGenerator(is));
-
-            Request r = builder.build();
-
-            final ListenableFuture<Response> responseFuture = c.executeRequest(r);
-            waitForAndAssertResponse(responseFuture);
+        try {
+            try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
+                ListenableFuture<Response> responseFuture = c.executeRequest(post(getTargetUrl()).setBody(new InputStreamBodyGenerator(is)));
+                waitForAndAssertResponse(responseFuture);
+            }
+        } finally {
+            is.close();
         }
     }
 
     public void doTestWithFeedableBodyGenerator(InputStream is) throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
-
-            final FeedableBodyGenerator feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
-            Request r = post(getTargetUrl()).setBody(feedableBodyGenerator).build();
-
-            ListenableFuture<Response> responseFuture = c.executeRequest(r);
-
-            feed(feedableBodyGenerator, is);
-
-            waitForAndAssertResponse(responseFuture);
+        try {
+            try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
+                final FeedableBodyGenerator feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
+                Request r = post(getTargetUrl()).setBody(feedableBodyGenerator).build();
+                ListenableFuture<Response> responseFuture = c.executeRequest(r);
+                feed(feedableBodyGenerator, is);
+                waitForAndAssertResponse(responseFuture);
+            }
+        } finally {
+            is.close();
         }
     }
 
