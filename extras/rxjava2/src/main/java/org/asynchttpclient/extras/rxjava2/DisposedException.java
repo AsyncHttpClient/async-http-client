@@ -19,12 +19,9 @@ import java.util.concurrent.CancellationException;
  * Indicates that the HTTP request has been disposed asynchronously via RxJava.
  */
 public class DisposedException extends CancellationException {
-    private static final long serialVersionUID = -2913992117415097629L;
+    private static final long serialVersionUID = -5885577182105850384L;
 
-    public DisposedException() {
-    }
-
-    public DisposedException(final Throwable cause) {
-        initCause(cause);
+    public DisposedException(String message) {
+        super(message);
     }
 }

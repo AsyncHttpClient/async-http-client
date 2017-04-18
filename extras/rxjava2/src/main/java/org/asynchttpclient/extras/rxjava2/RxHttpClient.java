@@ -81,5 +81,4 @@ public interface RxHttpClient {
      *             if at least one of the parameters is {@code null}
      */
     <T> Maybe<T> prepare(Request request, Supplier<? extends AsyncHandler<T>> handlerSupplier);
-
 }

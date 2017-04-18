@@ -50,6 +50,8 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMaybeAsyncHandlerBridge.class);
 
+    private static volatile DisposedException sharedDisposed;
+
     /**
      * The Rx callback object that receives downstream events and will be queried for its
      * {@link MaybeEmitter#isDisposed() disposed state} when Async HTTP Client callbacks are invoked.
@@ -148,7 +150,19 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
      */
     protected final AsyncHandler.State disposed() {
         if (!delegateTerminated.getAndSet(true)) {
-            delegate().onThrowable(new DisposedException());
+
+            DisposedException disposed = sharedDisposed;
+            if (disposed == null) {
+                disposed = new DisposedException("Subscription has been disposed.");
+                final StackTraceElement[] stackTrace = disposed.getStackTrace();
+                if (stackTrace.length > 0) {
+                    disposed.setStackTrace(new StackTraceElement[] { stackTrace[0] });
+                }
+
+                sharedDisposed = disposed;
+            }
+
+            delegate().onThrowable(disposed);
         }
 
         return State.ABORT;

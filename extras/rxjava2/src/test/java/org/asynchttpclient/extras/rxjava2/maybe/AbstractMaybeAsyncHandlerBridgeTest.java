@@ -13,8 +13,9 @@
  */
 package org.asynchttpclient.extras.rxjava2.maybe;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.asynchttpclient.AsyncHandler;
@@ -173,6 +175,23 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
         final Throwable thrown = throwable.getValue();
         assertThat(thrown, is(instanceOf(CompositeException.class)));
         assertThat(((CompositeException) thrown).getExceptions(), is(Arrays.asList(initial, followup)));
+    }
+
+    @Test
+    public void cachesDisposedException() throws Exception {
+        // when
+        new UnderTest().disposed();
+        new UnderTest().disposed();
+
+        // then
+        then(delegate).should(times(2)).onThrowable(throwable.capture());
+        final List<Throwable> errors = throwable.getAllValues();
+        final Throwable firstError = errors.get(0), secondError = errors.get(1);
+        assertThat(secondError, is(sameInstance(firstError)));
+        final StackTraceElement[] stackTrace = firstError.getStackTrace();
+        assertThat(stackTrace.length, is(1));
+        assertThat(stackTrace[0].getClassName(), is(AbstractMaybeAsyncHandlerBridge.class.getName()));
+        assertThat(stackTrace[0].getMethodName(), is("disposed"));
     }
 
     @DataProvider
