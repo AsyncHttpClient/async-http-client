@@ -339,8 +339,7 @@ public final class NettyRequestSender {
         HttpRequest httpRequest = nettyRequest.getHttpRequest();
         AsyncHandler<T> handler = future.getAsyncHandler();
 
-        // if the channel is dead because it was pooled and the remote
-        // server decided to close it,
+        // if the channel is dead because it was pooled and the remote server decided to close it,
         // we just let it go and the channelInactive do its work
         if (!Channels.isChannelValid(channel))
             return;
@@ -366,6 +365,7 @@ public final class NettyRequestSender {
 
                 // if the request has a body, we want to track progress
                 if (writeBody) {
+                    // FIXME does this really work??? the promise is for the request without body!!!
                     ChannelProgressivePromise promise = channel.newProgressivePromise();
                     ChannelFuture f = channel.write(httpRequest, promise);
                     f.addListener(new WriteProgressListener(future, true, 0L));

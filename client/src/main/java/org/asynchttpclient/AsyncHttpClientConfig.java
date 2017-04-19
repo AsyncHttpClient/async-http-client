@@ -279,6 +279,8 @@ public interface AsyncHttpClientConfig {
 
     boolean isValidateResponseHeaders();
 
+    boolean isAggregateWebSocketFrameFragments();
+
     boolean isTcpNoDelay();
 
     boolean isSoReuseAddress();

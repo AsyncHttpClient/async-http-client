@@ -91,11 +91,11 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            WebSocket websocket = asyncHttpClient.prepareGet(targetUrl).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = asyncHttpClient.prepareGet(targetUrl).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(payload);
                     latch.countDown();
                 }
 
@@ -104,7 +104,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -115,7 +115,7 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.sendMessage("ECHO");
+            websocket.sendTextFrame("ECHO");
 
             latch.await();
             assertEquals(text.get(), "ECHO");

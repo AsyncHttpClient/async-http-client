@@ -15,15 +15,18 @@ package org.asynchttpclient.netty.ws;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import java.net.SocketAddress;
 import java.nio.charset.CharacterCodingException;
@@ -35,13 +38,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.util.Utf8ByteBufCharsetDecoder;
 import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketByteListener;
-import org.asynchttpclient.ws.WebSocketCloseCodeReasonListener;
 import org.asynchttpclient.ws.WebSocketListener;
-import org.asynchttpclient.ws.WebSocketPingListener;
-import org.asynchttpclient.ws.WebSocketPongListener;
-import org.asynchttpclient.ws.WebSocketTextListener;
-import org.asynchttpclient.ws.WebSocketWriteCompleteListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +49,6 @@ public class NettyWebSocket implements WebSocket {
     protected final Channel channel;
     protected final HttpHeaders upgradeHeaders;
     protected final Collection<WebSocketListener> listeners;
-    private volatile boolean interestedInByteMessages;
-    private volatile boolean interestedInTextMessages;
     // no need for volatile because only mutated in IO thread
     private boolean ready;
     private List<WebSocketFrame> bufferedFrames;
@@ -67,6 +62,128 @@ public class NettyWebSocket implements WebSocket {
         this.upgradeHeaders = upgradeHeaders;
         this.listeners = listeners;
     }
+
+    @Override
+    public HttpHeaders getUpgradeHeaders() {
+        return upgradeHeaders;
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return channel.remoteAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        return channel.localAddress();
+    }
+
+    @Override
+    public Future<Void> sendTextFrame(String message) {
+        return sendTextFrame(message, true, 0);
+    }
+
+    @Override
+    public Future<Void> sendTextFrame(String payload, boolean finalFragment, int rsv) {
+        return channel.writeAndFlush(new TextWebSocketFrame(finalFragment, rsv, payload));
+    }
+
+    @Override
+    public Future<Void> sendTextFrame(ByteBuf payload, boolean finalFragment, int rsv) {
+        return channel.writeAndFlush(new TextWebSocketFrame(finalFragment, rsv, payload));
+    }
+
+    @Override
+    public Future<Void> sendBinaryFrame(byte[] payload) {
+        return sendBinaryFrame(payload, true, 0);
+    }
+
+    @Override
+    public Future<Void> sendBinaryFrame(byte[] payload, boolean finalFragment, int rsv) {
+        return sendBinaryFrame(wrappedBuffer(payload), finalFragment, rsv);
+    }
+
+    @Override
+    public Future<Void> sendBinaryFrame(ByteBuf payload, boolean finalFragment, int rsv) {
+        return channel.writeAndFlush(new BinaryWebSocketFrame(payload));
+    }
+
+    @Override
+    public Future<Void> sendContinuationFrame(String payload, boolean finalFragment, int rsv) {
+        return channel.writeAndFlush(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
+    }
+
+    @Override
+    public Future<Void> sendContinuationFrame(byte[] payload, boolean finalFragment, int rsv) {
+        return sendContinuationFrame(wrappedBuffer(payload), finalFragment, rsv);
+    }
+
+    @Override
+    public Future<Void> sendContinuationFrame(ByteBuf payload, boolean finalFragment, int rsv) {
+        return channel.writeAndFlush(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
+    }
+
+    @Override
+    public Future<Void> sendPingFrame() {
+        return channel.writeAndFlush(new PingWebSocketFrame());
+    }
+
+    @Override
+    public Future<Void> sendPingFrame(byte[] payload) {
+        return sendPingFrame(wrappedBuffer(payload));
+    }
+
+    @Override
+    public Future<Void> sendPingFrame(ByteBuf payload) {
+        return channel.writeAndFlush(new PingWebSocketFrame(payload));
+    }
+
+    @Override
+    public Future<Void> sendPongFrame() {
+        return channel.writeAndFlush(new PongWebSocketFrame());
+    }
+
+    @Override
+    public Future<Void> sendPongFrame(byte[] payload) {
+        return sendPongFrame(wrappedBuffer(payload));
+    }
+
+    @Override
+    public Future<Void> sendPongFrame(ByteBuf payload) {
+        return channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)));
+    }
+
+    @Override
+    public Future<Void> sendCloseFrame() {
+        return sendCloseFrame(1000, "normal closure");
+    }
+
+    @Override
+    public Future<Void> sendCloseFrame(int statusCode, String reasonText) {
+        if (channel.isOpen()) {
+            return channel.writeAndFlush(new CloseWebSocketFrame(1000, "normal closure"));
+        }
+        return ImmediateEventExecutor.INSTANCE.newSucceededFuture(null);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return channel.isOpen();
+    }
+
+    @Override
+    public WebSocket addWebSocketListener(WebSocketListener l) {
+        listeners.add(l);
+        return this;
+    }
+
+    @Override
+    public WebSocket removeWebSocketListener(WebSocketListener l) {
+        listeners.remove(l);
+        return this;
+    }
+
+    // INTERNAL, NOT FOR PUBLIC USAGE!!!
 
     public boolean isReady() {
         return ready;
@@ -85,6 +202,7 @@ public class NettyWebSocket implements WebSocket {
             for (WebSocketFrame frame : bufferedFrames) {
                 frame.release();
             }
+            bufferedFrames = null;
         }
     }
 
@@ -116,165 +234,39 @@ public class NettyWebSocket implements WebSocket {
             Channels.silentlyCloseChannel(channel);
 
         } else if (frame instanceof PingWebSocketFrame) {
-            onPing((PingWebSocketFrame) frame);
+            onPingFrame((PingWebSocketFrame) frame);
 
         } else if (frame instanceof PongWebSocketFrame) {
-            onPong((PongWebSocketFrame) frame);
+            onPongFrame((PongWebSocketFrame) frame);
         }
-    }
-
-    @Override
-    public HttpHeaders getUpgradeHeaders() {
-        return upgradeHeaders;
-    }
-
-    @Override
-    public SocketAddress getRemoteAddress() {
-        return channel.remoteAddress();
-    }
-
-    @Override
-    public SocketAddress getLocalAddress() {
-        return channel.localAddress();
-    }
-
-    @Override
-    public WebSocket sendMessage(byte[] message) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(wrappedBuffer(message)), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket sendMessage(byte[] message, WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new BinaryWebSocketFrame(wrappedBuffer(message)), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(byte[] fragment, boolean last) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(final byte[] fragment, final boolean last, final WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset, len)), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(final byte[] fragment, final int offset, final int len, final boolean last, final WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset, len)), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket sendMessage(String message) {
-        channel.writeAndFlush(new TextWebSocketFrame(message), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket sendMessage(String message, WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new TextWebSocketFrame(message), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(String fragment, boolean last) {
-        channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket stream(final String fragment, final boolean last, final WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new TextWebSocketFrame(last, 0, fragment), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket sendPing(byte[] payload) {
-        channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket sendPing(final byte[] payload, final WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new PingWebSocketFrame(wrappedBuffer(payload)), channelPromise);
-        return this;
-    }
-
-    @Override
-    public WebSocket sendPong(byte[] payload) {
-        channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)), channel.voidPromise());
-        return this;
-    }
-
-    @Override
-    public WebSocket sendPong(final byte[] payload, final WebSocketWriteCompleteListener listener) {
-        final ChannelPromise channelPromise = channel.newPromise();
-        channelPromise.addListener(listener);
-        channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)), channelPromise);
-        return this;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return channel.isOpen();
-    }
-
-    @Override
-    public void close() {
-        if (channel.isOpen()) {
-            channel.writeAndFlush(new CloseWebSocketFrame(1000, "normal closure"));
-        }
-    }
-
-    public void close(int statusCode, String reason) {
-        onClose(statusCode, reason);
-        listeners.clear();
-        releaseBufferedFrames();
     }
 
     public void onError(Throwable t) {
-        for (WebSocketListener listener : listeners) {
-            try {
-                listener.onError(t);
-            } catch (Throwable t2) {
-                LOGGER.error("WebSocketListener.onError crash", t2);
+        try {
+            for (WebSocketListener listener : listeners) {
+                try {
+                    listener.onError(t);
+                } catch (Throwable t2) {
+                    LOGGER.error("WebSocketListener.onError crash", t2);
+                }
             }
+        } finally {
+            releaseBufferedFrames();
         }
-        releaseBufferedFrames();
     }
 
     public void onClose(int code, String reason) {
-        for (WebSocketListener l : listeners) {
-            try {
-                if (l instanceof WebSocketCloseCodeReasonListener) {
-                    WebSocketCloseCodeReasonListener.class.cast(l).onClose(this, code, reason);
+        try {
+            for (WebSocketListener l : listeners) {
+                try {
+                    l.onClose(this, code, reason);
+                } catch (Throwable t) {
+                    l.onError(t);
                 }
-                l.onClose(this);
-            } catch (Throwable t) {
-                l.onError(t);
             }
+            listeners.clear();
+        } finally {
+            releaseBufferedFrames();
         }
     }
 
@@ -283,85 +275,38 @@ public class NettyWebSocket implements WebSocket {
         return "NettyWebSocket{channel=" + channel + '}';
     }
 
-    private boolean hasWebSocketByteListener() {
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketByteListener)
-                return true;
-        }
-        return false;
-    }
-
-    private boolean hasWebSocketTextListener() {
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketTextListener)
-                return true;
-        }
-        return false;
-    }
-
-    @Override
-    public WebSocket addWebSocketListener(WebSocketListener l) {
-        listeners.add(l);
-        interestedInByteMessages = interestedInByteMessages || l instanceof WebSocketByteListener;
-        interestedInTextMessages = interestedInTextMessages || l instanceof WebSocketTextListener;
-        return this;
-    }
-
-    @Override
-    public WebSocket removeWebSocketListener(WebSocketListener l) {
-        listeners.remove(l);
-
-        if (l instanceof WebSocketByteListener)
-            interestedInByteMessages = hasWebSocketByteListener();
-        if (l instanceof WebSocketTextListener)
-            interestedInTextMessages = hasWebSocketTextListener();
-
-        return this;
-    }
-
-    private void notifyByteListeners(byte[] message) {
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketByteListener)
-                WebSocketByteListener.class.cast(listener).onMessage(message);
-        }
-    }
-
-    private void notifyTextListeners(String message) {
-        for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketTextListener)
-                WebSocketTextListener.class.cast(listener).onMessage(message);
-        }
-    }
-
     public void onBinaryFrame(BinaryWebSocketFrame frame) {
-        if (interestedInByteMessages) {
-            notifyByteListeners(byteBuf2Bytes(frame.content()));
+        byte[] bytes = byteBuf2Bytes(frame.content());
+        for (WebSocketListener listener : listeners) {
+            listener.onBinaryFrame(bytes, frame.isFinalFragment(), frame.rsv());
         }
     }
 
     public void onTextFrame(TextWebSocketFrame frame) {
-        if (interestedInTextMessages) {
-            try {
-                notifyTextListeners(Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content()));
-            } catch (CharacterCodingException e) {
-                throw new IllegalArgumentException(e);
+        try {
+            // faster than frame.text();
+            String text = Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content());
+            frame.isFinalFragment();
+            frame.rsv();
+            for (WebSocketListener listener : listeners) {
+                listener.onTextFrame(text, frame.isFinalFragment(), frame.rsv());
             }
+        } catch (CharacterCodingException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
-    public void onPing(PingWebSocketFrame frame) {
+    public void onPingFrame(PingWebSocketFrame frame) {
         byte[] bytes = byteBuf2Bytes(frame.content());
         for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketPingListener)
-                WebSocketPingListener.class.cast(listener).onPing(bytes);
+            listener.onPingFrame(bytes);
         }
     }
 
-    public void onPong(PongWebSocketFrame frame) {
+    public void onPongFrame(PongWebSocketFrame frame) {
         byte[] bytes = byteBuf2Bytes(frame.content());
         for (WebSocketListener listener : listeners) {
-            if (listener instanceof WebSocketPongListener)
-                WebSocketPongListener.class.cast(listener).onPong(bytes);
+            listener.onPongFrame(bytes);
         }
     }
 }

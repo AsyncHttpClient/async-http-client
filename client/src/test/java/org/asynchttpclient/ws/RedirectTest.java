@@ -90,7 +90,7 @@ public class RedirectTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                 }
 
                 @Override
@@ -102,7 +102,7 @@ public class RedirectTest extends AbstractBasicTest {
 
             latch.await();
             assertEquals(text.get(), "OnOpen");
-            websocket.close();
+            websocket.sendCloseFrame();
         }
     }
 

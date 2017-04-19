@@ -52,7 +52,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                 }
 
                 @Override
@@ -102,7 +102,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     text.set("OnClose");
                     latch.countDown();
                 }
@@ -132,7 +132,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     text.set("OnClose");
                     latch.countDown();
                 }
@@ -144,7 +144,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.close();
+            websocket.sendCloseFrame();
 
             latch.await();
             assertEquals(text.get(), "OnClose");
@@ -157,11 +157,11 @@ public class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(payload);
                     latch.countDown();
                 }
 
@@ -170,7 +170,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -181,7 +181,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.sendMessage("ECHO");
+            websocket.sendTextFrame("ECHO");
 
             latch.await();
             assertEquals(text.get(), "ECHO");
@@ -194,11 +194,11 @@ public class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(payload);
                     latch.countDown();
                 }
 
@@ -207,7 +207,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -216,11 +216,11 @@ public class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).addWebSocketListener(new WebSocketTextListener() {
+            }).addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(text.get() + message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(text.get() + payload);
                     latch.countDown();
                 }
 
@@ -229,7 +229,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -240,7 +240,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.sendMessage("ECHO");
+            websocket.sendTextFrame("ECHO");
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
@@ -253,21 +253,22 @@ public class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(text.get() + message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(text.get() + payload);
                     latch.countDown();
                 }
 
                 @Override
                 public void onOpen(WebSocket websocket) {
-                    websocket.sendMessage("ECHO").sendMessage("ECHO");
+                    websocket.sendTextFrame("ECHO");
+                    websocket.sendTextFrame("ECHO");
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -288,11 +289,11 @@ public class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(payload);
                     latch.countDown();
                 }
 
@@ -301,7 +302,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -312,8 +313,8 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.stream("ECHO", false);
-            websocket.stream("ECHO", true);
+            websocket.sendTextFrame("ECHO", false, 0);
+            websocket.sendTextFrame("ECHO", true, 0);
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
@@ -327,11 +328,11 @@ public class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch closeLatch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
 
-            final WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+            final WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
-                public void onMessage(String message) {
-                    text.set(text.get() + message);
+                public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    text.set(text.get() + payload);
                     textLatch.countDown();
                 }
 
@@ -340,7 +341,7 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     closeLatch.countDown();
                 }
 
@@ -351,10 +352,10 @@ public class TextMessageTest extends AbstractBasicTest {
                 }
             }).build()).get();
 
-            websocket.sendMessage("ECHO");
+            websocket.sendTextFrame("ECHO");
             textLatch.await();
 
-            websocket.sendMessage("CLOSE");
+            websocket.sendTextFrame("CLOSE");
             closeLatch.await();
 
             assertEquals(text.get(), "ECHO");

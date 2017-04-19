@@ -12,9 +12,10 @@
  */
 package org.asynchttpclient.ws;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.assertEquals;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,6 +25,8 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
 public class ByteMessageTest extends AbstractBasicTest {
+    
+    private static final byte[] ECHO_BYTES = "ECHO".getBytes(StandardCharsets.UTF_8);
 
     @Override
     public WebSocketHandler getWebSocketHandler() {
@@ -41,14 +44,14 @@ public class ByteMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(new byte[0]);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -57,19 +60,18 @@ public class ByteMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-
+                
                 @Override
-                public void onMessage(byte[] message) {
-                    text.set(message);
+                public void onBinaryFrame(byte[] frame, boolean finalFragment, int rsv) {
+                    text.set(frame);
                     latch.countDown();
                 }
-
             }).build()).get();
 
-            websocket.sendMessage("ECHO".getBytes());
+            websocket.sendBinaryFrame(ECHO_BYTES);
 
             latch.await();
-            assertEquals(text.get(), "ECHO".getBytes());
+            assertEquals(text.get(), ECHO_BYTES);
         }
     }
 
@@ -79,14 +81,14 @@ public class ByteMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -97,13 +99,13 @@ public class ByteMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onMessage(byte[] message) {
+                public void onBinaryFrame(byte[] frame, boolean finalFragment, int rsv) {
                     if (text.get() == null) {
-                        text.set(message);
+                        text.set(frame);
                     } else {
-                        byte[] n = new byte[text.get().length + message.length];
+                        byte[] n = new byte[text.get().length + frame.length];
                         System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                        System.arraycopy(message, 0, n, text.get().length, message.length);
+                        System.arraycopy(frame, 0, n, text.get().length, frame.length);
                         text.set(n);
                     }
                     latch.countDown();
@@ -111,7 +113,8 @@ public class ByteMessageTest extends AbstractBasicTest {
 
             }).build()).get();
 
-            websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
+            websocket.sendBinaryFrame(ECHO_BYTES);
+            websocket.sendBinaryFrame(ECHO_BYTES);
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
@@ -124,15 +127,16 @@ public class ByteMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
-            /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
-                    websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
+                    websocket.sendBinaryFrame(ECHO_BYTES);
+                    websocket.sendBinaryFrame(ECHO_BYTES);
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -143,13 +147,13 @@ public class ByteMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onMessage(byte[] message) {
+                public void onBinaryFrame(byte[] frame, boolean finalFragment, int rsv) {
                     if (text.get() == null) {
-                        text.set(message);
+                        text.set(frame);
                     } else {
-                        byte[] n = new byte[text.get().length + message.length];
+                        byte[] n = new byte[text.get().length + frame.length];
                         System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                        System.arraycopy(message, 0, n, text.get().length, message.length);
+                        System.arraycopy(frame, 0, n, text.get().length, frame.length);
                         text.set(n);
                     }
                     latch.countDown();
@@ -167,14 +171,14 @@ public class ByteMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                     latch.countDown();
                 }
 
@@ -185,21 +189,21 @@ public class ByteMessageTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public void onMessage(byte[] message) {
+                public void onBinaryFrame(byte[] frame, boolean finalFragment, int rsv) {
                     if (text.get() == null) {
-                        text.set(message);
+                        text.set(frame);
                     } else {
-                        byte[] n = new byte[text.get().length + message.length];
+                        byte[] n = new byte[text.get().length + frame.length];
                         System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                        System.arraycopy(message, 0, n, text.get().length, message.length);
+                        System.arraycopy(frame, 0, n, text.get().length, frame.length);
                         text.set(n);
                     }
                     latch.countDown();
                 }
 
             }).build()).get();
-            websocket.stream("ECHO".getBytes(), false);
-            websocket.stream("ECHO".getBytes(), true);
+            websocket.sendBinaryFrame(ECHO_BYTES, false, 0);
+            websocket.sendBinaryFrame(ECHO_BYTES, true, 0);
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
         }

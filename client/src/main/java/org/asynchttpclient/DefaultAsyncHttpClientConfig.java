@@ -75,6 +75,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean keepEncodingHeader;
     private final ProxyServerSelector proxyServerSelector;
     private final boolean validateResponseHeaders;
+    private final boolean aggregateWebSocketFrameFragments;
 
     // timeouts
     private final int connectTimeout;
@@ -148,6 +149,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             boolean keepEncodingHeader,//
             ProxyServerSelector proxyServerSelector,//
             boolean validateResponseHeaders,//
+            boolean aggregateWebSocketFrameFragments,
 
             // timeouts
             int connectTimeout,//
@@ -222,6 +224,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.keepEncodingHeader = keepEncodingHeader;
         this.proxyServerSelector = proxyServerSelector;
         this.validateResponseHeaders = validateResponseHeaders;
+        this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
 
         // timeouts
         this.connectTimeout = connectTimeout;
@@ -416,6 +419,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isValidateResponseHeaders() {
         return validateResponseHeaders;
+    }
+
+    @Override
+    public boolean isAggregateWebSocketFrameFragments() {
+        return aggregateWebSocketFrameFragments;
     }
 
     // ssl
@@ -617,6 +625,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean validateResponseHeaders = defaultValidateResponseHeaders();
+        private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
 
         // timeouts
         private int connectTimeout = defaultConnectTimeout();
@@ -816,6 +825,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setValidateResponseHeaders(boolean validateResponseHeaders) {
             this.validateResponseHeaders = validateResponseHeaders;
+            return this;
+        }
+
+        public Builder setAggregateWebSocketFrameFragments(boolean aggregateWebSocketFrameFragments) {
+            this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
             return this;
         }
 
@@ -1123,6 +1137,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     keepEncodingHeader, //
                     resolveProxyServerSelector(), //
                     validateResponseHeaders, //
+                    aggregateWebSocketFrameFragments, //
                     connectTimeout, //
                     requestTimeout, //
                     readTimeout, //

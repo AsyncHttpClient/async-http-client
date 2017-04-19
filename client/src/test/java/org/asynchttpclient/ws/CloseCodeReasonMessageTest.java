@@ -45,7 +45,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
             WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
-            websocket.close();
+            websocket.sendCloseFrame();
 
             latch.await();
             assertTrue(text.get().startsWith("1000"), "Expected a 1000 code but got " + text.get());
@@ -65,7 +65,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
     }
 
-    public final static class Listener implements WebSocketListener, WebSocketCloseCodeReasonListener {
+    public final static class Listener implements WebSocketListener {
 
         final CountDownLatch latch;
         final AtomicReference<String> text;
@@ -80,10 +80,6 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
         }
 
         @Override
-        public void onClose(WebSocket websocket) {
-            latch.countDown();
-        }
-
         public void onClose(WebSocket websocket, int code, String reason) {
             text.set(code + "-" + reason);
             latch.countDown();
@@ -100,18 +96,14 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
         try (AsyncHttpClient client = asyncHttpClient()) {
-            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
-
-                @Override
-                public void onMessage(String message) {
-                }
+            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
                 }
-
+                
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                 }
 
                 @Override
@@ -130,18 +122,14 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
-
-                @Override
-                public void onMessage(String message) {
-                }
+            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(org.asynchttpclient.ws.WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(org.asynchttpclient.ws.WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                 }
 
                 @Override
@@ -163,18 +151,14 @@ public class CloseCodeReasonMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
-
-                @Override
-                public void onMessage(String message) {
-                }
+            c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
                 }
 
                 @Override
-                public void onClose(WebSocket websocket) {
+                public void onClose(WebSocket websocket, int code, String reason) {
                 }
 
                 @Override

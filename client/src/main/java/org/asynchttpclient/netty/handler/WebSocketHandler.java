@@ -91,6 +91,14 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         }
     }
 
+    private static WebSocketUpgradeHandler getWebSocketUpgradeHandler(NettyResponseFuture<?> future) {
+        return (WebSocketUpgradeHandler) future.getAsyncHandler();
+    }
+    
+    private static NettyWebSocket getNettyWebSocket(NettyResponseFuture<?> future) throws Exception {
+        return getWebSocketUpgradeHandler(future).onCompleted();
+    }
+    
     @Override
     public void handleRead(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
 
@@ -101,7 +109,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
             }
 
-            WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
+            WebSocketUpgradeHandler handler = getWebSocketUpgradeHandler(future);
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
             HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
 
@@ -116,9 +124,8 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             }
 
         } else if (e instanceof WebSocketFrame) {
-            final WebSocketFrame frame = (WebSocketFrame) e;
-            WebSocketUpgradeHandler handler = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = handler.onCompleted();
+            WebSocketFrame frame = (WebSocketFrame) e;
+            NettyWebSocket webSocket = getNettyWebSocket(future);
             // retain because we might buffer the frame
             if (webSocket.isReady()) {
                 webSocket.handleFrame(frame);
@@ -139,11 +146,10 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         logger.warn("onError", e);
 
         try {
-            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = h.onCompleted();
+            NettyWebSocket webSocket = getNettyWebSocket(future);
             if (webSocket != null) {
                 webSocket.onError(e.getCause());
-                webSocket.close();
+                webSocket.sendCloseFrame();
             }
         } catch (Throwable t) {
             logger.error("onError", t);
@@ -152,15 +158,13 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
     @Override
     public void handleChannelInactive(NettyResponseFuture<?> future) {
-        logger.trace("onClose");
+        logger.trace("Connection was closed abnormally (that is, with no close frame being received).");
 
         try {
-            WebSocketUpgradeHandler h = (WebSocketUpgradeHandler) future.getAsyncHandler();
-            NettyWebSocket webSocket = h.onCompleted();
-
-            logger.trace("Connection was closed abnormally (that is, with no close frame being received).");
-            if (webSocket != null)
-                webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being received).");
+            NettyWebSocket webSocket = getNettyWebSocket(future);
+            if (webSocket != null) {
+                webSocket.onClose(1006, "Connection was closed abnormally (that is, with no close frame being received).");
+            }
         } catch (Throwable t) {
             logger.error("onError", t);
         }

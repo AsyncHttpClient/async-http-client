@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2017 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
@@ -12,15 +13,16 @@
  */
 package org.asynchttpclient.ws;
 
-import java.io.Closeable;
 import java.net.SocketAddress;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.util.concurrent.Future;
 
 /**
  * A WebSocket client
  */
-public interface WebSocket extends Closeable {
+public interface WebSocket {
 
     /**
      * @return the headers received in the Upgrade response
@@ -42,137 +44,161 @@ public interface WebSocket extends Closeable {
     SocketAddress getLocalAddress();
 
     /**
-     * Send a byte message.
+     * Send a full text frame
      * 
-     * @param message a byte message
-     * @return this
+     * @param payload a text payload
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendMessage(byte[] message);
+    Future<Void> sendTextFrame(String payload);
 
     /**
-     * Send a byte message.
-     *
-     * @param message a byte message
-     * @param listener is notified when a message was successfully processed by the channel or in case of failure
-     * @return this
-     */
-    WebSocket sendMessage(byte[] message, WebSocketWriteCompleteListener listener);
-
-    /**
-     * Allows streaming of multiple binary fragments.
+     * Allows sending a text frame with fragmentation or extension bits.
+     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
-     * @param fragment binary fragment.
-     * @param last flag indicating whether or not this is the last fragment.
+     * @param payload a text fragment.
+     * @param finalFragment flag indicating whether or not this is the final fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendTextFrame(String payload, boolean finalFragment, int rsv);
+
+    /**
+     * Allows sending a text frame with fragmentation or extension bits.
+     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
-     * @return this
+     * @param payload a ByteBuf fragment.
+     * @param finalFragment flag indicating whether or not this is the final fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket stream(byte[] fragment, boolean last);
-
+    Future<Void> sendTextFrame(ByteBuf payload, boolean finalFragment, int rsv);
+    
     /**
-     * Allows streaming of multiple binary fragments.
-     *
-     * @param fragment binary fragment.
-     * @param last flag indicating whether or not this is the last fragment.
-     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
-     *
-     * @return this
-     */
-    WebSocket stream(byte[] fragment, boolean last, WebSocketWriteCompleteListener listener);
-
-    /**
-     * Allows streaming of multiple binary fragments.
+     * Send a full binary frame.
      * 
-     * @param fragment binary fragment.
-     * @param offset starting offset.
-     * @param len length.
-     * @param last flag indicating whether or not this is the last fragment.
-     * @return this
+     * @param payload a binary payload
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket stream(byte[] fragment, int offset, int len, boolean last);
+    Future<Void> sendBinaryFrame(byte[] payload);
 
     /**
-     * Allows streaming of multiple binary fragments.
-     *
-     * @param fragment binary fragment.
-     * @param offset starting offset.
-     * @param len length.
-     * @param last flag indicating whether or not this is the last fragment.
-     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
-     * @return this
-     */
-    WebSocket stream(byte[] fragment, int offset, int len, boolean last, WebSocketWriteCompleteListener listener);
-
-    /**
-     * Send a text message
+     * Allows sending a binary frame with fragmentation or extension bits.
+     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
-     * @param message a text message
-     * @return this
+     * @param payload a binary payload
+     * @param finalFragment flag indicating whether or not this is the last fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendMessage(String message);
+    Future<Void> sendBinaryFrame(byte[] payload, boolean finalFragment, int rsv);
 
     /**
-     * Send a text message
-     *
-     * @param message a text message
-     * @param listener is notified when a message was successfully processed by the channel or in case of failure
-     * @return this
-     */
-    WebSocket sendMessage(String message, WebSocketWriteCompleteListener listener);
-
-    /**
-     * Allows streaming of multiple text fragments.
+     * Allows sending a binary frame with fragmentation or extension bits.
+     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
-     * @param fragment text fragment.
-     * @param last flag indicating whether or not this is the last fragment.
-     * @return this
+     * @param payload a ByteBuf payload
+     * @param finalFragment flag indicating whether or not this is the last fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket stream(String fragment, boolean last);
+    Future<Void> sendBinaryFrame(ByteBuf payload, boolean finalFragment, int rsv);
 
     /**
-     * Allows streaming of multiple text fragments.
-     *
-     * @param fragment text fragment.
-     * @param last flag indicating whether or not this is the last fragment.
-     * @param listener is notified when a fragment was successfully processed by the channel or in case of failure
-     * @return this
-     */
-    WebSocket stream(String fragment, boolean last, WebSocketWriteCompleteListener listener);
-
-    /**
-     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
+     * Send a text continuation frame.
+     * The last fragment must have finalFragment set to true.
      * 
-     * @param payload the ping payload.
-     * @return this
+     * @param payload the text fragment
+     * @param finalFragment flag indicating whether or not this is the last fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendPing(byte[] payload);
+    Future<Void> sendContinuationFrame(String payload, boolean finalFragment, int rsv);
+    
+    /**
+     * Send a binary continuation frame.
+     * The last fragment must have finalFragment set to true.
+     * 
+     * @param payload the binary fragment
+     * @param finalFragment flag indicating whether or not this is the last fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendContinuationFrame(byte[] payload, boolean finalFragment, int rsv);
+    
+    /**
+     * Send a continuation frame (those are actually untyped as counterpart must have memorized first fragmented frame type).
+     * The last fragment must have finalFragment set to true.
+     * 
+     * @param payload a ByteBuf fragment
+     * @param finalFragment flag indicating whether or not this is the last fragment
+     * @param rsv extension bits, 0 otherwise
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendContinuationFrame(ByteBuf payload, boolean finalFragment, int rsv);
+    
+    /**
+     * Send a empty ping frame
+     * 
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendPingFrame();
+    
+    /**
+     * Send a ping frame with a byte array payload (limited to 125 bytes or less).
+     * 
+     * @param payload the payload.
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendPingFrame(byte[] payload);
+    
+    /**
+     * Send a ping frame with a ByteBuf payload (limited to 125 bytes or less).
+     * 
+     * @param payload the payload.
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendPingFrame(ByteBuf payload);
 
     /**
-     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
-     *
-     * @param payload the ping payload.
-     * @param listener is notified when the ping was successfully processed by the channel or in case of failure
-     * @return this
+     * Send a empty pong frame
+     * 
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendPing(byte[] payload, WebSocketWriteCompleteListener listener);
+    Future<Void> sendPongFrame();
+    
+    /**
+     * Send a pong frame with a byte array payload (limited to 125 bytes or less).
+     * 
+     * @param payload the payload.
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendPongFrame(byte[] payload);
 
     /**
-     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
-     *
-     * @param payload the pong payload.
-     * @return this
+     * Send a pong frame with a ByteBuf payload (limited to 125 bytes or less).
+     * 
+     * @param payload the payload.
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendPong(byte[] payload);
-
+    Future<Void> sendPongFrame(ByteBuf payload);
+    
     /**
-     * Send a <code>ping</code> with an optional payload (limited to 125 bytes or less).
+     * Send a empty close frame.
      *
-     * @param payload the pong payload.
-     * @param listener is notified when the pong was successfully processed by the channel or in case of failure
-
-     * @return this
+     * @return a future that will be completed once the frame will be actually written on the wire
      */
-    WebSocket sendPong(byte[] payload, WebSocketWriteCompleteListener listener);
-
+    Future<Void> sendCloseFrame();
+    
+    /**
+     * Send a empty close frame.
+     *
+     * @param statusCode a status code
+     * @param reasonText a reason
+     * @return a future that will be completed once the frame will be actually written on the wire
+     */
+    Future<Void> sendCloseFrame(int statusCode, String reasonText);
+    
+    
     /**
      * Add a {@link WebSocketListener}
      * 
