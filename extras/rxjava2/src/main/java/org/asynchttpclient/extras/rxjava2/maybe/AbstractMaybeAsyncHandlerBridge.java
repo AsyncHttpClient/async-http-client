@@ -39,7 +39,7 @@ import io.reactivex.exceptions.Exceptions;
  *
  * When the request is {@link AsyncHandler#onCompleted() completed}, the result produced by the wrapped instance is
  * forwarded to the {@code Maybe}: If the result is {@code null}, {@link MaybeEmitter#onComplete()} is invoked,
- * {@link MaybeEmitter#onSuccess(T)} otherwise.
+ * {@link MaybeEmitter#onSuccess(Object)} otherwise.
  *
  * Any errors during request processing are forwarded via {@link MaybeEmitter#onError(Throwable)}.
  *

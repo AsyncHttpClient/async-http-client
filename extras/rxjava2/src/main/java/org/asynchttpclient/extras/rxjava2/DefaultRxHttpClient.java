@@ -42,8 +42,6 @@ public class DefaultRxHttpClient implements RxHttpClient {
      * @param asyncHttpClient
      *            the Async HTTP Client instance to be used
      *
-     * @return a new {@code RxHttpClient} instance
-     *
      * @throws NullPointerException
      *             if {@code asyncHttpClient} is {@code null}
      */
