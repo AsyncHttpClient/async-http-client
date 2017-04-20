@@ -16,14 +16,13 @@
 package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
-
-import static io.netty.util.internal.ThrowableUtil.*;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -70,8 +69,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                        assertContentTypesEquals(content.getHeaders().get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                        assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                         return State.ABORT;
                     }
                 }).get(5, TimeUnit.SECONDS);
@@ -94,8 +93,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                             private StringBuilder builder = new StringBuilder();
 
                             @Override
-                            public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                                assertContentTypesEquals(content.getHeaders().get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                                 return State.CONTINUE;
                             }
 
@@ -134,9 +133,9 @@ public class AsyncStreamHandlerTest extends HttpTest {
                         .execute(new AsyncHandlerAdapter() {
 
                             @Override
-                            public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
                                 onHeadersReceived.set(true);
-                                assertContentTypesEquals(content.getHeaders().get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                                 return State.ABORT;
                             }
 
@@ -176,8 +175,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                             private StringBuilder builder = new StringBuilder();
 
                             @Override
-                            public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                                assertContentTypesEquals(content.getHeaders().get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                                 onHeadersReceived.set(true);
                                 return State.CONTINUE;
                             }
@@ -218,7 +217,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
                         throw unknownStackTrace(new RuntimeException("FOO"), AsyncStreamHandlerTest.class, "asyncStreamThrowableRefusedTest");
                     }
 
@@ -259,8 +258,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     private StringBuilder builder = new StringBuilder();
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                        responseHeaders.set(content.getHeaders());
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                        responseHeaders.set(headers);
                         return State.CONTINUE;
                     }
 
@@ -292,8 +291,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                         private StringBuilder builder = new StringBuilder();
 
                         @Override
-                        public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                            responseHeaders.set(content.getHeaders());
+                        public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                            responseHeaders.set(headers);
                             return State.CONTINUE;
                         }
 
@@ -381,7 +380,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     }
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
                         whatCalled[OTHER] = true;
                         latch.countDown();
                         return State.ABORT;
@@ -427,8 +426,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                        responseHeaders.set(content.getHeaders());
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                        responseHeaders.set(headers);
                         return State.ABORT;
                     }
 
@@ -461,8 +460,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                     private Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
-                    public State onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                        builder.accumulate(content);
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                        builder.accumulate(headers);
                         return State.CONTINUE;
                     }
 

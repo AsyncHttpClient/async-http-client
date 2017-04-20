@@ -19,6 +19,7 @@ import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -28,7 +29,6 @@ import java.io.IOException;
 
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
@@ -47,7 +47,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    private void upgrade(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponse response, HttpResponseHeaders responseHeaders)
+    private void upgrade(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponse response, HttpHeaders responseHeaders)
             throws Exception {
         boolean validStatus = response.status().equals(SWITCHING_PROTOCOLS);
         boolean validUpgrade = response.headers().get(UPGRADE) != null;
@@ -70,7 +70,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         // if it comes in the same frame as the HTTP Upgrade response
         Channels.setAttribute(channel, future);
 
-        handler.setWebSocket(new NettyWebSocket(channel, responseHeaders.getHeaders()));
+        handler.setWebSocket(new NettyWebSocket(channel, responseHeaders));
         channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
         // We don't need to synchronize as replacing the "ws-decoder" will
@@ -111,7 +111,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
             WebSocketUpgradeHandler handler = getWebSocketUpgradeHandler(future);
             HttpResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
-            HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
+            HttpHeaders responseHeaders = response.headers();
 
             if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
                 switch (handler.onStatusReceived(status)) {

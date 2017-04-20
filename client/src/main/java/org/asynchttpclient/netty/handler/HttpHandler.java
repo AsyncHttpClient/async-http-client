@@ -29,7 +29,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
@@ -52,8 +51,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
     private boolean abortAfterHandlingHeaders(//
             AsyncHandler<?> handler,//
-            HttpResponseHeaders responseHeaders) throws Exception {
-        return !responseHeaders.getHeaders().isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
+            HttpHeaders responseHeaders) throws Exception {
+        return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
     private boolean abortAfterHandlingReactiveStreams(//
@@ -80,7 +79,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(future.getTargetRequest(), httpRequest, response));
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
-        HttpResponseHeaders responseHeaders = new HttpResponseHeaders(response.headers());
+        HttpHeaders responseHeaders = response.headers();
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
             boolean abort = abortAfterHandlingStatus(handler, status) || //
@@ -106,7 +105,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             LastHttpContent lastChunk = (LastHttpContent) chunk;
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
-                abort = handler.onHeadersReceived(new HttpResponseHeaders(trailingHeaders, true)) == State.ABORT;
+                abort = handler.onTrailingHeadersReceived(trailingHeaders) == State.ABORT;
             }
         }
 

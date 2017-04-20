@@ -12,12 +12,13 @@
  */
 package org.asynchttpclient.filter;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Request;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Request;
 
 /**
  * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
@@ -68,9 +69,9 @@ public class FilterContext<T> {
     }
 
     /**
-     * @return the response {@link HttpResponseHeaders}
+     * @return the response {@link HttpHeaders}
      */
-    public HttpResponseHeaders getResponseHeaders() {
+    public HttpHeaders getResponseHeaders() {
         return b.headers;
     }
 
@@ -94,7 +95,7 @@ public class FilterContext<T> {
         private HttpResponseStatus responseStatus = null;
         private boolean replayRequest = false;
         private IOException ioException = null;
-        private HttpResponseHeaders headers;
+        private HttpHeaders headers;
 
         public FilterContextBuilder() {
         }
@@ -130,7 +131,7 @@ public class FilterContext<T> {
             return this;
         }
 
-        public FilterContextBuilder<T> responseHeaders(HttpResponseHeaders headers) {
+        public FilterContextBuilder<T> responseHeaders(HttpHeaders headers) {
             this.headers = headers;
             return this;
         }

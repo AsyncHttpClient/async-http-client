@@ -13,6 +13,10 @@
  */
 package org.asynchttpclient.reactivestreams;
 
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.testng.Assert.assertEquals;
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
@@ -20,12 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.testng.Assert.*;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
@@ -115,7 +115,7 @@ public class ReactiveStreamsDownLoadTest {
         }
 
         @Override
-        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) throws Exception {
             return State.CONTINUE;
         }
 

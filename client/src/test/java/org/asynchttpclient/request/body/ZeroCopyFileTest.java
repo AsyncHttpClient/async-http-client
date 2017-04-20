@@ -15,6 +15,7 @@ package org.asynchttpclient.request.body;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +37,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BasicHttpsTest;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -132,7 +132,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                         return State.CONTINUE;
                     }
 
-                    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
                         return State.CONTINUE;
                     }
 
@@ -170,7 +170,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                         return State.CONTINUE;
                     }
 
-                    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
                         return State.CONTINUE;
                     }
 

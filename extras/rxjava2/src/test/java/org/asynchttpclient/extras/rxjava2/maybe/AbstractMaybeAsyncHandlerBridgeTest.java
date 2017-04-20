@@ -27,6 +27,9 @@ import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.reactivex.MaybeEmitter;
+import io.reactivex.exceptions.CompositeException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +38,6 @@ import java.util.concurrent.Callable;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.extras.rxjava2.DisposedException;
 import org.mockito.ArgumentCaptor;
@@ -47,9 +49,6 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import io.reactivex.MaybeEmitter;
-import io.reactivex.exceptions.CompositeException;
 
 public class AbstractMaybeAsyncHandlerBridgeTest {
 
@@ -63,7 +62,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
     private HttpResponseStatus status;
 
     @Mock
-    private HttpResponseHeaders headers;
+    private HttpHeaders headers;
 
     @Mock
     private HttpResponseBodyPart bodyPart;

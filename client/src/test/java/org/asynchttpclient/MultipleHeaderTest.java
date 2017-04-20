@@ -15,6 +15,7 @@ package org.asynchttpclient;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -108,9 +109,9 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                public State onHeadersReceived(HttpHeaders response) throws Exception {
                     int i = 0;
-                    for (String header : response.getHeaders().getAll("X-Forwarded-For")) {
+                    for (String header : response.getAll("X-Forwarded-For")) {
                         xffHeaders[i++] = header;
                     }
                     latch.countDown();
@@ -157,10 +158,10 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                public State onHeadersReceived(HttpHeaders response) throws Exception {
                     try {
                         int i = 0;
-                        for (String header : response.getHeaders().getAll(CONTENT_LENGTH)) {
+                        for (String header : response.getAll(CONTENT_LENGTH)) {
                             clHeaders[i++] = header;
                         }
                     } finally {

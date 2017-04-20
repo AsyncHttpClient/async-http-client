@@ -15,6 +15,7 @@ package org.asynchttpclient.netty;
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.text.SimpleDateFormat;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.asynchttpclient.HttpResponseHeaders;
 import org.testng.annotations.Test;
 
 public class NettyAsyncResponseTest {
@@ -37,7 +37,7 @@ public class NettyAsyncResponseTest {
         Date date = new Date(System.currentTimeMillis() + 60000);
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
-        HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
+        HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();
@@ -51,7 +51,7 @@ public class NettyAsyncResponseTest {
     public void testCookieParseMaxAge() {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
         
-        HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
+        HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
         List<Cookie> cookies = response.getCookies();
         assertEquals(cookies.size(), 1);
@@ -63,7 +63,7 @@ public class NettyAsyncResponseTest {
     @Test(groups = "standalone")
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
-        HttpResponseHeaders responseHeaders = new HttpResponseHeaders(new DefaultHttpHeaders().add(SET_COOKIE, cookieDef));
+        HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();

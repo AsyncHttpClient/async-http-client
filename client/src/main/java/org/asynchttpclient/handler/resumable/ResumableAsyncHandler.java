@@ -13,6 +13,7 @@
 package org.asynchttpclient.handler.resumable;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -23,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -100,11 +100,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         this(0, resumableProcessor, null, accumulateBody);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public AsyncHandler.State onStatusReceived(final HttpResponseStatus status) throws Exception {
+    public State onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
             url = status.getUri().toUrl();
@@ -119,9 +116,6 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         return AsyncHandler.State.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onThrowable(Throwable t) {
         if (decoratedAsyncHandler != null) {
@@ -131,11 +125,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public AsyncHandler.State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 
         if (accumulateBody) {
             responseBuilder.accumulate(bodyPart);
@@ -158,9 +149,6 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         return state;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Response onCompleted() throws Exception {
         resumableProcessor.remove(url);
@@ -173,13 +161,10 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         return responseBuilder.build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public AsyncHandler.State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
-        String contentLengthHeader = headers.getHeaders().get(CONTENT_LENGTH);
+        String contentLengthHeader = headers.get(CONTENT_LENGTH);
         if (contentLengthHeader != null) {
             if (Long.parseLong(contentLengthHeader) == -1L) {
                 return AsyncHandler.State.ABORT;
@@ -189,7 +174,13 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         if (decoratedAsyncHandler != null) {
             return decoratedAsyncHandler.onHeadersReceived(headers);
         }
-        return AsyncHandler.State.CONTINUE;
+        return State.CONTINUE;
+    }
+    
+    @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        responseBuilder.accumulate(headers);
+        return State.CONTINUE;
     }
 
     /**
@@ -315,6 +306,5 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         public long length() {
             return length;
         }
-
     }
 }

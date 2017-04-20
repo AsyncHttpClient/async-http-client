@@ -33,7 +33,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Realm;
@@ -790,7 +789,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) throws Exception {
             calculateTotal(headers);
 
             fireHeaders(headers);
@@ -798,8 +797,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return super.onHeadersReceived(headers);
         }
 
-        private void calculateTotal(HttpResponseHeaders headers) {
-            String length = headers.getHeaders().get(CONTENT_LENGTH);
+        private void calculateTotal(HttpHeaders headers) {
+            String length = headers.get(CONTENT_LENGTH);
 
             try {
                 total = Integer.valueOf(length);
@@ -830,9 +829,9 @@ public class SimpleAsyncHttpClient implements Closeable {
             }
         }
 
-        private void fireHeaders(HttpResponseHeaders headers) {
+        private void fireHeaders(HttpHeaders headers) {
             if (listener != null) {
-                listener.onHeaders(uri, headers.getHeaders());
+                listener.onHeaders(uri, headers);
             }
         }
 

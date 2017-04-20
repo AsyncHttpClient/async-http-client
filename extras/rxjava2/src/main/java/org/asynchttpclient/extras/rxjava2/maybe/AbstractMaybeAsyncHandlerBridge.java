@@ -14,21 +14,20 @@
 package org.asynchttpclient.extras.rxjava2.maybe;
 
 import static java.util.Objects.requireNonNull;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.reactivex.MaybeEmitter;
+import io.reactivex.exceptions.CompositeException;
+import io.reactivex.exceptions.Exceptions;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.extras.rxjava2.DisposedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.reactivex.MaybeEmitter;
-import io.reactivex.exceptions.CompositeException;
-import io.reactivex.exceptions.Exceptions;
 
 /**
  * Abstract base class that bridges events between the {@code Maybe} reactive base type and {@code AsyncHandlers}.
@@ -78,7 +77,7 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
     }
 
     @Override
-    public final State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public final State onHeadersReceived(HttpHeaders headers) throws Exception {
         return emitter.isDisposed() ? disposed() : delegate().onHeadersReceived(headers);
     }
 

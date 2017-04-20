@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
@@ -43,12 +42,12 @@ import org.asynchttpclient.uri.Uri;
 public class NettyResponse implements Response {
 
     private final List<HttpResponseBodyPart> bodyParts;
-    private final HttpResponseHeaders headers;
+    private final HttpHeaders headers;
     private final HttpResponseStatus status;
     private List<Cookie> cookies;
 
     public NettyResponse(HttpResponseStatus status,//
-            HttpResponseHeaders headers,//
+            HttpHeaders headers,//
             List<HttpResponseBodyPart> bodyParts) {
         this.bodyParts = bodyParts;
         this.headers = headers;
@@ -57,10 +56,10 @@ public class NettyResponse implements Response {
 
     private List<Cookie> buildCookies() {
 
-        List<String> setCookieHeaders = headers.getHeaders().getAll(SET_COOKIE2);
+        List<String> setCookieHeaders = headers.getAll(SET_COOKIE2);
 
         if (!isNonEmpty(setCookieHeaders)) {
-            setCookieHeaders = headers.getHeaders().getAll(SET_COOKIE);
+            setCookieHeaders = headers.getAll(SET_COOKIE);
         }
 
         if (isNonEmpty(setCookieHeaders)) {
@@ -118,7 +117,7 @@ public class NettyResponse implements Response {
 
     @Override
     public final HttpHeaders getHeaders() {
-        return headers != null ? headers.getHeaders() : EmptyHttpHeaders.INSTANCE;
+        return headers != null ? headers : EmptyHttpHeaders.INSTANCE;
     }
 
     @Override
@@ -156,7 +155,7 @@ public class NettyResponse implements Response {
 
     @Override
     public boolean hasResponseHeaders() {
-        return headers != null && !headers.getHeaders().isEmpty();
+        return headers != null && !headers.isEmpty();
     }
 
     @Override

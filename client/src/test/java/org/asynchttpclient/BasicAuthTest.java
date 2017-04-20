@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -217,7 +218,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                public State onHeadersReceived(HttpHeaders headers) throws Exception {
                     return State.CONTINUE;
                 }
 

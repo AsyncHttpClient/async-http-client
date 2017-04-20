@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -64,7 +65,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
                                     return State.CONTINUE;
                                 }
 
-                                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                                public State onHeadersReceived(HttpHeaders headers) throws Exception {
                                     return State.CONTINUE;
                                 }
 

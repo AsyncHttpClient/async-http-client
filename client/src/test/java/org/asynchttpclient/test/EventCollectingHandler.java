@@ -13,6 +13,7 @@
 package org.asynchttpclient.test;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -22,7 +23,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
@@ -77,7 +77,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase implement
     }
 
     @Override
-    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
         firedEvents.add(HEADERS_RECEIVED_EVENT);
         return super.onHeadersReceived(headers);
     }

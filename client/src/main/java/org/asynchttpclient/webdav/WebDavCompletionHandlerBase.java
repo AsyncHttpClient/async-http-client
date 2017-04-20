@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.webdav;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -26,7 +28,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.NettyResponse;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
     private HttpResponseStatus status;
-    private HttpResponseHeaders headers;
+    private HttpHeaders headers;
     private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
 
     /**
@@ -71,7 +72,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      * {@inheritDoc}
      */
     @Override
-    public final State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+    public final State onHeadersReceived(final HttpHeaders headers) throws Exception {
         this.headers = headers;
         return State.CONTINUE;
     }

@@ -15,6 +15,7 @@ package org.asynchttpclient.test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -57,7 +58,6 @@ import org.apache.commons.io.FileUtils;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SslEngineFactory;
@@ -395,7 +395,7 @@ public class TestUtils {
         }
 
         @Override
-        public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(final HttpHeaders headers) throws Exception {
             return State.CONTINUE;
         }
 

@@ -74,7 +74,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
                 // headers if found in the response
-                ctx.getResponseHeaders().getHeaders().get("x-expect-post");
+                ctx.getResponseHeaders().get("x-expect-post");
                 ctx.getRequest().getHeaders().add("x-expect-post", "true");
                 ctx.getRequest().getHeaders().remove("x-redirect");
                 return ctx;
@@ -109,7 +109,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
                 // headers if found in the response
-                ctx.getResponseHeaders().getHeaders().get("x-expect-get");
+                ctx.getResponseHeaders().get("x-expect-get");
                 ctx.getRequest().getHeaders().add("x-expect-get", "true");
                 ctx.getRequest().getHeaders().remove("x-redirect");
                 return ctx;

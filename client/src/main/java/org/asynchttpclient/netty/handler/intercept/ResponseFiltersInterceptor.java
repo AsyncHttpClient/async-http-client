@@ -15,10 +15,10 @@ package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
@@ -42,7 +42,7 @@ public class ResponseFiltersInterceptor {
             NettyResponseFuture<?> future,//
             AsyncHandler<?> handler, //
             HttpResponseStatus status,//
-            HttpResponseHeaders responseHeaders) {
+            HttpHeaders responseHeaders) {
 
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
                 .responseHeaders(responseHeaders).build();

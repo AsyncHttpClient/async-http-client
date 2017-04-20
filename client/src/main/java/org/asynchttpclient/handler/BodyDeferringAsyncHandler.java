@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.handler;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +25,6 @@ import java.util.concurrent.Semaphore;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 
@@ -98,6 +99,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         this.responseSet = false;
     }
 
+    @Override
     public void onThrowable(Throwable t) {
         this.throwable = t;
         // Counting down to handle error cases too.
@@ -121,17 +123,26 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
+    @Override
     public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         responseBuilder.reset();
         responseBuilder.accumulate(responseStatus);
         return State.CONTINUE;
     }
 
-    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    @Override
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+        responseBuilder.accumulate(headers);
+        return State.CONTINUE;
+    }
+    
+    @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         return State.CONTINUE;
     }
 
+    @Override
     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         // body arrived, flush headers
         if (!responseSet) {
@@ -152,6 +163,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
+    @Override
     public Response onCompleted() throws IOException {
 
         if (!responseSet) {
@@ -242,6 +254,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * Closes the input stream, and "joins" (wait for complete execution
          * together with potential exception thrown) of the async request.
          */
+        @Override
         public void close() throws IOException {
             // close
             super.close();

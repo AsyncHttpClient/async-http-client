@@ -13,12 +13,13 @@
  */
 package org.asynchttpclient.ws;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 
@@ -42,7 +43,7 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
     }
 
     @Override
-    public final State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public final State onHeadersReceived(HttpHeaders headers) throws Exception {
         return State.CONTINUE;
     }
 

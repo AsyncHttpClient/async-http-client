@@ -15,6 +15,7 @@ package org.asynchttpclient.reactivestreams;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -28,7 +29,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
@@ -153,7 +153,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
 
         @Override
-        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) throws Exception {
             return State.CONTINUE;
         }
 
@@ -243,7 +243,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
 
         @Override
-        public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) throws Exception {
             return State.CONTINUE;
         }
 

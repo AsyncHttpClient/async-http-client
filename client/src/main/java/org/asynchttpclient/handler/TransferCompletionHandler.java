@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,8 +96,14 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     @Override
-    public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
-        fireOnHeaderReceived(headers.getHeaders());
+    public State onHeadersReceived(final HttpHeaders headers) throws Exception {
+        fireOnHeaderReceived(headers);
+        return super.onHeadersReceived(headers);
+    }
+    
+    @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        fireOnHeaderReceived(headers);
         return super.onHeadersReceived(headers);
     }
 

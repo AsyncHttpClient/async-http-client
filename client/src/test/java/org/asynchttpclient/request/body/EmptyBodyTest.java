@@ -15,8 +15,9 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,6 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -95,7 +95,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
                     return AsyncHandler.State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders e) throws Exception {
+                public State onHeadersReceived(HttpHeaders e) throws Exception {
                     if (headers.incrementAndGet() == 2) {
                         throw new Exception("Analyze this.");
                     }

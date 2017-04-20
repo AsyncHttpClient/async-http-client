@@ -165,7 +165,7 @@ public class FilterTest extends AbstractBasicTest {
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
-                if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().getHeaders().get("Ping").equals("Pong") && replay.getAndSet(false)) {
+                if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().get("Ping").equals("Pong") && replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
                     return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }

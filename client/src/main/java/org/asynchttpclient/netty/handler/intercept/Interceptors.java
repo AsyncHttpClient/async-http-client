@@ -15,13 +15,13 @@ package org.asynchttpclient.netty.handler.intercept;
 
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -61,7 +61,7 @@ public class Interceptors {
             AsyncHandler<?> handler,//
             HttpResponse response,//
             HttpResponseStatus status,//
-            HttpResponseHeaders responseHeaders) throws Exception {
+            HttpHeaders responseHeaders) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         ProxyServer proxyServer = future.getProxyServer();

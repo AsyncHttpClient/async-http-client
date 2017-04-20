@@ -16,8 +16,9 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -127,8 +128,8 @@ public class RC1KTest extends AbstractBasicTest {
             return State.CONTINUE;
         }
 
-        public State onHeadersReceived(HttpResponseHeaders event) throws Exception {
-            assertEquals(event.getHeaders().get(ARG_HEADER), arg);
+        public State onHeadersReceived(HttpHeaders event) throws Exception {
+            assertEquals(event.get(ARG_HEADER), arg);
             return State.CONTINUE;
         }
 

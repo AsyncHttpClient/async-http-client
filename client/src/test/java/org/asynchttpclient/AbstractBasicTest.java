@@ -17,6 +17,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.testng.Assert.fail;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
@@ -92,17 +93,17 @@ public abstract class AbstractBasicTest {
         }
 
         @Override
-        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
             return State.CONTINUE;
         }
 
         @Override
-        public State onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
+        public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
             return State.CONTINUE;
         }
 
         @Override
-        public State onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) throws Exception {
             return State.CONTINUE;
         }
 

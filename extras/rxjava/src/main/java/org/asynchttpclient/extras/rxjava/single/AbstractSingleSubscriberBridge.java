@@ -13,17 +13,17 @@
 package org.asynchttpclient.extras.rxjava.single;
 
 import static java.util.Objects.requireNonNull;
+import io.netty.handler.codec.http.HttpHeaders;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.extras.rxjava.UnsubscribedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import rx.SingleSubscriber;
 import rx.exceptions.CompositeException;
@@ -52,7 +52,7 @@ abstract class AbstractSingleSubscriberBridge<T> implements AsyncHandler<Void> {
     }
 
     @Override
-    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
         return subscriber.isUnsubscribed() ? abort() : delegate().onHeadersReceived(headers);
     }
 

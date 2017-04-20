@@ -19,6 +19,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
@@ -208,7 +209,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                public State onHeadersReceived(HttpHeaders headers) throws Exception {
                     builder.accumulate(headers);
                     return State.CONTINUE;
                 }

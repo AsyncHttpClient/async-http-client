@@ -15,8 +15,9 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.*;
+import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -121,7 +122,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpResponseHeaders e) throws Exception {
+                public State onHeadersReceived(HttpHeaders e) throws Exception {
                     if (headers.incrementAndGet() == 2) {
                         throw new Exception("Analyze this.");
                     }

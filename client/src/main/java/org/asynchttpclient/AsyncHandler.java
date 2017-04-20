@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 
 /**
  * An asynchronous handler or callback which gets invoked as soon as some data is available when
@@ -89,14 +91,23 @@ public interface AsyncHandler<T> {
     State onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
-     * Invoked as soon as the HTTP headers has been received. Can potentially be invoked more than once if a broken server
-     * sent trailing headers.
+     * Invoked as soon as the HTTP headers have been received.
      *
      * @param headers the HTTP headers.
      * @return a {@link State} telling to CONTINUE or ABORT the current processing.
      * @throws Exception if something wrong happens
      */
-    State onHeadersReceived(HttpResponseHeaders headers) throws Exception;
+    State onHeadersReceived(HttpHeaders headers) throws Exception;
+    
+    /**
+     * Invoked when trailing headers have been received. 
+     * @param headers
+     * @return
+     * @throws Exception
+     */
+    default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        return State.CONTINUE;
+    }
 
     /**
      * Invoked once the HTTP response processing is finished.

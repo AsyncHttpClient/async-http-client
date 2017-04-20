@@ -172,15 +172,15 @@ public interface Response {
     class ResponseBuilder {
         private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>(1);
         private HttpResponseStatus status;
-        private HttpResponseHeaders headers;
+        private HttpHeaders headers;
 
         public ResponseBuilder accumulate(HttpResponseStatus status) {
             this.status = status;
             return this;
         }
 
-        public ResponseBuilder accumulate(HttpResponseHeaders headers) {
-            this.headers = this.headers == null ? headers : new HttpResponseHeaders(this.headers.getHeaders().add(headers.getHeaders()), true);
+        public ResponseBuilder accumulate(HttpHeaders headers) {
+            this.headers = this.headers == null ? headers : this.headers.add(headers);
             return this;
         }
 
