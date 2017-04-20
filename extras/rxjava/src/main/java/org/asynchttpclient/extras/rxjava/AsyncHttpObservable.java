@@ -39,7 +39,7 @@ public class AsyncHttpObservable {
         final BoundRequestBuilder builder = supplier.call();
 
         //create the observable from scratch
-        return Observable.create(new Observable.OnSubscribe<Response>() {
+        return Observable.unsafeCreate(new Observable.OnSubscribe<Response>() {
 
             @Override
             public void call(final Subscriber<? super Response> subscriber) {
@@ -57,7 +57,6 @@ public class AsyncHttpObservable {
                         public void onThrowable(Throwable t) {
                             subscriber.onError(t);
                         }
-
                     };
                     //execute the request
                     builder.execute(handler);
@@ -65,9 +64,7 @@ public class AsyncHttpObservable {
                     subscriber.onError(t);
                 }
             }
-
         });
-
     }
 
     /**
