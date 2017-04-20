@@ -57,6 +57,11 @@ abstract class AbstractSingleSubscriberBridge<T> implements AsyncHandler<Void> {
     }
 
     @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        return subscriber.isUnsubscribed() ? abort() : delegate().onTrailingHeadersReceived(headers);
+    }
+
+    @Override
     public Void onCompleted() {
         if (delegateTerminated.getAndSet(true)) {
             return null;

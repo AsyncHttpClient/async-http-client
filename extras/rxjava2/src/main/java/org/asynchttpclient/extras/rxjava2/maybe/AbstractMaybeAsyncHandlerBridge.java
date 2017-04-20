@@ -81,6 +81,11 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
         return emitter.isDisposed() ? disposed() : delegate().onHeadersReceived(headers);
     }
 
+    @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        return emitter.isDisposed() ? disposed() : delegate().onTrailingHeadersReceived(headers);
+    }
+
     /**
      * {@inheritDoc}
      *
