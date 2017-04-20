@@ -52,8 +52,7 @@ public interface WebSocket {
     Future<Void> sendTextFrame(String payload);
 
     /**
-     * Allows sending a text frame with fragmentation or extension bits.
-     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
+     * Allows sending a text frame with fragmentation or extension bits. When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
      * @param payload a text fragment.
      * @param finalFragment flag indicating whether or not this is the final fragment
@@ -63,8 +62,7 @@ public interface WebSocket {
     Future<Void> sendTextFrame(String payload, boolean finalFragment, int rsv);
 
     /**
-     * Allows sending a text frame with fragmentation or extension bits.
-     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
+     * Allows sending a text frame with fragmentation or extension bits. When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
      * @param payload a ByteBuf fragment.
      * @param finalFragment flag indicating whether or not this is the final fragment
@@ -72,7 +70,7 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendTextFrame(ByteBuf payload, boolean finalFragment, int rsv);
-    
+
     /**
      * Send a full binary frame.
      * 
@@ -82,8 +80,7 @@ public interface WebSocket {
     Future<Void> sendBinaryFrame(byte[] payload);
 
     /**
-     * Allows sending a binary frame with fragmentation or extension bits.
-     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
+     * Allows sending a binary frame with fragmentation or extension bits. When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
      * @param payload a binary payload
      * @param finalFragment flag indicating whether or not this is the last fragment
@@ -93,8 +90,7 @@ public interface WebSocket {
     Future<Void> sendBinaryFrame(byte[] payload, boolean finalFragment, int rsv);
 
     /**
-     * Allows sending a binary frame with fragmentation or extension bits.
-     * When using fragmentation, the next fragments must be sent with sendContinuationFrame.
+     * Allows sending a binary frame with fragmentation or extension bits. When using fragmentation, the next fragments must be sent with sendContinuationFrame.
      * 
      * @param payload a ByteBuf payload
      * @param finalFragment flag indicating whether or not this is the last fragment
@@ -104,8 +100,7 @@ public interface WebSocket {
     Future<Void> sendBinaryFrame(ByteBuf payload, boolean finalFragment, int rsv);
 
     /**
-     * Send a text continuation frame.
-     * The last fragment must have finalFragment set to true.
+     * Send a text continuation frame. The last fragment must have finalFragment set to true.
      * 
      * @param payload the text fragment
      * @param finalFragment flag indicating whether or not this is the last fragment
@@ -113,10 +108,9 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendContinuationFrame(String payload, boolean finalFragment, int rsv);
-    
+
     /**
-     * Send a binary continuation frame.
-     * The last fragment must have finalFragment set to true.
+     * Send a binary continuation frame. The last fragment must have finalFragment set to true.
      * 
      * @param payload the binary fragment
      * @param finalFragment flag indicating whether or not this is the last fragment
@@ -124,10 +118,9 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendContinuationFrame(byte[] payload, boolean finalFragment, int rsv);
-    
+
     /**
-     * Send a continuation frame (those are actually untyped as counterpart must have memorized first fragmented frame type).
-     * The last fragment must have finalFragment set to true.
+     * Send a continuation frame (those are actually untyped as counterpart must have memorized first fragmented frame type). The last fragment must have finalFragment set to true.
      * 
      * @param payload a ByteBuf fragment
      * @param finalFragment flag indicating whether or not this is the last fragment
@@ -135,14 +128,14 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendContinuationFrame(ByteBuf payload, boolean finalFragment, int rsv);
-    
+
     /**
      * Send a empty ping frame
      * 
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendPingFrame();
-    
+
     /**
      * Send a ping frame with a byte array payload (limited to 125 bytes or less).
      * 
@@ -150,7 +143,7 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendPingFrame(byte[] payload);
-    
+
     /**
      * Send a ping frame with a ByteBuf payload (limited to 125 bytes or less).
      * 
@@ -165,7 +158,7 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendPongFrame();
-    
+
     /**
      * Send a pong frame with a byte array payload (limited to 125 bytes or less).
      * 
@@ -181,14 +174,14 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendPongFrame(ByteBuf payload);
-    
+
     /**
      * Send a empty close frame.
      *
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendCloseFrame();
-    
+
     /**
      * Send a empty close frame.
      *
@@ -197,8 +190,12 @@ public interface WebSocket {
      * @return a future that will be completed once the frame will be actually written on the wire
      */
     Future<Void> sendCloseFrame(int statusCode, String reasonText);
-    
-    
+
+    /**
+     * @return <code>true</code> if the WebSocket is open/connected.
+     */
+    boolean isOpen();
+
     /**
      * Add a {@link WebSocketListener}
      * 
@@ -214,9 +211,4 @@ public interface WebSocket {
      * @return this
      */
     WebSocket removeWebSocketListener(WebSocketListener l);
-
-    /**
-     * @return <code>true</code> if the WebSocket is open/connected.
-     */
-    boolean isOpen();
 }
