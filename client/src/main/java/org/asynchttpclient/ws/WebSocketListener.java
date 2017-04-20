@@ -25,7 +25,7 @@ public interface WebSocketListener {
     void onOpen(WebSocket websocket);
 
     /**
-     * Invoked when the {@link WebSocket} is close.
+     * Invoked when the {@link WebSocket} is closed.
      * 
      * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
      *
@@ -36,14 +36,14 @@ public interface WebSocketListener {
     void onClose(WebSocket websocket, int code, String reason);
 
     /**
-     * Invoked when the {@link WebSocket} is open.
+     * Invoked when the {@link WebSocket} crashes.
      *
      * @param t a {@link Throwable}
      */
     void onError(Throwable t);
 
     /**
-     * Invoked when bytes are available.
+     * Invoked when a binary frame is received.
      * 
      * @param payload a byte array
      * @param finalFragment true if this frame is the final fragment
@@ -53,7 +53,7 @@ public interface WebSocketListener {
     };
 
     /**
-     * Invoked when WebSocket text message are received.
+     * Invoked when a text frame is received.
      * 
      * @param payload a UTF-8 {@link String} message
      * @param finalFragment true if this frame is the final fragment
@@ -63,7 +63,7 @@ public interface WebSocketListener {
     };
 
     /**
-     * Invoked when a ping message is received
+     * Invoked when a ping frame is received
      * 
      * @param payload a byte array
      */
@@ -71,7 +71,7 @@ public interface WebSocketListener {
     };
 
     /**
-     * Invoked when a pong message is received
+     * Invoked when a pong frame is received
      * 
      * @param payload a byte array
      */
