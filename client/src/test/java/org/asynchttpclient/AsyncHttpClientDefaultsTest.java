@@ -76,7 +76,7 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     public void testDefaultUserAgent() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultUserAgent(), "AHC/2.0");
+        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultUserAgent(), "AHC/2.1");
         testStringSystemProperty("userAgent", "defaultUserAgent", "MyAHC");
     }
 
