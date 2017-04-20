@@ -92,6 +92,9 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
         /* when */ underTest.onBodyPartReceived(bodyPart);
         then(delegate).should(times(2)).onBodyPartReceived(bodyPart);
 
+        /* when */ underTest.onTrailingHeadersReceived(headers);
+        then(delegate).should().onTrailingHeadersReceived(headers);
+
         /* when */ underTest.onCompleted();
         then(delegate).should().onCompleted();
         then(emitter).should().onSuccess(this);
@@ -199,6 +202,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
                 { named("onStatusReceived", () -> underTest.onStatusReceived(status)) }, //
                 { named("onHeadersReceived", () -> underTest.onHeadersReceived(headers)) }, //
                 { named("onBodyPartReceived", () -> underTest.onBodyPartReceived(bodyPart)) }, //
+                { named("onTrailingHeadersReceived", () -> underTest.onTrailingHeadersReceived(headers)) }, //
         };
     }
 

@@ -82,6 +82,9 @@ public class AsyncHttpSingleTest {
                 bridge.onBodyPartReceived(null);
                 verify(handler).onBodyPartReceived(null);
 
+                bridge.onTrailingHeadersReceived(null);
+                verify(handler).onTrailingHeadersReceived(null);
+
                 bridge.onCompleted();
                 verify(handler).onCompleted();
             } catch (final Throwable t) {
@@ -134,6 +137,9 @@ public class AsyncHttpSingleTest {
 
                 progressBridge.onBodyPartReceived(null);
                 inOrder.verify(handler).onBodyPartReceived(null);
+
+                bridge.onTrailingHeadersReceived(null);
+                verify(handler).onTrailingHeadersReceived(null);
 
                 progressBridge.onCompleted();
                 inOrder.verify(handler).onCompleted();
