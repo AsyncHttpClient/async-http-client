@@ -52,6 +52,7 @@ public class NettyWebSocket implements WebSocket {
     // no need for volatile because only mutated in IO thread
     private boolean ready;
     private List<WebSocketFrame> bufferedFrames;
+    protected FragmentedFrameType expectedFragmentedFrameType;
 
     public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders) {
         this(channel, upgradeHeaders, new ConcurrentLinkedQueue<>());
@@ -238,6 +239,9 @@ public class NettyWebSocket implements WebSocket {
 
         } else if (frame instanceof PongWebSocketFrame) {
             onPongFrame((PongWebSocketFrame) frame);
+
+        } else if (frame instanceof ContinuationWebSocketFrame) {
+            onContinuationFrame((ContinuationWebSocketFrame) frame);
         }
     }
 
@@ -276,6 +280,13 @@ public class NettyWebSocket implements WebSocket {
     }
 
     public void onBinaryFrame(BinaryWebSocketFrame frame) {
+        if (expectedFragmentedFrameType == null && !frame.isFinalFragment()) {
+            expectedFragmentedFrameType = FragmentedFrameType.BINARY;
+        }
+        onBinaryFrame0(frame);
+    }
+
+    private void onBinaryFrame0(WebSocketFrame frame) {
         byte[] bytes = byteBuf2Bytes(frame.content());
         for (WebSocketListener listener : listeners) {
             listener.onBinaryFrame(bytes, frame.isFinalFragment(), frame.rsv());
@@ -283,6 +294,13 @@ public class NettyWebSocket implements WebSocket {
     }
 
     public void onTextFrame(TextWebSocketFrame frame) {
+        if (expectedFragmentedFrameType == null && !frame.isFinalFragment()) {
+            expectedFragmentedFrameType = FragmentedFrameType.TEXT;
+        }
+        onTextFrame0(frame);
+    }
+
+    private void onTextFrame0(WebSocketFrame frame) {
         try {
             // faster than frame.text();
             String text = Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content());
@@ -293,6 +311,29 @@ public class NettyWebSocket implements WebSocket {
             }
         } catch (CharacterCodingException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    public void onContinuationFrame(ContinuationWebSocketFrame frame) {
+        if (expectedFragmentedFrameType == null) {
+            LOGGER.warn("Received continuation frame without an original text or binary frame, ignoring");
+            return;
+        }
+        try {
+            switch (expectedFragmentedFrameType) {
+            case BINARY:
+                onBinaryFrame0(frame);
+                break;
+            case TEXT:
+                onTextFrame0(frame);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown FragmentedFrameType " + expectedFragmentedFrameType);
+            }
+        } finally {
+            if (frame.isFinalFragment()) {
+                expectedFragmentedFrameType = null;
+            }
         }
     }
 
@@ -308,5 +349,9 @@ public class NettyWebSocket implements WebSocket {
         for (WebSocketListener listener : listeners) {
             listener.onPongFrame(bytes);
         }
+    }
+
+    private enum FragmentedFrameType {
+        TEXT, BINARY;
     }
 }
