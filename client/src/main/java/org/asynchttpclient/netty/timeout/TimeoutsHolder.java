@@ -38,7 +38,7 @@ public class TimeoutsHolder {
     private volatile NettyResponseFuture<?> nettyResponseFuture;
     public final Timeout requestTimeout;
     public volatile Timeout readTimeout;
-    private volatile String remoteAddress = "not-connected";
+    private volatile InetSocketAddress remoteAddress;
 
     public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config) {
         this.nettyTimer = nettyTimer;
@@ -61,7 +61,7 @@ public class TimeoutsHolder {
     }
 
     public void initRemoteAddress(InetSocketAddress address) {
-        remoteAddress = address.toString();
+        remoteAddress = address;
     }
 
     public void startReadTimeout() {
@@ -77,8 +77,7 @@ public class TimeoutsHolder {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
                 task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
             }
-            Timeout readTimeout = newTimeout(task, readTimeoutValue);
-            this.readTimeout = readTimeout;
+            this.readTimeout = newTimeout(task, readTimeoutValue);
 
         } else if (task != null) {
             // read timeout couldn't re-scheduling itself, clean up
@@ -104,6 +103,6 @@ public class TimeoutsHolder {
     }
 
     String remoteAddress() {
-        return remoteAddress;
+        return remoteAddress == null ?  "not-connected" : remoteAddress.toString();
     }
 }
