@@ -12,10 +12,6 @@
  */
 package org.asynchttpclient.config;
 
-import io.netty.handler.ssl.NettySslPackageAccessor;
-
-import java.util.Arrays;
-import java.util.Set;
 
 public final class AsyncHttpClientConfigDefaults {
 
@@ -81,9 +77,7 @@ public final class AsyncHttpClientConfigDefaults {
     }
     
     public static String[] defaultEnabledCipherSuites() {
-        String[] defaultEnabledCipherSuites = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + "enabledCipherSuites");
-        Set<String> supportedCipherSuites = NettySslPackageAccessor.jdkSupportedCipherSuites();
-        return Arrays.stream(defaultEnabledCipherSuites).filter(supportedCipherSuites::contains).toArray(String[]::new);
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + "enabledCipherSuites");
     }
 
     public static boolean defaultUseProxySelector() {

@@ -13,10 +13,14 @@
  */
 package org.asynchttpclient.netty.ssl;
 
+import static org.asynchttpclient.util.MiscUtils.*;
+
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
+
+import java.util.Arrays;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -28,16 +32,26 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
     private volatile SslContext sslContext;
 
     private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
-        if (config.getSslContext() != null)
+        if (config.getSslContext() != null) {
             return config.getSslContext();
+        }
 
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()//
                 .sslProvider(config.isUseOpenSsl() ? SslProvider.OPENSSL : SslProvider.JDK)//
                 .sessionCacheSize(config.getSslSessionCacheSize())//
                 .sessionTimeout(config.getSslSessionTimeout());
 
-        if (config.isAcceptAnyCertificate())
+        if (isNonEmpty(config.getEnabledProtocols())) {
+            sslContextBuilder.protocols(config.getEnabledProtocols());
+        }
+
+        if (isNonEmpty(config.getEnabledCipherSuites())) {
+            sslContextBuilder.ciphers(Arrays.asList(config.getEnabledCipherSuites()));
+        }
+
+        if (config.isAcceptAnyCertificate()) {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+        }
 
         return configureSslContextBuilder(sslContextBuilder).build();
     }
@@ -56,8 +70,8 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
     }
 
     /**
-     * The last step of configuring the SslContextBuilder used to create an SslContext when no context is provided in
-     * the {@link AsyncHttpClientConfig}. This defaults to no-op and is intended to be overridden as needed.
+     * The last step of configuring the SslContextBuilder used to create an SslContext when no context is provided in the {@link AsyncHttpClientConfig}. This defaults to no-op and
+     * is intended to be overridden as needed.
      *
      * @param builder builder with normal configuration applied
      * @return builder to be used to build context (can be the same object as the input)

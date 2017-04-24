@@ -94,6 +94,10 @@ public class AsyncHttpClientConfigHelper {
 
         public String[] getStringArray(String key) {
             String s = getString(key);
+            s = s.trim();
+            if (s.isEmpty()) {
+                return null;
+            }
             String[] rawArray = s.split(",");
             String[] array = new String[rawArray.length];
             for (int i = 0; i < rawArray.length; i++)
