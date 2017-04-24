@@ -13,8 +13,6 @@
  */
 package org.asynchttpclient.netty.ssl;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
@@ -30,11 +28,5 @@ public abstract class SslEngineFactoryBase implements SslEngineFactory {
             params.setEndpointIdentificationAlgorithm("HTTPS");
             sslEngine.setSSLParameters(params);
         }
-
-        if (isNonEmpty(config.getEnabledProtocols()))
-            sslEngine.setEnabledProtocols(config.getEnabledProtocols());
-
-        if (isNonEmpty(config.getEnabledCipherSuites()))
-            sslEngine.setEnabledCipherSuites(config.getEnabledCipherSuites());
     }
 }
