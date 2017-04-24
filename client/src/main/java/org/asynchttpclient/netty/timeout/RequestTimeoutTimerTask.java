@@ -18,6 +18,7 @@ import io.netty.util.Timeout;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.StringBuilderPool;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
@@ -43,7 +44,9 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         if (nettyResponseFuture.isDone())
             return;
 
-        String message = "Request timeout to " + timeoutsHolder.remoteAddress() + " after " + requestTimeout + " ms";
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
+        appendRemoteAddress(sb);
+        String message =  sb.append(" after ").append(requestTimeout).append(" ms").toString();
         long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
         expire(message, age);
     }

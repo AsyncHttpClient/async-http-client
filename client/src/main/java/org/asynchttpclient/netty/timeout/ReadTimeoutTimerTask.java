@@ -18,6 +18,7 @@ import io.netty.util.Timeout;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.StringBuilderPool;
 
 public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
@@ -49,7 +50,9 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
         if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectTimeout reached
-            String message = "Read timeout to " + timeoutsHolder.remoteAddress() + " after " + readTimeout + " ms";
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
+            appendRemoteAddress(sb);
+            String message = sb.append(" after ").append(readTimeout).append(" ms").toString();
             long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
             expire(message, durationSinceLastTouch);
             // cancel request timeout sibling

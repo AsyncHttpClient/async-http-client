@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.resolver;
 
-import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
+import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
@@ -21,15 +21,10 @@ import io.netty.util.concurrent.Promise;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.SimpleFutureListener;
-import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,32 +32,15 @@ public enum RequestHostnameResolver {
 
     INSTANCE;
 
-    public Future<List<InetSocketAddress>> resolve(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
+    public Future<List<InetSocketAddress>> resolve(NameResolver<InetAddress> nameResolver, InetSocketAddress unresolvedAddress, AsyncHandlerExtensions asyncHandlerExtensions) {
 
-        Uri uri = request.getUri();
+        final String hostname = unresolvedAddress.getHostName();
+        final int port = unresolvedAddress.getPort();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
-
-        if (request.getAddress() != null) {
-            List<InetSocketAddress> resolved = Collections.singletonList(new InetSocketAddress(request.getAddress(), uri.getExplicitPort()));
-            return promise.setSuccess(resolved);
-        }
-
-        // don't notify on explicit address
-        final AsyncHandlerExtensions asyncHandlerExtensions = request.getAddress() == null ? toAsyncHandlerExtensions(asyncHandler) : null;
-        final String name;
-        final int port;
-
-        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
-            name = proxy.getHost();
-            port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
-        } else {
-            name = uri.getHost();
-            port = uri.getExplicitPort();
-        }
 
         if (asyncHandlerExtensions != null) {
             try {
-                asyncHandlerExtensions.onHostnameResolutionAttempt(name);
+                asyncHandlerExtensions.onHostnameResolutionAttempt(hostname);
             } catch (Exception e) {
                 LOGGER.error("onHostnameResolutionAttempt crashed", e);
                 promise.tryFailure(e);
@@ -70,7 +48,7 @@ public enum RequestHostnameResolver {
             }
         }
 
-        final Future<List<InetAddress>> whenResolved = request.getNameResolver().resolveAll(name);
+        final Future<List<InetAddress>> whenResolved = nameResolver.resolveAll(hostname);
 
         whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
 
@@ -82,7 +60,7 @@ public enum RequestHostnameResolver {
                 }
                 if (asyncHandlerExtensions != null) {
                     try {
-                        asyncHandlerExtensions.onHostnameResolutionSuccess(name, socketAddresses);
+                        asyncHandlerExtensions.onHostnameResolutionSuccess(hostname, socketAddresses);
                     } catch (Exception e) {
                         LOGGER.error("onHostnameResolutionSuccess crashed", e);
                         promise.tryFailure(e);
@@ -96,7 +74,7 @@ public enum RequestHostnameResolver {
             protected void onFailure(Throwable t) throws Exception {
                 if (asyncHandlerExtensions != null) {
                     try {
-                        asyncHandlerExtensions.onHostnameResolutionFailure(name, t);
+                        asyncHandlerExtensions.onHostnameResolutionFailure(hostname, t);
                     } catch (Exception e) {
                         LOGGER.error("onHostnameResolutionFailure crashed", e);
                         promise.tryFailure(e);

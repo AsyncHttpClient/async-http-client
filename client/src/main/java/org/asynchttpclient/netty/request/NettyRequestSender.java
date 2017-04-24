@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.request;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
+import static java.util.Collections.singletonList;
 import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
@@ -31,6 +32,9 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.Timer;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import io.netty.util.concurrent.Promise;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -230,8 +234,7 @@ public final class NettyRequestSender {
             }
         }
 
-        TimeoutsHolder timeoutsHolder = scheduleRequestTimeout(future);
-        timeoutsHolder.initRemoteAddress((InetSocketAddress) channel.remoteAddress());
+        scheduleRequestTimeout(future, (InetSocketAddress) channel.remoteAddress());
         future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
@@ -293,9 +296,7 @@ public final class NettyRequestSender {
             return future;
         }
 
-        scheduleRequestTimeout(future);
-
-        RequestHostnameResolver.INSTANCE.resolve(request, proxy, asyncHandler)//
+        resolveAddresses(request, proxy, future, asyncHandler)//
                 .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
                     @Override
@@ -314,6 +315,37 @@ public final class NettyRequestSender {
                 });
 
         return future;
+    }
+    
+    private <T> Future<List<InetSocketAddress>> resolveAddresses(
+            Request request,//
+            ProxyServer proxy,//
+            NettyResponseFuture<T> future,//
+            AsyncHandler<T> asyncHandler) {
+        
+        Uri uri = request.getUri();
+        final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+
+        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
+            int port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
+            InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
+            scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, toAsyncHandlerExtensions(asyncHandler));
+            
+        } else {
+            int port = uri.getExplicitPort();
+            
+            if (request.getAddress() != null) {
+                // bypass resolution
+                InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
+                return promise.setSuccess(singletonList(inetSocketAddress));
+                
+            } else {
+                InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
+                scheduleRequestTimeout(future, unresolvedRemoteAddress);
+                return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, toAsyncHandlerExtensions(asyncHandler));
+            }
+        }
     }
 
     private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
@@ -396,11 +428,10 @@ public final class NettyRequestSender {
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 
-    private TimeoutsHolder scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture) {
+    private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture, InetSocketAddress originalRemoteAddress) {
         nettyResponseFuture.touch();
-        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config);
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config, originalRemoteAddress);
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
-        return timeoutsHolder;
     }
 
     private void scheduleReadTimeout(NettyResponseFuture<?> nettyResponseFuture) {

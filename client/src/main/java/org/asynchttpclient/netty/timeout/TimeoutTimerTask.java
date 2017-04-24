@@ -15,6 +15,7 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.TimerTask;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,12 +45,21 @@ public abstract class TimeoutTimerTask implements TimerTask {
     }
 
     /**
-     * When the timeout is cancelled, it could still be referenced for quite some time in the Timer.
-     * Holding a reference to the future might mean holding a reference to the channel, and heavy objects such as SslEngines
+     * When the timeout is cancelled, it could still be referenced for quite some time in the Timer. Holding a reference to the future might mean holding a reference to the
+     * channel, and heavy objects such as SslEngines
      */
     public void clean() {
         if (done.compareAndSet(false, true)) {
             nettyResponseFuture = null;
         }
+    }
+
+    protected void appendRemoteAddress(StringBuilder sb) {
+        InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
+        sb.append(remoteAddress.getHostName());
+        if (!remoteAddress.isUnresolved()) {
+            sb.append('/').append(remoteAddress.getAddress().getHostAddress());
+        }
+        sb.append(':').append(remoteAddress.getPort());
     }
 }

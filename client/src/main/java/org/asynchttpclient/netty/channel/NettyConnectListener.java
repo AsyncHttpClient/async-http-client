@@ -114,7 +114,7 @@ public final class NettyConnectListener<T> {
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
 
-        timeoutsHolder.initRemoteAddress(remoteAddress);
+        timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
         if (future.getProxyServer() == null && uri.isSecured()) {
