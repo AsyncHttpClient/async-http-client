@@ -168,7 +168,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
     }
 
     @Test(groups = "online")
-    public void evilCoookieTest() throws Exception {
+    public void evilCookieTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             Cookie cookie = new DefaultCookie("evilcookie", "test");
             cookie.setDomain(".google.com");
@@ -198,9 +198,7 @@ public class RemoteSiteTest extends AbstractBasicTest {
                 }
 
                 public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                    System.out.println(bodyPart.getBodyPartBytes().length);
                     builder.accumulate(bodyPart);
-
                     return State.CONTINUE;
                 }
 
