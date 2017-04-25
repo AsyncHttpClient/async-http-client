@@ -181,6 +181,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
+     * @param name header name
+     * @param value header value to set
+     * @return {@code this}
      * @see #setHeader(CharSequence, Object)
      */
     public T setHeader(CharSequence name, String value) {
@@ -212,6 +215,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
+     * @param name header name
+     * @param value header value to add
+     * @return {@code this}
      * @see #addHeader(CharSequence, Object)
      */
     public T addHeader(CharSequence name, String value) {

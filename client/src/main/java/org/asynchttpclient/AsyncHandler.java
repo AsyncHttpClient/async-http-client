@@ -25,8 +25,9 @@ import io.netty.handler.codec.http.HttpHeaders;
  * Callback methods get invoked in the following order:
  * <ol>
  *  <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
- *  <li>{@link #onHeadersReceived(HttpResponseHeaders)},</li>
+ *  <li>{@link #onHeadersReceived(HttpHeaders)},</li>
  *  <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
+ *  <li>{@link #onTrailingHeadersReceived(HttpHeaders)}, which is only invoked if trailing HTTP headers are received</li>
  *  <li>{@link #onCompleted()}, once the response has been fully read.</li>
  * </ol>
  * <br>
@@ -101,9 +102,9 @@ public interface AsyncHandler<T> {
     
     /**
      * Invoked when trailing headers have been received. 
-     * @param headers
-     * @return
-     * @throws Exception
+     * @param headers the trailing HTTP headers.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+     * @throws Exception if something wrong happens
      */
     default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
         return State.CONTINUE;

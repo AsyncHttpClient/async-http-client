@@ -141,7 +141,7 @@ public interface Response {
 
     /**
      * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the either
-     * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link AsyncHandler.State#ABORT}
+     * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
      * 
      * @return true if the response's headers has been computed by an {@link AsyncHandler}
      */
@@ -149,7 +149,7 @@ public interface Response {
 
     /**
      * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
-     * or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link AsyncHandler.State#ABORT}
+     * or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
      * 
      * @return true if the response's body has been computed by an {@link AsyncHandler}
      */
