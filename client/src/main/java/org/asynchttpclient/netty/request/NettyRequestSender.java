@@ -38,6 +38,7 @@ import io.netty.util.concurrent.Promise;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
@@ -234,7 +235,12 @@ public final class NettyRequestSender {
             }
         }
 
-        scheduleRequestTimeout(future, (InetSocketAddress) channel.remoteAddress());
+        SocketAddress channelRemoteAddress = channel.remoteAddress();
+        if (channelRemoteAddress != null) {
+            // otherwise, bad luck, the channel was closed, see bellow
+            scheduleRequestTimeout(future, (InetSocketAddress) channelRemoteAddress);
+        }
+
         future.setChannelState(ChannelState.POOLED);
         future.attachChannel(channel, false);
 
