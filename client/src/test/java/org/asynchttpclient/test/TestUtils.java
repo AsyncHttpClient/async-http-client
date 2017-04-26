@@ -105,7 +105,7 @@ public class TestUtils {
             TMP_DIR.deleteOnExit();
             LARGE_IMAGE_FILE = resourceAsFile("300k.png");
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
-            LARGE_IMAGE_PUBLISHER = createPublisher(LARGE_IMAGE_BYTES, /* chunkSize */1000);
+            LARGE_IMAGE_PUBLISHER = createPublisher(LARGE_IMAGE_BYTES, 1000);
             SIMPLE_TEXT_FILE = resourceAsFile("SimpleTextFile.txt");
             SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, UTF_8);
         } catch (Exception e) {
