@@ -13,12 +13,12 @@
  */
 package org.asynchttpclient.netty.ssl;
 
-import static org.asynchttpclient.util.MiscUtils.*;
-
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 import java.util.Arrays;
 
