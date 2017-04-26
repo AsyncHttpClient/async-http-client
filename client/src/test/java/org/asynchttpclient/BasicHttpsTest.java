@@ -58,7 +58,7 @@ public class BasicHttpsTest extends HttpTest {
     }
 
     @Test
-    public void postBodyOverHttps() throws Throwable {
+    public void postFileOverHttps() throws Throwable {
         logger.debug(">>> postBodyOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
             withServer(server).run(server -> {
@@ -71,6 +71,22 @@ public class BasicHttpsTest extends HttpTest {
             });
         });
         logger.debug("<<< postBodyOverHttps");
+    }
+    
+    @Test
+    public void postLargeFileOverHttps() throws Throwable {
+        logger.debug(">>> postLargeFileOverHttps");
+        withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+            withServer(server).run(server -> {
+                server.enqueueEcho();
+
+                Response resp = client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_FILE).setHeader(CONTENT_TYPE, "image/png").execute().get();
+                assertNotNull(resp);
+                assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+                assertEquals(resp.getResponseBodyAsBytes().length, LARGE_IMAGE_FILE.length());
+            });
+        });
+        logger.debug("<<< postLargeFileOverHttps");
     }
 
     @Test
