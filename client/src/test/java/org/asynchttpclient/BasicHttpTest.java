@@ -14,12 +14,12 @@
 package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;

@@ -16,10 +16,10 @@
 package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;

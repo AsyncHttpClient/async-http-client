@@ -13,14 +13,14 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
+
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
-
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 
 /**
  * Max connections and max-per-host connections limiter.

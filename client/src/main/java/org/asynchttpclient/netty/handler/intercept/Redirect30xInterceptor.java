@@ -14,11 +14,11 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;

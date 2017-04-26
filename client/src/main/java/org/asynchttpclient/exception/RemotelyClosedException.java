@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.exception;
 
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 import java.io.IOException;
 

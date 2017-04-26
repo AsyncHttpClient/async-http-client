@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.exception;
 
-import java.io.IOException;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
-import static io.netty.util.internal.ThrowableUtil.*;
+import java.io.IOException;
 
 @SuppressWarnings("serial")
 public final class ChannelClosedException extends IOException {
