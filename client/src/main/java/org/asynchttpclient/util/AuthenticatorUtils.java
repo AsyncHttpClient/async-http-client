@@ -53,10 +53,6 @@ public final class AuthenticatorUtils {
         return "Basic " + Base64.encode(s.getBytes(charset));
     }
 
-    public static String computeRealmURI(Realm realm) {
-        return computeRealmURI(realm.getUri(), realm.isUseAbsoluteURI(), realm.isOmitQuery());
-    }
-
     public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {
         if (useAbsoluteURI) {
             return omitQuery && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
@@ -67,12 +63,14 @@ public final class AuthenticatorUtils {
     }
 
     private static String computeDigestAuthentication(Realm realm) {
+        
+        String realmUri = computeRealmURI(realm.getUri(), realm.isUseAbsoluteURI(), realm.isOmitQuery());
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
         append(builder, "realm", realm.getRealmName(), true);
         append(builder, "nonce", realm.getNonce(), true);
-        append(builder, "uri", computeRealmURI(realm), true);
+        append(builder, "uri", realmUri, true);
         if (isNonEmpty(realm.getAlgorithm()))
             append(builder, "algorithm", realm.getAlgorithm(), false);
 
