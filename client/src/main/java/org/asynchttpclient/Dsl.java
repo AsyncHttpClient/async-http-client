@@ -85,7 +85,6 @@ public final class Dsl {
         return new Realm.Builder(prototype.getPrincipal(), prototype.getPassword())//
                 .setRealmName(prototype.getRealmName())//
                 .setAlgorithm(prototype.getAlgorithm())//
-                .setMethodName(prototype.getMethodName())//
                 .setNc(prototype.getNc())//
                 .setNonce(prototype.getNonce())//
                 .setCharset(prototype.getCharset())//

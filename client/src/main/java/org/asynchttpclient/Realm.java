@@ -51,7 +51,6 @@ public class Realm {
     private final String nc;
     private final String cnonce;
     private final Uri uri;
-    private final String methodName;
     private final boolean usePreemptiveAuth;
     private final Charset charset;
     private final String ntlmHost;
@@ -60,7 +59,6 @@ public class Realm {
     private final boolean omitQuery;
 
     public enum AuthScheme {
-
         BASIC, DIGEST, NTLM, SPNEGO, KERBEROS
     }
 
@@ -76,7 +74,6 @@ public class Realm {
             String nc,//
             String cnonce,//
             Uri uri,//
-            String methodName,//
             boolean usePreemptiveAuth,//
             Charset charset,//
             String ntlmDomain,//
@@ -96,7 +93,6 @@ public class Realm {
         this.nc = nc;
         this.cnonce = cnonce;
         this.uri = uri;
-        this.methodName = methodName;
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.charset = charset;
         this.ntlmDomain = ntlmDomain;
@@ -157,10 +153,6 @@ public class Realm {
         return charset;
     }
 
-    public String getMethodName() {
-        return methodName;
-    }
-
     /**
      * Return true is preemptive authentication is enabled
      * 
@@ -200,7 +192,7 @@ public class Realm {
     public String toString() {
         return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm
                 + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
-                + ", methodName='" + methodName + '\'' + ", useAbsoluteURI='" + useAbsoluteURI + '\'' + ", omitQuery='" + omitQuery + '\'' + '}';
+                + ", useAbsoluteURI='" + useAbsoluteURI + '\'' + ", omitQuery='" + omitQuery + '\'' + '}';
     }
 
     /**
@@ -503,7 +495,6 @@ public class Realm {
                     nc, //
                     cnonce, //
                     uri, //
-                    methodName, //
                     usePreemptive, //
                     charset, //
                     ntlmDomain,//
