@@ -148,7 +148,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         try {
             NettyWebSocket webSocket = getNettyWebSocket(future);
             if (webSocket != null) {
-                webSocket.onError(e.getCause());
+                webSocket.onError(e);
                 webSocket.sendCloseFrame();
             }
         } catch (Throwable t) {
