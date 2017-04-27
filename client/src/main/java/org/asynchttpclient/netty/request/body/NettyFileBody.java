@@ -70,15 +70,13 @@ public class NettyFileBody implements NettyBody {
     @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         @SuppressWarnings("resource")
-        // Netty will close the ChunkedNioFile or the DefaultFileRegion
-        final FileChannel fileChannel = new RandomAccessFile(file, "r").getChannel();
+        // netty will close the FileChannel
+        FileChannel fileChannel = new RandomAccessFile(file, "r").getChannel();
+        boolean noZeroCopy = ChannelManager.isSslHandlerConfigured(channel.pipeline()) || config.isDisableZeroCopy();
+        Object body = noZeroCopy ? new ChunkedNioFile(fileChannel, offset, length, config.getChunkedFileChunkSize()) : new DefaultFileRegion(fileChannel, offset, length);
 
-        Object message = (ChannelManager.isSslHandlerConfigured(channel.pipeline()) || config.isDisableZeroCopy()) ? //
-        new ChunkedNioFile(fileChannel, offset, length, config.getChunkedFileChunkSize())
-                : new DefaultFileRegion(fileChannel, offset, length);
-
-        channel.write(message, channel.newProgressivePromise())//
-                .addListener(new WriteProgressListener(future, false, getContentLength()));
+        channel.write(body, channel.newProgressivePromise())//
+                .addListener(new WriteProgressListener(future, false, length));
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
     }
 }
