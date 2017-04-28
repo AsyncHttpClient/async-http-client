@@ -163,8 +163,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxChunkSize");
     }
 
-    public static int defaultHttpClientInitialBufferSize() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientInitialBufferSize");
+    public static int defaultHttpClientCodecInitialBufferSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecInitialBufferSize");
     }
 
     public static boolean defaultDisableZeroCopy() {

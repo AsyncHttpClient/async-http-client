@@ -241,7 +241,7 @@ public interface AsyncHttpClientConfig {
 
     int getHttpClientCodecMaxChunkSize();
 
-    int getHttpClientInitialBufferSize();
+    int getHttpClientCodecInitialBufferSize();
 
     boolean isDisableZeroCopy();
 
