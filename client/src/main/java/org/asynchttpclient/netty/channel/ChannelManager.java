@@ -329,7 +329,8 @@ public class ChannelManager {
                 config.getHttpClientCodecMaxHeaderSize(),//
                 config.getHttpClientCodecMaxChunkSize(),//
                 false,//
-                config.isValidateResponseHeaders());
+                config.isValidateResponseHeaders(),//
+                config.getHttpClientInitialBufferSize());
     }
 
     private SslHandler createSslHandler(String peerHost, int peerPort) {

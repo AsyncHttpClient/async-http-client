@@ -241,6 +241,8 @@ public interface AsyncHttpClientConfig {
 
     int getHttpClientCodecMaxChunkSize();
 
+    int getHttpClientInitialBufferSize();
+
     boolean isDisableZeroCopy();
 
     int getHandshakeTimeout();

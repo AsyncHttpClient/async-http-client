@@ -116,6 +116,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int httpClientCodecMaxInitialLineLength;
     private final int httpClientCodecMaxHeaderSize;
     private final int httpClientCodecMaxChunkSize;
+    private final int httpClientInitialBufferSize;
     private final int chunkedFileChunkSize;
     private final int webSocketMaxBufferSize;
     private final int webSocketMaxFrameSize;
@@ -197,6 +198,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             int httpClientCodecMaxInitialLineLength,//
             int httpClientCodecMaxHeaderSize,//
             int httpClientCodecMaxChunkSize,//
+            int httpClientInitialBufferSize,//
             int chunkedFileChunkSize,//
             int webSocketMaxBufferSize,//
             int webSocketMaxFrameSize,//
@@ -272,6 +274,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
         this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
         this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
+        this.httpClientInitialBufferSize = httpClientInitialBufferSize;
         this.chunkedFileChunkSize = chunkedFileChunkSize;
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
@@ -541,6 +544,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public int getHttpClientInitialBufferSize() {
+        return httpClientInitialBufferSize;
+    }
+
+    @Override
     public int getChunkedFileChunkSize() {
         return chunkedFileChunkSize;
     }
@@ -673,6 +681,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
         private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
         private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
+        private int httpClientInitialBufferSize = defaultHttpClientInitialBufferSize();
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
@@ -1043,6 +1052,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setHttpClientInitialBufferSize(int httpClientInitialBufferSize) {
+            this.httpClientInitialBufferSize = httpClientInitialBufferSize;
+            return this;
+        }
+
         public Builder setChunkedFileChunkSize(int chunkedFileChunkSize) {
             this.chunkedFileChunkSize = chunkedFileChunkSize;
             return this;
@@ -1173,6 +1187,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     httpClientCodecMaxInitialLineLength, //
                     httpClientCodecMaxHeaderSize, //
                     httpClientCodecMaxChunkSize, //
+                    httpClientInitialBufferSize, //
                     chunkedFileChunkSize, //
                     webSocketMaxBufferSize, //
                     webSocketMaxFrameSize, //

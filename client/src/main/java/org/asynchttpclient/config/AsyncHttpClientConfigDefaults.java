@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.config;
 
-
 public final class AsyncHttpClientConfigDefaults {
 
     private AsyncHttpClientConfigDefaults() {
@@ -162,6 +161,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static int defaultHttpClientCodecMaxChunkSize() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientCodecMaxChunkSize");
+    }
+
+    public static int defaultHttpClientInitialBufferSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + "httpClientInitialBufferSize");
     }
 
     public static boolean defaultDisableZeroCopy() {
