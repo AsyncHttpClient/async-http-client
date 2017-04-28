@@ -45,6 +45,7 @@ public class TimeoutsHolder {
         this.nettyTimer = nettyTimer;
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
+        this.remoteAddress = originalRemoteAddress;
 
         final Request targetRequest = nettyResponseFuture.getTargetRequest();
 
