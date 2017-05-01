@@ -32,7 +32,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-public class FastUnauthorizedUploadTest extends AbstractBasicTest {
+public class FastUnauthorizedMultipartTest extends AbstractBasicTest {
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -49,14 +49,25 @@ public class FastUnauthorizedUploadTest extends AbstractBasicTest {
         };
     }
 
-    @Test(groups = "standalone")
-    public void testUnauthorizedWhileUploading() throws Exception {
+    @Test(groups = "standalone", enabled = false)
+    public void testUnauthorizedWhileMultipart() throws Exception {
         File file = createTempFile(1024 * 1024);
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute()
-                    .get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
             assertEquals(response.getStatusCode(), 401);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        FastUnauthorizedMultipartTest test = new FastUnauthorizedMultipartTest();
+        test.setUpGlobal();
+        try {
+            for (int i = 0; i < 20; i++) {
+                test.testUnauthorizedWhileMultipart();
+            }
+        } finally {
+            test.tearDownGlobal();
         }
     }
 }
