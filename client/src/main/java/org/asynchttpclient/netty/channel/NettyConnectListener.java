@@ -103,7 +103,7 @@ public final class NettyConnectListener<T> {
             }
         }
 
-        Channels.setInactiveToken(channel);
+        Channels.setActiveToken(channel);
 
         TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
 

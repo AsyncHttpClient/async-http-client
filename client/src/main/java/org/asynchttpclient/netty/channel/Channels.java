@@ -26,9 +26,9 @@ public class Channels {
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
-    private static final AttributeKey<Inactive> INACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("inactiveToken");
+    private static final AttributeKey<Active> ACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("activeToken");
 
-    private enum Inactive { INSTANCE }
+    private enum Active { INSTANCE }
 
     public static Object getAttribute(Channel channel) {
         Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
@@ -47,12 +47,12 @@ public class Channels {
         return channel != null && channel.isActive();
     }
     
-    public static void setInactiveToken(Channel channel) {
-        channel.attr(INACTIVE_TOKEN_ATTRIBUTE).set(Inactive.INSTANCE);
+    public static void setActiveToken(Channel channel) {
+        channel.attr(ACTIVE_TOKEN_ATTRIBUTE).set(Active.INSTANCE);
     }
     
-    public static boolean getInactiveToken(Channel channel) {
-        return channel != null && channel.attr(INACTIVE_TOKEN_ATTRIBUTE).getAndSet(null) != null;
+    public static boolean isActiveTokenSet(Channel channel) {
+        return channel != null && channel.attr(ACTIVE_TOKEN_ATTRIBUTE).getAndSet(null) != null;
     }
 
     public static void silentlyCloseChannel(Channel channel) {

@@ -465,7 +465,7 @@ public final class NettyRequestSender {
     }
 
     public void handleUnexpectedClosedChannel(Channel channel, NettyResponseFuture<?> future) {
-        if (Channels.getInactiveToken(channel)) {
+        if (Channels.isActiveTokenSet(channel)) {
             if (future.isDone()) {
                 channelManager.closeChannel(channel);
             } else if (future.incrementRetryAndCheck() && retry(future)) {
