@@ -131,7 +131,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    private static class SimpleHandler extends AbstractHandler {
+    public static class SimpleHandler extends AbstractHandler {
 
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
@@ -142,20 +142,21 @@ public class BasicAuthTest extends AbstractBasicTest {
             } else {
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
                 response.addHeader("X-" + CONTENT_LENGTH, String.valueOf(request.getContentLength()));
+                response.setIntHeader("X-" + CONTENT_LENGTH, request.getContentLength());
                 response.setStatus(200);
 
                 int size = 10 * 1024;
-                if (request.getContentLength() > 0) {
-                    size = request.getContentLength();
-                }
                 byte[] bytes = new byte[size];
                 int contentLength = 0;
                 if (bytes.length > 0) {
-                    int read = request.getInputStream().read(bytes);
-                    if (read > 0) {
-                        contentLength = read;
-                        response.getOutputStream().write(bytes, 0, read);
-                    }
+                    int read = 0;
+                    do {
+                        read = request.getInputStream().read(bytes);
+                        if (read > 0) {
+                            contentLength += read;
+                            response.getOutputStream().write(bytes, 0, read);
+                        }
+                    } while (read >= 0);
                 }
                 response.setContentLength(contentLength);
             }
