@@ -29,7 +29,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import java.net.SocketAddress;
-import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -301,16 +300,12 @@ public class NettyWebSocket implements WebSocket {
     }
 
     private void onTextFrame0(WebSocketFrame frame) {
-        try {
-            // faster than frame.text();
-            String text = Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content());
-            frame.isFinalFragment();
-            frame.rsv();
-            for (WebSocketListener listener : listeners) {
-                listener.onTextFrame(text, frame.isFinalFragment(), frame.rsv());
-            }
-        } catch (CharacterCodingException e) {
-            throw new IllegalArgumentException(e);
+        // faster than frame.text();
+        String text = Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content());
+        frame.isFinalFragment();
+        frame.rsv();
+        for (WebSocketListener listener : listeners) {
+            listener.onTextFrame(text, frame.isFinalFragment(), frame.rsv());
         }
     }
 
