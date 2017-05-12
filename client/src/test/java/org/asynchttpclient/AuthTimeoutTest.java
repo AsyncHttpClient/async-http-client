@@ -13,7 +13,6 @@
 package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 
@@ -72,17 +71,15 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             // NOTE: handler sends less bytes than are given in Content-Length, which should lead to timeout
-
+            response.setStatus(200);
             OutputStream out = response.getOutputStream();
-            if (request.getHeader("X-Content") != null) {
-                String content = request.getHeader("X-Content");
-                response.setHeader(CONTENT_LENGTH.toString(), String.valueOf(content.getBytes(UTF_8).length));
-                out.write(content.substring(1).getBytes(UTF_8));
-            } else {
-                response.setStatus(200);
-            }
+            response.setIntHeader(CONTENT_LENGTH.toString(), 1000);
+            out.write(0);
             out.flush();
-            out.close();
+            try {
+                Thread.sleep(LONG_FUTURE_TIMEOUT + 100);
+            } catch (InterruptedException e) {
+            }
         }
     }
 
@@ -172,7 +169,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
             }
         }
 
-        return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).setHeader("X-Content", "Test").execute();
+        return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).execute();
     }
 
     @Override
