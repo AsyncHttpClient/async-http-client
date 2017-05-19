@@ -3,7 +3,7 @@ Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on tw
 
 [Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/)
 
-[Getting](https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/) [started](https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/), and use [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
+[Getting started basic](https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/) [Getting started detailed](https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/), and use [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
 
 The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
 The library also supports the WebSocket Protocol. The Async HTTP Client library is simple to use.
