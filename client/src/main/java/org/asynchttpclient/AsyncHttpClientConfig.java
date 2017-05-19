@@ -213,7 +213,7 @@ public interface AsyncHttpClientConfig {
     /**
      * @return true to disable all HTTPS behaviors AT ONCE, such as hostname verification and SNI
      */
-    boolean isDisableHttpsAlgorithm();
+    boolean isDisableHttpsEndpointIdentificationAlgorithm();
 
     /**
      * @return the array of enabled protocols

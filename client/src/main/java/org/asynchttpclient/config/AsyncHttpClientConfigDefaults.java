@@ -119,8 +119,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "useInsecureTrustManager");
     }
 
-    public static boolean defaultDisableHttpsAlgorithm() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableHttpsAlgorithm");
+    public static boolean defaultDisableHttpsEndpointIdentificationAlgorithm() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + "disableHttpsEndpointIdentificationAlgorithm");
     }
 
     public static int defaultSslSessionCacheSize() {

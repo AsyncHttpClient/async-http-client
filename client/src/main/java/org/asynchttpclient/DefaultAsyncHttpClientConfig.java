@@ -97,7 +97,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // ssl
     private final boolean useOpenSsl;
     private final boolean useInsecureTrustManager;
-    private final boolean disableHttpsAlgorithm;
+    private final boolean disableHttpsEndpointIdentificationAlgorithm;
     private final int handshakeTimeout;
     private final String[] enabledProtocols;
     private final String[] enabledCipherSuites;
@@ -172,7 +172,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             // ssl
             boolean useOpenSsl,//
             boolean useInsecureTrustManager,//
-            boolean disableHttpsAlgorithm,//
+            boolean disableHttpsEndpointIdentificationAlgorithm,//
             int handshakeTimeout,//
             String[] enabledProtocols,//
             String[] enabledCipherSuites,//
@@ -248,7 +248,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // ssl
         this.useOpenSsl = useOpenSsl;
         this.useInsecureTrustManager = useInsecureTrustManager;
-        this.disableHttpsAlgorithm = disableHttpsAlgorithm;
+        this.disableHttpsEndpointIdentificationAlgorithm = disableHttpsEndpointIdentificationAlgorithm;
         this.handshakeTimeout = handshakeTimeout;
         this.enabledProtocols = enabledProtocols;
         this.enabledCipherSuites = enabledCipherSuites;
@@ -441,8 +441,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isDisableHttpsAlgorithm() {
-        return disableHttpsAlgorithm;
+    public boolean isDisableHttpsEndpointIdentificationAlgorithm() {
+        return disableHttpsEndpointIdentificationAlgorithm;
     }
 
     @Override
@@ -655,7 +655,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // ssl
         private boolean useOpenSsl = defaultUseOpenSsl();
         private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
-        private boolean disableHttpsAlgorithm = defaultDisableHttpsAlgorithm();
+        private boolean disableHttpsEndpointIdentificationAlgorithm = defaultDisableHttpsEndpointIdentificationAlgorithm();
         private int handshakeTimeout = defaultHandshakeTimeout();
         private String[] enabledProtocols = defaultEnabledProtocols();
         private String[] enabledCipherSuites = defaultEnabledCipherSuites();
@@ -934,8 +934,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setDisableHttpsAlgorithm(boolean disableHttpsAlgorithm) {
-            this.useInsecureTrustManager = disableHttpsAlgorithm;
+        public Builder setDisableHttpsEndpointIdentificationAlgorithm(boolean disableHttpsEndpointIdentificationAlgorithm) {
+            this.disableHttpsEndpointIdentificationAlgorithm = disableHttpsEndpointIdentificationAlgorithm;
             return this;
         }
 
@@ -1167,7 +1167,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     keepAliveStrategy, //
                     useOpenSsl, //
                     useInsecureTrustManager, //
-                    disableHttpsAlgorithm, //
+                    disableHttpsEndpointIdentificationAlgorithm, //
                     handshakeTimeout, //
                     enabledProtocols, //
                     enabledCipherSuites, //
