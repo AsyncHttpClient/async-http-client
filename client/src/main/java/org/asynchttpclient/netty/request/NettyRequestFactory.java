@@ -57,9 +57,11 @@ public final class NettyRequestFactory {
     public static final String GZIP_DEFLATE = HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE;
 
     private final AsyncHttpClientConfig config;
+    private final ClientCookieEncoder cookieEncoder;
 
     public NettyRequestFactory(AsyncHttpClientConfig config) {
         this.config = config;
+        cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
     }
 
     private NettyBody body(Request request, boolean connect) {
@@ -107,7 +109,7 @@ public final class NettyRequestFactory {
                 nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
 
             } else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator) {
-                ReactiveStreamsBodyGenerator reactiveStreamsBodyGenerator = (ReactiveStreamsBodyGenerator)request.getBodyGenerator();
+                ReactiveStreamsBodyGenerator reactiveStreamsBodyGenerator = (ReactiveStreamsBodyGenerator) request.getBodyGenerator();
                 nettyBody = new NettyReactiveStreamsBody(reactiveStreamsBodyGenerator.getPublisher(), reactiveStreamsBodyGenerator.getContentLength());
 
             } else if (request.getBodyGenerator() != null) {
@@ -167,8 +169,9 @@ public final class NettyRequestFactory {
             // assign headers as configured on request
             headers.set(request.getHeaders());
 
-            if (isNonEmpty(request.getCookies()))
-                headers.set(COOKIE, ClientCookieEncoder.STRICT.encode(request.getCookies()));
+            if (isNonEmpty(request.getCookies())) {
+                headers.set(COOKIE, cookieEncoder.encode(request.getCookies()));
+            }
 
             String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
             if (userDefinedAcceptEncoding != null) {
@@ -176,7 +179,7 @@ public final class NettyRequestFactory {
                 if (userDefinedAcceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
                     headers.set(ACCEPT_ENCODING, userDefinedAcceptEncoding.subSequence(0, userDefinedAcceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length()));
                 }
-                
+
             } else if (config.isCompressionEnforced()) {
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
             }

@@ -71,6 +71,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Realm realm;
     private final int maxRequestRetry;
     private final boolean disableUrlEncodingForBoundRequests;
+    private final boolean useLaxCookieEncoder;
     private final boolean disableZeroCopy;
     private final boolean keepEncodingHeader;
     private final ProxyServerSelector proxyServerSelector;
@@ -146,6 +147,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             Realm realm,//
             int maxRequestRetry,//
             boolean disableUrlEncodingForBoundRequests,//
+            boolean useLaxCookieEncoder,//
             boolean disableZeroCopy,//
             boolean keepEncodingHeader,//
             ProxyServerSelector proxyServerSelector,//
@@ -222,6 +224,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
+        this.useLaxCookieEncoder = useLaxCookieEncoder;
         this.disableZeroCopy = disableZeroCopy;
         this.keepEncodingHeader = keepEncodingHeader;
         this.proxyServerSelector = proxyServerSelector;
@@ -334,6 +337,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isDisableUrlEncodingForBoundRequests() {
         return disableUrlEncodingForBoundRequests;
+    }
+
+    @Override
+    public boolean isUseLaxCookieEncoder() {
+        return useLaxCookieEncoder;
     }
 
     @Override
@@ -627,6 +635,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
+        private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
         private boolean disableZeroCopy = defaultDisableZeroCopy();
         private boolean keepEncodingHeader = defaultKeepEncodingHeader();
         private ProxyServerSelector proxyServerSelector;
@@ -814,6 +823,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
             this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
+            return this;
+        }
+
+        public Builder setUseLaxCookieEncoder(boolean useLaxCookieEncoder) {
+            this.useLaxCookieEncoder = useLaxCookieEncoder;
             return this;
         }
 
@@ -1147,6 +1161,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     realm, //
                     maxRequestRetry, //
                     disableUrlEncodingForBoundRequests, //
+                    useLaxCookieEncoder, //
                     disableZeroCopy, //
                     keepEncodingHeader, //
                     resolveProxyServerSelector(), //

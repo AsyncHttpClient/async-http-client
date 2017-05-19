@@ -194,6 +194,11 @@ public interface AsyncHttpClientConfig {
     boolean isDisableUrlEncodingForBoundRequests();
 
     /**
+     * @return true if AHC is to use a LAX cookie encoder, eg accept illegal chars in cookie value
+     */
+    boolean isUseLaxCookieEncoder();
+
+    /**
      * In the case of a POST/Redirect/Get scenario where the server uses a 302 for the redirect, should AHC respond to the redirect with a GET or whatever the original method was.
      * Unless configured otherwise, for a 302, AHC, will use a GET for this case.
      *
