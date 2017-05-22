@@ -143,6 +143,9 @@ public final class Utf8UrlEncoder {
     }
 
     public static String percentEncodeQueryElement(String input) {
+        if (input == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder(input.length() + 6);
         encodeAndAppendPercentEncoded(sb, input);
         return sb.toString();

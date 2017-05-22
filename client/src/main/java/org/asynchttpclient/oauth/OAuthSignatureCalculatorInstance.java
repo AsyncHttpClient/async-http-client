@@ -123,11 +123,11 @@ class OAuthSignatureCalculatorInstance {
          * List of all query and form parameters added to this request; needed for calculating request signature
          */
         // start with standard OAuth parameters we need
-        parameters.add(KEY_OAUTH_CONSUMER_KEY, Utf8UrlEncoder.percentEncodeQueryElement(consumerAuth.getKey()))
+        parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())
                 .add(KEY_OAUTH_NONCE, Utf8UrlEncoder.percentEncodeQueryElement(nonce)).add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)
                 .add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         if (userAuth.getKey() != null) {
-            parameters.add(KEY_OAUTH_TOKEN, Utf8UrlEncoder.percentEncodeQueryElement(userAuth.getKey()));
+            parameters.add(KEY_OAUTH_TOKEN, userAuth.getPercentEncodedKey());
         }
         parameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
@@ -173,9 +173,9 @@ class OAuthSignatureCalculatorInstance {
     String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, String nonce, long oauthTimestamp) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append("OAuth ");
-        sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
+        sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getPercentEncodedKey()).append("\", ");
         if (userAuth.getKey() != null) {
-            sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getKey()).append("\", ");
+            sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getPercentEncodedKey()).append("\", ");
         }
         sb.append(KEY_OAUTH_SIGNATURE_METHOD).append("=\"").append(OAUTH_SIGNATURE_METHOD).append("\", ");
 

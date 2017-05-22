@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient.oauth;
 
+import org.asynchttpclient.util.Utf8UrlEncoder;
+
 /**
  * Value class used for OAuth tokens (request secret, access secret);
  * simple container with two parts, public id part ("key") and
@@ -24,10 +26,12 @@ package org.asynchttpclient.oauth;
 public class RequestToken {
     private final String key;
     private final String secret;
+    private final String percentEncodedKey;
 
     public RequestToken(String key, String token) {
         this.key = key;
         this.secret = token;
+        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
     }
 
     public String getKey() {
@@ -36,6 +40,10 @@ public class RequestToken {
 
     public String getSecret() {
         return secret;
+    }
+
+    String getPercentEncodedKey() {
+        return percentEncodedKey;
     }
 
     @Override
