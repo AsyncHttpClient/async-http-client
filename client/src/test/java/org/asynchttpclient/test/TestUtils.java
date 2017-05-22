@@ -26,18 +26,16 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -62,6 +60,7 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.netty.ssl.JsseSslEngineFactory;
+import org.asynchttpclient.util.Base64;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -78,10 +77,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.reactivestreams.Publisher;
-
-import rx.Observable;
-import rx.RxReactiveStreams;
 
 public class TestUtils {
 
@@ -94,7 +89,6 @@ public class TestUtils {
     public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
     public static final File LARGE_IMAGE_FILE;
     public static final byte[] LARGE_IMAGE_BYTES;
-    public static final Publisher<ByteBuffer> LARGE_IMAGE_PUBLISHER;
     public static final File SIMPLE_TEXT_FILE;
     public static final String SIMPLE_TEXT_FILE_STRING;
     private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
@@ -105,7 +99,6 @@ public class TestUtils {
             TMP_DIR.deleteOnExit();
             LARGE_IMAGE_FILE = resourceAsFile("300k.png");
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
-            LARGE_IMAGE_PUBLISHER = createPublisher(LARGE_IMAGE_BYTES, 1000);
             SIMPLE_TEXT_FILE = resourceAsFile("SimpleTextFile.txt");
             SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, UTF_8);
         } catch (Exception e) {
@@ -147,46 +140,6 @@ public class TestUtils {
             assertEquals(tmpFile.length(), expectedFileSize, "Invalid file length");
 
             return tmpFile;
-        }
-    }
-
-    public static Publisher<ByteBuffer> createPublisher(final byte[] bytes, final int chunkSize) {
-        Observable<ByteBuffer> observable = Observable.from(new ByteBufferIterable(bytes, chunkSize));
-        return RxReactiveStreams.toPublisher(observable);
-    }
-
-    public static class ByteBufferIterable implements Iterable<ByteBuffer> {
-        private final byte[] payload;
-        private final int chunkSize;
-
-        public ByteBufferIterable(byte[] payload, int chunkSize) {
-            this.payload = payload;
-            this.chunkSize = chunkSize;
-        }
-
-        @Override
-        public Iterator<ByteBuffer> iterator() {
-            return new Iterator<ByteBuffer>() {
-                private int currentIndex = 0;
-
-                @Override
-                public boolean hasNext() {
-                    return currentIndex != payload.length;
-                }
-
-                @Override
-                public ByteBuffer next() {
-                    int newIndex = Math.min(currentIndex + chunkSize, payload.length);
-                    byte[] bytesInElement = Arrays.copyOfRange(payload, currentIndex, newIndex);
-                    currentIndex = newIndex;
-                    return ByteBuffer.wrap(bytesInElement);
-                }
-
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException("ByteBufferIterable's iterator does not support remove.");
-                }
-            };
         }
     }
 
@@ -410,6 +363,20 @@ public class TestUtils {
         try {
             response.getOutputStream().print(body);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String md5(byte[] bytes) {
+        return md5(bytes, 0, bytes.length);
+    }
+
+    public static String md5(byte[] bytes, int offset, int len) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(bytes, offset, len);
+            return Base64.encode(md.digest());
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

@@ -254,9 +254,9 @@ public class HttpServer implements Closeable {
                 size = request.getContentLength();
             }
             if (size > 0) {
-                byte[] bytes = new byte[size];
                 int read = 0;
                 while (read > -1) {
+                    byte[] bytes = new byte[size];
                     read = request.getInputStream().read(bytes);
                     if (read > 0) {
                         response.getOutputStream().write(bytes, 0, read);

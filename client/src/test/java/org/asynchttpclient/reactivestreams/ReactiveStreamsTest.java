@@ -14,13 +14,16 @@ package org.asynchttpclient.reactivestreams;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +36,7 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
+import org.asynchttpclient.test.TestUtils;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -43,10 +47,15 @@ import rx.RxReactiveStreams;
 
 public class ReactiveStreamsTest extends AbstractBasicTest {
 
+    public static Publisher<ByteBuffer> createPublisher(final byte[] bytes, final int chunkSize) {
+        Observable<ByteBuffer> observable = Observable.from(new ByteBufferIterable(bytes, chunkSize));
+        return RxReactiveStreams.toPublisher(observable);
+    }
+
     @Test(groups = "standalone")
     public void testStreamingPutImage() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Response response = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER).execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342)).execute().get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
         }
@@ -56,16 +65,49 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
     public void testConnectionDoesNotGetClosed() throws Exception {
         // test that we can stream the same request multiple times
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl()).setBody(LARGE_IMAGE_PUBLISHER);
+            String expectedMd5 = TestUtils.md5(LARGE_IMAGE_BYTES);
+            BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl())//
+                    .setBody(createPublisher(LARGE_IMAGE_BYTES, 1000))//
+                    .setHeader("X-" + CONTENT_LENGTH, LARGE_IMAGE_BYTES.length)//
+                    .setHeader("X-" + CONTENT_MD5, expectedMd5);
+
             Response response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBodyAsBytes().length, LARGE_IMAGE_BYTES.length);
-            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+            byte[] responseBody = response.getResponseBodyAsBytes();
+            responseBody = response.getResponseBodyAsBytes();
+            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server received payload length invalid");
+            assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client back payload length invalid");
+            assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server received payload MD5 invalid");
+            assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client back payload MD5 invalid");
+            assertEquals(responseBody, LARGE_IMAGE_BYTES);
 
             response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBodyAsBytes().length, LARGE_IMAGE_BYTES.length);
-            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+            responseBody = response.getResponseBodyAsBytes();
+            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server received payload length invalid");
+            assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client back payload length invalid");
+            try {
+                assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server received payload MD5 invalid");
+                assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client back payload MD5 invalid");
+                assertEquals(responseBody, LARGE_IMAGE_BYTES);
+            } catch (AssertionError e) {
+                for (int i = 0; i < LARGE_IMAGE_BYTES.length; i++) {
+                    assertEquals(responseBody[i], LARGE_IMAGE_BYTES[i], "Invalid response byte at position " + i);
+                }
+                throw e;
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        ReactiveStreamsTest test = new ReactiveStreamsTest();
+        test.setUpGlobal();
+        try {
+            for (int i = 0; i < 1000; i++) {
+                test.testConnectionDoesNotGetClosed();
+            }
+        } finally {
+            test.tearDownGlobal();
         }
     }
 
@@ -292,6 +334,41 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
         @Override
         public void onComplete() {
+        }
+    }
+
+    static class ByteBufferIterable implements Iterable<ByteBuffer> {
+        private final byte[] payload;
+        private final int chunkSize;
+
+        public ByteBufferIterable(byte[] payload, int chunkSize) {
+            this.payload = payload;
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public Iterator<ByteBuffer> iterator() {
+            return new Iterator<ByteBuffer>() {
+                private volatile int currentIndex = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return currentIndex != payload.length;
+                }
+
+                @Override
+                public ByteBuffer next() {
+                    int newIndex = Math.min(currentIndex + chunkSize, payload.length);
+                    byte[] bytesInElement = Arrays.copyOfRange(payload, currentIndex, newIndex);
+                    currentIndex = newIndex;
+                    return ByteBuffer.wrap(bytesInElement);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException("ByteBufferIterable's iterator does not support remove.");
+                }
+            };
         }
     }
 }
