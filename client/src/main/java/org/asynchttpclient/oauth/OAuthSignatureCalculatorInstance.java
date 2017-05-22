@@ -66,24 +66,25 @@ class OAuthSignatureCalculatorInstance {
     }
 
     public void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder) throws InvalidKeyException {
-        String percentEncodedNonce = generatePercentEncodedNonce();
+        String nonce = generateNonce();
         long timestamp = generateTimestamp();
-        sign(consumerAuth, userAuth, request, requestBuilder, percentEncodedNonce, timestamp);
+        sign(consumerAuth, userAuth, request, requestBuilder, timestamp, nonce);
     }
 
-    private String generatePercentEncodedNonce() {
+    private String generateNonce() {
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
-        return Utf8UrlEncoder.percentEncodeQueryElement(Base64.encode(nonceBuffer));
+        return Base64.encode(nonceBuffer);
     }
 
     private static long generateTimestamp() {
         return System.currentTimeMillis() / 1000L;
     }
 
-    void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, String percentEncodedNonce, long timestamp) throws InvalidKeyException {
+    void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, long timestamp, String nonce) throws InvalidKeyException {
+        String percentEncodedNonce = Utf8UrlEncoder.percentEncodeQueryElement(nonce);
         String signature = calculateSignature(consumerAuth, userAuth, request, timestamp, percentEncodedNonce);
-        String headerValue = constructAuthHeader(consumerAuth, userAuth, signature, percentEncodedNonce, timestamp);
+        String headerValue = constructAuthHeader(consumerAuth, userAuth, signature, timestamp, percentEncodedNonce);
         requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, headerValue);
     }
 
@@ -170,7 +171,7 @@ class OAuthSignatureCalculatorInstance {
         return mac.doFinal();
     }
 
-    String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, String percentEncodedNonce, long oauthTimestamp) {
+    String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, long oauthTimestamp, String percentEncodedNonce) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getPercentEncodedKey()).append("\", ");

@@ -37,7 +37,7 @@ class StaticOAuthSignatureCalculator implements SignatureCalculator {
     @Override
     public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         try {
-            new OAuthSignatureCalculatorInstance().sign(consumerKey, requestToken, request, requestBuilder, nonce, timestamp);
+            new OAuthSignatureCalculatorInstance().sign(consumerKey, requestToken, request, requestBuilder, timestamp, nonce);
         } catch (InvalidKeyException | NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }

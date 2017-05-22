@@ -311,7 +311,7 @@ public class OAuthSignatureCalculatorTest {
         String actualSignature = new OAuthSignatureCalculatorInstance().calculateSignature(consumerKey, requestToken, request, timestamp, nonce);
         assertEquals(actualSignature, expectedSignature);
 
-        String generatedAuthHeader = new OAuthSignatureCalculatorInstance().constructAuthHeader(consumerKey, requestToken, actualSignature, nonce, timestamp);
+        String generatedAuthHeader = new OAuthSignatureCalculatorInstance().constructAuthHeader(consumerKey, requestToken, actualSignature, timestamp, nonce);
         assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));
     }
 
