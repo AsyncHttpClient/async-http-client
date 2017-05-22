@@ -66,31 +66,30 @@ class OAuthSignatureCalculatorInstance {
     }
 
     public void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder) throws InvalidKeyException {
-        String nonce = generateNonce();
+        String percentEncodedNonce = generatePercentEncodedNonce();
         long timestamp = generateTimestamp();
-        sign(consumerAuth, userAuth, request, requestBuilder, nonce, timestamp);
+        sign(consumerAuth, userAuth, request, requestBuilder, percentEncodedNonce, timestamp);
     }
 
-    private String generateNonce() {
+    private String generatePercentEncodedNonce() {
         ThreadLocalRandom.current().nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
-        return Base64.encode(nonceBuffer);
+        return Utf8UrlEncoder.percentEncodeQueryElement(Base64.encode(nonceBuffer));
     }
 
     private static long generateTimestamp() {
         return System.currentTimeMillis() / 1000L;
     }
 
-    void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, String nonce, long timestamp)
-            throws InvalidKeyException {
-        String signature = calculateSignature(consumerAuth, userAuth, request, timestamp, nonce);
-        String headerValue = constructAuthHeader(consumerAuth, userAuth, signature, nonce, timestamp);
+    void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, String percentEncodedNonce, long timestamp) throws InvalidKeyException {
+        String signature = calculateSignature(consumerAuth, userAuth, request, timestamp, percentEncodedNonce);
+        String headerValue = constructAuthHeader(consumerAuth, userAuth, signature, percentEncodedNonce, timestamp);
         requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, headerValue);
     }
 
-    String calculateSignature(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String nonce) throws InvalidKeyException {
+    String calculateSignature(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String percentEncodedNonce) throws InvalidKeyException {
 
-        StringBuilder sb = signatureBaseString(consumerAuth, userAuth, request, oauthTimestamp, nonce);
+        StringBuilder sb = signatureBaseString(consumerAuth, userAuth, request, oauthTimestamp, percentEncodedNonce);
 
         ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
         byte[] rawSignature = digest(consumerAuth, userAuth, rawBase);
@@ -98,11 +97,11 @@ class OAuthSignatureCalculatorInstance {
         return Base64.encode(rawSignature);
     }
 
-    StringBuilder signatureBaseString(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String nonce) {
+    StringBuilder signatureBaseString(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String percentEncodedNonce) {
 
         // beware: must generate first as we're using pooled StringBuilder
         String baseUrl = request.getUri().toBaseUrl();
-        String encodedParams = encodedParams(consumerAuth, userAuth, oauthTimestamp, nonce, request.getFormParams(), request.getQueryParams());
+        String encodedParams = encodedParams(consumerAuth, userAuth, oauthTimestamp, percentEncodedNonce, request.getFormParams(), request.getQueryParams());
 
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append(request.getMethod()); // POST / GET etc (nothing to URL encode)
@@ -115,7 +114,7 @@ class OAuthSignatureCalculatorInstance {
         return sb;
     }
 
-    private String encodedParams(ConsumerKey consumerAuth, RequestToken userAuth, long oauthTimestamp, String nonce, List<Param> formParams, List<Param> queryParams) {
+    private String encodedParams(ConsumerKey consumerAuth, RequestToken userAuth, long oauthTimestamp, String percentEncodedNonce, List<Param> formParams, List<Param> queryParams) {
 
         parameters.reset();
 
@@ -123,8 +122,9 @@ class OAuthSignatureCalculatorInstance {
          * List of all query and form parameters added to this request; needed for calculating request signature
          */
         // start with standard OAuth parameters we need
-        parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())
-                .add(KEY_OAUTH_NONCE, Utf8UrlEncoder.percentEncodeQueryElement(nonce)).add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)
+        parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())//
+                .add(KEY_OAUTH_NONCE, percentEncodedNonce)
+                .add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)//
                 .add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         if (userAuth.getKey() != null) {
             parameters.add(KEY_OAUTH_TOKEN, userAuth.getPercentEncodedKey());
@@ -170,7 +170,7 @@ class OAuthSignatureCalculatorInstance {
         return mac.doFinal();
     }
 
-    String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, String nonce, long oauthTimestamp) {
+    String constructAuthHeader(ConsumerKey consumerAuth, RequestToken userAuth, String signature, String percentEncodedNonce, long oauthTimestamp) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getPercentEncodedKey()).append("\", ");
@@ -184,10 +184,7 @@ class OAuthSignatureCalculatorInstance {
         Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, signature).append("\", ");
         sb.append(KEY_OAUTH_TIMESTAMP).append("=\"").append(oauthTimestamp).append("\", ");
 
-        // also: nonce may contain things that need URL encoding (esp. when using base64):
-        sb.append(KEY_OAUTH_NONCE).append("=\"");
-        Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, nonce);
-        sb.append("\", ");
+        sb.append(KEY_OAUTH_NONCE).append("=\"").append(percentEncodedNonce).append("\", ");
 
         sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");
         return sb.toString();

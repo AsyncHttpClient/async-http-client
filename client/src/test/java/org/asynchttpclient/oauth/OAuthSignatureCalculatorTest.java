@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.util.Utf8UrlEncoder;
 import org.testng.annotations.Test;
 
 /**
@@ -82,7 +83,7 @@ public class OAuthSignatureCalculatorTest {
                         new RequestToken("kkk9d7dh3k39sjv7", TOKEN_SECRET),//
                         request,//
                         137131201,//
-                        "ZLc92RAkooZcIO/0cctl0Q==").toString();
+                        Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
         assertEquals(signatureBaseString, "POST&" //
                 + "http%3A%2F%2Fexample.com%2Frequest" //
@@ -264,7 +265,7 @@ public class OAuthSignatureCalculatorTest {
                         new RequestToken(null, null),//
                         request,//
                         137131201,//
-                        "ZLc92RAkooZcIO/0cctl0Q==").toString();
+                        Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
         assertEquals(signatureBaseString, "GET&" + //
                 "http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26" + //
