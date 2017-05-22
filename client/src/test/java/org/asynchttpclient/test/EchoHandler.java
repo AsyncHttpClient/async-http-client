@@ -124,15 +124,15 @@ public class EchoHandler extends AbstractHandler {
             String md5 = TestUtils.md5(bytes, 0, total);
             httpResponse.addHeader(CONTENT_MD5.toString(), md5);
 
-            if (!md5.equals(clientMd5)) {
-                int length = total;
-                int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
-                StringBuilder buf = new StringBuilder("JETTY".length() + 1 + "JETTY".length() + 2 + 10 + 1 + 2 + rows * 80);
-
-                buf.append("JETTY").append(' ').append("JETTY").append(": ").append(length).append('B').append(StringUtil.NEWLINE);
-                ByteBufUtil.appendPrettyHexDump(buf, Unpooled.wrappedBuffer(bytes));
-                LOGGER.error(buf.toString());
-            }
+            // if (!md5.equals(clientMd5)) {
+            // int length = total;
+            // int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
+            // StringBuilder buf = new StringBuilder("JETTY".length() + 1 + "JETTY".length() + 2 + 10 + 1 + 2 + rows * 80);
+            //
+            // buf.append("JETTY").append(' ').append("JETTY").append(": ").append(length).append('B').append(StringUtil.NEWLINE);
+            // ByteBufUtil.appendPrettyHexDump(buf, Unpooled.wrappedBuffer(bytes));
+            // LOGGER.error(buf.toString());
+            // }
 
             httpResponse.getOutputStream().write(bytes, 0, total);
         } else {
