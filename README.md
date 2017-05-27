@@ -119,7 +119,7 @@ import static org.asynchttpclient.Dsl.*;
 import org.asynchttpclient.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient c = asyncHttpClient();
+AsyncHttpClient c = new DefaultAsyncHttpClient();
 Future<String> f = c.prepareGet("http://www.example.com/").execute(new AsyncHandler<String>() {
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
