@@ -20,7 +20,7 @@ First, in order to add it to your Maven project, simply download from Maven cent
 <dependency>
 	<groupId>org.asynchttpclient</groupId>
 	<artifactId>async-http-client</artifactId>
-	<version>LATEST_VERSION</version>
+	<version>LATEST</version>
 </dependency>
 ```
 
