@@ -83,7 +83,7 @@ public class TextMessageTest extends AbstractBasicTest {
     @Test(groups = "standalone", timeOut = 60000, expectedExceptions = UnknownHostException.class)
     public void onFailureTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
+            c.prepareGet("ws://abcdefg.i").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
             throw e.getCause();
         }
