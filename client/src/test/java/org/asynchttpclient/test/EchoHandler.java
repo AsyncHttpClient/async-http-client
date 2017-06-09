@@ -14,9 +14,6 @@
 package org.asynchttpclient.test;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
-import io.netty.util.internal.StringUtil;
 
 import java.io.IOException;
 import java.util.Enumeration;
@@ -26,6 +23,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
@@ -106,35 +104,17 @@ public class EchoHandler extends AbstractHandler {
             }
         }
 
-        String clientContentLength = httpRequest.getHeader("X-" + CONTENT_LENGTH);
-        String clientMd5 = httpRequest.getHeader("X-" + CONTENT_MD5);
+        String requestBodyLength = httpRequest.getHeader("X-" + CONTENT_LENGTH);
 
-        if (clientContentLength != null) {
-            byte[] bytes = new byte[Integer.valueOf(clientContentLength)];
-            int read = 0;
-            int total = 0;
-            while (read > -1) {
-                read = httpRequest.getInputStream().read(bytes, total, 5000);
-                if (read > 0) {
-                    total += read;
-                }
-            }
+        if (requestBodyLength != null) {
+            byte[] requestBodyBytes = IOUtils.toByteArray(httpRequest.getInputStream());
+            int total = requestBodyBytes.length;
 
             httpResponse.addIntHeader("X-" + CONTENT_LENGTH, total);
-            String md5 = TestUtils.md5(bytes, 0, total);
+            String md5 = TestUtils.md5(requestBodyBytes, 0, total);
             httpResponse.addHeader(CONTENT_MD5.toString(), md5);
 
-            // if (!md5.equals(clientMd5)) {
-            // int length = total;
-            // int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
-            // StringBuilder buf = new StringBuilder("JETTY".length() + 1 + "JETTY".length() + 2 + 10 + 1 + 2 + rows * 80);
-            //
-            // buf.append("JETTY").append(' ').append("JETTY").append(": ").append(length).append('B').append(StringUtil.NEWLINE);
-            // ByteBufUtil.appendPrettyHexDump(buf, Unpooled.wrappedBuffer(bytes));
-            // LOGGER.error(buf.toString());
-            // }
-
-            httpResponse.getOutputStream().write(bytes, 0, total);
+            httpResponse.getOutputStream().write(requestBodyBytes, 0, total);
         } else {
             int size = 16384;
             if (httpRequest.getContentLength() > 0) {
