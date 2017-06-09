@@ -162,7 +162,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    static protected class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
+    static class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
         private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
 
         public SimpleStreamedAsyncHandler() {
@@ -217,7 +217,7 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
     /**
      * Simple subscriber that requests and buffers one element at a time.
      */
-    static protected class SimpleSubscriber<T> implements Subscriber<T> {
+    static class SimpleSubscriber<T> implements Subscriber<T> {
         private volatile Subscription subscription;
         private volatile Throwable error;
         private final List<T> elements = Collections.synchronizedList(new ArrayList<>());

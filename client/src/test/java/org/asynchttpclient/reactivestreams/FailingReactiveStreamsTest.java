@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.reactivestreams;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
@@ -25,18 +25,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.request.NettyRequest;
-import org.asynchttpclient.reactivestreams.ReactiveStreamsTest;
+import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleStreamedAsyncHandler;
+import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleSubscriber;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
-public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
+public class FailingReactiveStreamsTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testRetryingOnFailingStream() throws Exception {
@@ -45,20 +47,17 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
             final CountDownLatch streamOnHold = new CountDownLatch(1); // allows us to hold the subscriber from processing further body chunks
             final CountDownLatch replayingRequest = new CountDownLatch(1); // allows us to block until the request is being replayed ( this is what we want to test here!)
 
-            // a ref to the publisher is needed to get a hold on the channel (if there is a better way, this should be changed) 
+            // a ref to the publisher is needed to get a hold on the channel (if there is a better way, this should be changed)
             final AtomicReference<StreamedResponsePublisher> publisherRef = new AtomicReference<>(null);
 
             // executing the request
-            client.preparePost(getTargetUrl())
-                    .setBody(LARGE_IMAGE_BYTES)
-                    .execute(new ReplayedSimpleAsyncHandler(replayingRequest,
-                            new BlockedStreamSubscriber(streamStarted, streamOnHold)) {
+            client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES)
+                    .execute(new ReplayedSimpleAsyncHandler(replayingRequest, new BlockedStreamSubscriber(streamStarted, streamOnHold)) {
                         @Override
                         public State onStream(Publisher<HttpResponseBodyPart> publisher) {
-                            if(!(publisher instanceof StreamedResponsePublisher)) {
+                            if (!(publisher instanceof StreamedResponsePublisher)) {
                                 throw new IllegalStateException(String.format("publisher %s is expected to be an instance of %s", publisher, StreamedResponsePublisher.class));
-                            }
-                            else if(!publisherRef.compareAndSet(null, (StreamedResponsePublisher) publisher)) {
+                            } else if (!publisherRef.compareAndSet(null, (StreamedResponsePublisher) publisher)) {
                                 // abort on retry
                                 return State.ABORT;
                             }
@@ -87,7 +86,7 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
             // now we expect a new connection to be created and AHC retry logic to kick-in automatically
             replayingRequest.await(); // wait until we are notified the request is being replayed
 
-            // Change this if there is a better way of stating the test succeeded 
+            // Change this if there is a better way of stating the test succeeded
             assertTrue(true);
         }
     }
@@ -119,40 +118,70 @@ public class NettyReactiveStreamsTest extends ReactiveStreamsTest {
             super.onNext(t);
         }
     }
-    
+
     private static class ReplayedSimpleAsyncHandler extends SimpleStreamedAsyncHandler implements AsyncHandlerExtensions {
         private final CountDownLatch replaying;
+
         public ReplayedSimpleAsyncHandler(CountDownLatch replaying, SimpleSubscriber<HttpResponseBodyPart> subscriber) {
             super(subscriber);
             this.replaying = replaying;
         }
+
         @Override
-        public void onHostnameResolutionAttempt(String name) {}
+        public void onHostnameResolutionAttempt(String name) {
+        }
+
         @Override
-        public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {}
+        public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+        }
+
         @Override
-        public void onHostnameResolutionFailure(String name, Throwable cause) {}
+        public void onHostnameResolutionFailure(String name, Throwable cause) {
+        }
+
         @Override
-        public void onTcpConnectAttempt(InetSocketAddress address) {}
+        public void onTcpConnectAttempt(InetSocketAddress address) {
+        }
+
         @Override
-        public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {}
+        public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {
+        }
+
         @Override
-        public void onTcpConnectFailure(InetSocketAddress address, Throwable cause) {}
+        public void onTcpConnectFailure(InetSocketAddress address, Throwable cause) {
+        }
+
         @Override
-        public void onTlsHandshakeAttempt() {}
+        public void onTlsHandshakeAttempt() {
+        }
+
         @Override
-        public void onTlsHandshakeSuccess() {}
+        public void onTlsHandshakeSuccess() {
+        }
+
         @Override
-        public void onTlsHandshakeFailure(Throwable cause) {}
+        public void onTlsHandshakeFailure(Throwable cause) {
+        }
+
         @Override
-        public void onConnectionPoolAttempt() {}
+        public void onConnectionPoolAttempt() {
+        }
+
         @Override
-        public void onConnectionPooled(Channel connection) {}
+        public void onConnectionPooled(Channel connection) {
+        }
+
         @Override
-        public void onConnectionOffer(Channel connection) {}
+        public void onConnectionOffer(Channel connection) {
+        }
+
         @Override
-        public void onRequestSend(NettyRequest request) {}
+        public void onRequestSend(NettyRequest request) {
+        }
+
         @Override
-        public void onRetry() { replaying.countDown(); }
+        public void onRetry() {
+            replaying.countDown();
+        }
     }
 }
