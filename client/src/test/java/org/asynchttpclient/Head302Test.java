@@ -17,6 +17,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
@@ -46,13 +47,11 @@ public class Head302Test extends AbstractBasicTest {
     private static class Head302handler extends AbstractHandler {
         public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("HEAD".equalsIgnoreCase(request.getMethod())) {
-                if (request.getPathInfo().endsWith("_moved")) {
-                    response.setStatus(HttpServletResponse.SC_OK);
-                } else {
-                    response.setStatus(HttpServletResponse.SC_FOUND); // 302
-                    response.setHeader("Location", request.getPathInfo() + "_moved");
-                }
-            } else { // this handler is to handle HEAD request
+                response.setStatus(HttpServletResponse.SC_FOUND); // 302
+                response.setHeader("Location", request.getPathInfo() + "_moved");
+            } else if ("GET".equalsIgnoreCase(request.getMethod())) {
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
 
@@ -80,11 +79,12 @@ public class Head302Test extends AbstractBasicTest {
                 }
             }).get(3, TimeUnit.SECONDS);
 
-            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+            if (l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+                assertTrue(response.getUri().getPath().endsWith("_moved"));
+            } else {
                 fail("Timeout out");
             }
-
-            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
         }
     }
 }
