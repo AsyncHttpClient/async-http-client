@@ -281,4 +281,10 @@ public interface AsyncHttpClient extends Closeable {
      * @param predicate the predicate
      */
     void flushChannelPoolPartitions(Predicate<Object> predicate);
+    
+    /**
+     * Return the config associated to this client.
+     * @return the config associated to this client.
+     */
+    AsyncHttpClientConfig getConfig();
 }
