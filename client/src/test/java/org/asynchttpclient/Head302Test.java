@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
@@ -54,6 +55,8 @@ public class Head302Test extends AbstractBasicTest {
             } else { // this handler is to handle HEAD request
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
+
+            r.setHandled(true);
         }
     }
 
@@ -64,11 +67,12 @@ public class Head302Test extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
-        try (AsyncHttpClient client = asyncHttpClient()) {
+        AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = head("http://localhost:" + port1 + "/Test").build();
 
-            client.executeRequest(request, new AsyncCompletionHandlerBase() {
+            Response response = client.executeRequest(request, new AsyncCompletionHandlerBase() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
                     l.countDown();
@@ -79,6 +83,8 @@ public class Head302Test extends AbstractBasicTest {
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 fail("Timeout out");
             }
+
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
         }
     }
 }
