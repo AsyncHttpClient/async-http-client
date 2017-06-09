@@ -16,6 +16,8 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.Dsl.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
@@ -45,15 +47,15 @@ public class Head302Test extends AbstractBasicTest {
     private static class Head302handler extends AbstractHandler {
         public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("HEAD".equalsIgnoreCase(request.getMethod())) {
-                if (request.getPathInfo().endsWith("_moved")) {
-                    response.setStatus(HttpServletResponse.SC_OK);
-                } else {
-                    response.setStatus(HttpServletResponse.SC_FOUND); // 302
-                    response.setHeader("Location", request.getPathInfo() + "_moved");
-                }
-            } else { // this handler is to handle HEAD request
+                response.setStatus(HttpServletResponse.SC_FOUND); // 302
+                response.setHeader("Location", request.getPathInfo() + "_moved");
+            } else if ("GET".equalsIgnoreCase(request.getMethod())) {
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
+
+            r.setHandled(true);
         }
     }
 
@@ -64,11 +66,12 @@ public class Head302Test extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
-        try (AsyncHttpClient client = asyncHttpClient()) {
+        AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+        try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
             final CountDownLatch l = new CountDownLatch(1);
             Request request = head("http://localhost:" + port1 + "/Test").build();
 
-            client.executeRequest(request, new AsyncCompletionHandlerBase() {
+            Response response = client.executeRequest(request, new AsyncCompletionHandlerBase() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
                     l.countDown();
@@ -76,7 +79,10 @@ public class Head302Test extends AbstractBasicTest {
                 }
             }).get(3, TimeUnit.SECONDS);
 
-            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+            if (l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+                assertTrue(response.getUri().getPath().endsWith("_moved"));
+            } else {
                 fail("Timeout out");
             }
         }
