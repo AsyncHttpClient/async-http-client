@@ -69,5 +69,4 @@ public class AsyncHttpClientCallFactoryTest {
         return e -> {
         };
     }
-
 }
