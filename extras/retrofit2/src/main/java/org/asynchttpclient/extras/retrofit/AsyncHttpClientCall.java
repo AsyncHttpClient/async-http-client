@@ -33,6 +33,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -289,7 +290,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @param argument consumer argument
      * @param <T>      consumer type.
      */
-    protected <T> void runConsumer(Consumer<T> consumer, T argument) {
+    protected static <T> void runConsumer(Consumer<T> consumer, T argument) {
         try {
             if (consumer != null) {
                 consumer.accept(argument);
@@ -297,6 +298,20 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         } catch (Exception e) {
             log.error("Exception while running consumer {}: {}", consumer, e.getMessage(), e);
         }
+    }
+
+    /**
+     * Safely runs multiple consumers.
+     *
+     * @param consumers collection of consumers (may be null)
+     * @param argument  consumer argument
+     * @param <T>       consumer type.
+     */
+    protected static <T> void runConsumers(Collection<Consumer<T>> consumers, T argument) {
+        if (consumers == null || consumers.isEmpty()) {
+            return;
+        }
+        consumers.forEach(consumer -> runConsumer(consumer, argument));
     }
 
     private void throwAlreadyExecuted() {

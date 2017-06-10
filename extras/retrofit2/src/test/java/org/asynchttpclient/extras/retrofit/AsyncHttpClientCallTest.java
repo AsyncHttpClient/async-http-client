@@ -25,14 +25,19 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumer;
+import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumers;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertTrue;
 
 @Slf4j
 public class AsyncHttpClientCallTest {
@@ -102,12 +107,12 @@ public class AsyncHttpClientCallTest {
         }
 
         // then
-        Assert.assertTrue(call.isExecuted());
+        assertTrue(call.isExecuted());
         Assert.assertFalse(call.isCanceled());
-        Assert.assertTrue(numRequestCustomizer.get() == 1); // request customizer must be always invoked.
-        Assert.assertTrue(numStarted.get() == expectedStarted);
-        Assert.assertTrue(numOk.get() == expectedOk);
-        Assert.assertTrue(numFailed.get() == expectedFailed);
+        assertTrue(numRequestCustomizer.get() == 1); // request customizer must be always invoked.
+        assertTrue(numStarted.get() == expectedStarted);
+        assertTrue(numOk.get() == expectedOk);
+        assertTrue(numFailed.get() == expectedFailed);
 
         // try with non-blocking call
         numStarted.set(0);
@@ -119,12 +124,12 @@ public class AsyncHttpClientCallTest {
         clonedCall.enqueue(null);
 
         // then
-        Assert.assertTrue(clonedCall.isExecuted());
+        assertTrue(clonedCall.isExecuted());
         Assert.assertFalse(clonedCall.isCanceled());
-        Assert.assertTrue(numRequestCustomizer.get() == 2); // request customizer must be always invoked.
-        Assert.assertTrue(numStarted.get() == expectedStarted);
-        Assert.assertTrue(numOk.get() == expectedOk);
-        Assert.assertTrue(numFailed.get() == expectedFailed);
+        assertTrue(numRequestCustomizer.get() == 2); // request customizer must be always invoked.
+        assertTrue(numStarted.get() == expectedStarted);
+        assertTrue(numOk.get() == expectedOk);
+        assertTrue(numFailed.get() == expectedFailed);
     }
 
     @DataProvider(name = "second")
@@ -164,12 +169,12 @@ public class AsyncHttpClientCallTest {
 
         // then
         Assert.assertNotNull(result);
-        Assert.assertTrue(result instanceof IOException);
+        assertTrue(result instanceof IOException);
 
         if (exception.getMessage() == null) {
-            Assert.assertTrue(result.getMessage() == exception.toString());
+            assertTrue(result.getMessage() == exception.toString());
         } else {
-            Assert.assertTrue(result.getMessage() == exception.getMessage());
+            assertTrue(result.getMessage() == exception.getMessage());
         }
     }
 
@@ -185,19 +190,12 @@ public class AsyncHttpClientCallTest {
 
     @Test(dataProvider = "4th")
     <T> void runConsumerShouldTolerateBadConsumers(Consumer<T> consumer, T argument) {
-        // given
-        val call = AsyncHttpClientCall.builder()
-                .httpClient(mock(AsyncHttpClient.class))
-                .request(REQUEST)
-                .build();
-
         // when
-        call.runConsumer(consumer, argument);
+        runConsumer(consumer, argument);
 
         // then
-        Assert.assertTrue(true);
+        assertTrue(true);
     }
-
 
     @DataProvider(name = "4th")
     Object[][] dataProvider4th() {
@@ -210,7 +208,39 @@ public class AsyncHttpClientCallTest {
         };
     }
 
+    @Test(dataProvider = "5th")
+    <T> void runConsumersShouldTolerateBadConsumers(Collection<Consumer<T>> consumers, T argument) {
+        // when
+        runConsumers(consumers, argument);
+
+        // then
+        assertTrue(true);
+    }
+
+    @DataProvider(name = "5th")
+    Object[][] dataProvider5th() {
+        return new Object[][]{
+                {null, null},
+                {Arrays.asList((Consumer<String>) s -> s.trim()), null},
+                {Arrays.asList(s -> s.trim(), null, (Consumer<String>) s -> s.isEmpty()), null},
+                {null, "foobar"},
+                {Arrays.asList((Consumer<String>) s -> doThrow("trololo")), null},
+                {Arrays.asList((Consumer<String>) s -> doThrow("trololo")), "foo"},
+        };
+    }
+
     private void doThrow(String message) {
         throw new RuntimeException(message);
+    }
+
+    /**
+     * Creates consumer that increments counter when it's called.
+     *
+     * @param counter counter that is going to be called
+     * @param <T>     consumer type
+     * @return consumer.
+     */
+    protected static <T> Consumer<T> createConsumer(AtomicInteger counter) {
+        return e -> counter.incrementAndGet();
     }
 }
