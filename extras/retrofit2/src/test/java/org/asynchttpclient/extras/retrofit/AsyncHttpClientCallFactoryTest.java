@@ -20,9 +20,12 @@ import org.asynchttpclient.RequestBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.createConsumer;
 import static org.mockito.Mockito.mock;
+import static org.testng.Assert.assertTrue;
 
 public class AsyncHttpClientCallFactoryTest {
     @Test
@@ -31,42 +34,53 @@ public class AsyncHttpClientCallFactoryTest {
         val request = new Request.Builder().url("http://www.google.com/").build();
         val httpClient = mock(AsyncHttpClient.class);
 
-        Consumer<Request> onRequestStart = createConsumer();
-        Consumer<Throwable> onRequestFailure = createConsumer();
-        Consumer<Response> onRequestSuccess = createConsumer();
-        Consumer<RequestBuilder> requestCustomizer = createConsumer();
+        Consumer<Request> onRequestStart = createConsumer(new AtomicInteger());
+        Consumer<Throwable> onRequestFailure = createConsumer(new AtomicInteger());
+        Consumer<Response> onRequestSuccess = createConsumer(new AtomicInteger());
+        Consumer<RequestBuilder> requestCustomizer = createConsumer(new AtomicInteger());
 
-        // when
+        // first call customizer
+        val customizer1Called = new AtomicInteger();
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer1 = builder -> {
+            builder.onRequestStart(onRequestStart)
+                    .onRequestFailure(onRequestFailure)
+                    .onRequestSuccess(onRequestSuccess);
+            customizer1Called.incrementAndGet();
+        };
+
+        // first call customizer
+        val customizer2Called = new AtomicInteger();
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer2 = builder -> {
+            builder.requestCustomizer(requestCustomizer);
+            customizer2Called.incrementAndGet();
+        };
+
+        // when: create call factory
         val factory = AsyncHttpClientCallFactory.builder()
                 .httpClient(httpClient)
-                .onRequestStart(onRequestStart)
-                .onRequestFailure(onRequestFailure)
-                .onRequestSuccess(onRequestSuccess)
-                .requestCustomizer(requestCustomizer)
+                .callCustomizer(callBuilderConsumer1)
+                .callCustomizer(callBuilderConsumer2)
                 .build();
 
         // then
-        Assert.assertTrue(factory.getHttpClient() == httpClient);
-        Assert.assertTrue(factory.getOnRequestStart() == onRequestStart);
-        Assert.assertTrue(factory.getOnRequestFailure() == onRequestFailure);
-        Assert.assertTrue(factory.getOnRequestSuccess() == onRequestSuccess);
-        Assert.assertTrue(factory.getRequestCustomizer() == requestCustomizer);
+        assertTrue(factory.getHttpClient() == httpClient);
+        assertTrue(factory.getCallCustomizers().size() == 2);
+        assertTrue(customizer1Called.get() == 0);
+        assertTrue(customizer2Called.get() == 0);
 
         // when
         val call = (AsyncHttpClientCall) factory.newCall(request);
 
         // then
         Assert.assertNotNull(call);
-        Assert.assertTrue(call.request() == request);
-        Assert.assertTrue(call.getHttpClient() == httpClient);
-        Assert.assertTrue(call.getOnRequestStart() == onRequestStart);
-        Assert.assertTrue(call.getOnRequestFailure() == onRequestFailure);
-        Assert.assertTrue(call.getOnRequestSuccess() == onRequestSuccess);
-        Assert.assertTrue(call.getRequestCustomizer() == requestCustomizer);
-    }
+        assertTrue(customizer1Called.get() == 1);
+        assertTrue(customizer2Called.get() == 1);
 
-    private <T> Consumer<T> createConsumer() {
-        return e -> {
-        };
+        assertTrue(call.request() == request);
+        assertTrue(call.getHttpClient() == httpClient);
+        assertTrue(call.getOnRequestStart() == onRequestStart);
+        assertTrue(call.getOnRequestFailure() == onRequestFailure);
+        assertTrue(call.getOnRequestSuccess() == onRequestSuccess);
+        assertTrue(call.getRequestCustomizer() == requestCustomizer);
     }
 }

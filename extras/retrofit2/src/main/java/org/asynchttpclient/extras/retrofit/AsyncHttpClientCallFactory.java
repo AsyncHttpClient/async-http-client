@@ -14,14 +14,17 @@ package org.asynchttpclient.extras.retrofit;
 
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
+import lombok.val;
 import okhttp3.Call;
 import okhttp3.Request;
-import okhttp3.Response;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.RequestBuilder;
 
+import java.util.List;
 import java.util.function.Consumer;
+
+import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumers;
 
 /**
  * {@link AsyncHttpClient} implementation of Retrofit2 {@link Call.Factory}
@@ -36,35 +39,21 @@ public class AsyncHttpClientCallFactory implements Call.Factory {
     AsyncHttpClient httpClient;
 
     /**
-     * Consumer that gets called just before actual HTTP request is being fired.
+     * List of {@link Call} builder customizers that are invoked just before creating it.
      */
-    Consumer<Request> onRequestStart;
-
-    /**
-     * Consumer that gets called when HTTP request finishes with an exception.
-     */
-    Consumer<Throwable> onRequestFailure;
-
-    /**
-     * Consumer that gets called when HTTP request finishes successfully.
-     */
-    Consumer<Response> onRequestSuccess;
-
-    /**
-     * <p>Request customizer that is being invoked just before async-http-client request is being built.</p>
-     * <p><b>NOTE:</b> You should NOT keep reference to request builder or related collections.</p>
-     */
-    Consumer<RequestBuilder> requestCustomizer;
+    @Singular("callCustomizer")
+    List<Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder>> callCustomizers;
 
     @Override
     public Call newCall(Request request) {
-        return AsyncHttpClientCall.builder()
+        val callBuilder = AsyncHttpClientCall.builder()
                 .httpClient(httpClient)
-                .onRequestStart(getOnRequestStart())
-                .onRequestSuccess(getOnRequestSuccess())
-                .onRequestFailure(getOnRequestFailure())
-                .requestCustomizer(getRequestCustomizer())
-                .request(request)
-                .build();
+                .request(request);
+
+        // customize builder before creating a call
+        runConsumers(this.callCustomizers, callBuilder);
+
+        // create a call
+        return callBuilder.build();
     }
 }
