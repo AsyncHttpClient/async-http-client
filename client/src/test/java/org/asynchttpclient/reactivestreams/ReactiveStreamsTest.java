@@ -12,16 +12,15 @@
  */
 package org.asynchttpclient.reactivestreams;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertEquals;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -359,10 +358,10 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
 
                 @Override
                 public ByteBuffer next() {
-                    int newIndex = Math.min(currentIndex + chunkSize, payload.length);
-                    byte[] bytesInElement = Arrays.copyOfRange(payload, currentIndex, newIndex);
-                    currentIndex = newIndex;
-                    return ByteBuffer.wrap(bytesInElement);
+                    int thisCurrentIndex = currentIndex;
+                    int length = Math.min(chunkSize, payload.length - thisCurrentIndex);
+                    currentIndex += length;
+                    return ByteBuffer.wrap(payload, thisCurrentIndex, length);
                 }
 
                 @Override

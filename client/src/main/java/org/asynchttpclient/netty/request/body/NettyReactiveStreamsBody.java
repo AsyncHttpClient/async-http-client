@@ -81,7 +81,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
         }
         @Override
         public void onNext(ByteBuffer t) {
-            ByteBuf buffer = Unpooled.wrappedBuffer(t.array());
+            ByteBuf buffer = Unpooled.wrappedBuffer(t);
             HttpContent content = new DefaultHttpContent(buffer);
             subscriber.onNext(content);
         }
