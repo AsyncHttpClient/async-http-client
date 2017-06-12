@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.request.body.generators;
+package org.asynchttpclient.request.body.generator;
 
 import static org.testng.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
@@ -38,18 +38,21 @@ public class ByteArrayBodyGeneratorTest {
         final byte[] srcArray = new byte[srcArraySize];
         random.nextBytes(srcArray);
 
-        final ByteArrayBodyGenerator babGen =
-            new ByteArrayBodyGenerator(srcArray);
+        final ByteArrayBodyGenerator babGen = new ByteArrayBodyGenerator(srcArray);
         final Body body = babGen.createBody();
 
         final ByteBuf chunkBuffer = Unpooled.buffer(chunkSize);
 
-        // should take 1 read to get through the srcArray
-        body.transferTo(chunkBuffer);
-        assertEquals(chunkBuffer.readableBytes(), srcArraySize, "bytes read");
-        chunkBuffer.clear();
+        try {
+            // should take 1 read to get through the srcArray
+            body.transferTo(chunkBuffer);
+            assertEquals(chunkBuffer.readableBytes(), srcArraySize, "bytes read");
+            chunkBuffer.clear();
 
-        assertEquals(body.transferTo(chunkBuffer), BodyState.STOP, "body at EOF");
+            assertEquals(body.transferTo(chunkBuffer), BodyState.STOP, "body at EOF");
+        } finally {
+            chunkBuffer.release();
+        }
     }
 
     @Test(groups = "standalone")
@@ -58,20 +61,23 @@ public class ByteArrayBodyGeneratorTest {
         final byte[] srcArray = new byte[srcArraySize];
         random.nextBytes(srcArray);
 
-        final ByteArrayBodyGenerator babGen =
-            new ByteArrayBodyGenerator(srcArray);
+        final ByteArrayBodyGenerator babGen = new ByteArrayBodyGenerator(srcArray);
         final Body body = babGen.createBody();
 
         final ByteBuf chunkBuffer = Unpooled.buffer(chunkSize);
 
-        int reads = 0;
-        int bytesRead = 0;
-        while (body.transferTo(chunkBuffer) != BodyState.STOP) {
-          reads += 1;
-          bytesRead += chunkBuffer.readableBytes();
-          chunkBuffer.clear();
+        try {
+            int reads = 0;
+            int bytesRead = 0;
+            while (body.transferTo(chunkBuffer) != BodyState.STOP) {
+                reads += 1;
+                bytesRead += chunkBuffer.readableBytes();
+                chunkBuffer.clear();
+            }
+            assertEquals(reads, 4, "reads to drain generator");
+            assertEquals(bytesRead, srcArraySize, "bytes read");
+        } finally {
+            chunkBuffer.release();
         }
-        assertEquals(reads, 4, "reads to drain generator");
-        assertEquals(bytesRead, srcArraySize, "bytes read");
     }
 }

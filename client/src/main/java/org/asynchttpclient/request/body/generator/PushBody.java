@@ -16,7 +16,6 @@ package org.asynchttpclient.request.body.generator;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Queue;
 
 import org.asynchttpclient.request.body.Body;
@@ -54,7 +53,7 @@ public final class PushBody implements Body {
             if (nextChunk == null) {
                 // Nothing in the queue. suspend stream if nothing was read. (reads == 0)
                 return res;
-            } else if (!nextChunk.buffer.hasRemaining() && !nextChunk.last) {
+            } else if (!nextChunk.buffer.isReadable() && !nextChunk.last) {
                 // skip empty buffers
                 queue.remove();
             } else {
@@ -66,23 +65,12 @@ public final class PushBody implements Body {
     }
 
     private void readChunk(ByteBuf target, BodyChunk part) {
-        move(target, part.buffer);
-
-        if (!part.buffer.hasRemaining()) {
+        target.writeBytes(part.buffer);
+        if (!part.buffer.isReadable()) {
             if (part.last) {
                 state = BodyState.STOP;
             }
             queue.remove();
-        }
-    }
-
-    private void move(ByteBuf target, ByteBuffer source) {
-        int size = Math.min(target.writableBytes(), source.remaining());
-        if (size > 0) {
-            ByteBuffer slice = source.slice();
-            slice.limit(size);
-            target.writeBytes(slice);
-            source.position(source.position() + size);
         }
     }
 

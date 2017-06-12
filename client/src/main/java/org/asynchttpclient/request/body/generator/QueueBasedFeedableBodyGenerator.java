@@ -13,7 +13,8 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
+
 import java.util.Queue;
 
 import org.asynchttpclient.request.body.Body;
@@ -35,7 +36,7 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
     protected abstract boolean offer(BodyChunk chunk) throws Exception;
 
     @Override
-    public boolean feed(final ByteBuffer buffer, final boolean isLast) throws Exception {
+    public boolean feed(final ByteBuf buffer, final boolean isLast) throws Exception {
         boolean offered = offer(new BodyChunk(buffer, isLast));
         if (offered && listener != null) {
             listener.onContentAdded();

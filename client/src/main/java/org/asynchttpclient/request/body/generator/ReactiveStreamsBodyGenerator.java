@@ -13,9 +13,9 @@
 package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.request.body.Body;
@@ -26,9 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
-    private static final ByteBuffer EMPTY = ByteBuffer.wrap("".getBytes());
 
-    private final Publisher<ByteBuffer> publisher;
+    private final Publisher<ByteBuf> publisher;
     private final FeedableBodyGenerator feedableBodyGenerator;
     private volatile FeedListener feedListener;
     private final long contentLength;
@@ -41,18 +40,18 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
      * @param publisher Body as a Publisher
      * @param contentLength Content-Length of the Body
      */
-    public ReactiveStreamsBodyGenerator(Publisher<ByteBuffer> publisher, long contentLength) {
+    public ReactiveStreamsBodyGenerator(Publisher<ByteBuf> publisher, long contentLength) {
         this.publisher = publisher;
         this.feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
         this.contentLength = contentLength;
     }
 
-    public Publisher<ByteBuffer> getPublisher() {
+    public Publisher<ByteBuf> getPublisher() {
         return this.publisher;
     }
 
     @Override
-    public boolean feed(ByteBuffer buffer, boolean isLast) throws Exception {
+    public boolean feed(ByteBuf buffer, boolean isLast) throws Exception {
         return feedableBodyGenerator.feed(buffer, isLast);
     }
 
@@ -79,7 +78,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         private final long contentLength;
 
-        public StreamedBody(Publisher<ByteBuffer> publisher, FeedableBodyGenerator bodyGenerator, long contentLength) {
+        public StreamedBody(Publisher<ByteBuf> publisher, FeedableBodyGenerator bodyGenerator, long contentLength) {
             this.body = bodyGenerator.createBody();
             this.subscriber = new SimpleSubscriber(bodyGenerator);
             this.contentLength = contentLength;
@@ -97,14 +96,15 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         @Override
         public BodyState transferTo(ByteBuf target) throws IOException {
-            if (initialized.compareAndSet(false, true))
+            if (initialized.compareAndSet(false, true)) {
                 publisher.subscribe(subscriber);
+            }
 
             return body.transferTo(target);
         }
     }
 
-    private class SimpleSubscriber implements Subscriber<ByteBuffer> {
+    private class SimpleSubscriber implements Subscriber<ByteBuf> {
 
         private final Logger LOGGER = LoggerFactory.getLogger(SimpleSubscriber.class);
 
@@ -130,7 +130,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         }
 
         @Override
-        public void onNext(ByteBuffer t) {
+        public void onNext(ByteBuf t) {
             if (t == null)
                 throw null;
             try {
@@ -147,14 +147,15 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
                 throw null;
             LOGGER.debug("Error occurred while consuming body stream.", t);
             FeedListener listener = feedListener;
-            if (listener != null)
+            if (listener != null) {
                 listener.onError(t);
+            }
         }
 
         @Override
         public void onComplete() {
             try {
-                feeder.feed(EMPTY, true);
+                feeder.feed(Unpooled.EMPTY_BUFFER, true);
             } catch (Exception e) {
                 LOGGER.info("Ignoring exception occurred while completing stream processing.", e);
                 this.subscription.cancel();

@@ -12,8 +12,13 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.LastHttpContent;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -25,24 +30,16 @@ import org.slf4j.LoggerFactory;
 
 import com.typesafe.netty.HandlerSubscriber;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.EventExecutor;
-
 public class NettyReactiveStreamsBody implements NettyBody {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyReactiveStreamsBody.class);
     private static final String NAME_IN_CHANNEL_PIPELINE = "request-body-streamer";
 
-    private final Publisher<ByteBuffer> publisher;
+    private final Publisher<ByteBuf> publisher;
 
     private final long contentLength;
 
-    public NettyReactiveStreamsBody(Publisher<ByteBuffer> publisher, long contentLength) {
+    public NettyReactiveStreamsBody(Publisher<ByteBuf> publisher, long contentLength) {
         this.publisher = publisher;
         this.contentLength = contentLength;
     }
@@ -69,32 +66,35 @@ public class NettyReactiveStreamsBody implements NettyBody {
         }
     }
 
-    private static class SubscriberAdapter implements Subscriber<ByteBuffer> {
+    private static class SubscriberAdapter implements Subscriber<ByteBuf> {
         private volatile Subscriber<HttpContent> subscriber;
-        
+
         public SubscriberAdapter(Subscriber<HttpContent> subscriber) {
             this.subscriber = subscriber;
         }
+
         @Override
         public void onSubscribe(Subscription s) {
-           subscriber.onSubscribe(s);
+            subscriber.onSubscribe(s);
         }
+
         @Override
-        public void onNext(ByteBuffer t) {
-            ByteBuf buffer = Unpooled.wrappedBuffer(t);
+        public void onNext(ByteBuf buffer) {
             HttpContent content = new DefaultHttpContent(buffer);
             subscriber.onNext(content);
         }
+
         @Override
         public void onError(Throwable t) {
             subscriber.onError(t);
         }
+
         @Override
         public void onComplete() {
             subscriber.onComplete();
-        }        
+        }
     }
-    
+
     private static class NettySubscriber extends HandlerSubscriber<HttpContent> {
         private static final Logger LOGGER = LoggerFactory.getLogger(NettySubscriber.class);
 
@@ -109,8 +109,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
         @Override
         protected void complete() {
-            EventExecutor executor = channel.eventLoop();
-            executor.execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(future -> removeFromPipeline()));
+            channel.eventLoop().execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(future -> removeFromPipeline()));
         }
 
         @Override

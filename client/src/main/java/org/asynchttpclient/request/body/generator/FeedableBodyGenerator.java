@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
  */
 public interface FeedableBodyGenerator extends BodyGenerator {
 
-    boolean feed(ByteBuffer buffer, boolean isLast) throws Exception;
+    boolean feed(ByteBuf buffer, boolean isLast) throws Exception;
 
     void setListener(FeedListener listener);
 }

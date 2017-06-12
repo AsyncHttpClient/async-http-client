@@ -13,13 +13,13 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
 
 public final class BodyChunk {
     public final boolean last;
-    public final ByteBuffer buffer;
+    public final ByteBuf buffer;
 
-    public BodyChunk(final ByteBuffer buffer, final boolean last) {
+    public BodyChunk(ByteBuf buffer, boolean last) {
         this.buffer = buffer;
         this.last = last;
     }

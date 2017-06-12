@@ -16,11 +16,11 @@ import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
+import io.netty.buffer.Unpooled;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
 import org.asynchttpclient.AbstractBasicTest;
@@ -89,10 +89,10 @@ public class ChunkingTest extends AbstractBasicTest {
             for (int i = 0; (i = inputStream.read(buffer)) > -1;) {
                 byte[] chunk = new byte[i];
                 System.arraycopy(buffer, 0, chunk, 0, i);
-                feedableBodyGenerator.feed(ByteBuffer.wrap(chunk), false);
+                feedableBodyGenerator.feed(Unpooled.wrappedBuffer(chunk), false);
             }
         }
-        feedableBodyGenerator.feed(ByteBuffer.allocate(0), true);
+        feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
 
     }
 

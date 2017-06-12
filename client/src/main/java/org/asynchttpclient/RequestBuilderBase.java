@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -398,11 +399,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setBody(Publisher<ByteBuffer> publisher) {
+    public T setBody(Publisher<ByteBuf> publisher) {
         return setBody(publisher, -1L);
     }
 
-    public T setBody(Publisher<ByteBuffer> publisher, long contentLength) {
+    public T setBody(Publisher<ByteBuf> publisher, long contentLength) {
         return setBody(new ReactiveStreamsBodyGenerator(publisher, contentLength));
     }
 
