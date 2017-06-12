@@ -16,18 +16,30 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertEquals;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
-import org.asynchttpclient.AbstractBasicTest;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -39,16 +51,156 @@ import org.asynchttpclient.test.TestUtils;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import rx.Observable;
 import rx.RxReactiveStreams;
 
-public class ReactiveStreamsTest extends AbstractBasicTest {
+public class ReactiveStreamsTest {
 
-    public static Publisher<ByteBuffer> createPublisher(final byte[] bytes, final int chunkSize) {
-        Observable<ByteBuffer> observable = Observable.from(new ByteBufferIterable(bytes, chunkSize));
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsTest.class);
+
+    public static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
+        Observable<ByteBuf> observable = Observable.from(new ByteBufIterable(bytes, chunkSize));
         return RxReactiveStreams.toPublisher(observable);
+    }
+
+    private Tomcat tomcat;
+    private int port1;
+
+    @SuppressWarnings("serial")
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
+
+        String path = new File(".").getAbsolutePath() + "/target";
+
+        tomcat = new Tomcat();
+        tomcat.setHostname("localhost");
+        tomcat.setPort(0);
+        tomcat.setBaseDir(path);
+        Context ctx = tomcat.addContext("", path);
+
+        Tomcat.addServlet(ctx, "webdav", new HttpServlet() {
+
+            @Override
+            public void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
+                LOGGER.debug("Echo received request {} on path {}", httpRequest, httpRequest.getServletContext().getContextPath());
+
+                if (httpRequest.getHeader("X-HEAD") != null) {
+                    httpResponse.setContentLength(1);
+                }
+
+                if (httpRequest.getHeader("X-ISO") != null) {
+                    httpResponse.setContentType(TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_ISO_8859_1_CHARSET);
+                } else {
+                    httpResponse.setContentType(TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                }
+
+                if (httpRequest.getMethod().equalsIgnoreCase("OPTIONS")) {
+                    httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
+                }
+
+                Enumeration<String> e = httpRequest.getHeaderNames();
+                String headerName;
+                while (e.hasMoreElements()) {
+                    headerName = e.nextElement();
+                    if (headerName.startsWith("LockThread")) {
+                        final int sleepTime = httpRequest.getIntHeader(headerName);
+                        try {
+                            Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
+                        } catch (InterruptedException ex) {
+                        }
+                    }
+
+                    if (headerName.startsWith("X-redirect")) {
+                        httpResponse.sendRedirect(httpRequest.getHeader("X-redirect"));
+                        return;
+                    }
+                    httpResponse.addHeader("X-" + headerName, httpRequest.getHeader(headerName));
+                }
+
+                String pathInfo = httpRequest.getPathInfo();
+                if (pathInfo != null)
+                    httpResponse.addHeader("X-pathInfo", pathInfo);
+
+                String queryString = httpRequest.getQueryString();
+                if (queryString != null)
+                    httpResponse.addHeader("X-queryString", queryString);
+
+                httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
+
+                Cookie[] cs = httpRequest.getCookies();
+                if (cs != null) {
+                    for (Cookie c : cs) {
+                        httpResponse.addCookie(c);
+                    }
+                }
+
+                Enumeration<String> i = httpRequest.getParameterNames();
+                if (i.hasMoreElements()) {
+                    StringBuilder requestBody = new StringBuilder();
+                    while (i.hasMoreElements()) {
+                        headerName = i.nextElement();
+                        httpResponse.addHeader("X-" + headerName, httpRequest.getParameter(headerName));
+                        requestBody.append(headerName);
+                        requestBody.append("_");
+                    }
+
+                    if (requestBody.length() > 0) {
+                        String body = requestBody.toString();
+                        httpResponse.getOutputStream().write(body.getBytes());
+                    }
+                }
+
+                String requestBodyLength = httpRequest.getHeader("X-" + CONTENT_LENGTH);
+
+                if (requestBodyLength != null) {
+                    byte[] requestBodyBytes = IOUtils.toByteArray(httpRequest.getInputStream());
+                    int total = requestBodyBytes.length;
+
+                    httpResponse.addIntHeader("X-" + CONTENT_LENGTH, total);
+                    String md5 = TestUtils.md5(requestBodyBytes, 0, total);
+                    httpResponse.addHeader(CONTENT_MD5.toString(), md5);
+
+                    httpResponse.getOutputStream().write(requestBodyBytes, 0, total);
+                } else {
+                    int size = 16384;
+                    if (httpRequest.getContentLength() > 0) {
+                        size = httpRequest.getContentLength();
+                    }
+                    if (size > 0) {
+                        int read = 0;
+                        while (read > -1) {
+                            byte[] bytes = new byte[size];
+                            read = httpRequest.getInputStream().read(bytes);
+                            if (read > 0) {
+                                httpResponse.getOutputStream().write(bytes, 0, read);
+                            }
+                        }
+                    }
+                }
+
+                httpResponse.getOutputStream().flush();
+                // FIXME don't always close, depends on the test, cf ReactiveStreamsTest
+//                httpResponse.getOutputStream().close();
+            }
+        });
+        ctx.addServletMappingDecoded("/*", "webdav");
+        tomcat.start();
+        port1 = tomcat.getConnector().getLocalPort();
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws InterruptedException, Exception {
+        tomcat.stop();
+    }
+
+    private String getTargetUrl() {
+        return String.format("http://localhost:%d/foo/test", port1);
     }
 
     @Test(groups = "standalone")
@@ -114,8 +266,8 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
     @Test(groups = "standalone", expectedExceptions = ExecutionException.class)
     public void testFailingStream() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Observable<ByteBuffer> failingObservable = Observable.error(new FailedStream());
-            Publisher<ByteBuffer> failingPublisher = RxReactiveStreams.toPublisher(failingObservable);
+            Observable<ByteBuf> failingObservable = Observable.error(new FailedStream());
+            Publisher<ByteBuf> failingPublisher = RxReactiveStreams.toPublisher(failingObservable);
 
             client.preparePut(getTargetUrl()).setBody(failingPublisher).execute().get();
         }
@@ -337,18 +489,18 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    static class ByteBufferIterable implements Iterable<ByteBuffer> {
+    static class ByteBufIterable implements Iterable<ByteBuf> {
         private final byte[] payload;
         private final int chunkSize;
 
-        public ByteBufferIterable(byte[] payload, int chunkSize) {
+        public ByteBufIterable(byte[] payload, int chunkSize) {
             this.payload = payload;
             this.chunkSize = chunkSize;
         }
 
         @Override
-        public Iterator<ByteBuffer> iterator() {
-            return new Iterator<ByteBuffer>() {
+        public Iterator<ByteBuf> iterator() {
+            return new Iterator<ByteBuf>() {
                 private volatile int currentIndex = 0;
 
                 @Override
@@ -357,11 +509,11 @@ public class ReactiveStreamsTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public ByteBuffer next() {
+                public ByteBuf next() {
                     int thisCurrentIndex = currentIndex;
                     int length = Math.min(chunkSize, payload.length - thisCurrentIndex);
                     currentIndex += length;
-                    return ByteBuffer.wrap(payload, thisCurrentIndex, length);
+                    return Unpooled.wrappedBuffer(payload, thisCurrentIndex, length);
                 }
 
                 @Override
