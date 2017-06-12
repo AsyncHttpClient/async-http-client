@@ -276,4 +276,9 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     protected BoundRequestBuilder requestBuilder(Request prototype) {
         return new BoundRequestBuilder(this, prototype).setSignatureCalculator(signatureCalculator);
     }
+
+    @Override
+    public AsyncHttpClientConfig getConfig() {
+        return this.config;
+    }
 }

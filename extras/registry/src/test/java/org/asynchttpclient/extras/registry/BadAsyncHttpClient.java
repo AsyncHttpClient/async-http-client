@@ -138,4 +138,9 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     public void flushChannelPoolPartitions(Predicate<Object> predicate) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public AsyncHttpClientConfig getConfig() {
+        return null;
+    }
 }
