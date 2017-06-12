@@ -31,15 +31,18 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.ReadListener;
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.Context;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -84,7 +87,7 @@ public class ReactiveStreamsTest {
         tomcat.setBaseDir(path);
         Context ctx = tomcat.addContext("", path);
 
-        Tomcat.addServlet(ctx, "webdav", new HttpServlet() {
+        Wrapper wrapper = Tomcat.addServlet(ctx, "webdav", new HttpServlet() {
 
             @Override
             public void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
@@ -156,39 +159,45 @@ public class ReactiveStreamsTest {
                     }
                 }
 
-                String requestBodyLength = httpRequest.getHeader("X-" + CONTENT_LENGTH);
+                final AsyncContext context = httpRequest.startAsync();
+                final ServletInputStream input = httpRequest.getInputStream();
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-                if (requestBodyLength != null) {
-                    byte[] requestBodyBytes = IOUtils.toByteArray(httpRequest.getInputStream());
-                    int total = requestBodyBytes.length;
+                input.setReadListener(new ReadListener() {
 
-                    httpResponse.addIntHeader("X-" + CONTENT_LENGTH, total);
-                    String md5 = TestUtils.md5(requestBodyBytes, 0, total);
-                    httpResponse.addHeader(CONTENT_MD5.toString(), md5);
+                    byte[] buffer = new byte[5 * 1024];
 
-                    httpResponse.getOutputStream().write(requestBodyBytes, 0, total);
-                } else {
-                    int size = 16384;
-                    if (httpRequest.getContentLength() > 0) {
-                        size = httpRequest.getContentLength();
+                    @Override
+                    public void onError(Throwable t) {
+                        t.printStackTrace();
+                        httpResponse.setStatus(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+                        context.complete();
                     }
-                    if (size > 0) {
-                        int read = 0;
-                        while (read > -1) {
-                            byte[] bytes = new byte[size];
-                            read = httpRequest.getInputStream().read(bytes);
-                            if (read > 0) {
-                                httpResponse.getOutputStream().write(bytes, 0, read);
-                            }
+
+                    @Override
+                    public void onDataAvailable() throws IOException {
+                        int len = -1;
+                        while (input.isReady() && (len = input.read(buffer)) != -1) {
+                            baos.write(buffer, 0, len);
                         }
                     }
-                }
 
-                httpResponse.getOutputStream().flush();
-                // FIXME don't always close, depends on the test, cf ReactiveStreamsTest
-//                httpResponse.getOutputStream().close();
+                    @Override
+                    public void onAllDataRead() throws IOException {
+                        byte[] requestBodyBytes = baos.toByteArray();
+                        int total = requestBodyBytes.length;
+
+                        httpResponse.addIntHeader("X-" + CONTENT_LENGTH, total);
+                        String md5 = TestUtils.md5(requestBodyBytes, 0, total);
+                        httpResponse.addHeader(CONTENT_MD5.toString(), md5);
+
+                        httpResponse.getOutputStream().write(requestBodyBytes, 0, total);
+                        context.complete();
+                    }
+                });
             }
         });
+        wrapper.setAsyncSupported(true);
         ctx.addServletMappingDecoded("/*", "webdav");
         tomcat.start();
         port1 = tomcat.getConnector().getLocalPort();
