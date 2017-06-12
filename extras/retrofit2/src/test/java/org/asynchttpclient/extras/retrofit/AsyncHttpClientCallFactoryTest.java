@@ -17,15 +17,17 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.REQUEST;
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.createConsumer;
 import static org.mockito.Mockito.mock;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class AsyncHttpClientCallFactoryTest {
     @Test
@@ -72,7 +74,7 @@ public class AsyncHttpClientCallFactoryTest {
         val call = (AsyncHttpClientCall) factory.newCall(request);
 
         // then
-        Assert.assertNotNull(call);
+        assertNotNull(call);
         assertTrue(customizer1Called.get() == 1);
         assertTrue(customizer2Called.get() == 1);
 
@@ -82,5 +84,61 @@ public class AsyncHttpClientCallFactoryTest {
         assertTrue(call.getOnRequestFailure() == onRequestFailure);
         assertTrue(call.getOnRequestSuccess() == onRequestSuccess);
         assertTrue(call.getRequestCustomizer() == requestCustomizer);
+    }
+
+    @Test
+    void shouldApplyAllConsumersToCallBeingConstructed() throws IOException {
+        // given
+        val httpClient = mock(AsyncHttpClient.class);
+
+        val rewriteUrl = "http://foo.bar.com/";
+        val headerName = "X-Header";
+        val headerValue = UUID.randomUUID().toString();
+
+        val numCustomized = new AtomicInteger();
+        val numRequestStart = new AtomicInteger();
+        val numRequestSuccess = new AtomicInteger();
+        val numRequestFailure = new AtomicInteger();
+
+        Consumer<RequestBuilder> requestCustomizer = requestBuilder -> {
+            requestBuilder.setUrl(rewriteUrl)
+                    .setHeader(headerName, headerValue);
+            numCustomized.incrementAndGet();
+        };
+
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder -> {
+            callBuilder.requestCustomizer(requestCustomizer)
+                    .onRequestSuccess(createConsumer(numRequestSuccess))
+                    .onRequestFailure(createConsumer(numRequestFailure))
+                    .onRequestStart(createConsumer(numRequestStart));
+        };
+
+        // create factory
+        val factory = AsyncHttpClientCallFactory.builder()
+                .callCustomizer(callCustomizer)
+                .httpClient(httpClient)
+                .build();
+
+        // when
+        val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+        val callRequest = call.createRequest(call.request());
+
+        // then
+        assertTrue(numCustomized.get() == 1);
+        assertTrue(numRequestStart.get() == 0);
+        assertTrue(numRequestSuccess.get() == 0);
+        assertTrue(numRequestFailure.get() == 0);
+
+        // let's see whether request customizers did their job
+        // final async-http-client request should have modified URL and one
+        // additional header value.
+        assertEquals(callRequest.getUrl(), rewriteUrl);
+        assertEquals(callRequest.getHeaders().get(headerName), headerValue);
+
+        // final call should have additional consumers set
+        assertNotNull(call.getOnRequestStart());
+        assertNotNull(call.getOnRequestSuccess());
+        assertNotNull(call.getOnRequestFailure());
+        assertNotNull(call.getRequestCustomizer());
     }
 }

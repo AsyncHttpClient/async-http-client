@@ -39,11 +39,6 @@ public class TestServices {
         int contributions;
     }
 
-    public interface Google {
-        @GET("/")
-        Call<String> getHomePage();
-    }
-
     /**
      * Synchronous interface
      */

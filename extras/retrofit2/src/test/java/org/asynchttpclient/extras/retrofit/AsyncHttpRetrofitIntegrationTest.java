@@ -12,15 +12,20 @@
  */
 package org.asynchttpclient.extras.retrofit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.testng.Assert;
+import org.asynchttpclient.testserver.HttpServer;
+import org.asynchttpclient.testserver.HttpTest;
 import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -29,18 +34,31 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 import rx.schedulers.Schedulers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+
+import static org.asynchttpclient.extras.retrofit.TestServices.Contributor;
+import static org.testng.Assert.*;
+import static org.testng.AssertJUnit.assertEquals;
 
 /**
  * All tests in this test suite are disabled, because they call functionality of github service that is
  * rate-limited.
  */
 @Slf4j
-public class AsyncHttpRetrofitIntegrationTest {
+public class AsyncHttpRetrofitIntegrationTest extends HttpTest {
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String OWNER = "AsyncHttpClient";
     private static final String REPO = "async-http-client";
 
-    protected static AsyncHttpClient httpClient = createHttpClient();
+    private static final AsyncHttpClient httpClient = createHttpClient();
+    private static HttpServer server;
+
+    private List<Contributor> expectedContributors;
 
     private static AsyncHttpClient createHttpClient() {
         val config = new DefaultAsyncHttpClientConfig.Builder()
@@ -55,49 +73,195 @@ public class AsyncHttpRetrofitIntegrationTest {
         return new DefaultAsyncHttpClient(config);
     }
 
+    @BeforeClass
+    public static void start() throws Throwable {
+        server = new HttpServer();
+        server.start();
+    }
+
+    @BeforeTest
+    void before() {
+        this.expectedContributors = generateContributors();
+    }
+
     @AfterSuite
     void cleanup() throws IOException {
         httpClient.close();
     }
 
-    @Test(enabled = false)
-    public void testSynchronousService() throws IOException {
+    // begin: synchronous execution
+    @Test
+    public void testSynchronousService_OK() throws Throwable {
         // given
+        val service = synchronousSetup();
+
+        // when:
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "utf-8");
+
+            val contributors = service.contributors(OWNER, REPO).execute().body();
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then
+        assertContributors(expectedContributors, resultRef.get());
+    }
+
+    @Test
+    public void testSynchronousService_OK_WithBadEncoding() throws Throwable {
+        // given
+        val service = synchronousSetup();
+
+        // when:
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "us-ascii");
+
+            val contributors = service.contributors(OWNER, REPO).execute().body();
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then
+        assertContributorsWithWrongCharset(expectedContributors, resultRef.get());
+    }
+
+    @Test
+    public void testSynchronousService_FAIL() throws Throwable {
+        // given
+        val service = synchronousSetup();
+
+        // when:
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 500, expectedContributors, "utf-8");
+
+            val contributors = service.contributors(OWNER, REPO).execute().body();
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then:
+        assertNull(resultRef.get());
+    }
+
+    @Test
+    public void testSynchronousService_NOT_FOUND() throws Throwable {
+        // given
+        val service = synchronousSetup();
+
+        // when:
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 404, expectedContributors, "utf-8");
+
+            val contributors = service.contributors(OWNER, REPO).execute().body();
+            log.info("contributors: {}", contributors);
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then:
+        assertNull(resultRef.get());
+    }
+
+    private TestServices.GithubSync synchronousSetup() {
         val callFactory = AsyncHttpClientCallFactory.builder().httpClient(httpClient).build();
         val retrofit = createRetrofitBuilder()
                 .callFactory(callFactory)
                 .build();
         val service = retrofit.create(TestServices.GithubSync.class);
+        return service;
+    }
+    // end: synchronous execution
 
-        // when:
-        val contributors = service.contributors(OWNER, REPO).execute().body();
+    // begin: rxjava 1.x
+    @Test(dataProvider = "testRxJava1Service")
+    public void testRxJava1Service_OK(RxJavaCallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
+        // given
+        val service = rxjava1Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).toBlocking().first();
+            resultRef.compareAndSet(null, contributors);
+        });
 
         // then
-        assertContributors(contributors);
+        assertContributors(expectedContributors, resultRef.get());
     }
 
-    @Test(enabled = false, dataProvider = "testRxJava1Service")
-    public void testRxJava1Service(RxJavaCallAdapterFactory rxJavaCallAdapterFactory) {
+    @Test(dataProvider = "testRxJava1Service")
+    public void testRxJava1Service_OK_WithBadEncoding(RxJavaCallAdapterFactory rxJavaCallAdapterFactory)
+            throws Throwable {
         // given
+        val service = rxjava1Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "us-ascii");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).toBlocking().first();
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then
+        assertContributorsWithWrongCharset(expectedContributors, resultRef.get());
+    }
+
+    @Test(dataProvider = "testRxJava1Service", expectedExceptions = HttpException.class,
+            expectedExceptionsMessageRegExp = ".*HTTP 500 Server Error.*")
+    public void testRxJava1Service_HTTP_500(RxJavaCallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
+        // given
+        val service = rxjava1Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 500, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).toBlocking().first();
+            resultRef.compareAndSet(null, contributors);
+        });
+    }
+
+    @Test(dataProvider = "testRxJava1Service",
+            expectedExceptions = HttpException.class, expectedExceptionsMessageRegExp = "HTTP 404 Not Found")
+    public void testRxJava1Service_NOT_FOUND(RxJavaCallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
+        // given
+        val service = rxjava1Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 404, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).toBlocking().first();
+            resultRef.compareAndSet(null, contributors);
+        });
+    }
+
+    private TestServices.GithubRxJava1 rxjava1Setup(RxJavaCallAdapterFactory rxJavaCallAdapterFactory) {
         val callFactory = AsyncHttpClientCallFactory.builder().httpClient(httpClient).build();
         val retrofit = createRetrofitBuilder()
                 .addCallAdapterFactory(rxJavaCallAdapterFactory)
                 .callFactory(callFactory)
                 .build();
-        val service = retrofit.create(TestServices.GithubRxJava1.class);
-
-        // when
-        val contributors = service.contributors(OWNER, REPO)
-                .subscribeOn(Schedulers.io())
-                .toBlocking()
-                .first();
-
-        // then
-        assertContributors(contributors);
+        return retrofit.create(TestServices.GithubRxJava1.class);
     }
 
     @DataProvider(name = "testRxJava1Service")
-    Object[][] testRxJava1ServiceDataProvider() {
+    Object[][] testRxJava1Service_DataProvider() {
         return new Object[][]{
                 {RxJavaCallAdapterFactory.create()},
                 {RxJavaCallAdapterFactory.createAsync()},
@@ -106,28 +270,97 @@ public class AsyncHttpRetrofitIntegrationTest {
                 {RxJavaCallAdapterFactory.createWithScheduler(Schedulers.trampoline())},
         };
     }
+    // end: rxjava 1.x
 
-    @Test(enabled = false, dataProvider = "testRxJava2Service")
-    public void testRxJava2Service(RxJava2CallAdapterFactory rxJava2CallAdapterFactory) {
+    // begin: rxjava 2.x
+    @Test(dataProvider = "testRxJava2Service")
+    public void testRxJava2Service_OK(RxJava2CallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
         // given
-        val callFactory = AsyncHttpClientCallFactory.builder().httpClient(httpClient).build();
-        val retrofit = createRetrofitBuilder()
-                .addCallAdapterFactory(rxJava2CallAdapterFactory)
-                .callFactory(callFactory)
-                .build();
-        val service = retrofit.create(TestServices.GithubRxJava2.class);
+        val service = rxjava2Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
 
         // when
-        val contributors = service.contributors(OWNER, REPO)
-                .subscribeOn(io.reactivex.schedulers.Schedulers.computation())
-                .blockingGet();
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).blockingGet();
+            resultRef.compareAndSet(null, contributors);
+        });
 
         // then
-        assertContributors(contributors);
+        assertContributors(expectedContributors, resultRef.get());
+    }
+
+    @Test(dataProvider = "testRxJava2Service")
+    public void testRxJava2Service_OK_WithBadEncoding(RxJava2CallAdapterFactory rxJavaCallAdapterFactory)
+            throws Throwable {
+        // given
+        val service = rxjava2Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 200, expectedContributors, "us-ascii");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).blockingGet();
+            resultRef.compareAndSet(null, contributors);
+        });
+
+        // then
+        assertContributorsWithWrongCharset(expectedContributors, resultRef.get());
+    }
+
+    @Test(dataProvider = "testRxJava2Service", expectedExceptions = HttpException.class,
+            expectedExceptionsMessageRegExp = ".*HTTP 500 Server Error.*")
+    public void testRxJava2Service_HTTP_500(RxJava2CallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
+        // given
+        val service = rxjava2Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 500, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).blockingGet();
+            resultRef.compareAndSet(null, contributors);
+        });
+    }
+
+    @Test(dataProvider = "testRxJava2Service",
+            expectedExceptions = HttpException.class, expectedExceptionsMessageRegExp = "HTTP 404 Not Found")
+    public void testRxJava2Service_NOT_FOUND(RxJava2CallAdapterFactory rxJavaCallAdapterFactory) throws Throwable {
+        // given
+        val service = rxjava2Setup(rxJavaCallAdapterFactory);
+        val expectedContributors = generateContributors();
+
+        // when
+        val resultRef = new AtomicReference<List<Contributor>>();
+        withServer(server).run(srv -> {
+            configureTestServer(srv, 404, expectedContributors, "utf-8");
+
+            // execute retrofit request
+            val contributors = service.contributors(OWNER, REPO).blockingGet();
+            resultRef.compareAndSet(null, contributors);
+        });
+    }
+
+    private TestServices.GithubRxJava2 rxjava2Setup(RxJava2CallAdapterFactory rxJavaCallAdapterFactory) {
+        val callFactory = AsyncHttpClientCallFactory.builder().httpClient(httpClient).build();
+        val retrofit = createRetrofitBuilder()
+                .addCallAdapterFactory(rxJavaCallAdapterFactory)
+                .callFactory(callFactory)
+                .build();
+        return retrofit.create(TestServices.GithubRxJava2.class);
     }
 
     @DataProvider(name = "testRxJava2Service")
-    Object[][] testRxJava2ServiceDataProvider() {
+    Object[][] testRxJava2Service_DataProvider() {
         return new Object[][]{
                 {RxJava2CallAdapterFactory.create()},
                 {RxJava2CallAdapterFactory.createAsync()},
@@ -136,40 +369,75 @@ public class AsyncHttpRetrofitIntegrationTest {
                 {RxJava2CallAdapterFactory.createWithScheduler(io.reactivex.schedulers.Schedulers.trampoline())},
         };
     }
-
-    @Test(enabled = false)
-    void testGoogle() throws IOException {
-        // given
-        val callFactory = AsyncHttpClientCallFactory.builder().httpClient(httpClient).build();
-        val retrofit = createRetrofitBuilder()
-                .callFactory(callFactory)
-                .baseUrl("http://www.google.com/")
-                .build();
-        val service = retrofit.create(TestServices.Google.class);
-
-        // when
-        val result = service.getHomePage().execute().body();
-        log.debug("Received: {} bytes of output", result.length());
-
-        // then
-        Assert.assertNotNull(result, "Response body should not be null.");
-        Assert.assertTrue(result.length() > 1_000, "Response body is too short.");
-    }
+    // end: rxjava 2.x
 
     private Retrofit.Builder createRetrofitBuilder() {
         return new Retrofit.Builder()
                 .addConverterFactory(ScalarsConverterFactory.create())
-                .addConverterFactory(JacksonConverterFactory.create())
+                .addConverterFactory(JacksonConverterFactory.create(objectMapper))
                 .validateEagerly(true)
-                .baseUrl("https://api.github.com/");
+                .baseUrl(server.getHttpUrl());
     }
 
-    private void assertContributors(Collection<TestServices.Contributor> contributors) {
-        Assert.assertNotNull(contributors, "Contributors should not be null.");
-        log.info("Contributors: {} ->\n  {}", contributors.size(), contributors);
-        Assert.assertTrue(contributors.size() >= 30, "There should be at least 30 contributors.");
-        contributors.forEach(e -> {
-            Assert.assertNotNull(e, "Contributor element should not be null");
+    /**
+     * Asserts contributors.
+     *
+     * @param expected expected list of contributors
+     * @param actual   actual retrieved list of contributors.
+     */
+    private void assertContributors(Collection<Contributor> expected, Collection<Contributor> actual) {
+        assertNotNull(actual, "Retrieved contributors should not be null.");
+        log.debug("Contributors: {} ->\n  {}", actual.size(), actual);
+        assertTrue(expected.size() == actual.size());
+        assertEquals(expected, actual);
+    }
+
+    private void assertContributorsWithWrongCharset(List<Contributor> expected, List<Contributor> actual) {
+        assertNotNull(actual, "Retrieved contributors should not be null.");
+        log.debug("Contributors: {} ->\n  {}", actual.size(), actual);
+        assertTrue(expected.size() == actual.size());
+
+        // first and second element should have different logins due to problems with decoding utf8 to us-ascii
+        assertNotEquals(expected.get(0).getLogin(), actual.get(0).getLogin());
+        assertEquals(expected.get(0).getContributions(), actual.get(0).getContributions());
+
+        assertNotEquals(expected.get(1).getLogin(), actual.get(1).getLogin());
+        assertEquals(expected.get(1).getContributions(), actual.get(1).getContributions());
+
+        // other elements should be equal
+        for (int i = 2; i < expected.size(); i++) {
+            assertEquals(expected.get(i), actual.get(i));
+        }
+    }
+
+    private List<Contributor> generateContributors() {
+        val list = new ArrayList<Contributor>();
+
+        list.add(new Contributor(UUID.randomUUID() + ": čćžšđ", 100));
+        list.add(new Contributor(UUID.randomUUID() + ": ČĆŽŠĐ", 200));
+
+        IntStream.range(0, (int) (Math.random() * 100)).forEach(i -> {
+            list.add(new Contributor(UUID.randomUUID().toString(), (int) (Math.random() * 500)));
         });
+
+        return list;
+    }
+
+    private HttpServer configureTestServer(HttpServer server, int status,
+                                           Collection<Contributor> contributors,
+                                           String charset) {
+        server.enqueueResponse(response -> {
+            response.setStatus(status);
+            if (status == 200) {
+                response.setHeader("Content-Type", "application/json; charset=" + charset);
+                response.getOutputStream().write(objectMapper.writeValueAsBytes(contributors));
+            } else {
+                response.setHeader("Content-Type", "text/plain");
+                val errorMsg = "This is an " + status + " error";
+                response.getOutputStream().write(errorMsg.getBytes());
+            }
+        });
+
+        return server;
     }
 }
