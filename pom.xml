@@ -326,22 +326,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>coyote</artifactId>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-core</artifactId>
 			<version>${tomcat.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>catalina</artifactId>
-			<version>${tomcat.version}</version>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.tomcat</groupId>
-					<artifactId>servlet-api</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -389,8 +377,8 @@
 		<slf4j.version>1.7.25</slf4j.version>
 		<logback.version>1.2.3</logback.version>
 		<testng.version>6.9.10</testng.version>
-		<jetty.version>	9.4.6.v20170531</jetty.version>
-		<tomcat.version>6.0.45</tomcat.version>
+		<jetty.version>9.4.6.v20170531</jetty.version>
+		<tomcat.version>8.5.14</tomcat.version>
 		<commons-io.version>2.4</commons-io.version>
 		<commons-fileupload.version>1.3</commons-fileupload.version>
 		<privilegedaccessor.version>1.2.2</privilegedaccessor.version>

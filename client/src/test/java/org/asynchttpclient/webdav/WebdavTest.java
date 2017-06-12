@@ -17,16 +17,16 @@ import static org.testng.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
 import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Host;
-import org.apache.catalina.Wrapper;
-import org.apache.catalina.connector.Connector;
-import org.apache.catalina.startup.Embedded;
-import org.apache.coyote.http11.Http11NioProtocol;
-import org.asynchttpclient.AbstractBasicTest;
+import org.apache.catalina.servlets.WebdavServlet;
+import org.apache.catalina.startup.Tomcat;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -36,55 +36,75 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public class WebDavBasicTest extends AbstractBasicTest {
+public class WebdavTest {
 
-    protected Embedded embedded;
+    private Tomcat tomcat;
+    private int port1;
 
+    @SuppressWarnings("serial")
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
-        embedded = new Embedded();
-        String path = new File(".").getAbsolutePath();
-        embedded.setCatalinaHome(path);
+        String path = new File(".").getAbsolutePath() + "/target";
 
-        Engine engine = embedded.createEngine();
-        engine.setDefaultHost("localhost");
+        tomcat = new Tomcat();
+        tomcat.setHostname("localhost");
+        tomcat.setPort(0);
+        tomcat.setBaseDir(path);
+        Context ctx = tomcat.addContext("", path);
 
-        Host host = embedded.createHost("localhost", path);
-        engine.addChild(host);
+        Tomcat.addServlet(ctx, "webdav", new WebdavServlet() {
+            @Override
+            public void init(ServletConfig config) throws ServletException {
 
-        Context c = embedded.createContext("/", path);
-        c.setReloadable(false);
-        Wrapper w = c.createWrapper();
-        w.addMapping("/*");
-        w.setServletClass(org.apache.catalina.servlets.WebdavServlet.class.getName());
-        w.addInitParameter("readonly", "false");
-        w.addInitParameter("listings", "true");
+                super.init(new ServletConfig() {
 
-        w.setLoadOnStartup(0);
+                    @Override
+                    public String getServletName() {
+                        return config.getServletName();
+                    }
 
-        c.addChild(w);
-        host.addChild(c);
+                    @Override
+                    public ServletContext getServletContext() {
+                        return config.getServletContext();
+                    }
 
-        Connector connector = embedded.createConnector("localhost", 0, Http11NioProtocol.class.getName());
-        connector.setContainer(host);
-        embedded.addEngine(engine);
-        embedded.addConnector(connector);
-        embedded.start();
-        port1 = connector.getLocalPort();
+                    @Override
+                    public Enumeration<String> getInitParameterNames() {
+                        // FIXME
+                        return config.getInitParameterNames();
+                    }
+
+                    @Override
+                    public String getInitParameter(String name) {
+                        switch (name) {
+                        case "readonly":
+                            return "false";
+                        case "listings":
+                            return "true";
+                        default:
+                            return config.getInitParameter(name);
+                        }
+                    }
+                });
+            }
+
+        });
+        ctx.addServletMappingDecoded("/*", "webdav");
+        tomcat.start();
+        port1 = tomcat.getConnector().getLocalPort();
     }
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws InterruptedException, Exception {
-        embedded.stop();
+        tomcat.stop();
     }
 
-    protected String getTargetUrl() {
+    private String getTargetUrl() {
         return String.format("http://localhost:%s/folder1", port1);
     }
 
     @AfterMethod(alwaysRun = true)
-    // FIXME not sure that's threadsafe
     public void clean() throws InterruptedException, Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.executeRequest(delete(getTargetUrl())).get();
@@ -126,11 +146,11 @@ public class WebDavBasicTest extends AbstractBasicTest {
             Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
-            Request putRequest = put(String.format("http://localhost:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
+            Request putRequest = put(getTargetUrl() + "/Test.txt").setBody("this is a test").build();
             response = c.executeRequest(putRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
-            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://localhost:%s/folder1/Test.txt", port1)).build();
+            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl() + "/Test.txt").build();
             response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 207);
