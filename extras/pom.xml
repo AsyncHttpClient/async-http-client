@@ -19,6 +19,7 @@
         <module>rxjava</module>
         <module>rxjava2</module>
         <module>simple</module>
+        <module>retrofit2</module>
     </modules>
 
     <dependencies>
