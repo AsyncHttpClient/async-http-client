@@ -35,7 +35,6 @@ public class TestServices {
         @NonNull
         String login;
 
-        @NonNull
         int contributions;
     }
 

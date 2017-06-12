@@ -161,7 +161,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
 
     protected <T> T handleException(Throwable throwable, Callback responseCallback) {
         try {
-            if (responseCallback == null) {
+            if (responseCallback != null) {
                 responseCallback.onFailure(this, toIOException(throwable));
             }
         } catch (Exception e) {
