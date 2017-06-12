@@ -333,8 +333,9 @@ public class ChannelManager {
                 config.getHttpClientCodecInitialBufferSize());
     }
 
-    private SslHandler createSslHandler(String peerHost, int peerPort) {
-        SSLEngine sslEngine = sslEngineFactory.newSslEngine(config, peerHost, peerPort);
+    private SslHandler createSslHandler(String peerHost, int peerPort, SslEngineFactory requestSslEngineFactory) {
+        SSLEngine sslEngine = (requestSslEngineFactory == null ? sslEngineFactory : requestSslEngineFactory)
+                .newSslEngine(config, peerHost, peerPort);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0)
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
@@ -345,7 +346,7 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws SSLException {
+    public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri, SslEngineFactory sslEngineFactory) throws SSLException {
         if (pipeline.get(HTTP_CLIENT_CODEC) != null)
             pipeline.remove(HTTP_CLIENT_CODEC);
 
@@ -354,7 +355,7 @@ public class ChannelManager {
                 pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
             } else {
                 pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
-                pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
+                pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(), sslEngineFactory));
             }
 
         else
@@ -366,7 +367,7 @@ public class ChannelManager {
         }
     }
 
-    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) {
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, SslEngineFactory requestSslEngineFactory) {
         String peerHost;
         int peerPort;
 
@@ -385,7 +386,7 @@ public class ChannelManager {
             peerPort = uri.getExplicitPort();
         }
 
-        SslHandler sslHandler = createSslHandler(peerHost, peerPort);
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort, requestSslEngineFactory);
         pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
         return sslHandler;
     }

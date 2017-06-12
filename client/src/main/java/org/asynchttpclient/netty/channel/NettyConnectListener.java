@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
@@ -47,17 +48,20 @@ public final class NettyConnectListener<T> {
     private final ChannelManager channelManager;
     private final ConnectionSemaphore connectionSemaphore;
     private final Object partitionKey;
+    private final SslEngineFactory sslEngineFactory;
 
     public NettyConnectListener(NettyResponseFuture<T> future,//
             NettyRequestSender requestSender,//
             ChannelManager channelManager,//
             ConnectionSemaphore connectionSemaphore,//
-            Object partitionKey) {
+            Object partitionKey,
+            SslEngineFactory sslEngineFactory) {
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
         this.connectionSemaphore = connectionSemaphore;
         this.partitionKey = partitionKey;
+        this.sslEngineFactory = sslEngineFactory;
     }
 
     private boolean futureIsAlreadyCancelled(Channel channel) {
@@ -120,7 +124,7 @@ public final class NettyConnectListener<T> {
         if (future.getProxyServer() == null && uri.isSecured()) {
             SslHandler sslHandler = null;
             try {
-                sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
+                sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost(), sslEngineFactory);
             } catch (Exception sslError) {
                 onFailure(channel, sslError);
                 return;

@@ -61,6 +61,7 @@ public class DefaultRequest implements Request {
     private final Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
     private final NameResolver<InetAddress> nameResolver;
+    private final SslEngineFactory sslEngineFactory;
     // lazily loaded
     private List<Param> queryParams;
 
@@ -88,7 +89,8 @@ public class DefaultRequest implements Request {
             long rangeOffset,//
             Charset charset,//
             ChannelPoolPartitioning channelPoolPartitioning,//
-            NameResolver<InetAddress> nameResolver) {
+            NameResolver<InetAddress> nameResolver,
+            SslEngineFactory sslEngineFactory) {
         this.method = method;
         this.uri = uri;
         this.address = address;
@@ -114,6 +116,7 @@ public class DefaultRequest implements Request {
         this.charset = charset;
         this.channelPoolPartitioning = channelPoolPartitioning;
         this.nameResolver = nameResolver;
+        this.sslEngineFactory = sslEngineFactory;
     }
 
     @Override
@@ -244,6 +247,11 @@ public class DefaultRequest implements Request {
     @Override
     public NameResolver<InetAddress> getNameResolver() {
         return nameResolver;
+    }
+
+    @Override
+    public SslEngineFactory getSslEngineFactory() {
+        return sslEngineFactory;
     }
 
     @Override
