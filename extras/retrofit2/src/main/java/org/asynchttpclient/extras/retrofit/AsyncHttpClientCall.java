@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Singular;
 import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ import org.asynchttpclient.RequestBuilder;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -76,24 +78,28 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
     Request request;
 
     /**
-     * Request customizer that is being invoked just before async-http-client request is being built.
+     * List of consumers that get called just before actual async-http-client request is being built.
      */
-    Consumer<RequestBuilder> requestCustomizer;
+    @Singular("requestCustomizer")
+    List<Consumer<RequestBuilder>> requestCustomizers;
 
     /**
-     * Consumer that gets called just before actual HTTP request is being fired.
+     * List of consumers that get called just before actual HTTP request is being fired.
      */
-    Consumer<Request> onRequestStart;
+    @Singular("onRequestStart")
+    List<Consumer<Request>> onRequestStart;
 
     /**
-     * Consumer that gets called when HTTP request finishes with an exception.
+     * List of consumers that get called when HTTP request finishes with an exception.
      */
-    Consumer<Throwable> onRequestFailure;
+    @Singular("onRequestFailure")
+    List<Consumer<Throwable>> onRequestFailure;
 
     /**
-     * Consumer that gets called when HTTP request finishes successfully.
+     * List of consumers that get called when HTTP request finishes successfully.
      */
-    Consumer<Response> onRequestSuccess;
+    @Singular("onRequestSuccess")
+    List<Consumer<Response>> onRequestSuccess;
 
     /**
      * Tells whether call has been executed.
@@ -191,18 +197,18 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
 
         // execute the request.
         val me = this;
-        runConsumer(this.onRequestStart, this.request);
+        runConsumers(this.onRequestStart, this.request);
         getHttpClient().executeRequest(asyncHttpClientRequest, new AsyncCompletionHandler<Response>() {
             @Override
             public void onThrowable(Throwable t) {
-                runConsumer(me.onRequestFailure, t);
+                runConsumers(me.onRequestFailure, t);
                 future.completeExceptionally(t);
             }
 
             @Override
             public Response onCompleted(org.asynchttpclient.Response response) throws Exception {
                 val okHttpResponse = toOkhttpResponse(response);
-                runConsumer(me.onRequestSuccess, okHttpResponse);
+                runConsumers(me.onRequestSuccess, okHttpResponse);
                 future.complete(okHttpResponse);
                 return okHttpResponse;
             }
@@ -278,7 +284,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         }
 
         // customize the request builder (external customizer can change the request url for example)
-        runConsumer(this.requestCustomizer, requestBuilder);
+        runConsumers(this.requestCustomizers, requestBuilder);
 
         return requestBuilder.build();
     }

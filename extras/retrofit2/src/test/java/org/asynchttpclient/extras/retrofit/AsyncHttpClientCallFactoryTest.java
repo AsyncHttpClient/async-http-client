@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.extras.retrofit;
 
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -29,6 +30,7 @@ import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.create
 import static org.mockito.Mockito.mock;
 import static org.testng.Assert.*;
 
+@Slf4j
 public class AsyncHttpClientCallFactoryTest {
     @Test
     void newCallShouldProduceExpectedResult() {
@@ -80,10 +82,11 @@ public class AsyncHttpClientCallFactoryTest {
 
         assertTrue(call.request() == request);
         assertTrue(call.getHttpClient() == httpClient);
-        assertTrue(call.getOnRequestStart() == onRequestStart);
-        assertTrue(call.getOnRequestFailure() == onRequestFailure);
-        assertTrue(call.getOnRequestSuccess() == onRequestSuccess);
-        assertTrue(call.getRequestCustomizer() == requestCustomizer);
+
+        assertEquals(call.getOnRequestStart().get(0), onRequestStart);
+        assertEquals(call.getOnRequestFailure().get(0), onRequestFailure);
+        assertEquals(call.getOnRequestSuccess().get(0), onRequestSuccess);
+        assertEquals(call.getRequestCustomizers().get(0), requestCustomizer);
     }
 
     @Test
@@ -107,7 +110,9 @@ public class AsyncHttpClientCallFactoryTest {
         };
 
         Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder -> {
-            callBuilder.requestCustomizer(requestCustomizer)
+            callBuilder
+                    .requestCustomizer(requestCustomizer)
+                    .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
                     .onRequestSuccess(createConsumer(numRequestSuccess))
                     .onRequestFailure(createConsumer(numRequestFailure))
                     .onRequestStart(createConsumer(numRequestStart));
@@ -137,8 +142,15 @@ public class AsyncHttpClientCallFactoryTest {
 
         // final call should have additional consumers set
         assertNotNull(call.getOnRequestStart());
+        assertTrue(call.getOnRequestStart().size() == 1);
+
         assertNotNull(call.getOnRequestSuccess());
+        assertTrue(call.getOnRequestSuccess().size() == 1);
+
         assertNotNull(call.getOnRequestFailure());
-        assertNotNull(call.getRequestCustomizer());
+        assertTrue(call.getOnRequestFailure().size() == 1);
+
+        assertNotNull(call.getRequestCustomizers());
+        assertTrue(call.getRequestCustomizers().size() == 2);
     }
 }
