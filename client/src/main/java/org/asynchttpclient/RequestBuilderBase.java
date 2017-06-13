@@ -92,6 +92,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
     protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
+    protected SslEngineFactory sslEngineFactory = null; // Overrides client-level SslEngineFactory if specified.
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
         this(method, disableUrlEncoding, true);
@@ -533,6 +534,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    public T setSslEngineFactory(SslEngineFactory sslEngineFactory) {
+        this.sslEngineFactory = sslEngineFactory;
+        return asDerivedType();
+    }
+
     public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
         this.signatureCalculator = signatureCalculator;
         return asDerivedType();
@@ -579,6 +585,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.charset = this.charset;
         rb.channelPoolPartitioning = this.channelPoolPartitioning;
         rb.nameResolver = this.nameResolver;
+        rb.sslEngineFactory = this.sslEngineFactory;
         Request unsignedRequest = rb.build();
         signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
         return rb;
@@ -652,6 +659,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.rangeOffset,//
                 finalCharset,//
                 rb.channelPoolPartitioning,//
-                rb.nameResolver);
+                rb.nameResolver,
+                rb.sslEngineFactory);
     }
 }

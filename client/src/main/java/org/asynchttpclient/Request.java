@@ -182,4 +182,9 @@ public interface Request {
      * @return the NameResolver to be used to resolve hostnams's IP
      */
     NameResolver<InetAddress> getNameResolver();
+
+    /**
+     * @return the SSLEngineFactory. Non null values means "override config value".
+     */
+    SslEngineFactory getSslEngineFactory();
 }

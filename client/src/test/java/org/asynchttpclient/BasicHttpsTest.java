@@ -36,6 +36,7 @@ import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class BasicHttpsTest extends HttpTest {
@@ -57,14 +58,24 @@ public class BasicHttpsTest extends HttpTest {
         return server.getHttpsUrl() + "/foo/bar";
     }
 
-    @Test
-    public void postFileOverHttps() throws Throwable {
+    @DataProvider(name = "useRequestSpecificSslEngineFactory")
+    public Object[][] useRequestSpecificSslEngineFactory() {
+        return new Object[][] {
+            { true },
+            { false }
+        };
+    }
+
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory")
+    public void postFileOverHttps(boolean useRequestSpecificSslEngineFactory) throws Throwable {
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory();
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory() : null;
         logger.debug(">>> postBodyOverHttps");
-        withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+        withClient(config().setSslEngineFactory(clientSslEngineFactory)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
 
-                Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader(CONTENT_TYPE, "text/html").execute().get();
+                Response resp = client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(SIMPLE_TEXT_FILE).setHeader(CONTENT_TYPE, "text/html").execute().get();
                 assertNotNull(resp);
                 assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
                 assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
@@ -73,14 +84,16 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< postBodyOverHttps");
     }
     
-    @Test
-    public void postLargeFileOverHttps() throws Throwable {
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory")
+    public void postLargeFileOverHttps(boolean useRequestSpecificSslEngineFactory) throws Throwable {
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory();
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory() : null;
         logger.debug(">>> postLargeFileOverHttps");
-        withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+        withClient(config().setSslEngineFactory(clientSslEngineFactory)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
 
-                Response resp = client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_FILE).setHeader(CONTENT_TYPE, "image/png").execute().get();
+                Response resp = client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(LARGE_IMAGE_FILE).setHeader(CONTENT_TYPE, "image/png").execute().get();
                 assertNotNull(resp);
                 assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
                 assertEquals(resp.getResponseBodyAsBytes().length, LARGE_IMAGE_FILE.length());
@@ -89,16 +102,18 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< postLargeFileOverHttps");
     }
 
-    @Test
-    public void multipleSequentialPostRequestsOverHttps() throws Throwable {
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory")
+    public void multipleSequentialPostRequestsOverHttps(boolean useRequestSpecificSslEngineFactory) throws Throwable {
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory();
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory() : null;
         logger.debug(">>> multipleSequentialPostRequestsOverHttps");
-        withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+        withClient(config().setSslEngineFactory(clientSslEngineFactory)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 server.enqueueEcho();
 
                 String body = "hello there";
-                Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
+                Response response = client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
                 assertEquals(response.getResponseBody(), body);
 
                 response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
@@ -108,8 +123,10 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< multipleSequentialPostRequestsOverHttps");
     }
 
-    @Test
-    public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy() throws Throwable {
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory")
+    public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy(boolean useRequestSpecificSslEngineFactory) throws Throwable {
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory();
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory() : null;
         logger.debug(">>> multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
 
         KeepAliveStrategy keepAliveStrategy = new KeepAliveStrategy() {
@@ -119,7 +136,7 @@ public class BasicHttpsTest extends HttpTest {
             }
         };
 
-        withClient(config().setSslEngineFactory(createSslEngineFactory()).setKeepAliveStrategy(keepAliveStrategy)).run(client -> {
+        withClient(config().setSslEngineFactory(clientSslEngineFactory).setKeepAliveStrategy(keepAliveStrategy)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 server.enqueueEcho();
@@ -130,7 +147,7 @@ public class BasicHttpsTest extends HttpTest {
                 client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute();
                 client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute();
 
-                Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get();
+                Response response = client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get();
                 assertEquals(response.getResponseBody(), body);
             });
         });
@@ -138,13 +155,15 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
     }
 
-    @Test
-    public void reconnectAfterFailedCertificationPath() throws Throwable {
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory")
+    public void reconnectAfterFailedCertificationPath(boolean useRequestSpecificSslEngineFactory) throws Throwable {
         logger.debug(">>> reconnectAfterFailedCertificationPath");
 
         AtomicBoolean trust = new AtomicBoolean();
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory(trust);
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory(trust) : null;
 
-        withClient(config().setMaxRequestRetry(0).setSslEngineFactory(createSslEngineFactory(trust))).run(client -> {
+        withClient(config().setMaxRequestRetry(0).setSslEngineFactory(clientSslEngineFactory)).run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 server.enqueueEcho();
@@ -154,7 +173,7 @@ public class BasicHttpsTest extends HttpTest {
                 // first request fails because server certificate is rejected
                     Throwable cause = null;
                     try {
-                        client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
+                        client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
                     } catch (final ExecutionException e) {
                         cause = e.getCause();
                     }
@@ -162,7 +181,7 @@ public class BasicHttpsTest extends HttpTest {
 
                     // second request should succeed
                     trust.set(true);
-                    Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
+                    Response response = client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
 
                     assertEquals(response.getResponseBody(), body);
                 });
@@ -187,16 +206,18 @@ public class BasicHttpsTest extends HttpTest {
 
     }
 
-    @Test(groups = "standalone")
-    public void testNormalEventsFired() throws Throwable {
+    @Test(dataProvider = "useRequestSpecificSslEngineFactory", groups = "standalone")
+    public void testNormalEventsFired(boolean useRequestSpecificSslEngineFactory) throws Throwable {
+        final SslEngineFactory clientSslEngineFactory = useRequestSpecificSslEngineFactory ? null : createSslEngineFactory();
+        final SslEngineFactory requestSslEngineFactory = useRequestSpecificSslEngineFactory ? createSslEngineFactory() : null;
         logger.debug(">>> testNormalEventsFired");
 
-        withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+        withClient(config().setSslEngineFactory(clientSslEngineFactory)).run(client -> {
             withServer(server).run(server -> {
                 EventCollectingHandler handler = new EventCollectingHandler();
 
                 server.enqueueEcho();
-                client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, SECONDS);
+                client.preparePost(getTargetUrl()).setSslEngineFactory(requestSslEngineFactory).setBody("whatever").execute(handler).get(3, SECONDS);
                 handler.waitForCompletion(3, SECONDS);
 
                 Object[] expectedEvents = new Object[] { //
