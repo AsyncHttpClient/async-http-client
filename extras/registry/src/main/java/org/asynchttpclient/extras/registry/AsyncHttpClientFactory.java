@@ -63,7 +63,7 @@ public class AsyncHttpClientFactory {
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         if (attemptInstantiation()) {
             try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(DefaultAsyncHttpClientConfig.class);
+                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpClientConfig.class);
                 return constructor.newInstance(config);
             } catch (Exception e) {
                 throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
