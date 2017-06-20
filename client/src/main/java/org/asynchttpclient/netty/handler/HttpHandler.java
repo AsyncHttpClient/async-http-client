@@ -87,7 +87,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                     abortAfterHandlingReactiveStreams(channel, future, handler);
 
             if (abort) {
-                finishUpdate(future, channel, false, false);
+                finishUpdate(future, channel, false, true);
             }
         }
     }
