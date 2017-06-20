@@ -77,8 +77,9 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                 exitAfterHandlingHeaders(channel, future, response, handler, responseHeaders, httpRequest) || //
                 exitAfterHandlingReactiveStreams(channel, future, response, handler, httpRequest);
 
-        if (exit)
-            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(httpRequest) || HttpHeaders.isTransferEncodingChunked(response));
+        if (exit) {
+            finishUpdate(future, channel, true);
+        }
     }
 
     private boolean exitAfterHandlingStatus(//
