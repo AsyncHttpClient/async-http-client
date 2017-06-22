@@ -40,7 +40,7 @@ public class Channels {
     }
 
     public static void setDiscard(Channel channel) {
-        setAttribute(channel, DiscardEvent.INSTANCE);
+        setAttribute(channel, DiscardEvent.DISCARD);
     }
 
     public static boolean isChannelValid(Channel channel) {

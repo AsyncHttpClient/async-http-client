@@ -102,7 +102,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                     ctx.pipeline().remove(publisher);
                     Channels.setDiscard(channel);
                 }
-            } else if (attribute != DiscardEvent.INSTANCE) {
+            } else if (attribute != DiscardEvent.DISCARD) {
                 // unhandled message
                 logger.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
                 Channels.silentlyCloseChannel(channel);
