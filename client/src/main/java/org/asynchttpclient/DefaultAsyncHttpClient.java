@@ -118,7 +118,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             
             //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
             try {
-                ThreadDeathWatcher.awaitInactivity(5, TimeUnit.SECONDS);
+                ThreadDeathWatcher.awaitInactivity(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
             } catch(InterruptedException t) {
                 // Ignore
             }

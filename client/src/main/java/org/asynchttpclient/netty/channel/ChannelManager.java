@@ -310,12 +310,12 @@ public class ChannelManager {
         
         //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
         try {
-            GlobalEventExecutor.INSTANCE.awaitInactivity(5, TimeUnit.SECONDS);
+            GlobalEventExecutor.INSTANCE.awaitInactivity(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
         } catch(InterruptedException t) {
             // Ignore
+        } finally {
+            closeLatch.countDown();
         }
-        
-        closeLatch.countDown();
     }
 
     public void close() {
@@ -326,7 +326,7 @@ public class ChannelManager {
             doClose();
         
         try {
-            closeLatch.await();
+            closeLatch.await(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e) {
            // Ignore
