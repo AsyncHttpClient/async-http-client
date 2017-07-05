@@ -18,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,46 +31,44 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-/**
- * @author Benjamin Hanzelmann
- */
-public class PutLargeFileTest extends AbstractBasicTest {
+public class PutFileTest extends AbstractBasicTest {
 
-    @Test(groups = "standalone")
-    public void testPutLargeFile() throws Exception {
-
-        File file = createTempFile(1024 * 1024);
-
+    private void put(int fileSize) throws Exception {
+        File file = createTempFile(fileSize);
         int timeout = (int) file.length() / 1000;
-
-        try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(timeout))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(timeout))) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
     }
 
     @Test(groups = "standalone")
+    public void testPutLargeFile() throws Exception {
+        put(1024 * 1024);
+    }
+
+    @Test(groups = "standalone")
     public void testPutSmallFile() throws Exception {
-
-        File file = createTempFile(1024);
-
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
-            assertEquals(response.getStatusCode(), 200);
-        }
+        put(1024);
     }
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
-            public void handle(String arg0, Request arg1, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-                resp.setStatus(200);
-                resp.getOutputStream().flush();
-                resp.getOutputStream().close();
+                InputStream is = baseRequest.getInputStream();
+                int read = 0;
+                do {
+                    // drain upload
+                    read = is.read();
+                } while (read >= 0);
 
-                arg1.setHandled(true);
+                response.setStatus(200);
+                response.getOutputStream().flush();
+                response.getOutputStream().close();
+                baseRequest.setHandled(true);
             }
         };
     }
