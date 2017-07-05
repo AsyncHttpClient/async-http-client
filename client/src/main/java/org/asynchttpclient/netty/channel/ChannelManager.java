@@ -308,8 +308,9 @@ public class ChannelManager {
         if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
                     .addListener(future -> doClose());
-        } else
+        } else {
             doClose();
+        }
     }
 
     public void closeChannel(Channel channel) {
