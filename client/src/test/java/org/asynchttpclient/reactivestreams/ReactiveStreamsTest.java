@@ -232,24 +232,34 @@ public class ReactiveStreamsTest {
                     .setHeader("X-" + CONTENT_MD5, expectedMd5);
 
             Response response = requestBuilder.execute().get();
-            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getStatusCode(), 200, "HTTP response was invalid on first request.");
+
             byte[] responseBody = response.getResponseBodyAsBytes();
             responseBody = response.getResponseBodyAsBytes();
-            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
+            assertEquals(
+                Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
+                LARGE_IMAGE_BYTES.length,
+                "Server side payload length invalid"
+            );
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
             assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server side payload MD5 invalid");
             assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client side payload MD5 invalid");
-            assertEquals(responseBody, LARGE_IMAGE_BYTES);
+            assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes are not equal on first attempt");
 
             response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
             responseBody = response.getResponseBodyAsBytes();
-            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
+            assertEquals(
+                Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
+                LARGE_IMAGE_BYTES.length,
+                "Server side payload length invalid"
+            );
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
+
             try {
                 assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server side payload MD5 invalid");
                 assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client side payload MD5 invalid");
-                assertEquals(responseBody, LARGE_IMAGE_BYTES);
+                assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes weren't equal on subsequent test");
             } catch (AssertionError e) {
                 e.printStackTrace();
                 for (int i = 0; i < LARGE_IMAGE_BYTES.length; i++) {

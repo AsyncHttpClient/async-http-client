@@ -37,6 +37,7 @@ import org.asynchttpclient.util.StringUtils;
 public class Realm {
 
     private static final String DEFAULT_NC = "00000001";
+    // MD5("")
     private static final String EMPTY_ENTITY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
     private final String principal;
@@ -412,15 +413,19 @@ public class Realm {
             return md.digest();
         }
 
-        private byte[] secretDigest(StringBuilder sb, MessageDigest md) {
+        private byte[] ha1(StringBuilder sb, MessageDigest md) {
+            // if algorithm is "MD5" or is unspecified => A1 = username ":" realm-value ":" passwd
+            // if algorithm is "MD5-sess" => A1 = MD5( username-value ":" realm-value ":" passwd ) ":" nonce-value ":" cnonce-value
 
             sb.append(principal).append(':').append(realmName).append(':').append(password);
-            byte[] ha1 = md5FromRecycledStringBuilder(sb, md);
+            byte[] core = md5FromRecycledStringBuilder(sb, md);
 
             if (algorithm == null || algorithm.equals("MD5")) {
-                return ha1;
+                // A1 = username ":" realm-value ":" passwd
+                return core;
             } else if ("MD5-sess".equals(algorithm)) {
-                appendBase16(sb, ha1);
+                // A1 = MD5(username ":" realm-value ":" passwd ) ":" nonce ":" cnonce
+                appendBase16(sb, core);
                 sb.append(':').append(nonce).append(':').append(cnonce);
                 return md5FromRecycledStringBuilder(sb, md);
             }
@@ -428,10 +433,15 @@ public class Realm {
             throw new UnsupportedOperationException("Digest algorithm not supported: " + algorithm);
         }
 
-        private byte[] dataDigest(StringBuilder sb, String digestUri, MessageDigest md) {
+        private byte[] ha2(StringBuilder sb, String digestUri, MessageDigest md) {
 
+            // if qop is "auth" or is unspecified => A2 = Method ":" digest-uri-value
+            // if qop is "auth-int" => A2 = Method ":" digest-uri-value ":" H(entity-body)
             sb.append(methodName).append(':').append(digestUri);
             if ("auth-int".equals(qop)) {
+                // when qop == "auth-int", A2 = Method ":" digest-uri-value ":" H(entity-body)
+                // but we don't have the request body here
+                // we would need a new API
                 sb.append(':').append(EMPTY_ENTITY_MD5);
 
             } else if (qop != null && !qop.equals("auth")) {
@@ -441,7 +451,8 @@ public class Realm {
             return md5FromRecycledStringBuilder(sb, md);
         }
 
-        private void appendDataBase(StringBuilder sb) {
+        private void appendMiddlePart(StringBuilder sb) {
+            // request-digest = MD5(H(A1) ":" nonce ":" nc ":" cnonce ":" qop ":" H(A2))
             sb.append(':').append(nonce).append(':');
             if ("auth".equals(qop) || "auth-int".equals(qop)) {
                 sb.append(nc).append(':').append(cnonce).append(':').append(qop).append(':');
@@ -457,12 +468,12 @@ public class Realm {
                 StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
 
                 // WARNING: DON'T MOVE, BUFFER IS RECYCLED!!!!
-                byte[] secretDigest = secretDigest(sb, md);
-                byte[] dataDigest = dataDigest(sb, digestUri, md);
+                byte[] ha1 = ha1(sb, md);
+                byte[] ha2 = ha2(sb, digestUri, md);
 
-                appendBase16(sb, secretDigest);
-                appendDataBase(sb);
-                appendBase16(sb, dataDigest);
+                appendBase16(sb, ha1);
+                appendMiddlePart(sb);
+                appendBase16(sb, ha2);
 
                 byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
                 response = toHexString(responseDigest);
