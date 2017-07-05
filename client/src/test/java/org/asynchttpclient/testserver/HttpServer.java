@@ -119,7 +119,7 @@ public class HttpServer implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (server == null) {
+        if (server != null) {
             try {
                 server.stop();
             } catch (Exception e) {
