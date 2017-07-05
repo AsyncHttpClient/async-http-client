@@ -19,8 +19,10 @@ package org.asynchttpclient;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import io.netty.util.ThreadDeathWatcher;
 import io.netty.util.Timer;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -42,6 +44,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
+    private final AtomicBoolean closeTriggered = new AtomicBoolean(false);
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
     private final ConnectionSemaphore connectionSemaphore;
@@ -87,7 +90,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
         channelManager = new ChannelManager(config, nettyTimer);
         connectionSemaphore = new ConnectionSemaphore(config);
-        requestSender = new NettyRequestSender(config, channelManager, connectionSemaphore, nettyTimer, new AsyncHttpClientState(closed));
+        requestSender = new NettyRequestSender(config, channelManager, connectionSemaphore, nettyTimer, new AsyncHttpClientState(closeTriggered));
         channelManager.configureBootstraps(requestSender);
     }
 
@@ -99,7 +102,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public void close() {
-        if (closed.compareAndSet(false, true)) {
+        if (closeTriggered.compareAndSet(false, true)) {
             try {
                 channelManager.close();
             } catch (Throwable t) {
@@ -112,6 +115,15 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
                     LOGGER.warn("Unexpected error on HashedWheelTimer close", t);
                 }
             }
+            
+            //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
+            try {
+                ThreadDeathWatcher.awaitInactivity(5, TimeUnit.SECONDS);
+            } catch(InterruptedException t) {
+                // Ignore
+            }
+            
+            closed.compareAndSet(false, true);
         }
     }
 

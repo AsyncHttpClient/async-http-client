@@ -23,7 +23,7 @@ public class AsyncHttpClientState {
         this.closed = closed;
     }
     
-    public boolean isClosed() {
+    public boolean isClosedOrClosingIsTriggered() {
         return closed.get();
     }
 }

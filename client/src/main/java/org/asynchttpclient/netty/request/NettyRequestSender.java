@@ -597,7 +597,7 @@ public final class NettyRequestSender {
     }
 
     public boolean isClosed() {
-        return clientState.isClosed();
+        return clientState.isClosedOrClosingIsTriggered();
     }
 
     public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future, Request nextRequest) {

@@ -43,6 +43,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -99,11 +100,15 @@ public class ChannelManager {
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
 
+    private final CountDownLatch closeLatch;
+
     private AsyncHttpClientHandler wsHandler;
 
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
         this.config = config;
+        
+        closeLatch = new CountDownLatch(2);
 
         this.sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory();
         try {
@@ -300,8 +305,17 @@ public class ChannelManager {
     }
 
     private void doClose() {
-        openChannels.close();
+        openChannels.close().addListener(future -> closeLatch.countDown());
         channelPool.destroy();
+        
+        //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
+        try {
+            GlobalEventExecutor.INSTANCE.awaitInactivity(5, TimeUnit.SECONDS);
+        } catch(InterruptedException t) {
+            // Ignore
+        }
+        
+        closeLatch.countDown();
     }
 
     public void close() {
@@ -310,6 +324,13 @@ public class ChannelManager {
                     .addListener(future -> doClose());
         } else
             doClose();
+        
+        try {
+            closeLatch.await();
+        }
+        catch (InterruptedException e) {
+           // Ignore
+        }
     }
 
     public void closeChannel(Channel channel) {
