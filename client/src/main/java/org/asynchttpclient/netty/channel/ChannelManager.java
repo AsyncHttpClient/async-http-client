@@ -322,13 +322,12 @@ public class ChannelManager {
         if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
                     .addListener(future -> doClose());
-        } else {
+        } else
             doClose();
 
         try {
             closeLatch.await(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
            // Ignore
         }
     }
