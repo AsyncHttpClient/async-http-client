@@ -50,6 +50,7 @@ public class Redirect30xInterceptor {
         REDIRECT_STATUSES.add(FOUND_302);
         REDIRECT_STATUSES.add(SEE_OTHER_303);
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
+        REDIRECT_STATUSES.add(PERMANENT_REDIRECT_308);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xInterceptor.class);
@@ -87,7 +88,7 @@ public class Redirect30xInterceptor {
                 String originalMethod = request.getMethod();
                 boolean switchToGet = !originalMethod.equals(GET)
                         && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
-                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || (statusCode == FOUND_302 && config.isStrict302Handling());
+                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
                         .setCookies(request.getCookies())//
