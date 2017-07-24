@@ -67,7 +67,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
     }
 
     private static class SubscriberAdapter implements Subscriber<ByteBuf> {
-        private volatile Subscriber<HttpContent> subscriber;
+        private final Subscriber<HttpContent> subscriber;
 
         public SubscriberAdapter(Subscriber<HttpContent> subscriber) {
             this.subscriber = subscriber;
