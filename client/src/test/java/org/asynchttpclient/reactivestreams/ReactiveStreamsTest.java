@@ -19,6 +19,7 @@ import static org.testng.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.reactivex.Flowable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -60,16 +61,12 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import rx.Observable;
-import rx.RxReactiveStreams;
-
 public class ReactiveStreamsTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsTest.class);
 
     public static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
-        Observable<ByteBuf> observable = Observable.from(new ByteBufIterable(bytes, chunkSize));
-        return RxReactiveStreams.toPublisher(observable);
+        return Flowable.fromIterable(new ByteBufIterable(bytes, chunkSize));
     }
 
     private Tomcat tomcat;
@@ -236,11 +233,7 @@ public class ReactiveStreamsTest {
 
             byte[] responseBody = response.getResponseBodyAsBytes();
             responseBody = response.getResponseBodyAsBytes();
-            assertEquals(
-                Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
-                LARGE_IMAGE_BYTES.length,
-                "Server side payload length invalid"
-            );
+            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
             assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server side payload MD5 invalid");
             assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client side payload MD5 invalid");
@@ -249,11 +242,7 @@ public class ReactiveStreamsTest {
             response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200);
             responseBody = response.getResponseBodyAsBytes();
-            assertEquals(
-                Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
-                LARGE_IMAGE_BYTES.length,
-                "Server side payload length invalid"
-            );
+            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
 
             try {
@@ -285,9 +274,7 @@ public class ReactiveStreamsTest {
     @Test(groups = "standalone", expectedExceptions = ExecutionException.class)
     public void testFailingStream() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Observable<ByteBuf> failingObservable = Observable.error(new FailedStream());
-            Publisher<ByteBuf> failingPublisher = RxReactiveStreams.toPublisher(failingObservable);
-
+            Publisher<ByteBuf> failingPublisher = Flowable.error(new FailedStream());
             client.preparePut(getTargetUrl()).setBody(failingPublisher).execute().get();
         }
     }
@@ -520,7 +507,7 @@ public class ReactiveStreamsTest {
         @Override
         public Iterator<ByteBuf> iterator() {
             return new Iterator<ByteBuf>() {
-                private volatile int currentIndex = 0;
+                private int currentIndex = 0;
 
                 @Override
                 public boolean hasNext() {
