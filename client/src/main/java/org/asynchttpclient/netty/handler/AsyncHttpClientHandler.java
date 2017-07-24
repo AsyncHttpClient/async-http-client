@@ -82,7 +82,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                 if (msg instanceof HttpContent) {
                     ByteBuf content = ((HttpContent) msg).content();
                     // Republish as a HttpResponseBodyPart
-                    if (content.readableBytes() > 0) {
+                    if (content.isReadable()) {
                         HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(content, false);
                         ctx.fireChannelRead(part);
                     }
