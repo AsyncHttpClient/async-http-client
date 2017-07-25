@@ -27,11 +27,16 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.oio.OioEventLoopGroup;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -242,7 +247,12 @@ public class ChannelManager {
                 ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
-                        .addLast(AHC_WS_HANDLER, wsHandler);
+//                        .addLast("http-aggregator",new HttpObjectAggregator(8192))
+//                        .addLast("ws-compression", WebSocketClientCompressionHandler.INSTANCE)
+//                        .addLast("ws-zlib", ZlibCodecFactory.newZlibDecoder(ZlibWrapper.NONE))
+                        .addLast("ws-compression", MyWebSocketClientCompressionHandler.INSTANCE)
+                        .addLast(AHC_WS_HANDLER, wsHandler)
+                        ;
 
                 if (LOGGER.isDebugEnabled()) {
                     pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
@@ -397,10 +407,15 @@ public class ChannelManager {
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
         pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        pipeline.addBefore(AHC_WS_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, config.getWebSocketMaxFrameSize()));
+//        pipeline.addAfter("http-aggregator","ws-compression", MyWebSocketClientCompressionHandler.INSTANCE);
+//        pipeline.addAfter("ws-compression", WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        pipeline.addBefore(WS_ENCODER_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, true, config.getWebSocketMaxFrameSize()));
         if (config.isAggregateWebSocketFrameFragments()) {
             pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(config.getWebSocketMaxBufferSize()));
         }
+//        System.out.println("upgradePipelineForWebSockets names1="+pipeline.names());
+//        pipeline.addAfter(WS_DECODER_HANDLER,"ws-compression", MyWebSocketClientCompressionHandler.INSTANCE);
+//        System.out.println("upgradePipelineForWebSockets names2="+pipeline.names());
         pipeline.remove(HTTP_CLIENT_CODEC);
     }
 

@@ -123,7 +123,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 }
             }
 
-        } else if (e instanceof WebSocketFrame) {
+            } else if (e instanceof WebSocketFrame) {
             WebSocketFrame frame = (WebSocketFrame) e;
             NettyWebSocket webSocket = getNettyWebSocket(future);
             // retain because we might buffer the frame
