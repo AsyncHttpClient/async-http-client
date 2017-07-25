@@ -247,9 +247,6 @@ public class ChannelManager {
                 ChannelPipeline pipeline = ch.pipeline()//
                         .addLast(PINNED_ENTRY, pinnedEntry)//
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
-//                        .addLast("http-aggregator",new HttpObjectAggregator(8192))
-//                        .addLast("ws-compression", WebSocketClientCompressionHandler.INSTANCE)
-//                        .addLast("ws-zlib", ZlibCodecFactory.newZlibDecoder(ZlibWrapper.NONE))
                         .addLast("ws-compression", MyWebSocketClientCompressionHandler.INSTANCE)
                         .addLast(AHC_WS_HANDLER, wsHandler)
                         ;
@@ -407,15 +404,11 @@ public class ChannelManager {
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
         pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-//        pipeline.addAfter("http-aggregator","ws-compression", MyWebSocketClientCompressionHandler.INSTANCE);
-//        pipeline.addAfter("ws-compression", WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        //for Bet365 live allowExtensions=true;
         pipeline.addBefore(WS_ENCODER_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, true, config.getWebSocketMaxFrameSize()));
         if (config.isAggregateWebSocketFrameFragments()) {
             pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(config.getWebSocketMaxBufferSize()));
         }
-//        System.out.println("upgradePipelineForWebSockets names1="+pipeline.names());
-//        pipeline.addAfter(WS_DECODER_HANDLER,"ws-compression", MyWebSocketClientCompressionHandler.INSTANCE);
-//        System.out.println("upgradePipelineForWebSockets names2="+pipeline.names());
         pipeline.remove(HTTP_CLIENT_CODEC);
     }
 

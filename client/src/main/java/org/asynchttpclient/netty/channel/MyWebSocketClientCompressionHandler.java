@@ -7,14 +7,17 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 
-
+/**CompressionHandler вместо WebSocketClientCompressionHandler
+ * for bet365 live WebSocketClientCompressionHandler - не подходит т.к.
+ * в PerMessageDeflateClientExtensionHandshaker нужно передать requestedServerNoContext=true
+ * */
 @Sharable
-public class MyWebSocketClientCompressionHandler extends MyWebSocketClientExtensionHandler {
+public class MyWebSocketClientCompressionHandler extends WebSocketClientExtensionHandler {
 
     public static final MyWebSocketClientCompressionHandler INSTANCE = new MyWebSocketClientCompressionHandler();
 
     private MyWebSocketClientCompressionHandler() {
-        super(new MyPerMessageDeflateClientExtensionHandshaker(6, ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), 15, false, true),
+        super(new PerMessageDeflateClientExtensionHandshaker(6, ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), 15, false, true),
                 new DeflateFrameClientExtensionHandshaker(false),
                 new DeflateFrameClientExtensionHandshaker(true));
     }
