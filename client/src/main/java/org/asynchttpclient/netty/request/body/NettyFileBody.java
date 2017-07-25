@@ -63,11 +63,6 @@ public class NettyFileBody implements NettyBody {
     }
 
     @Override
-    public String getContentType() {
-        return null;
-    }
-
-    @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         @SuppressWarnings("resource")
         // netty will close the FileChannel

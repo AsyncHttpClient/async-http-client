@@ -23,7 +23,9 @@ public interface NettyBody {
 
     long getContentLength();
 
-    CharSequence getContentType();
+    default CharSequence getContentTypeOverride() {
+        return null;
+    }
 
     void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
 }

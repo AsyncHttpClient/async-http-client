@@ -24,7 +24,7 @@ import org.asynchttpclient.request.body.multipart.Part;
 
 public class NettyMultipartBody extends NettyBodyBody {
 
-    private final String contentType;
+    private final String contentTypeOverride;
 
     public NettyMultipartBody(List<Part> parts, HttpHeaders headers, AsyncHttpClientConfig config) {
         this(newMultipartBody(parts, headers), config);
@@ -32,11 +32,11 @@ public class NettyMultipartBody extends NettyBodyBody {
 
     private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
         super(body, config);
-        contentType = body.getContentType();
+        contentTypeOverride = body.getContentType();
     }
 
     @Override
-    public String getContentType() {
-        return contentType;
+    public String getContentTypeOverride() {
+        return contentTypeOverride;
     }
 }

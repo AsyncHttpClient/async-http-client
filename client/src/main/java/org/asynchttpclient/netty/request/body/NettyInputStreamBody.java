@@ -54,11 +54,6 @@ public class NettyInputStreamBody implements NettyBody {
     }
 
     @Override
-    public String getContentType() {
-        return null;
-    }
-
-    @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         final InputStream is = inputStream;
 

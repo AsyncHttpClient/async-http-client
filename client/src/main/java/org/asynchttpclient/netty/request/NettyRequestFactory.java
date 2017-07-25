@@ -84,13 +84,8 @@ public final class NettyRequestFactory {
             nettyBody = new NettyInputStreamBody(request.getStreamData());
 
         } else if (isNonEmpty(request.getFormParams())) {
-
-            CharSequence contentType = null;
-            if (!request.getHeaders().contains(CONTENT_TYPE)) {
-                contentType = HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
-            }
-
-            nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentType);
+            CharSequence contentTypeOverride = request.getHeaders().contains(CONTENT_TYPE) ? null : HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
+            nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentTypeOverride);
 
         } else if (isNonEmpty(request.getBodyParts())) {
             nettyBody = new NettyMultipartBody(request.getBodyParts(), request.getHeaders(), config);
@@ -188,8 +183,8 @@ public final class NettyRequestFactory {
                 headers.set(CONTENT_LENGTH, body.getContentLength());
             }
 
-            if (body.getContentType() != null) {
-                headers.set(CONTENT_TYPE, body.getContentType());
+            if (body.getContentTypeOverride() != null) {
+                headers.set(CONTENT_TYPE, body.getContentTypeOverride());
             }
         }
 

@@ -52,11 +52,6 @@ public class NettyBodyBody implements NettyBody {
     }
 
     @Override
-    public String getContentType() {
-        return null;
-    }
-
-    @Override
     public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
 
         Object msg;
