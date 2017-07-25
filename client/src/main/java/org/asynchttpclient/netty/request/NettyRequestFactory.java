@@ -177,10 +177,12 @@ public final class NettyRequestFactory {
         }
 
         if (body != null) {
-            if (body.getContentLength() < 0) {
-                headers.set(TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-            } else {
-                headers.set(CONTENT_LENGTH, body.getContentLength());
+            if (!headers.contains(CONTENT_LENGTH)) {
+                if (body.getContentLength() < 0) {
+                    headers.set(TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+                } else {
+                    headers.set(CONTENT_LENGTH, body.getContentLength());
+                }
             }
 
             if (body.getContentTypeOverride() != null) {
