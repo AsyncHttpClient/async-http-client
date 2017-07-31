@@ -23,7 +23,11 @@ public class MiscUtils {
     }
 
     public static boolean isNonEmpty(String string) {
-        return string != null && !string.isEmpty();
+        return !isEmpty(string);
+    }
+    
+    public static boolean isEmpty(String string) {
+        return string == null || string.isEmpty();
     }
 
     public static boolean isNonEmpty(Object[] array) {
