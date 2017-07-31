@@ -61,9 +61,9 @@ public class Uri {
             String path,//
             String query) {
 
-        this.scheme = assertNotNull(scheme, "The scheme could not be resolved. Please provide a valid URL.");
+        this.scheme = assertNotNull(scheme, "scheme");
         this.userInfo = userInfo;
-        this.host = assertNotNull(host, "The host could not be resolved. Please provide a valid host.");
+        this.host = assertNotNull(host, "host");
         this.port = port;
         this.path = path;
         this.query = query;
