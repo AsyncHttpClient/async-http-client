@@ -240,7 +240,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void nullSchemeThrowsNPE() throws Throwable {
         withClient().run(client -> client.prepareGet("gatling.io").execute());
     }
@@ -859,7 +859,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void malformedUriThrowsException() throws Throwable {
         withClient().run(client -> {
             withServer(server).run(server -> {

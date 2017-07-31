@@ -36,6 +36,12 @@ public class Uri {
         UriParser parser = new UriParser();
         parser.parse(context, originalUrl);
 
+        if (null == parser.scheme || null == parser.host) {
+            throw new IllegalArgumentException(
+                    String.format("The UriParser could not extract all required values: scheme=%s, host=%s. Please "
+                                  + "make sure you provide a valid URL.", parser.scheme, parser.host));
+        }
+
         return new Uri(parser.scheme,//
                 parser.userInfo,//
                 parser.host,//
