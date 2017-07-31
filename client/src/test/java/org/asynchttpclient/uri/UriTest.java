@@ -229,6 +229,19 @@ public class UriTest {
     }
 
     @Test
+    public void testRelativeUriWithNoScheme() {
+        Uri context = Uri.create("https://hello.com/level1");
+
+        Uri url = Uri.create(context, "//world.org/content/img.png");
+
+        assertEquals(url.getScheme(), "https");
+        assertEquals(url.getHost(), "world.org");
+        assertEquals(url.getPort(), -1);
+        assertEquals(url.getPath(), "/content/img.png");
+        assertNull(url.getQuery());
+    }
+
+    @Test
     public void testCreateAndToUrl() {
         String url = "https://hello.com/level1/level2/level3";
         Uri uri = Uri.create(url);
