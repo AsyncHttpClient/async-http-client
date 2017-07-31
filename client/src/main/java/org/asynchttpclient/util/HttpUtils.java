@@ -12,9 +12,11 @@
  */
 package org.asynchttpclient.util;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -82,26 +84,39 @@ public class HttpUtils {
         return request.getFollowRedirect() != null ? request.getFollowRedirect() : config.isFollowRedirect();
     }
 
-    private static StringBuilder urlEncodeFormParams0(List<Param> params) {
+    public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
+        return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params, charset), US_ASCII);
+    }
+
+    private static StringBuilder urlEncodeFormParams0(List<Param> params, Charset charset) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         for (Param param : params) {
-            encodeAndAppendFormParam(sb, param.getName(), param.getValue());
+            encodeAndAppendFormParam(sb, param.getName(), param.getValue(), charset);
         }
         sb.setLength(sb.length() - 1);
         return sb;
     }
 
-    public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
-        return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params), charset);
-    }
-
-    private static void encodeAndAppendFormParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
-        Utf8UrlEncoder.encodeAndAppendFormElement(sb, name);
+    private static void encodeAndAppendFormParam(StringBuilder sb, String name, String value, Charset charset) {
+        encodeAndAppendFormField(sb, name, charset);
         if (value != null) {
             sb.append('=');
-            Utf8UrlEncoder.encodeAndAppendFormElement(sb, value);
+            encodeAndAppendFormField(sb, value, charset);
         }
         sb.append('&');
+    }
+
+    private static void encodeAndAppendFormField(StringBuilder sb, String field, Charset charset) {
+        if (charset.equals(UTF_8)) {
+            Utf8UrlEncoder.encodeAndAppendFormElement(sb, field);
+        } else {
+            try {
+                // TODO there's probably room for perf improvements
+                sb.append(URLEncoder.encode(field, charset.name()));
+            } catch (UnsupportedEncodingException e) {
+                // can't happen, as Charset was already resolved
+            }
+        }
     }
 
     public static String hostHeader(Request request, Uri uri) {
