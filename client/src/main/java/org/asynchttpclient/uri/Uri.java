@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.uri;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.Assertions.assertNotEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,9 +36,11 @@ public class Uri {
         UriParser parser = new UriParser();
         parser.parse(context, originalUrl);
 
-        if (parser.scheme == null || parser.host == null) {
-            throw new IllegalArgumentException(String.format("The UriParser could not extract all required values: scheme=%s, host=%s. Please make sure you provide a valid URL.",
-                    parser.scheme, parser.host));
+        if (isEmpty(parser.scheme)) {
+            throw new IllegalArgumentException(originalUrl + " could not be parsed into a proper Uri, missing scheme");
+        }
+        if (isEmpty(parser.host)) {
+            throw new IllegalArgumentException(originalUrl + " could not be parsed into a proper Uri, missing host");
         }
 
         return new Uri(parser.scheme,//
@@ -66,9 +68,9 @@ public class Uri {
             String path,//
             String query) {
 
-        this.scheme = assertNotNull(scheme, "scheme");
+        this.scheme = assertNotEmpty(scheme, "scheme");
         this.userInfo = userInfo;
-        this.host = assertNotNull(host, "host");
+        this.host = assertNotEmpty(host, "host");
         this.port = port;
         this.path = path;
         this.query = query;

@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.uri;
 
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.*;
+
+import org.testng.annotations.Test;
 
 public class UriTest {
 
@@ -360,31 +360,17 @@ public class UriTest {
     }
 
     @Test
-    public void testCreateWithInvalidUrl_throwsIllegalArgumentException() {
-        // a valid URL would contain the scheme/protocol
-        String invalidUrl = "localhost";
-
-        Throwable exception = null;
-        try {
-            // run
-            Uri.create(invalidUrl);
-        } catch (IllegalArgumentException ex) {
-            exception = ex;
-        }
-
-        // verify
-        assertNotNull(exception);
-        assertEquals("The UriParser could not extract all required values: scheme=null, host=null. Please make "
-                     + "sure you provide a valid URL.", exception.getMessage());
+    public void creatingUriWithDefinedSchemeAndHostWorks() {
+        Uri.create("http://localhost");
     }
 
-    @Test
-    public void testCreateWithValidUrl_doesNotThrowException() {
-        String validUrl = "https://localhost";
-        try {
-            Uri.create(validUrl);
-        } catch (IllegalArgumentException ex) {
-            fail(ex.getMessage());
-        }
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void creatingUriWithMissingSchemeThrowsIllegalArgumentException() {
+        Uri.create("localhost");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void creatingUriWithMissingHostThrowsIllegalArgumentException() {
+        Uri.create("http://");
     }
 }
