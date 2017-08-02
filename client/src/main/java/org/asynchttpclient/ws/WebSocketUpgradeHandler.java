@@ -37,6 +37,7 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
         this.listeners = listeners;
     }
     
+    protected void setWebSocket0(NettyWebSocket webSocket) {}
     protected void onStatusReceived0(HttpResponseStatus responseStatus) throws Exception {}
     protected void onHeadersReceived0(HttpHeaders headers) throws Exception {}
     protected void onBodyPartReceived0(HttpResponseBodyPart bodyPart) throws Exception {}
@@ -81,6 +82,7 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
 
     public final void setWebSocket(NettyWebSocket webSocket) {
         this.webSocket = webSocket;
+        setWebSocket0(this.webSocket);
     }
     
     public final void onOpen() {
