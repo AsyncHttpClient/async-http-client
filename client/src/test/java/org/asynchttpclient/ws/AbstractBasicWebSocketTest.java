@@ -14,32 +14,37 @@ package org.asynchttpclient.ws;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
+import org.asynchttpclient.AbstractBasicTest;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.testng.annotations.AfterClass;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.BeforeClass;
 
-public abstract class AbstractBasicTest extends org.asynchttpclient.AbstractBasicTest {
+public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
+    @Override
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
-        server.setHandler(getWebSocketHandler());
+        server.setHandler(configureHandler());
         server.start();
         port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        server.stop();
-    }
-
     protected String getTargetUrl() {
         return String.format("ws://localhost:%d/", port1);
     }
-
-    public abstract WebSocketHandler getWebSocketHandler();
+    
+    @Override
+    public WebSocketHandler configureHandler() {
+        return new WebSocketHandler() {
+            @Override
+            public void configure(WebSocketServletFactory factory) {
+                factory.register(EchoSocket.class);
+            }
+        };
+    }
 }

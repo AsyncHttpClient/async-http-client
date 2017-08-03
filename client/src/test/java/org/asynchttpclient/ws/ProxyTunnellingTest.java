@@ -24,15 +24,13 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 /**
  * Proxy usage tests.
  */
-public class ProxyTunnellingTest extends AbstractBasicTest {
+public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
 
     private Server server2;
 
@@ -46,21 +44,11 @@ public class ProxyTunnellingTest extends AbstractBasicTest {
         server2 = new Server();
         @SuppressWarnings("resource")
         ServerConnector connector2 = targetHttps ? addHttpsConnector(server2) : addHttpConnector(server2);
-        server2.setHandler(getWebSocketHandler());
+        server2.setHandler(configureHandler());
         server2.start();
         port2 = connector2.getLocalPort();
 
         logger.info("Local HTTP server started successfully");
-    }
-
-    @Override
-    public WebSocketHandler getWebSocketHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoSocket.class);
-            }
-        };
     }
 
     @AfterMethod(alwaysRun = true)

@@ -31,12 +31,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public class RedirectTest extends AbstractBasicTest {
+public class RedirectTest extends AbstractBasicWebSocketTest {
 
     @BeforeClass
     @Override
@@ -55,7 +53,7 @@ public class RedirectTest extends AbstractBasicTest {
                 }
             }
         });
-        list.addHandler(getWebSocketHandler());
+        list.addHandler(configureHandler());
         server.setHandler(list);
 
         server.start();
@@ -63,17 +61,6 @@ public class RedirectTest extends AbstractBasicTest {
         port2 = connector2.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
-
-    @Override
-    public WebSocketHandler getWebSocketHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoSocket.class);
-            }
-        };
-    }
-
 
     @Test(groups = "standalone", timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {

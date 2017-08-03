@@ -24,10 +24,10 @@ import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
-public class WebSocketWriteFutureTest extends AbstractBasicTest {
+public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
 
     @Override
-    public WebSocketHandler getWebSocketHandler() {
+    public WebSocketHandler configureHandler() {
         return new WebSocketHandler() {
             @Override
             public void configure(WebSocketServletFactory factory) {
