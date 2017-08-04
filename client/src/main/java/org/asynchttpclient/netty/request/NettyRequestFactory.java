@@ -198,9 +198,7 @@ public final class NettyRequestFactory {
                     .set(SEC_WEBSOCKET_VERSION, "13");
 
             if (!headers.contains(ORIGIN)) {
-                String scheme = uri.isSecured() ? "https://" : "http://";
-                String origin = scheme+ uri.getHost() + ":" + uri.getExplicitPort();
-                headers.set(ORIGIN, origin);
+                headers.set(ORIGIN, computeOriginHeader(uri));
             }
 
         } else if (!headers.contains(CONNECTION)) {

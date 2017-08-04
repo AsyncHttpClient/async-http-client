@@ -129,4 +129,13 @@ public class HttpUtils {
             return port == -1 || port == uri.getSchemeDefaultPort() ? host : host + ":" + port;
         }
     }
+    
+    public static String computeOriginHeader(Uri uri) {
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
+        sb.append(uri.isSecured() ? "https://" : "http://").append(uri.getHost());
+        if (uri.getExplicitPort() != uri.getSchemeDefaultPort()) {
+            sb.append(':').append(uri.getPort());
+        }
+        return sb.toString();
+    }
 }
