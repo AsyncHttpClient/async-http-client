@@ -196,9 +196,14 @@ public final class NettyRequestFactory {
         if (!connect && uri.isWebSocket()) {
             headers.set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET)//
                     .set(CONNECTION, HttpHeaders.Values.UPGRADE)//
-                    .set(ORIGIN, "http://" + uri.getHost() + ":" + uri.getExplicitPort())//
                     .set(SEC_WEBSOCKET_KEY, getKey())//
                     .set(SEC_WEBSOCKET_VERSION, "13");
+
+            if (!headers.contains(ORIGIN)) {
+                String scheme = uri.isSecured() ? "https://" : "http://";
+                String origin = scheme + uri.getHost() + ":" + uri.getExplicitPort();
+                headers.set(ORIGIN, origin);
+            }
 
         } else if (!headers.contains(CONNECTION)) {
             String connectionHeaderValue = connectionHeader(config.isKeepAlive(), httpVersion);
