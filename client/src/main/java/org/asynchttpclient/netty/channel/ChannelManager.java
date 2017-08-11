@@ -230,6 +230,7 @@ public class ChannelManager {
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
                         .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
+                        .addLast("ws-compression", MyWebSocketClientCompressionHandler.INSTANCE)
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
 
                 if (LOGGER.isTraceEnabled()) {
