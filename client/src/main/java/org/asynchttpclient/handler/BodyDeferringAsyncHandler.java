@@ -62,18 +62,20 @@ import org.asynchttpclient.Response;
  * <br>
  * <pre>
  *     PipedOutputStream pout = new PipedOutputStream();
- *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pout);
- *     // client executes async
- *     Future&lt;Response&gt; fr = client.prepareGet(&quot;http://foo.com/aresource&quot;).execute(bdah);
- *     // main thread will block here until headers are available
- *     Response response = bdah.getResponse();
- *     if (response.getStatusCode() == 200) {
- *      InputStream pin = new BodyDeferringInputStream(fr,new PipedInputStream(pout));
- *      // consume InputStream
- *      ...
- *     } else {
- *      // handle unexpected response status code
- *      ...
+ *     try (PipedInputStream pin = new PipedInputStream(pout)) {
+ *         BodyDeferringAsyncHandler handler = new BodyDeferringAsyncHandler(pout);
+ *         ListenableFuture<&lt;Response&gt; respFut = client.prepareGet(getTargetUrl()).execute(handler);
+ *         Response resp = handler.getResponse();
+ *         // main thread will block here until headers are available
+ *         if (resp.getStatusCode() == 200) {
+ *             try (InputStream is = new BodyDeferringInputStream(respFut, handler, pin)) {
+ *                 // consume InputStream
+ *                 ...
+ *             }
+ *         } else {
+ *             // handle unexpected response status code
+ *             ...
+ *         }
  *     }
  * </pre>
  */
