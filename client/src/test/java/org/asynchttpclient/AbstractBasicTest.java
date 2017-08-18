@@ -40,7 +40,6 @@ public abstract class AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -55,8 +54,9 @@ public abstract class AbstractBasicTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
-        if (server != null)
+        if (server != null) {
             server.stop();
+        }
     }
 
     protected String getTargetUrl() {

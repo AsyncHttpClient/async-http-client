@@ -36,29 +36,42 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
     }
+    
+    protected void setWebSocket0(NettyWebSocket webSocket) {}
+    protected void onStatusReceived0(HttpResponseStatus responseStatus) throws Exception {}
+    protected void onHeadersReceived0(HttpHeaders headers) throws Exception {}
+    protected void onBodyPartReceived0(HttpResponseBodyPart bodyPart) throws Exception {}
+    protected void onCompleted0() throws Exception {}
+    protected void onThrowable0(Throwable t) {}
+    protected void onOpen0() {}
 
     @Override
     public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    	onStatusReceived0(responseStatus);
         return responseStatus.getStatusCode() == SWITCHING_PROTOCOLS ? State.CONTINUE : State.ABORT;
     }
 
     @Override
     public final State onHeadersReceived(HttpHeaders headers) throws Exception {
+    	onHeadersReceived0(headers);
         return State.CONTINUE;
     }
 
     @Override
     public final State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    	onBodyPartReceived0(bodyPart);
         return State.CONTINUE;
     }
 
     @Override
     public final NettyWebSocket onCompleted() throws Exception {
+    	onCompleted0();
         return webSocket;
     }
 
     @Override
     public final void onThrowable(Throwable t) {
+    	onThrowable0(t);
         for (WebSocketListener listener : listeners) {
             if (webSocket != null) {
                 webSocket.addWebSocketListener(listener);
@@ -69,9 +82,11 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
 
     public final void setWebSocket(NettyWebSocket webSocket) {
         this.webSocket = webSocket;
+        setWebSocket0(webSocket);
     }
     
     public final void onOpen() {
+    	onOpen0();
         for (WebSocketListener listener : listeners) {
             webSocket.addWebSocketListener(listener);
             listener.onOpen(webSocket);

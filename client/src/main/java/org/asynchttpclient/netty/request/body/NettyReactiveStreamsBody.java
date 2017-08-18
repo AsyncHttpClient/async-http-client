@@ -50,11 +50,6 @@ public class NettyReactiveStreamsBody implements NettyBody {
     }
 
     @Override
-    public String getContentType() {
-        return null;
-    }
-
-    @Override
     public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
         if (future.isStreamConsumed()) {
             LOGGER.warn("Stream has already been consumed and cannot be reset");
@@ -67,7 +62,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
     }
 
     private static class SubscriberAdapter implements Subscriber<ByteBuf> {
-        private volatile Subscriber<HttpContent> subscriber;
+        private final Subscriber<HttpContent> subscriber;
 
         public SubscriberAdapter(Subscriber<HttpContent> subscriber) {
             this.subscriber = subscriber;

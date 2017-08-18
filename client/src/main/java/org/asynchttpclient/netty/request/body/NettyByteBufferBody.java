@@ -21,18 +21,18 @@ import java.nio.ByteBuffer;
 public class NettyByteBufferBody extends NettyDirectBody {
 
     private final ByteBuffer bb;
-    private final CharSequence contentType;
+    private final CharSequence contentTypeOverride;
     private final long length;
 
     public NettyByteBufferBody(ByteBuffer bb) {
         this(bb, null);
     }
 
-    public NettyByteBufferBody(ByteBuffer bb, CharSequence contentType) {
+    public NettyByteBufferBody(ByteBuffer bb, CharSequence contentTypeOverride) {
         this.bb = bb;
         length = bb.remaining();
         bb.mark();
-        this.contentType = contentType;
+        this.contentTypeOverride = contentTypeOverride;
     }
 
     @Override
@@ -41,8 +41,8 @@ public class NettyByteBufferBody extends NettyDirectBody {
     }
 
     @Override
-    public CharSequence getContentType() {
-        return contentType;
+    public CharSequence getContentTypeOverride() {
+        return contentTypeOverride;
     }
 
     @Override

@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.uri;
 
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.*;
+
+import org.testng.annotations.Test;
 
 public class UriTest {
 
@@ -229,6 +229,19 @@ public class UriTest {
     }
 
     @Test
+    public void testRelativeUriWithNoScheme() {
+        Uri context = Uri.create("https://hello.com/level1");
+
+        Uri url = Uri.create(context, "//world.org/content/img.png");
+
+        assertEquals(url.getScheme(), "https");
+        assertEquals(url.getHost(), "world.org");
+        assertEquals(url.getPort(), -1);
+        assertEquals(url.getPath(), "/content/img.png");
+        assertNull(url.getQuery());
+    }
+
+    @Test
     public void testCreateAndToUrl() {
         String url = "https://hello.com/level1/level2/level3";
         Uri uri = Uri.create(url);
@@ -357,5 +370,20 @@ public class UriTest {
         url = "wss://user@hello.com:8080/level1/level2/level3?q=1";
         uri = Uri.create(url);
         assertTrue(uri.isWebSocket(), "isWebSocket should return true for wss url");
+    }
+
+    @Test
+    public void creatingUriWithDefinedSchemeAndHostWorks() {
+        Uri.create("http://localhost");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void creatingUriWithMissingSchemeThrowsIllegalArgumentException() {
+        Uri.create("localhost");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void creatingUriWithMissingHostThrowsIllegalArgumentException() {
+        Uri.create("http://");
     }
 }

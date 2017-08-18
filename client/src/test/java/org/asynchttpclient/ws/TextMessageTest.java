@@ -21,21 +21,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
 
-public class TextMessageTest extends AbstractBasicTest {
-
-    @Override
-    public WebSocketHandler getWebSocketHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoSocket.class);
-            }
-        };
-    }
+public class TextMessageTest extends AbstractBasicWebSocketTest {
 
     @Test(groups = "standalone", timeOut = 60000)
     public void onOpen() throws Exception {

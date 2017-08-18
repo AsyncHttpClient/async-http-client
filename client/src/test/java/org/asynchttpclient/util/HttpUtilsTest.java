@@ -13,14 +13,23 @@
  */
 package org.asynchttpclient.util;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
+import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Dsl;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
@@ -92,19 +101,19 @@ public class HttpUtilsTest {
     @Test
     public void testParseCharsetWithoutQuotes() {
         Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset=utf-8");
-        assertEquals(charset, StandardCharsets.UTF_8, "parseCharset returned wrong Charset");
+        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
     }
 
     @Test
     public void testParseCharsetWithSingleQuotes() {
         Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset='utf-8'");
-        assertEquals(charset, StandardCharsets.UTF_8, "parseCharset returned wrong Charset");
+        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
     }
 
     @Test
     public void testParseCharsetWithDoubleQuotes() {
         Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset=\"utf-8\"");
-        assertEquals(charset, StandardCharsets.UTF_8, "parseCharset returned wrong Charset");
+        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
     }
 
     @Test
@@ -159,5 +168,65 @@ public class HttpUtilsTest {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertFalse(followRedirect, "Follow redirect value set in request should be given priority");
+    }
+
+    private void formUrlEncoding(Charset charset) throws Exception {
+        String key = "key";
+        String value = "中文";
+        List<Param> params = new ArrayList<>();
+        params.add(new Param(key, value));
+        ByteBuffer ahcBytes = HttpUtils.urlEncodeFormParams(params, charset);
+        String ahcString = toUsAsciiString(ahcBytes);
+        String jdkString = key + "=" + URLEncoder.encode(value, charset.name());
+        assertEquals(ahcString, jdkString);
+    }
+
+    @Test
+    public void formUrlEncodingShouldSupportUtf8Charset() throws Exception {
+        formUrlEncoding(UTF_8);
+    }
+
+    @Test
+    public void formUrlEncodingShouldSupportNonUtf8Charset() throws Exception {
+        formUrlEncoding(Charset.forName("GBK"));
+    }
+
+    private static String toUsAsciiString(ByteBuffer buf) throws CharacterCodingException {
+        ByteBuf bb = Unpooled.wrappedBuffer(buf);
+        try {
+            return ByteBufUtils.byteBuf2String(US_ASCII, bb);
+        } finally {
+            bb.release();
+        }
+    }
+
+    @Test
+    public void computeOriginForPlainUriWithImplicitPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com/bar")), "http://foo.com");
+    }
+
+    @Test
+    public void computeOriginForPlainUriWithDefaultPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com:80/bar")), "http://foo.com");
+    }
+
+    @Test
+    public void computeOriginForPlainUriWithNonDefaultPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com:81/bar")), "http://foo.com:81");
+    }
+
+    @Test
+    public void computeOriginForSecuredUriWithImplicitPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com/bar")), "https://foo.com");
+    }
+
+    @Test
+    public void computeOriginForSecuredUriWithDefaultPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com:443/bar")), "https://foo.com");
+    }
+
+    @Test
+    public void computeOriginForSecuredUriWithNonDefaultPort() {
+        assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com:444/bar")), "https://foo.com:444");
     }
 }

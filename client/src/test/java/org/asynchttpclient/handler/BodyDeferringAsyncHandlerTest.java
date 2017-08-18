@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -31,10 +32,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.handler.BodyDeferringAsyncHandler.BodyDeferringInputStream;
@@ -114,7 +117,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://localhost:" + port1 + "/deferredSimple");
+            BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
@@ -138,7 +141,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone", expectedExceptions = RemotelyClosedException.class)
     public void deferredSimpleWithFailure() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://localhost:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+            BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
@@ -167,7 +170,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://localhost:" + port1 + "/deferredInputStreamTrick");
+            BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
@@ -200,7 +203,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone", expectedExceptions = RemotelyClosedException.class)
     public void deferredInputStreamTrickWithFailure() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
-            BoundRequestBuilder r = client.prepareGet("http://localhost:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+            BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pos);
@@ -238,6 +241,28 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
             r.execute(bdah);
             bdah.getResponse();
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void testPipedStreams() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
+            PipedOutputStream pout = new PipedOutputStream();
+            try (PipedInputStream pin = new PipedInputStream(pout)) {
+                BodyDeferringAsyncHandler handler = new BodyDeferringAsyncHandler(pout);
+                ListenableFuture<Response> respFut = client.prepareGet(getTargetUrl()).execute(handler);
+
+                Response resp = handler.getResponse();
+
+                if (resp.getStatusCode() == 200) {
+                    try (BodyDeferringInputStream is = new BodyDeferringInputStream(respFut, handler, pin)) {
+                        String body = IOUtils.toString(is, StandardCharsets.UTF_8);
+                        assertTrue(body.contains("ABCDEF"));
+                    }
+                } else {
+                    throw new IOException("HTTP error " + resp.getStatusCode());
+                }
+            }
         }
     }
 }
