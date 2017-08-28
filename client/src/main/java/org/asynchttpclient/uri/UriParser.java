@@ -25,24 +25,27 @@ final class UriParser {
     public String path;
     public String userInfo;
 
-    private int start, end = 0;
-    private String urlWithoutQuery;
+    private String originalUrl;
+    private int start, end, currentIndex = 0;
 
-    private void trimRight(String originalUrl) {
-        end = originalUrl.length();
-        while (end > 0 && originalUrl.charAt(end - 1) <= ' ')
-            end--;
-    }
-
-    private void trimLeft(String originalUrl) {
-        while (start < end && originalUrl.charAt(start) <= ' ')
+    private void trimLeft() {
+        while (start < end && originalUrl.charAt(start) <= ' ') {
             start++;
+        }
 
-        if (originalUrl.regionMatches(true, start, "url:", 0, 4))
+        if (originalUrl.regionMatches(true, start, "url:", 0, 4)) {
             start += 4;
+        }
     }
 
-    private boolean isFragmentOnly(String originalUrl) {
+    private void trimRight() {
+        end = originalUrl.length();
+        while (end > 0 && originalUrl.charAt(end - 1) <= ' ') {
+            end--;
+        }
+    }
+
+    private boolean isFragmentOnly() {
         return start < originalUrl.length() && originalUrl.charAt(start) == '#';
     }
 
@@ -52,8 +55,9 @@ final class UriParser {
 
     private boolean isValidProtocolChars(String protocol) {
         for (int i = 1; i < protocol.length(); i++) {
-            if (!isValidProtocolChar(protocol.charAt(i)))
+            if (!isValidProtocolChar(protocol.charAt(i))) {
                 return false;
+            }
         }
         return true;
     }
@@ -62,32 +66,34 @@ final class UriParser {
         return protocol.length() > 0 && Character.isLetter(protocol.charAt(0)) && isValidProtocolChars(protocol);
     }
 
-    private void computeInitialScheme(String originalUrl) {
-        for (int i = start; i < end; i++) {
+    private void computeInitialScheme() {
+        for (int i = currentIndex; i < end; i++) {
             char c = originalUrl.charAt(i);
             if (c == ':') {
-                String s = originalUrl.substring(start, i);
+                String s = originalUrl.substring(currentIndex, i);
                 if (isValidProtocol(s)) {
-                  scheme = s.toLowerCase();
-                    start = i + 1;
+                    scheme = s.toLowerCase();
+                    currentIndex = i + 1;
                 }
                 break;
-            } else if (c == '/')
+            } else if (c == '/') {
                 break;
+            }
         }
     }
 
-    private boolean overrideWithContext(Uri context, String originalUrl) {
+    private boolean overrideWithContext(Uri context) {
 
         boolean isRelative = false;
 
-        // only use context if the schemes match
+        // use context only if schemes match
         if (context != null && (scheme == null || scheme.equalsIgnoreCase(context.getScheme()))) {
 
             // see RFC2396 5.2.3
             String contextPath = context.getPath();
-            if (isNonEmpty(contextPath) && contextPath.charAt(0) == '/')
-              scheme = null;
+            if (isNonEmpty(contextPath) && contextPath.charAt(0) == '/') {
+                scheme = null;
+            }
 
             if (scheme == null) {
                 scheme = context.getScheme();
@@ -101,8 +107,13 @@ final class UriParser {
         return isRelative;
     }
 
-    private void computeFragment(String originalUrl) {
-        int charpPosition = originalUrl.indexOf('#', start);
+    private int findWithinCurrentRange(char c) {
+        int pos = originalUrl.indexOf(c, currentIndex);
+        return pos > end ? -1 : pos;
+    }
+
+    private void trimFragment() {
+        int charpPosition = findWithinCurrentRange('#');
         if (charpPosition >= 0) {
             end = charpPosition;
         }
@@ -110,45 +121,43 @@ final class UriParser {
 
     private void inheritContextQuery(Uri context, boolean isRelative) {
         // see RFC2396 5.2.2: query and fragment inheritance
-        if (isRelative && start == end) {
+        if (isRelative && currentIndex == end) {
             query = context.getQuery();
         }
     }
 
-    private boolean splitUrlAndQuery(String originalUrl) {
-        boolean queryOnly = false;
-        urlWithoutQuery = originalUrl;
-        if (start < end) {
-            int askPosition = originalUrl.indexOf('?');
-            queryOnly = askPosition == start;
-            if (askPosition != -1 && askPosition < end) {
+    private boolean computeQuery() {
+        if (currentIndex < end) {
+            int askPosition = findWithinCurrentRange('?');
+            if (askPosition != -1) {
                 query = originalUrl.substring(askPosition + 1, end);
-                if (end > askPosition)
+                if (end > askPosition) {
                     end = askPosition;
-                urlWithoutQuery = originalUrl.substring(0, askPosition);
+                }
+                return askPosition == currentIndex;
             }
         }
-
-        return queryOnly;
+        return false;
     }
 
     private boolean currentPositionStartsWith4Slashes() {
-        return urlWithoutQuery.regionMatches(start, "////", 0, 4);
+        return originalUrl.regionMatches(currentIndex, "////", 0, 4);
     }
 
     private boolean currentPositionStartsWith2Slashes() {
-        return urlWithoutQuery.regionMatches(start, "//", 0, 2);
+        return originalUrl.regionMatches(currentIndex, "//", 0, 2);
     }
 
     private void computeAuthority() {
-        int authorityEndPosition = urlWithoutQuery.indexOf('/', start);
-        if (authorityEndPosition < 0) {
-            authorityEndPosition = urlWithoutQuery.indexOf('?', start);
-            if (authorityEndPosition < 0)
+        int authorityEndPosition = findWithinCurrentRange('/');
+        if (authorityEndPosition == -1) {
+            authorityEndPosition = findWithinCurrentRange('?');
+            if (authorityEndPosition == -1) {
                 authorityEndPosition = end;
+            }
         }
-        host = authority = urlWithoutQuery.substring(start, authorityEndPosition);
-        start = authorityEndPosition;
+        host = authority = originalUrl.substring(currentIndex, authorityEndPosition);
+        currentIndex = authorityEndPosition;
     }
 
     private void computeUserInfo() {
@@ -156,8 +165,9 @@ final class UriParser {
         if (atPosition != -1) {
             userInfo = authority.substring(0, atPosition);
             host = authority.substring(atPosition + 1);
-        } else
+        } else {
             userInfo = null;
+        }
     }
 
     private boolean isMaybeIPV6() {
@@ -179,14 +189,16 @@ final class UriParser {
                     if (host.length() > portPosition) {
                         port = Integer.parseInt(host.substring(portPosition));
                     }
-                } else
+                } else {
                     throw new IllegalArgumentException("Invalid authority field: " + authority);
+                }
             }
 
             host = host.substring(0, positionAfterClosingSquareBrace);
 
-        } else
+        } else {
             throw new IllegalArgumentException("Invalid authority field: " + authority);
+        }
     }
 
     private void computeRegularHostPort() {
@@ -218,39 +230,44 @@ final class UriParser {
                 } else if (end == 0) {
                     break;
                 }
-            } else
+            } else {
                 i = i + 3;
+            }
         }
     }
 
     private void removeTailing2Dots() {
         while (path.endsWith("/..")) {
             end = path.lastIndexOf('/', path.length() - 4);
-            if (end >= 0)
+            if (end >= 0) {
                 path = path.substring(0, end + 1);
-            else
+            } else {
                 break;
+            }
         }
     }
 
     private void removeStartingDot() {
-        if (path.startsWith("./") && path.length() > 2)
+        if (path.startsWith("./") && path.length() > 2) {
             path = path.substring(2);
+        }
     }
 
     private void removeTrailingDot() {
-        if (path.endsWith("/."))
+        if (path.endsWith("/.")) {
             path = path.substring(0, path.length() - 1);
+        }
     }
 
     private void handleRelativePath() {
         int lastSlashPosition = path.lastIndexOf('/');
-        String pathEnd = urlWithoutQuery.substring(start, end);
+        String pathEnd = originalUrl.substring(currentIndex, end);
 
-        if (lastSlashPosition == -1)
+        if (lastSlashPosition == -1) {
             path = authority != null ? "/" + pathEnd : pathEnd;
-        else
+        } else {
             path = path.substring(0, lastSlashPosition + 1) + pathEnd;
+        }
     }
 
     private void handlePathDots() {
@@ -265,36 +282,37 @@ final class UriParser {
 
     private void parseAuthority() {
         if (!currentPositionStartsWith4Slashes() && currentPositionStartsWith2Slashes()) {
-            start += 2;
+            currentIndex += 2;
 
             computeAuthority();
             computeUserInfo();
 
             if (host != null) {
-                if (isMaybeIPV6())
+                if (isMaybeIPV6()) {
                     computeIPV6();
-                else
+                } else {
                     computeRegularHostPort();
+                }
             }
 
-            if (port < -1)
+            if (port < -1) {
                 throw new IllegalArgumentException("Invalid port number :" + port);
+            }
 
             // see RFC2396 5.2.4: ignore context path if authority is defined
-            if (isNonEmpty(authority))
+            if (isNonEmpty(authority)) {
                 path = "";
+            }
         }
     }
 
     private void computeRegularPath() {
-        if (urlWithoutQuery.charAt(start) == '/')
-            path = urlWithoutQuery.substring(start, end);
-
-        else if (isNonEmpty(path))
+        if (originalUrl.charAt(currentIndex) == '/') {
+            path = originalUrl.substring(currentIndex, end);
+        } else if (isNonEmpty(path)) {
             handleRelativePath();
-
-        else {
-            String pathEnd = urlWithoutQuery.substring(start, end);
+        } else {
+            String pathEnd = originalUrl.substring(currentIndex, end);
             path = isNonEmpty(pathEnd) && pathEnd.charAt(0) != '/' ? "/" + pathEnd : pathEnd;
         }
         handlePathDots();
@@ -307,29 +325,31 @@ final class UriParser {
 
     private void computePath(boolean queryOnly) {
         // Parse the file path if any
-        if (start < end)
+        if (currentIndex < end) {
             computeRegularPath();
-        else if (queryOnly && path != null)
+        } else if (queryOnly && path != null) {
             computeQueryOnlyPath();
-        else if (path == null)
+        } else if (path == null) {
             path = "";
+        }
     }
 
     public void parse(Uri context, final String originalUrl) {
 
         assertNotNull(originalUrl, "orginalUri");
+        this.originalUrl = originalUrl;
+        this.end = originalUrl.length();
 
-        boolean isRelative = false;
-
-        trimRight(originalUrl);
-        trimLeft(originalUrl);
-        if (!isFragmentOnly(originalUrl))
-            computeInitialScheme(originalUrl);
-        overrideWithContext(context, originalUrl);
-        computeFragment(originalUrl);
+        trimLeft();
+        trimRight();
+        currentIndex = start;
+        if (!isFragmentOnly()) {
+            computeInitialScheme();
+        }
+        boolean isRelative = overrideWithContext(context);
+        trimFragment();
         inheritContextQuery(context, isRelative);
-
-        boolean queryOnly = splitUrlAndQuery(originalUrl);
+        boolean queryOnly = computeQuery();
         parseAuthority();
         computePath(queryOnly);
     }

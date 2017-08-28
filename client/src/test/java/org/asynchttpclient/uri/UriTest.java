@@ -14,231 +14,114 @@ package org.asynchttpclient.uri;
 
 import static org.testng.Assert.*;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+
 import org.testng.annotations.Test;
 
 public class UriTest {
 
-    @Test
-    public void testSimpleParsing() {
-        Uri url = Uri.create("https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    private static void assertUriEquals(Uri uri, URI javaUri) {
+        assertEquals(uri.getScheme(), uri.getScheme());
+        assertEquals(uri.getUserInfo(), uri.getUserInfo());
+        assertEquals(uri.getHost(), uri.getHost());
+        assertEquals(uri.getPort(), uri.getPort());
+        assertEquals(uri.getPath(), uri.getPath());
+        assertEquals(uri.getQuery(), uri.getQuery());
+    }
+
+    private static void validateAgainstAbsoluteURI(String url) throws MalformedURLException {
+        assertUriEquals(Uri.create(url), URI.create(url));
+    }
+
+    private static void validateAgainstRelativeURI(String context, String url) throws MalformedURLException {
+        assertUriEquals(Uri.create(Uri.create(context), url), URI.create(context).resolve(URI.create(url)));
     }
 
     @Test
-    public void testRootRelativeURIWithRootContext() {
-
-        Uri context = Uri.create("https://graph.facebook.com");
-
-        Uri url = Uri.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    public void testSimpleParsing() throws MalformedURLException {
+        validateAgainstAbsoluteURI("https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testRootRelativeURIWithNonRootContext() {
-
-        Uri context = Uri.create("https://graph.facebook.com/foo/bar");
-
-        Uri url = Uri.create(context, "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    public void testRootRelativeURIWithRootContext() throws MalformedURLException {
+        validateAgainstRelativeURI("https://graph.facebook.com", "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testNonRootRelativeURIWithNonRootContext() {
-
-        Uri context = Uri.create("https://graph.facebook.com/foo/bar");
-
-        Uri url = Uri.create(context, "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/foo/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    public void testRootRelativeURIWithNonRootContext() throws MalformedURLException {
+        validateAgainstRelativeURI("https://graph.facebook.com/foo/bar", "/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testNonRootRelativeURIWithRootContext() {
-
-        Uri context = Uri.create("https://graph.facebook.com");
-
-        Uri url = Uri.create(context, "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    public void testNonRootRelativeURIWithNonRootContext() throws MalformedURLException {
+        validateAgainstRelativeURI("https://graph.facebook.com/foo/bar", "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testAbsoluteURIWithContext() {
-
-        Uri context = Uri.create("https://hello.com/foo/bar");
-
-        Uri url = Uri.create(context, "https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "graph.facebook.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/750198471659552/accounts/test-users");
-        assertEquals(url.getQuery(), "method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
+    public void testNonRootRelativeURIWithRootContext() throws MalformedURLException {
+        validateAgainstRelativeURI("https://graph.facebook.com", "750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testRelativeUriWithDots() {
-        Uri context = Uri.create("https://hello.com/level1/level2/");
-
-        Uri url = Uri.create(context, "../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/level1/other/content/img.png");
-        assertNull(url.getQuery());
+    public void testAbsoluteURIWithContext() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/foo/bar",
+                "https://graph.facebook.com/750198471659552/accounts/test-users?method=get&access_token=750198471659552lleveCvbUu_zqBa9tkT3tcgaPh4");
     }
 
     @Test
-    public void testRelativeUriWithDotsAboveRoot() {
-        Uri context = Uri.create("https://hello.com/level1");
-
-        Uri url = Uri.create(context, "../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithDots() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2/", "../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithAbsoluteDots() {
-        Uri context = Uri.create("https://hello.com/level1/");
-
-        Uri url = Uri.create(context, "/../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithDotsAboveRoot() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1", "../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDots() {
-        Uri context = Uri.create("https://hello.com/level1/level2/");
-
-        Uri url = Uri.create(context, "../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithAbsoluteDots() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/", "/../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDotsAboveRoot() {
-        Uri context = Uri.create("https://hello.com/level1/level2");
-
-        Uri url = Uri.create(context, "../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithConsecutiveDots() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2/", "../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithAbsoluteConsecutiveDots() {
-        Uri context = Uri.create("https://hello.com/level1/level2/");
-
-        Uri url = Uri.create(context, "/../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithConsecutiveDotsAboveRoot() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2", "../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDotsFromRoot() {
-        Uri context = Uri.create("https://hello.com/");
-
-        Uri url = Uri.create(context, "../../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../../../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithAbsoluteConsecutiveDots() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2/", "/../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDotsFromRootResource() {
-        Uri context = Uri.create("https://hello.com/level1");
-
-        Uri url = Uri.create(context, "../../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../../../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithConsecutiveDotsFromRoot() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/", "../../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDotsFromSubrootResource() {
-        Uri context = Uri.create("https://hello.com/level1/level2");
-
-        Uri url = Uri.create(context, "../../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithConsecutiveDotsFromRootResource() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1", "../../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithConsecutiveDotsFromLevel3Resource() {
-        Uri context = Uri.create("https://hello.com/level1/level2/level3");
-
-        Uri url = Uri.create(context, "../../../other/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "hello.com");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/../other/content/img.png");
-        assertNull(url.getQuery());
+    public void testRelativeUriWithConsecutiveDotsFromSubrootResource() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2", "../../../other/content/img.png");
     }
 
     @Test
-    public void testRelativeUriWithNoScheme() {
-        Uri context = Uri.create("https://hello.com/level1");
+    public void testRelativeUriWithConsecutiveDotsFromLevel3Resource() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1/level2/level3", "../../../other/content/img.png");
+    }
 
-        Uri url = Uri.create(context, "//world.org/content/img.png");
-
-        assertEquals(url.getScheme(), "https");
-        assertEquals(url.getHost(), "world.org");
-        assertEquals(url.getPort(), -1);
-        assertEquals(url.getPath(), "/content/img.png");
-        assertNull(url.getQuery());
+    @Test
+    public void testRelativeUriWithNoScheme() throws MalformedURLException {
+        validateAgainstRelativeURI("https://hello.com/level1", "//world.org/content/img.png");
     }
 
     @Test
