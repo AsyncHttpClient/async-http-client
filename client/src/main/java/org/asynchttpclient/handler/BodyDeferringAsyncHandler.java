@@ -65,7 +65,7 @@ import org.asynchttpclient.Response;
  *     PipedOutputStream pout = new PipedOutputStream();
  *     try (PipedInputStream pin = new PipedInputStream(pout)) {
  *         BodyDeferringAsyncHandler handler = new BodyDeferringAsyncHandler(pout);
- *         ListenableFuture<&lt;Response&gt; respFut = client.prepareGet(getTargetUrl()).execute(handler);
+ *         ListenableFuture&lt;Response&gt; respFut = client.prepareGet(getTargetUrl()).execute(handler);
  *         Response resp = handler.getResponse();
  *         // main thread will block here until headers are available
  *         if (resp.getStatusCode() == 200) {
