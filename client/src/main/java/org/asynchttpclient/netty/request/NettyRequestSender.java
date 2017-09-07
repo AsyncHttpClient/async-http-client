@@ -527,6 +527,7 @@ public final class NettyRequestSender {
         }
 
         if (fc.replayRequest() && future.incrementRetryAndCheck() && future.isReplayPossible()) {
+            future.setKeepAlive(false);
             replayRequest(future, fc, channel);
             replayed = true;
         }
