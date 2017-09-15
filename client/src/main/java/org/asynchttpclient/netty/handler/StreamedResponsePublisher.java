@@ -42,16 +42,15 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     protected void cancelled() {
         logger.debug("Subscriber cancelled, ignoring the rest of the body");
 
-        // The subscriber cancelled early, we need to drain the remaining elements from the stream
-        channelManager.drainChannelAndOffer(channel, future);
-        channel.pipeline().remove(StreamedResponsePublisher.class);
-
         try {
             future.done();
         } catch (Exception t) {
             // Never propagate exception once we know we are done.
             logger.debug(t.getMessage(), t);
         }
+
+        // The subscriber cancelled early - this channel is dead and should be closed.
+        channelManager.closeChannel(channel);
     }
 
     NettyResponseFuture<?> future() {
