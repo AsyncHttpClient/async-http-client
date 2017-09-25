@@ -25,11 +25,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BasicAuthTest;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.Response;
+import org.asynchttpclient.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -71,7 +67,6 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         }
 
         assertTrue(cause instanceof IOException, "Expected an IOException");
-        assertEquals(cause.getMessage(), "Broken pipe");
     }
 
     @Test(groups = "standalone")
