@@ -193,7 +193,7 @@ public class MultipartPartTest {
 
     @Test
     public void transferToShouldWriteStringPart() throws IOException, URISyntaxException {
-        String text = FileUtils.readFileToString(TestUtils.resourceAsFile("test_sample_message.eml"));
+        String text = FileUtils.readFileToString(TestUtils.resourceAsFile("test_sample_message.eml"), UTF_8);
 
         List<Part> parts = new ArrayList<>();
         parts.add(new StringPart("test_sample_message.eml", text));
