@@ -312,7 +312,7 @@ public final class DefaultChannelPool implements ChannelPool {
      */
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = connectionTtlEnabled ? channelId2Creation.remove(channel.id()) : null;
-        return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(channel);
+        return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(new IdleChannel(channel, Long.MIN_VALUE));
     }
 
     /**
