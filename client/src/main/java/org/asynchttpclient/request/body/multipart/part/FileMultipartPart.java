@@ -31,6 +31,7 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
     private final long length;
     private long position = 0L;
 
+    @SuppressWarnings("resource")
     public FileMultipartPart(FilePart part, byte[] boundary) {
         super(part, boundary);
         try {
