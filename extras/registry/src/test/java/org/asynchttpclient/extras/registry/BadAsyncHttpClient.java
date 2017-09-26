@@ -143,4 +143,9 @@ public class BadAsyncHttpClient implements AsyncHttpClient {
     public AsyncHttpClientConfig getConfig() {
         return null;
     }
+
+	@Override
+	public void closeAndAwaitInactivity() {
+		
+	}
 }

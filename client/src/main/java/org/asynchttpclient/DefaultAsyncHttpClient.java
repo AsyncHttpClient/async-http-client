@@ -21,8 +21,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.ThreadDeathWatcher;
 import io.netty.util.Timer;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -102,29 +106,58 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public void close() {
+        closeInternal(false);
+    }
+    
+    public void closeAndAwaitInactivity() {
+        closeInternal(true);
+    }
+    
+    private void closeInternal(boolean awaitInactivity) {
         if (closeTriggered.compareAndSet(false, true)) {
-            try {
-                channelManager.close();
-            } catch (Throwable t) {
-                LOGGER.warn("Unexpected error on ChannelManager close", t);
-            }
-            if (allowStopNettyTimer) {
-                try {
-                    nettyTimer.stop();
-                } catch (Throwable t) {
-                    LOGGER.warn("Unexpected error on HashedWheelTimer close", t);
+            CompletableFuture<Void> handledCloseFuture = channelManager.close().whenComplete((v, t) -> {
+                if(t != null) {
+                    LOGGER.warn("Unexpected error on ChannelManager close", t);
                 }
+                if (allowStopNettyTimer) {
+                    try {
+                        nettyTimer.stop();
+                    } catch (Throwable th) {
+                        LOGGER.warn("Unexpected error on HashedWheelTimer close", th);
+                    }
+                }
+            });
+
+            if(awaitInactivity) {
+                handledCloseFuture = handledCloseFuture.thenCombine(awaitInactivity(), (v1,v2) -> null) ;
             }
-            
-            //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
+
             try {
-                ThreadDeathWatcher.awaitInactivity(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
-            } catch(InterruptedException t) {
-                // Ignore
+                handledCloseFuture.get(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | TimeoutException t) {
+                LOGGER.warn("Unexpected error on AsyncHttpClient close", t);
+            } catch (ExecutionException e) {
+                // already handled and could be ignored
             }
-            
             closed.compareAndSet(false, true);
         }
+    }
+
+    private CompletableFuture<Void> awaitInactivity() {
+        //see https://github.com/netty/netty/issues/2084#issuecomment-44822314
+        CompletableFuture<Void> wait1 = CompletableFuture.runAsync(() -> {
+        try {
+            GlobalEventExecutor.INSTANCE.awaitInactivity(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
+        } catch(InterruptedException t) {
+            // Ignore
+        }});
+        CompletableFuture<Void> wait2 = CompletableFuture.runAsync(() -> {
+        try {
+            ThreadDeathWatcher.awaitInactivity(config.getShutdownTimeout(), TimeUnit.MILLISECONDS);
+        } catch(InterruptedException t) {
+            // Ignore
+        }});  
+        return wait1.thenCombine(wait2, (v1,v2) -> null);
     }
 
     @Override

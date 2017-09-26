@@ -287,4 +287,12 @@ public interface AsyncHttpClient extends Closeable {
      * @return the config associated to this client.
      */
     AsyncHttpClientConfig getConfig();
+
+    /**
+     * Similar to calling the method {@link #close()} but additionally waits for inactivity on shared resources between
+     * multiple instances of netty. Calling this method instead of the method {@link #close()} might be helpful 
+     * on application shutdown to prevent errors like a {@link ClassNotFoundException} because the class loader was
+     * already removed but there are still some active tasks on this shared resources which want to access these classes.
+     */
+    void closeAndAwaitInactivity();
 }
