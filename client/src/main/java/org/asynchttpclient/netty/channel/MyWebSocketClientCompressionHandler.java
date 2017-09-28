@@ -17,7 +17,7 @@ public class MyWebSocketClientCompressionHandler extends WebSocketClientExtensio
     public static final MyWebSocketClientCompressionHandler INSTANCE = new MyWebSocketClientCompressionHandler();
 
     private MyWebSocketClientCompressionHandler() {
-        super(new PerMessageDeflateClientExtensionHandshaker(6, ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), 15, false, true),
+        super(new PerMessageDeflateClientExtensionHandshaker(6, ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), 15, true, true),
                 new DeflateFrameClientExtensionHandshaker(false),
                 new DeflateFrameClientExtensionHandshaker(true));
     }
