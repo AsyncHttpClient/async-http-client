@@ -87,7 +87,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                     abortAfterHandlingReactiveStreams(channel, future, handler);
 
             if (abort) {
-                finishUpdate(future, channel, false, true);
+                finishUpdate(future, channel, true);
             }
         }
     }
@@ -116,8 +116,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         }
 
         if (abort || last) {
-            boolean keepAlive = !abort && future.isKeepAlive();
-            finishUpdate(future, channel, keepAlive, !last);
+            boolean close = abort || !future.isKeepAlive();
+            finishUpdate(future, channel, close);
         }
     }
 
@@ -168,7 +168,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         } catch (Exception abortException) {
             logger.debug("Abort failed", abortException);
         } finally {
-            finishUpdate(future, channel, false, false);
+            finishUpdate(future, channel, true);
         }
     }
 

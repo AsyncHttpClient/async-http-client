@@ -226,15 +226,13 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
     }
     
-    protected void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean keepAlive, boolean expectOtherChunks) throws IOException {
+    protected void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) throws IOException {
         future.cancelTimeouts();
         
-        if (!keepAlive) {
+        if (close) {
             channelManager.closeChannel(channel);
-        } else if (expectOtherChunks) {
-            channelManager.drainChannelAndOffer(channel, future);
         } else {
-            channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), keepAlive, future.getPartitionKey());
+            channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), true, future.getPartitionKey());
         }
 
         try {
