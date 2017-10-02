@@ -38,11 +38,13 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -299,18 +301,25 @@ public class ChannelManager {
         return channelPool.removeAll(connection);
     }
 
-    private void doClose() {
-        openChannels.close();
-        channelPool.destroy();
-    }
-
-    public void close() {
+    public CompletableFuture<Void> close() {
+        CompletableFuture<Void> closeFuture = CompletableFuture.completedFuture(null);
         if (allowReleaseEventLoopGroup) {
-            eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
-                    .addListener(future -> doClose());
-        } else {
-            doClose();
+            closeFuture = toCompletableFuture(
+                eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS));
         }
+        return closeFuture.thenCompose(v -> toCompletableFuture(openChannels.close())).whenComplete((v,t) -> channelPool.destroy());
+    }
+    
+    private static CompletableFuture<Void> toCompletableFuture(final Future<?> future) {
+        final CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+        future.addListener(r  -> {
+            if(r.isSuccess()) {
+                completableFuture.complete(null);
+            } else {
+                completableFuture.completeExceptionally(r.cause());
+            }
+        });
+        return completableFuture;
     }
 
     public void closeChannel(Channel channel) {

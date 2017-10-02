@@ -139,4 +139,8 @@ public class TestAsyncHttpClient implements AsyncHttpClient {
     public AsyncHttpClientConfig getConfig() {
         return null;
     }
+
+	@Override
+	public void closeAndAwaitInactivity() {
+	}
 }
