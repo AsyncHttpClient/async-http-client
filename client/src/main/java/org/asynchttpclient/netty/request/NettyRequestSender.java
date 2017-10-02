@@ -13,41 +13,18 @@
  */
 package org.asynchttpclient.netty.request;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
-import static java.util.Collections.singletonList;
-import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
-import static org.asynchttpclient.util.AuthenticatorUtils.*;
-import static org.asynchttpclient.util.HttpConstants.Methods.*;
-import static org.asynchttpclient.util.MiscUtils.getCause;
-import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.*;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.List;
-
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpClientState;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Realm;
+import org.asynchttpclient.*;
 import org.asynchttpclient.Realm.AuthScheme;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.filter.FilterContext;
@@ -58,11 +35,7 @@ import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.SimpleFutureListener;
-import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.channel.ChannelState;
-import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.channel.ConnectionSemaphore;
-import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.channel.*;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
@@ -70,6 +43,22 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.List;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
+import static java.util.Collections.singletonList;
+import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
+import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
+import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
+import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.MiscUtils.getCause;
+import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
 public final class NettyRequestSender {
 
@@ -108,7 +97,8 @@ public final class NettyRequestSender {
         ProxyServer proxyServer = getProxyServer(config, request);
 
         // websockets use connect tunnelling to work with proxies
-        if (proxyServer != null && (request.getUri().isSecured() || request.getUri().isWebSocket()) && !isConnectDone(request, future))
+        if (proxyServer != null && (request.getUri().isSecured() || request.getUri().isWebSocket()) && !isConnectDone(request, future) //
+                && !proxyServer.getProxyType().isSocks())
             if (future != null && future.isConnectAllowed())
                 // SSL proxy or websocket: CONNECT for sure
                 return sendRequestWithCertainForceConnect(request, asyncHandler, future, performingNextRequest, proxyServer, true);
@@ -282,10 +272,6 @@ public final class NettyRequestSender {
         future.setInAuth(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
         future.setInProxyAuth(proxyRealm != null && proxyRealm.isUsePreemptiveAuth() && proxyRealm.getScheme() != AuthScheme.NTLM);
 
-        // Do not throw an exception when we need an extra connection for a redirect
-        // FIXME why? This violate the max connection per host handling, right?
-        Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), proxy);
-
         Object partitionKey = future.getPartitionKey();
 
         try {
@@ -310,7 +296,15 @@ public final class NettyRequestSender {
                         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore, partitionKey);
                         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, config);
                         if (!future.isDone()) {
-                            connector.connect(bootstrap, connectListener);
+                            // Do not throw an exception when we need an extra connection for a redirect
+                            // FIXME why? This violate the max connection per host handling, right?
+                            channelManager.getBootstrap(request, proxy).addListener((Future<Bootstrap> bootstrapFuture) -> {
+                                if (bootstrapFuture.isSuccess()) {
+                                    connector.connect(bootstrapFuture.get(), connectListener);
+                                } else {
+                                    abort(null, future, bootstrapFuture.cause());
+                                }
+                            });
                         }
                     }
 
@@ -332,7 +326,7 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
-        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
+        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && !proxy.getProxyType().isSocks()) {
             int port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);

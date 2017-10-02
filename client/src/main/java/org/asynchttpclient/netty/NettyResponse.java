@@ -220,7 +220,7 @@ public class NettyResponse implements Response {
             sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
         }
         sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
-                .append("}").toString();
+                .append("}");
         return sb.toString();
     }
 }

@@ -17,12 +17,7 @@ import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHan
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFactory;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -34,13 +29,16 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Timer;
-import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.*;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadFactory;
@@ -51,11 +49,7 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ClientStats;
-import org.asynchttpclient.HostStats;
-import org.asynchttpclient.SslEngineFactory;
+import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.channel.NoopChannelPool;
@@ -68,6 +62,7 @@ import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +73,7 @@ public class ChannelManager {
     public static final String PINNED_ENTRY = "entry";
     public static final String HTTP_CLIENT_CODEC = "http";
     public static final String SSL_HANDLER = "ssl";
+    public static final String SOCKS_HANDLER = "socks";
     public static final String DEFLATER_HANDLER = "deflater";
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
@@ -391,8 +387,49 @@ public class ChannelManager {
         return sslHandler;
     }
 
-    public Bootstrap getBootstrap(Uri uri, ProxyServer proxy) {
-        return uri.isWebSocket() && proxy == null ? wsBootstrap : httpBootstrap;
+    public Promise<Bootstrap> getBootstrap(Request request, ProxyServer proxy) {
+        final Promise<Bootstrap> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+
+        if (request.getUri().isWebSocket() && proxy == null) {
+            promise.setSuccess(wsBootstrap);
+        } else {
+            if (proxy != null && proxy.getProxyType().isSocks()) {
+                request.getNameResolver().resolve(proxy.getHost()).addListener((Future<InetAddress> proxyDnsFuture) -> {
+                    if (proxyDnsFuture.isSuccess()) {
+                        Bootstrap bootstrap = httpBootstrap.clone();
+                        ChannelHandler handler = bootstrap.config().handler();
+
+                        bootstrap.handler(new ChannelInitializer<Channel>() {
+                            @Override
+                            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+                                handler.handlerAdded(ctx);
+                                super.handlerAdded(ctx);
+                            }
+
+                            @Override
+                            protected void initChannel(Channel channel) throws Exception {
+                                InetSocketAddress proxyAddress = new InetSocketAddress(proxyDnsFuture.get(), proxy.getPort());
+                                if (proxy.getProxyType() == ProxyType.SOCKS_V4) {
+                                    channel.pipeline().addFirst(ChannelManager.SSL_HANDLER, new Socks4ProxyHandler(proxyAddress));
+                                } else if (proxy.getProxyType() == ProxyType.SOCKS_V5) {
+                                    channel.pipeline().addFirst(ChannelManager.SSL_HANDLER, new Socks5ProxyHandler(proxyAddress));
+                                } else {
+                                    throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
+                                }
+                            }
+                        });
+
+                        promise.setSuccess(bootstrap);
+                    } else {
+                        promise.setFailure(proxyDnsFuture.cause());
+                    }
+                });
+            } else {
+                promise.setSuccess(httpBootstrap);
+            }
+        }
+
+        return promise;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
