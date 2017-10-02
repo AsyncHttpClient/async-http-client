@@ -410,9 +410,9 @@ public class ChannelManager {
                             protected void initChannel(Channel channel) throws Exception {
                                 InetSocketAddress proxyAddress = new InetSocketAddress(proxyDnsFuture.get(), proxy.getPort());
                                 if (proxy.getProxyType() == ProxyType.SOCKS_V4) {
-                                    channel.pipeline().addFirst(ChannelManager.SSL_HANDLER, new Socks4ProxyHandler(proxyAddress));
+                                    channel.pipeline().addFirst(ChannelManager.SOCKS_HANDLER, new Socks4ProxyHandler(proxyAddress));
                                 } else if (proxy.getProxyType() == ProxyType.SOCKS_V5) {
-                                    channel.pipeline().addFirst(ChannelManager.SSL_HANDLER, new Socks5ProxyHandler(proxyAddress));
+                                    channel.pipeline().addFirst(ChannelManager.SOCKS_HANDLER, new Socks5ProxyHandler(proxyAddress));
                                 } else {
                                     throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
                                 }
