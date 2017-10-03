@@ -89,7 +89,7 @@ public final class NettyConnectListener<T> {
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
 
-        {
+        if (connectionSemaphore != null) {
             // transfer lock from future to channel
             Object partitionKeyLock = future.takePartitionKeyLock();
 

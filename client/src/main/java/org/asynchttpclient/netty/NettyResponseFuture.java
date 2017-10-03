@@ -90,11 +90,14 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     @SuppressWarnings("rawtypes")
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
     @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "onThrowableCalled");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class,
+            "onThrowableCalled");
     @SuppressWarnings("rawtypes")
-    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> timeoutsHolderField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class, TimeoutsHolder.class, "timeoutsHolder");
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> timeoutsHolderField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class,
+            TimeoutsHolder.class, "timeoutsHolder");
     @SuppressWarnings("rawtypes")
-    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, Object> partitionKeyLockField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class, Object.class, "partitionKeyLock");
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, Object> partitionKeyLockField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class,
+            Object.class, "partitionKeyLock");
 
     // volatile where we need CAS ops
     private volatile int redirectCount = 0;
@@ -120,12 +123,12 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private Realm proxyRealm;
     public Throwable pendingException;
 
-    public NettyResponseFuture(Request originalRequest,//
-            AsyncHandler<V> asyncHandler,//
-            NettyRequest nettyRequest,//
-            int maxRetry,//
-            ChannelPoolPartitioning connectionPoolPartitioning,//
-            ConnectionSemaphore connectionSemaphore,//
+    public NettyResponseFuture(Request originalRequest, //
+            AsyncHandler<V> asyncHandler, //
+            NettyRequest nettyRequest, //
+            int maxRetry, //
+            ChannelPoolPartitioning connectionPoolPartitioning, //
+            ConnectionSemaphore connectionSemaphore, //
             ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
@@ -138,6 +141,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     private void releasePartitionKeyLock() {
+        if (connectionSemaphore == null) {
+            return;
+        }
+
         Object partitionKey = takePartitionKeyLock();
         if (partitionKey != null) {
             connectionSemaphore.releaseChannelLock(partitionKey);
@@ -484,7 +491,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void acquirePartitionLockLazily() throws IOException {
-        if (partitionKeyLock != null) {
+        if (connectionSemaphore == null || partitionKeyLock != null) {
             return;
         }
 
