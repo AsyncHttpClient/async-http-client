@@ -176,7 +176,7 @@ AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
 
 ## WebSocket
 
-Async Http Client also support WebSocket by simply doing:
+Async Http Client also supports WebSocket by simply doing:
 
 ```java
 WebSocket websocket = c.prepareGet(getTargetUrl())
