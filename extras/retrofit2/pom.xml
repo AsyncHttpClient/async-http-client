@@ -13,7 +13,7 @@
 
     <properties>
       <retrofit2.version>2.3.0</retrofit2.version>
-      <lombok.version>1.16.16</lombok.version>
+      <lombok.version>1.16.18</lombok.version>
     </properties>
 
     <dependencies>
