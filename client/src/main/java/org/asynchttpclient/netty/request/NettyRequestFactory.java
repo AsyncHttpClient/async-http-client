@@ -17,7 +17,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.*;
-import static org.asynchttpclient.ws.WebSocketUtils.getKey;
+import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -194,7 +194,7 @@ public final class NettyRequestFactory {
         if (!connect && uri.isWebSocket()) {
             headers.set(UPGRADE, HttpHeaderValues.WEBSOCKET)//
                     .set(CONNECTION, HttpHeaderValues.UPGRADE)//
-                    .set(SEC_WEBSOCKET_KEY, getKey())//
+                    .set(SEC_WEBSOCKET_KEY, getWebSocketKey())//
                     .set(SEC_WEBSOCKET_VERSION, "13");
 
             if (!headers.contains(ORIGIN)) {

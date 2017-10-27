@@ -18,29 +18,21 @@ import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDiges
 
 import org.asynchttpclient.util.Base64;
 
+import io.netty.util.internal.ThreadLocalRandom;
+
 public final class WebSocketUtils {
 	public static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 	public static String getWebSocketKey() {
-		byte[] nonce = createRandomBytes(16);
+		byte[] nonce = new byte[16];
+		ThreadLocalRandom random = ThreadLocalRandom.current();
+		for (int i = 0; i < nonce.length; i++) {
+			nonce[i] = (byte) random.nextInt(256);
+		}
 		return Base64.encode(nonce);
 	}
 
 	public static String getAcceptKey(String key) {
 		return Base64.encode(pooledSha1MessageDigest().digest((key + MAGIC_GUID).getBytes(US_ASCII)));
-	}
-
-	public static byte[] createRandomBytes(int size) {
-		byte[] bytes = new byte[size];
-
-		for (int i = 0; i < size; i++) {
-			bytes[i] = (byte) createRandomNumber(0, 255);
-		}
-
-		return bytes;
-	}
-
-	public static int createRandomNumber(int min, int max) {
-		return (int) (Math.random() * max + min);
 	}
 }
