@@ -84,12 +84,11 @@ public final class NettyRequestSender {
 
     public NettyRequestSender(AsyncHttpClientConfig config,//
             ChannelManager channelManager,//
-            ConnectionSemaphore connectionSemaphore,//
             Timer nettyTimer,//
             AsyncHttpClientState clientState) {
         this.config = config;
         this.channelManager = channelManager;
-        this.connectionSemaphore = connectionSemaphore;
+        this.connectionSemaphore = ConnectionSemaphore.newConnectionSemaphore(config);
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
