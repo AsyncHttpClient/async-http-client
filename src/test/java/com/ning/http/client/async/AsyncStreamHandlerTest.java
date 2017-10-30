@@ -412,7 +412,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<>();
 
         try (AsyncHttpClient client = getAsyncHttpClient(null)) {
-            final String[] expected = { "GET", "HEAD", "OPTIONS", "POST", "TRACE" };
+            final String[] expected = { "GET", "HEAD", "OPTIONS", "POST" }; //, "TRACE" }; Trace has been disabled by apache.org
             Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
                 @Override
