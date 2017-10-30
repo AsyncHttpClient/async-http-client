@@ -99,7 +99,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
 
-            String anyMicrosoftPage = "http://www.microsoft.com[^:]*:80";
+            String anyMicrosoftPage = "https://www.microsoft.com[^:]*:443";
             String baseUrl = getBaseUrl(response.getUri());
 
             assertTrue(baseUrl.matches(anyMicrosoftPage), "response does not show redirection to " + anyMicrosoftPage);
