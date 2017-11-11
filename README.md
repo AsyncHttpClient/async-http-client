@@ -5,8 +5,8 @@ Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on tw
 
 [Getting](https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/) [started](https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/), and use [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
 
-The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
-The library also supports the WebSocket Protocol. The Async HTTP Client library is simple to use.
+The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process HTTP responses.
+The library also supports WebSocket Protocol. The Async HTTP Client library is simple to use.
 
 It's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
 
@@ -37,7 +37,7 @@ Future<Response> f = asyncHttpClient.prepareGet("http://www.example.com/").execu
 Response r = f.get();
 ```
 
-Note that in this case all the content must be read fully in memory, even if you used `getResponseBodyAsStream()` method on returned `Response` object.
+Note that in this case all content must be fully read in memory, even if you used `getResponseBodyAsStream()` method on returned `Response` object.
 
 You can also accomplish asynchronous (non-blocking) operation without using a Future if you want to receive and process the response in your handler:
 
