@@ -14,7 +14,7 @@ package org.asynchttpclient.reactivestreams;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -222,11 +222,10 @@ public class ReactiveStreamsTest {
     public void testConnectionDoesNotGetClosed() throws Exception {
         // test that we can stream the same request multiple times
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            String expectedMd5 = TestUtils.md5(LARGE_IMAGE_BYTES);
             BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl())//
                     .setBody(createPublisher(LARGE_IMAGE_BYTES, 1000))//
                     .setHeader("X-" + CONTENT_LENGTH, LARGE_IMAGE_BYTES.length)//
-                    .setHeader("X-" + CONTENT_MD5, expectedMd5);
+                    .setHeader("X-" + CONTENT_MD5, LARGE_IMAGE_BYTES_MD5);
 
             Response response = requestBuilder.execute().get();
             assertEquals(response.getStatusCode(), 200, "HTTP response was invalid on first request.");
@@ -235,8 +234,8 @@ public class ReactiveStreamsTest {
             responseBody = response.getResponseBodyAsBytes();
             assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(), LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
-            assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server side payload MD5 invalid");
-            assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client side payload MD5 invalid");
+            assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5, "Server side payload MD5 invalid");
+            assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5, "Client side payload MD5 invalid");
             assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes are not equal on first attempt");
 
             response = requestBuilder.execute().get();
@@ -246,8 +245,8 @@ public class ReactiveStreamsTest {
             assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
 
             try {
-                assertEquals(response.getHeader(CONTENT_MD5), expectedMd5, "Server side payload MD5 invalid");
-                assertEquals(TestUtils.md5(responseBody), expectedMd5, "Client side payload MD5 invalid");
+                assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5, "Server side payload MD5 invalid");
+                assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5, "Client side payload MD5 invalid");
                 assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes weren't equal on subsequent test");
             } catch (AssertionError e) {
                 e.printStackTrace();

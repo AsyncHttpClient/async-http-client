@@ -61,6 +61,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.netty.ssl.JsseSslEngineFactory;
 import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.MessageDigestUtils;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -89,6 +90,7 @@ public class TestUtils {
     public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
     public static final File LARGE_IMAGE_FILE;
     public static final byte[] LARGE_IMAGE_BYTES;
+    public static final String LARGE_IMAGE_BYTES_MD5;
     public static final File SIMPLE_TEXT_FILE;
     public static final String SIMPLE_TEXT_FILE_STRING;
     private static final LoginService LOGIN_SERVICE = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
@@ -99,6 +101,7 @@ public class TestUtils {
             TMP_DIR.deleteOnExit();
             LARGE_IMAGE_FILE = resourceAsFile("300k.png");
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
+            LARGE_IMAGE_BYTES_MD5 = TestUtils.md5(LARGE_IMAGE_BYTES);
             SIMPLE_TEXT_FILE = resourceAsFile("SimpleTextFile.txt");
             SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, UTF_8);
         } catch (Exception e) {
@@ -373,7 +376,7 @@ public class TestUtils {
 
     public static String md5(byte[] bytes, int offset, int len) {
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigestUtils.pooledMd5MessageDigest();
             md.update(bytes, offset, len);
             return Base64.encode(md.digest());
         } catch (Exception e) {
