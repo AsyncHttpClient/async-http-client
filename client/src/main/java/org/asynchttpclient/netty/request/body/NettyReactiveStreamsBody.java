@@ -58,6 +58,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
 			NettySubscriber subscriber = new NettySubscriber(channel, future);
 			channel.pipeline().addLast(NAME_IN_CHANNEL_PIPELINE, subscriber);
 			publisher.subscribe(new SubscriberAdapter(subscriber));
+			subscriber.delayedStart();
 		}
 	}
 
@@ -106,6 +107,17 @@ public class NettyReactiveStreamsBody implements NettyBody {
 		protected void complete() {
 			channel.eventLoop().execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
 					.addListener(future -> removeFromPipeline()));
+		}
+
+		private volatile Subscription deferredSubscription;
+
+		@Override
+		public void onSubscribe(Subscription subscription) {
+			deferredSubscription = subscription;
+		}
+		
+		public void delayedStart() {
+			super.onSubscribe(deferredSubscription);
 		}
 
 		@Override
