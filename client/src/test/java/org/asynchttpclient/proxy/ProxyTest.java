@@ -43,6 +43,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
+import org.asynchttpclient.testserver.SOCKSProxy;
 import org.asynchttpclient.util.ProxyUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -191,6 +192,25 @@ public class ProxyTest extends AbstractBasicTest {
         testWildcardNonProxyHosts();
         testUseProxySelector();
     }
+
+    @Test(groups = "standalone")
+    public void runSocksProxy() throws Exception {
+        new Thread(() -> {
+            try {
+                new SOCKSProxy(60000);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String target = "http://localhost:" + port1 + "/";
+            Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4)).execute();
+
+            assertEquals(200, f.get(60, TimeUnit.SECONDS).getStatusCode());
+        }
+    }
+
 
     // @Test(groups = "standalone")
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {

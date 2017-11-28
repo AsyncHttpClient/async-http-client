@@ -35,13 +35,15 @@ public class ProxyServer {
     private final int securedPort;
     private final Realm realm;
     private final List<String> nonProxyHosts;
+    private final ProxyType proxyType;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts) {
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, ProxyType proxyType) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
         this.realm = realm;
         this.nonProxyHosts = nonProxyHosts;
+        this.proxyType = proxyType;
     }
 
     public String getHost() {
@@ -50,6 +52,10 @@ public class ProxyServer {
 
     public int getPort() {
         return port;
+    }
+
+    public ProxyType getProxyType() {
+        return proxyType;
     }
 
     public int getSecuredPort() {
@@ -103,6 +109,7 @@ public class ProxyServer {
         private int securedPort;
         private Realm realm;
         private List<String> nonProxyHosts;
+        private ProxyType proxyType;
 
         public Builder(String host, int port) {
             this.host = host;
@@ -112,6 +119,11 @@ public class ProxyServer {
 
         public Builder setSecuredPort(int securedPort) {
             this.securedPort = securedPort;
+            return this;
+        }
+
+        public Builder setProxyType(ProxyType proxyType) {
+            this.proxyType = proxyType;
             return this;
         }
 
@@ -139,7 +151,8 @@ public class ProxyServer {
 
         public ProxyServer build() {
             List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
-            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts);
+            ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
+            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType);
         }
     }
 }

@@ -17,23 +17,35 @@ import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHan
 import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLException;
 
 /**
  * Non Blocking connect.
@@ -94,12 +106,7 @@ public final class NettyConnectListener<T> {
             Object partitionKeyLock = future.takePartitionKeyLock();
 
             if (partitionKeyLock != null) {
-                channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                    @Override
-                    public void operationComplete(Future<? super Void> future) throws Exception {
-                        connectionSemaphore.releaseChannelLock(partitionKeyLock);
-                    }
-                });
+                channel.closeFuture().addListener(future -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
             }
         }
 

@@ -45,6 +45,7 @@ import org.asynchttpclient.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.netty.request.body.NettyReactiveStreamsBody;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
@@ -237,7 +238,7 @@ public final class NettyRequestFactory {
             // proxy tunnelling, connect need host and explicit port
             return getAuthority(uri);
 
-        } else if (proxyServer != null && !uri.isSecured()) {
+        } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType() == ProxyType.HTTP) {
             // proxy over HTTP, need full url
             return uri.toUrl();
 
