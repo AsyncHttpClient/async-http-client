@@ -123,10 +123,10 @@ public final class NettyRequestFactory {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
     }
 
-    public NettyRequest newNettyRequest(Request request, boolean forceConnect, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
+    public NettyRequest newNettyRequest(Request request, boolean performConnectRequest, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
 
         Uri uri = request.getUri();
-        HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
+        HttpMethod method = performConnectRequest ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
 
         HttpVersion httpVersion = HttpVersion.HTTP_1_1;
