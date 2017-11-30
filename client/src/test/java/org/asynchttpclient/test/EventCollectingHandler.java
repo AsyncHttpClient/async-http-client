@@ -25,11 +25,10 @@ import java.util.concurrent.TimeUnit;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
 
-public class EventCollectingHandler extends AsyncCompletionHandlerBase implements AsyncHandlerExtensions {
+public class EventCollectingHandler extends AsyncCompletionHandlerBase {
 
     public static final String COMPLETED_EVENT = "Completed";
     public static final String STATUS_RECEIVED_EVENT = "StatusReceived";

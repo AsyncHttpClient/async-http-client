@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
-import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.*;
@@ -53,7 +52,6 @@ import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
-import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
@@ -238,15 +236,12 @@ public final class NettyRequestSender {
     private <T> ListenableFuture<T> sendRequestWithOpenChannel(Request request, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
 
-        final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
-        if (asyncHandlerExtensions != null) {
-            try {
-                asyncHandlerExtensions.onConnectionPooled(channel);
-            } catch (Exception e) {
-                LOGGER.error("onConnectionPooled crashed", e);
-                abort(channel, future, e);
-                return future;
-            }
+        try {
+            asyncHandler.onConnectionPooled(channel);
+        } catch (Exception e) {
+            LOGGER.error("onConnectionPooled crashed", e);
+            abort(channel, future, e);
+            return future;
         }
 
         SocketAddress channelRemoteAddress = channel.remoteAddress();
@@ -352,8 +347,7 @@ public final class NettyRequestSender {
             int port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);
-            return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress,
-                    toAsyncHandlerExtensions(asyncHandler));
+            return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
 
         } else {
             int port = uri.getExplicitPort();
@@ -366,8 +360,7 @@ public final class NettyRequestSender {
             } else {
                 InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
                 scheduleRequestTimeout(future, unresolvedRemoteAddress);
-                return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress,
-                        toAsyncHandlerExtensions(asyncHandler));
+                return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
             }
         }
     }
@@ -394,7 +387,7 @@ public final class NettyRequestSender {
 
         NettyRequest nettyRequest = future.getNettyRequest();
         HttpRequest httpRequest = nettyRequest.getHttpRequest();
-        AsyncHandler<T> handler = future.getAsyncHandler();
+        AsyncHandler<T> asyncHandler = future.getAsyncHandler();
 
         // if the channel is dead because it was pooled and the remote server decided to
         // close it,
@@ -403,23 +396,20 @@ public final class NettyRequestSender {
             return;
 
         try {
-            if (handler instanceof TransferCompletionHandler) {
-                configureTransferAdapter(handler, httpRequest);
+            if (asyncHandler instanceof TransferCompletionHandler) {
+                configureTransferAdapter(asyncHandler, httpRequest);
             }
 
             boolean writeBody = !future.isDontWriteBodyBecauseExpectContinue()
                     && httpRequest.method() != HttpMethod.CONNECT && nettyRequest.getBody() != null;
 
             if (!future.isHeadersAlreadyWrittenOnContinue()) {
-                final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(handler);
-                if (asyncHandlerExtensions != null) {
-                    try {
-                        asyncHandlerExtensions.onRequestSend(nettyRequest);
-                    } catch (Exception e) {
-                        LOGGER.error("onRequestSend crashed", e);
-                        abort(channel, future, e);
-                        return;
-                    }
+                try {
+                    asyncHandler.onRequestSend(nettyRequest);
+                } catch (Exception e) {
+                    LOGGER.error("onRequestSend crashed", e);
+                    abort(channel, future, e);
+                    return;
                 }
 
                 // if the request has a body, we want to track progress
@@ -511,15 +501,12 @@ public final class NettyRequestSender {
             future.setChannelState(ChannelState.RECONNECTED);
 
             LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
-            final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
-            if (asyncHandlerExtensions != null) {
-                try {
-                    asyncHandlerExtensions.onRetry();
-                } catch (Exception e) {
-                    LOGGER.error("onRetry crashed", e);
-                    abort(future.channel(), future, e);
-                    return false;
-                }
+            try {
+                future.getAsyncHandler().onRetry();
+            } catch (Exception e) {
+                LOGGER.error("onRetry crashed", e);
+                abort(future.channel(), future, e);
+                return false;
             }
 
             try {
@@ -582,14 +569,10 @@ public final class NettyRequestSender {
     }
 
     private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
-
-        final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
-        if (asyncHandlerExtensions != null) {
-            try {
-                asyncHandlerExtensions.onConnectionPoolAttempt();
-            } catch (Exception e) {
-                LOGGER.error("onConnectionPoolAttempt crashed", e);
-            }
+        try {
+            asyncHandler.onConnectionPoolAttempt();
+        } catch (Exception e) {
+            LOGGER.error("onConnectionPoolAttempt crashed", e);
         }
 
         Uri uri = request.getUri();
@@ -611,15 +594,12 @@ public final class NettyRequestSender {
         future.touch();
 
         LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
-        final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
-        if (asyncHandlerExtensions != null) {
-            try {
-                asyncHandlerExtensions.onRetry();
-            } catch (Exception e) {
-                LOGGER.error("onRetry crashed", e);
-                abort(channel, future, e);
-                return;
-            }
+        try {
+            future.getAsyncHandler().onRetry();
+        } catch (Exception e) {
+            LOGGER.error("onRetry crashed", e);
+            abort(channel, future, e);
+            return;
         }
 
         channelManager.drainChannelAndOffer(channel, future);

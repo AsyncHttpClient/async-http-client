@@ -13,19 +13,13 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
 import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.ssl.SslHandler;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
@@ -34,6 +28,12 @@ import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * Non Blocking connect.
@@ -126,43 +126,37 @@ public final class NettyConnectListener<T> {
                 return;
             }
 
-            final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(future.getAsyncHandler());
-
-            if (asyncHandlerExtensions != null) {
-                try {
-                    asyncHandlerExtensions.onTlsHandshakeAttempt();
-                } catch (Exception e) {
-                    LOGGER.error("onTlsHandshakeAttempt crashed", e);
-                    onFailure(channel, e);
-                    return;
-                }
+            final AsyncHandler<?> asyncHandler = future.getAsyncHandler();
+            
+            try {
+                asyncHandler.onTlsHandshakeAttempt();
+            } catch (Exception e) {
+                LOGGER.error("onTlsHandshakeAttempt crashed", e);
+                onFailure(channel, e);
+                return;
             }
 
             sslHandler.handshakeFuture().addListener(new SimpleFutureListener<Channel>() {
                 @Override
                 protected void onSuccess(Channel value) throws Exception {
-                    if (asyncHandlerExtensions != null) {
-                        try {
-                            asyncHandlerExtensions.onTlsHandshakeSuccess();
-                        } catch (Exception e) {
-                            LOGGER.error("onTlsHandshakeSuccess crashed", e);
-                            NettyConnectListener.this.onFailure(channel, e);
-                            return;
-                        }
+                    try {
+                        asyncHandler.onTlsHandshakeSuccess();
+                    } catch (Exception e) {
+                        LOGGER.error("onTlsHandshakeSuccess crashed", e);
+                        NettyConnectListener.this.onFailure(channel, e);
+                        return;
                     }
                     writeRequest(channel);
                 }
 
                 @Override
                 protected void onFailure(Throwable cause) throws Exception {
-                    if (asyncHandlerExtensions != null) {
-                        try {
-                            asyncHandlerExtensions.onTlsHandshakeFailure(cause);
-                        } catch (Exception e) {
-                            LOGGER.error("onTlsHandshakeFailure crashed", e);
-                            NettyConnectListener.this.onFailure(channel, e);
-                            return;
-                        }
+                    try {
+                        asyncHandler.onTlsHandshakeFailure(cause);
+                    } catch (Exception e) {
+                        LOGGER.error("onTlsHandshakeFailure crashed", e);
+                        NettyConnectListener.this.onFailure(channel, e);
+                        return;
                     }
                     NettyConnectListener.this.onFailure(channel, cause);
                 }

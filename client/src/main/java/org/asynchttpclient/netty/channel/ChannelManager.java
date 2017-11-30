@@ -13,8 +13,6 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import static org.asynchttpclient.handler.AsyncHandlerExtensionsUtils.toAsyncHandlerExtensions;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -59,7 +57,6 @@ import org.asynchttpclient.SslEngineFactory;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.channel.NoopChannelPool;
-import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
@@ -271,13 +268,10 @@ public class ChannelManager {
             LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
             Channels.setDiscard(channel);
 
-            final AsyncHandlerExtensions asyncHandlerExtensions = toAsyncHandlerExtensions(asyncHandler);
-            if (asyncHandlerExtensions != null) {
-                try {
-                    asyncHandlerExtensions.onConnectionOffer(channel);
-                } catch (Exception e) {
-                    LOGGER.error("onConnectionOffer crashed", e);
-                }
+            try {
+                asyncHandler.onConnectionOffer(channel);
+            } catch (Exception e) {
+                LOGGER.error("onConnectionOffer crashed", e);
             }
 
             if (!channelPool.offer(channel, partitionKey)) {

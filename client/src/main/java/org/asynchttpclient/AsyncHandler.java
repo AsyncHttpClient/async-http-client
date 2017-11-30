@@ -15,6 +15,12 @@
  */
 package org.asynchttpclient;
 
+import java.net.InetSocketAddress;
+import java.util.List;
+
+import org.asynchttpclient.netty.request.NettyRequest;
+
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 
 
@@ -118,4 +124,127 @@ public interface AsyncHandler<T> {
      * @throws Exception if something wrong happens
      */
     T onCompleted() throws Exception;
+    
+    // ////////// DNS /////////////////
+
+    /**
+     * Notify the callback before hostname resolution
+     * 
+     * @param name the name to be resolved
+     */
+    default void onHostnameResolutionAttempt(String name) {
+    }
+
+    /**
+     * Notify the callback after hostname resolution was successful.
+     * 
+     * @param name the name to be resolved
+     * @param addresses the resolved addresses
+     */
+    default void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+    }
+
+    /**
+     * Notify the callback after hostname resolution failed.
+     * 
+     * @param name the name to be resolved
+     * @param cause the failure cause
+     */
+    default void onHostnameResolutionFailure(String name, Throwable cause) {
+    }
+
+    // ////////////// TCP CONNECT ////////
+
+    /**
+     * Notify the callback when trying to open a new connection.
+     * 
+     * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
+     * 
+     * @param remoteAddress the address we try to connect to
+     */
+    default void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+    }
+
+    /**
+     * Notify the callback after a successful connect
+     * 
+     * @param remoteAddress the address we try to connect to
+     * @param connection the connection
+     */
+    default void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+    }
+
+    /**
+     * Notify the callback after a failed connect.
+     * 
+     * Might be called several times, or be followed by onTcpConnectSuccess when the name was resolved to multiple addresses.
+     * 
+     * @param remoteAddress the address we try to connect to
+     * @param cause the cause of the failure
+     */
+    default void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
+    }
+
+    // ////////////// TLS ///////////////
+
+    /**
+     * Notify the callback before TLS handshake
+     */
+    default void onTlsHandshakeAttempt() {
+    }
+
+    /**
+     * Notify the callback after the TLS was successful
+     */
+    default void onTlsHandshakeSuccess() {
+    }
+
+    /**
+     * Notify the callback after the TLS failed
+     * 
+     * @param cause the cause of the failure
+     */
+    default void onTlsHandshakeFailure(Throwable cause) {
+    }
+
+    // /////////// POOLING /////////////
+
+    /**
+     * Notify the callback when trying to fetch a connection from the pool.
+     */
+    default void onConnectionPoolAttempt() {
+    }
+
+    /**
+     * Notify the callback when a new connection was successfully fetched from the pool.
+     * 
+     * @param connection the connection
+     */
+    default void onConnectionPooled(Channel connection) {
+    }
+
+    /**
+     * Notify the callback when trying to offer a connection to the pool.
+     * 
+     * @param connection the connection
+     */
+    default void onConnectionOffer(Channel connection) {
+    }
+
+    // //////////// SENDING //////////////
+
+    /**
+     * Notify the callback when a request is being written on the channel. If the original request causes multiple requests to be sent, for example, because of authorization or
+     * retry, it will be notified multiple times.
+     * 
+     * @param request the real request object as passed to the provider
+     */
+    default void onRequestSend(NettyRequest request) {
+    }
+
+    /**
+     * Notify the callback every time a request is being retried.
+     */
+    default void onRetry() {
+    }
 }

@@ -20,17 +20,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 import java.lang.reflect.Field;
-import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.handler.AsyncHandlerExtensions;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
-import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleStreamedAsyncHandler;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleSubscriber;
 import org.reactivestreams.Publisher;
@@ -119,64 +115,12 @@ public class FailingReactiveStreamsTest extends AbstractBasicTest {
         }
     }
 
-    private static class ReplayedSimpleAsyncHandler extends SimpleStreamedAsyncHandler implements AsyncHandlerExtensions {
+    private static class ReplayedSimpleAsyncHandler extends SimpleStreamedAsyncHandler {
         private final CountDownLatch replaying;
 
         public ReplayedSimpleAsyncHandler(CountDownLatch replaying, SimpleSubscriber<HttpResponseBodyPart> subscriber) {
             super(subscriber);
             this.replaying = replaying;
-        }
-
-        @Override
-        public void onHostnameResolutionAttempt(String name) {
-        }
-
-        @Override
-        public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
-        }
-
-        @Override
-        public void onHostnameResolutionFailure(String name, Throwable cause) {
-        }
-
-        @Override
-        public void onTcpConnectAttempt(InetSocketAddress address) {
-        }
-
-        @Override
-        public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {
-        }
-
-        @Override
-        public void onTcpConnectFailure(InetSocketAddress address, Throwable cause) {
-        }
-
-        @Override
-        public void onTlsHandshakeAttempt() {
-        }
-
-        @Override
-        public void onTlsHandshakeSuccess() {
-        }
-
-        @Override
-        public void onTlsHandshakeFailure(Throwable cause) {
-        }
-
-        @Override
-        public void onConnectionPoolAttempt() {
-        }
-
-        @Override
-        public void onConnectionPooled(Channel connection) {
-        }
-
-        @Override
-        public void onConnectionOffer(Channel connection) {
-        }
-
-        @Override
-        public void onRequestSend(NettyRequest request) {
         }
 
         @Override
