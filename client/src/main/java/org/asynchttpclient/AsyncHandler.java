@@ -63,25 +63,6 @@ public interface AsyncHandler<T> {
          */
         CONTINUE
     }
-
-    /**
-     * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
-     * produced by implementation of onXXXReceived method invocation.
-     *
-     * @param t a {@link Throwable}
-     */
-    void onThrowable(Throwable t);
-
-    /**
-     * Invoked as soon as some response body part are received. Could be invoked many times.
-     * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
-     *
-     * @param bodyPart response's body part.
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
-     * @throws Exception if something wrong happens
-     */
-    State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
-
     /**
      * Invoked as soon as the HTTP status line has been received
      *
@@ -101,6 +82,16 @@ public interface AsyncHandler<T> {
     State onHeadersReceived(HttpHeaders headers) throws Exception;
     
     /**
+     * Invoked as soon as some response body part are received. Could be invoked many times.
+     * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
+     *
+     * @param bodyPart response's body part.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
+     * @throws Exception if something wrong happens
+     */
+    State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
+    
+    /**
      * Invoked when trailing headers have been received. 
      * @param headers the trailing HTTP headers.
      * @return a {@link State} telling to CONTINUE or ABORT the current processing.
@@ -109,6 +100,14 @@ public interface AsyncHandler<T> {
     default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
         return State.CONTINUE;
     }
+    
+    /**
+     * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
+     * produced by implementation of onXXXReceived method invocation.
+     *
+     * @param t a {@link Throwable}
+     */
+    void onThrowable(Throwable t);
 
     /**
      * Invoked once the HTTP response processing is finished.
