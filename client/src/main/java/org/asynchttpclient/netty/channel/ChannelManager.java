@@ -232,7 +232,7 @@ public class ChannelManager {
                 }
 
                 if (config.getHttpAdditionalChannelInitializer() != null)
-                    config.getHttpAdditionalChannelInitializer().initChannel(ch);
+                    config.getHttpAdditionalChannelInitializer().accept(ch);
             }
         });
 
@@ -249,7 +249,7 @@ public class ChannelManager {
                 }
 
                 if (config.getWsAdditionalChannelInitializer() != null)
-                    config.getWsAdditionalChannelInitializer().initChannel(ch);
+                    config.getWsAdditionalChannelInitializer().accept(ch);
             }
         });
     }

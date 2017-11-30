@@ -13,17 +13,10 @@
  */
 package org.asynchttpclient;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.handler.ssl.SslContext;
-import io.netty.util.Timer;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
@@ -34,6 +27,14 @@ import org.asynchttpclient.netty.EagerResponseBodyPart;
 import org.asynchttpclient.netty.LazyResponseBodyPart;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
+import io.netty.util.Timer;
 
 public interface AsyncHttpClientConfig {
 
@@ -272,9 +273,9 @@ public interface AsyncHttpClientConfig {
 
     boolean isUseNativeTransport();
 
-    AdditionalChannelInitializer getHttpAdditionalChannelInitializer();
+    Consumer<Channel> getHttpAdditionalChannelInitializer();
 
-    AdditionalChannelInitializer getWsAdditionalChannelInitializer();
+    Consumer<Channel> getWsAdditionalChannelInitializer();
 
     ResponseBodyPartFactory getResponseBodyPartFactory();
 
@@ -301,11 +302,6 @@ public interface AsyncHttpClientConfig {
     ByteBufAllocator getAllocator();
 
     int getIoThreadsCount();
-
-    interface AdditionalChannelInitializer {
-
-        void initChannel(Channel channel) throws Exception;
-    }
 
     enum ResponseBodyPartFactory {
 

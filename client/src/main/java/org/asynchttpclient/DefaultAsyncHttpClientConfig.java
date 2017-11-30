@@ -16,21 +16,12 @@
 package org.asynchttpclient;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.handler.ssl.SslContext;
-import io.netty.util.Timer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
@@ -41,6 +32,13 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
+
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
+import io.netty.util.Timer;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
@@ -132,8 +130,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int soRcvBuf;
     private final Timer nettyTimer;
     private final ThreadFactory threadFactory;
-    private final AdditionalChannelInitializer httpAdditionalChannelInitializer;
-    private final AdditionalChannelInitializer wsAdditionalChannelInitializer;
+    private final Consumer<Channel> httpAdditionalChannelInitializer;
+    private final Consumer<Channel> wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
     private final int ioThreadsCount;
 
@@ -210,8 +208,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             ByteBufAllocator allocator,//
             Timer nettyTimer,//
             ThreadFactory threadFactory,//
-            AdditionalChannelInitializer httpAdditionalChannelInitializer,//
-            AdditionalChannelInitializer wsAdditionalChannelInitializer,//
+            Consumer<Channel> httpAdditionalChannelInitializer,//
+            Consumer<Channel> wsAdditionalChannelInitializer,//
             ResponseBodyPartFactory responseBodyPartFactory,//
             int ioThreadsCount) {
 
@@ -602,12 +600,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public AdditionalChannelInitializer getHttpAdditionalChannelInitializer() {
+    public Consumer<Channel> getHttpAdditionalChannelInitializer() {
         return httpAdditionalChannelInitializer;
     }
 
     @Override
-    public AdditionalChannelInitializer getWsAdditionalChannelInitializer() {
+    public Consumer<Channel> getWsAdditionalChannelInitializer() {
         return wsAdditionalChannelInitializer;
     }
 
@@ -700,8 +698,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private EventLoopGroup eventLoopGroup;
         private Timer nettyTimer;
         private ThreadFactory threadFactory;
-        private AdditionalChannelInitializer httpAdditionalChannelInitializer;
-        private AdditionalChannelInitializer wsAdditionalChannelInitializer;
+        private Consumer<Channel> httpAdditionalChannelInitializer;
+        private Consumer<Channel> wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
         private int ioThreadsCount = defaultIoThreadsCount();
 
@@ -1117,12 +1115,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setHttpAdditionalChannelInitializer(AdditionalChannelInitializer httpAdditionalChannelInitializer) {
+        public Builder setHttpAdditionalChannelInitializer(Consumer<Channel> httpAdditionalChannelInitializer) {
             this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
             return this;
         }
 
-        public Builder setWsAdditionalChannelInitializer(AdditionalChannelInitializer wsAdditionalChannelInitializer) {
+        public Builder setWsAdditionalChannelInitializer(Consumer<Channel> wsAdditionalChannelInitializer) {
             this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
             return this;
         }
