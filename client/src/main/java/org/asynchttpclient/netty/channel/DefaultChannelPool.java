@@ -149,10 +149,6 @@ public final class DefaultChannelPool implements ChannelPool {
         return creation != null && now - creation.creationTime >= connectionTtl;
     }
 
-    private boolean isRemotelyClosed(Channel channel) {
-        return !channel.isActive();
-    }
-
     private final class IdleChannelDetector implements TimerTask {
 
         private boolean isIdleTimeoutExpired(IdleChannel idleChannel, long now) {
@@ -164,7 +160,7 @@ public final class DefaultChannelPool implements ChannelPool {
             List<IdleChannel> idleTimeoutChannels = null;
             for (IdleChannel idleChannel : partition) {
                 boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleChannel, now);
-                boolean isRemotelyClosed = isRemotelyClosed(idleChannel.channel);
+                boolean isRemotelyClosed = !Channels.isChannelActive(idleChannel.channel);
                 boolean isTtlExpired = isTtlExpired(idleChannel.channel, now);
                 if (isIdleTimeoutExpired || isRemotelyClosed || isTtlExpired) {
                     LOGGER.debug("Adding Candidate expired Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}", idleChannel.channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
@@ -301,9 +297,9 @@ public final class DefaultChannelPool implements ChannelPool {
                 if (idleChannel == null)
                     // pool is empty
                     break;
-                else if (isRemotelyClosed(idleChannel.channel)) {
+                else if (!Channels.isChannelActive(idleChannel.channel)) {
                     idleChannel = null;
-                    LOGGER.trace("Channel not connected or not opened, probably remotely closed!");
+                    LOGGER.trace("Channel is inactive, probably remotely closed!");
                 } else if (!idleChannel.takeOwnership()) {
                     idleChannel = null;
                     LOGGER.trace("Couldn't take ownership of channel, probably in the process of being expired!");
