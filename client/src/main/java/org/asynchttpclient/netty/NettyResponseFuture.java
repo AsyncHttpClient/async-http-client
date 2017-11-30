@@ -43,18 +43,46 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.
+ * A {@link Future} that can be used to track when an asynchronous HTTP request
+ * has been fully processed.
  * 
- * @param <V> the result type
+ * @param <V>
+ *            the result type
  */
 public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyResponseFuture.class);
 
     @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> REDIRECT_COUNT_UPDATER = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "redirectCount");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> REDIRECT_COUNT_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "redirectCount");
     @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> CURRENT_RETRY_UPDATER = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "currentRetry");
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> CURRENT_RETRY_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "currentRetry");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> IS_DONE_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "isDone");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> IS_CANCELLED_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "isCancelled");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> IN_AUTH_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "inAuth");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> IN_PROXY_AUTH_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "inProxyAuth");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> CONTENT_PROCESSED_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "contentProcessed");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> ON_THROWABLE_CALLED_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "onThrowableCalled");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> TIMEOUTS_HOLDER_FIELD = AtomicReferenceFieldUpdater
+            .newUpdater(NettyResponseFuture.class, TimeoutsHolder.class, "timeoutsHolder");
+    @SuppressWarnings("rawtypes")
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, Object> PARTITION_KEY_LOCK_FIELD = AtomicReferenceFieldUpdater
+            .newUpdater(NettyResponseFuture.class, Object.class, "partitionKeyLock");
 
     private final long start = unpreciseMillisTime();
     private final ChannelPoolPartitioning connectionPoolPartitioning;
@@ -78,26 +106,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile TimeoutsHolder timeoutsHolder;
     // partition key, when != null used to release lock in ChannelManager
     private volatile Object partitionKeyLock;
-
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isDoneField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isDone");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> isCancelledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "isCancelled");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inAuthField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inAuth");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> inProxyAuthField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "inProxyAuth");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> contentProcessedField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class, "contentProcessed");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> onThrowableCalledField = AtomicIntegerFieldUpdater.newUpdater(NettyResponseFuture.class,
-            "onThrowableCalled");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> timeoutsHolderField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class,
-            TimeoutsHolder.class, "timeoutsHolder");
-    @SuppressWarnings("rawtypes")
-    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, Object> partitionKeyLockField = AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class,
-            Object.class, "partitionKeyLock");
 
     // volatile where we need CAS ops
     private volatile int redirectCount = 0;
@@ -159,7 +167,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return null;
         }
 
-        return partitionKeyLockField.getAndSet(this, null);
+        return PARTITION_KEY_LOCK_FIELD.getAndSet(this, null);
     }
 
     // java.util.concurrent.Future
@@ -179,7 +187,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         releasePartitionKeyLock();
         cancelTimeouts();
 
-        if (isCancelledField.getAndSet(this, 1) != 0)
+        if (IS_CANCELLED_FIELD.getAndSet(this, 1) != 0)
             return false;
 
         // cancel could happen before channel was attached
@@ -188,7 +196,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             Channels.silentlyCloseChannel(channel);
         }
 
-        if (onThrowableCalledField.getAndSet(this, 1) == 0) {
+        if (ON_THROWABLE_CALLED_FIELD.getAndSet(this, 1) == 0) {
             try {
                 asyncHandler.onThrowable(new CancellationException());
             } catch (Throwable t) {
@@ -221,11 +229,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
         // No more retry
         CURRENT_RETRY_UPDATER.set(this, maxRetry);
-        if (contentProcessedField.getAndSet(this, 1) == 0) {
+        if (CONTENT_PROCESSED_FIELD.getAndSet(this, 1) == 0) {
             try {
                 future.complete(asyncHandler.onCompleted());
             } catch (Throwable ex) {
-                if (onThrowableCalledField.getAndSet(this, 1) == 0) {
+                if (ON_THROWABLE_CALLED_FIELD.getAndSet(this, 1) == 0) {
                     try {
                         try {
                             asyncHandler.onThrowable(ex);
@@ -249,7 +257,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         cancelTimeouts();
         this.channel = null;
         this.reuseChannel = false;
-        return isDoneField.getAndSet(this, 1) != 0 || isCancelled != 0;
+        return IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
     }
 
     public final void done() {
@@ -276,7 +284,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
         future.completeExceptionally(t);
 
-        if (onThrowableCalledField.compareAndSet(this, 0, 1)) {
+        if (ON_THROWABLE_CALLED_FIELD.compareAndSet(this, 0, 1)) {
             try {
                 asyncHandler.onThrowable(t);
             } catch (Throwable te) {
@@ -323,7 +331,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void cancelTimeouts() {
-        TimeoutsHolder ref = timeoutsHolderField.getAndSet(this, null);
+        TimeoutsHolder ref = TIMEOUTS_HOLDER_FIELD.getAndSet(this, null);
         if (ref != null) {
             ref.cancel();
         }
@@ -362,11 +370,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
-        timeoutsHolderField.set(this, timeoutsHolder);
+        TIMEOUTS_HOLDER_FIELD.set(this, timeoutsHolder);
     }
 
     public TimeoutsHolder getTimeoutsHolder() {
-        return timeoutsHolderField.get(this);
+        return TIMEOUTS_HOLDER_FIELD.get(this);
     }
 
     public boolean isInAuth() {
@@ -378,7 +386,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public boolean isAndSetInAuth(boolean set) {
-        return inAuthField.getAndSet(this, set ? 1 : 0) != 0;
+        return IN_AUTH_FIELD.getAndSet(this, set ? 1 : 0) != 0;
     }
 
     public boolean isInProxyAuth() {
@@ -390,7 +398,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public boolean isAndSetInProxyAuth(boolean inProxyAuth) {
-        return inProxyAuthField.getAndSet(this, inProxyAuth ? 1 : 0) != 0;
+        return IN_PROXY_AUTH_FIELD.getAndSet(this, inProxyAuth ? 1 : 0) != 0;
     }
 
     public ChannelState getChannelState() {
@@ -473,13 +481,15 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
-     * recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario
+     * where a connection can be closed by an unexpected IOException, and in some
+     * situation we can recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean isReplayPossible() {
-        return !isDone() && !(Channels.isChannelValid(channel) && !getUri().getScheme().equalsIgnoreCase("https")) && inAuth == 0 && inProxyAuth == 0;
+        return !isDone() && !(Channels.isChannelActive(channel) && !getUri().getScheme().equalsIgnoreCase("https"))
+                && inAuth == 0 && inProxyAuth == 0;
     }
 
     public long getStart() {
@@ -487,7 +497,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public Object getPartitionKey() {
-        return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(), proxyServer);
+        return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
+                proxyServer);
     }
 
     public void acquirePartitionLockLazily() throws IOException {
@@ -497,7 +508,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
         Object partitionKey = getPartitionKey();
         connectionSemaphore.acquireChannelLock(partitionKey);
-        Object prevKey = partitionKeyLockField.getAndSet(this, partitionKey);
+        Object prevKey = PARTITION_KEY_LOCK_FIELD.getAndSet(this, partitionKey);
         if (prevKey != null) {
             // self-check
 
@@ -541,7 +552,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
                 ",\n\turi=" + getUri() + //
                 ",\n\tkeepAlive=" + keepAlive + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\ttimeoutsHolder=" + timeoutsHolderField.get(this) + //
+                ",\n\ttimeoutsHolder=" + TIMEOUTS_HOLDER_FIELD.get(this) + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //

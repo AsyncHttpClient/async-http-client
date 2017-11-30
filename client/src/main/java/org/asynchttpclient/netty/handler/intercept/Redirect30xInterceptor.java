@@ -146,7 +146,6 @@ public class Redirect30xInterceptor {
                 LOGGER.debug("Sending redirect to {}", newUri);
 
                 if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(response)) {
-
                     if (sameBase) {
                         future.setReuseChannel(true);
                         // we can't directly send the next request because we still have to received LastContent
