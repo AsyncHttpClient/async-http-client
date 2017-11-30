@@ -42,6 +42,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
+    private final boolean noRequestFilters;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
@@ -78,7 +79,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
 
         this.config = config;
-
+        this.noRequestFilters = config.getRequestFilters().isEmpty();
         allowStopNettyTimer = config.getNettyTimer() == null;
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
 
@@ -179,10 +180,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
-
-        if (config.getRequestFilters().isEmpty()) {
+        if (noRequestFilters) {
             return execute(request, handler);
-
         } else {
             FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
             try {
