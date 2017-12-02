@@ -13,8 +13,9 @@
  */
 package org.asynchttpclient.request.body.multipart.part;
 
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.buffer.ByteBuf;
+import org.asynchttpclient.netty.request.body.BodyChunkedInput;
+import org.asynchttpclient.request.body.multipart.FilePart;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,8 +23,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
-import org.asynchttpclient.netty.request.body.BodyChunkedInput;
-import org.asynchttpclient.request.body.multipart.FilePart;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
@@ -49,7 +49,13 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
-        int transferred = target.writeBytes(channel, target.writableBytes());
+        int transferred;
+        try {
+            transferred = target.writeBytes(channel, target.writableBytes());
+        } catch (IOException ie) {
+            closeSilently(channel);
+            throw ie;
+        }
         position += transferred;
         if (position == length) {
             state = MultipartState.POST_CONTENT;
@@ -62,7 +68,13 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
     protected long transferContentTo(WritableByteChannel target) throws IOException {
         // WARN: don't use channel.position(), it's always 0 here
         // from FileChannel javadoc: "This method does not modify this channel's position."
-        long transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
+        long transferred;
+        try {
+            transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
+        } catch (IOException ie) {
+            closeSilently(channel);
+            throw ie;
+        }
         position += transferred;
         if (position == length) {
             state = MultipartState.POST_CONTENT;
