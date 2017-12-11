@@ -52,7 +52,7 @@ public interface Body extends Closeable {
      * Reads the next chunk of bytes from the body.
      *
      * @param target The buffer to store the chunk in, must not be {@code null}.
-     * @return The non-negative number of bytes actually read or {@code -1} if the body has been read completely.
+     * @return The state.
      * @throws IOException If the chunk could not be read.
      */
     BodyState transferTo(ByteBuf target) throws IOException;

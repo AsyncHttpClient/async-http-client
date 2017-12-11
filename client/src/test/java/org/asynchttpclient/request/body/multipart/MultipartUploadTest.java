@@ -17,15 +17,7 @@ import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +39,6 @@ import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -62,15 +53,15 @@ import org.testng.annotations.Test;
  * @author dominict
  */
 public class MultipartUploadTest extends AbstractBasicTest {
-    public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48,
-            58, 54, 6, 0, 0, 0 };
+    public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116,
+            120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0 };
 
     @BeforeClass
     public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.addServlet(new ServletHolder(new MockMultipartUploadServlet()), "/upload/*");
+        context.addServlet(new ServletHolder(new MockMultipartUploadServlet()), "/upload");
         server.setHandler(context);
         server.start();
         port1 = connector.getLocalPort();
@@ -78,10 +69,11 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
     /**
      * Tests that the streaming of a file works.
-     * @throws IOException 
+     * 
+     * @throws IOException
      */
     @Test(groups = "standalone")
-    public void testSendingSmallFilesAndByteArray() throws IOException {
+    public void testSendingSmallFilesAndByteArray() throws Exception {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
         String expectedContents3 = "filecontent: hello2";
@@ -89,29 +81,9 @@ public class MultipartUploadTest extends AbstractBasicTest {
         String testResource2 = "gzip.txt.gz";
         String testResource3 = "textfile2.txt";
 
-        File testResource1File = null;
-        try {
-            testResource1File = getClasspathFile(testResource1);
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            fail("unable to find " + testResource1);
-        }
-
-        File testResource2File = null;
-        try {
-            testResource2File = getClasspathFile(testResource2);
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            fail("unable to find " + testResource2);
-        }
-
-        File testResource3File = null;
-        try {
-            testResource3File = getClasspathFile(testResource3);
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            fail("unable to find " + testResource3);
-        }
+        File testResource1File = getClasspathFile(testResource1);
+        File testResource2File = getClasspathFile(testResource2);
+        File testResource3File = getClasspathFile(testResource3);
 
         List<File> testFiles = new ArrayList<>();
         testFiles.add(testResource1File);
@@ -137,46 +109,50 @@ public class MultipartUploadTest extends AbstractBasicTest {
             testFiles.add(tmpFile);
             expected.add(expectedContents);
             gzipped.add(false);
-
-        } catch (FileNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
         }
 
         if (!tmpFileCreated) {
             fail("Unable to test ByteArrayMultiPart, as unable to write to filesystem the tmp test content");
         }
 
-        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-
-            RequestBuilder builder = post("http://localhost" + ":" + port1 + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8));
-            builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic"));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8));
-            builder.addBodyPart(new StringPart("Age", "3"));
-            builder.addBodyPart(new StringPart("Height", "shrimplike"));
-            builder.addBodyPart(new StringPart("Hair", "ridiculous"));
-
-            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"));
-
-            Request r = builder.build();
+        try (AsyncHttpClient c = asyncHttpClient(config())) {
+            Request r = post("http://localhost" + ":" + port1 + "/upload")
+                    .addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8))
+                    .addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null))
+                    .addBodyPart(new StringPart("Name", "Dominic"))
+                    .addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8))
+                    .addBodyPart(new StringPart("Age", "3")).addBodyPart(new StringPart("Height", "shrimplike"))
+                    .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
+                            expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
+                    .build();
 
             Response res = c.executeRequest(r).get();
 
             assertEquals(res.getStatusCode(), 200);
 
             testSentFile(expected, testFiles, res, gzipped);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Download Exception");
-        } finally {
-            FileUtils.deleteQuietly(tmpFile);
         }
+    }
+
+    private void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
+        File file = getClasspathFile("empty.txt");
+        try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
+            Request r = post("http://localhost" + ":" + port1 + "/upload/bob")
+                    .addBodyPart(new FilePart("file", file, "text/plain", UTF_8)).build();
+
+            Response res = c.executeRequest(r).get();
+            assertEquals(res.getStatusCode(), 200);
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void sendEmptyFile() throws Exception {
+        sendEmptyFile0(true);
+    }
+
+    @Test(groups = "standalone")
+    public void sendEmptyFileZeroCopy() throws Exception {
+        sendEmptyFile0(false);
     }
 
     /**
@@ -187,7 +163,8 @@ public class MultipartUploadTest extends AbstractBasicTest {
      * @param r
      * @param deflate
      */
-    private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r, List<Boolean> deflate) {
+    private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r,
+            List<Boolean> deflate) {
         String content = r.getResponseBody();
         assertNotNull("===>" + content);
         logger.debug(content);
@@ -248,7 +225,6 @@ public class MultipartUploadTest extends AbstractBasicTest {
                     assertEquals(bytes, sourceBytes);
                 }
 
-
                 if (!deflate.get(i)) {
                     String helloString = new String(bytes);
                     assertEquals(helloString, expectedContents.get(i));
@@ -265,9 +241,9 @@ public class MultipartUploadTest extends AbstractBasicTest {
                         } finally {
                             deflater.close();
                         }
-    
+
                         String helloString = new String(baos3.toByteArray());
-    
+
                         assertEquals(expectedContents.get(i), helloString);
                     }
                 }
@@ -326,7 +302,8 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
 
         @Override
-        public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        public void service(HttpServletRequest request, HttpServletResponse response)
+                throws ServletException, IOException {
             // Check that we have a file upload request
             boolean isMultipart = ServletFileUpload.isMultipartContent(request);
             if (isMultipart) {
@@ -342,12 +319,14 @@ public class MultipartUploadTest extends AbstractBasicTest {
                         try (InputStream stream = item.openStream()) {
 
                             if (item.isFormField()) {
-                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
+                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream)
+                                        + " detected.");
                                 incrementStringsProcessed();
                             } else {
                                 LOGGER.debug("File field " + name + " with file name " + item.getName() + " detected.");
                                 // Process the input stream
-                                File tmpFile = File.createTempFile(UUID.randomUUID().toString() + "_MockUploadServlet", ".tmp");
+                                File tmpFile = File.createTempFile(UUID.randomUUID().toString() + "_MockUploadServlet",
+                                        ".tmp");
                                 tmpFile.deleteOnExit();
                                 try (OutputStream os = new FileOutputStream(tmpFile)) {
                                     byte[] buffer = new byte[4096];
