@@ -49,11 +49,16 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
+        // can return -1 if file is empty or FileChannel was closed
         int transferred = target.writeBytes(channel, target.writableBytes());
-        position += transferred;
-        if (position == length) {
+        if (transferred > 0) {
+            position += transferred;
+        }
+        if (position == length || transferred < 0) {
             state = MultipartState.POST_CONTENT;
-            channel.close();
+            if (channel.isOpen()) {
+                channel.close();
+            }
         }
         return transferred;
     }
@@ -63,10 +68,14 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
         // WARN: don't use channel.position(), it's always 0 here
         // from FileChannel javadoc: "This method does not modify this channel's position."
         long transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
-        position += transferred;
-        if (position == length) {
+        if (transferred > 0) {
+            position += transferred;
+        }
+        if (position == length || transferred < 0) {
             state = MultipartState.POST_CONTENT;
-            channel.close();
+            if (channel.isOpen()) {
+                channel.close();
+            }
         } else {
             slowTarget = true;
         }
