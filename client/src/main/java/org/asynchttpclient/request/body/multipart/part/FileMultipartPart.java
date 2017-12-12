@@ -16,9 +16,7 @@ package org.asynchttpclient.request.body.multipart.part;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.buffer.ByteBuf;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -27,19 +25,26 @@ import org.asynchttpclient.request.body.multipart.FilePart;
 
 public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
-    private final FileChannel channel;
+    private FileChannel channel;
     private final long length;
     private long position = 0L;
 
-    @SuppressWarnings("resource")
+    private FileChannel getChannel() throws IOException {
+        if (channel == null) {
+            channel = new RandomAccessFile(part.getFile(), "r").getChannel();
+        }
+        return channel;
+    }
+
     public FileMultipartPart(FilePart part, byte[] boundary) {
         super(part, boundary);
-        try {
-            channel = new FileInputStream(part.getFile()).getChannel();
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("File part doesn't exist: " + part.getFile().getAbsolutePath(), e);
+        File file = part.getFile();
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File part doesn't exist: " + file.getAbsolutePath());
+        } else if (!file.canRead()) {
+            throw new IllegalArgumentException("File part can't be read: " + file.getAbsolutePath());
         }
-        length = part.getFile().length();
+        length = file.length();
     }
 
     @Override
@@ -50,7 +55,7 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
         // can return -1 if file is empty or FileChannel was closed
-        int transferred = target.writeBytes(channel, target.writableBytes());
+        int transferred = target.writeBytes(getChannel(), target.writableBytes());
         if (transferred > 0) {
             position += transferred;
         }
@@ -66,8 +71,9 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
     @Override
     protected long transferContentTo(WritableByteChannel target) throws IOException {
         // WARN: don't use channel.position(), it's always 0 here
-        // from FileChannel javadoc: "This method does not modify this channel's position."
-        long transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
+        // from FileChannel javadoc: "This method does not modify this channel's
+        // position."
+        long transferred = getChannel().transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
         if (transferred > 0) {
             position += transferred;
         }
