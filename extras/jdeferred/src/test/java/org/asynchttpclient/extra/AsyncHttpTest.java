@@ -41,7 +41,7 @@ public class AsyncHttpTest {
         final AtomicInteger progressCount = new AtomicInteger();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://gatling.io"));
+            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("https://gatling.io"));
             p1.done(new DoneCallback<Response>() {
                 @Override
                 public void onDone(Response response) {
@@ -72,7 +72,7 @@ public class AsyncHttpTest {
         final AtomicInteger successCount = new AtomicInteger();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://gatling.io"));
+            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("https://gatling.io"));
             Promise<Response, Throwable, HttpProgress> p2 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.google.com"));
             AsyncHttpDeferredObject deferredRequest = new AsyncHttpDeferredObject(client.prepareGet("http://jdeferred.org"));
 
