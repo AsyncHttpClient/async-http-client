@@ -17,6 +17,7 @@ package org.asynchttpclient.channel;
 
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.EventCollectingHandler.*;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.testng.Assert.*;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.test.EventCollectingHandler;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.testng.annotations.Test;
 
@@ -125,11 +127,15 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             client.prepareGet(getTargetUrl()).execute(handler).get();
             server.stop();
 
+            // Jetty 9.4.8 doesn't properly stop and restart (recreates ReservedThreadExecutors on start but still point to old offers threads to old ones)
+            // instead of restarting, we create a fresh new one and have it bind on the same port
+            server = new Server();
+            ServerConnector newConnector = addHttpConnector(server);
             // make sure connector will restart with the port as it's originally dynamically allocated
-            ServerConnector connector = (ServerConnector) server.getConnectors()[0];
-            connector.setPort(port1);
-
+            newConnector.setPort(port1);
+            server.setHandler(configureHandler());
             server.start();
+
             client.prepareGet(getTargetUrl()).execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
