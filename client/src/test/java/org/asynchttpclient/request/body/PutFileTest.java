@@ -35,8 +35,7 @@ public class PutFileTest extends AbstractBasicTest {
 
     private void put(int fileSize) throws Exception {
         File file = createTempFile(fileSize);
-        int timeout = (int) file.length() / 1000;
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(timeout))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }
