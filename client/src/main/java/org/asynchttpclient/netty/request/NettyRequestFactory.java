@@ -66,7 +66,7 @@ public final class NettyRequestFactory {
 
     private NettyBody body(Request request) {
         NettyBody nettyBody = null;
-        Charset bodyCharset = withDefault(request.getCharset(), DEFAULT_CHARSET);
+        Charset bodyCharset = request.getCharset();
 
         if (request.getByteData() != null) {
             nettyBody = new NettyByteArrayBody(request.getByteData());

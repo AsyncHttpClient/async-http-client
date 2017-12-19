@@ -14,7 +14,7 @@
 package org.asynchttpclient;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.*;
@@ -289,14 +289,14 @@ public class BasicHttpTest extends HttpTest {
     }
 
     @Test
-    public void defaultRequestBodyEncodingIsIso() throws Throwable {
+    public void defaultRequestBodyEncodingIsUtf8() throws Throwable {
         withClient().run(client -> {
             withServer(server).run(server -> {
                 server.enqueueEcho();
                 Response response = client.preparePost(getTargetUrl())//
                         .setBody("\u017D\u017D\u017D\u017D\u017D\u017D")//
                         .execute().get();
-                assertEquals(response.getResponseBodyAsBytes(), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(ISO_8859_1));
+                assertEquals(response.getResponseBodyAsBytes(), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(UTF_8));
             });
         });
     }

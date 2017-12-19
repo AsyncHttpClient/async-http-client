@@ -15,9 +15,10 @@
  */
 package org.asynchttpclient;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.util.HttpUtils.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -31,11 +32,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -584,25 +581,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return rb;
     }
 
-    private Charset computeCharset() {
-        if (this.charset == null) {
-            try {
-                final String contentType = this.headers.get(CONTENT_TYPE);
-                if (contentType != null) {
-                    final Charset charset = parseCharset(contentType);
-                    if (charset != null) {
-                        // ensure that if charset is provided with the
-                        // Content-Type header,
-                        // we propagate that down to the charset of the Request
-                        // object
-                        return charset;
-                    }
-                }
-            } catch (Throwable e) {
-                // NoOp -- we can't fix the Content-Type or charset from here
-            }
+    private void updateCharset() {
+        String contentTypeHeader = headers.get(CONTENT_TYPE);
+        Charset contentTypeCharset = extractCharset(contentTypeHeader);
+        charset = withDefault(contentTypeCharset, withDefault(charset, UTF_8));
+        if (contentTypeHeader != null && contentTypeHeader.regionMatches(true, 0, "text/", 0, 5) && contentTypeCharset == null) {
+            // add explicit charset to content-type header
+            headers.set(CONTENT_TYPE, contentTypeHeader + "; charset=" + charset.name());
         }
-        return this.charset;
     }
 
     private Uri computeUri() {
@@ -619,9 +605,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
+        updateCharset();
         RequestBuilderBase<?> rb = executeSignatureCalculator();
         Uri finalUri = rb.computeUri();
-        Charset finalCharset = rb.computeCharset();
 
         // make copies of mutable internal collections
         List<Cookie> cookiesCopy = rb.cookies == null ? Collections.emptyList() : new ArrayList<>(rb.cookies);
@@ -650,7 +636,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.requestTimeout,//
                 rb.readTimeout,//
                 rb.rangeOffset,//
-                finalCharset,//
+                rb.charset,//
                 rb.channelPoolPartitioning,//
                 rb.nameResolver);
     }

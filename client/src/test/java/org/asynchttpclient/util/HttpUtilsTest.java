@@ -15,6 +15,7 @@ package org.asynchttpclient.util;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.testng.Assert.*;
+import static io.netty.handler.codec.http.HttpHeaderValues.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -99,27 +100,33 @@ public class HttpUtilsTest {
     }
 
     @Test
-    public void testParseCharsetWithoutQuotes() {
-        Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset=utf-8");
-        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
+    public void testExtractCharsetWithoutQuotes() {
+        Charset charset = HttpUtils.extractCharset("text/html; charset=iso-8859-1");
+        assertEquals(charset, ISO_8859_1);
     }
 
     @Test
-    public void testParseCharsetWithSingleQuotes() {
-        Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset='utf-8'");
-        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
+    public void testExtractCharsetWithSingleQuotes() {
+        Charset charset = HttpUtils.extractCharset("text/html; charset='iso-8859-1'");
+        assertEquals(charset, ISO_8859_1);
     }
 
     @Test
-    public void testParseCharsetWithDoubleQuotes() {
-        Charset charset = HttpUtils.parseCharset("Content-type: application/json; charset=\"utf-8\"");
-        assertEquals(charset, UTF_8, "parseCharset returned wrong Charset");
+    public void testExtractCharsetWithDoubleQuotes() {
+        Charset charset = HttpUtils.extractCharset("text/html; charset=\"iso-8859-1\"");
+        assertEquals(charset, ISO_8859_1);
+    }
+    
+    @Test
+    public void testExtractCharsetWithDoubleQuotesAndSpaces() {
+        Charset charset = HttpUtils.extractCharset("text/html; charset= \"iso-8859-1\" ");
+        assertEquals(charset, ISO_8859_1);
     }
 
     @Test
-    public void testParseCharsetReturnsNullWhenNoCharset() {
-        Charset charset = HttpUtils.parseCharset("Content-type: application/json");
-        assertNull(charset, "parseCharset should return null when charset is not specified in header value");
+    public void testExtractCharsetFallsBackToUtf8() {
+        Charset charset = HttpUtils.extractCharset(APPLICATION_JSON.toString());
+        assertNull(charset);
     }
 
     @Test

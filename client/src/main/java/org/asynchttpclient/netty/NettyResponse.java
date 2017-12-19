@@ -13,9 +13,10 @@
  */
 package org.asynchttpclient.netty;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.util.HttpUtils.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
@@ -185,23 +186,12 @@ public class NettyResponse implements Response {
 
     @Override
     public String getResponseBody() {
-        return getResponseBody(null);
-    }
-
-    private Charset computeCharset(Charset charset) {
-
-        if (charset == null) {
-            String contentType = getContentType();
-            if (contentType != null)
-                charset = parseCharset(contentType); // parseCharset can return
-                                                     // null
-        }
-        return charset != null ? charset : DEFAULT_CHARSET;
+        return getResponseBody(withDefault(extractCharset(getContentType()), UTF_8));
     }
 
     @Override
     public String getResponseBody(Charset charset) {
-        return new String(getResponseBodyAsBytes(), computeCharset(charset));
+        return new String(getResponseBodyAsBytes(), charset);
     }
 
     @Override

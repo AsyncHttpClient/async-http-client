@@ -13,7 +13,7 @@
 package org.asynchttpclient.util;
 
 import static java.nio.charset.StandardCharsets.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -31,12 +31,12 @@ import org.asynchttpclient.uri.Uri;
  */
 public class HttpUtils {
 
-    public final static Charset DEFAULT_CHARSET = ISO_8859_1;
-
     public static void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")
+                && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
+                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 
@@ -50,33 +50,68 @@ public class HttpUtils {
     }
 
     public static boolean isSameBase(Uri uri1, Uri uri2) {
-        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost()) && uri1.getExplicitPort() == uri2.getExplicitPort();
+        return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost())
+                && uri1.getExplicitPort() == uri2.getExplicitPort();
     }
 
     /**
-     * @param uri the uri
+     * @param uri
+     *            the uri
      * @return the raw path or "/" if it's null
      */
     public static String getNonEmptyPath(Uri uri) {
         return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 
-    public static Charset parseCharset(String contentType) {
-        for (String part : contentType.split(";")) {
-            if (part.trim().startsWith("charset=")) {
-                String[] val = part.split("=");
-                if (val.length > 1) {
-                    String charset = val[1].trim();
-                    // Quite a lot of sites have charset="CHARSET",
-                    // e.g. charset="utf-8". Note the quotes. This is
-                    // not correct, but client should be able to handle
-                    // it (all browsers do, Grizzly strips it by default)
-                    // This is a poor man's trim("\"").trim("'")
-                    String charsetName = charset.replaceAll("\"", "").replaceAll("'", "");
+    private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
+
+    public static class ContentType {
+        public final String value;
+        public final Charset charset;
+
+        public ContentType(String value, Charset charset) {
+            this.value = value;
+            this.charset = charset;
+        }
+    }
+
+    public static Charset extractCharset(String contentType) {
+        if (contentType != null) {
+            for (int i = 0; i < contentType.length(); i++) {
+                if (contentType.regionMatches(true, i, CONTENT_TYPE_CHARSET_ATTRIBUTE, 0,
+                        CONTENT_TYPE_CHARSET_ATTRIBUTE.length())) {
+                    int start = i + CONTENT_TYPE_CHARSET_ATTRIBUTE.length();
+
+                    // trim left
+                    while (start < contentType.length()) {
+                        char c = contentType.charAt(start);
+                        if (c == ' ' || c == '\'' || c == '"') {
+                            start++;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (start == contentType.length()) {
+                        break;
+                    }
+
+                    // trim right
+                    int end = start + 1;
+                    while (end < contentType.length()) {
+                        char c = contentType.charAt(end);
+                        if (c == ' ' || c == '\'' || c == '"' || c == ';') {
+                            break;
+                        } else {
+                            end++;
+                        }
+                    }
+
+                    String charsetName = contentType.substring(start, end);
                     return Charset.forName(charsetName);
                 }
             }
         }
+
         return null;
     }
 
@@ -129,7 +164,7 @@ public class HttpUtils {
             return port == -1 || port == uri.getSchemeDefaultPort() ? host : host + ":" + port;
         }
     }
-    
+
     public static String computeOriginHeader(Uri uri) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         sb.append(uri.isSecured() ? "https://" : "http://").append(uri.getHost());
