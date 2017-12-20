@@ -27,7 +27,7 @@
         <dependency>
             <groupId>org.jdeferred</groupId>
             <artifactId>jdeferred-core</artifactId>
-            <version>1.2.4</version>
+            <version>1.2.6</version>
         </dependency>
     </dependencies>
 </project>
