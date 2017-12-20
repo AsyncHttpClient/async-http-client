@@ -384,7 +384,7 @@
 		<target.property>1.8</target.property>
 		<netty.version>4.1.19.Final</netty.version>
 		<slf4j.version>1.7.25</slf4j.version>
-		<reactive-streams.version>1.0.1</reactive-streams.version>
+		<reactive-streams.version>1.0.2</reactive-streams.version>
 		<netty-reactive-streams.version>2.0.0</netty-reactive-streams.version>
 		<rxjava.version>1.3.4</rxjava.version>
 		<rxjava2.version>2.1.7</rxjava2.version>
