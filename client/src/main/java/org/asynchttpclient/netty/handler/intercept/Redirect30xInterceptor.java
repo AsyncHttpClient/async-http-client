@@ -129,8 +129,10 @@ public class Redirect30xInterceptor {
 
                 for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
                     Cookie c = ClientCookieDecoder.STRICT.decode(cookieStr);
-                    if (c != null)
-                        requestBuilder.addOrReplaceCookie(c);
+                    if (c != null) {
+                        if ((!c.isHttpOnly() && !c.isSecure()) || (c.isHttpOnly() && !newUri.isSecured()) || (c.isSecure() && newUri.isSecured()))
+                            requestBuilder.addOrReplaceCookie(c);
+                    }
                 }
 
                 boolean sameBase = isSameBase(request.getUri(), newUri);
