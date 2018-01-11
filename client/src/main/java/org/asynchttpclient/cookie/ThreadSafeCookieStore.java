@@ -20,84 +20,58 @@ import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;
 
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
-    private Map<CookieKey, StoredCookie> cookieJar = new HashMap<>();
-    private ReentrantLock lock = new ReentrantLock();
+    private Map<CookieKey, StoredCookie> cookieJar = new ConcurrentHashMap<>();
 
     @Override
     public void add(Uri uri, Cookie cookie) {
         String thisRequestDomain = requestDomain(uri);
         String thisRequestPath = requestPath(uri);
 
-        try {
-            lock.lock();
-            add(thisRequestDomain, thisRequestPath, cookie);
-        } finally {
-            lock.unlock();
-        }
+        add(thisRequestDomain, thisRequestPath, cookie);
     }
 
     @Override
     public List<Cookie> get(Uri uri) {
-        try {
-            lock.lock();
-            return get(requestDomain(uri), requestPath(uri), uri.isSecured());
-        } finally {
-            lock.unlock();
-        }
+        return get(requestDomain(uri), requestPath(uri), uri.isSecured());
     }
 
     @Override
     public List<Cookie> getAll() {
-        try {
-            lock.lock();
-            final boolean[] removeExpired = {false};
-            List<Cookie> result = cookieJar
-                    .entrySet()
-                    .stream()
-                    .filter(pair -> {
-                        boolean hasCookieExpired = hasCookieExpired(pair.getValue().cookie, pair.getValue().createdAt);
-                        if (hasCookieExpired && !removeExpired[0])
-                            removeExpired[0] = true;
-                        return !hasCookieExpired;
-                    })
-                    .map(pair -> pair.getValue().cookie)
-                    .collect(Collectors.toList());
+        final boolean[] removeExpired = {false};
+        List<Cookie> result = cookieJar
+                .entrySet()
+                .stream()
+                .filter(pair -> {
+                    boolean hasCookieExpired = hasCookieExpired(pair.getValue().cookie, pair.getValue().createdAt);
+                    if (hasCookieExpired && !removeExpired[0])
+                        removeExpired[0] = true;
+                    return !hasCookieExpired;
+                })
+                .map(pair -> pair.getValue().cookie)
+                .collect(Collectors.toList());
 
-            if (removeExpired[0])
-                removeExpired();
+        if (removeExpired[0])
+            removeExpired();
 
-            return result;
-        } finally {
-            lock.unlock();
-        }
+        return result;
     }
 
     @Override
     public boolean remove(Predicate<Cookie> predicate) {
-        try {
-            lock.lock();
-            return cookieJar.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
-        } finally {
-            lock.unlock();
-        }
+        return cookieJar.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
     }
 
     @Override
     public boolean clear() {
-        try {
-            lock.lock();
-            boolean result = !cookieJar.isEmpty();
-            cookieJar.clear();
-            return result;
-        } finally {
-            lock.unlock();
-        }
+        boolean result = !cookieJar.isEmpty();
+        cookieJar.clear();
+        return result;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
