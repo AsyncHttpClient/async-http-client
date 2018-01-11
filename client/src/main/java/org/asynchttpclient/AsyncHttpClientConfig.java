@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -181,6 +182,13 @@ public interface AsyncHttpClientConfig {
      * @return Unmodifiable list of {@link java.io.IOException}
      */
     List<IOExceptionFilter> getIoExceptionFilters();
+
+    /**
+     * Return cookie store that is used to store and retrieve cookies
+     *
+     * @return {@link CookieStore} object
+     */
+    CookieStore getCookieStore();
 
     /**
      * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server

@@ -15,10 +15,15 @@ package org.asynchttpclient.filter;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
+
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 /**
  * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
@@ -151,4 +156,32 @@ public class FilterContext<T> {
         }
     }
 
+    /**
+     * Configure and execute the associated {@link RequestFilter}. This class
+     * may decorate the {@link Request} and {@link AsyncHandler}
+     *
+     * @param requestFilters {@link List<RequestFilter>}
+     * @return {@link FilterContext}
+     */
+    public FilterContext<T> preProcessRequest(List<RequestFilter> requestFilters) throws FilterException {
+        FilterContext<T> fc = this;
+
+        for (RequestFilter asyncFilter : requestFilters) {
+            fc = asyncFilter.filter(fc);
+            assertNotNull(fc, "filterContext");
+        }
+
+        Request request = fc.getRequest();
+        if (fc.getAsyncHandler() instanceof ResumableAsyncHandler) {
+            request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
+        }
+
+        if (request.getRangeOffset() != 0) {
+            RequestBuilder builder = new RequestBuilder(request);
+            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
+            request = builder.build();
+        }
+        fc = new FilterContext.FilterContextBuilder<>(fc).request(request).build();
+        return fc;
+    }
 }
