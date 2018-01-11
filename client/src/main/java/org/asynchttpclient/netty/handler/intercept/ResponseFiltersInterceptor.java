@@ -13,17 +13,13 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
