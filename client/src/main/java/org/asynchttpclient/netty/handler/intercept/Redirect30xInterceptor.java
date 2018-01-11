@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -34,6 +35,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -91,7 +93,6 @@ public class Redirect30xInterceptor {
                 boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
-                        .setCookies(request.getCookies())//
                         .setChannelPoolPartitioning(request.getChannelPoolPartitioning())//
                         .setFollowRedirect(true)//
                         .setLocalAddress(request.getLocalAddress())//
@@ -127,10 +128,13 @@ public class Redirect30xInterceptor {
 
                 LOGGER.debug("Redirecting to {}", newUri);
 
-                for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
-                    Cookie c = ClientCookieDecoder.STRICT.decode(cookieStr);
-                    if (c != null)
-                        requestBuilder.addOrReplaceCookie(c);
+                CookieStore cookieStore = config.getCookieStore();
+                if (cookieStore != null) {
+                    // Update request's cookies assuming that cookie store is already updated by Interceptors
+                    List<Cookie> cookies = cookieStore.get(newUri);
+                    if (!cookies.isEmpty())
+                        for (Cookie cookie : cookies)
+                            requestBuilder.addOrReplaceCookie(cookie);
                 }
 
                 boolean sameBase = isSameBase(request.getUri(), newUri);
