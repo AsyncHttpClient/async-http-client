@@ -129,8 +129,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
             return rawCookiePath;
         } else {
             // rfc6265#section-5.1.4
-            if (!requestPath.isEmpty() && requestPath.charAt(0) == '/' && requestPath.lastIndexOf('/') > 0)
-                return requestPath.substring(0, requestPath.lastIndexOf('/'));
+            int indexOfLastSlash = requestPath.lastIndexOf('/');
+            if (!requestPath.isEmpty() && requestPath.charAt(0) == '/' && indexOfLastSlash > 0)
+                return requestPath.substring(0, indexOfLastSlash);
             else
                 return "/";
         }
