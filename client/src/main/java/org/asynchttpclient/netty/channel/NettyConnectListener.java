@@ -32,8 +32,6 @@ import org.slf4j.LoggerFactory;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * Non Blocking connect.
@@ -94,12 +92,7 @@ public final class NettyConnectListener<T> {
             Object partitionKeyLock = future.takePartitionKeyLock();
 
             if (partitionKeyLock != null) {
-                channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                    @Override
-                    public void operationComplete(Future<? super Void> future) throws Exception {
-                        connectionSemaphore.releaseChannelLock(partitionKeyLock);
-                    }
-                });
+                channel.closeFuture().addListener(future -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
             }
         }
 
