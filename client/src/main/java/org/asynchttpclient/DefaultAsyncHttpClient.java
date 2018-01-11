@@ -18,9 +18,11 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
@@ -180,6 +182,22 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
+        if (config.getCookieStore() != null) {
+            try {
+                List<Cookie> cookies = config.getCookieStore().get(request.getUri());
+                if (!cookies.isEmpty()) {
+                    RequestBuilder requestBuilder = new RequestBuilder(request);
+                    for (Cookie cookie : cookies)
+                        requestBuilder.addOrReplaceCookie(cookie);
+
+                    request = requestBuilder.build();
+                }
+            } catch (Exception e) {
+                handler.onThrowable(e);
+                return new ListenableFuture.CompletedFailure<>("Failed to set cookies of request", e);
+            }
+        }
+
         if (noRequestFilters) {
             return execute(request, handler);
         } else {
