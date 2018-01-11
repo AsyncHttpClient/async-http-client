@@ -19,6 +19,7 @@ import org.asynchttpclient.uri.Uri;
 
 import java.net.CookieManager;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * This interface represents an abstract store for {@link Cookie} objects.
@@ -69,11 +70,11 @@ public interface CookieStore {
     /**
      * Remove a cookie from store.
      *
-     * @param cookie the cookie to remove
+     * @param predicate that indicates what cookies to remove
      * @return {@code true} if this store contained the specified cookie
      * @throws NullPointerException if {@code cookie} is {@code null}
      */
-    boolean remove(Cookie cookie);
+    boolean remove(Predicate<Cookie> predicate);
 
     /**
      * Remove all cookies in this cookie store.

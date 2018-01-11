@@ -21,6 +21,7 @@ import org.asynchttpclient.util.MiscUtils;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class ThreadSafeCookieStore implements CookieStore {
@@ -78,10 +79,10 @@ public final class ThreadSafeCookieStore implements CookieStore {
     }
 
     @Override
-    public boolean remove(Cookie cookie) {
+    public boolean remove(Predicate<Cookie> predicate) {
         try {
             lock.lock();
-            return cookieJar.entrySet().removeIf(v -> v.getValue().cookie == cookie);
+            return cookieJar.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
         } finally {
             lock.unlock();
         }
