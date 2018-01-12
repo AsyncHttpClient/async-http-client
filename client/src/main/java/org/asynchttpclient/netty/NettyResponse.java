@@ -209,8 +209,7 @@ public class NettyResponse implements Response {
         for (Map.Entry<String, String> header : getHeaders()) {
             sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
         }
-        sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
+        return sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
                 .append("}").toString();
-        return sb.toString();
     }
 }
