@@ -35,13 +35,16 @@ public class ProxyServer {
     private final int securedPort;
     private final Realm realm;
     private final List<String> nonProxyHosts;
+    private final ProxyType proxyType;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts) {
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
+            ProxyType proxyType) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
         this.realm = realm;
         this.nonProxyHosts = nonProxyHosts;
+        this.proxyType = proxyType;
     }
 
     public String getHost() {
@@ -64,13 +67,24 @@ public class ProxyServer {
         return realm;
     }
 
+    public ProxyType getProxyType() {
+        return proxyType;
+    }
+
     /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to target host. If <code>null</code> proxy is passed in, this method
-     * returns true -- since there is NO proxy, we should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
+     * Checks whether proxy should be used according to nonProxyHosts settings of
+     * it, or we want to go directly to target host. If <code>null</code> proxy is
+     * passed in, this method returns true -- since there is NO proxy, we should
+     * avoid to use it. Simple hostname pattern matching using "*" are supported,
+     * but only as prefixes.
      * 
-     * @param hostname the hostname
-     * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
-     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
+     * @param hostname
+     *            the hostname
+     * @return true if we have to ignore proxy use (obeying non-proxy hosts
+     *         settings), false otherwise.
+     * @see <a href=
+     *      "https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking
+     *      Properties</a>
      */
     public boolean isIgnoredForHost(String hostname) {
         assertNotNull(hostname, "hostname");
@@ -88,7 +102,8 @@ public class ProxyServer {
 
         if (nonProxyHost.length() > 1) {
             if (nonProxyHost.charAt(0) == '*') {
-                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1, nonProxyHost.length() - 1);
+                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
+                        nonProxyHost.length() - 1);
             } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
                 return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
         }
@@ -103,6 +118,7 @@ public class ProxyServer {
         private int securedPort;
         private Realm realm;
         private List<String> nonProxyHosts;
+        private ProxyType proxyType;
 
         public Builder(String host, int port) {
             this.host = host;
@@ -137,9 +153,16 @@ public class ProxyServer {
             return this;
         }
 
+        public Builder setProxyType(ProxyType proxyType) {
+            this.proxyType = proxyType;
+            return this;
+        }
+
         public ProxyServer build() {
-            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
-            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts);
+            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
+                    : Collections.emptyList();
+            ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
+            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType);
         }
     }
 }

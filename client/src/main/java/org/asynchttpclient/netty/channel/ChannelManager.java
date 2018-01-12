@@ -15,12 +15,7 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFactory;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -32,12 +27,15 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
-import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.*;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -75,6 +73,7 @@ public class ChannelManager {
     public static final String PINNED_ENTRY = "entry";
     public static final String HTTP_CLIENT_CODEC = "http";
     public static final String SSL_HANDLER = "ssl";
+    public static final String SOCKS_HANDLER = "socks";
     public static final String DEFLATER_HANDLER = "deflater";
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
@@ -385,8 +384,55 @@ public class ChannelManager {
         return sslHandler;
     }
 
-    public Bootstrap getBootstrap(Uri uri, ProxyServer proxy) {
-        return uri.isWebSocket() && proxy == null ? wsBootstrap : httpBootstrap;
+    public Future<Bootstrap> getBootstrap(Uri uri, NameResolver<InetAddress> nameResolver, ProxyServer proxy) {
+
+        final Promise<Bootstrap> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+
+        if (uri.isWebSocket() && proxy == null) {
+            return promise.setSuccess(wsBootstrap);
+
+        } else if (proxy != null && proxy.getProxyType().isSocks()) {
+            Bootstrap socksBootstrap = httpBootstrap.clone();
+            ChannelHandler httpBootstrapHandler = socksBootstrap.config().handler();
+            
+            nameResolver.resolve(proxy.getHost()).addListener((Future<InetAddress> whenProxyAddress) -> {
+                if (whenProxyAddress.isSuccess()) {
+                    socksBootstrap.handler(new ChannelInitializer<Channel>() {
+                        @Override
+                        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+                            httpBootstrapHandler.handlerAdded(ctx);
+                            super.handlerAdded(ctx);
+                        }
+
+                        @Override
+                        protected void initChannel(Channel channel) throws Exception {
+                            InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+                            switch (proxy.getProxyType()) {
+                            case SOCKS_V4:
+                                channel.pipeline().addFirst(SOCKS_HANDLER, new Socks4ProxyHandler(proxyAddress));
+                                break;
+
+                            case SOCKS_V5:
+                                channel.pipeline().addFirst(SOCKS_HANDLER, new Socks5ProxyHandler(proxyAddress));
+                                break;
+
+                            default:
+                                throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
+                            }
+                        }
+                    });
+                    promise.setSuccess(socksBootstrap);
+
+                } else {
+                    promise.setFailure(whenProxyAddress.cause());
+                }
+            });
+
+        } else {
+            promise.setSuccess(httpBootstrap);
+        }
+        
+        return promise;
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

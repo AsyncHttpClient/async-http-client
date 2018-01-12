@@ -106,8 +106,10 @@ public final class NettyRequestSender {
         ProxyServer proxyServer = getProxyServer(config, request);
 
         // WebSockets use connect tunneling to work with proxies
-        if (proxyServer != null && (request.getUri().isSecured() || request.getUri().isWebSocket())
-                && !isConnectDone(request, future)) {
+        if (proxyServer != null //
+                && (request.getUri().isSecured() || request.getUri().isWebSocket()) //
+                && !isConnectDone(request, future) //
+                && proxyServer.getProxyType().isHttp()) {
             // Proxy with HTTPS or WebSocket: CONNECT for sure
             if (future != null && future.isConnectAllowed()) {
                 // Perform CONNECT
@@ -292,10 +294,6 @@ public final class NettyRequestSender {
         future.setInProxyAuth(
                 proxyRealm != null && proxyRealm.isUsePreemptiveAuth() && proxyRealm.getScheme() != AuthScheme.NTLM);
 
-        // Do not throw an exception when we need an extra connection for a redirect
-        // FIXME why? This violate the max connection per host handling, right?
-        Bootstrap bootstrap = channelManager.getBootstrap(request.getUri(), proxy);
-
         Object partitionKey = future.getPartitionKey();
 
         try {
@@ -322,7 +320,16 @@ public final class NettyRequestSender {
                         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
                                 addresses, asyncHandler, clientState, config);
                         if (!future.isDone()) {
-                            connector.connect(bootstrap, connectListener);
+                            // Do not throw an exception when we need an extra connection for a redirect
+                            // FIXME why? This violate the max connection per host handling, right?
+                            channelManager.getBootstrap(request.getUri(), request.getNameResolver(), proxy)
+                                    .addListener((Future<Bootstrap> whenBootstrap) -> {
+                                        if (whenBootstrap.isSuccess()) {
+                                            connector.connect(whenBootstrap.get(), connectListener);
+                                        } else {
+                                            abort(null, future, whenBootstrap.cause());
+                                        }
+                                    });
                         }
                     }
 
@@ -343,7 +350,7 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
-        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost())) {
+        if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
             int port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);

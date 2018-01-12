@@ -13,6 +13,7 @@
 package org.asynchttpclient.channel;
 
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.HttpUtils;
 
@@ -23,12 +24,14 @@ public interface ChannelPoolPartitioning {
         private final int proxyPort;
         private final boolean secured;
         private final String targetHostBaseUrl;
+        private final ProxyType proxyType;
 
-        public ProxyPartitionKey(String proxyHost, int proxyPort, boolean secured, String targetHostBaseUrl) {
+        public ProxyPartitionKey(String proxyHost, int proxyPort, boolean secured, String targetHostBaseUrl, ProxyType proxyType) {
             this.proxyHost = proxyHost;
             this.proxyPort = proxyPort;
             this.secured = secured;
             this.targetHostBaseUrl = targetHostBaseUrl;
+            this.proxyType = proxyType;
         }
 
         @Override
@@ -39,6 +42,7 @@ public interface ChannelPoolPartitioning {
             result = prime * result + proxyPort;
             result = prime * result + (secured ? 1231 : 1237);
             result = prime * result + ((targetHostBaseUrl == null) ? 0 : targetHostBaseUrl.hashCode());
+            result = prime * result + proxyType.hashCode();
             return result;
         }
 
@@ -65,6 +69,8 @@ public interface ChannelPoolPartitioning {
                     return false;
             } else if (!targetHostBaseUrl.equals(other.targetHostBaseUrl))
                 return false;
+            if (proxyType != other.proxyType)
+                return false;
             return true;
         }
 
@@ -75,6 +81,7 @@ public interface ChannelPoolPartitioning {
                     .append(", proxyPort=").append(proxyPort)//
                     .append(", secured=").append(secured)//
                     .append(", targetHostBaseUrl=").append(targetHostBaseUrl)//
+                    .append(", proxyType=").append(proxyType)//
                     .toString();
         }
     }
@@ -89,8 +96,8 @@ public interface ChannelPoolPartitioning {
             String targetHostBaseUrl = virtualHost != null ? virtualHost : HttpUtils.getBaseUrl(uri);
             if (proxyServer != null) {
                 return uri.isSecured() ? //
-                new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getSecuredPort(), true, targetHostBaseUrl)
-                        : new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getPort(), false, targetHostBaseUrl);
+                new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getSecuredPort(), true, targetHostBaseUrl, proxyServer.getProxyType())
+                        : new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getPort(), false, targetHostBaseUrl, proxyServer.getProxyType());
             } else {
                 return targetHostBaseUrl;
             }

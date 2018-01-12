@@ -237,7 +237,7 @@ public final class NettyRequestFactory {
             // proxy tunnelling, connect need host and explicit port
             return getAuthority(uri);
 
-        } else if (proxyServer != null && !uri.isSecured()) {
+        } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType().isHttp()) {
             // proxy over HTTP, need full url
             return uri.toUrl();
 

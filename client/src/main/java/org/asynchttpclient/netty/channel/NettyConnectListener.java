@@ -25,6 +25,7 @@ import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,8 +110,10 @@ public final class NettyConnectListener<T> {
 
         timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
 
+        ProxyServer proxyServer = future.getProxyServer();
+
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
-        if (future.getProxyServer() == null && uri.isSecured()) {
+        if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
             SslHandler sslHandler = null;
             try {
                 sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());

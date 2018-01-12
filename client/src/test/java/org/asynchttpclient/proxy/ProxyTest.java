@@ -43,6 +43,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
+import org.asynchttpclient.testserver.SocksProxy;
 import org.asynchttpclient.util.ProxyUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -139,17 +140,17 @@ public class ProxyTest extends AbstractBasicTest {
 
         // // should avoid, it's in non-proxy hosts
         Request req = get("http://somewhere.com/foo").build();
-        ProxyServer proxyServer = proxyServer("foo", 1234).setNonProxyHost("somewhere.com").build();
+        ProxyServer proxyServer = proxyServer("localhost", 1234).setNonProxyHost("somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
         //
         // // should avoid, it's in non-proxy hosts (with "*")
         req = get("http://sub.somewhere.com/foo").build();
-        proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("localhost", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
 
         // should use it
         req = get("http://sub.somewhere.com/foo").build();
-        proxyServer = proxyServer("foo", 1234).setNonProxyHost("*.somewhere.com").build();
+        proxyServer = proxyServer("localhost", 1234).setNonProxyHost("*.somewhere.com").build();
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
     }
 
@@ -338,6 +339,24 @@ public class ProxyTest extends AbstractBasicTest {
         } finally {
             // FIXME not threadsafe
             ProxySelector.setDefault(originalProxySelector);
+        }
+    }
+    
+    @Test(groups = "standalone")
+    public void runSocksProxy() throws Exception {
+        new Thread(() -> {
+            try {
+                new SocksProxy(60000);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String target = "http://localhost:" + port1 + "/";
+            Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4)).execute();
+
+            assertEquals(200, f.get(60, TimeUnit.SECONDS).getStatusCode());
         }
     }
 }
