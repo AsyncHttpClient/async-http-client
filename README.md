@@ -213,7 +213,7 @@ WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
 
           @Override
           public void onOpen(WebSocket websocket) {
-              websocket.sendTextFrame("...").sendMessage("...");
+              websocket.sendTextFrame("...").sendTextFrame("...");
           }
 
           @Override
