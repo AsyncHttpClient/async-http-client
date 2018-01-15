@@ -155,7 +155,7 @@ import static org.asynchttpclient.Dsl.*;
 import org.asynchttpclient.*;
 import io.netty.handler.codec.http.HttpHeaders;
 
-Future<Integer> f = asyncHttpClient.prepareGet("http://www.example.com/")
+Future<Integer> whenStatusCode = asyncHttpClient.prepareGet("http://www.example.com/")
 .execute(new AsyncHandler<Integer>() {
 	private Integer status;
 	@Override
@@ -180,7 +180,7 @@ Future<Integer> f = asyncHttpClient.prepareGet("http://www.example.com/")
 	}
 });
 
-Integer statusCode = f.get();
+Integer statusCode = whenStatusCode.get();
 ```
 
 #### Using Continuations
@@ -190,13 +190,13 @@ Beware that canceling this `CompletableFuture` won't properly cancel the ongoing
 There's a very good chance we'll return a `CompletionStage` instead in the next release.
 
 ```java
-CompletableFuture<Response> promise = asyncHttpClient
+CompletableFuture<Response> whenResponse = asyncHttpClient
             .prepareGet("http://www.example.com/")
             .execute()
             .toCompletableFuture()
             .exceptionally(t -> { /* Something wrong happened... */  } )
-            .thenApply(resp -> { /*  Do something with the Response */ return resp; });
-promise.join(); // wait for completion
+            .thenApply(response -> { /*  Do something with the Response */ return resp; });
+whenResponse.join(); // wait for completion
 ```
 
 You may get the complete maven project for this simple demo from [org.asynchttpclient.example](https://github.com/AsyncHttpClient/async-http-client/tree/master/example/src/main/java/org/asynchttpclient/example)
@@ -213,7 +213,7 @@ WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
 
           @Override
           public void onOpen(WebSocket websocket) {
-              websocket.sendTextMessage("...").sendMessage("...");
+              websocket.sendTextFrame("...").sendMessage("...");
           }
 
           @Override
