@@ -28,11 +28,7 @@ public class Utf8ByteBufCharsetDecoder {
   private static final int UTF_8_MAX_BYTES_PER_CHAR = 4;
   private static final char INVALID_CHAR_REPLACEMENT = '�';
 
-  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = new ThreadLocal<Utf8ByteBufCharsetDecoder>() {
-    protected Utf8ByteBufCharsetDecoder initialValue() {
-      return new Utf8ByteBufCharsetDecoder();
-    }
-  };
+  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = ThreadLocal.withInitial(() ->new Utf8ByteBufCharsetDecoder());
 
   private static Utf8ByteBufCharsetDecoder pooledDecoder() {
     Utf8ByteBufCharsetDecoder decoder = POOL.get();
