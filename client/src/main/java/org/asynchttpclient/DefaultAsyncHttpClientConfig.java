@@ -17,8 +17,6 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
@@ -49,18 +47,6 @@ import io.netty.util.Timer;
  * @see AsyncHttpClientConfig for documentation
  */
 public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
-
-    private static final String AHC_VERSION;
-
-    static {
-        try (InputStream is = DefaultAsyncHttpClientConfig.class.getResourceAsStream("/ahc-version.properties")) {
-            Properties prop = new Properties();
-            prop.load(is);
-            AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 
     // http
     private final boolean followRedirect;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,6 +37,13 @@ public class AsyncHttpClientConfigHelper {
         private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
         private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES, true);
         private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
+
+        public Config() {
+        }
+
+        public Config(Properties properties) {
+            customProperties = properties;
+        }
 
         public void reload() {
             customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
@@ -92,6 +100,14 @@ public class AsyncHttpClientConfigHelper {
             });
         }
 
+        public Optional<String> getStringOpt(String key) {
+            try {
+                return Optional.ofNullable(getString(key));
+            } catch (Exception ex) {
+                return Optional.empty();
+            }
+        }
+
         public String[] getStringArray(String key) {
             String s = getString(key);
             s = s.trim();
@@ -105,12 +121,36 @@ public class AsyncHttpClientConfigHelper {
             return array;
         }
 
+        public Optional<String[]> getStringArrayOpt(String key) {
+            try {
+                return Optional.ofNullable(getStringArray(key));
+            } catch (Exception ex) {
+                return Optional.empty();
+            }
+        }
+
         public int getInt(String key) {
             return Integer.parseInt(getString(key));
         }
 
+        public Optional<Integer> getIntOpt(String key) {
+            try {
+                return Optional.of(getInt(key));
+            } catch (Exception ex) {
+                return Optional.empty();
+            }
+        }
+
         public long getLong(String key) {
             return Long.parseLong(getString(key));
+        }
+
+        public Optional<Long> getLongOpt(String key) {
+            try {
+                return Optional.of(getLong(key));
+            } catch (Exception ex) {
+                return Optional.empty();
+            }
         }
 
         public Integer getInteger(String key) {
@@ -120,6 +160,14 @@ public class AsyncHttpClientConfigHelper {
 
         public boolean getBoolean(String key) {
             return Boolean.parseBoolean(getString(key));
+        }
+
+        public Optional<Boolean> getBooleanOpt(String key) {
+            try {
+                return Optional.of(getBoolean(key));
+            } catch (Exception ex) {
+                return Optional.empty();
+            }
         }
     }
 }
