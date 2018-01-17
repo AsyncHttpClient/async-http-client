@@ -26,12 +26,12 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
-public class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
+class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
 
   private final RandomAccessBody body;
   private long transferred;
 
-  public BodyFileRegion(RandomAccessBody body) {
+  BodyFileRegion(RandomAccessBody body) {
     this.body = assertNotNull(body, "body");
   }
 

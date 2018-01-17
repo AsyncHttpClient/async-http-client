@@ -16,7 +16,6 @@ package org.asynchttpclient.request.body.generator;
 import io.netty.buffer.ByteBuf;
 import org.asynchttpclient.request.body.Body;
 
-import java.io.IOException;
 import java.util.Queue;
 
 public final class PushBody implements Body {
@@ -34,7 +33,7 @@ public final class PushBody implements Body {
   }
 
   @Override
-  public BodyState transferTo(final ByteBuf target) throws IOException {
+  public BodyState transferTo(final ByteBuf target) {
     switch (state) {
       case CONTINUE:
         return readNextChunk(target);
@@ -45,7 +44,7 @@ public final class PushBody implements Body {
     }
   }
 
-  private BodyState readNextChunk(ByteBuf target) throws IOException {
+  private BodyState readNextChunk(ByteBuf target) {
     BodyState res = BodyState.SUSPEND;
     while (target.isWritable() && state != BodyState.STOP) {
       BodyChunk nextChunk = queue.peek();

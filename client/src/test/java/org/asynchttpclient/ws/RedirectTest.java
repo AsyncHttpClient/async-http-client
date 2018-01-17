@@ -22,7 +22,6 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -47,7 +46,7 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
     HandlerList list = new HandlerList();
     list.addHandler(new AbstractHandler() {
       @Override
-      public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
+      public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
         if (request.getLocalPort() == port2) {
           httpServletResponse.sendRedirect(getTargetUrl());
         }
@@ -62,7 +61,7 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
     logger.info("Local HTTP server started successfully");
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void testRedirectToWSResource() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
       final CountDownLatch latch = new CountDownLatch(1);

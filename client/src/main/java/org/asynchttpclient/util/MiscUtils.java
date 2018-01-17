@@ -46,11 +46,6 @@ public class MiscUtils {
     return map != null && !map.isEmpty();
   }
 
-  public static boolean getBoolean(String systemPropName, boolean defaultValue) {
-    String systemPropValue = System.getProperty(systemPropName);
-    return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
-  }
-
   public static <T> T withDefault(T value, T def) {
     return value == null ? def : value;
   }
@@ -60,6 +55,7 @@ public class MiscUtils {
       try {
         closeable.close();
       } catch (IOException e) {
+        //
       }
   }
 

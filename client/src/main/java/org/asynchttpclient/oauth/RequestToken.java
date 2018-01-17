@@ -28,7 +28,7 @@ public class RequestToken {
   private final String secret;
   private final String percentEncodedKey;
 
-  public RequestToken(String key, String token) {
+  RequestToken(String key, String token) {
     this.key = key;
     this.secret = token;
     this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);

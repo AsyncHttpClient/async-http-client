@@ -27,7 +27,7 @@ import static org.testng.Assert.assertTrue;
 
 public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onCloseWithCode() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -42,7 +42,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onCloseWithCodeServerClose() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -142,7 +142,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
     final CountDownLatch latch;
     final AtomicReference<String> text;
 
-    public Listener(CountDownLatch latch, AtomicReference<String> text) {
+    Listener(CountDownLatch latch, AtomicReference<String> text) {
       this.latch = latch;
       this.text = text;
     }

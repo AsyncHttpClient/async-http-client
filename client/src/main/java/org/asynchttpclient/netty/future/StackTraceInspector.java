@@ -54,9 +54,6 @@ public class StackTraceInspector {
     } catch (Throwable ignore) {
     }
 
-    if (t.getCause() != null)
-      return recoverOnReadOrWriteException(t.getCause());
-
-    return false;
+    return t.getCause() != null && recoverOnReadOrWriteException(t.getCause());
   }
 }

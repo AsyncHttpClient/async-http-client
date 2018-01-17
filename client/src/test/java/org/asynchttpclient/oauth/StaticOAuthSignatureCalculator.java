@@ -27,7 +27,7 @@ class StaticOAuthSignatureCalculator implements SignatureCalculator {
   private final String nonce;
   private final long timestamp;
 
-  public StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
+  StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
     this.consumerKey = consumerKey;
     this.requestToken = requestToken;
     this.nonce = nonce;

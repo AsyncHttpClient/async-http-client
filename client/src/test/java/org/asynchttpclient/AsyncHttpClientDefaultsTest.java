@@ -120,8 +120,8 @@ public class AsyncHttpClientDefaultsTest {
     System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
     AsyncHttpClientConfigHelper.reloadProperties();
     try {
-      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName, new Class[]{});
-      Assert.assertEquals(method.invoke(null, new Object[]{}), Integer.parseInt(value));
+      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
+      Assert.assertEquals(method.invoke(null), Integer.parseInt(value));
     } catch (Exception e) {
       Assert.fail("Couldn't find or execute method : " + methodName, e);
     }
@@ -136,8 +136,8 @@ public class AsyncHttpClientDefaultsTest {
     System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
     AsyncHttpClientConfigHelper.reloadProperties();
     try {
-      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName, new Class[]{});
-      Assert.assertEquals(method.invoke(null, new Object[]{}), Boolean.parseBoolean(value));
+      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
+      Assert.assertEquals(method.invoke(null), Boolean.parseBoolean(value));
     } catch (Exception e) {
       Assert.fail("Couldn't find or execute method : " + methodName, e);
     }
@@ -152,8 +152,8 @@ public class AsyncHttpClientDefaultsTest {
     System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
     AsyncHttpClientConfigHelper.reloadProperties();
     try {
-      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName, new Class[]{});
-      Assert.assertEquals(method.invoke(null, new Object[]{}), value);
+      Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
+      Assert.assertEquals(method.invoke(null), value);
     } catch (Exception e) {
       Assert.fail("Couldn't find or execute method : " + methodName, e);
     }

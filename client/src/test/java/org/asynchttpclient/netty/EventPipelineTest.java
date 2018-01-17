@@ -31,7 +31,7 @@ import static org.testng.Assert.fail;
 
 public class EventPipelineTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void asyncPipelineTest() throws Exception {
 
     Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline().addBefore("inflater",
@@ -42,7 +42,7 @@ public class EventPipelineTest extends AbstractBasicTest {
       final CountDownLatch l = new CountDownLatch(1);
       p.executeRequest(get(getTargetUrl()), new AsyncCompletionHandlerAdapter() {
         @Override
-        public Response onCompleted(Response response) throws Exception {
+        public Response onCompleted(Response response) {
           try {
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Original-Content-Encoding"), "<original encoding>");

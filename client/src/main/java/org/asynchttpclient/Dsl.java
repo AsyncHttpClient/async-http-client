@@ -85,20 +85,20 @@ public final class Dsl {
 
   // /////////// Realm ////////////////
   public static Realm.Builder realm(Realm prototype) {
-    return new Realm.Builder(prototype.getPrincipal(), prototype.getPassword())//
-            .setRealmName(prototype.getRealmName())//
-            .setAlgorithm(prototype.getAlgorithm())//
-            .setNc(prototype.getNc())//
-            .setNonce(prototype.getNonce())//
-            .setCharset(prototype.getCharset())//
-            .setOpaque(prototype.getOpaque())//
-            .setQop(prototype.getQop())//
-            .setScheme(prototype.getScheme())//
-            .setUri(prototype.getUri())//
-            .setUsePreemptiveAuth(prototype.isUsePreemptiveAuth())//
-            .setNtlmDomain(prototype.getNtlmDomain())//
-            .setNtlmHost(prototype.getNtlmHost())//
-            .setUseAbsoluteURI(prototype.isUseAbsoluteURI())//
+    return new Realm.Builder(prototype.getPrincipal(), prototype.getPassword())
+            .setRealmName(prototype.getRealmName())
+            .setAlgorithm(prototype.getAlgorithm())
+            .setNc(prototype.getNc())
+            .setNonce(prototype.getNonce())
+            .setCharset(prototype.getCharset())
+            .setOpaque(prototype.getOpaque())
+            .setQop(prototype.getQop())
+            .setScheme(prototype.getScheme())
+            .setUri(prototype.getUri())
+            .setUsePreemptiveAuth(prototype.isUsePreemptiveAuth())
+            .setNtlmDomain(prototype.getNtlmDomain())
+            .setNtlmHost(prototype.getNtlmHost())
+            .setUseAbsoluteURI(prototype.isUseAbsoluteURI())
             .setOmitQuery(prototype.isOmitQuery());
   }
 

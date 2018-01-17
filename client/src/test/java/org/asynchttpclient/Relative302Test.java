@@ -67,7 +67,7 @@ public class Relative302Test extends AbstractBasicTest {
     relativePathRedirectTest();
   }
 
-  // @Test(groups = "online")
+  @Test(groups = "online", enabled = false)
   public void redirected302Test() throws Exception {
     isSet.getAndSet(false);
 
@@ -81,7 +81,7 @@ public class Relative302Test extends AbstractBasicTest {
     }
   }
 
-  //     @Test(groups = "standalone")
+  @Test(enabled = false)
   public void redirected302InvalidTest() throws Exception {
     isSet.getAndSet(false);
 
@@ -99,7 +99,7 @@ public class Relative302Test extends AbstractBasicTest {
     assertTrue(cause.getMessage().contains(":" + port2));
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void absolutePathRedirectTest() throws Exception {
     isSet.getAndSet(false);
 
@@ -116,7 +116,7 @@ public class Relative302Test extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void relativePathRedirectTest() throws Exception {
     isSet.getAndSet(false);
 

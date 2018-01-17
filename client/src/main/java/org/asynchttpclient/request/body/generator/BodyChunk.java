@@ -19,7 +19,7 @@ public final class BodyChunk {
   public final boolean last;
   public final ByteBuf buffer;
 
-  public BodyChunk(ByteBuf buffer, boolean last) {
+  BodyChunk(ByteBuf buffer, boolean last) {
     this.buffer = buffer;
     this.last = last;
   }

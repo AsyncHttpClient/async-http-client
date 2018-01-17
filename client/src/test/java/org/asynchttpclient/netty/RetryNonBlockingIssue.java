@@ -58,7 +58,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     return String.format("http://localhost:%d/", port1);
   }
 
-  private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) throws IOException {
+  private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) {
     RequestBuilder r = get(getTargetUrl())//
             .addQueryParam(action, "1")//
             .addQueryParam("maxRequests", "" + requests)//
@@ -66,14 +66,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     return client.executeRequest(r);
   }
 
-  /**
-   * Tests that a head request can be made
-   *
-   * @throws IOException
-   * @throws ExecutionException
-   * @throws InterruptedException
-   */
-  @Test(groups = "standalone")
+  @Test
   public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
     AsyncHttpClientConfig config = config()//
@@ -93,18 +86,18 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
       for (ListenableFuture<Response> r : res) {
         Response theres = r.get();
         assertEquals(200, theres.getStatusCode());
-        b.append("==============\r\n");
-        b.append("Response Headers\r\n");
+        b.append("==============\r\n")
+                .append("Response Headers\r\n");
         HttpHeaders heads = theres.getHeaders();
-        b.append(heads + "\r\n");
-        b.append("==============\r\n");
+        b.append(heads).append("\r\n")
+                .append("==============\r\n");
       }
       System.out.println(b.toString());
       System.out.flush();
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
     AsyncHttpClientConfig config = config()//
@@ -124,11 +117,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
       for (ListenableFuture<Response> r : res) {
         Response theres = r.get();
         assertEquals(theres.getStatusCode(), 200);
-        b.append("==============\r\n");
-        b.append("Response Headers\r\n");
+        b.append("==============\r\n")
+                .append("Response Headers\r\n");
         HttpHeaders heads = theres.getHeaders();
-        b.append(heads + "\r\n");
-        b.append("==============\r\n");
+        b.append(heads).append("\r\n")
+                .append("==============\r\n");
       }
       System.out.println(b.toString());
       System.out.flush();
@@ -141,7 +134,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     private Map<String, Integer> requests = new ConcurrentHashMap<>();
 
     private synchronized int increment(String id) {
-      int val = 0;
+      int val;
       if (requests.containsKey(id)) {
         Integer i = requests.get(id);
         val = i + 1;
@@ -156,7 +149,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
 
     public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
       String maxRequests = req.getParameter("maxRequests");
-      int max = 0;
+      int max;
       try {
         max = Integer.parseInt(maxRequests);
       } catch (NumberFormatException e) {

@@ -46,18 +46,16 @@ public class ProxyUnauthorized407Interceptor {
   private final ChannelManager channelManager;
   private final NettyRequestSender requestSender;
 
-  public ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
+  ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
     this.channelManager = channelManager;
     this.requestSender = requestSender;
   }
 
-  public boolean exitAfterHandling407(//
-                                      Channel channel,//
-                                      NettyResponseFuture<?> future,//
-                                      HttpResponse response,//
-                                      Request request,//
-                                      int statusCode,//
-                                      ProxyServer proxyServer,//
+  public boolean exitAfterHandling407(Channel channel,
+                                      NettyResponseFuture<?> future,
+                                      HttpResponse response,
+                                      Request request,
+                                      ProxyServer proxyServer,
                                       HttpRequest httpRequest) {
 
     if (future.isAndSetInProxyAuth(true)) {
@@ -128,7 +126,7 @@ public class ProxyUnauthorized407Interceptor {
           LOGGER.info("Can't handle 407 with NTLM realm as Proxy-Authenticate headers don't match");
           return false;
         }
-        ntlmProxyChallenge(ntlmHeader, request, requestHeaders, proxyRealm, future);
+        ntlmProxyChallenge(ntlmHeader, requestHeaders, proxyRealm, future);
         Realm newNtlmRealm = realm(proxyRealm)//
                 .setUsePreemptiveAuth(true)//
                 .build();
@@ -142,14 +140,14 @@ public class ProxyUnauthorized407Interceptor {
           return false;
         }
         try {
-          kerberosProxyChallenge(channel, proxyAuthHeaders, request, proxyServer, proxyRealm, requestHeaders, future);
+          kerberosProxyChallenge(proxyServer, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
           String ntlmHeader2 = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
           if (ntlmHeader2 != null) {
             LOGGER.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
-            ntlmProxyChallenge(ntlmHeader2, request, requestHeaders, proxyRealm, future);
+            ntlmProxyChallenge(ntlmHeader2, requestHeaders, proxyRealm, future);
             Realm newNtlmRealm2 = realm(proxyRealm)//
                     .setScheme(AuthScheme.NTLM)//
                     .setUsePreemptiveAuth(true)//
@@ -186,22 +184,16 @@ public class ProxyUnauthorized407Interceptor {
     return true;
   }
 
-  private void kerberosProxyChallenge(Channel channel,//
-                                      List<String> proxyAuth,//
-                                      Request request,//
-                                      ProxyServer proxyServer,//
-                                      Realm proxyRealm,//
-                                      HttpHeaders headers,//
-                                      NettyResponseFuture<?> future) throws SpnegoEngineException {
+  private void kerberosProxyChallenge(ProxyServer proxyServer,
+                                      HttpHeaders headers) throws SpnegoEngineException {
 
     String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
     headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 
-  private void ntlmProxyChallenge(String authenticateHeader,//
-                                  Request request,//
-                                  HttpHeaders requestHeaders,//
-                                  Realm proxyRealm,//
+  private void ntlmProxyChallenge(String authenticateHeader,
+                                  HttpHeaders requestHeaders,
+                                  Realm proxyRealm,
                                   NettyResponseFuture<?> future) {
 
     if (authenticateHeader.equals("NTLM")) {

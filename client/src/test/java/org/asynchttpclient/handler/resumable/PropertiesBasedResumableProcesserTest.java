@@ -23,8 +23,8 @@ import static org.testng.Assert.assertEquals;
  */
 public class PropertiesBasedResumableProcesserTest {
 
-  @Test(groups = "standalone")
-  public void testSaveLoad() throws Exception {
+  @Test
+  public void testSaveLoad() {
     PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
     p.put("http://localhost/test.url", 15L);
     p.put("http://localhost/test2.url", 50L);

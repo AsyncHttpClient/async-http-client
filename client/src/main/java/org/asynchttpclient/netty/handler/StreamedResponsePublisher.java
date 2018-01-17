@@ -29,7 +29,7 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
   private final NettyResponseFuture<?> future;
   private final Channel channel;
 
-  public StreamedResponsePublisher(EventExecutor executor, ChannelManager channelManager, NettyResponseFuture<?> future, Channel channel) {
+  StreamedResponsePublisher(EventExecutor executor, ChannelManager channelManager, NettyResponseFuture<?> future, Channel channel) {
     super(executor, HttpResponseBodyPart.class);
     this.channelManager = channelManager;
     this.future = future;

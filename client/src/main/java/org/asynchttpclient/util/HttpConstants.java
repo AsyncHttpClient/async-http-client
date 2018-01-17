@@ -43,7 +43,6 @@ public final class HttpConstants {
     public static final int MOVED_PERMANENTLY_301 = HttpResponseStatus.MOVED_PERMANENTLY.code();
     public static final int FOUND_302 = HttpResponseStatus.FOUND.code();
     public static final int SEE_OTHER_303 = HttpResponseStatus.SEE_OTHER.code();
-    public static final int NOT_MODIFIED_304 = HttpResponseStatus.NOT_MODIFIED.code();
     public static final int TEMPORARY_REDIRECT_307 = HttpResponseStatus.TEMPORARY_REDIRECT.code();
     public static final int PERMANENT_REDIRECT_308 = HttpResponseStatus.PERMANENT_REDIRECT.code();
     public static final int UNAUTHORIZED_401 = HttpResponseStatus.UNAUTHORIZED.code();

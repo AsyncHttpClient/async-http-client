@@ -33,7 +33,6 @@ import org.testng.annotations.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ReadListener;
-import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -45,6 +44,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_MD5;
@@ -60,23 +60,11 @@ public class ReactiveStreamsTest {
   private Tomcat tomcat;
   private int port1;
 
-  public static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
+  private static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
     return Flowable.fromIterable(new ByteBufIterable(bytes, chunkSize));
   }
 
-  public static void main(String[] args) throws Exception {
-    ReactiveStreamsTest test = new ReactiveStreamsTest();
-    test.setUpGlobal();
-    try {
-      for (int i = 0; i < 1000; i++) {
-        test.testConnectionDoesNotGetClosed();
-      }
-    } finally {
-      test.tearDownGlobal();
-    }
-  }
-
-  static byte[] getBytes(List<HttpResponseBodyPart> bodyParts) throws IOException {
+  private static byte[] getBytes(List<HttpResponseBodyPart> bodyParts) throws IOException {
     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
     for (HttpResponseBodyPart part : bodyParts) {
       bytes.write(part.getBodyPartBytes());
@@ -100,7 +88,7 @@ public class ReactiveStreamsTest {
 
       @Override
       public void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-              throws ServletException, IOException {
+              throws IOException {
         LOGGER.debug("Echo received request {} on path {}", httpRequest,
                 httpRequest.getServletContext().getContextPath());
 
@@ -127,6 +115,7 @@ public class ReactiveStreamsTest {
             try {
               Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
             } catch (InterruptedException ex) {
+              //
             }
           }
 
@@ -188,7 +177,7 @@ public class ReactiveStreamsTest {
 
           @Override
           public void onDataAvailable() throws IOException {
-            int len = -1;
+            int len;
             while (input.isReady() && (len = input.read(buffer)) != -1) {
               baos.write(buffer, 0, len);
             }
@@ -216,7 +205,7 @@ public class ReactiveStreamsTest {
   }
 
   @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws InterruptedException, Exception {
+  public void tearDownGlobal() throws Exception {
     tomcat.stop();
   }
 
@@ -224,7 +213,7 @@ public class ReactiveStreamsTest {
     return String.format("http://localhost:%d/foo/test", port1);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testStreamingPutImage() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342))
@@ -234,7 +223,7 @@ public class ReactiveStreamsTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testConnectionDoesNotGetClosed() throws Exception {
     // test that we can stream the same request multiple times
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
@@ -247,7 +236,6 @@ public class ReactiveStreamsTest {
       assertEquals(response.getStatusCode(), 200, "HTTP response was invalid on first request.");
 
       byte[] responseBody = response.getResponseBodyAsBytes();
-      responseBody = response.getResponseBodyAsBytes();
       assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
               LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
       assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
@@ -276,7 +264,7 @@ public class ReactiveStreamsTest {
     }
   }
 
-  @Test(groups = "standalone", expectedExceptions = ExecutionException.class)
+  @Test(expectedExceptions = ExecutionException.class)
   public void testFailingStream() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Publisher<ByteBuf> failingPublisher = Flowable.error(new FailedStream());
@@ -284,7 +272,7 @@ public class ReactiveStreamsTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void streamedResponseTest() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
 
@@ -309,7 +297,7 @@ public class ReactiveStreamsTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void cancelStreamedResponseTest() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
 
@@ -333,7 +321,7 @@ public class ReactiveStreamsTest {
   static class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<Void> {
     private final Subscriber<HttpResponseBodyPart> subscriber;
 
-    public SimpleStreamedAsyncHandler(Subscriber<HttpResponseBodyPart> subscriber) {
+    SimpleStreamedAsyncHandler(Subscriber<HttpResponseBodyPart> subscriber) {
       this.subscriber = subscriber;
     }
 
@@ -349,22 +337,22 @@ public class ReactiveStreamsTest {
     }
 
     @Override
-    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
       throw new AssertionError("Should not have received body part");
     }
 
     @Override
-    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) {
       return State.CONTINUE;
     }
 
     @Override
-    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) {
       return State.CONTINUE;
     }
 
     @Override
-    public Void onCompleted() throws Exception {
+    public Void onCompleted() {
       return null;
     }
   }
@@ -401,7 +389,7 @@ public class ReactiveStreamsTest {
       latch.countDown();
     }
 
-    public List<T> getElements() throws Throwable {
+    List<T> getElements() throws Throwable {
       latch.await();
       if (error != null) {
         throw error;
@@ -414,7 +402,7 @@ public class ReactiveStreamsTest {
   static class CancellingStreamedAsyncProvider implements StreamedAsyncHandler<CancellingStreamedAsyncProvider> {
     private final int cancelAfter;
 
-    public CancellingStreamedAsyncProvider(int cancelAfter) {
+    CancellingStreamedAsyncProvider(int cancelAfter) {
       this.cancelAfter = cancelAfter;
     }
 
@@ -435,17 +423,17 @@ public class ReactiveStreamsTest {
     }
 
     @Override
-    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) {
       return State.CONTINUE;
     }
 
     @Override
-    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) {
       return State.CONTINUE;
     }
 
     @Override
-    public CancellingStreamedAsyncProvider onCompleted() throws Exception {
+    public CancellingStreamedAsyncProvider onCompleted() {
       return this;
     }
   }
@@ -456,9 +444,9 @@ public class ReactiveStreamsTest {
   static class CancellingSubscriber<T> implements Subscriber<T> {
     private final int cancelAfter;
     private volatile Subscription subscription;
-    private volatile int count;
+    private AtomicInteger count = new AtomicInteger(0);
 
-    public CancellingSubscriber(int cancelAfter) {
+    CancellingSubscriber(int cancelAfter) {
       this.cancelAfter = cancelAfter;
     }
 
@@ -474,8 +462,7 @@ public class ReactiveStreamsTest {
 
     @Override
     public void onNext(T t) {
-      count++;
-      if (count == cancelAfter) {
+      if (count.incrementAndGet() == cancelAfter) {
         subscription.cancel();
       } else {
         subscription.request(1);
@@ -495,7 +482,7 @@ public class ReactiveStreamsTest {
     private final byte[] payload;
     private final int chunkSize;
 
-    public ByteBufIterable(byte[] payload, int chunkSize) {
+    ByteBufIterable(byte[] payload, int chunkSize) {
       this.payload = payload;
       this.chunkSize = chunkSize;
     }

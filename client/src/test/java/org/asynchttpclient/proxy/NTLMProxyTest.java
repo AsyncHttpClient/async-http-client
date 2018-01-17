@@ -23,7 +23,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +36,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     return new NTLMProxyHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
 
     try (AsyncHttpClient client = asyncHttpClient()) {
@@ -48,7 +47,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
     }
   }
 
-  private ProxyServer ntlmProxy() throws UnknownHostException {
+  private ProxyServer ntlmProxy() {
     Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")//
             .setNtlmDomain("Ursa-Minor")//
             .setNtlmHost("LightCity")//

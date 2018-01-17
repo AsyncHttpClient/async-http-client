@@ -87,20 +87,16 @@ public interface ChannelPoolPartitioning {
           return false;
       } else if (!targetHostBaseUrl.equals(other.targetHostBaseUrl))
         return false;
-      if (proxyType != other.proxyType)
-        return false;
-      return true;
+      return proxyType == other.proxyType;
     }
 
     @Override
     public String toString() {
-      return new StringBuilder()//
-              .append("ProxyPartitionKey(proxyHost=").append(proxyHost)//
-              .append(", proxyPort=").append(proxyPort)//
-              .append(", secured=").append(secured)//
-              .append(", targetHostBaseUrl=").append(targetHostBaseUrl)//
-              .append(", proxyType=").append(proxyType)//
-              .toString();
+      return "ProxyPartitionKey(proxyHost=" + proxyHost +
+              ", proxyPort=" + proxyPort +
+              ", secured=" + secured +
+              ", targetHostBaseUrl=" + targetHostBaseUrl +
+              ", proxyType=" + proxyType;
     }
   }
 }

@@ -35,7 +35,7 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
   }
 
   @Override
-  public long transferTo(ByteBuf target) throws IOException {
+  public long transferTo(ByteBuf target) {
     return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
   }
 
@@ -79,12 +79,12 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
   }
 
   @Override
-  protected long transferContentTo(ByteBuf target) throws IOException {
+  protected long transferContentTo(ByteBuf target) {
     throw new UnsupportedOperationException("Not supposed to be called");
   }
 
   @Override
-  protected long transferContentTo(WritableByteChannel target) throws IOException {
+  protected long transferContentTo(WritableByteChannel target) {
     throw new UnsupportedOperationException("Not supposed to be called");
   }
 

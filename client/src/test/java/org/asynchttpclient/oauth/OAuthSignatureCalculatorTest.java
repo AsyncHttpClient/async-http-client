@@ -39,10 +39,10 @@ import static org.testng.Assert.assertTrue;
  * See <a href= "https://oauth.googlecode.com/svn/code/javascript/example/signature.html" >Signature Tester</a> for an online oauth signature checker.
  */
 public class OAuthSignatureCalculatorTest {
-  public static final String TOKEN_KEY = "nnch734d00sl2jdk";
-  public static final String TOKEN_SECRET = "pfkkdhi9sl3r4s00";
-  public static final String NONCE = "kllo9940pd9333jh";
-  final static long TIMESTAMP = 1191242096;
+  private static final String TOKEN_KEY = "nnch734d00sl2jdk";
+  private static final String TOKEN_SECRET = "pfkkdhi9sl3r4s00";
+  private static final String NONCE = "kllo9940pd9333jh";
+  private static final long TIMESTAMP = 1191242096;
   private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
   private static final String CONSUMER_SECRET = "kd94hf93k423kf44";
 
@@ -312,7 +312,7 @@ public class OAuthSignatureCalculatorTest {
   }
 
   @Test
-  public void testPercentEncodeKeyValues() throws NoSuchAlgorithmException {
+  public void testPercentEncodeKeyValues() {
     // see https://github.com/AsyncHttpClient/async-http-client/issues/1415
     String keyValue = "\u3b05\u000c\u375b";
 

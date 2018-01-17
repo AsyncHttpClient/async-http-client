@@ -24,7 +24,7 @@ import java.util.Map;
 public class MapResumableProcessor
         implements ResumableProcessor {
 
-  Map<String, Long> map = new HashMap<>();
+  private Map<String, Long> map = new HashMap<>();
 
   public void put(String key, long transferredBytes) {
     map.put(key, transferredBytes);

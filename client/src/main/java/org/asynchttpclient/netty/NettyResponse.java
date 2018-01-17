@@ -114,7 +114,7 @@ public class NettyResponse implements Response {
 
   @Override
   public final List<String> getHeaders(CharSequence name) {
-    return headers != null ? getHeaders().getAll(name) : Collections.<String>emptyList();
+    return headers != null ? getHeaders().getAll(name) : Collections.emptyList();
   }
 
   @Override

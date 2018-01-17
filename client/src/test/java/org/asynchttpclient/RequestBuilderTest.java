@@ -36,8 +36,8 @@ public class RequestBuilderTest {
   private final static String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_*.";
   private final static String HEX_CHARS = "0123456789ABCDEF";
 
-  @Test(groups = "standalone")
-  public void testEncodesQueryParameters() throws UnsupportedEncodingException {
+  @Test
+  public void testEncodesQueryParameters() {
     String[] values = new String[]{"abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKQLMNOPQRSTUVWXYZ", "1234567890", "1234567890", "`~!@#$%^&*()", "`~!@#$%^&*()", "_+-=,.<>/?",
             "_+-=,.<>/?", ";:'\"[]{}\\| ", ";:'\"[]{}\\| "};
 
@@ -71,8 +71,8 @@ public class RequestBuilderTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void testChaining() throws IOException, ExecutionException, InterruptedException {
+  @Test
+  public void testChaining() {
     Request request = get("http://foo.com").addQueryParam("x", "value").build();
 
     Request request2 = new RequestBuilder(request).build();
@@ -80,8 +80,8 @@ public class RequestBuilderTest {
     assertEquals(request2.getUri(), request.getUri());
   }
 
-  @Test(groups = "standalone")
-  public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
+  @Test
+  public void testParsesQueryParams() {
     Request request = get("http://foo.com/?param1=value1").addQueryParam("param2", "value2").build();
 
     assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
@@ -91,21 +91,21 @@ public class RequestBuilderTest {
     assertEquals(params.get(1), new Param("param2", "value2"));
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testUserProvidedRequestMethod() {
     Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
     assertEquals(req.getMethod(), "ABC");
     assertEquals(req.getUrl(), "http://foo.com");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPercentageEncodedUserInfo() {
     final Request req = get("http://hello:wor%20ld@foo.com").build();
     assertEquals(req.getMethod(), "GET");
     assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testContentTypeCharsetToBodyEncoding() {
     final Request req = get("http://localhost").setHeader("Content-Type", "application/json; charset=utf-8").build();
     assertEquals(req.getCharset(), UTF_8);
@@ -132,6 +132,7 @@ public class RequestBuilderTest {
     assertEquals(requestBuilder.headers.get("Content-Type"), "application/json", "header value incorrect");
   }
 
+  @Test(enabled = false)
   public void testAddOrReplaceCookies() {
     RequestBuilder requestBuilder = new RequestBuilder();
     Cookie cookie = new DefaultCookie("name", "value");

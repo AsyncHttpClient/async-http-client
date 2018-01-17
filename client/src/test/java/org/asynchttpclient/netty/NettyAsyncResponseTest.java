@@ -29,7 +29,7 @@ import static org.testng.Assert.assertTrue;
 
 public class NettyAsyncResponseTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testCookieParseExpires() {
     // e.g. "Tue, 27 Oct 2015 12:54:24 GMT";
     SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
@@ -48,7 +48,7 @@ public class NettyAsyncResponseTest {
     assertTrue(cookie.maxAge() >= 58 && cookie.maxAge() <= 60);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testCookieParseMaxAge() {
     final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
 
@@ -61,7 +61,7 @@ public class NettyAsyncResponseTest {
     assertEquals(cookie.maxAge(), 60);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testCookieParseWeirdExpiresValue() {
     final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
     HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);

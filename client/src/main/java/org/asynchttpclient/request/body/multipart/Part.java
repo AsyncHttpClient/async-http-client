@@ -27,49 +27,9 @@ public interface Part {
   byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
 
   /**
-   * Content dispostion as a byte
-   */
-  byte QUOTE_BYTE = '\"';
-
-  /**
    * Extra characters as a byte array
    */
   byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
-
-  /**
-   * Content dispostion as a byte array
-   */
-  byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: ".getBytes(US_ASCII);
-
-  /**
-   * form-data as a byte array
-   */
-  byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = "form-data".getBytes(US_ASCII);
-
-  /**
-   * name as a byte array
-   */
-  byte[] NAME_BYTES = "; name=".getBytes(US_ASCII);
-
-  /**
-   * Content type header as a byte array
-   */
-  byte[] CONTENT_TYPE_BYTES = "Content-Type: ".getBytes(US_ASCII);
-
-  /**
-   * Content charset as a byte array
-   */
-  byte[] CHARSET_BYTES = "; charset=".getBytes(US_ASCII);
-
-  /**
-   * Content type header as a byte array
-   */
-  byte[] CONTENT_TRANSFER_ENCODING_BYTES = "Content-Transfer-Encoding: ".getBytes(US_ASCII);
-
-  /**
-   * Content type header as a byte array
-   */
-  byte[] CONTENT_ID_BYTES = "Content-ID: ".getBytes(US_ASCII);
 
   /**
    * Return the name of this part.

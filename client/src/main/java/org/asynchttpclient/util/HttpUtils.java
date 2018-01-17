@@ -162,14 +162,4 @@ public class HttpUtils {
     }
     return sb.toString();
   }
-
-  public static class ContentType {
-    public final String value;
-    public final Charset charset;
-
-    public ContentType(String value, Charset charset) {
-      this.value = value;
-      this.charset = charset;
-    }
-  }
 }

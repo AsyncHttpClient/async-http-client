@@ -62,26 +62,24 @@ public class AsyncStreamHandlerTest extends HttpTest {
   @Test
   public void getWithOnHeadersReceivedAbort() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
-
         server.enqueueEcho();
         client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
             return State.ABORT;
           }
         }).get(5, TimeUnit.SECONDS);
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStreamPOSTTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -93,32 +91,31 @@ public class AsyncStreamHandlerTest extends HttpTest {
                   private StringBuilder builder = new StringBuilder();
 
                   @Override
-                  public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                  public State onHeadersReceived(HttpHeaders headers) {
                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return State.CONTINUE;
                   }
 
                   @Override
-                  public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                  public State onBodyPartReceived(HttpResponseBodyPart content) {
                     builder.append(new String(content.getBodyPartBytes(), US_ASCII));
                     return State.CONTINUE;
                   }
 
                   @Override
-                  public String onCompleted() throws Exception {
+                  public String onCompleted() {
                     return builder.toString().trim();
                   }
                 }).get(10, TimeUnit.SECONDS);
 
         assertEquals(responseBody, RESPONSE);
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStreamInterruptTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -133,14 +130,14 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 .execute(new AsyncHandlerAdapter() {
 
                   @Override
-                  public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                  public State onHeadersReceived(HttpHeaders headers) {
                     onHeadersReceived.set(true);
                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return State.ABORT;
                   }
 
                   @Override
-                  public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+                  public State onBodyPartReceived(final HttpResponseBodyPart content) {
                     onBodyPartReceived.set(true);
                     return State.ABORT;
                   }
@@ -154,14 +151,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         assertTrue(onHeadersReceived.get(), "Headers weren't received");
         assertFalse(onBodyPartReceived.get(), "Abort not working");
         assertFalse(onThrowable.get(), "Shouldn't get an exception");
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStreamFutureTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -175,20 +171,20 @@ public class AsyncStreamHandlerTest extends HttpTest {
                   private StringBuilder builder = new StringBuilder();
 
                   @Override
-                  public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                  public State onHeadersReceived(HttpHeaders headers) {
                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     onHeadersReceived.set(true);
                     return State.CONTINUE;
                   }
 
                   @Override
-                  public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                  public State onBodyPartReceived(HttpResponseBodyPart content) {
                     builder.append(new String(content.getBodyPartBytes()));
                     return State.CONTINUE;
                   }
 
                   @Override
-                  public String onCompleted() throws Exception {
+                  public String onCompleted() {
                     return builder.toString().trim();
                   }
 
@@ -201,14 +197,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         assertTrue(onHeadersReceived.get(), "Headers weren't received");
         assertFalse(onThrowable.get(), "Shouldn't get an exception");
         assertEquals(responseBody, RESPONSE, "Unexpected response body");
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStreamThrowableRefusedTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -217,7 +212,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
         client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             throw unknownStackTrace(new RuntimeException("FOO"), AsyncStreamHandlerTest.class, "asyncStreamThrowableRefusedTest");
           }
 
@@ -236,14 +231,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         if (!l.await(10, TimeUnit.SECONDS)) {
           fail("Timed out");
         }
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStreamReusePOSTTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -258,19 +252,19 @@ public class AsyncStreamHandlerTest extends HttpTest {
           private StringBuilder builder = new StringBuilder();
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             responseHeaders.set(headers);
             return State.CONTINUE;
           }
 
           @Override
-          public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
             builder.append(new String(content.getBodyPartBytes()));
             return State.CONTINUE;
           }
 
           @Override
-          public String onCompleted() throws Exception {
+          public String onCompleted() {
             return builder.toString();
           }
         });
@@ -291,19 +285,19 @@ public class AsyncStreamHandlerTest extends HttpTest {
           private StringBuilder builder = new StringBuilder();
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             responseHeaders.set(headers);
             return State.CONTINUE;
           }
 
           @Override
-          public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
             builder.append(new String(content.getBodyPartBytes()));
             return State.CONTINUE;
           }
 
           @Override
-          public String onCompleted() throws Exception {
+          public String onCompleted() {
             return builder.toString();
           }
         });
@@ -314,14 +308,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         assertContentTypesEquals(h.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
         assertNotNull(r, "No response body");
         assertEquals(r.trim(), RESPONSE, "Unexpected response body");
-      });
-    });
+      }));
   }
 
   @Test
   public void asyncStream302RedirectWithBody() throws Throwable {
 
-    withClient(config().setFollowRedirect(true)).run(client -> {
+    withClient(config().setFollowRedirect(true)).run(client ->
       withServer(server).run(server -> {
 
         String originalUrl = server.getHttpUrl() + "/original";
@@ -338,14 +331,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
         assertEquals(response.getStatusCode(), 200);
         assertTrue(response.getResponseBody().isEmpty());
-      });
-    });
+      }));
   }
 
   @Test(timeOut = 3000)
   public void asyncStreamJustStatusLine() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         server.enqueueEcho();
@@ -365,14 +357,14 @@ public class AsyncStreamHandlerTest extends HttpTest {
           }
 
           @Override
-          public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+          public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
             whatCalled[OTHER] = true;
             latch.countDown();
             return State.ABORT;
           }
 
           @Override
-          public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
             whatCalled[STATUS] = true;
             status = responseStatus.getStatusCode();
             latch.countDown();
@@ -380,14 +372,14 @@ public class AsyncStreamHandlerTest extends HttpTest {
           }
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             whatCalled[OTHER] = true;
             latch.countDown();
             return State.ABORT;
           }
 
           @Override
-          public Integer onCompleted() throws Exception {
+          public Integer onCompleted() {
             whatCalled[COMPLETED] = true;
             latch.countDown();
             return status;
@@ -410,14 +402,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         if (whatCalled[OTHER]) {
           fail("Other method of AsyncHandler got called.");
         }
-      });
-    });
+      }));
   }
 
   @Test(groups = "online")
   public void asyncOptionsTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
 
         final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
@@ -426,13 +417,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
           @Override
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             responseHeaders.set(headers);
             return State.ABORT;
           }
 
           @Override
-          public String onCompleted() throws Exception {
+          public String onCompleted() {
             return "OK";
           }
         });
@@ -445,14 +436,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
         assertEquals(values.length, expected.length);
         Arrays.sort(values);
         assertEquals(values, expected);
-      });
-    });
+      }));
   }
 
   @Test
   public void closeConnectionTest() throws Throwable {
 
-    withClient().run(client -> {
+    withClient().run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
 
@@ -460,7 +450,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
           private Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             builder.accumulate(headers);
             return State.CONTINUE;
           }
@@ -468,25 +458,24 @@ public class AsyncStreamHandlerTest extends HttpTest {
           public void onThrowable(Throwable t) {
           }
 
-          public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
             builder.accumulate(content);
             return content.isLast() ? State.ABORT : State.CONTINUE;
           }
 
-          public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
             builder.accumulate(responseStatus);
 
             return State.CONTINUE;
           }
 
-          public Response onCompleted() throws Exception {
+          public Response onCompleted() {
             return builder.build();
           }
         }).get();
 
         assertNotNull(r);
         assertEquals(r.getStatusCode(), 200);
-      });
-    });
+      }));
   }
 }

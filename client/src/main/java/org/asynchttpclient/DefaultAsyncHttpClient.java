@@ -54,7 +54,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
    * Default signature calculator to use for all requests constructed by this
    * client instance.
    */
-  protected SignatureCalculator signatureCalculator;
+  private SignatureCalculator signatureCalculator;
 
   /**
    * Create a new HTTP Asynchronous Client using the default
@@ -229,7 +229,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
   private <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {
     try {
-      return requestSender.sendRequest(request, asyncHandler, null, false);
+      return requestSender.sendRequest(request, asyncHandler, null);
     } catch (Exception e) {
       asyncHandler.onThrowable(e);
       return new ListenableFuture.CompletedFailure<>(e);

@@ -25,8 +25,9 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.NoSuchElementException;
+
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 public class NettyReactiveStreamsBody implements NettyBody {
 
@@ -48,7 +49,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
   }
 
   @Override
-  public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
+  public void write(Channel channel, NettyResponseFuture<?> future) {
     if (future.isStreamConsumed()) {
       LOGGER.warn("Stream has already been consumed and cannot be reset");
     } else {
@@ -63,7 +64,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
   private static class SubscriberAdapter implements Subscriber<ByteBuf> {
     private final Subscriber<HttpContent> subscriber;
 
-    public SubscriberAdapter(Subscriber<HttpContent> subscriber) {
+    SubscriberAdapter(Subscriber<HttpContent> subscriber) {
       this.subscriber = subscriber;
     }
 
@@ -96,7 +97,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
     private final NettyResponseFuture<?> future;
     private volatile Subscription deferredSubscription;
 
-    public NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
+    NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
       super(channel.eventLoop());
       this.channel = channel;
       this.future = future;
@@ -113,14 +114,13 @@ public class NettyReactiveStreamsBody implements NettyBody {
       deferredSubscription = subscription;
     }
 
-    public void delayedStart() {
+    void delayedStart() {
       super.onSubscribe(deferredSubscription);
     }
 
     @Override
     protected void error(Throwable error) {
-      if (error == null)
-        throw null;
+      assertNotNull(error, "error");
       removeFromPipeline();
       future.abort(error);
     }

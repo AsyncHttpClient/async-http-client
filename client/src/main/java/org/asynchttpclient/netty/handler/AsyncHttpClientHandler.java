@@ -47,11 +47,11 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
   protected final AsyncHttpClientConfig config;
   protected final ChannelManager channelManager;
   protected final NettyRequestSender requestSender;
-  protected final Interceptors interceptors;
-  protected final boolean hasIOExceptionFilters;
+  final Interceptors interceptors;
+  final boolean hasIOExceptionFilters;
 
-  public AsyncHttpClientHandler(AsyncHttpClientConfig config,//
-                                ChannelManager channelManager,//
+  AsyncHttpClientHandler(AsyncHttpClientConfig config,
+                                ChannelManager channelManager,
                                 NettyRequestSender requestSender) {
     this.config = config;
     this.channelManager = channelManager;
@@ -145,7 +145,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) {
     Throwable cause = getCause(e);
 
     if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
@@ -209,12 +209,12 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
   }
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+  public void channelActive(ChannelHandlerContext ctx) {
     ctx.read();
   }
 
   @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+  public void channelReadComplete(ChannelHandlerContext ctx) {
     if (!isHandledByReactiveStreams(ctx)) {
       ctx.read();
     } else {
@@ -226,7 +226,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
   }
 
-  protected void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) throws IOException {
+  void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
     future.cancelTimeouts();
 
     if (close) {

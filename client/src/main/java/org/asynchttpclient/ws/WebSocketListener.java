@@ -51,8 +51,6 @@ public interface WebSocketListener {
   default void onBinaryFrame(byte[] payload, boolean finalFragment, int rsv) {
   }
 
-  ;
-
   /**
    * Invoked when a text frame is received.
    *
@@ -73,8 +71,6 @@ public interface WebSocketListener {
   default void onPingFrame(byte[] payload) {
   }
 
-  ;
-
   /**
    * Invoked when a pong frame is received
    *
@@ -82,6 +78,4 @@ public interface WebSocketListener {
    */
   default void onPongFrame(byte[] payload) {
   }
-
-  ;
 }

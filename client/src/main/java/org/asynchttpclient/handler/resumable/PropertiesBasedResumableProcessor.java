@@ -37,7 +37,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
   private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<>();
 
   private static String append(Map.Entry<String, Long> e) {
-    return new StringBuilder(e.getKey()).append('=').append(e.getValue()).append('\n').toString();
+    return e.getKey() + '=' + e.getValue() + '\n';
   }
 
   /**

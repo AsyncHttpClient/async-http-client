@@ -20,7 +20,7 @@ import io.netty.channel.ChannelFutureListener;
 public abstract class SimpleChannelFutureListener implements ChannelFutureListener {
 
   @Override
-  public final void operationComplete(ChannelFuture future) throws Exception {
+  public final void operationComplete(ChannelFuture future) {
     Channel channel = future.channel();
     if (future.isSuccess()) {
       onSuccess(channel);

@@ -68,9 +68,6 @@ public abstract class FileLikePart extends PartBase {
 
   @Override
   public String toString() {
-    return new StringBuilder()//
-            .append(super.toString())//
-            .append(" filename=").append(fileName)//
-            .toString();
+    return super.toString() + " filename=" + fileName;
   }
 }

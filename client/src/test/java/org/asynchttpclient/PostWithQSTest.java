@@ -42,7 +42,7 @@ import static org.testng.Assert.assertNotNull;
  */
 public class PostWithQSTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
@@ -52,7 +52,7 @@ public class PostWithQSTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
@@ -72,7 +72,7 @@ public class PostWithQSTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
@@ -92,7 +92,7 @@ public class PostWithQSTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {

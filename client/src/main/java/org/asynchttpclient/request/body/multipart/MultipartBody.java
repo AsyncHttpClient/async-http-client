@@ -65,7 +65,7 @@ public class MultipartBody implements RandomAccessBody {
     }
   }
 
-  public void close() throws IOException {
+  public void close() {
     if (closed.compareAndSet(false, true)) {
       for (MultipartPart<? extends Part> part : parts) {
         closeSilently(part);

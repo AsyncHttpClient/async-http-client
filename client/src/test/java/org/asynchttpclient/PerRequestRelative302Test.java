@@ -70,7 +70,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     redirected302InvalidTest();
   }
 
-  // @Test(groups = "online")
+  @Test(groups = "online", enabled = false)
   public void redirected302Test() throws Exception {
     isSet.getAndSet(false);
     try (AsyncHttpClient c = asyncHttpClient()) {
@@ -86,7 +86,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "online")
+  @Test(groups = "online", enabled = false)
   public void notRedirected302Test() throws Exception {
     isSet.getAndSet(false);
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -106,7 +106,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
   }
 
-  // @Test(groups = "standalone")
+  @Test(groups = "online", enabled = false)
   public void redirected302InvalidTest() throws Exception {
     isSet.getAndSet(false);
     Exception e = null;
@@ -123,7 +123,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     assertTrue(cause.getMessage().contains(":" + port2));
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void relativeLocationUrl() throws Exception {
     isSet.getAndSet(false);
 

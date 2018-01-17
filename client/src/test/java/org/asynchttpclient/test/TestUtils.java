@@ -62,7 +62,7 @@ public class TestUtils {
   public static final String TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET = "text/html;charset=UTF-8";
   public static final String TEXT_HTML_CONTENT_TYPE_WITH_ISO_8859_1_CHARSET = "text/html;charset=ISO-8859-1";
   public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
-  public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
+  private static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
   public static final File LARGE_IMAGE_FILE;
   public static final byte[] LARGE_IMAGE_BYTES;
   public static final String LARGE_IMAGE_BYTES_MD5;
@@ -214,11 +214,11 @@ public class TestUtils {
     return tmf.getTrustManagers();
   }
 
-  public static SslEngineFactory createSslEngineFactory() throws SSLException {
+  public static SslEngineFactory createSslEngineFactory() {
     return createSslEngineFactory(new AtomicBoolean(true));
   }
 
-  public static SslEngineFactory createSslEngineFactory(AtomicBoolean trust) throws SSLException {
+  public static SslEngineFactory createSslEngineFactory(AtomicBoolean trust) {
 
     try {
       KeyManager[] keyManagers = createKeyManagers();
@@ -245,6 +245,7 @@ public class TestUtils {
     try {
       cl = Thread.currentThread().getContextClassLoader();
     } catch (Throwable ex) {
+      //
     }
     if (cl == null) {
       cl = TestUtils.class.getClassLoader();
@@ -260,10 +261,6 @@ public class TestUtils {
 
   public static void assertContentTypesEquals(String actual, String expected) {
     assertEquals(actual.replace("; ", "").toLowerCase(Locale.ENGLISH), expected.replace("; ", "").toLowerCase(Locale.ENGLISH), "Unexpected content-type");
-  }
-
-  public static String getLocalhostIp() {
-    return "127.0.0.1";
   }
 
   public static void writeResponseBody(HttpServletResponse response, String body) {
@@ -294,7 +291,7 @@ public class TestUtils {
     private final X509TrustManager tm;
     private final AtomicBoolean trust;
 
-    public DummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
+    DummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
       this.trust = trust;
       this.tm = tm;
     }
@@ -344,7 +341,7 @@ public class TestUtils {
     }
 
     @Override
-    public State onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(final HttpResponseStatus responseStatus) {
       return State.CONTINUE;
     }
 

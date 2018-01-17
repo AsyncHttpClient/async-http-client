@@ -25,17 +25,13 @@ import java.security.NoSuchAlgorithmException;
  */
 public class OAuthSignatureCalculator implements SignatureCalculator {
 
-  private static final ThreadLocal<OAuthSignatureCalculatorInstance> INSTANCES = new ThreadLocal<OAuthSignatureCalculatorInstance>() {
-    protected OAuthSignatureCalculatorInstance initialValue() {
-      try {
-        return new OAuthSignatureCalculatorInstance();
-      } catch (NoSuchAlgorithmException e) {
-        throw new ExceptionInInitializerError(e);
-      }
+  private static final ThreadLocal<OAuthSignatureCalculatorInstance> INSTANCES = ThreadLocal.withInitial(() -> {
+    try {
+      return new OAuthSignatureCalculatorInstance();
+    } catch (NoSuchAlgorithmException e) {
+      throw new ExceptionInInitializerError(e);
     }
-
-    ;
-  };
+  });
 
   private final ConsumerKey consumerAuth;
 
@@ -45,7 +41,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
    * @param consumerAuth Consumer key to use for signature calculation
    * @param userAuth     Request/access token to use for signature calculation
    */
-  public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
+  OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
     this.consumerAuth = consumerAuth;
     this.userAuth = userAuth;
   }

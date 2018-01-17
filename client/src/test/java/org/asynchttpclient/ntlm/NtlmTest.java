@@ -65,12 +65,12 @@ public class NtlmTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void lazyNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
     ntlmAuthTest(realmBuilderBase());
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void preemptiveNTLMAuthTest() throws IOException, InterruptedException, ExecutionException {
     ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
   }
@@ -139,7 +139,7 @@ public class NtlmTest extends AbstractBasicTest {
     fail("An NtlmEngineException must have occurred as unicode support is not indicated");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGenerateType2Msg() {
     Type2Message type2Message = new Type2Message("TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
     Assert.assertEquals(type2Message.getMessageLength(), 40, "This is a sample challenge that should return 40");

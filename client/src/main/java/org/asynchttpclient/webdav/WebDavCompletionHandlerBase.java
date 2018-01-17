@@ -51,7 +51,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
    * {@inheritDoc}
    */
   @Override
-  public final State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+  public final State onBodyPartReceived(final HttpResponseBodyPart content) {
     bodyParts.add(content);
     return State.CONTINUE;
   }
@@ -60,7 +60,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
    * {@inheritDoc}
    */
   @Override
-  public final State onStatusReceived(final HttpResponseStatus status) throws Exception {
+  public final State onStatusReceived(final HttpResponseStatus status) {
     this.status = status;
     return State.CONTINUE;
   }
@@ -69,24 +69,18 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
    * {@inheritDoc}
    */
   @Override
-  public final State onHeadersReceived(final HttpHeaders headers) throws Exception {
+  public final State onHeadersReceived(final HttpHeaders headers) {
     this.headers = headers;
     return State.CONTINUE;
   }
 
   private Document readXMLResponse(InputStream stream) {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    Document document = null;
+    Document document;
     try {
       document = factory.newDocumentBuilder().parse(stream);
       parse(document);
-    } catch (SAXException e) {
-      logger.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      logger.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    } catch (ParserConfigurationException e) {
+    } catch (SAXException | IOException | ParserConfigurationException e) {
       logger.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
@@ -148,7 +142,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
     private final int statusCode;
 
-    public HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
+    HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
       super(wrapper.getUri());
       this.wrapped = wrapper;
       this.statusText = statusText;

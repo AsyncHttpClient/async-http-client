@@ -35,7 +35,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
   /**
    * Content disposition as a byte
    */
-  protected static final byte QUOTE_BYTE = '\"';
+  static final byte QUOTE_BYTE = '\"';
   /**
    * Carriage return/linefeed as a byte array
    */
@@ -91,13 +91,13 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
   private final int preContentLength;
   private final int postContentLength;
   protected MultipartState state;
-  protected boolean slowTarget;
+  boolean slowTarget;
 
   // lazy
   private ByteBuf preContentBuffer;
   private ByteBuf postContentBuffer;
 
-  public MultipartPart(T part, byte[] boundary) {
+  MultipartPart(T part, byte[] boundary) {
     this.part = part;
     this.boundary = boundary;
     preContentLength = computePreContentLength();

@@ -38,8 +38,7 @@ class Parameters {
 
     // and build parameter section using pre-encoded pieces:
     StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
-    for (int i = 0; i < parameters.size(); i++) {
-      Parameter param = parameters.get(i);
+    for (Parameter param : parameters) {
       encodedParams.append(param.key).append('=').append(param.value).append('&');
     }
     int length = encodedParams.length();

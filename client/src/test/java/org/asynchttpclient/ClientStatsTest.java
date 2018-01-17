@@ -31,7 +31,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
   private final static String hostname = "localhost";
 
-  @Test(groups = "standalone")
+  @Test
   public void testClientStatus() throws Throwable {
     try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
       final String url = getTargetUrl();
@@ -112,7 +112,7 @@ public class ClientStatsTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testClientStatusNoKeepalive() throws Throwable {
     try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
       final String url = getTargetUrl();

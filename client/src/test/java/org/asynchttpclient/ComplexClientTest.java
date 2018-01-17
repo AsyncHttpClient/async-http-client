@@ -24,7 +24,7 @@ import static org.testng.Assert.assertEquals;
 
 public class ComplexClientTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void multipleRequestsTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       String body = "hello there";
@@ -41,7 +41,7 @@ public class ComplexClientTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void urlWithoutSlashTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       String body = "hello there";

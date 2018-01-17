@@ -55,19 +55,19 @@ public class NonBlockingSemaphoreTest {
     private final Semaphore real;
     private final NonBlockingSemaphore nonBlocking;
 
-    public Mirror(int permits) {
+    Mirror(int permits) {
       real = new Semaphore(permits);
       nonBlocking = new NonBlockingSemaphore(permits);
     }
 
-    public boolean tryAcquire() {
+    boolean tryAcquire() {
       boolean a = real.tryAcquire();
       boolean b = nonBlocking.tryAcquire();
       assertEquals(a, b);
       return a;
     }
 
-    public void release() {
+    void release() {
       real.release();
       nonBlocking.release();
     }

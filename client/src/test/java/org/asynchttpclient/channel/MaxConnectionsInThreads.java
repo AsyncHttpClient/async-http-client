@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,7 +41,7 @@ import static org.testng.Assert.assertEquals;
 
 public class MaxConnectionsInThreads extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testMaxConnectionsWithinThreads() throws Exception {
 
     String[] urls = new String[]{getTargetUrl(), getTargetUrl()};
@@ -134,9 +133,9 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
   public static class MockTimeoutHttpServlet extends HttpServlet {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockTimeoutHttpServlet.class);
     private static final String contentType = "text/plain";
-    public static long DEFAULT_TIMEOUT = 2000;
+    static long DEFAULT_TIMEOUT = 2000;
 
-    public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
       res.setStatus(200);
       res.addHeader("Content-Type", contentType);
       long sleepTime = DEFAULT_TIMEOUT;
@@ -156,7 +155,7 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
         LOGGER.debug("Servlet is awake for");
         LOGGER.debug("=======================================");
       } catch (Exception e) {
-
+        //
       }
 
       res.setHeader("XXX", "TripleX");

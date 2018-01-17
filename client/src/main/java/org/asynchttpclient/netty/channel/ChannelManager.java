@@ -212,7 +212,7 @@ public class ChannelManager {
 
     httpBootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
-      protected void initChannel(Channel ch) throws Exception {
+      protected void initChannel(Channel ch) {
         ChannelPipeline pipeline = ch.pipeline()//
                 .addLast(PINNED_ENTRY, pinnedEntry)//
                 .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
@@ -231,7 +231,7 @@ public class ChannelManager {
 
     wsBootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
-      protected void initChannel(Channel ch) throws Exception {
+      protected void initChannel(Channel ch) {
         ChannelPipeline pipeline = ch.pipeline()//
                 .addLast(PINNED_ENTRY, pinnedEntry)//
                 .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
@@ -251,7 +251,7 @@ public class ChannelManager {
     if (config.isKeepEncodingHeader())
       return new HttpContentDecompressor() {
         @Override
-        protected String getTargetContentEncoding(String contentEncoding) throws Exception {
+        protected String getTargetContentEncoding(String contentEncoding) {
           return contentEncoding;
         }
       };
@@ -285,8 +285,8 @@ public class ChannelManager {
     return channelPool.poll(partitionKey);
   }
 
-  public boolean removeAll(Channel connection) {
-    return channelPool.removeAll(connection);
+  public void removeAll(Channel connection) {
+    channelPool.removeAll(connection);
   }
 
   private void doClose() {
@@ -310,7 +310,7 @@ public class ChannelManager {
     Channels.silentlyCloseChannel(channel);
   }
 
-  public void registerOpenChannel(Channel channel, Object partitionKey) {
+  public void registerOpenChannel(Channel channel) {
     openChannels.add(channel);
   }
 
@@ -332,7 +332,7 @@ public class ChannelManager {
     return sslHandler;
   }
 
-  public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) throws SSLException {
+  public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) {
     if (pipeline.get(HTTP_CLIENT_CODEC) != null)
       pipeline.remove(HTTP_CLIENT_CODEC);
 
@@ -437,7 +437,7 @@ public class ChannelManager {
     pipeline.remove(HTTP_CLIENT_CODEC);
   }
 
-  public final OnLastHttpContentCallback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final Object partitionKey) {
+  private OnLastHttpContentCallback newDrainCallback(final NettyResponseFuture<?> future, final Channel channel, final boolean keepAlive, final Object partitionKey) {
 
     return new OnLastHttpContentCallback(future) {
       public void call() {

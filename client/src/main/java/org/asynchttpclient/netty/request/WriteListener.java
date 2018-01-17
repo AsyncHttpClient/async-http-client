@@ -27,10 +27,10 @@ public abstract class WriteListener {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WriteListener.class);
   protected final NettyResponseFuture<?> future;
-  protected final ProgressAsyncHandler<?> progressAsyncHandler;
-  protected final boolean notifyHeaders;
+  final ProgressAsyncHandler<?> progressAsyncHandler;
+  final boolean notifyHeaders;
 
-  public WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
+  WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
     this.future = future;
     this.progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
     this.notifyHeaders = notifyHeaders;
@@ -51,7 +51,7 @@ public abstract class WriteListener {
     return false;
   }
 
-  protected void operationComplete(Channel channel, Throwable cause) {
+  void operationComplete(Channel channel, Throwable cause) {
     future.touch();
 
     // The write operation failed. If the channel was cached, it means it got asynchronously closed.
@@ -61,10 +61,8 @@ public abstract class WriteListener {
     }
 
     if (progressAsyncHandler != null) {
-      /**
-       * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
-       * causing unpredictable behavior.
-       */
+       // We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+       // causing unpredictable behavior.
       boolean startPublishing = !future.isInAuth() && !future.isInProxyAuth();
       if (startPublishing) {
 

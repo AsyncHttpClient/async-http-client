@@ -18,7 +18,6 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.util.concurrent.*;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -32,7 +31,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
   private static final int COUNT = 10;
 
   @Test(groups = "online", timeOut = 30 * 1000)
-  public void testFollowRedirect() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  public void testFollowRedirect() throws InterruptedException {
 
     final CountDownLatch countDown = new CountDownLatch(COUNT);
     ExecutorService pool = Executors.newCachedThreadPool();
@@ -51,22 +50,22 @@ public class FollowingThreadTest extends AbstractBasicTest {
                   t.printStackTrace();
                 }
 
-                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
                   System.out.println(new String(bodyPart.getBodyPartBytes()));
                   return State.CONTINUE;
                 }
 
-                public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                public State onStatusReceived(HttpResponseStatus responseStatus) {
                   status = responseStatus.getStatusCode();
                   System.out.println(responseStatus.getStatusText());
                   return State.CONTINUE;
                 }
 
-                public State onHeadersReceived(HttpHeaders headers) throws Exception {
+                public State onHeadersReceived(HttpHeaders headers) {
                   return State.CONTINUE;
                 }
 
-                public Integer onCompleted() throws Exception {
+                public Integer onCompleted() {
                   l.countDown();
                   return status;
                 }

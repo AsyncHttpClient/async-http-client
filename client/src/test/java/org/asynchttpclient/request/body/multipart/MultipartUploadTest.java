@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,8 +53,6 @@ import static org.testng.Assert.*;
  * @author dominict
  */
 public class MultipartUploadTest extends AbstractBasicTest {
-  public static byte GZIPTEXT[] = new byte[]{31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116,
-          120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0};
 
   @BeforeClass
   public void setUp() throws Exception {
@@ -68,12 +65,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     port1 = connector.getLocalPort();
   }
 
-  /**
-   * Tests that the streaming of a file works.
-   *
-   * @throws IOException
-   */
-  @Test(groups = "standalone")
+  @Test
   public void testSendingSmallFilesAndByteArray() throws Exception {
     String expectedContents = "filecontent: hello";
     String expectedContents2 = "gzipcontent: hello";
@@ -101,19 +93,13 @@ public class MultipartUploadTest extends AbstractBasicTest {
     gzipped.add(true);
     gzipped.add(false);
 
-    boolean tmpFileCreated = false;
     File tmpFile = File.createTempFile("textbytearray", ".txt");
     try (OutputStream os = Files.newOutputStream(tmpFile.toPath())) {
       IOUtils.write(expectedContents.getBytes(UTF_8), os);
-      tmpFileCreated = true;
 
       testFiles.add(tmpFile);
       expected.add(expectedContents);
       gzipped.add(false);
-    }
-
-    if (!tmpFileCreated) {
-      fail("Unable to test ByteArrayMultiPart, as unable to write to filesystem the tmp test content");
     }
 
     try (AsyncHttpClient c = asyncHttpClient(config())) {
@@ -146,28 +132,23 @@ public class MultipartUploadTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void sendEmptyFile() throws Exception {
     sendEmptyFile0(true);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void sendEmptyFileZeroCopy() throws Exception {
     sendEmptyFile0(false);
   }
 
   /**
    * Test that the files were sent, based on the response from the servlet
-   *
-   * @param expectedContents
-   * @param sourceFiles
-   * @param r
-   * @param deflate
    */
   private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r,
                             List<Boolean> deflate) {
     String content = r.getResponseBody();
-    assertNotNull("===>" + content);
+    assertNotNull(content);
     logger.debug(content);
 
     String[] contentArray = content.split("\\|\\|");
@@ -192,10 +173,10 @@ public class MultipartUploadTest extends AbstractBasicTest {
       try {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] sourceBytes = null;
+        byte[] sourceBytes;
         try (InputStream instream = Files.newInputStream(sourceFile.toPath())) {
           byte[] buf = new byte[8092];
-          int len = 0;
+          int len;
           while ((len = instream.read(buf)) > 0) {
             baos.write(buf, 0, len);
           }
@@ -218,7 +199,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         try (InputStream instream = Files.newInputStream(tmp.toPath())) {
           ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
           byte[] buf = new byte[8092];
-          int len = 0;
+          int len;
           while ((len = instream.read(buf)) > 0) {
             baos2.write(buf, 0, len);
           }
@@ -235,7 +216,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
             GZIPInputStream deflater = new GZIPInputStream(instream);
             try {
               byte[] buf3 = new byte[8092];
-              int len3 = 0;
+              int len3;
               while ((len3 = deflater.read(buf3)) > 0) {
                 baos3.write(buf3, 0, len3);
               }
@@ -272,24 +253,23 @@ public class MultipartUploadTest extends AbstractBasicTest {
     private int filesProcessed = 0;
     private int stringsProcessed = 0;
 
-    public MockMultipartUploadServlet() {
+    MockMultipartUploadServlet() {
 
     }
 
-    public synchronized void resetFilesProcessed() {
+    synchronized void resetFilesProcessed() {
       filesProcessed = 0;
     }
 
     private synchronized int incrementFilesProcessed() {
       return ++filesProcessed;
-
     }
 
-    public int getFilesProcessed() {
+    int getFilesProcessed() {
       return filesProcessed;
     }
 
-    public synchronized void resetStringsProcessed() {
+    synchronized void resetStringsProcessed() {
       stringsProcessed = 0;
     }
 
@@ -304,14 +284,14 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
       // Check that we have a file upload request
       boolean isMultipart = ServletFileUpload.isMultipartContent(request);
       if (isMultipart) {
         List<String> files = new ArrayList<>();
         ServletFileUpload upload = new ServletFileUpload();
         // Parse the request
-        FileItemIterator iter = null;
+        FileItemIterator iter;
         try {
           iter = upload.getItemIterator(request);
           while (iter.hasNext()) {
@@ -342,7 +322,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
             }
           }
         } catch (FileUploadException e) {
-
+          //
         }
         try (Writer w = response.getWriter()) {
           w.write(Integer.toString(getFilesProcessed()));

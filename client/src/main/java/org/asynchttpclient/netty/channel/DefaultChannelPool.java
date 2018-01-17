@@ -312,7 +312,7 @@ public final class DefaultChannelPool implements ChannelPool {
         }
       }
 
-      return idleTimeoutChannels != null ? idleTimeoutChannels : Collections.<IdleChannel>emptyList();
+      return idleTimeoutChannels != null ? idleTimeoutChannels : Collections.emptyList();
     }
 
     private List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
@@ -342,7 +342,7 @@ public final class DefaultChannelPool implements ChannelPool {
       return closedChannels != null ? closedChannels : candidates;
     }
 
-    public void run(Timeout timeout) throws Exception {
+    public void run(Timeout timeout) {
 
       if (isClosed.get())
         return;

@@ -13,7 +13,6 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -31,36 +30,32 @@ import static org.testng.Assert.fail;
 
 public class PostRedirectGetTest extends AbstractBasicTest {
 
-  // ------------------------------------------------------ Test Configuration
-
   @Override
   public AbstractHandler configureHandler() throws Exception {
     return new PostRedirectGetHandler();
   }
 
-  // ------------------------------------------------------------ Test Methods
-
-  @Test(groups = "standalone")
+  @Test
   public void postRedirectGet302Test() throws Exception {
     doTestPositive(302);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postRedirectGet302StrictTest() throws Exception {
     doTestNegative(302, true);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postRedirectGet303Test() throws Exception {
     doTestPositive(303);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postRedirectGet301Test() throws Exception {
     doTestPositive(301);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void postRedirectGet307Test() throws Exception {
     doTestNegative(307, false);
   }
@@ -71,7 +66,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     ResponseFilter responseFilter = new ResponseFilter() {
       @Override
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         // pass on the x-expect-get and remove the x-redirect
         // headers if found in the response
         ctx.getResponseHeaders().get("x-expect-post");
@@ -86,7 +81,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
       Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
         @Override
-        public Integer onCompleted(Response response) throws Exception {
+        public Integer onCompleted(Response response) {
           return response.getStatusCode();
         }
 
@@ -106,7 +101,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
 
     ResponseFilter responseFilter = new ResponseFilter() {
       @Override
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         // pass on the x-expect-get and remove the x-redirect
         // headers if found in the response
         ctx.getResponseHeaders().get("x-expect-get");
@@ -121,7 +116,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
       Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
         @Override
-        public Integer onCompleted(Response response) throws Exception {
+        public Integer onCompleted(Response response) {
           return response.getStatusCode();
         }
 

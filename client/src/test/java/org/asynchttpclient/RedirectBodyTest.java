@@ -19,7 +19,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
   private volatile String receivedContentType;
 
   @BeforeMethod
-  public void setUp() throws Exception {
+  public void setUp() {
     redirectAlreadyPerformed = false;
     receivedContentType = null;
   }
@@ -47,7 +46,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
   public AbstractHandler configureHandler() throws Exception {
     return new AbstractHandler() {
       @Override
-      public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+      public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
 
         String redirectHeader = httpRequest.getHeader("X-REDIRECT");
         if (redirectHeader != null && !redirectAlreadyPerformed) {
@@ -73,7 +72,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     };
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void regular301LosesBody() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
       String body = "hello there";
@@ -85,7 +84,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void regular302LosesBody() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
       String body = "hello there";
@@ -97,7 +96,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void regular302StrictKeepsBody() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
       String body = "hello there";
@@ -109,7 +108,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void regular307KeepsBody() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
       String body = "hello there";

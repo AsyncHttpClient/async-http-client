@@ -30,7 +30,7 @@ package org.asynchttpclient.ntlm;
 /**
  * Signals NTLM protocol failure.
  */
-public class NtlmEngineException extends RuntimeException {
+class NtlmEngineException extends RuntimeException {
 
   private static final long serialVersionUID = 6027981323731768824L;
 
@@ -39,7 +39,7 @@ public class NtlmEngineException extends RuntimeException {
    *
    * @param message the exception detail message
    */
-  public NtlmEngineException(String message) {
+  NtlmEngineException(String message) {
     super(message);
   }
 
@@ -50,8 +50,7 @@ public class NtlmEngineException extends RuntimeException {
    * @param cause   the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
    *                if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
    */
-  public NtlmEngineException(String message, Throwable cause) {
+  NtlmEngineException(String message, Throwable cause) {
     super(message, cause);
   }
-
 }

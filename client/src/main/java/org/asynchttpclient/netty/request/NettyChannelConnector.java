@@ -15,7 +15,6 @@ package org.asynchttpclient.netty.request;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
@@ -26,10 +25,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public class NettyChannelConnector {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
+
+  private static final AtomicIntegerFieldUpdater<NettyChannelConnector> I_UPDATER = AtomicIntegerFieldUpdater
+          .newUpdater(NettyChannelConnector.class, "i");
 
   private final AsyncHandler<?> asyncHandler;
   private final InetSocketAddress localAddress;
@@ -37,11 +40,10 @@ public class NettyChannelConnector {
   private final AsyncHttpClientState clientState;
   private volatile int i = 0;
 
-  public NettyChannelConnector(InetAddress localAddress,//
-                               List<InetSocketAddress> remoteAddresses,//
-                               AsyncHandler<?> asyncHandler,//
-                               AsyncHttpClientState clientState,//
-                               AsyncHttpClientConfig config) {
+  NettyChannelConnector(InetAddress localAddress,
+                               List<InetSocketAddress> remoteAddresses,
+                               AsyncHandler<?> asyncHandler,
+                               AsyncHttpClientState clientState) {
     this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
     this.remoteAddresses = remoteAddresses;
     this.asyncHandler = asyncHandler;
@@ -49,7 +51,7 @@ public class NettyChannelConnector {
   }
 
   private boolean pickNextRemoteAddress() {
-    i++;
+    I_UPDATER.incrementAndGet(this);
     return i < remoteAddresses.size();
   }
 

@@ -81,10 +81,9 @@ public final class NettyRequestSender {
     requestFactory = new NettyRequestFactory(config);
   }
 
-  public <T> ListenableFuture<T> sendRequest(final Request request, //
-                                             final AsyncHandler<T> asyncHandler, //
-                                             NettyResponseFuture<T> future, //
-                                             boolean performingNextRequest) {
+  public <T> ListenableFuture<T> sendRequest(final Request request,
+                                             final AsyncHandler<T> asyncHandler,
+                                             NettyResponseFuture<T> future) {
 
     if (isClosed()) {
       throw new IllegalStateException("Closed");
@@ -139,7 +138,7 @@ public final class NettyRequestSender {
     Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
 
     return Channels.isChannelActive(channel)
-            ? sendRequestWithOpenChannel(request, proxyServer, newFuture, asyncHandler, channel)
+            ? sendRequestWithOpenChannel(newFuture, asyncHandler, channel)
             : sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler);
   }
 
@@ -170,7 +169,7 @@ public final class NettyRequestSender {
       if (Channels.isChannelActive(channel)) {
         // if the channel is still active, we can use it,
         // otherwise, channel was closed by the time we computed the request, try again
-        return sendRequestWithOpenChannel(request, proxyServer, newFuture, asyncHandler, channel);
+        return sendRequestWithOpenChannel(newFuture, asyncHandler, channel);
       }
     }
 
@@ -183,7 +182,7 @@ public final class NettyRequestSender {
                                                                       final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture, ProxyServer proxy,
                                                                       boolean performConnectRequest) {
 
-    Realm realm = null;
+    Realm realm;
     if (originalFuture != null) {
       realm = originalFuture.getRealm();
     } else {
@@ -224,8 +223,9 @@ public final class NettyRequestSender {
     }
   }
 
-  private <T> ListenableFuture<T> sendRequestWithOpenChannel(Request request, ProxyServer proxy,
-                                                             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
+  private <T> ListenableFuture<T> sendRequestWithOpenChannel(NettyResponseFuture<T> future,
+                                                             AsyncHandler<T> asyncHandler,
+                                                             Channel channel) {
 
     try {
       asyncHandler.onConnectionPooled(channel);
@@ -283,8 +283,6 @@ public final class NettyRequestSender {
     future.setInProxyAuth(
             proxyRealm != null && proxyRealm.isUsePreemptiveAuth() && proxyRealm.getScheme() != AuthScheme.NTLM);
 
-    Object partitionKey = future.getPartitionKey();
-
     try {
       if (!channelManager.isOpen()) {
         throw PoolAlreadyClosedException.INSTANCE;
@@ -305,9 +303,9 @@ public final class NettyRequestSender {
               @Override
               protected void onSuccess(List<InetSocketAddress> addresses) {
                 NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
-                        NettyRequestSender.this, channelManager, connectionSemaphore, partitionKey);
+                        NettyRequestSender.this, channelManager, connectionSemaphore);
                 NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
-                        addresses, asyncHandler, clientState, config);
+                        addresses, asyncHandler, clientState);
                 if (!future.isDone()) {
                   // Do not throw an exception when we need an extra connection for a redirect
                   // FIXME why? This violate the max connection per host handling, right?
@@ -545,7 +543,7 @@ public final class NettyRequestSender {
   }
 
   public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
-    sendRequest(request, future.getAsyncHandler(), future, true);
+    sendRequest(request, future.getAsyncHandler(), future);
   }
 
   private void validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {

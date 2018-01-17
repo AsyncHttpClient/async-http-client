@@ -21,7 +21,7 @@ final class UriParser {
   public String host;
   public int port = -1;
   public String query;
-  public String authority;
+  private String authority;
   public String path;
   public String userInfo;
 

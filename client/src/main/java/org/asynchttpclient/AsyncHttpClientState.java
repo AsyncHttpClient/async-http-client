@@ -19,7 +19,7 @@ public class AsyncHttpClientState {
 
   private final AtomicBoolean closed;
 
-  public AsyncHttpClientState(AtomicBoolean closed) {
+  AsyncHttpClientState(AtomicBoolean closed) {
     this.closed = closed;
   }
 

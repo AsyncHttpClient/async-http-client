@@ -52,7 +52,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     logger.info("Local HTTP server started successfully");
   }
 
-  @Test(groups = "standalone")
+  @Test
   // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
   public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
     httpToHttpsRedirect();
@@ -60,14 +60,14 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     relativeLocationUrl();
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void httpToHttpsRedirect() throws Exception {
     redirectDone.getAndSet(false);
 
-    AsyncHttpClientConfig cg = config()//
-            .setMaxRedirects(5)//
-            .setFollowRedirect(true)//
-            .setUseInsecureTrustManager(true)//
+    AsyncHttpClientConfig cg = config()
+            .setMaxRedirects(5)
+            .setFollowRedirect(true)
+            .setUseInsecureTrustManager(true)
             .build();
     try (AsyncHttpClient c = asyncHttpClient(cg)) {
       Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
@@ -77,14 +77,14 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void httpToHttpsProperConfig() throws Exception {
     redirectDone.getAndSet(false);
 
-    AsyncHttpClientConfig cg = config()//
-            .setMaxRedirects(5)//
-            .setFollowRedirect(true)//
-            .setUseInsecureTrustManager(true)//
+    AsyncHttpClientConfig cg = config()
+            .setMaxRedirects(5)
+            .setFollowRedirect(true)
+            .setUseInsecureTrustManager(true)
             .build();
     try (AsyncHttpClient c = asyncHttpClient(cg)) {
       Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
@@ -100,14 +100,14 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void relativeLocationUrl() throws Exception {
     redirectDone.getAndSet(false);
 
-    AsyncHttpClientConfig cg = config()//
-            .setMaxRedirects(5)//
-            .setFollowRedirect(true)//
-            .setUseInsecureTrustManager(true)//
+    AsyncHttpClientConfig cg = config()
+            .setMaxRedirects(5)
+            .setFollowRedirect(true)
+            .setUseInsecureTrustManager(true)
             .build();
     try (AsyncHttpClient c = asyncHttpClient(cg)) {
       Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();

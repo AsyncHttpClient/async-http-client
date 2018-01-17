@@ -44,7 +44,7 @@ public final class AuthenticatorUtils {
     return null;
   }
 
-  public static String computeBasicAuthentication(Realm realm) {
+  private static String computeBasicAuthentication(Realm realm) {
     return realm != null ? computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset()) : null;
   }
 
@@ -91,14 +91,14 @@ public final class AuthenticatorUtils {
     return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1));
   }
 
-  private static StringBuilder append(StringBuilder builder, String name, String value, boolean quoted) {
+  private static void append(StringBuilder builder, String name, String value, boolean quoted) {
     builder.append(name).append('=');
     if (quoted)
       builder.append('"').append(value).append('"');
     else
       builder.append(value);
 
-    return builder.append(", ");
+    builder.append(", ");
   }
 
   public static String perConnectionProxyAuthorizationHeader(Request request, Realm proxyRealm) {

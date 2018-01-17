@@ -22,7 +22,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -66,7 +65,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
   /**
    * Tests that after a redirect the final url in the response reflect the redirect
    */
-  @Test(groups = "standalone")
+  @Test
   public void testGetRedirectFinalUrl() throws Exception {
 
     AsyncHttpClientConfig config = config()//
@@ -80,8 +79,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
 
     try (AsyncHttpClient c = asyncHttpClient(config)) {
       ListenableFuture<Response> response = c.executeRequest(get(servletEndpointRedirectUrl));
-      Response res = null;
-      res = response.get();
+      Response res = response.get();
       assertNotNull(res.getResponseBody());
       assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
     }
@@ -89,7 +87,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
 
   @SuppressWarnings("serial")
   class MockRedirectHttpServlet extends HttpServlet {
-    public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
       res.sendRedirect("/overthere");
     }
   }
@@ -100,8 +98,8 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     private static final String contentType = "text/xml";
     private static final String xml = "<?xml version=\"1.0\"?><hello date=\"%s\"></hello>";
 
-    public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-      String xmlToReturn = String.format(xml, new Object[]{new Date().toString()});
+    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
+      String xmlToReturn = String.format(xml, new Date().toString());
 
       res.setStatus(200);
       res.addHeader("Content-Type", contentType);

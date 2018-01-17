@@ -42,7 +42,7 @@ public class FilterTest extends AbstractBasicTest {
     return String.format("http://localhost:%d/foo/test", port1);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
       Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -51,7 +51,7 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void loadThrottleTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(10)))) {
       List<Future<Response>> futures = new ArrayList<>();
@@ -67,7 +67,7 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void maxConnectionsText() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
       c.preparePost(getTargetUrl()).execute().get();
@@ -77,12 +77,12 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicResponseFilterTest() throws Exception {
 
     ResponseFilter responseFilter = new ResponseFilter() {
       @Override
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         return ctx;
       }
     };
@@ -94,12 +94,12 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void replayResponseFilterTest() throws Exception {
 
     final AtomicBoolean replay = new AtomicBoolean(true);
     ResponseFilter responseFilter = new ResponseFilter() {
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (replay.getAndSet(false)) {
           Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
@@ -116,12 +116,12 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void replayStatusCodeResponseFilterTest() throws Exception {
 
     final AtomicBoolean replay = new AtomicBoolean(true);
     ResponseFilter responseFilter = new ResponseFilter() {
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
           Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
@@ -138,12 +138,12 @@ public class FilterTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void replayHeaderResponseFilterTest() throws Exception {
 
     final AtomicBoolean replay = new AtomicBoolean(true);
     ResponseFilter responseFilter = new ResponseFilter() {
-      public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+      public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().get("Ping").equals("Pong") && replay.getAndSet(false)) {
           Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();

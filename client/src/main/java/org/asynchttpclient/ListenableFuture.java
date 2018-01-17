@@ -106,12 +106,12 @@ public interface ListenableFuture<V> extends Future<V> {
     }
 
     @Override
-    public T get() throws InterruptedException, ExecutionException {
+    public T get() throws ExecutionException {
       throw e;
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public T get(long timeout, TimeUnit unit) throws ExecutionException {
       throw e;
     }
 

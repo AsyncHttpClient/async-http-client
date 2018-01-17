@@ -123,14 +123,12 @@ public abstract class PartBase implements Part {
   }
 
   public String toString() {
-    return new StringBuilder()//
-            .append(getClass().getSimpleName())//
-            .append(" name=").append(getName())//
-            .append(" contentType=").append(getContentType())//
-            .append(" charset=").append(getCharset())//
-            .append(" tranferEncoding=").append(getTransferEncoding())//
-            .append(" contentId=").append(getContentId())//
-            .append(" dispositionType=").append(getDispositionType())//
-            .toString();
+    return getClass().getSimpleName() +
+            " name=" + getName() +
+            " contentType=" + getContentType() +
+            " charset=" + getCharset() +
+            " tranferEncoding=" + getTransferEncoding() +
+            " contentId=" + getContentId() +
+            " dispositionType=" + getDispositionType();
   }
 }

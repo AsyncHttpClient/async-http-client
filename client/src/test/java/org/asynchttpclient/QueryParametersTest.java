@@ -47,7 +47,7 @@ public class QueryParametersTest extends AbstractBasicTest {
     return new QueryStringHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet("http://localhost:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
@@ -59,7 +59,7 @@ public class QueryParametersTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testUrlRequestParametersEncoding() throws IOException, ExecutionException, InterruptedException {
     String URL = getTargetUrl() + "?q=";
     String REQUEST_PARAM = "github github \ngithub";
@@ -73,7 +73,7 @@ public class QueryParametersTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void urlWithColonTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       String query = "test:colon:";

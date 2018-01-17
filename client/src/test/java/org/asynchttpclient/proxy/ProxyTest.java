@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -53,7 +54,7 @@ public class ProxyTest extends AbstractBasicTest {
     return new ProxyHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       String target = "http://localhost:1234/";
@@ -92,7 +93,7 @@ public class ProxyTest extends AbstractBasicTest {
   // }
   // }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1)))) {
       String target = "http://localhost:1234/";
@@ -104,7 +105,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1 - 1)))) {
       String target = "http://localhost:1234/";
@@ -116,7 +117,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testNonProxyHost() {
 
     // // should avoid, it's in non-proxy hosts
@@ -135,8 +136,8 @@ public class ProxyTest extends AbstractBasicTest {
     assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
   }
 
-  @Test(groups = "standalone")
-  public void testNonProxyHostsRequestOverridesConfig() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void testNonProxyHostsRequestOverridesConfig() {
 
     ProxyServer configProxy = proxyServer("localhost", port1 - 1).build();
     ProxyServer requestProxy = proxyServer("localhost", port1).setNonProxyHost("localhost").build();
@@ -151,7 +152,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRequestNonProxyHost() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
     ProxyServer proxy = proxyServer("localhost", port1 - 1).setNonProxyHost("localhost").build();
@@ -165,7 +166,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void runSequentiallyBecauseNotThreadSafe() throws Exception {
     testProxyProperties();
     testIgnoreProxyPropertiesByDefault();
@@ -174,7 +175,7 @@ public class ProxyTest extends AbstractBasicTest {
     testUseProxySelector();
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     // FIXME not threadsafe!
     Properties originalProps = new Properties();
@@ -195,7 +196,7 @@ public class ProxyTest extends AbstractBasicTest {
       String nonProxifiedtarget = "http://localhost:1234/";
       f = client.prepareGet(nonProxifiedtarget).execute();
       try {
-        resp = f.get(3, TimeUnit.SECONDS);
+        f.get(3, TimeUnit.SECONDS);
         fail("should not be able to connect");
       } catch (ExecutionException e) {
         // ok, no proxy used
@@ -205,8 +206,8 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
-  public void testIgnoreProxyPropertiesByDefault() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test(enabled = false)
+  public void testIgnoreProxyPropertiesByDefault() throws IOException, TimeoutException, InterruptedException {
     // FIXME not threadsafe!
     Properties originalProps = new Properties();
     originalProps.putAll(System.getProperties());
@@ -229,7 +230,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone", enabled = false)
+  @Test(enabled = false)
   public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     // FIXME not threadsafe!
     Properties originalProps = new Properties();
@@ -251,7 +252,7 @@ public class ProxyTest extends AbstractBasicTest {
       String nonProxifiedTarget = "http://localhost:1234/";
       f = client.prepareGet(nonProxifiedTarget).execute();
       try {
-        resp = f.get(3, TimeUnit.SECONDS);
+        f.get(3, TimeUnit.SECONDS);
         fail("should not be able to connect");
       } catch (ExecutionException e) {
         // ok, no proxy used
@@ -261,8 +262,8 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
-  public void testWildcardNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test(enabled = false)
+  public void testWildcardNonProxyHosts() throws IOException, TimeoutException, InterruptedException {
     // FIXME not threadsafe!
     Properties originalProps = new Properties();
     originalProps.putAll(System.getProperties());
@@ -285,7 +286,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  // @Test(groups = "standalone")
+  @Test(enabled = false)
   public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     ProxySelector originalProxySelector = ProxySelector.getDefault();
     ProxySelector.setDefault(new ProxySelector() {
@@ -293,7 +294,7 @@ public class ProxyTest extends AbstractBasicTest {
         if (uri.getHost().equals("127.0.0.1")) {
           return Arrays.asList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", port1)));
         } else {
-          return Arrays.asList(Proxy.NO_PROXY);
+          return Collections.singletonList(Proxy.NO_PROXY);
         }
       }
 
@@ -323,7 +324,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void runSocksProxy() throws Exception {
     new Thread(() -> {
       try {

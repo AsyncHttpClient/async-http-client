@@ -17,14 +17,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import org.asynchttpclient.netty.NettyResponseFuture;
 
-import java.io.IOException;
-
 public abstract class NettyDirectBody implements NettyBody {
 
   public abstract ByteBuf byteBuf();
 
   @Override
-  public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
+  public void write(Channel channel, NettyResponseFuture<?> future) {
     throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
   }
 }

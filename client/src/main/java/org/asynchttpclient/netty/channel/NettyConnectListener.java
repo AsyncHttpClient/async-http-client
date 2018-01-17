@@ -44,18 +44,15 @@ public final class NettyConnectListener<T> {
   private final NettyResponseFuture<T> future;
   private final ChannelManager channelManager;
   private final ConnectionSemaphore connectionSemaphore;
-  private final Object partitionKey;
 
-  public NettyConnectListener(NettyResponseFuture<T> future,//
-                              NettyRequestSender requestSender,//
-                              ChannelManager channelManager,//
-                              ConnectionSemaphore connectionSemaphore,//
-                              Object partitionKey) {
+  public NettyConnectListener(NettyResponseFuture<T> future,
+                              NettyRequestSender requestSender,
+                              ChannelManager channelManager,
+                              ConnectionSemaphore connectionSemaphore) {
     this.future = future;
     this.requestSender = requestSender;
     this.channelManager = channelManager;
     this.connectionSemaphore = connectionSemaphore;
-    this.partitionKey = partitionKey;
   }
 
   private boolean futureIsAlreadyCancelled(Channel channel) {
@@ -80,7 +77,7 @@ public final class NettyConnectListener<T> {
 
     Channels.setAttribute(channel, future);
 
-    channelManager.registerOpenChannel(channel, partitionKey);
+    channelManager.registerOpenChannel(channel);
     future.attachChannel(channel, false);
     requestSender.writeRequest(future, channel);
   }
@@ -113,7 +110,7 @@ public final class NettyConnectListener<T> {
 
     // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
     if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
-      SslHandler sslHandler = null;
+      SslHandler sslHandler;
       try {
         sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
       } catch (Exception sslError) {
@@ -133,7 +130,7 @@ public final class NettyConnectListener<T> {
 
       sslHandler.handshakeFuture().addListener(new SimpleFutureListener<Channel>() {
         @Override
-        protected void onSuccess(Channel value) throws Exception {
+        protected void onSuccess(Channel value) {
           try {
             asyncHandler.onTlsHandshakeSuccess();
           } catch (Exception e) {
@@ -145,7 +142,7 @@ public final class NettyConnectListener<T> {
         }
 
         @Override
-        protected void onFailure(Throwable cause) throws Exception {
+        protected void onFailure(Throwable cause) {
           try {
             asyncHandler.onTlsHandshakeFailure(cause);
           } catch (Exception e) {

@@ -15,7 +15,6 @@ package org.asynchttpclient.uri;
 
 import org.testng.annotations.Test;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 
 import static org.testng.Assert.assertEquals;
@@ -31,7 +30,7 @@ public class UriParserTest {
     assertEquals(parser.query, uri.getQuery());
   }
 
-  private static void validateAgainstAbsoluteURI(String url) throws MalformedURLException {
+  private static void validateAgainstAbsoluteURI(String url) {
     UriParser parser = new UriParser();
     parser.parse(null, url);
     assertUriEquals(parser, URI.create(url));
@@ -44,12 +43,12 @@ public class UriParserTest {
   }
 
   @Test
-  public void testUrlWithPathAndQuery() throws MalformedURLException {
+  public void testUrlWithPathAndQuery() {
     validateAgainstAbsoluteURI("http://example.com:8080/test?q=1");
   }
 
   @Test
-  public void testFragmentTryingToTrickAuthorityAsBasicAuthCredentials() throws MalformedURLException {
+  public void testFragmentTryingToTrickAuthorityAsBasicAuthCredentials() {
     validateAgainstAbsoluteURI("http://1.2.3.4:81#@5.6.7.8:82/aaa/b?q=xxx");
   }
 

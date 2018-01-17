@@ -131,11 +131,11 @@ public class HttpServer implements Closeable {
 
     private final boolean closeAfterResponse;
 
-    public AutoFlushHandler() {
+    AutoFlushHandler() {
       this(false);
     }
 
-    public AutoFlushHandler(boolean closeAfterResponse) {
+    AutoFlushHandler(boolean closeAfterResponse) {
       this.closeAfterResponse = closeAfterResponse;
     }
 
@@ -155,11 +155,11 @@ public class HttpServer implements Closeable {
 
     private final HttpServletResponseConsumer c;
 
-    public ConsumerHandler(HttpServletResponseConsumer c) {
+    ConsumerHandler(HttpServletResponseConsumer c) {
       this(c, false);
     }
 
-    public ConsumerHandler(HttpServletResponseConsumer c, boolean closeAfterResponse) {
+    ConsumerHandler(HttpServletResponseConsumer c, boolean closeAfterResponse) {
       super(closeAfterResponse);
       this.c = c;
     }

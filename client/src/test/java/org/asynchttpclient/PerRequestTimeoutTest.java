@@ -56,7 +56,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     return new SlowHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRequestTimeout() throws IOException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(100).execute();
@@ -72,7 +72,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testReadTimeout() throws IOException {
     try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(100))) {
       Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -88,7 +88,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
       Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
@@ -102,7 +102,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGlobalRequestTimeout() throws IOException {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
       Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -118,14 +118,14 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGlobalIdleTimeout() throws IOException {
     final long times[] = new long[]{-1, -1};
 
     try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000))) {
       Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
         @Override
-        public Response onCompleted(Response response) throws Exception {
+        public Response onCompleted(Response response) {
           return response;
         }
 
@@ -156,32 +156,24 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
       response.setStatus(HttpServletResponse.SC_OK);
       final AsyncContext asyncContext = request.startAsync();
-      new Thread(new Runnable() {
-        public void run() {
+      new Thread(() -> {
           try {
             Thread.sleep(1500);
             response.getOutputStream().print(MSG);
             response.getOutputStream().flush();
-          } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
-          } catch (IOException e) {
+          } catch (InterruptedException | IOException e) {
             logger.error(e.getMessage(), e);
           }
-        }
       }).start();
-      new Thread(new Runnable() {
-        public void run() {
+      new Thread(() -> {
           try {
             Thread.sleep(3000);
             response.getOutputStream().print(MSG);
             response.getOutputStream().flush();
             asyncContext.complete();
-          } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
-          } catch (IOException e) {
+          } catch (InterruptedException | IOException e) {
             logger.error(e.getMessage(), e);
           }
-        }
       }).start();
       baseRequest.setHandled(true);
     }

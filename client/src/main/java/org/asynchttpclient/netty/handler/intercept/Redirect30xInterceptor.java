@@ -62,7 +62,7 @@ public class Redirect30xInterceptor {
   private final NettyRequestSender requestSender;
   private final MaxRedirectException maxRedirectException;
 
-  public Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+  Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
     this.channelManager = channelManager;
     this.config = config;
     this.requestSender = requestSender;

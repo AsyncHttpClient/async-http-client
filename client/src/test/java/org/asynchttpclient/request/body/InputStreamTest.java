@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -46,15 +45,15 @@ public class InputStreamTest extends AbstractBasicTest {
     return new InputStreamHandler();
   }
 
-  @Test(groups = "standalone")
-  public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void testInvalidInputStream() throws IOException, ExecutionException, InterruptedException {
 
     try (AsyncHttpClient c = asyncHttpClient()) {
       HttpHeaders h = new DefaultHttpHeaders().add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
 
       InputStream is = new InputStream() {
 
-        public int readAllowed;
+        int readAllowed;
 
         @Override
         public int available() {
@@ -62,7 +61,7 @@ public class InputStreamTest extends AbstractBasicTest {
         }
 
         @Override
-        public int read() throws IOException {
+        public int read() {
           int fakeCount = readAllowed++;
           if (fakeCount == 0) {
             return (int) 'a';

@@ -22,7 +22,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -52,13 +51,12 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
   @Override
   public AbstractHandler configureHandler() throws Exception {
     return new AbstractHandler() {
-      public void handle(String s, Request request, HttpServletRequest req, final HttpServletResponse resp) throws IOException, ServletException {
+      public void handle(String s, Request request, HttpServletRequest req, final HttpServletResponse resp) throws IOException {
         resp.setContentType("text/plain;charset=utf-8");
         resp.setStatus(200);
         final AsyncContext asyncContext = request.startAsync();
         final PrintWriter writer = resp.getWriter();
-        executorService.submit(new Runnable() {
-          public void run() {
+        executorService.submit(() -> {
             try {
               Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -67,10 +65,8 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
             logger.info("Delivering part1.");
             writer.write("part1");
             writer.flush();
-          }
         });
-        executorService.submit(new Runnable() {
-          public void run() {
+        executorService.submit(() -> {
             try {
               Thread.sleep(200);
             } catch (InterruptedException e) {
@@ -80,14 +76,13 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
             writer.write("part2");
             writer.flush();
             asyncContext.complete();
-          }
         });
         request.setHandled(true);
       }
     };
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testStream() throws Exception {
     try (AsyncHttpClient ahc = asyncHttpClient()) {
       final AtomicBoolean err = new AtomicBoolean(false);
@@ -110,7 +105,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public State onStatusReceived(HttpResponseStatus e) throws Exception {
+        public State onStatusReceived(HttpResponseStatus e) {
           status.set(true);
           return State.CONTINUE;
         }
@@ -122,7 +117,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public Object onCompleted() throws Exception {
+        public Object onCompleted() {
           latch.countDown();
           return null;
         }

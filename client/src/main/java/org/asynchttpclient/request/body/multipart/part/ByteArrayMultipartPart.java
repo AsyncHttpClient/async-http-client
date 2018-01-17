@@ -35,7 +35,7 @@ public class ByteArrayMultipartPart extends FileLikeMultipartPart<ByteArrayPart>
   }
 
   @Override
-  protected long transferContentTo(ByteBuf target) throws IOException {
+  protected long transferContentTo(ByteBuf target) {
     return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
   }
 

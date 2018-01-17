@@ -60,7 +60,7 @@ class OAuthSignatureCalculatorInstance {
   private final byte[] nonceBuffer = new byte[16];
   private final Parameters parameters = new Parameters();
 
-  public OAuthSignatureCalculatorInstance() throws NoSuchAlgorithmException {
+  OAuthSignatureCalculatorInstance() throws NoSuchAlgorithmException {
     mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
   }
 
@@ -118,10 +118,8 @@ class OAuthSignatureCalculatorInstance {
 
     parameters.reset();
 
-    /**
-     * List of all query and form parameters added to this request; needed for calculating request signature
-     */
-    // start with standard OAuth parameters we need
+    // List of all query and form parameters added to this request; needed for calculating request signature
+    // Start with standard OAuth parameters we need
     parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())//
             .add(KEY_OAUTH_NONCE, percentEncodedNonce)
             .add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)//

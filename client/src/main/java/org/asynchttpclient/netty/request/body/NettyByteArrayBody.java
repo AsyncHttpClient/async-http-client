@@ -16,7 +16,6 @@ package org.asynchttpclient.netty.request.body;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-
 public class NettyByteArrayBody extends NettyDirectBody {
 
   private final byte[] bytes;

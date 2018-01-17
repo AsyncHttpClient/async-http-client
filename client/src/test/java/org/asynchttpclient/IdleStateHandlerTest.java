@@ -45,7 +45,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
     logger.info("Local HTTP server started successfully");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void idleStateTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
       c.prepareGet(getTargetUrl()).execute().get();

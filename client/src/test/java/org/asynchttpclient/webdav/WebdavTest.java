@@ -96,7 +96,7 @@ public class WebdavTest {
   }
 
   @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws InterruptedException, Exception {
+  public void tearDownGlobal() throws Exception {
     tomcat.stop();
   }
 
@@ -105,13 +105,13 @@ public class WebdavTest {
   }
 
   @AfterMethod(alwaysRun = true)
-  public void clean() throws InterruptedException, Exception {
+  public void clean() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       c.executeRequest(delete(getTargetUrl())).get();
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
     try (AsyncHttpClient c = asyncHttpClient()) {
       Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -120,7 +120,7 @@ public class WebdavTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
     try (AsyncHttpClient c = asyncHttpClient()) {
       Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
@@ -129,7 +129,7 @@ public class WebdavTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
     try (AsyncHttpClient c = asyncHttpClient()) {
       Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
@@ -139,7 +139,7 @@ public class WebdavTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
     try (AsyncHttpClient c = asyncHttpClient()) {
       Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -158,7 +158,7 @@ public class WebdavTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
     try (AsyncHttpClient c = asyncHttpClient()) {
       Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -177,7 +177,7 @@ public class WebdavTest {
         }
 
         @Override
-        public WebDavResponse onCompleted(WebDavResponse response) throws Exception {
+        public WebDavResponse onCompleted(WebDavResponse response) {
           return response;
         }
       }).get();

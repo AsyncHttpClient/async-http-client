@@ -173,24 +173,20 @@ public interface Response {
     private HttpResponseStatus status;
     private HttpHeaders headers;
 
-    public ResponseBuilder accumulate(HttpResponseStatus status) {
+    public void accumulate(HttpResponseStatus status) {
       this.status = status;
-      return this;
     }
 
-    public ResponseBuilder accumulate(HttpHeaders headers) {
+    public void accumulate(HttpHeaders headers) {
       this.headers = this.headers == null ? headers : this.headers.add(headers);
-      return this;
     }
 
     /**
      * @param bodyPart a body part (possibly empty, but will be filtered out)
-     * @return this
      */
-    public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {
+    public void accumulate(HttpResponseBodyPart bodyPart) {
       if (bodyPart.length() > 0)
         bodyParts.add(bodyPart);
-      return this;
     }
 
     /**

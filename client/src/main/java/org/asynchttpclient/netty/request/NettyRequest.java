@@ -21,7 +21,7 @@ public final class NettyRequest {
   private final HttpRequest httpRequest;
   private final NettyBody body;
 
-  public NettyRequest(HttpRequest httpRequest, NettyBody body) {
+  NettyRequest(HttpRequest httpRequest, NettyBody body) {
     this.httpRequest = httpRequest;
     this.body = body;
   }

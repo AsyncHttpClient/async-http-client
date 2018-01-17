@@ -28,8 +28,6 @@ import org.asynchttpclient.request.body.generator.FeedListener;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 
-import java.io.IOException;
-
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyBodyBody implements NettyBody {
@@ -52,7 +50,7 @@ public class NettyBodyBody implements NettyBody {
   }
 
   @Override
-  public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
+  public void write(final Channel channel, NettyResponseFuture<?> future) {
 
     Object msg;
     if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy()) {

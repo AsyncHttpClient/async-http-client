@@ -206,16 +206,15 @@ public class MultipartPartTest {
     String boundary = "uwyqQolZaSmme019O2kFKvAeHoC14Npp";
 
     List<MultipartPart<? extends Part>> multipartParts = MultipartUtils.generateMultipartParts(parts, boundary.getBytes());
-    MultipartBody multipartBody = new MultipartBody(multipartParts, "multipart/form-data; boundary=" + boundary, boundary.getBytes());
+    try (MultipartBody multipartBody = new MultipartBody(multipartParts, "multipart/form-data; boundary=" + boundary, boundary.getBytes())) {
 
-    ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(8 * 1024);
-
-    try {
+      ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(8 * 1024);
       multipartBody.transferTo(byteBuf);
-      byteBuf.toString(StandardCharsets.UTF_8);
-    } finally {
-      multipartBody.close();
-      byteBuf.release();
+      try {
+        byteBuf.toString(StandardCharsets.UTF_8);
+      } finally {
+        byteBuf.release();
+      }
     }
   }
 
@@ -224,27 +223,27 @@ public class MultipartPartTest {
    */
   private class TestFileLikePart extends FileLikePart {
 
-    public TestFileLikePart(String name) {
+    TestFileLikePart(String name) {
       this(name, null, null, null, null);
     }
 
-    public TestFileLikePart(String name, String contentType) {
+    TestFileLikePart(String name, String contentType) {
       this(name, contentType, null);
     }
 
-    public TestFileLikePart(String name, String contentType, Charset charset) {
+    TestFileLikePart(String name, String contentType, Charset charset) {
       this(name, contentType, charset, null);
     }
 
-    public TestFileLikePart(String name, String contentType, Charset charset, String contentId) {
+    TestFileLikePart(String name, String contentType, Charset charset, String contentId) {
       this(name, contentType, charset, contentId, null);
     }
 
-    public TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
+    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
       this(name, contentType, charset, contentId, transfertEncoding, null);
     }
 
-    public TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding, String fileName) {
+    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding, String fileName) {
       super(name, contentType, charset, fileName, contentId, transfertEncoding);
     }
   }
@@ -254,7 +253,7 @@ public class MultipartPartTest {
    */
   private class TestMultipartPart extends FileLikeMultipartPart<TestFileLikePart> {
 
-    public TestMultipartPart(TestFileLikePart part, byte[] boundary) {
+    TestMultipartPart(TestFileLikePart part, byte[] boundary) {
       super(part, boundary);
     }
 
@@ -264,12 +263,12 @@ public class MultipartPartTest {
     }
 
     @Override
-    protected long transferContentTo(ByteBuf target) throws IOException {
+    protected long transferContentTo(ByteBuf target) {
       return 0;
     }
 
     @Override
-    protected long transferContentTo(WritableByteChannel target) throws IOException {
+    protected long transferContentTo(WritableByteChannel target) {
       return 0;
     }
   }

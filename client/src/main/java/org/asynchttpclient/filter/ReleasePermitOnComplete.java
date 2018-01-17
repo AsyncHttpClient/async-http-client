@@ -2,8 +2,6 @@ package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHandler;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,9 +27,7 @@ public class ReleasePermitOnComplete {
     ClassLoader classLoader = handlerClass.getClassLoader();
     Class<?>[] interfaces = allInterfaces(handlerClass);
 
-    return (AsyncHandler<T>) Proxy.newProxyInstance(classLoader, interfaces, new InvocationHandler() {
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    return (AsyncHandler<T>) Proxy.newProxyInstance(classLoader, interfaces, (proxy, method, args) -> {
         try {
           return method.invoke(handler, args);
         } finally {
@@ -42,7 +38,6 @@ public class ReleasePermitOnComplete {
             default:
           }
         }
-      }
     });
   }
 
@@ -52,7 +47,7 @@ public class ReleasePermitOnComplete {
    * @param handlerClass the handler class
    * @return all interfaces implemented by this class
    */
-  static Class<?>[] allInterfaces(Class<?> handlerClass) {
+  private static Class<?>[] allInterfaces(Class<?> handlerClass) {
     Set<Class<?>> allInterfaces = new HashSet<>();
     for (Class<?> clazz = handlerClass; clazz != null; clazz = clazz.getSuperclass()) {
       Collections.addAll(allInterfaces, clazz.getInterfaces());

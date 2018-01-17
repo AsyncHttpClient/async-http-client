@@ -24,11 +24,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -41,8 +39,8 @@ import static org.testng.Assert.*;
  */
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
-  public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+  @Test
+  public void zeroCopyPostTest() throws IOException, ExecutionException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       final AtomicBoolean headerSent = new AtomicBoolean(false);
       final AtomicBoolean operationCompleted = new AtomicBoolean(false);
@@ -60,7 +58,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
 
         @Override
-        public Response onCompleted(Response response) throws Exception {
+        public Response onCompleted(Response response) {
           return response;
         }
       }).get();
@@ -72,8 +70,8 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+  @Test
+  public void zeroCopyPutTest() throws IOException, ExecutionException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePut("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
       Response resp = f.get();
@@ -88,8 +86,8 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     return new ZeroCopyHandler();
   }
 
-  @Test(groups = "standalone")
-  public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+  @Test
+  public void zeroCopyFileTest() throws IOException, ExecutionException, InterruptedException {
     File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
     tmp.deleteOnExit();
     try (AsyncHttpClient client = asyncHttpClient()) {
@@ -103,15 +101,15 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
             return State.CONTINUE;
           }
 
-          public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
             return State.CONTINUE;
           }
 
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             return State.CONTINUE;
           }
 
-          public Response onCompleted() throws Exception {
+          public Response onCompleted() {
             return null;
           }
         }).get();
@@ -121,8 +119,8 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+  @Test
+  public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, InterruptedException {
     File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
     tmp.deleteOnExit();
     try (AsyncHttpClient client = asyncHttpClient()) {
@@ -141,15 +139,15 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
             return State.CONTINUE;
           }
 
-          public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
             return State.CONTINUE;
           }
 
-          public State onHeadersReceived(HttpHeaders headers) throws Exception {
+          public State onHeadersReceived(HttpHeaders headers) {
             return State.CONTINUE;
           }
 
-          public Response onCompleted() throws Exception {
+          public Response onCompleted() {
             return null;
           }
         }).get();

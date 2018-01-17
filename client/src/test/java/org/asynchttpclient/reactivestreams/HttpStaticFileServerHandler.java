@@ -88,11 +88,11 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public class HttpStaticFileServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-  public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-  public static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
-  public static final int HTTP_CACHE_SECONDS = 60;
+  private static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
+  private static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
+  private static final int HTTP_CACHE_SECONDS = 60;
   private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
-  private static final Pattern ALLOWED_FILE_NAME = Pattern.compile("[A-Za-z0-9][-_A-Za-z0-9\\.]*");
+  private static final Pattern ALLOWED_FILE_NAME = Pattern.compile("[A-Za-z0-9][-_A-Za-z0-9.]*");
 
   private static String sanitizeUri(String uri) {
     // Decode the path.

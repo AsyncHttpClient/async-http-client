@@ -47,7 +47,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     return new SlowHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRequestTimeout() throws IOException {
     final Semaphore requestThrottle = new Semaphore(1);
 
@@ -58,42 +58,40 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
       final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<>(2));
 
       for (int i = 0; i < samples; i++) {
-        new Thread(new Runnable() {
-
-          public void run() {
+        new Thread(() -> {
+          try {
+            requestThrottle.acquire();
+            Future<Response> responseFuture = null;
             try {
-              requestThrottle.acquire();
-              Future<Response> responseFuture = null;
-              try {
-                responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(SLEEPTIME_MS / 2)
-                        .execute(new AsyncCompletionHandler<Response>() {
+              responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(SLEEPTIME_MS / 2)
+                      .execute(new AsyncCompletionHandler<Response>() {
 
-                          @Override
-                          public Response onCompleted(Response response) throws Exception {
-                            return response;
+                        @Override
+                        public Response onCompleted(Response response) {
+                          return response;
+                        }
+
+                        @Override
+                        public void onThrowable(Throwable t) {
+                          logger.error("onThrowable got an error", t);
+                          try {
+                            Thread.sleep(100);
+                          } catch (InterruptedException e) {
+                            //
                           }
-
-                          @Override
-                          public void onThrowable(Throwable t) {
-                            logger.error("onThrowable got an error", t);
-                            try {
-                              Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                            }
-                            requestThrottle.release();
-                          }
-                        });
-              } catch (Exception e) {
-                tooManyConnections.add(e);
-              }
-
-              if (responseFuture != null)
-                responseFuture.get();
+                          requestThrottle.release();
+                        }
+                      });
             } catch (Exception e) {
-            } finally {
-              latch.countDown();
+              tooManyConnections.add(e);
             }
 
+            if (responseFuture != null)
+              responseFuture.get();
+          } catch (Exception e) {
+            //
+          } finally {
+            latch.countDown();
           }
         }).start();
       }
@@ -116,18 +114,14 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
             throws IOException, ServletException {
       response.setStatus(HttpServletResponse.SC_OK);
       final AsyncContext asyncContext = request.startAsync();
-      new Thread(new Runnable() {
-        public void run() {
-          try {
-            Thread.sleep(SLEEPTIME_MS);
-            response.getOutputStream().print(MSG);
-            response.getOutputStream().flush();
-            asyncContext.complete();
-          } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
-          } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-          }
+      new Thread(() -> {
+        try {
+          Thread.sleep(SLEEPTIME_MS);
+          response.getOutputStream().print(MSG);
+          response.getOutputStream().flush();
+          asyncContext.complete();
+        } catch (InterruptedException | IOException e) {
+          logger.error(e.getMessage(), e);
         }
       }).start();
       baseRequest.setHandled(true);

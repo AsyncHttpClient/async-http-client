@@ -18,7 +18,7 @@ public enum ProxyType {
 
   private final boolean http;
 
-  private ProxyType(boolean http) {
+  ProxyType(boolean http) {
     this.http = http;
   }
 

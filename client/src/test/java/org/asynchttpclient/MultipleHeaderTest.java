@@ -41,8 +41,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
     port1 = serverSocket.getLocalPort();
     executorService = Executors.newFixedThreadPool(1);
-    voidFuture = executorService.submit(new Callable<Void>() {
-      public Void call() throws Exception {
+    voidFuture = executorService.submit(() -> {
         Socket socket;
         while ((socket = serverSocket.accept()) != null) {
           InputStream inputStream = socket.getInputStream();
@@ -67,8 +66,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           }
         }
         return null;
-      }
-    });
+      });
   }
 
   @AfterClass(alwaysRun = true)
@@ -78,7 +76,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     serverSocket.close();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     final String[] xffHeaders = new String[]{null, null};
 
@@ -90,15 +88,15 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           t.printStackTrace(System.out);
         }
 
-        public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+        public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) {
           return State.CONTINUE;
         }
 
-        public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+        public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) {
           return State.CONTINUE;
         }
 
-        public State onHeadersReceived(HttpHeaders response) throws Exception {
+        public State onHeadersReceived(HttpHeaders response) {
           int i = 0;
           for (String header : response.getAll("X-Forwarded-For")) {
             xffHeaders[i++] = header;
@@ -107,7 +105,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public Void onCompleted() throws Exception {
+        public Void onCompleted() {
           return null;
         }
       }).get(3, TimeUnit.SECONDS);
@@ -127,7 +125,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     final String[] clHeaders = new String[]{null, null};
 
@@ -139,15 +137,15 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           t.printStackTrace(System.out);
         }
 
-        public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+        public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) {
           return State.CONTINUE;
         }
 
-        public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+        public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) {
           return State.CONTINUE;
         }
 
-        public State onHeadersReceived(HttpHeaders response) throws Exception {
+        public State onHeadersReceived(HttpHeaders response) {
           try {
             int i = 0;
             for (String header : response.getAll(CONTENT_LENGTH)) {
@@ -159,7 +157,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public Void onCompleted() throws Exception {
+        public Void onCompleted() {
           return null;
         }
       }).get(3, TimeUnit.SECONDS);

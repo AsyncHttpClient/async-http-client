@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+
 public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
   private final Publisher<ByteBuf> publisher;
@@ -66,7 +68,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
   @Override
   public Body createBody() {
-    return new StreamedBody(publisher, feedableBodyGenerator, contentLength);
+    return new StreamedBody(feedableBodyGenerator, contentLength);
   }
 
   private class StreamedBody implements Body {
@@ -77,7 +79,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     private final long contentLength;
 
-    public StreamedBody(Publisher<ByteBuf> publisher, FeedableBodyGenerator bodyGenerator, long contentLength) {
+    public StreamedBody(FeedableBodyGenerator bodyGenerator, long contentLength) {
       this.body = bodyGenerator.createBody();
       this.subscriber = new SimpleSubscriber(bodyGenerator);
       this.contentLength = contentLength;
@@ -116,8 +118,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     @Override
     public void onSubscribe(Subscription s) {
-      if (s == null)
-        throw null;
+      assertNotNull(s, "subscription");
 
       // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
       if (this.subscription != null) {
@@ -129,11 +130,10 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     }
 
     @Override
-    public void onNext(ByteBuf t) {
-      if (t == null)
-        throw null;
+    public void onNext(ByteBuf b) {
+      assertNotNull(b, "bytebuf");
       try {
-        feeder.feed(t, false);
+        feeder.feed(b, false);
       } catch (Exception e) {
         LOGGER.error("Exception occurred while processing element in stream.", e);
         subscription.cancel();
@@ -142,8 +142,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     @Override
     public void onError(Throwable t) {
-      if (t == null)
-        throw null;
+      assertNotNull(t, "throwable");
       LOGGER.debug("Error occurred while consuming body stream.", t);
       FeedListener listener = feedListener;
       if (listener != null) {

@@ -24,7 +24,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
   private final long readTimeout;
 
-  public ReadTimeoutTimerTask(//
+  ReadTimeoutTimerTask(//
                               NettyResponseFuture<?> nettyResponseFuture,//
                               NettyRequestSender requestSender,//
                               TimeoutsHolder timeoutsHolder,//
@@ -33,7 +33,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
     this.readTimeout = readTimeout;
   }
 
-  public void run(Timeout timeout) throws Exception {
+  public void run(Timeout timeout) {
 
     if (done.getAndSet(true) || requestSender.isClosed())
       return;

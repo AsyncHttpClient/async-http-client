@@ -17,7 +17,6 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
-import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,12 +60,12 @@ public final class ProxyUtils {
   /**
    * The username to use for authentication for the proxy server.
    */
-  public static final String PROXY_USER = PROPERTY_PREFIX + "user";
+  private static final String PROXY_USER = PROPERTY_PREFIX + "user";
 
   /**
    * The password to use for authentication for the proxy server.
    */
-  public static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
+  private static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
 
   private ProxyUtils() {
   }
@@ -141,9 +140,8 @@ public final class ProxyUtils {
    * @param proxySelector The proxy selector to use.  Must not be null.
    * @return The proxy server selector.
    */
-  public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
-    return new ProxyServerSelector() {
-      public ProxyServer select(Uri uri) {
+  private static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
+    return uri -> {
         try {
           URI javaUri = uri.toJavaNetURI();
 
@@ -173,7 +171,6 @@ public final class ProxyUtils {
           logger.warn(uri + " couldn't be turned into a java.net.URI", e);
           return null;
         }
-      }
     };
   }
 }

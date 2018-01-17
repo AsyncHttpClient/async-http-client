@@ -15,8 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
@@ -60,7 +58,7 @@ public class BasicHttpsTest extends HttpTest {
   @Test
   public void postFileOverHttps() throws Throwable {
     logger.debug(">>> postBodyOverHttps");
-    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
 
@@ -68,15 +66,14 @@ public class BasicHttpsTest extends HttpTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
-      });
-    });
+      }));
     logger.debug("<<< postBodyOverHttps");
   }
 
   @Test
   public void postLargeFileOverHttps() throws Throwable {
     logger.debug(">>> postLargeFileOverHttps");
-    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
 
@@ -84,15 +81,14 @@ public class BasicHttpsTest extends HttpTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBodyAsBytes().length, LARGE_IMAGE_FILE.length());
-      });
-    });
+      }));
     logger.debug("<<< postLargeFileOverHttps");
   }
 
   @Test
   public void multipleSequentialPostRequestsOverHttps() throws Throwable {
     logger.debug(">>> multipleSequentialPostRequestsOverHttps");
-    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
         server.enqueueEcho();
@@ -103,8 +99,7 @@ public class BasicHttpsTest extends HttpTest {
 
         response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
         assertEquals(response.getResponseBody(), body);
-      });
-    });
+      }));
     logger.debug("<<< multipleSequentialPostRequestsOverHttps");
   }
 
@@ -112,14 +107,9 @@ public class BasicHttpsTest extends HttpTest {
   public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy() throws Throwable {
     logger.debug(">>> multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
 
-    KeepAliveStrategy keepAliveStrategy = new KeepAliveStrategy() {
-      @Override
-      public boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse) {
-        return !ahcRequest.getUri().isSecured();
-      }
-    };
+    KeepAliveStrategy keepAliveStrategy = (ahcRequest, nettyRequest, nettyResponse) -> !ahcRequest.getUri().isSecured();
 
-    withClient(config().setSslEngineFactory(createSslEngineFactory()).setKeepAliveStrategy(keepAliveStrategy)).run(client -> {
+    withClient(config().setSslEngineFactory(createSslEngineFactory()).setKeepAliveStrategy(keepAliveStrategy)).run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
         server.enqueueEcho();
@@ -132,8 +122,7 @@ public class BasicHttpsTest extends HttpTest {
 
         Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get();
         assertEquals(response.getResponseBody(), body);
-      });
-    });
+      }));
 
     logger.debug("<<< multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
   }
@@ -144,7 +133,7 @@ public class BasicHttpsTest extends HttpTest {
 
     AtomicBoolean trust = new AtomicBoolean();
 
-    withClient(config().setMaxRequestRetry(0).setSslEngineFactory(createSslEngineFactory(trust))).run(client -> {
+    withClient(config().setMaxRequestRetry(0).setSslEngineFactory(createSslEngineFactory(trust))).run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
         server.enqueueEcho();
@@ -165,8 +154,7 @@ public class BasicHttpsTest extends HttpTest {
         Response response = client.preparePost(getTargetUrl()).setBody(body).setHeader(CONTENT_TYPE, "text/html").execute().get(TIMEOUT, SECONDS);
 
         assertEquals(response.getResponseBody(), body);
-      });
-    });
+      }));
     logger.debug("<<< reconnectAfterFailedCertificationPath");
   }
 
@@ -174,24 +162,23 @@ public class BasicHttpsTest extends HttpTest {
   public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
     logger.debug(">>> failInstantlyIfNotAllowedSelfSignedCertificate");
 
-    withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client -> {
+    withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client ->
       withServer(server).run(server -> {
         try {
           client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, SECONDS);
         } catch (ExecutionException e) {
           throw e.getCause().getCause();
         }
-      });
-    });
+      }));
     logger.debug("<<< failInstantlyIfNotAllowedSelfSignedCertificate");
 
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testNormalEventsFired() throws Throwable {
     logger.debug(">>> testNormalEventsFired");
 
-    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client -> {
+    withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
       withServer(server).run(server -> {
         EventCollectingHandler handler = new EventCollectingHandler();
 
@@ -215,8 +202,7 @@ public class BasicHttpsTest extends HttpTest {
                 COMPLETED_EVENT};
 
         assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
-      });
-    });
+      }));
     logger.debug("<<< testNormalEventsFired");
   }
 }

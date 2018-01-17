@@ -52,7 +52,7 @@ public enum RequestHostnameResolver {
     whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
 
       @Override
-      protected void onSuccess(List<InetAddress> value) throws Exception {
+      protected void onSuccess(List<InetAddress> value) {
         ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
         for (InetAddress a : value) {
           socketAddresses.add(new InetSocketAddress(a, port));
@@ -68,7 +68,7 @@ public enum RequestHostnameResolver {
       }
 
       @Override
-      protected void onFailure(Throwable t) throws Exception {
+      protected void onFailure(Throwable t) {
         try {
           asyncHandler.onHostnameResolutionFailure(hostname, t);
         } catch (Exception e) {

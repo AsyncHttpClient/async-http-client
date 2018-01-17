@@ -39,13 +39,13 @@ import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 
 public final class NettyRequestFactory {
 
-  public static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
-  public static final String GZIP_DEFLATE = HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE;
+  private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
+  private static final String GZIP_DEFLATE = HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE;
 
   private final AsyncHttpClientConfig config;
   private final ClientCookieEncoder cookieEncoder;
 
-  public NettyRequestFactory(AsyncHttpClientConfig config) {
+  NettyRequestFactory(AsyncHttpClientConfig config) {
     this.config = config;
     cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
   }

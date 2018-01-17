@@ -34,7 +34,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
   private boolean endOfInput;
   private long progress = 0L;
 
-  public BodyChunkedInput(Body body) {
+  BodyChunkedInput(Body body) {
     this.body = assertNotNull(body, "body");
     this.contentLength = body.getContentLength();
     if (contentLength <= 0)
@@ -74,7 +74,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
   }
 
   @Override
-  public boolean isEndOfInput() throws Exception {
+  public boolean isEndOfInput() {
     return endOfInput;
   }
 

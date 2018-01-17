@@ -134,7 +134,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     return asyncHttpClient(config().setRequestTimeout(REQUEST_TIMEOUT));
   }
 
-  protected Future<Response> execute(AsyncHttpClient client, boolean basic, boolean preemptive) throws IOException {
+  protected Future<Response> execute(AsyncHttpClient client, boolean basic, boolean preemptive) {
     Realm.Builder realm;
     String url;
 
@@ -182,6 +182,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
       try {
         Thread.sleep(LONG_FUTURE_TIMEOUT + 100);
       } catch (InterruptedException e) {
+        //
       }
     }
   }

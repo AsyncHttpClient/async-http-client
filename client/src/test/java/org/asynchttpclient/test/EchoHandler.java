@@ -61,6 +61,7 @@ public class EchoHandler extends AbstractHandler {
         try {
           Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
         } catch (InterruptedException ex) {
+          //
         }
       }
 

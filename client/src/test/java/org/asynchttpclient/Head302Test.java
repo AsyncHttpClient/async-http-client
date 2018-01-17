@@ -40,8 +40,8 @@ public class Head302Test extends AbstractBasicTest {
     return new Head302handler();
   }
 
-  @Test(groups = "standalone")
-  public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
+  @Test
+  public void testHEAD302() throws IOException, InterruptedException, ExecutionException, TimeoutException {
     AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
     try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
       final CountDownLatch l = new CountDownLatch(1);

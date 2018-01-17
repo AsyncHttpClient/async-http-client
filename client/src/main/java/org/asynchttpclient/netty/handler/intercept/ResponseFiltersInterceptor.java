@@ -31,7 +31,7 @@ public class ResponseFiltersInterceptor {
   private final AsyncHttpClientConfig config;
   private final NettyRequestSender requestSender;
 
-  public ResponseFiltersInterceptor(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+  ResponseFiltersInterceptor(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
     this.config = config;
     this.requestSender = requestSender;
   }

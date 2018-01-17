@@ -24,7 +24,7 @@ import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 public class RealmTest {
-  @Test(groups = "standalone")
+  @Test
   public void testClone() {
     Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)//
             .setUsePreemptiveAuth(true)//
@@ -41,12 +41,12 @@ public class RealmTest {
     assertEquals(clone.getScheme(), orig.getScheme());
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testOldDigestEmptyString() throws Exception {
     testOldDigest("");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testOldDigestNull() throws Exception {
     testOldDigest(null);
   }
@@ -73,7 +73,7 @@ public class RealmTest {
     assertEquals(orig.getResponse(), expectedResponse);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testStrongDigest() throws Exception {
     String user = "user";
     String pass = "pass";

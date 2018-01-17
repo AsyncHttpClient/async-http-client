@@ -38,7 +38,7 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
     return new BasicHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicByteBufferTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       File largeFile = createTempFile(1024 * 100 * 10);

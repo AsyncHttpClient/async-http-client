@@ -55,11 +55,11 @@ public class ReactiveStreamsDownLoadTest {
   }
 
   @AfterClass(alwaysRun = true)
-  public void tearDown() throws Exception {
+  public void tearDown() {
     HttpStaticFileServer.shutdown();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void streamedResponseLargeFileTest() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
       String largeFileName = "http://localhost:" + serverPort + "/" + largeFile.getName();
@@ -69,7 +69,7 @@ public class ReactiveStreamsDownLoadTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void streamedResponseSmallFileTest() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
       String smallFileName = "http://localhost:" + serverPort + "/" + smallFile.getName();
@@ -83,11 +83,11 @@ public class ReactiveStreamsDownLoadTest {
   static protected class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
     private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
 
-    public SimpleStreamedAsyncHandler() {
+    SimpleStreamedAsyncHandler() {
       this(new SimpleSubscriber<>());
     }
 
-    public SimpleStreamedAsyncHandler(SimpleSubscriber<HttpResponseBodyPart> subscriber) {
+    SimpleStreamedAsyncHandler(SimpleSubscriber<HttpResponseBodyPart> subscriber) {
       this.subscriber = subscriber;
     }
 
@@ -110,7 +110,7 @@ public class ReactiveStreamsDownLoadTest {
     }
 
     @Override
-    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) {
       return State.CONTINUE;
     }
 

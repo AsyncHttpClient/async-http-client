@@ -35,7 +35,7 @@ import static org.testng.Assert.assertNotNull;
 
 public class ParamEncodingTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
     String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";

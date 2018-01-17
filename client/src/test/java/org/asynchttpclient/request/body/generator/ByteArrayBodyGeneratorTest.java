@@ -31,7 +31,7 @@ public class ByteArrayBodyGeneratorTest {
   private final Random random = new Random();
   private final int chunkSize = 1024 * 8;
 
-  @Test(groups = "standalone")
+  @Test
   public void testSingleRead() throws IOException {
     final int srcArraySize = chunkSize - 1;
     final byte[] srcArray = new byte[srcArraySize];
@@ -54,7 +54,7 @@ public class ByteArrayBodyGeneratorTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testMultipleReads() throws IOException {
     final int srcArraySize = (3 * chunkSize) + 42;
     final byte[] srcArray = new byte[srcArraySize];

@@ -41,7 +41,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
     ServerConnector connector = addHttpConnector(server);
     server.setHandler(new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
         int MAX_BODY_SIZE = 1024; // Can only handle bodies of up to 1024 bytes.
         byte[] b = new byte[MAX_BODY_SIZE];
         int offset = 0;
@@ -64,7 +64,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
     port1 = connector.getLocalPort();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testNonAsciiContentLength() throws Exception {
     execute("test");
     execute("\u4E00"); // Unicode CJK ideograph for one

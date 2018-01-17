@@ -11,7 +11,7 @@ public abstract class FileLikeMultipartPart<T extends FileLikePart> extends Mult
    */
   private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(US_ASCII);
 
-  public FileLikeMultipartPart(T part, byte[] boundary) {
+  FileLikeMultipartPart(T part, byte[] boundary) {
     super(part, boundary);
   }
 

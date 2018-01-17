@@ -32,7 +32,7 @@ public class WebDavResponse implements Response {
   private final Response response;
   private final Document document;
 
-  public WebDavResponse(Response response, Document document) {
+  WebDavResponse(Response response, Document document) {
     this.response = response;
     this.document = document;
   }

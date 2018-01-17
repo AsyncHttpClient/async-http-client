@@ -35,7 +35,7 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
 
   private Server server2;
 
-  public void setUpServers(boolean targetHttps) throws Exception {
+  private void setUpServers(boolean targetHttps) throws Exception {
     server = new Server();
     ServerConnector connector = addHttpConnector(server);
     server.setHandler(new ConnectHandler());
@@ -58,12 +58,12 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
     server2.stop();
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void echoWSText() throws Exception {
     runTest(false);
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void echoWSSText() throws Exception {
     runTest(true);
   }

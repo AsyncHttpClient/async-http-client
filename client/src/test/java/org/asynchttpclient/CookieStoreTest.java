@@ -45,7 +45,7 @@ public class CookieStoreTest {
     System.out.println("--Stop");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void runAllSequentiallyBecauseNotThreadSafe() {
     addCookieWithEmptyPath();
     dontReturnCookieForAnotherDomain();

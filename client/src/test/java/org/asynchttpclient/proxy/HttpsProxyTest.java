@@ -61,7 +61,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     server2.stop();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRequestProxy() throws Exception {
 
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
@@ -71,7 +71,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testConfigProxy() throws Exception {
     AsyncHttpClientConfig config = config()//
             .setFollowRedirect(true)//
@@ -84,7 +84,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPooledConnectionsWithProxy() throws Exception {
 
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {

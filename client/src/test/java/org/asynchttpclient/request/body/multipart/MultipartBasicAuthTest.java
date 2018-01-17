@@ -60,7 +60,7 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     Throwable cause = null;
     try (AsyncHttpClient client = asyncHttpClient()) {
       try {
-        for (int i = 0; i < 20 && cause == null; i++) {
+        for (int i = 0; i < 20; i++) {
           f.apply(client.preparePut(getTargetUrl())//
                   .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))//
                   .execute().get();
@@ -73,12 +73,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     assertTrue(cause instanceof IOException, "Expected an IOException");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void noRealmCausesServerToCloseSocket() throws Exception {
     expectBrokenPipe(rb -> rb);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Exception {
     expectBrokenPipe(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)));
   }
@@ -97,12 +97,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void authorizedPreemptiveRealmWorks() throws Exception {
     expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN).setUsePreemptiveAuth(true)));
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void authorizedNonPreemptiveRealmWorksWithExpectContinue() throws Exception {
     expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)).setHeader(EXPECT, CONTINUE));
   }

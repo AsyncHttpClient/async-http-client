@@ -19,6 +19,8 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
 
+import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.SWITCHING_PROTOCOLS_101;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +29,6 @@ import java.util.List;
  */
 public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
 
-  private static final int SWITCHING_PROTOCOLS = io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS.code();
   private final List<WebSocketListener> listeners;
   private NettyWebSocket webSocket;
 
@@ -59,7 +60,7 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
   @Override
   public final State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
     onStatusReceived0(responseStatus);
-    return responseStatus.getStatusCode() == SWITCHING_PROTOCOLS ? State.CONTINUE : State.ABORT;
+    return responseStatus.getStatusCode() == SWITCHING_PROTOCOLS_101 ? State.CONTINUE : State.ABORT;
   }
 
   @Override

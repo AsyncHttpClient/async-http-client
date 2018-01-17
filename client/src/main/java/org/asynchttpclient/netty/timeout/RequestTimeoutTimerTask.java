@@ -24,16 +24,15 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
   private final long requestTimeout;
 
-  public RequestTimeoutTimerTask(//
-                                 NettyResponseFuture<?> nettyResponseFuture,//
-                                 NettyRequestSender requestSender,//
-                                 TimeoutsHolder timeoutsHolder,//
+  RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
+                                 NettyRequestSender requestSender,
+                                 TimeoutsHolder timeoutsHolder,
                                  int requestTimeout) {
     super(nettyResponseFuture, requestSender, timeoutsHolder);
     this.requestTimeout = requestTimeout;
   }
 
-  public void run(Timeout timeout) throws Exception {
+  public void run(Timeout timeout) {
 
     if (done.getAndSet(true) || requestSender.isClosed())
       return;

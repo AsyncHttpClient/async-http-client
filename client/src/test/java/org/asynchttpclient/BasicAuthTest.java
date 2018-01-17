@@ -45,8 +45,6 @@ import static org.testng.Assert.assertNotNull;
 
 public class BasicAuthTest extends AbstractBasicTest {
 
-  protected static final String MY_MESSAGE = "my message";
-
   private Server server2;
   private Server serverNoAuth;
   private int portNoAuth;
@@ -94,7 +92,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     return "http://localhost:" + port2 + "/uff";
   }
 
-  protected String getTargetUrlNoAuth() {
+  private String getTargetUrlNoAuth() {
     return "http://localhost:" + portNoAuth + "/";
   }
 
@@ -103,7 +101,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     return new SimpleHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet(getTargetUrl())//
@@ -116,8 +114,8 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void redirectAndBasicAuthTest() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
       Future<Response> f = client.prepareGet(getTargetUrl2())//
               .setRealm(basicAuthRealm(USER, ADMIN).build())//
@@ -129,8 +127,8 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void basic401Test() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void basic401Test() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient()) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl())//
               .setHeader("X-401", "401")//
@@ -144,11 +142,11 @@ public class BasicAuthTest extends AbstractBasicTest {
 
         }
 
-        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
           return State.CONTINUE;
         }
 
-        public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+        public State onStatusReceived(HttpResponseStatus responseStatus) {
           this.status = responseStatus;
 
           if (status.getStatusCode() != 200) {
@@ -157,11 +155,11 @@ public class BasicAuthTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public State onHeadersReceived(HttpHeaders headers) throws Exception {
+        public State onHeadersReceived(HttpHeaders headers) {
           return State.CONTINUE;
         }
 
-        public Integer onCompleted() throws Exception {
+        public Integer onCompleted() {
           return status.getStatusCode();
         }
       });
@@ -171,7 +169,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       // send the request to the no-auth endpoint to be able to verify the
@@ -187,7 +185,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet(getTargetUrl())//
@@ -200,7 +198,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost(getTargetUrl())//
@@ -216,7 +214,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthFileTest() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost(getTargetUrl())//
@@ -232,7 +230,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthAsyncConfigTest() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN)))) {
       Future<Response> f = client.preparePost(getTargetUrl())//
@@ -247,7 +245,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void basicAuthFileNoKeepAliveTest() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
 
@@ -264,7 +262,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(basicAuthRealm(USER, ADMIN).build());
@@ -322,16 +320,14 @@ public class BasicAuthTest extends AbstractBasicTest {
         int size = 10 * 1024;
         byte[] bytes = new byte[size];
         int contentLength = 0;
-        if (bytes.length > 0) {
-          int read = 0;
-          do {
-            read = request.getInputStream().read(bytes);
-            if (read > 0) {
-              contentLength += read;
-              response.getOutputStream().write(bytes, 0, read);
-            }
-          } while (read >= 0);
-        }
+        int read;
+        do {
+          read = request.getInputStream().read(bytes);
+          if (read > 0) {
+            contentLength += read;
+            response.getOutputStream().write(bytes, 0, read);
+          }
+        } while (read >= 0);
         response.setContentLength(contentLength);
       }
       response.getOutputStream().flush();

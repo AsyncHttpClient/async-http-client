@@ -174,7 +174,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
   }
 
   @Override
-  public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+  public State onTrailingHeadersReceived(HttpHeaders headers) {
     responseBuilder.accumulate(headers);
     return State.CONTINUE;
   }
@@ -292,7 +292,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
 
     private long length = 0L;
 
-    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException {
+    public void onBytesReceived(ByteBuffer byteBuffer) {
       length += byteBuffer.remaining();
     }
 

@@ -29,7 +29,6 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  */
 public class ConnectionSemaphore {
 
-  private final int maxTotalConnections;
   private final NonBlockingSemaphoreLike freeChannels;
   private final int maxConnectionsPerHost;
   private final ConcurrentHashMap<Object, NonBlockingSemaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
@@ -39,7 +38,7 @@ public class ConnectionSemaphore {
   private ConnectionSemaphore(AsyncHttpClientConfig config) {
     tooManyConnections = unknownStackTrace(new TooManyConnectionsException(config.getMaxConnections()), ConnectionSemaphore.class, "acquireChannelLock");
     tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(config.getMaxConnectionsPerHost()), ConnectionSemaphore.class, "acquireChannelLock");
-    maxTotalConnections = config.getMaxConnections();
+    int maxTotalConnections = config.getMaxConnections();
     maxConnectionsPerHost = config.getMaxConnectionsPerHost();
 
     freeChannels = maxTotalConnections > 0 ?

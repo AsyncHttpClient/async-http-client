@@ -62,6 +62,7 @@ public class ErrorResponseTest extends AbstractBasicTest {
       try {
         Thread.sleep(210L);
       } catch (InterruptedException e) {
+        //
       }
       response.setContentType("text/plain");
       response.setStatus(400);

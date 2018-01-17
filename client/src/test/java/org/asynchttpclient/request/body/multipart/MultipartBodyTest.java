@@ -52,8 +52,6 @@ public class MultipartBodyTest {
     try (MultipartBody dummyBody = buildMultipart()) {
       // separator is random
       MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE = dummyBody.getContentLength() + 100;
-    } catch (IOException e) {
-      throw new ExceptionInInitializerError(e);
     }
   }
 
@@ -94,11 +92,11 @@ public class MultipartBodyTest {
       }
 
       @Override
-      public void close() throws IOException {
+      public void close() {
       }
 
       @Override
-      public int write(ByteBuffer src) throws IOException {
+      public int write(ByteBuffer src) {
         int written = src.remaining();
         transferred.set(transferred.get() + written);
         src.position(src.limit());

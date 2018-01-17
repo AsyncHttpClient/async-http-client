@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -26,7 +25,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.fail;
 
 public abstract class AbstractBasicTest {
 
@@ -81,35 +79,6 @@ public abstract class AbstractBasicTest {
     @Override
     public void onThrowable(Throwable t) {
       t.printStackTrace();
-    }
-  }
-
-  public static class AsyncHandlerAdapter implements AsyncHandler<String> {
-
-    @Override
-    public void onThrowable(Throwable t) {
-      t.printStackTrace();
-      fail("Unexpected exception", t);
-    }
-
-    @Override
-    public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-      return State.CONTINUE;
-    }
-
-    @Override
-    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-      return State.CONTINUE;
-    }
-
-    @Override
-    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-      return State.CONTINUE;
-    }
-
-    @Override
-    public String onCompleted() throws Exception {
-      return "";
     }
   }
 }

@@ -19,7 +19,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -41,12 +40,12 @@ public class PutFileTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPutLargeFile() throws Exception {
     put(1024 * 1024);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPutSmallFile() throws Exception {
     put(1024);
   }
@@ -55,10 +54,10 @@ public class PutFileTest extends AbstractBasicTest {
   public AbstractHandler configureHandler() throws Exception {
     return new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         InputStream is = baseRequest.getInputStream();
-        int read = 0;
+        int read;
         do {
           // drain upload
           read = is.read();

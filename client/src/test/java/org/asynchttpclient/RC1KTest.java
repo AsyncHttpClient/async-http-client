@@ -24,7 +24,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -50,7 +48,7 @@ public class RC1KTest extends AbstractBasicTest {
   private static final int C1K = 1000;
   private static final String ARG_HEADER = "Arg";
   private static final int SRV_COUNT = 10;
-  protected Server[] servers = new Server[SRV_COUNT];
+  private Server[] servers = new Server[SRV_COUNT];
   private int[] ports = new int[SRV_COUNT];
 
   @BeforeClass(alwaysRun = true)
@@ -77,7 +75,7 @@ public class RC1KTest extends AbstractBasicTest {
   @Override
   public AbstractHandler configureHandler() throws Exception {
     return new AbstractHandler() {
-      public void handle(String s, Request r, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+      public void handle(String s, Request r, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/pain");
         String arg = s.substring(1);
         resp.setHeader(ARG_HEADER, arg);
@@ -89,8 +87,8 @@ public class RC1KTest extends AbstractBasicTest {
     };
   }
 
-  @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
-  public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test(timeOut = 10 * 60 * 1000)
+  public void rc10kProblem() throws IOException, ExecutionException, InterruptedException {
     try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {
       List<Future<Integer>> resps = new ArrayList<>(C1K);
       int i = 0;
@@ -110,7 +108,7 @@ public class RC1KTest extends AbstractBasicTest {
     private String arg;
     private AtomicInteger result = new AtomicInteger(-1);
 
-    public MyAsyncHandler(int i) {
+    MyAsyncHandler(int i) {
       arg = String.format("%d", i);
     }
 
@@ -118,23 +116,23 @@ public class RC1KTest extends AbstractBasicTest {
       logger.warn("onThrowable called.", t);
     }
 
-    public State onBodyPartReceived(HttpResponseBodyPart event) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart event) {
       String s = new String(event.getBodyPartBytes());
       result.compareAndSet(-1, new Integer(s.trim().equals("") ? "-1" : s));
       return State.CONTINUE;
     }
 
-    public State onStatusReceived(HttpResponseStatus event) throws Exception {
+    public State onStatusReceived(HttpResponseStatus event) {
       assertEquals(event.getStatusCode(), 200);
       return State.CONTINUE;
     }
 
-    public State onHeadersReceived(HttpHeaders event) throws Exception {
+    public State onHeadersReceived(HttpHeaders event) {
       assertEquals(event.get(ARG_HEADER), arg);
       return State.CONTINUE;
     }
 
-    public Integer onCompleted() throws Exception {
+    public Integer onCompleted() {
       return result.get();
     }
   }

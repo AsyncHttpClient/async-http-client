@@ -91,7 +91,7 @@ public class SpnegoEngine {
        * Unfortunately SPNEGO is JRE >=1.6.
        */
 
-      /** Try SPNEGO by default, fall back to Kerberos later if error */
+      // Try SPNEGO by default, fall back to Kerberos later if error
       negotiationOid = new Oid(SPNEGO_OID);
 
       boolean tryKerberos = false;

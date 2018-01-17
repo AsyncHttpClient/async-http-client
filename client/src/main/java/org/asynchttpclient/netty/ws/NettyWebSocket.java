@@ -35,14 +35,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 
-public class NettyWebSocket implements WebSocket {
+public final class NettyWebSocket implements WebSocket {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyWebSocket.class);
 
   protected final Channel channel;
-  protected final HttpHeaders upgradeHeaders;
-  protected final Collection<WebSocketListener> listeners;
-  protected FragmentedFrameType expectedFragmentedFrameType;
+  private final HttpHeaders upgradeHeaders;
+  private final Collection<WebSocketListener> listeners;
+  private FragmentedFrameType expectedFragmentedFrameType;
   // no need for volatile because only mutated in IO thread
   private boolean ready;
   private List<WebSocketFrame> bufferedFrames;
@@ -51,7 +51,7 @@ public class NettyWebSocket implements WebSocket {
     this(channel, upgradeHeaders, new ConcurrentLinkedQueue<>());
   }
 
-  public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, Collection<WebSocketListener> listeners) {
+  private NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders, Collection<WebSocketListener> listeners) {
     this.channel = channel;
     this.upgradeHeaders = upgradeHeaders;
     this.listeners = listeners;
@@ -272,7 +272,7 @@ public class NettyWebSocket implements WebSocket {
     return "NettyWebSocket{channel=" + channel + '}';
   }
 
-  public void onBinaryFrame(BinaryWebSocketFrame frame) {
+  private void onBinaryFrame(BinaryWebSocketFrame frame) {
     if (expectedFragmentedFrameType == null && !frame.isFinalFragment()) {
       expectedFragmentedFrameType = FragmentedFrameType.BINARY;
     }
@@ -286,7 +286,7 @@ public class NettyWebSocket implements WebSocket {
     }
   }
 
-  public void onTextFrame(TextWebSocketFrame frame) {
+  private void onTextFrame(TextWebSocketFrame frame) {
     if (expectedFragmentedFrameType == null && !frame.isFinalFragment()) {
       expectedFragmentedFrameType = FragmentedFrameType.TEXT;
     }
@@ -303,7 +303,7 @@ public class NettyWebSocket implements WebSocket {
     }
   }
 
-  public void onContinuationFrame(ContinuationWebSocketFrame frame) {
+  private void onContinuationFrame(ContinuationWebSocketFrame frame) {
     if (expectedFragmentedFrameType == null) {
       LOGGER.warn("Received continuation frame without an original text or binary frame, ignoring");
       return;
@@ -326,14 +326,14 @@ public class NettyWebSocket implements WebSocket {
     }
   }
 
-  public void onPingFrame(PingWebSocketFrame frame) {
+  private void onPingFrame(PingWebSocketFrame frame) {
     byte[] bytes = byteBuf2Bytes(frame.content());
     for (WebSocketListener listener : listeners) {
       listener.onPingFrame(bytes);
     }
   }
 
-  public void onPongFrame(PongWebSocketFrame frame) {
+  private void onPongFrame(PongWebSocketFrame frame) {
     byte[] bytes = byteBuf2Bytes(frame.content());
     for (WebSocketListener listener : listeners) {
       listener.onPongFrame(bytes);
@@ -341,6 +341,6 @@ public class NettyWebSocket implements WebSocket {
   }
 
   private enum FragmentedFrameType {
-    TEXT, BINARY;
+    TEXT, BINARY
   }
 }

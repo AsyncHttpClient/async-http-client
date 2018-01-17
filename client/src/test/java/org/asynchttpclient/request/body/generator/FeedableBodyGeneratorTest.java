@@ -31,20 +31,20 @@ public class FeedableBodyGeneratorTest {
   private TestFeedListener listener;
 
   @BeforeMethod
-  public void setUp() throws Exception {
+  public void setUp() {
     feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
     listener = new TestFeedListener();
     feedableBodyGenerator.setListener(listener);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void feedNotifiesListener() throws Exception {
     feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, false);
     feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
     assertEquals(listener.getCalls(), 2);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void readingBytesReturnsFedContentWithoutChunkBoundaries() throws Exception {
     byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
 
@@ -62,7 +62,7 @@ public class FeedableBodyGeneratorTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void returnZeroToSuspendStreamWhenNothingIsInQueue() throws Exception {
     byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
 
@@ -106,7 +106,7 @@ public class FeedableBodyGeneratorTest {
     public void onError(Throwable t) {
     }
 
-    public int getCalls() {
+    int getCalls() {
       return calls;
     }
   }

@@ -22,7 +22,7 @@ public final class UnboundedQueueFeedableBodyGenerator extends QueueBasedFeedabl
   }
 
   @Override
-  protected boolean offer(BodyChunk chunk) throws Exception {
+  protected boolean offer(BodyChunk chunk) {
     return queue.offer(chunk);
   }
 }

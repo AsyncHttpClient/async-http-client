@@ -73,7 +73,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
       return contentLength;
     }
 
-    public BodyState transferTo(ByteBuf target) throws IOException {
+    public BodyState transferTo(ByteBuf target) {
 
       // To be safe.
       chunk = new byte[target.writableBytes() - 10];

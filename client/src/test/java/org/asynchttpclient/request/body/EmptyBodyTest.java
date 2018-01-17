@@ -25,7 +25,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +45,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
     return new NoBodyResponseHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testEmptyBody() throws IOException {
     try (AsyncHttpClient ahc = asyncHttpClient()) {
       final AtomicBoolean err = new AtomicBoolean(false);
@@ -72,7 +71,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public State onStatusReceived(HttpResponseStatus e) throws Exception {
+        public State onStatusReceived(HttpResponseStatus e) {
           status.set(true);
           return AsyncHandler.State.CONTINUE;
         }
@@ -84,7 +83,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
           return State.CONTINUE;
         }
 
-        public Object onCompleted() throws Exception {
+        public Object onCompleted() {
           latch.countDown();
           return null;
         }
@@ -101,7 +100,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPutEmptyBody() throws Exception {
     try (AsyncHttpClient ahc = asyncHttpClient()) {
       Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
@@ -109,7 +108,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
       assertNotNull(response);
       assertEquals(response.getStatusCode(), 204);
       assertEquals(response.getResponseBody(), "");
-      assertTrue(response.getResponseBodyAsStream() instanceof InputStream);
+      assertNotNull(response.getResponseBodyAsStream());
       assertEquals(response.getResponseBodyAsStream().read(), -1);
     }
   }

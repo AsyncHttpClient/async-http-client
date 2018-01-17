@@ -13,8 +13,6 @@
 package org.asynchttpclient.reactivestreams;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -36,7 +34,7 @@ import static org.testng.Assert.assertTrue;
 
 public class FailingReactiveStreamsTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testRetryingOnFailingStream() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient()) {
       final CountDownLatch streamStarted = new CountDownLatch(1); // allows us to wait until subscriber has received the first body chunk
@@ -70,12 +68,7 @@ public class FailingReactiveStreamsTest extends AbstractBasicTest {
       StreamedResponsePublisher publisher = publisherRef.get();
       final CountDownLatch channelClosed = new CountDownLatch(1);
 
-      getChannel(publisher).close().addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          channelClosed.countDown();
-        }
-      });
+      getChannel(publisher).close().addListener(future-> channelClosed.countDown());
       streamOnHold.countDown(); // the subscriber is set free to process new incoming body chunks.
       channelClosed.await(); // the channel is confirmed to be closed
 
@@ -98,7 +91,7 @@ public class FailingReactiveStreamsTest extends AbstractBasicTest {
     private final CountDownLatch streamStarted;
     private final CountDownLatch streamOnHold;
 
-    public BlockedStreamSubscriber(CountDownLatch streamStarted, CountDownLatch streamOnHold) {
+    BlockedStreamSubscriber(CountDownLatch streamStarted, CountDownLatch streamOnHold) {
       this.streamStarted = streamStarted;
       this.streamOnHold = streamOnHold;
     }
@@ -118,7 +111,7 @@ public class FailingReactiveStreamsTest extends AbstractBasicTest {
   private static class ReplayedSimpleAsyncHandler extends SimpleStreamedAsyncHandler {
     private final CountDownLatch replaying;
 
-    public ReplayedSimpleAsyncHandler(CountDownLatch replaying, SimpleSubscriber<HttpResponseBodyPart> subscriber) {
+    ReplayedSimpleAsyncHandler(CountDownLatch replaying, SimpleSubscriber<HttpResponseBodyPart> subscriber) {
       super(subscriber);
       this.replaying = replaying;
     }

@@ -23,7 +23,7 @@ public class StringPart extends PartBase {
   /**
    * Default charset of string parameters
    */
-  public static final Charset DEFAULT_CHARSET = UTF_8;
+  private static final Charset DEFAULT_CHARSET = UTF_8;
 
   /**
    * Contents of this StringPart.

@@ -24,7 +24,6 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.ntlm.NtlmEngine;
-import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
@@ -47,19 +46,16 @@ public class Unauthorized401Interceptor {
   private final ChannelManager channelManager;
   private final NettyRequestSender requestSender;
 
-  public Unauthorized401Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
+  Unauthorized401Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
     this.channelManager = channelManager;
     this.requestSender = requestSender;
   }
 
-  public boolean exitAfterHandling401(//
-                                      final Channel channel,//
-                                      final NettyResponseFuture<?> future,//
-                                      HttpResponse response,//
-                                      final Request request,//
-                                      int statusCode,//
-                                      Realm realm,//
-                                      ProxyServer proxyServer,//
+  public boolean exitAfterHandling401(final Channel channel,
+                                      final NettyResponseFuture<?> future,
+                                      HttpResponse response,
+                                      final Request request,
+                                      Realm realm,
                                       HttpRequest httpRequest) {
 
     if (realm == null) {
@@ -129,7 +125,7 @@ public class Unauthorized401Interceptor {
           return false;
         }
 
-        ntlmChallenge(ntlmHeader, request, requestHeaders, realm, future);
+        ntlmChallenge(ntlmHeader, requestHeaders, realm, future);
         Realm newNtlmRealm = realm(realm)//
                 .setUsePreemptiveAuth(true)//
                 .build();
@@ -143,14 +139,14 @@ public class Unauthorized401Interceptor {
           return false;
         }
         try {
-          kerberosChallenge(channel, wwwAuthHeaders, request, requestHeaders, realm, future);
+          kerberosChallenge(request, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
           String ntlmHeader2 = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
           if (ntlmHeader2 != null) {
             LOGGER.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
-            ntlmChallenge(ntlmHeader2, request, requestHeaders, realm, future);
+            ntlmChallenge(ntlmHeader2, requestHeaders, realm, future);
             Realm newNtlmRealm2 = realm(realm)//
                     .setScheme(AuthScheme.NTLM)//
                     .setUsePreemptiveAuth(true)//
@@ -182,10 +178,9 @@ public class Unauthorized401Interceptor {
     return true;
   }
 
-  private void ntlmChallenge(String authenticateHeader,//
-                             Request request,//
-                             HttpHeaders requestHeaders,//
-                             Realm realm,//
+  private void ntlmChallenge(String authenticateHeader,
+                             HttpHeaders requestHeaders,
+                             Realm realm,
                              NettyResponseFuture<?> future) {
 
     if (authenticateHeader.equals("NTLM")) {
@@ -205,12 +200,8 @@ public class Unauthorized401Interceptor {
     }
   }
 
-  private void kerberosChallenge(Channel channel,//
-                                 List<String> authHeaders,//
-                                 Request request,//
-                                 HttpHeaders headers,//
-                                 Realm realm,//
-                                 NettyResponseFuture<?> future) throws SpnegoEngineException {
+  private void kerberosChallenge(Request request,
+                                 HttpHeaders headers) throws SpnegoEngineException {
 
     Uri uri = request.getUri();
     String host = withDefault(request.getVirtualHost(), uri.getHost());

@@ -52,7 +52,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     return new SimpleHandler();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")//
@@ -65,7 +65,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")//
@@ -78,7 +78,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")//

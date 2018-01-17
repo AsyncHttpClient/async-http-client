@@ -52,10 +52,6 @@ public class NettyFileBody implements NettyBody {
     return file;
   }
 
-  public long getOffset() {
-    return offset;
-  }
-
   @Override
   public long getContentLength() {
     return length;

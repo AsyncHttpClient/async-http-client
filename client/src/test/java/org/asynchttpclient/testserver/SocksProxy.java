@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class SocksProxy {
 
-  static ArrayList<SocksClient> clients = new ArrayList<SocksClient>();
+  private static ArrayList<SocksClient> clients = new ArrayList<>();
 
   public SocksProxy(int runningTime) throws IOException {
     ServerSocketChannel socks = ServerSocketChannel.open();
@@ -52,9 +52,9 @@ public class SocksProxy {
             SocksClient cl = clients.get(i);
             try {
               if (k.channel() == cl.client) // from client (e.g. socks client)
-                cl.newClientData(select, k);
+                cl.newClientData(select);
               else if (k.channel() == cl.remote) {  // from server client is connected to (e.g. website)
-                cl.newRemoteData(select, k);
+                cl.newRemoteData();
               }
             } catch (IOException e) { // error occurred - remove client
               cl.client.close();
@@ -86,23 +86,22 @@ public class SocksProxy {
   }
 
   // utility function
-  public SocksClient addClient(SocketChannel s) {
+  private void addClient(SocketChannel s) {
     SocksClient cl;
     try {
       cl = new SocksClient(s);
     } catch (IOException e) {
       e.printStackTrace();
-      return null;
+      return;
     }
     clients.add(cl);
-    return cl;
   }
 
   // socks client class - one per client connection
   class SocksClient {
     SocketChannel client, remote;
     boolean connected;
-    long lastData = 0;
+    long lastData;
 
     SocksClient(SocketChannel c) throws IOException {
       client = c;
@@ -110,7 +109,7 @@ public class SocksProxy {
       lastData = System.currentTimeMillis();
     }
 
-    public void newRemoteData(Selector selector, SelectionKey sk) throws IOException {
+    void newRemoteData() throws IOException {
       ByteBuffer buf = ByteBuffer.allocate(1024);
       if (remote.read(buf) == -1)
         throw new IOException("disconnected");
@@ -119,7 +118,7 @@ public class SocksProxy {
       client.write(buf);
     }
 
-    public void newClientData(Selector selector, SelectionKey sk) throws IOException {
+    void newClientData(Selector selector) throws IOException {
       if (!connected) {
         ByteBuffer inbuf = ByteBuffer.allocate(512);
         if (client.read(inbuf) < 1)
@@ -146,7 +145,7 @@ public class SocksProxy {
 
         InetAddress remoteAddr = InetAddress.getByAddress(ip);
 
-        while ((inbuf.get()) != 0) ; // username
+        while ((inbuf.get()) != 0); // username
 
         // hostname provided, not IP
         if (ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] != 0) { // host provided

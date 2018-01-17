@@ -74,7 +74,7 @@ public class BasicHttpProxyToHttpTest {
   }
 
   @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws Exception {
+  public void tearDownGlobal() {
     if (proxy != null) {
       try {
         proxy.stop();

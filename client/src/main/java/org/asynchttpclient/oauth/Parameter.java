@@ -20,7 +20,7 @@ final class Parameter implements Comparable<Parameter> {
 
   final String key, value;
 
-  public Parameter(String key, String value) {
+  Parameter(String key, String value) {
     this.key = key;
     this.value = value;
   }

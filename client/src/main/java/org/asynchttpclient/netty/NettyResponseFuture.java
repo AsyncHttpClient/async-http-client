@@ -207,10 +207,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     return future.get(l, tu);
   }
 
-  private V getContent() throws ExecutionException {
+  private void loadContent() throws ExecutionException {
     if (future.isDone()) {
       try {
-        return future.get();
+        future.get();
       } catch (InterruptedException e) {
         throw new RuntimeException("unreachable", e);
       }
@@ -236,7 +236,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         future.completeExceptionally(ex);
       }
     }
-    return future.getNow(null);
+    future.getNow(null);
   }
 
   // org.asynchttpclient.ListenableFuture
@@ -255,7 +255,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
       return;
 
     try {
-      getContent();
+      loadContent();
     } catch (ExecutionException ignored) {
 
     } catch (RuntimeException t) {
@@ -305,10 +305,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
   public Uri getUri() {
     return targetRequest.getUri();
-  }
-
-  public ChannelPoolPartitioning getConnectionPoolPartitioning() {
-    return connectionPoolPartitioning;
   }
 
   public ProxyServer getProxyServer() {

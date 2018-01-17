@@ -87,7 +87,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     future.done();
   }
 
-  private void abort(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponseStatus status) throws Exception {
+  private void abort(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponseStatus status) {
     try {
       handler.onThrowable(new IOException("Invalid Status code=" + status.getStatusCode() + " text=" + status.getStatusText()));
     } finally {

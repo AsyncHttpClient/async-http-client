@@ -20,7 +20,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,12 +39,12 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
   public AbstractHandler configureHandler() throws Exception {
     return new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+      public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         ServletInputStream in = req.getInputStream();
         byte[] b = new byte[8192];
 
-        int count = -1;
+        int count;
         int total = 0;
         while ((count = in.read(b)) != -1) {
           b = new byte[8192];
@@ -61,7 +60,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     };
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPutImageFile() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
@@ -69,7 +68,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPutLargeTextFile() throws Exception {
     File file = createTempFile(1024 * 1024);
 

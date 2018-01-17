@@ -79,5 +79,4 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
     // default to no op
     return builder;
   }
-
 }

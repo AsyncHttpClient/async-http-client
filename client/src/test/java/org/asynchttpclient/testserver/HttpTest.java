@@ -28,21 +28,15 @@ public abstract class HttpTest {
   protected static final String STATUS_RECEIVED_EVENT = "StatusReceived";
   protected static final String HEADERS_RECEIVED_EVENT = "HeadersReceived";
   protected static final String HEADERS_WRITTEN_EVENT = "HeadersWritten";
-  protected static final String CONTENT_WRITTEN_EVENT = "ContentWritten";
   protected static final String CONNECTION_OPEN_EVENT = "ConnectionOpen";
   protected static final String HOSTNAME_RESOLUTION_EVENT = "HostnameResolution";
   protected static final String HOSTNAME_RESOLUTION_SUCCESS_EVENT = "HostnameResolutionSuccess";
-  protected static final String HOSTNAME_RESOLUTION_FAILURE_EVENT = "HostnameResolutionFailure";
   protected static final String CONNECTION_SUCCESS_EVENT = "ConnectionSuccess";
-  protected static final String CONNECTION_FAILURE_EVENT = "ConnectionFailure";
   protected static final String TLS_HANDSHAKE_EVENT = "TlsHandshake";
   protected static final String TLS_HANDSHAKE_SUCCESS_EVENT = "TlsHandshakeSuccess";
-  protected static final String TLS_HANDSHAKE_FAILURE_EVENT = "TlsHandshakeFailure";
   protected static final String CONNECTION_POOL_EVENT = "ConnectionPool";
-  protected static final String CONNECTION_POOLED_EVENT = "ConnectionPooled";
   protected static final String CONNECTION_OFFER_EVENT = "ConnectionOffer";
   protected static final String REQUEST_SEND_EVENT = "RequestSend";
-  protected static final String RETRY_EVENT = "Retry";
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   protected ClientTestBody withClient() {
@@ -53,7 +47,7 @@ public abstract class HttpTest {
     return withClient(builder.build());
   }
 
-  protected ClientTestBody withClient(AsyncHttpClientConfig config) {
+  private ClientTestBody withClient(AsyncHttpClientConfig config) {
     return new ClientTestBody(config);
   }
 

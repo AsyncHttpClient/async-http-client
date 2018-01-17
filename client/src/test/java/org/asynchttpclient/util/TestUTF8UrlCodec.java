@@ -20,14 +20,14 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
 public class TestUTF8UrlCodec {
-  @Test(groups = "standalone")
+  @Test
   public void testBasics() {
     assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
     assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
     assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPercentageEncoding() {
     assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foobar"), "foobar");
     assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");

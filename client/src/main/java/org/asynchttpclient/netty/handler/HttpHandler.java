@@ -43,16 +43,14 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     return handler.onStatusReceived(status) == State.ABORT;
   }
 
-  private boolean abortAfterHandlingHeaders(//
-                                            AsyncHandler<?> handler,//
+  private boolean abortAfterHandlingHeaders(AsyncHandler<?> handler,
                                             HttpHeaders responseHeaders) throws Exception {
     return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
   }
 
-  private boolean abortAfterHandlingReactiveStreams(//
-                                                    Channel channel,//
-                                                    NettyResponseFuture<?> future,//
-                                                    AsyncHandler<?> handler) throws IOException {
+  private boolean abortAfterHandlingReactiveStreams(Channel channel,
+                                                    NettyResponseFuture<?> future,
+                                                    AsyncHandler<?> handler) {
     if (handler instanceof StreamedAsyncHandler) {
       StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
       StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
@@ -86,10 +84,10 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     }
   }
 
-  private void handleChunk(HttpContent chunk,//
-                           final Channel channel,//
-                           final NettyResponseFuture<?> future,//
-                           AsyncHandler<?> handler) throws IOException, Exception {
+  private void handleChunk(HttpContent chunk,
+                           final Channel channel,
+                           final NettyResponseFuture<?> future,
+                           AsyncHandler<?> handler) throws Exception {
 
     boolean abort = false;
     boolean last = chunk instanceof LastHttpContent;
@@ -156,7 +154,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     }
   }
 
-  private void readFailed(Channel channel, NettyResponseFuture<?> future, Throwable t) throws Exception {
+  private void readFailed(Channel channel, NettyResponseFuture<?> future, Throwable t) {
     try {
       requestSender.abort(channel, future, t);
     } catch (Exception abortException) {

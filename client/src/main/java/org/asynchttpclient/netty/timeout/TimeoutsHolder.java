@@ -29,13 +29,13 @@ import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class TimeoutsHolder {
 
-  public final Timeout requestTimeout;
+  private final Timeout requestTimeout;
   private final AtomicBoolean cancelled = new AtomicBoolean();
   private final Timer nettyTimer;
   private final NettyRequestSender requestSender;
   private final long requestTimeoutMillisTime;
   private final int readTimeoutValue;
-  public volatile Timeout readTimeout;
+  private volatile Timeout readTimeout;
   private volatile NettyResponseFuture<?> nettyResponseFuture;
   private volatile InetSocketAddress remoteAddress;
 

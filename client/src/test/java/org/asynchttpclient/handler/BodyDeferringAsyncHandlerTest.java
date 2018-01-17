@@ -42,19 +42,19 @@ import static org.testng.Assert.*;
 
 public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
-  protected static final int CONTENT_LENGTH_VALUE = 100000;
+  static final int CONTENT_LENGTH_VALUE = 100000;
 
   public AbstractHandler configureHandler() throws Exception {
     return new SlowAndBigHandler();
   }
 
-  public AsyncHttpClientConfig getAsyncHttpClientConfig() {
+  private AsyncHttpClientConfig getAsyncHttpClientConfig() {
     // for this test brevity's sake, we are limiting to 1 retries
     return config().setMaxRequestRetry(0).setRequestTimeout(10000).build();
   }
 
-  @Test(groups = "standalone")
-  public void deferredSimple() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void deferredSimple() throws IOException, ExecutionException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
@@ -77,7 +77,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone", expectedExceptions = RemotelyClosedException.class)
+  @Test(expectedExceptions = RemotelyClosedException.class)
   public void deferredSimpleWithFailure() throws Throwable {
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
@@ -106,8 +106,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
-  public void deferredInputStreamTrick() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test
+  public void deferredInputStreamTrick() throws IOException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
@@ -139,7 +139,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone", expectedExceptions = RemotelyClosedException.class)
+  @Test(expectedExceptions = RemotelyClosedException.class)
   public void deferredInputStreamTrickWithFailure() throws Throwable {
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
@@ -170,8 +170,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone", expectedExceptions = IOException.class)
-  public void testConnectionRefused() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  @Test(expectedExceptions = IOException.class)
+  public void testConnectionRefused() throws IOException, InterruptedException {
     int newPortWithoutAnyoneListening = findFreePort();
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       BoundRequestBuilder r = client.prepareGet("http://localhost:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
@@ -183,7 +183,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testPipedStreams() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
       PipedOutputStream pout = new PipedOutputStream();
@@ -251,12 +251,12 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     private int byteCount = 0;
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
       // /dev/null
       byteCount++;
     }
 
-    public int getByteCount() {
+    int getByteCount() {
       return byteCount;
     }
   }

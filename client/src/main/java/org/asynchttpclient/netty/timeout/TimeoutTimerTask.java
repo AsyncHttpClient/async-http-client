@@ -29,16 +29,16 @@ public abstract class TimeoutTimerTask implements TimerTask {
 
   protected final AtomicBoolean done = new AtomicBoolean();
   protected final NettyRequestSender requestSender;
-  protected final TimeoutsHolder timeoutsHolder;
-  protected volatile NettyResponseFuture<?> nettyResponseFuture;
+  final TimeoutsHolder timeoutsHolder;
+  volatile NettyResponseFuture<?> nettyResponseFuture;
 
-  public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
+  TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
     this.nettyResponseFuture = nettyResponseFuture;
     this.requestSender = requestSender;
     this.timeoutsHolder = timeoutsHolder;
   }
 
-  protected void expire(String message, long time) {
+  void expire(String message, long time) {
     LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
     requestSender.abort(nettyResponseFuture.channel(), nettyResponseFuture, new TimeoutException(message));
   }
@@ -53,7 +53,7 @@ public abstract class TimeoutTimerTask implements TimerTask {
     }
   }
 
-  protected void appendRemoteAddress(StringBuilder sb) {
+  void appendRemoteAddress(StringBuilder sb) {
     InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
     sb.append(remoteAddress.getHostName());
     if (!remoteAddress.isUnresolved()) {

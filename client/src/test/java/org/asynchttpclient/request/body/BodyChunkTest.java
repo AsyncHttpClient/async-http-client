@@ -29,7 +29,7 @@ public class BodyChunkTest extends AbstractBasicTest {
 
   private static final String MY_MESSAGE = "my message";
 
-  @Test(groups = "standalone")
+  @Test
   public void negativeContentTypeTest() throws Exception {
 
     AsyncHttpClientConfig config = config()//
