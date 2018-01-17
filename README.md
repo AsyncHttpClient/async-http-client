@@ -72,8 +72,8 @@ import org.asynchttpclient.*;
 Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.com/").execute();
 
 // unbound
-Request request = get("http://www.example.com/");
-Future<Response> whenResponse = asyncHttpClient.execute(request).execute();
+Request request = get("http://www.example.com/").build();
+Future<Response> whenResponse = asyncHttpClient.execute(request);
 ```
 
 #### Setting Request Body
