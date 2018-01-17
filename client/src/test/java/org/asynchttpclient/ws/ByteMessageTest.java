@@ -26,7 +26,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
 
   private static final byte[] ECHO_BYTES = "ECHO".getBytes(StandardCharsets.UTF_8);
 
-  @Test(groups = "standalone")
+  @Test
   public void echoByte() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -63,7 +63,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void echoTwoMessagesTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(2);
@@ -154,6 +154,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
+  @Test
   public void echoFragments() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -191,7 +192,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
 
       }).build()).get();
       websocket.sendBinaryFrame(ECHO_BYTES, false, 0);
-      websocket.sendBinaryFrame(ECHO_BYTES, true, 0);
+      websocket.sendContinuationFrame(ECHO_BYTES, true, 0);
       latch.await();
       assertEquals(text.get(), "ECHOECHO".getBytes());
     }

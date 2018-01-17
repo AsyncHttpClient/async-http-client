@@ -19,7 +19,7 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class EchoSocket extends WebSocketAdapter {
+public class EchoWebSocket extends WebSocketAdapter {
 
   @Override
   public void onWebSocketConnect(Session sess) {

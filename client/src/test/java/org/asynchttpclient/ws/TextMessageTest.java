@@ -27,7 +27,7 @@ import static org.testng.Assert.fail;
 
 public class TextMessageTest extends AbstractBasicWebSocketTest {
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onOpen() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -57,7 +57,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onEmptyListenerTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       WebSocket websocket = null;
@@ -70,7 +70,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000, expectedExceptions = UnknownHostException.class)
+  @Test(timeOut = 60000, expectedExceptions = UnknownHostException.class)
   public void onFailureTest() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
       c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
@@ -79,7 +79,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onTimeoutCloseTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -109,7 +109,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void onClose() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -141,7 +141,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void echoText() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -178,7 +178,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void echoDoubleListenerText() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(2);
@@ -237,7 +237,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void echoTwoMessagesTest() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(2);
@@ -274,6 +274,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
   }
 
+  @Test
   public void echoFragments() throws Exception {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch latch = new CountDownLatch(1);
@@ -304,14 +305,14 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
       }).build()).get();
 
       websocket.sendTextFrame("ECHO", false, 0);
-      websocket.sendTextFrame("ECHO", true, 0);
+      websocket.sendContinuationFrame("ECHO", true, 0);
 
       latch.await();
       assertEquals(text.get(), "ECHOECHO");
     }
   }
 
-  @Test(groups = "standalone", timeOut = 60000)
+  @Test(timeOut = 60000)
   public void echoTextAndThenClose() throws Throwable {
     try (AsyncHttpClient c = asyncHttpClient()) {
       final CountDownLatch textLatch = new CountDownLatch(1);

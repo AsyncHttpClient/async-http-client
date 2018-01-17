@@ -43,7 +43,7 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
     return new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
-        factory.register(EchoSocket.class);
+        factory.register(EchoWebSocket.class);
       }
     };
   }
