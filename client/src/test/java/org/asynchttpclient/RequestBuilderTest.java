@@ -132,7 +132,7 @@ public class RequestBuilderTest {
     assertEquals(requestBuilder.headers.get("Content-Type"), "application/json", "header value incorrect");
   }
 
-  @Test(enabled = false)
+  @Test
   public void testAddOrReplaceCookies() {
     RequestBuilder requestBuilder = new RequestBuilder();
     Cookie cookie = new DefaultCookie("name", "value");
@@ -156,7 +156,7 @@ public class RequestBuilderTest {
     assertEquals(requestBuilder.cookies.size(), 1, "cookies size should remain 1 as we just replaced a cookie with same name");
     assertEquals(requestBuilder.cookies.get(0), cookie2, "cookie does not match");
 
-    Cookie cookie3 = new DefaultCookie("name", "value");
+    Cookie cookie3 = new DefaultCookie("name2", "value");
     cookie3.setDomain("google.com");
     cookie3.setPath("/");
     cookie3.setMaxAge(1000);

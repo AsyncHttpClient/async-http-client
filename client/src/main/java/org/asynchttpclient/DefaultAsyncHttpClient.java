@@ -186,9 +186,9 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         List<Cookie> cookies = config.getCookieStore().get(request.getUri());
         if (!cookies.isEmpty()) {
           RequestBuilder requestBuilder = new RequestBuilder(request);
-          for (Cookie cookie : cookies)
+          for (Cookie cookie : cookies) {
             requestBuilder.addOrReplaceCookie(cookie);
-
+          }
           request = requestBuilder.build();
         }
       } catch (Exception e) {

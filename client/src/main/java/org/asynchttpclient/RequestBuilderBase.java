@@ -306,6 +306,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     return asDerivedType();
   }
 
+  /**
+   * Add/replace a cookie based on its name
+   * @param cookie the new cookie
+   * @return this
+   */
   public T addOrReplaceCookie(Cookie cookie) {
     String cookieKey = cookie.name();
     boolean replace = false;
