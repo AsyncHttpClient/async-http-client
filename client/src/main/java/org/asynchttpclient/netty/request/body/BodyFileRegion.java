@@ -13,83 +13,81 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import static org.asynchttpclient.util.Assertions.*;
-
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
-
-import org.asynchttpclient.request.body.RandomAccessBody;
-
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
+import org.asynchttpclient.request.body.RandomAccessBody;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
-public class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
+class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
 
-    private final RandomAccessBody body;
-    private long transferred;
+  private final RandomAccessBody body;
+  private long transferred;
 
-    public BodyFileRegion(RandomAccessBody body) {
-        this.body = assertNotNull(body, "body");
+  BodyFileRegion(RandomAccessBody body) {
+    this.body = assertNotNull(body, "body");
+  }
+
+  @Override
+  public long position() {
+    return 0;
+  }
+
+  @Override
+  public long count() {
+    return body.getContentLength();
+  }
+
+  @Override
+  public long transfered() {
+    return transferred();
+  }
+
+  @Override
+  public long transferred() {
+    return transferred;
+  }
+
+  @Override
+  public FileRegion retain() {
+    super.retain();
+    return this;
+  }
+
+  @Override
+  public FileRegion retain(int arg0) {
+    super.retain(arg0);
+    return this;
+  }
+
+  @Override
+  public FileRegion touch() {
+    return this;
+  }
+
+  @Override
+  public FileRegion touch(Object arg0) {
+    return this;
+  }
+
+  @Override
+  public long transferTo(WritableByteChannel target, long position) throws IOException {
+    long written = body.transferTo(target);
+    if (written > 0) {
+      transferred += written;
     }
+    return written;
+  }
 
-    @Override
-    public long position() {
-        return 0;
-    }
-
-    @Override
-    public long count() {
-        return body.getContentLength();
-    }
-
-    @Override
-    public long transfered() {
-        return transferred();
-    }
-
-    @Override
-    public long transferred() {
-        return transferred;
-    }
-
-    @Override
-    public FileRegion retain() {
-        super.retain();
-        return this;
-    }
-
-    @Override
-    public FileRegion retain(int arg0) {
-        super.retain(arg0);
-        return this;
-    }
-
-    @Override
-    public FileRegion touch() {
-        return this;
-    }
-
-    @Override
-    public FileRegion touch(Object arg0) {
-        return this;
-    }
-
-    @Override
-    public long transferTo(WritableByteChannel target, long position) throws IOException {
-        long written = body.transferTo(target);
-        if (written > 0) {
-            transferred += written;
-        }
-        return written;
-    }
-
-    @Override
-    protected void deallocate() {
-        closeSilently(body);
-    }
+  @Override
+  protected void deallocate() {
+    closeSilently(body);
+  }
 }

@@ -1,14 +1,14 @@
 <configuration>
-	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-		<layout class="ch.qos.logback.classic.PatternLayout">
-			<Pattern>%d [%thread] %level %logger - %m%n</Pattern>
-		</layout>
-	</appender>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>%d [%thread] %level %logger - %m%n</Pattern>
+    </layout>
+  </appender>
 
-	<logger name="org.eclipse" level="INFO" />
-	<logger name="org.apache" level="INFO" />
+  <logger name="org.eclipse" level="INFO"/>
+  <logger name="org.apache" level="INFO"/>
 
-	<root level="DEBUG">
-		<appender-ref ref="CONSOLE" />
-	</root>
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE"/>
+  </root>
 </configuration>

@@ -19,52 +19,48 @@ import java.util.Map;
 
 public class MiscUtils {
 
-    private MiscUtils() {
-    }
+  private MiscUtils() {
+  }
 
-    public static boolean isNonEmpty(String string) {
-        return !isEmpty(string);
-    }
-    
-    public static boolean isEmpty(String string) {
-        return string == null || string.isEmpty();
-    }
+  public static boolean isNonEmpty(String string) {
+    return !isEmpty(string);
+  }
 
-    public static boolean isNonEmpty(Object[] array) {
-        return array != null && array.length != 0;
-    }
+  public static boolean isEmpty(String string) {
+    return string == null || string.isEmpty();
+  }
 
-    public static boolean isNonEmpty(byte[] array) {
-        return array != null && array.length != 0;
-    }
+  public static boolean isNonEmpty(Object[] array) {
+    return array != null && array.length != 0;
+  }
 
-    public static boolean isNonEmpty(Collection<?> collection) {
-        return collection != null && !collection.isEmpty();
-    }
+  public static boolean isNonEmpty(byte[] array) {
+    return array != null && array.length != 0;
+  }
 
-    public static boolean isNonEmpty(Map<?, ?> map) {
-        return map != null && !map.isEmpty();
-    }
+  public static boolean isNonEmpty(Collection<?> collection) {
+    return collection != null && !collection.isEmpty();
+  }
 
-    public static boolean getBoolean(String systemPropName, boolean defaultValue) {
-        String systemPropValue = System.getProperty(systemPropName);
-        return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
-    }
+  public static boolean isNonEmpty(Map<?, ?> map) {
+    return map != null && !map.isEmpty();
+  }
 
-    public static <T> T withDefault(T value, T def) {
-        return value == null ? def : value;
-    }
+  public static <T> T withDefault(T value, T def) {
+    return value == null ? def : value;
+  }
 
-    public static void closeSilently(Closeable closeable) {
-        if (closeable != null)
-            try {
-                closeable.close();
-            } catch (IOException e) {
-            }
-    }
+  public static void closeSilently(Closeable closeable) {
+    if (closeable != null)
+      try {
+        closeable.close();
+      } catch (IOException e) {
+        //
+      }
+  }
 
-    public static Throwable getCause(Throwable t) {
-        Throwable cause = t.getCause();
-        return cause != null ? getCause(cause) : t;
-    }
+  public static Throwable getCause(Throwable t) {
+    Throwable cause = t.getCause();
+    return cause != null ? getCause(cause) : t;
+  }
 }

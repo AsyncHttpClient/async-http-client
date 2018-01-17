@@ -17,14 +17,14 @@ package org.asynchttpclient.filter;
  */
 public interface IOExceptionFilter {
 
-    /**
-     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
-     * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
-     *
-     * @param ctx a {@link FilterContext}
-     * @param <T> the handler result type
-     * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
-     * @throws FilterException to interrupt the filter processing.
-     */
-    <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
+  /**
+   * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
+   * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
+   *
+   * @param ctx a {@link FilterContext}
+   * @param <T> the handler result type
+   * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
+   * @throws FilterException to interrupt the filter processing.
+   */
+  <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
 }

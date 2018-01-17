@@ -14,5 +14,5 @@
 package org.asynchttpclient.netty.channel;
 
 public enum ChannelState {
-    NEW, POOLED, RECONNECTED, CLOSED,
+  NEW, POOLED, RECONNECTED, CLOSED,
 }

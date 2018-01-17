@@ -15,39 +15,38 @@ package org.asynchttpclient.request.body.multipart.part;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.asynchttpclient.request.body.multipart.StringPart;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
-import org.asynchttpclient.request.body.multipart.StringPart;
-
 public class StringMultipartPart extends MultipartPart<StringPart> {
 
-    private final ByteBuf contentBuffer;
+  private final ByteBuf contentBuffer;
 
-    public StringMultipartPart(StringPart part, byte[] boundary) {
-        super(part, boundary);
-        contentBuffer = Unpooled.wrappedBuffer(part.getValue().getBytes(part.getCharset()));
-    }
+  public StringMultipartPart(StringPart part, byte[] boundary) {
+    super(part, boundary);
+    contentBuffer = Unpooled.wrappedBuffer(part.getValue().getBytes(part.getCharset()));
+  }
 
-    @Override
-    protected long getContentLength() {
-        return contentBuffer.capacity();
-    }
+  @Override
+  protected long getContentLength() {
+    return contentBuffer.capacity();
+  }
 
-    @Override
-    protected long transferContentTo(ByteBuf target) throws IOException {
-        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
-    }
+  @Override
+  protected long transferContentTo(ByteBuf target) {
+    return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+  }
 
-    @Override
-    protected long transferContentTo(WritableByteChannel target) throws IOException {
-        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
-    }
+  @Override
+  protected long transferContentTo(WritableByteChannel target) throws IOException {
+    return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+  }
 
-    @Override
-    public void close() {
-        super.close();
-        contentBuffer.release();
-    }
+  @Override
+  public void close() {
+    super.close();
+    contentBuffer.release();
+  }
 }

@@ -15,14 +15,14 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.Dsl.config;
-import static org.asynchttpclient.test.TestUtils.*;
-import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-import static org.testng.Assert.*;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.test.TestUtils.*;
+import org.asynchttpclient.testserver.HttpServer;
+import org.asynchttpclient.testserver.HttpTest;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -31,462 +31,451 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.asynchttpclient.test.TestUtils.AsyncHandlerAdapter;
-import org.asynchttpclient.testserver.HttpServer;
-import org.asynchttpclient.testserver.HttpTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.test.TestUtils.*;
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
+import static org.testng.Assert.*;
 
 public class AsyncStreamHandlerTest extends HttpTest {
 
-    private static final String RESPONSE = "param_1_";
+  private static final String RESPONSE = "param_1_";
 
-    private static HttpServer server;
+  private static HttpServer server;
 
-    @BeforeClass
-    public static void start() throws Throwable {
-        server = new HttpServer();
-        server.start();
-    }
+  @BeforeClass
+  public static void start() throws Throwable {
+    server = new HttpServer();
+    server.start();
+  }
 
-    @AfterClass
-    public static void stop() throws Throwable {
-        server.close();
-    }
+  @AfterClass
+  public static void stop() throws Throwable {
+    server.close();
+  }
 
-    private static String getTargetUrl() {
-        return server.getHttpUrl() + "/foo/bar";
-    }
+  private static String getTargetUrl() {
+    return server.getHttpUrl() + "/foo/bar";
+  }
 
-    @Test
-    public void getWithOnHeadersReceivedAbort() throws Throwable {
+  @Test
+  public void getWithOnHeadersReceivedAbort() throws Throwable {
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+    withClient().run(client ->
+      withServer(server).run(server -> {
+        server.enqueueEcho();
+        client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
-                server.enqueueEcho();
-                client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+            return State.ABORT;
+          }
+        }).get(5, TimeUnit.SECONDS);
+      }));
+  }
 
-                    @Override
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                        return State.ABORT;
-                    }
+  @Test
+  public void asyncStreamPOSTTest() throws Throwable {
+
+    withClient().run(client ->
+      withServer(server).run(server -> {
+
+        server.enqueueEcho();
+
+        String responseBody = client.preparePost(getTargetUrl())//
+                .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
+                .addFormParam("param_1", "value_1")//
+                .execute(new AsyncHandlerAdapter() {
+                  private StringBuilder builder = new StringBuilder();
+
+                  @Override
+                  public State onHeadersReceived(HttpHeaders headers) {
+                    assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                    return State.CONTINUE;
+                  }
+
+                  @Override
+                  public State onBodyPartReceived(HttpResponseBodyPart content) {
+                    builder.append(new String(content.getBodyPartBytes(), US_ASCII));
+                    return State.CONTINUE;
+                  }
+
+                  @Override
+                  public String onCompleted() {
+                    return builder.toString().trim();
+                  }
+                }).get(10, TimeUnit.SECONDS);
+
+        assertEquals(responseBody, RESPONSE);
+      }));
+  }
+
+  @Test
+  public void asyncStreamInterruptTest() throws Throwable {
+
+    withClient().run(client ->
+      withServer(server).run(server -> {
+
+        server.enqueueEcho();
+
+        final AtomicBoolean onHeadersReceived = new AtomicBoolean();
+        final AtomicBoolean onBodyPartReceived = new AtomicBoolean();
+        final AtomicBoolean onThrowable = new AtomicBoolean();
+
+        client.preparePost(getTargetUrl())//
+                .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
+                .addFormParam("param_1", "value_1")//
+                .execute(new AsyncHandlerAdapter() {
+
+                  @Override
+                  public State onHeadersReceived(HttpHeaders headers) {
+                    onHeadersReceived.set(true);
+                    assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                    return State.ABORT;
+                  }
+
+                  @Override
+                  public State onBodyPartReceived(final HttpResponseBodyPart content) {
+                    onBodyPartReceived.set(true);
+                    return State.ABORT;
+                  }
+
+                  @Override
+                  public void onThrowable(Throwable t) {
+                    onThrowable.set(true);
+                  }
                 }).get(5, TimeUnit.SECONDS);
-            });
+
+        assertTrue(onHeadersReceived.get(), "Headers weren't received");
+        assertFalse(onBodyPartReceived.get(), "Abort not working");
+        assertFalse(onThrowable.get(), "Shouldn't get an exception");
+      }));
+  }
+
+  @Test
+  public void asyncStreamFutureTest() throws Throwable {
+
+    withClient().run(client ->
+      withServer(server).run(server -> {
+
+        server.enqueueEcho();
+
+        final AtomicBoolean onHeadersReceived = new AtomicBoolean();
+        final AtomicBoolean onThrowable = new AtomicBoolean();
+
+        String responseBody = client.preparePost(getTargetUrl())//
+                .addFormParam("param_1", "value_1")//
+                .execute(new AsyncHandlerAdapter() {
+                  private StringBuilder builder = new StringBuilder();
+
+                  @Override
+                  public State onHeadersReceived(HttpHeaders headers) {
+                    assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                    onHeadersReceived.set(true);
+                    return State.CONTINUE;
+                  }
+
+                  @Override
+                  public State onBodyPartReceived(HttpResponseBodyPart content) {
+                    builder.append(new String(content.getBodyPartBytes()));
+                    return State.CONTINUE;
+                  }
+
+                  @Override
+                  public String onCompleted() {
+                    return builder.toString().trim();
+                  }
+
+                  @Override
+                  public void onThrowable(Throwable t) {
+                    onThrowable.set(true);
+                  }
+                }).get(5, TimeUnit.SECONDS);
+
+        assertTrue(onHeadersReceived.get(), "Headers weren't received");
+        assertFalse(onThrowable.get(), "Shouldn't get an exception");
+        assertEquals(responseBody, RESPONSE, "Unexpected response body");
+      }));
+  }
+
+  @Test
+  public void asyncStreamThrowableRefusedTest() throws Throwable {
+
+    withClient().run(client ->
+      withServer(server).run(server -> {
+
+        server.enqueueEcho();
+
+        final CountDownLatch l = new CountDownLatch(1);
+        client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
+
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            throw unknownStackTrace(new RuntimeException("FOO"), AsyncStreamHandlerTest.class, "asyncStreamThrowableRefusedTest");
+          }
+
+          @Override
+          public void onThrowable(Throwable t) {
+            try {
+              if (t.getMessage() != null) {
+                assertEquals(t.getMessage(), "FOO");
+              }
+            } finally {
+              l.countDown();
+            }
+          }
         });
-    }
 
-    @Test
-    public void asyncStreamPOSTTest() throws Throwable {
+        if (!l.await(10, TimeUnit.SECONDS)) {
+          fail("Timed out");
+        }
+      }));
+  }
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+  @Test
+  public void asyncStreamReusePOSTTest() throws Throwable {
 
-                server.enqueueEcho();
+    withClient().run(client ->
+      withServer(server).run(server -> {
 
-                String responseBody = client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
-                        .addFormParam("param_1", "value_1")//
-                        .execute(new AsyncHandlerAdapter() {
-                            private StringBuilder builder = new StringBuilder();
+        server.enqueueEcho();
 
-                            @Override
-                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                                return State.CONTINUE;
-                            }
+        final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
-                            @Override
-                            public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                                builder.append(new String(content.getBodyPartBytes(), US_ASCII));
-                                return State.CONTINUE;
-                            }
+        BoundRequestBuilder rb = client.preparePost(getTargetUrl())//
+                .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
+                .addFormParam("param_1", "value_1");
 
-                            @Override
-                            public String onCompleted() throws Exception {
-                                return builder.toString().trim();
-                            }
-                        }).get(10, TimeUnit.SECONDS);
+        Future<String> f = rb.execute(new AsyncHandlerAdapter() {
+          private StringBuilder builder = new StringBuilder();
 
-                assertEquals(responseBody, RESPONSE);
-            });
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            responseHeaders.set(headers);
+            return State.CONTINUE;
+          }
+
+          @Override
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
+            builder.append(new String(content.getBodyPartBytes()));
+            return State.CONTINUE;
+          }
+
+          @Override
+          public String onCompleted() {
+            return builder.toString();
+          }
         });
-    }
 
-    @Test
-    public void asyncStreamInterruptTest() throws Throwable {
+        String r = f.get(5, TimeUnit.SECONDS);
+        HttpHeaders h = responseHeaders.get();
+        assertNotNull(h, "Should receive non null headers");
+        assertContentTypesEquals(h.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+        assertNotNull(r, "No response body");
+        assertEquals(r.trim(), RESPONSE, "Unexpected response body");
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+        responseHeaders.set(null);
 
-                server.enqueueEcho();
+        server.enqueueEcho();
 
-                final AtomicBoolean onHeadersReceived = new AtomicBoolean();
-                final AtomicBoolean onBodyPartReceived = new AtomicBoolean();
-                final AtomicBoolean onThrowable = new AtomicBoolean();
+        // Let do the same again
+        f = rb.execute(new AsyncHandlerAdapter() {
+          private StringBuilder builder = new StringBuilder();
 
-                client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
-                        .addFormParam("param_1", "value_1")//
-                        .execute(new AsyncHandlerAdapter() {
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            responseHeaders.set(headers);
+            return State.CONTINUE;
+          }
 
-                            @Override
-                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                                onHeadersReceived.set(true);
-                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                                return State.ABORT;
-                            }
+          @Override
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
+            builder.append(new String(content.getBodyPartBytes()));
+            return State.CONTINUE;
+          }
 
-                            @Override
-                            public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-                                onBodyPartReceived.set(true);
-                                return State.ABORT;
-                            }
-
-                            @Override
-                            public void onThrowable(Throwable t) {
-                                onThrowable.set(true);
-                            }
-                        }).get(5, TimeUnit.SECONDS);
-
-                assertTrue(onHeadersReceived.get(), "Headers weren't received");
-                assertFalse(onBodyPartReceived.get(), "Abort not working");
-                assertFalse(onThrowable.get(), "Shouldn't get an exception");
-            });
+          @Override
+          public String onCompleted() {
+            return builder.toString();
+          }
         });
-    }
 
-    @Test
-    public void asyncStreamFutureTest() throws Throwable {
+        f.get(5, TimeUnit.SECONDS);
+        h = responseHeaders.get();
+        assertNotNull(h, "Should receive non null headers");
+        assertContentTypesEquals(h.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+        assertNotNull(r, "No response body");
+        assertEquals(r.trim(), RESPONSE, "Unexpected response body");
+      }));
+  }
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+  @Test
+  public void asyncStream302RedirectWithBody() throws Throwable {
 
-                server.enqueueEcho();
+    withClient(config().setFollowRedirect(true)).run(client ->
+      withServer(server).run(server -> {
 
-                final AtomicBoolean onHeadersReceived = new AtomicBoolean();
-                final AtomicBoolean onThrowable = new AtomicBoolean();
+        String originalUrl = server.getHttpUrl() + "/original";
+        String redirectUrl = server.getHttpUrl() + "/redirect";
 
-                String responseBody = client.preparePost(getTargetUrl())//
-                        .addFormParam("param_1", "value_1")//
-                        .execute(new AsyncHandlerAdapter() {
-                            private StringBuilder builder = new StringBuilder();
-
-                            @Override
-                            public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                                assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                                onHeadersReceived.set(true);
-                                return State.CONTINUE;
-                            }
-
-                            @Override
-                            public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                                builder.append(new String(content.getBodyPartBytes()));
-                                return State.CONTINUE;
-                            }
-
-                            @Override
-                            public String onCompleted() throws Exception {
-                                return builder.toString().trim();
-                            }
-
-                            @Override
-                            public void onThrowable(Throwable t) {
-                                onThrowable.set(true);
-                            }
-                        }).get(5, TimeUnit.SECONDS);
-
-                assertTrue(onHeadersReceived.get(), "Headers weren't received");
-                assertFalse(onThrowable.get(), "Shouldn't get an exception");
-                assertEquals(responseBody, RESPONSE, "Unexpected response body");
-            });
+        server.enqueueResponse(response -> {
+          response.setStatus(302);
+          response.setHeader(LOCATION.toString(), redirectUrl);
+          response.getOutputStream().println("You are being asked to redirect to " + redirectUrl);
         });
-    }
+        server.enqueueOk();
 
-    @Test
-    public void asyncStreamThrowableRefusedTest() throws Throwable {
+        Response response = client.prepareGet(originalUrl).execute().get(20, TimeUnit.SECONDS);
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+        assertEquals(response.getStatusCode(), 200);
+        assertTrue(response.getResponseBody().isEmpty());
+      }));
+  }
 
-                server.enqueueEcho();
+  @Test(timeOut = 3000)
+  public void asyncStreamJustStatusLine() throws Throwable {
 
-                final CountDownLatch l = new CountDownLatch(1);
-                client.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
+    withClient().run(client ->
+      withServer(server).run(server -> {
 
-                    @Override
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        throw unknownStackTrace(new RuntimeException("FOO"), AsyncStreamHandlerTest.class, "asyncStreamThrowableRefusedTest");
-                    }
+        server.enqueueEcho();
 
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        try {
-                            if (t.getMessage() != null) {
-                                assertEquals(t.getMessage(), "FOO");
-                            }
-                        } finally {
-                            l.countDown();
-                        }
-                    }
-                });
+        final int STATUS = 0;
+        final int COMPLETED = 1;
+        final int OTHER = 2;
+        final boolean[] whatCalled = new boolean[]{false, false, false};
+        final CountDownLatch latch = new CountDownLatch(1);
+        Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
+          private int status = -1;
 
-                if (!l.await(10, TimeUnit.SECONDS)) {
-                    fail("Timed out");
-                }
-            });
+          @Override
+          public void onThrowable(Throwable t) {
+            whatCalled[OTHER] = true;
+            latch.countDown();
+          }
+
+          @Override
+          public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
+            whatCalled[OTHER] = true;
+            latch.countDown();
+            return State.ABORT;
+          }
+
+          @Override
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
+            whatCalled[STATUS] = true;
+            status = responseStatus.getStatusCode();
+            latch.countDown();
+            return State.ABORT;
+          }
+
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            whatCalled[OTHER] = true;
+            latch.countDown();
+            return State.ABORT;
+          }
+
+          @Override
+          public Integer onCompleted() {
+            whatCalled[COMPLETED] = true;
+            latch.countDown();
+            return status;
+          }
         });
-    }
 
-    @Test
-    public void asyncStreamReusePOSTTest() throws Throwable {
+        if (!latch.await(2, TimeUnit.SECONDS)) {
+          fail("Timeout");
+          return;
+        }
+        Integer status = statusCode.get(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals((int) status, 200, "Expected status code failed.");
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+        if (!whatCalled[STATUS]) {
+          fail("onStatusReceived not called.");
+        }
+        if (!whatCalled[COMPLETED]) {
+          fail("onCompleted not called.");
+        }
+        if (whatCalled[OTHER]) {
+          fail("Other method of AsyncHandler got called.");
+        }
+      }));
+  }
 
-                server.enqueueEcho();
+  @Test(groups = "online")
+  public void asyncOptionsTest() throws Throwable {
 
-                final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
+    withClient().run(client ->
+      withServer(server).run(server -> {
 
-                BoundRequestBuilder rb = client.preparePost(getTargetUrl())//
-                        .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)//
-                        .addFormParam("param_1", "value_1");
+        final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
-                Future<String> f = rb.execute(new AsyncHandlerAdapter() {
-                    private StringBuilder builder = new StringBuilder();
+        final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
+        Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
-                    @Override
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        responseHeaders.set(headers);
-                        return State.CONTINUE;
-                    }
+          @Override
+          public State onHeadersReceived(HttpHeaders headers) {
+            responseHeaders.set(headers);
+            return State.ABORT;
+          }
 
-                    @Override
-                    public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                        builder.append(new String(content.getBodyPartBytes()));
-                        return State.CONTINUE;
-                    }
-
-                    @Override
-                    public String onCompleted() throws Exception {
-                        return builder.toString();
-                    }
-                });
-
-                String r = f.get(5, TimeUnit.SECONDS);
-                HttpHeaders h = responseHeaders.get();
-                assertNotNull(h, "Should receive non null headers");
-                assertContentTypesEquals(h.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                assertNotNull(r, "No response body");
-                assertEquals(r.trim(), RESPONSE, "Unexpected response body");
-
-                responseHeaders.set(null);
-
-                server.enqueueEcho();
-
-                // Let do the same again
-                    f = rb.execute(new AsyncHandlerAdapter() {
-                        private StringBuilder builder = new StringBuilder();
-
-                        @Override
-                        public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                            responseHeaders.set(headers);
-                            return State.CONTINUE;
-                        }
-
-                        @Override
-                        public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                            builder.append(new String(content.getBodyPartBytes()));
-                            return State.CONTINUE;
-                        }
-
-                        @Override
-                        public String onCompleted() throws Exception {
-                            return builder.toString();
-                        }
-                    });
-
-                    f.get(5, TimeUnit.SECONDS);
-                    h = responseHeaders.get();
-                    assertNotNull(h, "Should receive non null headers");
-                    assertContentTypesEquals(h.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
-                    assertNotNull(r, "No response body");
-                    assertEquals(r.trim(), RESPONSE, "Unexpected response body");
-                });
+          @Override
+          public String onCompleted() {
+            return "OK";
+          }
         });
-    }
 
-    @Test
-    public void asyncStream302RedirectWithBody() throws Throwable {
+        f.get(20, TimeUnit.SECONDS);
+        HttpHeaders h = responseHeaders.get();
+        assertNotNull(h);
+        String[] values = h.get(ALLOW).split(",|, ");
+        assertNotNull(values);
+        assertEquals(values.length, expected.length);
+        Arrays.sort(values);
+        assertEquals(values, expected);
+      }));
+  }
 
-        withClient(config().setFollowRedirect(true)).run(client -> {
-            withServer(server).run(server -> {
+  @Test
+  public void closeConnectionTest() throws Throwable {
 
-                String originalUrl = server.getHttpUrl() + "/original";
-                String redirectUrl = server.getHttpUrl() + "/redirect";
+    withClient().run(client ->
+      withServer(server).run(server -> {
+        server.enqueueEcho();
 
-                server.enqueueResponse(response -> {
-                    response.setStatus(302);
-                    response.setHeader(LOCATION.toString(), redirectUrl);
-                    response.getOutputStream().println("You are being asked to redirect to " + redirectUrl);
-                });
-                server.enqueueOk();
+        Response r = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
 
-                Response response = client.prepareGet(originalUrl).execute().get(20, TimeUnit.SECONDS);
+          private Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
-                assertEquals(response.getStatusCode(), 200);
-                assertTrue(response.getResponseBody().isEmpty());
-            });
-        });
-    }
+          public State onHeadersReceived(HttpHeaders headers) {
+            builder.accumulate(headers);
+            return State.CONTINUE;
+          }
 
-    @Test(timeOut = 3000)
-    public void asyncStreamJustStatusLine() throws Throwable {
+          public void onThrowable(Throwable t) {
+          }
 
-        withClient().run(client -> {
-            withServer(server).run(server -> {
+          public State onBodyPartReceived(HttpResponseBodyPart content) {
+            builder.accumulate(content);
+            return content.isLast() ? State.ABORT : State.CONTINUE;
+          }
 
-                server.enqueueEcho();
+          public State onStatusReceived(HttpResponseStatus responseStatus) {
+            builder.accumulate(responseStatus);
 
-                final int STATUS = 0;
-                final int COMPLETED = 1;
-                final int OTHER = 2;
-                final boolean[] whatCalled = new boolean[] { false, false, false };
-                final CountDownLatch latch = new CountDownLatch(1);
-                Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
-                    private int status = -1;
+            return State.CONTINUE;
+          }
 
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        whatCalled[OTHER] = true;
-                        latch.countDown();
-                    }
+          public Response onCompleted() {
+            return builder.build();
+          }
+        }).get();
 
-                    @Override
-                    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                        whatCalled[OTHER] = true;
-                        latch.countDown();
-                        return State.ABORT;
-                    }
-
-                    @Override
-                    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                        whatCalled[STATUS] = true;
-                        status = responseStatus.getStatusCode();
-                        latch.countDown();
-                        return State.ABORT;
-                    }
-
-                    @Override
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        whatCalled[OTHER] = true;
-                        latch.countDown();
-                        return State.ABORT;
-                    }
-
-                    @Override
-                    public Integer onCompleted() throws Exception {
-                        whatCalled[COMPLETED] = true;
-                        latch.countDown();
-                        return status;
-                    }
-                });
-
-                if (!latch.await(2, TimeUnit.SECONDS)) {
-                    fail("Timeout");
-                    return;
-                }
-                Integer status = statusCode.get(TIMEOUT, TimeUnit.SECONDS);
-                assertEquals((int) status, 200, "Expected status code failed.");
-
-                if (!whatCalled[STATUS]) {
-                    fail("onStatusReceived not called.");
-                }
-                if (!whatCalled[COMPLETED]) {
-                    fail("onCompleted not called.");
-                }
-                if (whatCalled[OTHER]) {
-                    fail("Other method of AsyncHandler got called.");
-                }
-            });
-        });
-    }
-
-    @Test(groups = "online")
-    public void asyncOptionsTest() throws Throwable {
-
-        withClient().run(client -> {
-            withServer(server).run(server -> {
-
-                final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
-
-                final String[] expected = { "GET", "HEAD", "OPTIONS", "POST" };
-                Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
-
-                    @Override
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        responseHeaders.set(headers);
-                        return State.ABORT;
-                    }
-
-                    @Override
-                    public String onCompleted() throws Exception {
-                        return "OK";
-                    }
-                });
-
-                f.get(20, TimeUnit.SECONDS);
-                HttpHeaders h = responseHeaders.get();
-                assertNotNull(h);
-                String[] values = h.get(ALLOW).split(",|, ");
-                assertNotNull(values);
-                assertEquals(values.length, expected.length);
-                Arrays.sort(values);
-                assertEquals(values, expected);
-            });
-        });
-    }
-
-    @Test
-    public void closeConnectionTest() throws Throwable {
-
-        withClient().run(client -> {
-            withServer(server).run(server -> {
-                server.enqueueEcho();
-
-                Response r = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
-
-                    private Response.ResponseBuilder builder = new Response.ResponseBuilder();
-
-                    public State onHeadersReceived(HttpHeaders headers) throws Exception {
-                        builder.accumulate(headers);
-                        return State.CONTINUE;
-                    }
-
-                    public void onThrowable(Throwable t) {
-                    }
-
-                    public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                        builder.accumulate(content);
-                        return content.isLast() ? State.ABORT : State.CONTINUE;
-                    }
-
-                    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                        builder.accumulate(responseStatus);
-
-                        return State.CONTINUE;
-                    }
-
-                    public Response onCompleted() throws Exception {
-                        return builder.build();
-                    }
-                }).get();
-
-                assertNotNull(r);
-                assertEquals(r.getStatusCode(), 200);
-            });
-        });
-    }
+        assertNotNull(r);
+        assertEquals(r.getStatusCode(), 200);
+      }));
+  }
 }

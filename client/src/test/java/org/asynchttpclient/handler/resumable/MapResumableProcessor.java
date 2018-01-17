@@ -24,27 +24,27 @@ import java.util.Map;
 public class MapResumableProcessor
         implements ResumableProcessor {
 
-    Map<String, Long> map = new HashMap<>();
+  private Map<String, Long> map = new HashMap<>();
 
-    public void put(String key, long transferredBytes) {
-        map.put(key, transferredBytes);
-    }
+  public void put(String key, long transferredBytes) {
+    map.put(key, transferredBytes);
+  }
 
-    public void remove(String key) {
-        map.remove(key);
-    }
+  public void remove(String key) {
+    map.remove(key);
+  }
 
-    /**
-     * NOOP
-     */
-    public void save(Map<String, Long> map) {
+  /**
+   * NOOP
+   */
+  public void save(Map<String, Long> map) {
 
-    }
+  }
 
-    /**
-     * NOOP
-     */
-    public Map<String, Long> load() {
-        return map;
-    }
+  /**
+   * NOOP
+   */
+  public Map<String, Long> load() {
+    return map;
+  }
 }

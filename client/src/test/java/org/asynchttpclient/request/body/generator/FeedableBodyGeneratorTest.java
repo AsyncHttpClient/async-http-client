@@ -13,101 +13,101 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import static org.testng.Assert.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import static org.testng.Assert.assertEquals;
+
 public class FeedableBodyGeneratorTest {
 
-    private UnboundedQueueFeedableBodyGenerator feedableBodyGenerator;
-    private TestFeedListener listener;
+  private UnboundedQueueFeedableBodyGenerator feedableBodyGenerator;
+  private TestFeedListener listener;
 
-    @BeforeMethod
-    public void setUp() throws Exception {
-        feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
-        listener = new TestFeedListener();
-        feedableBodyGenerator.setListener(listener);
+  @BeforeMethod
+  public void setUp() {
+    feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
+    listener = new TestFeedListener();
+    feedableBodyGenerator.setListener(listener);
+  }
+
+  @Test
+  public void feedNotifiesListener() throws Exception {
+    feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, false);
+    feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
+    assertEquals(listener.getCalls(), 2);
+  }
+
+  @Test
+  public void readingBytesReturnsFedContentWithoutChunkBoundaries() throws Exception {
+    byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
+
+    ByteBuf source = Unpooled.wrappedBuffer(content);
+    ByteBuf target = Unpooled.buffer(1);
+
+    try {
+      feedableBodyGenerator.feed(source, true);
+      Body body = feedableBodyGenerator.createBody();
+      assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
+      assertEquals(body.transferTo(target), BodyState.STOP);
+    } finally {
+      source.release();
+      target.release();
+    }
+  }
+
+  @Test
+  public void returnZeroToSuspendStreamWhenNothingIsInQueue() throws Exception {
+    byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
+
+    ByteBuf source = Unpooled.wrappedBuffer(content);
+    ByteBuf target = Unpooled.buffer(1);
+
+    try {
+      feedableBodyGenerator.feed(source, false);
+
+      Body body = feedableBodyGenerator.createBody();
+      assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
+      assertEquals(body.transferTo(target), BodyState.SUSPEND);
+    } finally {
+      source.release();
+      target.release();
+    }
+  }
+
+  private byte[] readFromBody(Body body) throws IOException {
+    ByteBuf byteBuf = Unpooled.buffer(512);
+    try {
+      body.transferTo(byteBuf);
+      byte[] readBytes = new byte[byteBuf.readableBytes()];
+      byteBuf.readBytes(readBytes);
+      return readBytes;
+    } finally {
+      byteBuf.release();
+    }
+  }
+
+  private static class TestFeedListener implements FeedListener {
+
+    private int calls;
+
+    @Override
+    public void onContentAdded() {
+      calls++;
     }
 
-    @Test(groups = "standalone")
-    public void feedNotifiesListener() throws Exception {
-        feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, false);
-        feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
-        assertEquals(listener.getCalls(), 2);
+    @Override
+    public void onError(Throwable t) {
     }
 
-    @Test(groups = "standalone")
-    public void readingBytesReturnsFedContentWithoutChunkBoundaries() throws Exception {
-        byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
-
-        ByteBuf source = Unpooled.wrappedBuffer(content);
-        ByteBuf target = Unpooled.buffer(1);
-
-        try {
-            feedableBodyGenerator.feed(source, true);
-            Body body = feedableBodyGenerator.createBody();
-            assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-            assertEquals(body.transferTo(target), BodyState.STOP);
-        } finally {
-            source.release();
-            target.release();
-        }
+    int getCalls() {
+      return calls;
     }
-
-    @Test(groups = "standalone")
-    public void returnZeroToSuspendStreamWhenNothingIsInQueue() throws Exception {
-        byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
-
-        ByteBuf source = Unpooled.wrappedBuffer(content);
-        ByteBuf target = Unpooled.buffer(1);
-
-        try {
-            feedableBodyGenerator.feed(source, false);
-
-            Body body = feedableBodyGenerator.createBody();
-            assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
-            assertEquals(body.transferTo(target), BodyState.SUSPEND);
-        } finally {
-            source.release();
-            target.release();
-        }
-    }
-
-    private byte[] readFromBody(Body body) throws IOException {
-        ByteBuf byteBuf = Unpooled.buffer(512);
-        try {
-            body.transferTo(byteBuf);
-            byte[] readBytes = new byte[byteBuf.readableBytes()];
-            byteBuf.readBytes(readBytes);
-            return readBytes;
-        } finally {
-            byteBuf.release();
-        }
-    }
-
-    private static class TestFeedListener implements FeedListener {
-
-        private int calls;
-
-        @Override
-        public void onContentAdded() {
-            calls++;
-        }
-
-        @Override
-        public void onError(Throwable t) {
-        }
-
-        public int getCalls() {
-            return calls;
-        }
-    }
+  }
 }

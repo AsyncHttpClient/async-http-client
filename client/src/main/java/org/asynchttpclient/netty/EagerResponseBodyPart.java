@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 import io.netty.buffer.ByteBuf;
+import org.asynchttpclient.HttpResponseBodyPart;
 
 import java.nio.ByteBuffer;
 
-import org.asynchttpclient.HttpResponseBodyPart;
+import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 
 /**
  * A callback class used when an HTTP response body is received.
@@ -25,30 +25,30 @@ import org.asynchttpclient.HttpResponseBodyPart;
  */
 public class EagerResponseBodyPart extends HttpResponseBodyPart {
 
-    private final byte[] bytes;
+  private final byte[] bytes;
 
-    public EagerResponseBodyPart(ByteBuf buf, boolean last) {
-        super(last);
-        bytes = byteBuf2Bytes(buf);
-    }
+  public EagerResponseBodyPart(ByteBuf buf, boolean last) {
+    super(last);
+    bytes = byteBuf2Bytes(buf);
+  }
 
-    /**
-     * Return the response body's part bytes received.
-     * 
-     * @return the response body's part bytes received.
-     */
-    @Override
-    public byte[] getBodyPartBytes() {
-        return bytes;
-    }
+  /**
+   * Return the response body's part bytes received.
+   *
+   * @return the response body's part bytes received.
+   */
+  @Override
+  public byte[] getBodyPartBytes() {
+    return bytes;
+  }
 
-    @Override
-    public int length() {
-        return bytes.length;
-    }
+  @Override
+  public int length() {
+    return bytes.length;
+  }
 
-    @Override
-    public ByteBuffer getBodyByteBuffer() {
-        return ByteBuffer.wrap(bytes);
-    }
+  @Override
+  public ByteBuffer getBodyByteBuffer() {
+    return ByteBuffer.wrap(bytes);
+  }
 }

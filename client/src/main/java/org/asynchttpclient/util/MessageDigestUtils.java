@@ -18,31 +18,31 @@ import java.security.NoSuchAlgorithmException;
 
 public final class MessageDigestUtils {
 
-	private static final ThreadLocal<MessageDigest> MD5_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
-		try {
-			return MessageDigest.getInstance("MD5");
-		} catch (NoSuchAlgorithmException e) {
-			throw new InternalError("MD5 not supported on this platform");
-		}
-	});
+  private static final ThreadLocal<MessageDigest> MD5_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
+    try {
+      return MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new InternalError("MD5 not supported on this platform");
+    }
+  });
 
-	private static final ThreadLocal<MessageDigest> SHA1_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
-		try {
-			return MessageDigest.getInstance("SHA1");
-		} catch (NoSuchAlgorithmException e) {
-			throw new InternalError("SHA1 not supported on this platform");
-		}
-	});
+  private static final ThreadLocal<MessageDigest> SHA1_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
+    try {
+      return MessageDigest.getInstance("SHA1");
+    } catch (NoSuchAlgorithmException e) {
+      throw new InternalError("SHA1 not supported on this platform");
+    }
+  });
 
-	public static MessageDigest pooledMd5MessageDigest() {
-		MessageDigest md = MD5_MESSAGE_DIGESTS.get();
-		md.reset();
-		return md;
-	}
+  public static MessageDigest pooledMd5MessageDigest() {
+    MessageDigest md = MD5_MESSAGE_DIGESTS.get();
+    md.reset();
+    return md;
+  }
 
-	public static MessageDigest pooledSha1MessageDigest() {
-		MessageDigest md = SHA1_MESSAGE_DIGESTS.get();
-		md.reset();
-		return md;
-	}
+  public static MessageDigest pooledSha1MessageDigest() {
+    MessageDigest md = SHA1_MESSAGE_DIGESTS.get();
+    md.reset();
+    return md;
+  }
 }

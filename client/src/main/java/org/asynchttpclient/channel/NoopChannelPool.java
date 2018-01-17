@@ -21,38 +21,38 @@ import java.util.function.Predicate;
 
 public enum NoopChannelPool implements ChannelPool {
 
-    INSTANCE;
+  INSTANCE;
 
-    @Override
-    public boolean offer(Channel channel, Object partitionKey) {
-        return false;
-    }
+  @Override
+  public boolean offer(Channel channel, Object partitionKey) {
+    return false;
+  }
 
-    @Override
-    public Channel poll(Object partitionKey) {
-        return null;
-    }
+  @Override
+  public Channel poll(Object partitionKey) {
+    return null;
+  }
 
-    @Override
-    public boolean removeAll(Channel channel) {
-        return false;
-    }
+  @Override
+  public boolean removeAll(Channel channel) {
+    return false;
+  }
 
-    @Override
-    public boolean isOpen() {
-        return true;
-    }
+  @Override
+  public boolean isOpen() {
+    return true;
+  }
 
-    @Override
-    public void destroy() {
-    }
+  @Override
+  public void destroy() {
+  }
 
-    @Override
-    public void flushPartitions(Predicate<Object> predicate) {
-    }
+  @Override
+  public void flushPartitions(Predicate<Object> predicate) {
+  }
 
-    @Override
-    public Map<String, Long> getIdleChannelCountPerHost() {
-        return Collections.emptyMap();
-    }
+  @Override
+  public Map<String, Long> getIdleChannelCountPerHost() {
+    return Collections.emptyMap();
+  }
 }

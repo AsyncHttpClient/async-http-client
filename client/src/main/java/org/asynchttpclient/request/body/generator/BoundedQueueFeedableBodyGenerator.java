@@ -18,12 +18,12 @@ import java.util.concurrent.BlockingQueue;
 
 public final class BoundedQueueFeedableBodyGenerator extends QueueBasedFeedableBodyGenerator<BlockingQueue<BodyChunk>> {
 
-    public BoundedQueueFeedableBodyGenerator(int capacity) {
-        super(new ArrayBlockingQueue<>(capacity, true));
-    }
+  public BoundedQueueFeedableBodyGenerator(int capacity) {
+    super(new ArrayBlockingQueue<>(capacity, true));
+  }
 
-    @Override
-    protected boolean offer(BodyChunk chunk) throws InterruptedException {
-        return queue.offer(chunk);
-    }
+  @Override
+  protected boolean offer(BodyChunk chunk) throws InterruptedException {
+    return queue.offer(chunk);
+  }
 }

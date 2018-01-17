@@ -18,13 +18,13 @@ package org.asynchttpclient.spnego;
  */
 public class SpnegoEngineException extends Exception {
 
-    private static final long serialVersionUID = -3123799505052881438L;
+  private static final long serialVersionUID = -3123799505052881438L;
 
-    public SpnegoEngineException(String message) {
-        super(message);
-    }
+  public SpnegoEngineException(String message) {
+    super(message);
+  }
 
-    public SpnegoEngineException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public SpnegoEngineException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

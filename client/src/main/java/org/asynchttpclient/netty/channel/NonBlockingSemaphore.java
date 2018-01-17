@@ -22,33 +22,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class NonBlockingSemaphore implements NonBlockingSemaphoreLike {
 
-    private final AtomicInteger permits;
+  private final AtomicInteger permits;
 
-    public NonBlockingSemaphore(int permits) {
-        this.permits = new AtomicInteger(permits);
-    }
+  public NonBlockingSemaphore(int permits) {
+    this.permits = new AtomicInteger(permits);
+  }
 
-    @Override
-    public void release() {
-        permits.incrementAndGet();
-    }
+  @Override
+  public void release() {
+    permits.incrementAndGet();
+  }
 
-    @Override
-    public boolean tryAcquire() {
-        for (;;) {
-            int count = permits.get();
-            if (count <= 0) {
-                return false;
-            }
-            if (permits.compareAndSet(count, count - 1)) {
-                return true;
-            }
-        }
+  @Override
+  public boolean tryAcquire() {
+    for (; ; ) {
+      int count = permits.get();
+      if (count <= 0) {
+        return false;
+      }
+      if (permits.compareAndSet(count, count - 1)) {
+        return true;
+      }
     }
+  }
 
-    @Override
-    public String toString() {
-        // mimic toString of Semaphore class
-        return super.toString() + "[Permits = " + permits + "]";
-    }
+  @Override
+  public String toString() {
+    // mimic toString of Semaphore class
+    return super.toString() + "[Permits = " + permits + "]";
+  }
 }

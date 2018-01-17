@@ -22,71 +22,71 @@ import java.util.Objects;
  */
 public class ClientStats {
 
-    private final Map<String, HostStats> statsPerHost;
+  private final Map<String, HostStats> statsPerHost;
 
-    public ClientStats(Map<String, HostStats> statsPerHost) {
-        this.statsPerHost = Collections.unmodifiableMap(statsPerHost);
-    }
+  public ClientStats(Map<String, HostStats> statsPerHost) {
+    this.statsPerHost = Collections.unmodifiableMap(statsPerHost);
+  }
 
-    /**
-     * @return A map from hostname to statistics on that host's connections.
-     * The returned map is unmodifiable.
-     */
-    public Map<String, HostStats> getStatsPerHost() {
-        return statsPerHost;
-    }
+  /**
+   * @return A map from hostname to statistics on that host's connections.
+   * The returned map is unmodifiable.
+   */
+  public Map<String, HostStats> getStatsPerHost() {
+    return statsPerHost;
+  }
 
-    /**
-     * @return The sum of {@link #getTotalActiveConnectionCount()} and {@link #getTotalIdleConnectionCount()},
-     * a long representing the total number of connections in the connection pool.
-     */
-    public long getTotalConnectionCount() {
-        return statsPerHost
-                .values()
-                .stream()
-                .mapToLong(HostStats::getHostConnectionCount)
-                .sum();
-    }
+  /**
+   * @return The sum of {@link #getTotalActiveConnectionCount()} and {@link #getTotalIdleConnectionCount()},
+   * a long representing the total number of connections in the connection pool.
+   */
+  public long getTotalConnectionCount() {
+    return statsPerHost
+            .values()
+            .stream()
+            .mapToLong(HostStats::getHostConnectionCount)
+            .sum();
+  }
 
-    /**
-     * @return A long representing the number of active connections in the connection pool.
-     */
-    public long getTotalActiveConnectionCount() {
-        return statsPerHost
-                .values()
-                .stream()
-                .mapToLong(HostStats::getHostActiveConnectionCount)
-                .sum();
-    }
+  /**
+   * @return A long representing the number of active connections in the connection pool.
+   */
+  public long getTotalActiveConnectionCount() {
+    return statsPerHost
+            .values()
+            .stream()
+            .mapToLong(HostStats::getHostActiveConnectionCount)
+            .sum();
+  }
 
-    /**
-     * @return A long representing the number of idle connections in the connection pool.
-     */
-    public long getTotalIdleConnectionCount() {
-        return statsPerHost
-                .values()
-                .stream()
-                .mapToLong(HostStats::getHostIdleConnectionCount)
-                .sum();
-    }
+  /**
+   * @return A long representing the number of idle connections in the connection pool.
+   */
+  public long getTotalIdleConnectionCount() {
+    return statsPerHost
+            .values()
+            .stream()
+            .mapToLong(HostStats::getHostIdleConnectionCount)
+            .sum();
+  }
 
-    @Override
-    public String toString() {
-        return "There are " + getTotalConnectionCount() +
-                " total connections, " + getTotalActiveConnectionCount() +
-                " are active and " + getTotalIdleConnectionCount() + " are idle.";
-    }
+  @Override
+  public String toString() {
+    return "There are " + getTotalConnectionCount() +
+            " total connections, " + getTotalActiveConnectionCount() +
+            " are active and " + getTotalIdleConnectionCount() + " are idle.";
+  }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ClientStats that = (ClientStats) o;
-        return Objects.equals(statsPerHost, that.statsPerHost);
-    }
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ClientStats that = (ClientStats) o;
+    return Objects.equals(statsPerHost, that.statsPerHost);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(statsPerHost);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(statsPerHost);
+  }
 }

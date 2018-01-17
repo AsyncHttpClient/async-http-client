@@ -8,7 +8,11 @@ import java.util.function.Function;
 
 @Test
 public class PropertiesAsyncHttpClientConfigTest {
-    
+
+    public void testThreadPoolName() {
+        testProperty(PropertiesAsyncHttpClientConfig::getThreadPoolName, "threadPoolName", "MyHttpClient", "AsyncHttpClient");
+    }
+
     public void testMaxTotalConnections() {
         testProperty(PropertiesAsyncHttpClientConfig::getMaxConnections, "maxConnections", 100, -1);
     }
@@ -22,15 +26,15 @@ public class PropertiesAsyncHttpClientConfigTest {
     }
 
     public void testPooledConnectionIdleTimeout() {
-        testProperty(PropertiesAsyncHttpClientConfig::getPooledConnectionIdleTimeout, "pooledConnectionIdleTimeout", 200,6 * 10000);
+        testProperty(PropertiesAsyncHttpClientConfig::getPooledConnectionIdleTimeout, "pooledConnectionIdleTimeout", 200, 6 * 10000);
     }
 
     public void testReadTimeout() {
-        testProperty(PropertiesAsyncHttpClientConfig::getReadTimeout, "readTimeout", 100,60 * 1000);
+        testProperty(PropertiesAsyncHttpClientConfig::getReadTimeout, "readTimeout", 100, 60 * 1000);
     }
 
     public void testRequestTimeout() {
-        testProperty(PropertiesAsyncHttpClientConfig::getRequestTimeout, "requestTimeout",200,6 * 10000);
+        testProperty(PropertiesAsyncHttpClientConfig::getRequestTimeout, "requestTimeout", 200, 6 * 10000);
     }
 
     public void testConnectionTtl() {
@@ -47,10 +51,6 @@ public class PropertiesAsyncHttpClientConfigTest {
 
     public void testCompressionEnforced() {
         testProperty(PropertiesAsyncHttpClientConfig::isCompressionEnforced, "compressionEnforced", true, false);
-    }
-
-    public void testUserAgent() {
-        testProperty(PropertiesAsyncHttpClientConfig::getUserAgent, "userAgent", "MyAHC", "AHC/2.1");
     }
 
     public void testStrict302Handling() {

@@ -16,11 +16,11 @@ package org.asynchttpclient.request.body.generator;
 import io.netty.buffer.ByteBuf;
 
 public final class BodyChunk {
-    public final boolean last;
-    public final ByteBuf buffer;
+  public final boolean last;
+  public final ByteBuf buffer;
 
-    public BodyChunk(ByteBuf buffer, boolean last) {
-        this.buffer = buffer;
-        this.last = last;
-    }
+  BodyChunk(ByteBuf buffer, boolean last) {
+    this.buffer = buffer;
+    this.last = last;
+  }
 }

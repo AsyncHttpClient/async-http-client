@@ -13,7 +13,6 @@
  */
 package org.asynchttpclient.netty.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
@@ -22,17 +21,18 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class Utf8ByteBufCharsetDecoder {
 
   private static final int INITIAL_CHAR_BUFFER_SIZE = 1024;
   private static final int UTF_8_MAX_BYTES_PER_CHAR = 4;
   private static final char INVALID_CHAR_REPLACEMENT = '�';
 
-  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = new ThreadLocal<Utf8ByteBufCharsetDecoder>() {
-    protected Utf8ByteBufCharsetDecoder initialValue() {
-      return new Utf8ByteBufCharsetDecoder();
-    }
-  };
+  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = ThreadLocal.withInitial(() -> new Utf8ByteBufCharsetDecoder());
+  private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
+  protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
+  private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
 
   private static Utf8ByteBufCharsetDecoder pooledDecoder() {
     Utf8ByteBufCharsetDecoder decoder = POOL.get();
@@ -50,33 +50,6 @@ public class Utf8ByteBufCharsetDecoder {
 
   private static CharsetDecoder configureReplaceCodingErrorActions(CharsetDecoder decoder) {
     return decoder.onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
-  }
-
-  private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
-  protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
-  private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
-
-  protected CharBuffer allocateCharBuffer(int l) {
-    return CharBuffer.allocate(l);
-  }
-
-  private void ensureCapacity(int l) {
-    if (charBuffer.position() == 0) {
-      if (charBuffer.capacity() < l) {
-        charBuffer = allocateCharBuffer(l);
-      }
-    } else if (charBuffer.remaining() < l) {
-      CharBuffer newCharBuffer = allocateCharBuffer(charBuffer.position() + l);
-      charBuffer.flip();
-      newCharBuffer.put(charBuffer);
-      charBuffer = newCharBuffer;
-    }
-  }
-
-  public void reset() {
-    configureReplaceCodingErrorActions(decoder.reset());
-    charBuffer.clear();
-    splitCharBuffer.clear();
   }
 
   private static int moreThanOneByteCharSize(byte firstByte) {
@@ -102,6 +75,29 @@ public class Utf8ByteBufCharsetDecoder {
   private static boolean isContinuation(byte b) {
     // 10xxxxxx
     return b >> 6 == -2;
+  }
+
+  protected CharBuffer allocateCharBuffer(int l) {
+    return CharBuffer.allocate(l);
+  }
+
+  private void ensureCapacity(int l) {
+    if (charBuffer.position() == 0) {
+      if (charBuffer.capacity() < l) {
+        charBuffer = allocateCharBuffer(l);
+      }
+    } else if (charBuffer.remaining() < l) {
+      CharBuffer newCharBuffer = allocateCharBuffer(charBuffer.position() + l);
+      charBuffer.flip();
+      newCharBuffer.put(charBuffer);
+      charBuffer = newCharBuffer;
+    }
+  }
+
+  public void reset() {
+    configureReplaceCodingErrorActions(decoder.reset());
+    charBuffer.clear();
+    splitCharBuffer.clear();
   }
 
   private boolean stashContinuationBytes(ByteBuffer nioBuffer, int missingBytes) {

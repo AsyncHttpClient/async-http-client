@@ -73,7 +73,7 @@ Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.c
 
 // unbound
 Request request = get("http://www.example.com/");
-Future<Response> whenResponse = asyncHttpClient.executeRequest("http://www.example.com/").execute();
+Future<Response> whenResponse = asyncHttpClient.execute(request).execute();
 ```
 
 #### Setting Request Body
@@ -279,9 +279,7 @@ Of course, Pull Requests are welcome.
 Here a the few rules we'd like you to respect if you do so:
 
 * Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
-* Respect the formatting rules:
-  * Indent with 4 spaces
-* Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash them into a single one
+* Use IntelliJ default formatting rules.
 * Regarding licensing:
   * You must be the original author of the code you suggest.
   * You must give the copyright to "the AsyncHttpClient Project"

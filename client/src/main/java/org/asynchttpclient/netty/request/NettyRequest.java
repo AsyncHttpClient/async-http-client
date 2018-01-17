@@ -13,25 +13,24 @@
  */
 package org.asynchttpclient.netty.request;
 
-import org.asynchttpclient.netty.request.body.NettyBody;
-
 import io.netty.handler.codec.http.HttpRequest;
+import org.asynchttpclient.netty.request.body.NettyBody;
 
 public final class NettyRequest {
 
-    private final HttpRequest httpRequest;
-    private final NettyBody body;
+  private final HttpRequest httpRequest;
+  private final NettyBody body;
 
-    public NettyRequest(HttpRequest httpRequest, NettyBody body) {
-        this.httpRequest = httpRequest;
-        this.body = body;
-    }
+  NettyRequest(HttpRequest httpRequest, NettyBody body) {
+    this.httpRequest = httpRequest;
+    this.body = body;
+  }
 
-    public HttpRequest getHttpRequest() {
-        return httpRequest;
-    }
+  public HttpRequest getHttpRequest() {
+    return httpRequest;
+  }
 
-    public NettyBody getBody() {
-        return body;
-    }
+  public NettyBody getBody() {
+    return body;
+  }
 }

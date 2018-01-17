@@ -12,69 +12,68 @@
  */
 package org.asynchttpclient.extras.simple;
 
-import static org.testng.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.Future;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.extras.simple.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.concurrent.Future;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 /**
  * @author Benjamin Hanzelmann
- * 
  */
 public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
-    
-    @Test(groups = "standalone")
-    public void testAccumulateErrorBody() throws Exception {
-        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                .setUrl(getTargetUrl() + "/nonexistent")//
-                .setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build()) {
-            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-            Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
-            System.out.println("waiting for response");
-            Response response = future.get();
-            assertEquals(response.getStatusCode(), 404);
-            assertEquals(o.toString(), "");
-            assertTrue(response.getResponseBody().startsWith("<html>"));
-        }
+  @Test(groups = "standalone")
+  public void testAccumulateErrorBody() throws Exception {
+    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+            .setUrl(getTargetUrl() + "/nonexistent")//
+            .setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build()) {
+      ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+      Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
+
+      System.out.println("waiting for response");
+      Response response = future.get();
+      assertEquals(response.getStatusCode(), 404);
+      assertEquals(o.toString(), "");
+      assertTrue(response.getResponseBody().startsWith("<html>"));
     }
+  }
 
-    @Test(groups = "standalone")
-    public void testOmitErrorBody() throws Exception {
-        try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-                .setUrl(getTargetUrl() + "/nonexistent")//
-                .setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build()) {
-            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-            Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
+  @Test(groups = "standalone")
+  public void testOmitErrorBody() throws Exception {
+    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+            .setUrl(getTargetUrl() + "/nonexistent")//
+            .setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build()) {
+      ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+      Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
-            System.out.println("waiting for response");
-            Response response = future.get();
-            assertEquals(response.getStatusCode(), 404);
-            assertEquals(o.toString(), "");
-            assertEquals(response.getResponseBody(), "");
-        }
+      System.out.println("waiting for response");
+      Response response = future.get();
+      assertEquals(response.getStatusCode(), 404);
+      assertEquals(o.toString(), "");
+      assertEquals(response.getResponseBody(), "");
     }
+  }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new AbstractHandler() {
+  @Override
+  public AbstractHandler configureHandler() throws Exception {
+    return new AbstractHandler() {
 
-            public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-                response.sendError(404);
-                baseRequest.setHandled(true);
-            }
-        };
-    }
+      public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        response.sendError(404);
+        baseRequest.setHandled(true);
+      }
+    };
+  }
 
 }

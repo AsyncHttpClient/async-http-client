@@ -13,60 +13,61 @@
  */
 package org.asynchttpclient.netty.util;
 
-import static java.nio.charset.StandardCharsets.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
+import static java.nio.charset.StandardCharsets.*;
+
 public final class ByteBufUtils {
 
-    private ByteBufUtils() {
+  private ByteBufUtils() {
+  }
+
+  public static boolean isUtf8OrUsAscii(Charset charset) {
+    return charset.equals(UTF_8) || charset.equals(US_ASCII);
+  }
+
+  public static String byteBuf2StringDefault(Charset charset, ByteBuf... bufs) {
+
+    if (bufs.length == 1) {
+      return bufs[0].toString(charset);
     }
 
-    public static boolean isUtf8OrUsAscii(Charset charset) {
-        return charset.equals(UTF_8) || charset.equals(US_ASCII);
+    for (ByteBuf buf : bufs) {
+      buf.retain();
     }
 
-    public static String byteBuf2StringDefault(Charset charset, ByteBuf... bufs) {
+    ByteBuf composite = Unpooled.wrappedBuffer(bufs);
 
-        if (bufs.length == 1) {
-            return bufs[0].toString(charset);
-        }
-
-        for (ByteBuf buf : bufs) {
-            buf.retain();
-        }
-
-        ByteBuf composite = Unpooled.wrappedBuffer(bufs);
-
-        try {
-            return composite.toString(charset);
-        } finally {
-            composite.release();
-        }
+    try {
+      return composite.toString(charset);
+    } finally {
+      composite.release();
     }
+  }
 
-    public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
-        return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(buf) : buf.toString(charset);
-    }
+  public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
+    return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(buf) : buf.toString(charset);
+  }
 
-    public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
-        return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(bufs) : byteBuf2StringDefault(charset, bufs);
-    }
+  public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
+    return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(bufs) : byteBuf2StringDefault(charset, bufs);
+  }
 
-    public static byte[] byteBuf2Bytes(ByteBuf buf) {
-        int readable = buf.readableBytes();
-        int readerIndex = buf.readerIndex();
-        if (buf.hasArray()) {
-            byte[] array = buf.array();
-            if (buf.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
-                return array;
-            }
-        }
-        byte[] array = new byte[readable];
-        buf.getBytes(readerIndex, array);
+  public static byte[] byteBuf2Bytes(ByteBuf buf) {
+    int readable = buf.readableBytes();
+    int readerIndex = buf.readerIndex();
+    if (buf.hasArray()) {
+      byte[] array = buf.array();
+      if (buf.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
         return array;
+      }
     }
+    byte[] array = new byte[readable];
+    buf.getBytes(readerIndex, array);
+    return array;
+  }
 }

@@ -20,25 +20,25 @@ import java.util.List;
 
 public class NettyCompositeByteArrayBody extends NettyDirectBody {
 
-    private final byte[][] bytes;
-    private final long contentLength;
+  private final byte[][] bytes;
+  private final long contentLength;
 
-    public NettyCompositeByteArrayBody(List<byte[]> bytes) {
-        this.bytes = new byte[bytes.size()][];
-        bytes.toArray(this.bytes);
-        long l = 0;
-        for (byte[] b : bytes)
-            l += b.length;
-        contentLength = l;
-    }
+  public NettyCompositeByteArrayBody(List<byte[]> bytes) {
+    this.bytes = new byte[bytes.size()][];
+    bytes.toArray(this.bytes);
+    long l = 0;
+    for (byte[] b : bytes)
+      l += b.length;
+    contentLength = l;
+  }
 
-    @Override
-    public long getContentLength() {
-        return contentLength;
-    }
+  @Override
+  public long getContentLength() {
+    return contentLength;
+  }
 
-    @Override
-    public ByteBuf byteBuf() {
-        return Unpooled.wrappedBuffer(bytes);
-    }
+  @Override
+  public ByteBuf byteBuf() {
+    return Unpooled.wrappedBuffer(bytes);
+  }
 }

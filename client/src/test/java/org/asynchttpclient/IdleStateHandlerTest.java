@@ -15,17 +15,6 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
-import static org.testng.Assert.fail;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -33,39 +22,50 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.testng.Assert.fail;
+
 public class IdleStateHandlerTest extends AbstractBasicTest {
 
-    private class IdleStateHandler extends AbstractHandler {
+  @BeforeClass(alwaysRun = true)
+  public void setUpGlobal() throws Exception {
+    server = new Server();
+    ServerConnector connector = addHttpConnector(server);
+    server.setHandler(new IdleStateHandler());
+    server.start();
+    port1 = connector.getLocalPort();
+    logger.info("Local HTTP server started successfully");
+  }
 
-        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-
-            try {
-                Thread.sleep(20 * 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            httpResponse.setStatus(200);
-            httpResponse.getOutputStream().flush();
-            httpResponse.getOutputStream().close();
-        }
+  @Test
+  public void idleStateTest() throws Exception {
+    try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
+      c.prepareGet(getTargetUrl()).execute().get();
+    } catch (ExecutionException e) {
+      fail("Should allow to finish processing request.", e);
     }
+  }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
-        server = new Server();
-        ServerConnector connector = addHttpConnector(server);
-        server.setHandler(new IdleStateHandler());
-        server.start();
-        port1 = connector.getLocalPort();
-        logger.info("Local HTTP server started successfully");
-    }
+  private class IdleStateHandler extends AbstractHandler {
 
-    @Test(groups = "standalone")
-    public void idleStateTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
-            c.prepareGet(getTargetUrl()).execute().get();
-        } catch (ExecutionException e) {
-            fail("Should allow to finish processing request.", e);
-        }
+    public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+
+      try {
+        Thread.sleep(20 * 1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      httpResponse.setStatus(200);
+      httpResponse.getOutputStream().flush();
+      httpResponse.getOutputStream().close();
     }
+  }
 }

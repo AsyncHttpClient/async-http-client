@@ -18,25 +18,25 @@ import javax.net.ssl.SSLException;
 
 public interface SslEngineFactory {
 
-    /**
-     * Creates new {@link SSLEngine}.
-     *
-     * @param config the client config
-     * @param peerHost the peer hostname
-     * @param peerPort the peer port
-     * @return new engine
-     */
-    SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort);
+  /**
+   * Creates new {@link SSLEngine}.
+   *
+   * @param config   the client config
+   * @param peerHost the peer hostname
+   * @param peerPort the peer port
+   * @return new engine
+   */
+  SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort);
 
-    /**
-     * Perform any necessary one-time configuration. This will be called just once before {@code newSslEngine} is called
-     * for the first time.
-     *
-     * @param config the client config
-     * @throws SSLException if initialization fails. If an exception is thrown, the instance will not be used as client
-     *                      creation will fail.
-     */
-    default void init(AsyncHttpClientConfig config) throws SSLException {
-        // no op
-    }
+  /**
+   * Perform any necessary one-time configuration. This will be called just once before {@code newSslEngine} is called
+   * for the first time.
+   *
+   * @param config the client config
+   * @throws SSLException if initialization fails. If an exception is thrown, the instance will not be used as client
+   *                      creation will fail.
+   */
+  default void init(AsyncHttpClientConfig config) throws SSLException {
+    // no op
+  }
 }

@@ -15,76 +15,70 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
-import java.io.IOException;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.concurrent.*;
 
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.head;
+import static org.testng.Assert.*;
 
 /**
  * Tests HEAD request that gets 302 response.
- * 
+ *
  * @author Hubert Iwaniuk
  */
 public class Head302Test extends AbstractBasicTest {
 
-    /**
-     * Handler that does Found (302) in response to HEAD method.
-     */
-    private static class Head302handler extends AbstractHandler {
-        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-            if ("HEAD".equalsIgnoreCase(request.getMethod())) {
-                response.setStatus(HttpServletResponse.SC_FOUND); // 302
-                response.setHeader("Location", request.getPathInfo() + "_moved");
-            } else if ("GET".equalsIgnoreCase(request.getMethod())) {
-                response.setStatus(HttpServletResponse.SC_OK);
-            } else {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            }
+  @Override
+  public AbstractHandler configureHandler() throws Exception {
+    return new Head302handler();
+  }
 
-            r.setHandled(true);
+  @Test
+  public void testHEAD302() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
+    try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
+      final CountDownLatch l = new CountDownLatch(1);
+      Request request = head("http://localhost:" + port1 + "/Test").build();
+
+      Response response = client.executeRequest(request, new AsyncCompletionHandlerBase() {
+        @Override
+        public Response onCompleted(Response response) throws Exception {
+          l.countDown();
+          return super.onCompleted(response);
         }
+      }).get(3, TimeUnit.SECONDS);
+
+      if (l.await(TIMEOUT, TimeUnit.SECONDS)) {
+        assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+        assertTrue(response.getUri().getPath().endsWith("_moved"));
+      } else {
+        fail("Timeout out");
+      }
     }
+  }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new Head302handler();
+  /**
+   * Handler that does Found (302) in response to HEAD method.
+   */
+  private static class Head302handler extends AbstractHandler {
+    public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      if ("HEAD".equalsIgnoreCase(request.getMethod())) {
+        response.setStatus(HttpServletResponse.SC_FOUND); // 302
+        response.setHeader("Location", request.getPathInfo() + "_moved");
+      } else if ("GET".equalsIgnoreCase(request.getMethod())) {
+        response.setStatus(HttpServletResponse.SC_OK);
+      } else {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      }
+
+      r.setHandled(true);
     }
-
-    @Test(groups = "standalone")
-    public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
-        AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
-        try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
-            final CountDownLatch l = new CountDownLatch(1);
-            Request request = head("http://localhost:" + port1 + "/Test").build();
-
-            Response response = client.executeRequest(request, new AsyncCompletionHandlerBase() {
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-                    l.countDown();
-                    return super.onCompleted(response);
-                }
-            }).get(3, TimeUnit.SECONDS);
-
-            if (l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-                assertTrue(response.getUri().getPath().endsWith("_moved"));
-            } else {
-                fail("Timeout out");
-            }
-        }
-    }
+  }
 }

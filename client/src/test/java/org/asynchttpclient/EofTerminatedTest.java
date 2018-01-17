@@ -13,46 +13,47 @@
  */
 package org.asynchttpclient;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static org.asynchttpclient.Dsl.*;
 import io.netty.handler.codec.http.HttpHeaderValues;
-
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.testng.annotations.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+
 public class EofTerminatedTest extends AbstractBasicTest {
 
-    private static class StreamHandler extends AbstractHandler {
-        @Override
-        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-            request.getResponse().getHttpOutput().sendContent(EofTerminatedTest.class.getClassLoader().getResourceAsStream("SimpleTextFile.txt"));
-        }
-    }
+  protected String getTargetUrl() {
+    return String.format("http://localhost:%d/", port1);
+  }
 
-    protected String getTargetUrl() {
-        return String.format("http://localhost:%d/", port1);
-    }
+  @Override
+  public AbstractHandler configureHandler() throws Exception {
+    GzipHandler gzipHandler = new GzipHandler();
+    gzipHandler.setHandler(new StreamHandler());
+    return gzipHandler;
+  }
 
+  @Test
+  public void testEolTerminatedResponse() throws Exception {
+    try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
+      ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
+              .get();
+    }
+  }
+
+  private static class StreamHandler extends AbstractHandler {
     @Override
-    public AbstractHandler configureHandler() throws Exception {
-        GzipHandler gzipHandler = new GzipHandler();
-        gzipHandler.setHandler(new StreamHandler());
-        return gzipHandler;
+    public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+      request.getResponse().getHttpOutput().sendContent(EofTerminatedTest.class.getClassLoader().getResourceAsStream("SimpleTextFile.txt"));
     }
-
-    @Test
-    public void testEolTerminatedResponse() throws Exception {
-        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
-                    .get();
-        }
-    }
+  }
 }

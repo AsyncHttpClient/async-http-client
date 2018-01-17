@@ -22,60 +22,60 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
  * Value class for OAuth consumer keys.
  */
 public class ConsumerKey {
-    private final String key;
-    private final String secret;
-    private final String percentEncodedKey;
+  private final String key;
+  private final String secret;
+  private final String percentEncodedKey;
 
-    public ConsumerKey(String key, String secret) {
-        this.key = key;
-        this.secret = secret;
-        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
-    }
+  ConsumerKey(String key, String secret) {
+    this.key = key;
+    this.secret = secret;
+    this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
+  }
 
-    public String getKey() {
-        return key;
-    }
+  public String getKey() {
+    return key;
+  }
 
-    public String getSecret() {
-        return secret;
-    }
+  public String getSecret() {
+    return secret;
+  }
 
-    String getPercentEncodedKey() {
-        return percentEncodedKey;
-    }
+  String getPercentEncodedKey() {
+    return percentEncodedKey;
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("{Consumer key, key=");
-        appendValue(sb, key);
-        sb.append(", secret=");
-        appendValue(sb, secret);
-        sb.append("}");
-        return sb.toString();
-    }
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("{Consumer key, key=");
+    appendValue(sb, key);
+    sb.append(", secret=");
+    appendValue(sb, secret);
+    sb.append("}");
+    return sb.toString();
+  }
 
-    private void appendValue(StringBuilder sb, String value) {
-        if (value == null) {
-            sb.append("null");
-        } else {
-            sb.append('"');
-            sb.append(value);
-            sb.append('"');
-        }
+  private void appendValue(StringBuilder sb, String value) {
+    if (value == null) {
+      sb.append("null");
+    } else {
+      sb.append('"');
+      sb.append(value);
+      sb.append('"');
     }
+  }
 
-    @Override
-    public int hashCode() {
-        return key.hashCode() + secret.hashCode();
-    }
+  @Override
+  public int hashCode() {
+    return key.hashCode() + secret.hashCode();
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-        if (o == null || o.getClass() != getClass())
-            return false;
-        ConsumerKey other = (ConsumerKey) o;
-        return key.equals(other.key) && secret.equals(other.secret);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (o == this)
+      return true;
+    if (o == null || o.getClass() != getClass())
+      return false;
+    ConsumerKey other = (ConsumerKey) o;
+    return key.equals(other.key) && secret.equals(other.secret);
+  }
 }

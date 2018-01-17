@@ -19,7 +19,7 @@ package org.asynchttpclient.netty.channel;
  * @author Stepan Koltsov
  */
 interface NonBlockingSemaphoreLike {
-    void release();
+  void release();
 
-    boolean tryAcquire();
+  boolean tryAcquire();
 }
