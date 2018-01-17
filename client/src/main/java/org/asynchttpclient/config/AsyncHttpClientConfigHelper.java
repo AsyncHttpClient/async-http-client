@@ -163,11 +163,7 @@ public class AsyncHttpClientConfigHelper {
         }
 
         public Optional<Boolean> getBooleanOpt(String key) {
-            try {
-                return Optional.of(getBoolean(key));
-            } catch (Exception ex) {
-                return Optional.empty();
-            }
+            return Optional.ofNullable(getString(key)).map(Boolean::parseBoolean);
         }
     }
 }

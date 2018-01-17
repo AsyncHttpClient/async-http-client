@@ -74,7 +74,7 @@ public class PropertiesAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     @Override
     public int getRequestTimeout() {
-        return config.getIntOpt(READ_TIMEOUT_CONFIG).orElse(defaultReadTimeout());
+        return config.getIntOpt(REQUEST_TIMEOUT_CONFIG).orElse(defaultReadTimeout());
     }
 
     @Override
