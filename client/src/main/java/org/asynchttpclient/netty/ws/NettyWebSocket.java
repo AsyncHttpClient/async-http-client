@@ -99,7 +99,7 @@ public final class NettyWebSocket implements WebSocket {
 
   @Override
   public Future<Void> sendBinaryFrame(ByteBuf payload, boolean finalFragment, int rsv) {
-    return channel.writeAndFlush(new BinaryWebSocketFrame(payload));
+    return channel.writeAndFlush(new BinaryWebSocketFrame(finalFragment, rsv, payload));
   }
 
   @Override
