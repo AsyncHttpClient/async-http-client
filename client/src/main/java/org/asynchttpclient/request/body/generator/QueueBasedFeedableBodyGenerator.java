@@ -14,38 +14,37 @@
 package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
+import org.asynchttpclient.request.body.Body;
 
 import java.util.Queue;
 
-import org.asynchttpclient.request.body.Body;
-
 public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>> implements FeedableBodyGenerator {
 
-    protected final T queue;
-    private FeedListener listener;
+  protected final T queue;
+  private FeedListener listener;
 
-    public QueueBasedFeedableBodyGenerator(T queue) {
-        this.queue = queue;
+  public QueueBasedFeedableBodyGenerator(T queue) {
+    this.queue = queue;
+  }
+
+  @Override
+  public Body createBody() {
+    return new PushBody(queue);
+  }
+
+  protected abstract boolean offer(BodyChunk chunk) throws Exception;
+
+  @Override
+  public boolean feed(final ByteBuf buffer, final boolean isLast) throws Exception {
+    boolean offered = offer(new BodyChunk(buffer, isLast));
+    if (offered && listener != null) {
+      listener.onContentAdded();
     }
+    return offered;
+  }
 
-    @Override
-    public Body createBody() {
-        return new PushBody(queue);
-    }
-
-    protected abstract boolean offer(BodyChunk chunk) throws Exception;
-
-    @Override
-    public boolean feed(final ByteBuf buffer, final boolean isLast) throws Exception {
-        boolean offered = offer(new BodyChunk(buffer, isLast));
-        if (offered && listener != null) {
-            listener.onContentAdded();
-        }
-        return offered;
-    }
-
-    @Override
-    public void setListener(FeedListener listener) {
-        this.listener = listener;
-    }
+  @Override
+  public void setListener(FeedListener listener) {
+    this.listener = listener;
+  }
 }

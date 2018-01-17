@@ -13,14 +13,10 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.stream.ChunkedWriteHandler;
-
-import java.io.IOException;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -32,58 +28,62 @@ import org.asynchttpclient.request.body.generator.FeedListener;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 
+import java.io.IOException;
+
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
 public class NettyBodyBody implements NettyBody {
 
-    private final Body body;
-    private final AsyncHttpClientConfig config;
+  private final Body body;
+  private final AsyncHttpClientConfig config;
 
-    public NettyBodyBody(Body body, AsyncHttpClientConfig config) {
-        this.body = body;
-        this.config = config;
+  public NettyBodyBody(Body body, AsyncHttpClientConfig config) {
+    this.body = body;
+    this.config = config;
+  }
+
+  public Body getBody() {
+    return body;
+  }
+
+  @Override
+  public long getContentLength() {
+    return body.getContentLength();
+  }
+
+  @Override
+  public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
+
+    Object msg;
+    if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy()) {
+      msg = new BodyFileRegion((RandomAccessBody) body);
+
+    } else {
+      msg = new BodyChunkedInput(body);
+
+      BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
+      if (bg instanceof FeedableBodyGenerator && !(bg instanceof ReactiveStreamsBodyGenerator)) {
+        final ChunkedWriteHandler chunkedWriteHandler = channel.pipeline().get(ChunkedWriteHandler.class);
+        FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+          @Override
+          public void onContentAdded() {
+            chunkedWriteHandler.resumeTransfer();
+          }
+
+          @Override
+          public void onError(Throwable t) {
+          }
+        });
+      }
     }
 
-    public Body getBody() {
-        return body;
-    }
-
-    @Override
-    public long getContentLength() {
-        return body.getContentLength();
-    }
-
-    @Override
-    public void write(final Channel channel, NettyResponseFuture<?> future) throws IOException {
-
-        Object msg;
-        if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy()) {
-            msg = new BodyFileRegion((RandomAccessBody) body);
-
-        } else {
-            msg = new BodyChunkedInput(body);
-
-            BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
-            if (bg instanceof FeedableBodyGenerator && !(bg instanceof ReactiveStreamsBodyGenerator)) {
-                final ChunkedWriteHandler chunkedWriteHandler = channel.pipeline().get(ChunkedWriteHandler.class);
-                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
-                    @Override
-                    public void onContentAdded() {
-                        chunkedWriteHandler.resumeTransfer();
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-                    }
-                });
-            }
-        }
-
-        channel.write(msg, channel.newProgressivePromise())//
-                .addListener(new WriteProgressListener(future, false, getContentLength()) {
-                    public void operationComplete(ChannelProgressiveFuture cf) {
-                        closeSilently(body);
-                        super.operationComplete(cf);
-                    }
-                });
-        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
-    }
+    channel.write(msg, channel.newProgressivePromise())//
+            .addListener(new WriteProgressListener(future, false, getContentLength()) {
+              public void operationComplete(ChannelProgressiveFuture cf) {
+                closeSilently(body);
+                super.operationComplete(cf);
+              }
+            });
+    channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
+  }
 }

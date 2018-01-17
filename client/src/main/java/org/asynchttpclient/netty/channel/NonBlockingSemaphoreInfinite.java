@@ -15,25 +15,25 @@ package org.asynchttpclient.netty.channel;
 
 /**
  * Non-blocking semaphore-like object with infinite permits.
- *
+ * <p>
  * So try-acquire always succeeds.
  *
  * @author Stepan Koltsov
  */
 enum NonBlockingSemaphoreInfinite implements NonBlockingSemaphoreLike {
-    INSTANCE;
+  INSTANCE;
 
-    @Override
-    public void release() {
-    }
+  @Override
+  public void release() {
+  }
 
-    @Override
-    public boolean tryAcquire() {
-        return true;
-    }
+  @Override
+  public boolean tryAcquire() {
+    return true;
+  }
 
-    @Override
-    public String toString() {
-        return NonBlockingSemaphore.class.getName();
-    }
+  @Override
+  public String toString() {
+    return NonBlockingSemaphore.class.getName();
+  }
 }

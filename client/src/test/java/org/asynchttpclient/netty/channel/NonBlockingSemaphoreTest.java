@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import java.util.concurrent.Semaphore;
-
 import org.testng.annotations.Test;
+
+import java.util.concurrent.Semaphore;
 
 import static org.testng.Assert.*;
 
@@ -24,53 +24,53 @@ import static org.testng.Assert.*;
  */
 public class NonBlockingSemaphoreTest {
 
-    private static class Mirror {
-        private final Semaphore real;
-        private final NonBlockingSemaphore nonBlocking;
+  @Test
+  public void test0() {
+    Mirror mirror = new Mirror(0);
+    assertFalse(mirror.tryAcquire());
+  }
 
-        public Mirror(int permits) {
-            real = new Semaphore(permits);
-            nonBlocking = new NonBlockingSemaphore(permits);
-        }
+  @Test
+  public void three() {
+    Mirror mirror = new Mirror(3);
+    for (int i = 0; i < 3; ++i) {
+      assertTrue(mirror.tryAcquire());
+    }
+    assertFalse(mirror.tryAcquire());
+    mirror.release();
+    assertTrue(mirror.tryAcquire());
+  }
 
-        public boolean tryAcquire() {
-            boolean a = real.tryAcquire();
-            boolean b = nonBlocking.tryAcquire();
-            assertEquals(a, b);
-            return a;
-        }
+  @Test
+  public void negative() {
+    Mirror mirror = new Mirror(-1);
+    assertFalse(mirror.tryAcquire());
+    mirror.release();
+    assertFalse(mirror.tryAcquire());
+    mirror.release();
+    assertTrue(mirror.tryAcquire());
+  }
 
-        public void release() {
-            real.release();
-            nonBlocking.release();
-        }
+  private static class Mirror {
+    private final Semaphore real;
+    private final NonBlockingSemaphore nonBlocking;
+
+    public Mirror(int permits) {
+      real = new Semaphore(permits);
+      nonBlocking = new NonBlockingSemaphore(permits);
     }
 
-    @Test
-    public void test0() {
-        Mirror mirror = new Mirror(0);
-        assertFalse(mirror.tryAcquire());
+    public boolean tryAcquire() {
+      boolean a = real.tryAcquire();
+      boolean b = nonBlocking.tryAcquire();
+      assertEquals(a, b);
+      return a;
     }
 
-    @Test
-    public void three() {
-        Mirror mirror = new Mirror(3);
-        for (int i = 0; i < 3; ++i) {
-            assertTrue(mirror.tryAcquire());
-        }
-        assertFalse(mirror.tryAcquire());
-        mirror.release();
-        assertTrue(mirror.tryAcquire());
+    public void release() {
+      real.release();
+      nonBlocking.release();
     }
-
-    @Test
-    public void negative() {
-        Mirror mirror = new Mirror(-1);
-        assertFalse(mirror.tryAcquire());
-        mirror.release();
-        assertFalse(mirror.tryAcquire());
-        mirror.release();
-        assertTrue(mirror.tryAcquire());
-    }
+  }
 
 }

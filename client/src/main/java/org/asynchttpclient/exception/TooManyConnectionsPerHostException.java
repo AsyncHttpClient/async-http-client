@@ -17,7 +17,7 @@ import java.io.IOException;
 @SuppressWarnings("serial")
 public class TooManyConnectionsPerHostException extends IOException {
 
-    public TooManyConnectionsPerHostException(int max) {
-        super("Too many connections: " + max);
-    }
+  public TooManyConnectionsPerHostException(int max) {
+    super("Too many connections: " + max);
+  }
 }

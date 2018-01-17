@@ -27,38 +27,38 @@ import java.util.List;
  * Github DTOs and services.
  */
 public class TestServices {
-    @Value
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Contributor implements Serializable {
-        private static final long serialVersionUID = 1;
+  /**
+   * Synchronous interface
+   */
+  public interface GithubSync {
+    @GET("/repos/{owner}/{repo}/contributors")
+    Call<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+  }
 
-        @NonNull
-        String login;
+  /**
+   * RxJava 1.x reactive interface
+   */
+  public interface GithubRxJava1 {
+    @GET("/repos/{owner}/{repo}/contributors")
+    Observable<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+  }
 
-        int contributions;
-    }
+  /**
+   * RxJava 2.x reactive interface
+   */
+  public interface GithubRxJava2 {
+    @GET("/repos/{owner}/{repo}/contributors")
+    io.reactivex.Single<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+  }
 
-    /**
-     * Synchronous interface
-     */
-    public interface GithubSync {
-        @GET("/repos/{owner}/{repo}/contributors")
-        Call<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-    }
+  @Value
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Contributor implements Serializable {
+    private static final long serialVersionUID = 1;
 
-    /**
-     * RxJava 1.x reactive interface
-     */
-    public interface GithubRxJava1 {
-        @GET("/repos/{owner}/{repo}/contributors")
-        Observable<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-    }
+    @NonNull
+    String login;
 
-    /**
-     * RxJava 2.x reactive interface
-     */
-    public interface GithubRxJava2 {
-        @GET("/repos/{owner}/{repo}/contributors")
-        io.reactivex.Single<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-    }
+    int contributions;
+  }
 }

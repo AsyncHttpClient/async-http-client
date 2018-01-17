@@ -24,15 +24,15 @@ import java.io.IOException;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 public class CompletableFutures {
-    public static void main(String[] args) throws IOException {
-        try(AsyncHttpClient asyncHttpClient = asyncHttpClient()) {
-            asyncHttpClient
-                    .prepareGet("http://www.example.com/")
-                    .execute()
-                    .toCompletableFuture()
-                    .thenApply(Response::getResponseBody)
-                    .thenAccept(System.out::println)
-                    .join();
-        }
+  public static void main(String[] args) throws IOException {
+    try (AsyncHttpClient asyncHttpClient = asyncHttpClient()) {
+      asyncHttpClient
+              .prepareGet("http://www.example.com/")
+              .execute()
+              .toCompletableFuture()
+              .thenApply(Response::getResponseBody)
+              .thenAccept(System.out::println)
+              .join();
     }
+  }
 }

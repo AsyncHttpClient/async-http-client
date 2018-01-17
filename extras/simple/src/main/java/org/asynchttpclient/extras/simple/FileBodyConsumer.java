@@ -21,42 +21,42 @@ import java.nio.ByteBuffer;
  */
 public class FileBodyConsumer implements ResumableBodyConsumer {
 
-    private final RandomAccessFile file;
+  private final RandomAccessFile file;
 
-    public FileBodyConsumer(RandomAccessFile file) {
-        this.file = file;
-    }
+  public FileBodyConsumer(RandomAccessFile file) {
+    this.file = file;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void consume(ByteBuffer byteBuffer) throws IOException {
-        // TODO: Channel.transferFrom may be a good idea to investigate.
-        file.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void consume(ByteBuffer byteBuffer) throws IOException {
+    // TODO: Channel.transferFrom may be a good idea to investigate.
+    file.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() throws IOException {
-        file.close();
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void close() throws IOException {
+    file.close();
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public long getTransferredBytes() throws IOException {
-        return file.length();
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public long getTransferredBytes() throws IOException {
+    return file.length();
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void resume() throws IOException {
-        file.seek(getTransferredBytes());
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void resume() throws IOException {
+    file.seek(getTransferredBytes());
+  }
 }

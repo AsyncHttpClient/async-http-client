@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.extras.registry.AsyncHttpClientRegistryImpl;
-
 public class TestAsyncHttpClientRegistry extends AsyncHttpClientRegistryImpl {
 
 }

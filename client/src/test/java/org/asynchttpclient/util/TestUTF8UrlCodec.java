@@ -15,23 +15,23 @@
  */
 package org.asynchttpclient.util;
 
-import static org.testng.Assert.assertEquals;
-
 import org.testng.annotations.Test;
 
-public class TestUTF8UrlCodec {
-    @Test(groups = "standalone")
-    public void testBasics() {
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
-    }
+import static org.testng.Assert.assertEquals;
 
-    @Test(groups = "standalone")
-    public void testPercentageEncoding() {
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foobar"), "foobar");
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"), "foo~b_ar");
-    }
+public class TestUTF8UrlCodec {
+  @Test(groups = "standalone")
+  public void testBasics() {
+    assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
+    assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
+    assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
+  }
+
+  @Test(groups = "standalone")
+  public void testPercentageEncoding() {
+    assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foobar"), "foobar");
+    assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");
+    assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"), "foo~b_ar");
+  }
 
 }

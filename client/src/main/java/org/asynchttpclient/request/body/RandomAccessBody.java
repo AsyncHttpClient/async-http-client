@@ -21,14 +21,12 @@ import java.nio.channels.WritableByteChannel;
  */
 public interface RandomAccessBody extends Body {
 
-    /**
-     * Transfers the specified chunk of bytes from this body to the specified channel.
-     * 
-     * @param target
-     *            The destination channel to transfer the body chunk to, must not be {@code null}.
-     * @return The non-negative number of bytes actually transferred.
-     * @throws IOException
-     *             If the body chunk could not be transferred.
-     */
-    long transferTo(WritableByteChannel target) throws IOException;
+  /**
+   * Transfers the specified chunk of bytes from this body to the specified channel.
+   *
+   * @param target The destination channel to transfer the body chunk to, must not be {@code null}.
+   * @return The non-negative number of bytes actually transferred.
+   * @throws IOException If the body chunk could not be transferred.
+   */
+  long transferTo(WritableByteChannel target) throws IOException;
 }

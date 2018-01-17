@@ -13,102 +13,98 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.request.body.multipart.part.*;
+import org.asynchttpclient.util.StringBuilderPool;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.asynchttpclient.request.body.multipart.part.ByteArrayMultipartPart;
-import org.asynchttpclient.request.body.multipart.part.FileMultipartPart;
-import org.asynchttpclient.request.body.multipart.part.MessageEndMultipartPart;
-import org.asynchttpclient.request.body.multipart.part.MultipartPart;
-import org.asynchttpclient.request.body.multipart.part.StringMultipartPart;
-import org.asynchttpclient.util.StringBuilderPool;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class MultipartUtils {
 
-    /**
-     * The pool of ASCII chars to be used for generating a multipart boundary.
-     */
-    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
+  /**
+   * The pool of ASCII chars to be used for generating a multipart boundary.
+   */
+  private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
 
-    /**
-     * Creates a new multipart entity containing the given parts.
-     * 
-     * @param parts the parts to include.
-     * @param requestHeaders the request headers
-     * @return a MultipartBody
-     */
-    public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
-        assertNotNull(parts, "parts");
+  /**
+   * Creates a new multipart entity containing the given parts.
+   *
+   * @param parts          the parts to include.
+   * @param requestHeaders the request headers
+   * @return a MultipartBody
+   */
+  public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
+    assertNotNull(parts, "parts");
 
-        byte[] boundary;
-        String contentType;
+    byte[] boundary;
+    String contentType;
 
-        String contentTypeHeader = requestHeaders.get(CONTENT_TYPE);
-        if (isNonEmpty(contentTypeHeader)) {
-            int boundaryLocation = contentTypeHeader.indexOf("boundary=");
-            if (boundaryLocation != -1) {
-                // boundary defined in existing Content-Type
-                contentType = contentTypeHeader;
-                boundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
-            } else {
-                // generate boundary and append it to existing Content-Type
-                boundary = generateBoundary();
-                contentType = computeContentType(contentTypeHeader, boundary);
-            }
-        } else {
-            boundary = generateBoundary();
-            contentType = computeContentType(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
-        }
-
-        List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
-
-        return new MultipartBody(multipartParts, contentType, boundary);
+    String contentTypeHeader = requestHeaders.get(CONTENT_TYPE);
+    if (isNonEmpty(contentTypeHeader)) {
+      int boundaryLocation = contentTypeHeader.indexOf("boundary=");
+      if (boundaryLocation != -1) {
+        // boundary defined in existing Content-Type
+        contentType = contentTypeHeader;
+        boundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
+      } else {
+        // generate boundary and append it to existing Content-Type
+        boundary = generateBoundary();
+        contentType = computeContentType(contentTypeHeader, boundary);
+      }
+    } else {
+      boundary = generateBoundary();
+      contentType = computeContentType(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
     }
 
-    public static List<MultipartPart<? extends Part>> generateMultipartParts(List<Part> parts, byte[] boundary) {
-        List<MultipartPart<? extends Part>> multipartParts = new ArrayList<>(parts.size());
-        for (Part part : parts) {
-            if (part instanceof FilePart) {
-                multipartParts.add(new FileMultipartPart((FilePart) part, boundary));
+    List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
 
-            } else if (part instanceof ByteArrayPart) {
-                multipartParts.add(new ByteArrayMultipartPart((ByteArrayPart) part, boundary));
+    return new MultipartBody(multipartParts, contentType, boundary);
+  }
 
-            } else if (part instanceof StringPart) {
-                multipartParts.add(new StringMultipartPart((StringPart) part, boundary));
+  public static List<MultipartPart<? extends Part>> generateMultipartParts(List<Part> parts, byte[] boundary) {
+    List<MultipartPart<? extends Part>> multipartParts = new ArrayList<>(parts.size());
+    for (Part part : parts) {
+      if (part instanceof FilePart) {
+        multipartParts.add(new FileMultipartPart((FilePart) part, boundary));
 
-            } else {
-                throw new IllegalArgumentException("Unknown part type: " + part);
-            }
-        }
-        // add an extra fake part for terminating the message
-        multipartParts.add(new MessageEndMultipartPart(boundary));
+      } else if (part instanceof ByteArrayPart) {
+        multipartParts.add(new ByteArrayMultipartPart((ByteArrayPart) part, boundary));
 
-        return multipartParts;
+      } else if (part instanceof StringPart) {
+        multipartParts.add(new StringMultipartPart((StringPart) part, boundary));
+
+      } else {
+        throw new IllegalArgumentException("Unknown part type: " + part);
+      }
     }
+    // add an extra fake part for terminating the message
+    multipartParts.add(new MessageEndMultipartPart(boundary));
 
-    // a random size from 30 to 40
-    private static byte[] generateBoundary() {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        byte[] bytes = new byte[random.nextInt(11) + 30];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];
-        }
-        return bytes;
-    }
+    return multipartParts;
+  }
 
-    private static String computeContentType(CharSequence base, byte[] boundary) {
-        StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder().append(base);
-        if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
-            buffer.append(';');
-        return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
+  // a random size from 30 to 40
+  private static byte[] generateBoundary() {
+    ThreadLocalRandom random = ThreadLocalRandom.current();
+    byte[] bytes = new byte[random.nextInt(11) + 30];
+    for (int i = 0; i < bytes.length; i++) {
+      bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];
     }
+    return bytes;
+  }
+
+  private static String computeContentType(CharSequence base, byte[] boundary) {
+    StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder().append(base);
+    if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
+      buffer.append(';');
+    return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
+  }
 }

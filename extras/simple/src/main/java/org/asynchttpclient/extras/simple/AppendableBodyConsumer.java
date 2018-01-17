@@ -12,41 +12,41 @@
  */
 package org.asynchttpclient.extras.simple;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * An {@link Appendable} customer for {@link ByteBuffer}
  */
 public class AppendableBodyConsumer implements BodyConsumer {
 
-    private final Appendable appendable;
-    private final Charset charset;
+  private final Appendable appendable;
+  private final Charset charset;
 
-    public AppendableBodyConsumer(Appendable appendable, Charset charset) {
-        this.appendable = appendable;
-        this.charset = charset;
-    }
+  public AppendableBodyConsumer(Appendable appendable, Charset charset) {
+    this.appendable = appendable;
+    this.charset = charset;
+  }
 
-    public AppendableBodyConsumer(Appendable appendable) {
-        this.appendable = appendable;
-        this.charset = UTF_8;
-    }
+  public AppendableBodyConsumer(Appendable appendable) {
+    this.appendable = appendable;
+    this.charset = UTF_8;
+  }
 
-    @Override
-    public void consume(ByteBuffer byteBuffer) throws IOException {
-        appendable
-                .append(new String(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining(), charset));
-    }
+  @Override
+  public void consume(ByteBuffer byteBuffer) throws IOException {
+    appendable
+            .append(new String(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining(), charset));
+  }
 
-    @Override
-    public void close() throws IOException {
-        if (appendable instanceof Closeable) {
-            Closeable.class.cast(appendable).close();
-        }
+  @Override
+  public void close() throws IOException {
+    if (appendable instanceof Closeable) {
+      Closeable.class.cast(appendable).close();
     }
+  }
 }

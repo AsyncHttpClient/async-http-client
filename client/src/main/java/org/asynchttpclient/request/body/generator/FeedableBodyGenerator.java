@@ -21,7 +21,7 @@ import io.netty.buffer.ByteBuf;
  */
 public interface FeedableBodyGenerator extends BodyGenerator {
 
-    boolean feed(ByteBuf buffer, boolean isLast) throws Exception;
+  boolean feed(ByteBuf buffer, boolean isLast) throws Exception;
 
-    void setListener(FeedListener listener);
+  void setListener(FeedListener listener);
 }

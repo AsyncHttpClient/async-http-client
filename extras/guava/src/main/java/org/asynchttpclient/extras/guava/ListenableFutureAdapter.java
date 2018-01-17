@@ -21,38 +21,38 @@ import java.util.concurrent.TimeoutException;
 
 public final class ListenableFutureAdapter {
 
-    /**
-     * @param future an AHC ListenableFuture
-     * @param <V> the Future's value type
-     * @return a Guava ListenableFuture
-     */
-    public static <V> com.google.common.util.concurrent.ListenableFuture<V> asGuavaFuture(final ListenableFuture<V> future) {
+  /**
+   * @param future an AHC ListenableFuture
+   * @param <V>    the Future's value type
+   * @return a Guava ListenableFuture
+   */
+  public static <V> com.google.common.util.concurrent.ListenableFuture<V> asGuavaFuture(final ListenableFuture<V> future) {
 
-        return new com.google.common.util.concurrent.ListenableFuture<V>() {
+    return new com.google.common.util.concurrent.ListenableFuture<V>() {
 
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                return future.cancel(mayInterruptIfRunning);
-            }
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        return future.cancel(mayInterruptIfRunning);
+      }
 
-            public V get() throws InterruptedException, ExecutionException {
-                return future.get();
-            }
+      public V get() throws InterruptedException, ExecutionException {
+        return future.get();
+      }
 
-            public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                return future.get(timeout, unit);
-            }
+      public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return future.get(timeout, unit);
+      }
 
-            public boolean isCancelled() {
-                return future.isCancelled();
-            }
+      public boolean isCancelled() {
+        return future.isCancelled();
+      }
 
-            public boolean isDone() {
-                return future.isDone();
-            }
+      public boolean isDone() {
+        return future.isDone();
+      }
 
-            public void addListener(final Runnable runnable, final Executor executor) {
-                future.addListener(runnable, executor);
-            }
-        };
-    }
+      public void addListener(final Runnable runnable, final Executor executor) {
+        future.addListener(runnable, executor);
+      }
+    };
+  }
 }

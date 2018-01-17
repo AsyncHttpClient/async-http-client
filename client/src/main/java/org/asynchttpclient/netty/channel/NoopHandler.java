@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerAdapter;
 
 /**
  * A noop handler that just serves as a pinned reference for adding and removing handlers in the pipeline

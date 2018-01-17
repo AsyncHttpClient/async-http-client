@@ -18,45 +18,45 @@ import java.nio.charset.Charset;
 
 public final class StringUtils {
 
-    private StringUtils() {
-    }
+  private StringUtils() {
+  }
 
-    public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
-        return charset.encode(CharBuffer.wrap(cs));
-    }
+  public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
+    return charset.encode(CharBuffer.wrap(cs));
+  }
 
-    public static byte[] byteBuffer2ByteArray(ByteBuffer bb) {
-        byte[] rawBase = new byte[bb.remaining()];
-        bb.get(rawBase);
-        return rawBase;
-    }
+  public static byte[] byteBuffer2ByteArray(ByteBuffer bb) {
+    byte[] rawBase = new byte[bb.remaining()];
+    bb.get(rawBase);
+    return rawBase;
+  }
 
-    public static byte[] charSequence2Bytes(CharSequence sb, Charset charset) {
-        ByteBuffer bb = charSequence2ByteBuffer(sb, charset);
-        return byteBuffer2ByteArray(bb);
-    }
+  public static byte[] charSequence2Bytes(CharSequence sb, Charset charset) {
+    ByteBuffer bb = charSequence2ByteBuffer(sb, charset);
+    return byteBuffer2ByteArray(bb);
+  }
 
-    public static String toHexString(byte[] data) {
-        StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder();
-        for (byte aData : data) {
-            buffer.append(Integer.toHexString((aData & 0xf0) >>> 4));
-            buffer.append(Integer.toHexString(aData & 0x0f));
-        }
-        return buffer.toString();
+  public static String toHexString(byte[] data) {
+    StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder();
+    for (byte aData : data) {
+      buffer.append(Integer.toHexString((aData & 0xf0) >>> 4));
+      buffer.append(Integer.toHexString(aData & 0x0f));
     }
+    return buffer.toString();
+  }
 
-    public static void appendBase16(StringBuilder buf, byte[] bytes) {
-        int base = 16;
-        for (byte b : bytes) {
-            int bi = 0xff & b;
-            int c = '0' + (bi / base) % base;
-            if (c > '9')
-                c = 'a' + (c - '0' - 10);
-            buf.append((char) c);
-            c = '0' + bi % base;
-            if (c > '9')
-                c = 'a' + (c - '0' - 10);
-            buf.append((char) c);
-        }
+  public static void appendBase16(StringBuilder buf, byte[] bytes) {
+    int base = 16;
+    for (byte b : bytes) {
+      int bi = 0xff & b;
+      int c = '0' + (bi / base) % base;
+      if (c > '9')
+        c = 'a' + (c - '0' - 10);
+      buf.append((char) c);
+      c = '0' + bi % base;
+      if (c > '9')
+        c = 'a' + (c - '0' - 10);
+      buf.append((char) c);
     }
+  }
 }

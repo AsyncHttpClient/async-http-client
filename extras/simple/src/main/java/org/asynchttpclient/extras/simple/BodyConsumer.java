@@ -22,11 +22,11 @@ import java.nio.ByteBuffer;
  */
 public interface BodyConsumer extends Closeable {
 
-    /**
-     * Consume the received bytes.
-     *
-     * @param byteBuffer a {@link ByteBuffer} representation of the response's chunk.
-     * @throws IOException IO exception
-     */
-    void consume(ByteBuffer byteBuffer) throws IOException;
+  /**
+   * Consume the received bytes.
+   *
+   * @param byteBuffer a {@link ByteBuffer} representation of the response's chunk.
+   * @throws IOException IO exception
+   */
+  void consume(ByteBuffer byteBuffer) throws IOException;
 }

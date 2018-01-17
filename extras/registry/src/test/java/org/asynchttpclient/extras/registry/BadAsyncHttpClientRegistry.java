@@ -12,11 +12,9 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.extras.registry.AsyncHttpClientRegistryImpl;
-
 public class BadAsyncHttpClientRegistry extends AsyncHttpClientRegistryImpl {
 
-    private BadAsyncHttpClientRegistry() {
-        throw new RuntimeException("I am bad");
-    }
+  private BadAsyncHttpClientRegistry() {
+    throw new RuntimeException("I am bad");
+  }
 }

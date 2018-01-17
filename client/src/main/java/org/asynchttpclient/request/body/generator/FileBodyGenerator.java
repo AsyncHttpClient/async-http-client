@@ -12,48 +12,48 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import static org.asynchttpclient.util.Assertions.*;
+import org.asynchttpclient.request.body.RandomAccessBody;
 
 import java.io.File;
 
-import org.asynchttpclient.request.body.RandomAccessBody;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 /**
  * Creates a request body from the contents of a file.
  */
 public final class FileBodyGenerator implements BodyGenerator {
 
-    private final File file;
-    private final long regionSeek;
-    private final long regionLength;
+  private final File file;
+  private final long regionSeek;
+  private final long regionLength;
 
-    public FileBodyGenerator(File file) {
-        this(file, 0L, file.length());
-    }
+  public FileBodyGenerator(File file) {
+    this(file, 0L, file.length());
+  }
 
-    public FileBodyGenerator(File file, long regionSeek, long regionLength) {
-        this.file = assertNotNull(file, "file");
-        this.regionLength = regionLength;
-        this.regionSeek = regionSeek;
-    }
+  public FileBodyGenerator(File file, long regionSeek, long regionLength) {
+    this.file = assertNotNull(file, "file");
+    this.regionLength = regionLength;
+    this.regionSeek = regionSeek;
+  }
 
-    public File getFile() {
-        return file;
-    }
+  public File getFile() {
+    return file;
+  }
 
-    public long getRegionLength() {
-        return regionLength;
-    }
+  public long getRegionLength() {
+    return regionLength;
+  }
 
-    public long getRegionSeek() {
-        return regionSeek;
-    }
+  public long getRegionSeek() {
+    return regionSeek;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public RandomAccessBody createBody() {
-        throw new UnsupportedOperationException("FileBodyGenerator.createBody isn't used, Netty direclt sends the file");
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public RandomAccessBody createBody() {
+    throw new UnsupportedOperationException("FileBodyGenerator.createBody isn't used, Netty direclt sends the file");
+  }
 }

@@ -14,19 +14,19 @@
 package org.asynchttpclient.proxy;
 
 public enum ProxyType {
-    HTTP(true), SOCKS_V4(false), SOCKS_V5(false);
+  HTTP(true), SOCKS_V4(false), SOCKS_V5(false);
 
-    private final boolean http;
+  private final boolean http;
 
-    private ProxyType(boolean http) {
-        this.http = http;
-    }
+  private ProxyType(boolean http) {
+    this.http = http;
+  }
 
-    public boolean isHttp() {
-        return http;
-    }
+  public boolean isHttp() {
+    return http;
+  }
 
-    public boolean isSocks() {
-        return !isHttp();
-    }
+  public boolean isSocks() {
+    return !isHttp();
+  }
 }

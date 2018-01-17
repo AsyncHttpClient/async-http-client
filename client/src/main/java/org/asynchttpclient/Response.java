@@ -18,6 +18,8 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
+import org.asynchttpclient.netty.NettyResponse;
+import org.asynchttpclient.uri.Uri;
 
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -26,190 +28,187 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.asynchttpclient.netty.NettyResponse;
-import org.asynchttpclient.uri.Uri;
-
 /**
  * Represents the asynchronous HTTP response callback for an {@link AsyncCompletionHandler}
  */
 public interface Response {
-    /**
-     * Returns the status code for the request.
-     * 
-     * @return The status code
-     */
-    int getStatusCode();
+  /**
+   * Returns the status code for the request.
+   *
+   * @return The status code
+   */
+  int getStatusCode();
 
-    /**
-     * Returns the status text for the request.
-     * 
-     * @return The status text
-     */
-    String getStatusText();
+  /**
+   * Returns the status text for the request.
+   *
+   * @return The status text
+   */
+  String getStatusText();
 
-    /**
-     * Return the entire response body as a byte[].
-     * 
-     * @return the entire response body as a byte[].
-     */
-    byte[] getResponseBodyAsBytes();
+  /**
+   * Return the entire response body as a byte[].
+   *
+   * @return the entire response body as a byte[].
+   */
+  byte[] getResponseBodyAsBytes();
 
-    /**
-     * Return the entire response body as a ByteBuffer.
-     * 
-     * @return the entire response body as a ByteBuffer.
-     */
-    ByteBuffer getResponseBodyAsByteBuffer();
+  /**
+   * Return the entire response body as a ByteBuffer.
+   *
+   * @return the entire response body as a ByteBuffer.
+   */
+  ByteBuffer getResponseBodyAsByteBuffer();
 
-    /**
-     * Returns an input stream for the response body. Note that you should not try to get this more than once, and that you should not close the stream.
-     * 
-     * @return The input stream
-     */
-    InputStream getResponseBodyAsStream();
+  /**
+   * Returns an input stream for the response body. Note that you should not try to get this more than once, and that you should not close the stream.
+   *
+   * @return The input stream
+   */
+  InputStream getResponseBodyAsStream();
 
-    /**
-     * Return the entire response body as a String.
-     * 
-     * @param charset the charset to use when decoding the stream
-     * @return the entire response body as a String.
-     */
-    String getResponseBody(Charset charset);
+  /**
+   * Return the entire response body as a String.
+   *
+   * @param charset the charset to use when decoding the stream
+   * @return the entire response body as a String.
+   */
+  String getResponseBody(Charset charset);
 
-    /**
-     * Return the entire response body as a String.
-     * 
-     * @return the entire response body as a String.
-     */
-    String getResponseBody();
+  /**
+   * Return the entire response body as a String.
+   *
+   * @return the entire response body as a String.
+   */
+  String getResponseBody();
 
-    /**
-     * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link Uri} will be the last valid redirect url.
-     * 
-     * @return the request {@link Uri}.
-     */
-    Uri getUri();
+  /**
+   * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link Uri} will be the last valid redirect url.
+   *
+   * @return the request {@link Uri}.
+   */
+  Uri getUri();
 
-    /**
-     * Return the content-type header value.
-     * 
-     * @return the content-type header value.
-     */
-    String getContentType();
+  /**
+   * Return the content-type header value.
+   *
+   * @return the content-type header value.
+   */
+  String getContentType();
 
-    /**
-     * @param name the header name
-     * @return the first response header value
-     */
-    String getHeader(CharSequence name);
+  /**
+   * @param name the header name
+   * @return the first response header value
+   */
+  String getHeader(CharSequence name);
 
-    /**
-     * Return a {@link List} of the response header value.
-     * 
-     * @param name the header name
-     * @return the response header value
-     */
-    List<String> getHeaders(CharSequence name);
+  /**
+   * Return a {@link List} of the response header value.
+   *
+   * @param name the header name
+   * @return the response header value
+   */
+  List<String> getHeaders(CharSequence name);
 
-    HttpHeaders getHeaders();
+  HttpHeaders getHeaders();
 
-    /**
-     * Return true if the response redirects to another object.
-     * 
-     * @return True if the response redirects to another object.
-     */
-    boolean isRedirected();
+  /**
+   * Return true if the response redirects to another object.
+   *
+   * @return True if the response redirects to another object.
+   */
+  boolean isRedirected();
 
-    /**
-     * Subclasses SHOULD implement toString() in a way that identifies the response for logging.
-     * 
-     * @return the textual representation
-     */
-    String toString();
+  /**
+   * Subclasses SHOULD implement toString() in a way that identifies the response for logging.
+   *
+   * @return the textual representation
+   */
+  String toString();
 
-    /**
-     * @return the list of {@link Cookie}.
-     */
-    List<Cookie> getCookies();
+  /**
+   * @return the list of {@link Cookie}.
+   */
+  List<Cookie> getCookies();
 
-    /**
-     * Return true if the response's status has been computed by an {@link AsyncHandler}
-     * 
-     * @return true if the response's status has been computed by an {@link AsyncHandler}
-     */
-    boolean hasResponseStatus();
+  /**
+   * Return true if the response's status has been computed by an {@link AsyncHandler}
+   *
+   * @return true if the response's status has been computed by an {@link AsyncHandler}
+   */
+  boolean hasResponseStatus();
 
-    /**
-     * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the either
-     * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
-     * 
-     * @return true if the response's headers has been computed by an {@link AsyncHandler}
-     */
-    boolean hasResponseHeaders();
+  /**
+   * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the either
+   * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
+   *
+   * @return true if the response's headers has been computed by an {@link AsyncHandler}
+   */
+  boolean hasResponseHeaders();
 
-    /**
-     * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
-     * or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
-     * 
-     * @return true if the response's body has been computed by an {@link AsyncHandler}
-     */
-    boolean hasResponseBody();
+  /**
+   * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
+   * or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
+   *
+   * @return true if the response's body has been computed by an {@link AsyncHandler}
+   */
+  boolean hasResponseBody();
 
-    /**
-     * Get remote address client initiated request to.
-     * 
-     * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
-     */
-    SocketAddress getRemoteAddress();
+  /**
+   * Get remote address client initiated request to.
+   *
+   * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
+   */
+  SocketAddress getRemoteAddress();
 
-    /**
-     * Get local address client initiated request from.
-     * 
-     * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
-     */
-    SocketAddress getLocalAddress();
+  /**
+   * Get local address client initiated request from.
+   *
+   * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
+   */
+  SocketAddress getLocalAddress();
 
-    class ResponseBuilder {
-        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>(1);
-        private HttpResponseStatus status;
-        private HttpHeaders headers;
+  class ResponseBuilder {
+    private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>(1);
+    private HttpResponseStatus status;
+    private HttpHeaders headers;
 
-        public ResponseBuilder accumulate(HttpResponseStatus status) {
-            this.status = status;
-            return this;
-        }
-
-        public ResponseBuilder accumulate(HttpHeaders headers) {
-            this.headers = this.headers == null ? headers : this.headers.add(headers);
-            return this;
-        }
-
-        /**
-         * @param bodyPart a body part (possibly empty, but will be filtered out)
-         * @return this
-         */
-        public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {
-            if (bodyPart.length() > 0)
-                bodyParts.add(bodyPart);
-            return this;
-        }
-
-        /**
-         * Build a {@link Response} instance
-         * 
-         * @return a {@link Response} instance
-         */
-        public Response build() {
-            return status == null ? null : new NettyResponse(status, headers, bodyParts);
-        }
-
-        /**
-         * Reset the internal state of this builder.
-         */
-        public void reset() {
-            bodyParts.clear();
-            status = null;
-            headers = null;
-        }
+    public ResponseBuilder accumulate(HttpResponseStatus status) {
+      this.status = status;
+      return this;
     }
+
+    public ResponseBuilder accumulate(HttpHeaders headers) {
+      this.headers = this.headers == null ? headers : this.headers.add(headers);
+      return this;
+    }
+
+    /**
+     * @param bodyPart a body part (possibly empty, but will be filtered out)
+     * @return this
+     */
+    public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {
+      if (bodyPart.length() > 0)
+        bodyParts.add(bodyPart);
+      return this;
+    }
+
+    /**
+     * Build a {@link Response} instance
+     *
+     * @return a {@link Response} instance
+     */
+    public Response build() {
+      return status == null ? null : new NettyResponse(status, headers, bodyParts);
+    }
+
+    /**
+     * Reset the internal state of this builder.
+     */
+    public void reset() {
+      bodyParts.clear();
+      status = null;
+      headers = null;
+    }
+  }
 }

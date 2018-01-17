@@ -18,8 +18,8 @@ import io.netty.channel.epoll.EpollSocketChannel;
 
 class EpollSocketChannelFactory implements ChannelFactory<EpollSocketChannel> {
 
-    @Override
-    public EpollSocketChannel newChannel() {
-        return new EpollSocketChannel();
-    }
+  @Override
+  public EpollSocketChannel newChannel() {
+    return new EpollSocketChannel();
+  }
 }

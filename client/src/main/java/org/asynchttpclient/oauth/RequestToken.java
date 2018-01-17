@@ -24,60 +24,60 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
  * confidential ("secret") part.
  */
 public class RequestToken {
-    private final String key;
-    private final String secret;
-    private final String percentEncodedKey;
+  private final String key;
+  private final String secret;
+  private final String percentEncodedKey;
 
-    public RequestToken(String key, String token) {
-        this.key = key;
-        this.secret = token;
-        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
-    }
+  public RequestToken(String key, String token) {
+    this.key = key;
+    this.secret = token;
+    this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
+  }
 
-    public String getKey() {
-        return key;
-    }
+  public String getKey() {
+    return key;
+  }
 
-    public String getSecret() {
-        return secret;
-    }
+  public String getSecret() {
+    return secret;
+  }
 
-    String getPercentEncodedKey() {
-        return percentEncodedKey;
-    }
+  String getPercentEncodedKey() {
+    return percentEncodedKey;
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("{ key=");
-        appendValue(sb, key);
-        sb.append(", secret=");
-        appendValue(sb, secret);
-        sb.append("}");
-        return sb.toString();
-    }
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("{ key=");
+    appendValue(sb, key);
+    sb.append(", secret=");
+    appendValue(sb, secret);
+    sb.append("}");
+    return sb.toString();
+  }
 
-    private void appendValue(StringBuilder sb, String value) {
-        if (value == null) {
-            sb.append("null");
-        } else {
-            sb.append('"');
-            sb.append(value);
-            sb.append('"');
-        }
+  private void appendValue(StringBuilder sb, String value) {
+    if (value == null) {
+      sb.append("null");
+    } else {
+      sb.append('"');
+      sb.append(value);
+      sb.append('"');
     }
+  }
 
-    @Override
-    public int hashCode() {
-        return key.hashCode() + secret.hashCode();
-    }
+  @Override
+  public int hashCode() {
+    return key.hashCode() + secret.hashCode();
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-        if (o == null || o.getClass() != getClass())
-            return false;
-        RequestToken other = (RequestToken) o;
-        return key.equals(other.key) && secret.equals(other.secret);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (o == this)
+      return true;
+    if (o == null || o.getClass() != getClass())
+      return false;
+    RequestToken other = (RequestToken) o;
+    return key.equals(other.key) && secret.equals(other.secret);
+  }
 }

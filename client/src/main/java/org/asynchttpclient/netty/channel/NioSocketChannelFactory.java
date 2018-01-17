@@ -18,10 +18,10 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 enum NioSocketChannelFactory implements ChannelFactory<NioSocketChannel> {
 
-    INSTANCE;
-    
-    @Override
-    public NioSocketChannel newChannel() {
-        return new NioSocketChannel();
-    }
+  INSTANCE;
+
+  @Override
+  public NioSocketChannel newChannel() {
+    return new NioSocketChannel();
+  }
 }

@@ -12,12 +12,10 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.extras.registry.AsyncHttpClientImplException;
-
 @SuppressWarnings("serial")
 public class BadAsyncHttpClientException extends AsyncHttpClientImplException {
 
-    public BadAsyncHttpClientException(String msg) {
-        super(msg);
-    }
+  public BadAsyncHttpClientException(String msg) {
+    super(msg);
+  }
 }
