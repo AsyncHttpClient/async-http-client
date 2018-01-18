@@ -227,9 +227,9 @@ public class ReactiveStreamsTest {
   public void testConnectionDoesNotGetClosed() throws Exception {
     // test that we can stream the same request multiple times
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl())//
-              .setBody(createPublisher(LARGE_IMAGE_BYTES, 1000))//
-              .setHeader("X-" + CONTENT_LENGTH, LARGE_IMAGE_BYTES.length)//
+      BoundRequestBuilder requestBuilder = client.preparePut(getTargetUrl())
+              .setBody(createPublisher(LARGE_IMAGE_BYTES, 1000))
+              .setHeader("X-" + CONTENT_LENGTH, LARGE_IMAGE_BYTES.length)
               .setHeader("X-" + CONTENT_MD5, LARGE_IMAGE_BYTES_MD5);
 
       Response response = requestBuilder.execute().get();
@@ -418,7 +418,7 @@ public class ReactiveStreamsTest {
     }
 
     @Override
-    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
       throw new AssertionError("Should not have received body part");
     }
 

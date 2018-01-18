@@ -67,7 +67,6 @@ public class ChannelManager {
   public static final String HTTP_CLIENT_CODEC = "http";
   public static final String SSL_HANDLER = "ssl";
   public static final String SOCKS_HANDLER = "socks";
-  public static final String DEFLATER_HANDLER = "deflater";
   public static final String INFLATER_HANDLER = "inflater";
   public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
   public static final String WS_DECODER_HANDLER = "ws-decoder";
@@ -154,10 +153,10 @@ public class ChannelManager {
 
   private Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
     @SuppressWarnings("deprecation")
-    Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)//
-            .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)//
-            .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())//
-            .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())//
+    Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)
+            .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)
+            .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())
+            .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())
             .option(ChannelOption.AUTO_CLOSE, false);
 
     if (config.getConnectTimeout() > 0) {
@@ -213,11 +212,11 @@ public class ChannelManager {
     httpBootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
-        ChannelPipeline pipeline = ch.pipeline()//
-                .addLast(PINNED_ENTRY, pinnedEntry)//
-                .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
-                .addLast(INFLATER_HANDLER, newHttpContentDecompressor())//
-                .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
+        ChannelPipeline pipeline = ch.pipeline()
+                .addLast(PINNED_ENTRY, pinnedEntry)
+                .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
+                .addLast(INFLATER_HANDLER, newHttpContentDecompressor())
+                .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())
                 .addLast(AHC_HTTP_HANDLER, httpHandler);
 
         if (LOGGER.isTraceEnabled()) {
@@ -232,9 +231,9 @@ public class ChannelManager {
     wsBootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
-        ChannelPipeline pipeline = ch.pipeline()//
-                .addLast(PINNED_ENTRY, pinnedEntry)//
-                .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())//
+        ChannelPipeline pipeline = ch.pipeline()
+                .addLast(PINNED_ENTRY, pinnedEntry)
+                .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
                 .addLast(AHC_WS_HANDLER, wsHandler);
 
         if (LOGGER.isDebugEnabled()) {
@@ -296,7 +295,8 @@ public class ChannelManager {
 
   public void close() {
     if (allowReleaseEventLoopGroup) {
-      eventLoopGroup.shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)//
+      eventLoopGroup
+              .shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)
               .addListener(future -> doClose());
     } else {
       doClose();
@@ -316,11 +316,11 @@ public class ChannelManager {
 
   private HttpClientCodec newHttpClientCodec() {
     return new HttpClientCodec(//
-            config.getHttpClientCodecMaxInitialLineLength(),//
-            config.getHttpClientCodecMaxHeaderSize(),//
-            config.getHttpClientCodecMaxChunkSize(),//
-            false,//
-            config.isValidateResponseHeaders(),//
+            config.getHttpClientCodecMaxInitialLineLength(),
+            config.getHttpClientCodecMaxHeaderSize(),
+            config.getHttpClientCodecMaxChunkSize(),
+            false,
+            config.isValidateResponseHeaders(),
             config.getHttpClientCodecInitialBufferSize());
   }
 

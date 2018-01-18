@@ -45,7 +45,7 @@ public class AsyncHttpClientRegistryTest {
     System.clearProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAndRegister() throws IOException {
     try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
       Assert.assertNull(AsyncHttpClientRegistryImpl.getInstance().get(TEST_AHC));
@@ -54,7 +54,7 @@ public class AsyncHttpClientRegistryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testDeRegister() throws IOException {
     try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
       Assert.assertFalse(AsyncHttpClientRegistryImpl.getInstance().unregister(TEST_AHC));
@@ -64,7 +64,7 @@ public class AsyncHttpClientRegistryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testRegisterIfNew() throws IOException {
     try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
       try (AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient()) {
@@ -79,7 +79,7 @@ public class AsyncHttpClientRegistryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testClearAllInstances() throws IOException {
     try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
       try (AsyncHttpClient ahc2 = AsyncHttpClientFactory.getAsyncHttpClient()) {
@@ -98,14 +98,14 @@ public class AsyncHttpClientRegistryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testCustomAsyncHttpClientRegistry() {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, TestAsyncHttpClientRegistry.class.getName());
     AsyncHttpClientConfigHelper.reloadProperties();
     Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance() instanceof TestAsyncHttpClientRegistry);
   }
 
-  @Test(groups = "standalone", expectedExceptions = AsyncHttpClientImplException.class)
+  @Test(expectedExceptions = AsyncHttpClientImplException.class)
   public void testNonExistentAsyncHttpClientRegistry() {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.NON_EXISTENT_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -113,7 +113,7 @@ public class AsyncHttpClientRegistryTest {
     Assert.fail("Should never have reached here");
   }
 
-  @Test(groups = "standalone", expectedExceptions = AsyncHttpClientImplException.class)
+  @Test(expectedExceptions = AsyncHttpClientImplException.class)
   public void testBadAsyncHttpClientRegistry() {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, AbstractAsyncHttpClientFactoryTest.BAD_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();

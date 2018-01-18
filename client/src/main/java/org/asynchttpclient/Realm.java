@@ -61,23 +61,23 @@ public class Realm {
   private final boolean useAbsoluteURI;
   private final boolean omitQuery;
 
-  private Realm(AuthScheme scheme, //
-                String principal, //
-                String password, //
-                String realmName, //
-                String nonce, //
-                String algorithm, //
-                String response, //
-                String opaque, //
-                String qop, //
-                String nc, //
-                String cnonce, //
-                Uri uri, //
-                boolean usePreemptiveAuth, //
-                Charset charset, //
-                String ntlmDomain, //
-                String ntlmHost, //
-                boolean useAbsoluteURI, //
+  private Realm(AuthScheme scheme,
+                String principal,
+                String password,
+                String realmName,
+                String nonce,
+                String algorithm,
+                String response,
+                String opaque,
+                String qop,
+                String nc,
+                String cnonce,
+                Uri uri,
+                boolean usePreemptiveAuth,
+                Charset charset,
+                String ntlmDomain,
+                String ntlmHost,
+                boolean useAbsoluteURI,
                 boolean omitQuery) {
 
     this.scheme = assertNotNull(scheme, "scheme");
@@ -333,9 +333,9 @@ public class Realm {
     }
 
     public Builder parseWWWAuthenticateHeader(String headerLine) {
-      setRealmName(match(headerLine, "realm"))//
-              .setNonce(match(headerLine, "nonce"))//
-              .setOpaque(match(headerLine, "opaque"))//
+      setRealmName(match(headerLine, "realm"))
+              .setNonce(match(headerLine, "nonce"))
+              .setOpaque(match(headerLine, "opaque"))
               .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
       String algorithm = match(headerLine, "algorithm");
       if (isNonEmpty(algorithm)) {
@@ -352,9 +352,9 @@ public class Realm {
     }
 
     public Builder parseProxyAuthenticateHeader(String headerLine) {
-      setRealmName(match(headerLine, "realm"))//
-              .setNonce(match(headerLine, "nonce"))//
-              .setOpaque(match(headerLine, "opaque"))//
+      setRealmName(match(headerLine, "realm"))
+              .setNonce(match(headerLine, "nonce"))
+              .setOpaque(match(headerLine, "opaque"))
               .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
       String algorithm = match(headerLine, "algorithm");
       if (isNonEmpty(algorithm)) {
@@ -484,23 +484,23 @@ public class Realm {
         newResponse(md);
       }
 
-      return new Realm(scheme, //
-              principal, //
-              password, //
-              realmName, //
-              nonce, //
-              algorithm, //
-              response, //
-              opaque, //
-              qop, //
-              nc, //
-              cnonce, //
-              uri, //
-              usePreemptive, //
-              charset, //
-              ntlmDomain, //
-              ntlmHost, //
-              useAbsoluteURI, //
+      return new Realm(scheme,
+              principal,
+              password,
+              realmName,
+              nonce,
+              algorithm,
+              response,
+              opaque,
+              qop,
+              nc,
+              cnonce,
+              uri,
+              usePreemptive,
+              charset,
+              ntlmDomain,
+              ntlmHost,
+              useAbsoluteURI,
               omitQuery);
     }
   }

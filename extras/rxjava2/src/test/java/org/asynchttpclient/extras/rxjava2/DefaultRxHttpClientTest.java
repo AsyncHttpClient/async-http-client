@@ -66,28 +66,28 @@ public class DefaultRxHttpClientTest {
   @InjectMocks
   private DefaultRxHttpClient underTest;
 
-  @BeforeMethod(groups = "standalone")
+  @BeforeMethod
   public void initializeTest() {
     underTest = null; // we want a fresh instance for each test
     MockitoAnnotations.initMocks(this);
   }
 
-  @Test(groups = "standalone", expectedExceptions = NullPointerException.class)
+  @Test(expectedExceptions = NullPointerException.class)
   public void rejectsNullClient() {
     new DefaultRxHttpClient(null);
   }
 
-  @Test(groups = "standalone", expectedExceptions = NullPointerException.class)
+  @Test(expectedExceptions = NullPointerException.class)
   public void rejectsNullRequest() {
     underTest.prepare(null, handlerSupplier);
   }
 
-  @Test(groups = "standalone", expectedExceptions = NullPointerException.class)
+  @Test(expectedExceptions = NullPointerException.class)
   public void rejectsNullHandlerSupplier() {
     underTest.prepare(request, null);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void emitsNullPointerExceptionWhenNullHandlerIsSupplied() {
     // given
     given(handlerSupplier.get()).willReturn(null);
@@ -104,8 +104,8 @@ public class DefaultRxHttpClientTest {
     verifyNoMoreInteractions(handlerSupplier);
   }
 
-  @Test(groups = "standalone")
-  public void usesVanillaAsyncHandler() throws Exception {
+  @Test
+  public void usesVanillaAsyncHandler() {
     // given
     given(handlerSupplier.get()).willReturn(handler);
 
@@ -118,8 +118,8 @@ public class DefaultRxHttpClientTest {
     assertThat(bridge, is(not(instanceOf(ProgressAsyncHandler.class))));
   }
 
-  @Test(groups = "standalone")
-  public void usesProgressAsyncHandler() throws Exception {
+  @Test
+  public void usesProgressAsyncHandler() {
     given(handlerSupplier.get()).willReturn(progressHandler);
 
     // when
@@ -131,8 +131,8 @@ public class DefaultRxHttpClientTest {
     assertThat(bridge, is(instanceOf(ProgressAsyncHandler.class)));
   }
 
-  @Test(groups = "standalone")
-  public void callsSupplierForEachSubscription() throws Exception {
+  @Test
+  public void callsSupplierForEachSubscription() {
     // given
     given(handlerSupplier.get()).willReturn(handler);
     final Maybe<Object> prepared = underTest.prepare(request, handlerSupplier);
@@ -145,7 +145,7 @@ public class DefaultRxHttpClientTest {
     then(handlerSupplier).should(times(2)).get();
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void cancelsResponseFutureOnDispose() throws Exception {
     given(handlerSupplier.get()).willReturn(handler);
     given(asyncHttpClient.executeRequest(eq(request), any())).willReturn(resposeFuture);

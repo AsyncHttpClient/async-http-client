@@ -178,9 +178,9 @@ public final class NettyRequestFactory {
 
     // connection header and friends
     if (!connect && uri.isWebSocket()) {
-      headers.set(UPGRADE, HttpHeaderValues.WEBSOCKET)//
-              .set(CONNECTION, HttpHeaderValues.UPGRADE)//
-              .set(SEC_WEBSOCKET_KEY, getWebSocketKey())//
+      headers.set(UPGRADE, HttpHeaderValues.WEBSOCKET)
+              .set(CONNECTION, HttpHeaderValues.UPGRADE)
+              .set(SEC_WEBSOCKET_KEY, getWebSocketKey())
               .set(SEC_WEBSOCKET_VERSION, "13");
 
       if (!headers.contains(ORIGIN)) {

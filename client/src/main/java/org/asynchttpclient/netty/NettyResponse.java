@@ -48,8 +48,8 @@ public class NettyResponse implements Response {
   private final HttpResponseStatus status;
   private List<Cookie> cookies;
 
-  public NettyResponse(HttpResponseStatus status,//
-                       HttpHeaders headers,//
+  public NettyResponse(HttpResponseStatus status,
+                       HttpHeaders headers,
                        List<HttpResponseBodyPart> bodyParts) {
     this.bodyParts = bodyParts;
     this.headers = headers;
@@ -203,14 +203,14 @@ public class NettyResponse implements Response {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append(getClass().getSimpleName()).append(" {\n")//
-            .append("\tstatusCode=").append(getStatusCode()).append("\n")//
+    sb.append(getClass().getSimpleName()).append(" {\n")
+            .append("\tstatusCode=").append(getStatusCode()).append("\n")
             .append("\theaders=\n");
 
     for (Map.Entry<String, String> header : getHeaders()) {
       sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
     }
-    return sb.append("\tbody=\n").append(getResponseBody()).append("\n")//
+    return sb.append("\tbody=\n").append(getResponseBody()).append("\n")
             .append("}").toString();
   }
 }

@@ -93,12 +93,12 @@ public class ChunkingTest extends AbstractBasicTest {
   }
 
   private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
-    return config()//
-            .setKeepAlive(true)//
-            .setMaxConnectionsPerHost(1)//
-            .setMaxConnections(1)//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(1000)//
+    return config()
+            .setKeepAlive(true)
+            .setMaxConnectionsPerHost(1)
+            .setMaxConnections(1)
+            .setConnectTimeout(1000)
+            .setRequestTimeout(1000)
             .setFollowRedirect(true);
   }
 

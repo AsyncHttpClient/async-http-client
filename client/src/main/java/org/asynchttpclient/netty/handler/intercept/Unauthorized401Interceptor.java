@@ -97,8 +97,8 @@ public class Unauthorized401Interceptor {
 
         // FIXME do we want to update the realm, or directly
         // set the header?
-        Realm newBasicRealm = realm(realm)//
-                .setUsePreemptiveAuth(true)//
+        Realm newBasicRealm = realm(realm)
+                .setUsePreemptiveAuth(true)
                 .build();
         future.setRealm(newBasicRealm);
         break;
@@ -109,11 +109,11 @@ public class Unauthorized401Interceptor {
           LOGGER.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
           return false;
         }
-        Realm newDigestRealm = realm(realm)//
-                .setUri(request.getUri())//
-                .setMethodName(request.getMethod())//
-                .setUsePreemptiveAuth(true)//
-                .parseWWWAuthenticateHeader(digestHeader)//
+        Realm newDigestRealm = realm(realm)
+                .setUri(request.getUri())
+                .setMethodName(request.getMethod())
+                .setUsePreemptiveAuth(true)
+                .parseWWWAuthenticateHeader(digestHeader)
                 .build();
         future.setRealm(newDigestRealm);
         break;
@@ -126,8 +126,8 @@ public class Unauthorized401Interceptor {
         }
 
         ntlmChallenge(ntlmHeader, requestHeaders, realm, future);
-        Realm newNtlmRealm = realm(realm)//
-                .setUsePreemptiveAuth(true)//
+        Realm newNtlmRealm = realm(realm)
+                .setUsePreemptiveAuth(true)
                 .build();
         future.setRealm(newNtlmRealm);
         break;
@@ -147,9 +147,9 @@ public class Unauthorized401Interceptor {
           if (ntlmHeader2 != null) {
             LOGGER.warn("Kerberos/Spnego auth failed, proceeding with NTLM");
             ntlmChallenge(ntlmHeader2, requestHeaders, realm, future);
-            Realm newNtlmRealm2 = realm(realm)//
-                    .setScheme(AuthScheme.NTLM)//
-                    .setUsePreemptiveAuth(true)//
+            Realm newNtlmRealm2 = realm(realm)
+                    .setScheme(AuthScheme.NTLM)
+                    .setUsePreemptiveAuth(true)
                     .build();
             future.setRealm(newNtlmRealm2);
           } else {
@@ -165,8 +165,8 @@ public class Unauthorized401Interceptor {
     final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
 
     LOGGER.debug("Sending authentication to {}", request.getUri());
-    if (future.isKeepAlive()//
-            && !HttpUtil.isTransferEncodingChunked(httpRequest)//
+    if (future.isKeepAlive()
+            && !HttpUtil.isTransferEncodingChunked(httpRequest)
             && !HttpUtil.isTransferEncodingChunked(response)) {
       future.setReuseChannel(true);
       requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);

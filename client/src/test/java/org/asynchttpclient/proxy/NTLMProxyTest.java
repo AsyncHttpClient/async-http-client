@@ -48,9 +48,9 @@ public class NTLMProxyTest extends AbstractBasicTest {
   }
 
   private ProxyServer ntlmProxy() {
-    Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")//
-            .setNtlmDomain("Ursa-Minor")//
-            .setNtlmHost("LightCity")//
+    Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")
+            .setNtlmDomain("Ursa-Minor")
+            .setNtlmHost("LightCity")
             .build();
     return proxyServer("localhost", port2).setRealm(realm).build();
   }

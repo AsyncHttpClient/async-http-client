@@ -134,9 +134,9 @@ public final class AuthenticatorUtils {
         case DIGEST:
           if (isNonEmpty(proxyRealm.getNonce())) {
             // update realm with request information
-            proxyRealm = realm(proxyRealm)//
-                    .setUri(request.getUri())//
-                    .setMethodName(request.getMethod())//
+            proxyRealm = realm(proxyRealm)
+                    .setUri(request.getUri())
+                    .setMethodName(request.getMethod())
                     .build();
             proxyAuthorization = computeDigestAuthentication(proxyRealm);
           }
@@ -201,9 +201,9 @@ public final class AuthenticatorUtils {
         case DIGEST:
           if (isNonEmpty(realm.getNonce())) {
             // update realm with request information
-            realm = realm(realm)//
-                    .setUri(request.getUri())//
-                    .setMethodName(request.getMethod())//
+            realm = realm(realm)
+                    .setUri(request.getUri())
+                    .setMethodName(request.getMethod())
                     .build();
             authorizationHeader = computeDigestAuthentication(realm);
           }

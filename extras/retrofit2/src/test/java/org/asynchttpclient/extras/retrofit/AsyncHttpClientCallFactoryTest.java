@@ -20,7 +20,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -90,7 +89,7 @@ public class AsyncHttpClientCallFactoryTest {
   }
 
   @Test
-  void shouldApplyAllConsumersToCallBeingConstructed() throws IOException {
+  void shouldApplyAllConsumersToCallBeingConstructed() {
     // given
     val httpClient = mock(AsyncHttpClient.class);
 
@@ -109,14 +108,13 @@ public class AsyncHttpClientCallFactoryTest {
       numCustomized.incrementAndGet();
     };
 
-    Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder -> {
+    Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder ->
       callBuilder
               .requestCustomizer(requestCustomizer)
               .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
               .onRequestSuccess(createConsumer(numRequestSuccess))
               .onRequestFailure(createConsumer(numRequestFailure))
               .onRequestStart(createConsumer(numRequestStart));
-    };
 
     // create factory
     val factory = AsyncHttpClientCallFactory.builder()

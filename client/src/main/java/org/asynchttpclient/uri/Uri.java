@@ -38,11 +38,11 @@ public class Uri {
   private boolean secured;
   private boolean webSocket;
 
-  public Uri(String scheme,//
-             String userInfo,//
-             String host,//
-             int port,//
-             String path,//
+  public Uri(String scheme,
+             String userInfo,
+             String host,
+             int port,
+             String path,
              String query) {
 
     this.scheme = assertNotEmpty(scheme, "scheme");
@@ -70,11 +70,11 @@ public class Uri {
       throw new IllegalArgumentException(originalUrl + " could not be parsed into a proper Uri, missing host");
     }
 
-    return new Uri(parser.scheme,//
-            parser.userInfo,//
-            parser.host,//
-            parser.port,//
-            parser.path,//
+    return new Uri(parser.scheme,
+            parser.userInfo,
+            parser.host,
+            parser.port,
+            parser.path,
             parser.query);
   }
 
@@ -175,20 +175,20 @@ public class Uri {
   }
 
   public Uri withNewScheme(String newScheme) {
-    return new Uri(newScheme,//
-            userInfo,//
-            host,//
-            port,//
-            path,//
+    return new Uri(newScheme,
+            userInfo,
+            host,
+            port,
+            path,
             query);
   }
 
   public Uri withNewQuery(String newQuery) {
-    return new Uri(scheme,//
-            userInfo,//
-            host,//
-            port,//
-            path,//
+    return new Uri(scheme,
+            userInfo,
+            host,
+            port,
+            path,
             newQuery);
   }
 

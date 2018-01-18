@@ -35,9 +35,9 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
       return config.getSslContext();
     }
 
-    SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()//
-            .sslProvider(config.isUseOpenSsl() ? SslProvider.OPENSSL : SslProvider.JDK)//
-            .sessionCacheSize(config.getSslSessionCacheSize())//
+    SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
+            .sslProvider(config.isUseOpenSsl() ? SslProvider.OPENSSL : SslProvider.JDK)
+            .sessionCacheSize(config.getSslSessionCacheSize())
             .sessionTimeout(config.getSslSessionTimeout());
 
     if (isNonEmpty(config.getEnabledProtocols())) {

@@ -23,7 +23,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
   private Server server2;
 
-  public AbstractHandler configureHandler() throws Exception {
+  public AbstractHandler configureHandler() {
     return new ConnectHandler();
   }
 
@@ -50,16 +50,16 @@ public class HttpsProxyTest extends AbstractBasicTest {
     server2.stop();
   }
 
-  @Test(groups = "online")
-  public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+  @Test
+  public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException {
 
-    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-            .setProxyHost("localhost")//
-            .setProxyPort(port1)//
-            .setFollowRedirect(true)//
-            .setUrl(getTargetUrl2())//
-            .setAcceptAnyCertificate(true)//
-            .setHeader("Content-Type", "text/html")//
+    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+            .setProxyHost("localhost")
+            .setProxyPort(port1)
+            .setFollowRedirect(true)
+            .setUrl(getTargetUrl2())
+            .setAcceptAnyCertificate(true)
+            .setHeader("Content-Type", "text/html")
             .build()) {
       Response r = client.get().get();
 

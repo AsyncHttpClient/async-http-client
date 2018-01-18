@@ -216,7 +216,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
       }
 
       @Override
-      public Response onCompleted(org.asynchttpclient.Response response) throws Exception {
+      public Response onCompleted(org.asynchttpclient.Response response) {
         val okHttpResponse = toOkhttpResponse(response);
         runConsumers(me.onRequestSuccess, okHttpResponse);
         future.complete(okHttpResponse);

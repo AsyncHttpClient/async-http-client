@@ -26,7 +26,7 @@ import static org.testng.Assert.assertNotNull;
 
 public class AsyncHttpObservableTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testToObservableNoError() {
     final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -46,7 +46,7 @@ public class AsyncHttpObservableTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testToObservableError() {
     final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -66,7 +66,7 @@ public class AsyncHttpObservableTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testObserveNoError() {
     final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -86,7 +86,7 @@ public class AsyncHttpObservableTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testObserveError() {
     final TestSubscriber<Response> tester = new TestSubscriber<>();
 
@@ -106,7 +106,7 @@ public class AsyncHttpObservableTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testObserveMultiple() {
     final TestSubscriber<Response> tester = new TestSubscriber<>();
 

@@ -113,7 +113,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnCompleteTwice() throws Exception {
+  public void wontCallOnCompleteTwice() {
     InOrder inOrder = Mockito.inOrder(emitter);
 
     /* when */
@@ -128,7 +128,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnErrorTwice() throws Exception {
+  public void wontCallOnErrorTwice() {
     InOrder inOrder = Mockito.inOrder(emitter);
 
     /* when */
@@ -143,7 +143,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnErrorAfterOnComplete() throws Exception {
+  public void wontCallOnErrorAfterOnComplete() {
     /* when */
     underTest.onCompleted();
     then(emitter).should().onComplete();
@@ -154,7 +154,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnCompleteAfterOnError() throws Exception {
+  public void wontCallOnCompleteAfterOnError() {
     /* when */
     underTest.onThrowable(null);
     then(emitter).should().onError(null);
@@ -165,7 +165,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnCompleteAfterDisposal() throws Exception {
+  public void wontCallOnCompleteAfterDisposal() {
     given(emitter.isDisposed()).willReturn(true);
     /* when */
     underTest.onCompleted();
@@ -174,7 +174,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void wontCallOnErrorAfterDisposal() throws Exception {
+  public void wontCallOnErrorAfterDisposal() {
     given(emitter.isDisposed()).willReturn(true);
     /* when */
     underTest.onThrowable(new RuntimeException("ignored"));
@@ -193,7 +193,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void handlesExceptionsWhileFailing() throws Exception {
+  public void handlesExceptionsWhileFailing() {
     // given
     final Throwable initial = new RuntimeException("mocked error for onThrowable()");
     final Throwable followup = new RuntimeException("mocked error in delegate onThrowable()");
@@ -210,7 +210,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void cachesDisposedException() throws Exception {
+  public void cachesDisposedException() {
     // when
     new UnderTest().disposed();
     new UnderTest().disposed();
@@ -228,11 +228,11 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
 
   @DataProvider
   public Object[][] httpEvents() {
-    return new Object[][]{ //
-            {named("onStatusReceived", () -> underTest.onStatusReceived(status))}, //
-            {named("onHeadersReceived", () -> underTest.onHeadersReceived(headers))}, //
-            {named("onBodyPartReceived", () -> underTest.onBodyPartReceived(bodyPart))}, //
-            {named("onTrailingHeadersReceived", () -> underTest.onTrailingHeadersReceived(headers))}, //
+    return new Object[][]{
+            {named("onStatusReceived", () -> underTest.onStatusReceived(status))},
+            {named("onHeadersReceived", () -> underTest.onHeadersReceived(headers))},
+            {named("onBodyPartReceived", () -> underTest.onBodyPartReceived(bodyPart))},
+            {named("onTrailingHeadersReceived", () -> underTest.onTrailingHeadersReceived(headers))},
     };
   }
 
@@ -260,7 +260,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
     }
 
     @Override
-    protected AsyncHandler<? extends Object> delegate() {
+    protected AsyncHandler<?> delegate() {
       return delegate;
     }
   }

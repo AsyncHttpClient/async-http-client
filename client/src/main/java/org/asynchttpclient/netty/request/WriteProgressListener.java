@@ -22,8 +22,8 @@ public class WriteProgressListener extends WriteListener implements ChannelProgr
   private final long expectedTotal;
   private long lastProgress = 0L;
 
-  public WriteProgressListener(NettyResponseFuture<?> future,//
-                               boolean notifyHeaders,//
+  public WriteProgressListener(NettyResponseFuture<?> future,
+                               boolean notifyHeaders,
                                long expectedTotal) {
     super(future, notifyHeaders);
     this.expectedTotal = expectedTotal;

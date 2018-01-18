@@ -51,8 +51,8 @@ public class NtlmTest extends AbstractBasicTest {
   }
 
   private Realm.Builder realmBuilderBase() {
-    return ntlmAuthRealm("Zaphod", "Beeblebrox")//
-            .setNtlmDomain("Ursa-Minor")//
+    return ntlmAuthRealm("Zaphod", "Beeblebrox")
+            .setNtlmDomain("Ursa-Minor")
             .setNtlmHost("LightCity");
   }
 

@@ -99,8 +99,8 @@ public class ProxyUnauthorized407Interceptor {
 
         // FIXME do we want to update the realm, or directly
         // set the header?
-        Realm newBasicRealm = realm(proxyRealm)//
-                .setUsePreemptiveAuth(true)//
+        Realm newBasicRealm = realm(proxyRealm)
+                .setUsePreemptiveAuth(true)
                 .build();
         future.setProxyRealm(newBasicRealm);
         break;
@@ -111,11 +111,11 @@ public class ProxyUnauthorized407Interceptor {
           LOGGER.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
           return false;
         }
-        Realm newDigestRealm = realm(proxyRealm)//
-                .setUri(request.getUri())//
-                .setMethodName(request.getMethod())//
-                .setUsePreemptiveAuth(true)//
-                .parseProxyAuthenticateHeader(digestHeader)//
+        Realm newDigestRealm = realm(proxyRealm)
+                .setUri(request.getUri())
+                .setMethodName(request.getMethod())
+                .setUsePreemptiveAuth(true)
+                .parseProxyAuthenticateHeader(digestHeader)
                 .build();
         future.setProxyRealm(newDigestRealm);
         break;
@@ -127,8 +127,8 @@ public class ProxyUnauthorized407Interceptor {
           return false;
         }
         ntlmProxyChallenge(ntlmHeader, requestHeaders, proxyRealm, future);
-        Realm newNtlmRealm = realm(proxyRealm)//
-                .setUsePreemptiveAuth(true)//
+        Realm newNtlmRealm = realm(proxyRealm)
+                .setUsePreemptiveAuth(true)
                 .build();
         future.setProxyRealm(newNtlmRealm);
         break;
@@ -148,9 +148,9 @@ public class ProxyUnauthorized407Interceptor {
           if (ntlmHeader2 != null) {
             LOGGER.warn("Kerberos/Spnego proxy auth failed, proceeding with NTLM");
             ntlmProxyChallenge(ntlmHeader2, requestHeaders, proxyRealm, future);
-            Realm newNtlmRealm2 = realm(proxyRealm)//
-                    .setScheme(AuthScheme.NTLM)//
-                    .setUsePreemptiveAuth(true)//
+            Realm newNtlmRealm2 = realm(proxyRealm)
+                    .setScheme(AuthScheme.NTLM)
+                    .setUsePreemptiveAuth(true)
                     .build();
             future.setProxyRealm(newNtlmRealm2);
           } else {
@@ -170,8 +170,8 @@ public class ProxyUnauthorized407Interceptor {
     final Request nextRequest = nextRequestBuilder.build();
 
     LOGGER.debug("Sending proxy authentication to {}", request.getUri());
-    if (future.isKeepAlive()//
-            && !HttpUtil.isTransferEncodingChunked(httpRequest)//
+    if (future.isKeepAlive()
+            && !HttpUtil.isTransferEncodingChunked(httpRequest)
             && !HttpUtil.isTransferEncodingChunked(response)) {
       future.setConnectAllowed(true);
       future.setReuseChannel(true);

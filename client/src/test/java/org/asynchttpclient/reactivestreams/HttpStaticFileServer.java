@@ -36,9 +36,9 @@ public final class HttpStaticFileServer {
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup();
     ServerBootstrap b = new ServerBootstrap();
-    b.group(bossGroup, workerGroup)//
-            .channel(NioServerSocketChannel.class)//
-            .handler(new LoggingHandler(LogLevel.INFO))//
+    b.group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .handler(new LoggingHandler(LogLevel.INFO))
             .childHandler(new HttpStaticFileServerInitializer());
 
     b.bind(port).sync().channel();

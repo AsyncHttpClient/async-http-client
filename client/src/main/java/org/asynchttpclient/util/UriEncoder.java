@@ -65,7 +65,7 @@ public enum UriEncoder {
       sb.setLength(sb.length() - 1);
       return sb.toString();
     }
-  }, //
+  },
 
   RAW {
     public String encodePath(String path) {
@@ -128,11 +128,11 @@ public enum UriEncoder {
   public Uri encode(Uri uri, List<Param> queryParams) {
     String newPath = encodePath(uri.getPath());
     String newQuery = encodeQuery(uri.getQuery(), queryParams);
-    return new Uri(uri.getScheme(),//
-            uri.getUserInfo(),//
-            uri.getHost(),//
-            uri.getPort(),//
-            newPath,//
+    return new Uri(uri.getScheme(),
+            uri.getUserInfo(),
+            uri.getHost(),
+            uri.getPort(),
+            newPath,
             newQuery);
   }
 

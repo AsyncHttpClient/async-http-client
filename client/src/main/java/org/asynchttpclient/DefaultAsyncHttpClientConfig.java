@@ -139,85 +139,84 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final ResponseBodyPartFactory responseBodyPartFactory;
   private final int ioThreadsCount;
 
-  private DefaultAsyncHttpClientConfig(//
-                                       // http
-                                       boolean followRedirect,//
-                                       int maxRedirects,//
-                                       boolean strict302Handling,//
-                                       boolean compressionEnforced,//
-                                       String userAgent,//
-                                       Realm realm,//
-                                       int maxRequestRetry,//
-                                       boolean disableUrlEncodingForBoundRequests,//
-                                       boolean useLaxCookieEncoder,//
-                                       boolean disableZeroCopy,//
-                                       boolean keepEncodingHeader,//
-                                       ProxyServerSelector proxyServerSelector,//
-                                       boolean validateResponseHeaders,//
+  private DefaultAsyncHttpClientConfig(// http
+                                       boolean followRedirect,
+                                       int maxRedirects,
+                                       boolean strict302Handling,
+                                       boolean compressionEnforced,
+                                       String userAgent,
+                                       Realm realm,
+                                       int maxRequestRetry,
+                                       boolean disableUrlEncodingForBoundRequests,
+                                       boolean useLaxCookieEncoder,
+                                       boolean disableZeroCopy,
+                                       boolean keepEncodingHeader,
+                                       ProxyServerSelector proxyServerSelector,
+                                       boolean validateResponseHeaders,
                                        boolean aggregateWebSocketFrameFragments,
 
                                        // timeouts
-                                       int connectTimeout,//
-                                       int requestTimeout,//
-                                       int readTimeout,//
-                                       int shutdownQuietPeriod,//
-                                       int shutdownTimeout,//
+                                       int connectTimeout,
+                                       int requestTimeout,
+                                       int readTimeout,
+                                       int shutdownQuietPeriod,
+                                       int shutdownTimeout,
 
                                        // keep-alive
-                                       boolean keepAlive,//
-                                       int pooledConnectionIdleTimeout,//
-                                       int connectionPoolCleanerPeriod,//
-                                       int connectionTtl,//
-                                       int maxConnections,//
-                                       int maxConnectionsPerHost,//
-                                       ChannelPool channelPool,//
-                                       KeepAliveStrategy keepAliveStrategy,//
+                                       boolean keepAlive,
+                                       int pooledConnectionIdleTimeout,
+                                       int connectionPoolCleanerPeriod,
+                                       int connectionTtl,
+                                       int maxConnections,
+                                       int maxConnectionsPerHost,
+                                       ChannelPool channelPool,
+                                       KeepAliveStrategy keepAliveStrategy,
 
                                        // ssl
-                                       boolean useOpenSsl,//
-                                       boolean useInsecureTrustManager,//
-                                       boolean disableHttpsEndpointIdentificationAlgorithm,//
-                                       int handshakeTimeout,//
-                                       String[] enabledProtocols,//
-                                       String[] enabledCipherSuites,//
-                                       int sslSessionCacheSize,//
-                                       int sslSessionTimeout,//
-                                       SslContext sslContext,//
-                                       SslEngineFactory sslEngineFactory,//
+                                       boolean useOpenSsl,
+                                       boolean useInsecureTrustManager,
+                                       boolean disableHttpsEndpointIdentificationAlgorithm,
+                                       int handshakeTimeout,
+                                       String[] enabledProtocols,
+                                       String[] enabledCipherSuites,
+                                       int sslSessionCacheSize,
+                                       int sslSessionTimeout,
+                                       SslContext sslContext,
+                                       SslEngineFactory sslEngineFactory,
 
                                        // filters
-                                       List<RequestFilter> requestFilters,//
-                                       List<ResponseFilter> responseFilters,//
-                                       List<IOExceptionFilter> ioExceptionFilters,//
+                                       List<RequestFilter> requestFilters,
+                                       List<ResponseFilter> responseFilters,
+                                       List<IOExceptionFilter> ioExceptionFilters,
 
                                        // cookie store
                                        CookieStore cookieStore,
 
                                        // tuning
-                                       boolean tcpNoDelay,//
-                                       boolean soReuseAddress,//
-                                       int soLinger, //
-                                       int soSndBuf, //
-                                       int soRcvBuf, //
+                                       boolean tcpNoDelay,
+                                       boolean soReuseAddress,
+                                       int soLinger,
+                                       int soSndBuf,
+                                       int soRcvBuf,
 
                                        // internals
-                                       String threadPoolName,//
-                                       int httpClientCodecMaxInitialLineLength,//
-                                       int httpClientCodecMaxHeaderSize,//
-                                       int httpClientCodecMaxChunkSize,//
-                                       int httpClientCodecInitialBufferSize,//
-                                       int chunkedFileChunkSize,//
-                                       int webSocketMaxBufferSize,//
-                                       int webSocketMaxFrameSize,//
-                                       Map<ChannelOption<Object>, Object> channelOptions,//
-                                       EventLoopGroup eventLoopGroup,//
-                                       boolean useNativeTransport,//
-                                       ByteBufAllocator allocator,//
-                                       Timer nettyTimer,//
-                                       ThreadFactory threadFactory,//
-                                       Consumer<Channel> httpAdditionalChannelInitializer,//
-                                       Consumer<Channel> wsAdditionalChannelInitializer,//
-                                       ResponseBodyPartFactory responseBodyPartFactory,//
+                                       String threadPoolName,
+                                       int httpClientCodecMaxInitialLineLength,
+                                       int httpClientCodecMaxHeaderSize,
+                                       int httpClientCodecMaxChunkSize,
+                                       int httpClientCodecInitialBufferSize,
+                                       int chunkedFileChunkSize,
+                                       int webSocketMaxBufferSize,
+                                       int webSocketMaxFrameSize,
+                                       Map<ChannelOption<Object>, Object> channelOptions,
+                                       EventLoopGroup eventLoopGroup,
+                                       boolean useNativeTransport,
+                                       ByteBufAllocator allocator,
+                                       Timer nettyTimer,
+                                       ThreadFactory threadFactory,
+                                       Consumer<Channel> httpAdditionalChannelInitializer,
+                                       Consumer<Channel> wsAdditionalChannelInitializer,
+                                       ResponseBodyPartFactory responseBodyPartFactory,
                                        int ioThreadsCount) {
 
     // http
@@ -1170,70 +1169,70 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public DefaultAsyncHttpClientConfig build() {
 
-      return new DefaultAsyncHttpClientConfig(//
-              followRedirect, //
-              maxRedirects, //
-              strict302Handling, //
-              compressionEnforced, //
-              userAgent, //
-              realm, //
-              maxRequestRetry, //
-              disableUrlEncodingForBoundRequests, //
-              useLaxCookieEncoder, //
-              disableZeroCopy, //
-              keepEncodingHeader, //
-              resolveProxyServerSelector(), //
-              validateResponseHeaders, //
-              aggregateWebSocketFrameFragments, //
-              connectTimeout, //
-              requestTimeout, //
-              readTimeout, //
-              shutdownQuietPeriod, //
-              shutdownTimeout, //
-              keepAlive, //
-              pooledConnectionIdleTimeout, //
-              connectionPoolCleanerPeriod, //
-              connectionTtl, //
-              maxConnections, //
-              maxConnectionsPerHost, //
-              channelPool, //
-              keepAliveStrategy, //
-              useOpenSsl, //
-              useInsecureTrustManager, //
-              disableHttpsEndpointIdentificationAlgorithm, //
-              handshakeTimeout, //
-              enabledProtocols, //
-              enabledCipherSuites, //
-              sslSessionCacheSize, //
-              sslSessionTimeout, //
-              sslContext, //
-              sslEngineFactory, //
-              requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters), //
-              responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),//
-              ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),//
+      return new DefaultAsyncHttpClientConfig(
+              followRedirect,
+              maxRedirects,
+              strict302Handling,
+              compressionEnforced,
+              userAgent,
+              realm,
+              maxRequestRetry,
+              disableUrlEncodingForBoundRequests,
+              useLaxCookieEncoder,
+              disableZeroCopy,
+              keepEncodingHeader,
+              resolveProxyServerSelector(),
+              validateResponseHeaders,
+              aggregateWebSocketFrameFragments,
+              connectTimeout,
+              requestTimeout,
+              readTimeout,
+              shutdownQuietPeriod,
+              shutdownTimeout,
+              keepAlive,
+              pooledConnectionIdleTimeout,
+              connectionPoolCleanerPeriod,
+              connectionTtl,
+              maxConnections,
+              maxConnectionsPerHost,
+              channelPool,
+              keepAliveStrategy,
+              useOpenSsl,
+              useInsecureTrustManager,
+              disableHttpsEndpointIdentificationAlgorithm,
+              handshakeTimeout,
+              enabledProtocols,
+              enabledCipherSuites,
+              sslSessionCacheSize,
+              sslSessionTimeout,
+              sslContext,
+              sslEngineFactory,
+              requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters),
+              responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),
+              ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),
               cookieStore,
-              tcpNoDelay, //
-              soReuseAddress, //
-              soLinger, //
-              soSndBuf, //
-              soRcvBuf, //
-              threadPoolName, //
-              httpClientCodecMaxInitialLineLength, //
-              httpClientCodecMaxHeaderSize, //
-              httpClientCodecMaxChunkSize, //
-              httpClientCodecInitialBufferSize, //
-              chunkedFileChunkSize, //
-              webSocketMaxBufferSize, //
-              webSocketMaxFrameSize, //
-              channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),//
-              eventLoopGroup, //
-              useNativeTransport, //
-              allocator, //
-              nettyTimer, //
-              threadFactory, //
-              httpAdditionalChannelInitializer, //
-              wsAdditionalChannelInitializer, //
-              responseBodyPartFactory, //
+              tcpNoDelay,
+              soReuseAddress,
+              soLinger,
+              soSndBuf,
+              soRcvBuf,
+              threadPoolName,
+              httpClientCodecMaxInitialLineLength,
+              httpClientCodecMaxHeaderSize,
+              httpClientCodecMaxChunkSize,
+              httpClientCodecInitialBufferSize,
+              chunkedFileChunkSize,
+              webSocketMaxBufferSize,
+              webSocketMaxFrameSize,
+              channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),
+              eventLoopGroup,
+              useNativeTransport,
+              allocator,
+              nettyTimer,
+              threadFactory,
+              httpAdditionalChannelInitializer,
+              wsAdditionalChannelInitializer,
+              responseBodyPartFactory,
               ioThreadsCount);
     }
   }

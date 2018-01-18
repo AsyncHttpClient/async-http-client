@@ -120,12 +120,12 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
   private Realm realm;
   private Realm proxyRealm;
 
-  public NettyResponseFuture(Request originalRequest, //
-                             AsyncHandler<V> asyncHandler, //
-                             NettyRequest nettyRequest, //
-                             int maxRetry, //
-                             ChannelPoolPartitioning connectionPoolPartitioning, //
-                             ConnectionSemaphore connectionSemaphore, //
+  public NettyResponseFuture(Request originalRequest,
+                             AsyncHandler<V> asyncHandler,
+                             NettyRequest nettyRequest,
+                             int maxRetry,
+                             ChannelPoolPartitioning connectionPoolPartitioning,
+                             ConnectionSemaphore connectionSemaphore,
                              ProxyServer proxyServer) {
 
     this.asyncHandler = asyncHandler;

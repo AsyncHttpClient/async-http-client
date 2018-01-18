@@ -56,27 +56,27 @@ public final class DefaultChannelPool implements ChannelPool {
   private final PoolLeaseStrategy poolLeaseStrategy;
 
   public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
-    this(config.getPooledConnectionIdleTimeout(),//
-            config.getConnectionTtl(),//
-            hashedWheelTimer,//
+    this(config.getPooledConnectionIdleTimeout(),
+            config.getConnectionTtl(),
+            hashedWheelTimer,
             config.getConnectionPoolCleanerPeriod());
   }
 
-  public DefaultChannelPool(int maxIdleTime,//
-                            int connectionTtl,//
-                            Timer nettyTimer,//
+  public DefaultChannelPool(int maxIdleTime,
+                            int connectionTtl,
+                            Timer nettyTimer,
                             int cleanerPeriod) {
-    this(maxIdleTime,//
-            connectionTtl,//
-            PoolLeaseStrategy.LIFO,//
-            nettyTimer,//
+    this(maxIdleTime,
+            connectionTtl,
+            PoolLeaseStrategy.LIFO,
+            nettyTimer,
             cleanerPeriod);
   }
 
-  public DefaultChannelPool(int maxIdleTime,//
-                            int connectionTtl,//
-                            PoolLeaseStrategy poolLeaseStrategy,//
-                            Timer nettyTimer,//
+  public DefaultChannelPool(int maxIdleTime,
+                            int connectionTtl,
+                            PoolLeaseStrategy poolLeaseStrategy,
+                            Timer nettyTimer,
                             int cleanerPeriod) {
     this.maxIdleTime = maxIdleTime;
     this.connectionTtl = connectionTtl;

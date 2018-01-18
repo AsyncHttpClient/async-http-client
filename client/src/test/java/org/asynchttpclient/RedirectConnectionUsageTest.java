@@ -68,13 +68,13 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
   @Test
   public void testGetRedirectFinalUrl() throws Exception {
 
-    AsyncHttpClientConfig config = config()//
-            .setKeepAlive(true)//
-            .setMaxConnectionsPerHost(1)//
-            .setMaxConnections(1)//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(1000)//
-            .setFollowRedirect(true)//
+    AsyncHttpClientConfig config = config()
+            .setKeepAlive(true)
+            .setMaxConnectionsPerHost(1)
+            .setMaxConnections(1)
+            .setConnectTimeout(1000)
+            .setRequestTimeout(1000)
+            .setFollowRedirect(true)
             .build();
 
     try (AsyncHttpClient c = asyncHttpClient(config)) {

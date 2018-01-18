@@ -37,11 +37,10 @@ public class ResponseFiltersInterceptor {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public boolean exitAfterProcessingFilters(//
-                                            Channel channel,//
-                                            NettyResponseFuture<?> future,//
-                                            AsyncHandler<?> handler, //
-                                            HttpResponseStatus status,//
+  public boolean exitAfterProcessingFilters(Channel channel,
+                                            NettyResponseFuture<?> future,
+                                            AsyncHandler<?> handler,
+                                            HttpResponseStatus status,
                                             HttpHeaders responseHeaders) {
 
     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)

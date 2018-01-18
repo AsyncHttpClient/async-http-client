@@ -70,12 +70,11 @@ public class Redirect30xInterceptor {
             "exitAfterHandlingRedirect");
   }
 
-  public boolean exitAfterHandlingRedirect(//
-                                           Channel channel,//
-                                           NettyResponseFuture<?> future,//
-                                           HttpResponse response,//
-                                           Request request,//
-                                           int statusCode,//
+  public boolean exitAfterHandlingRedirect(Channel channel,
+                                           NettyResponseFuture<?> future,
+                                           HttpResponse response,
+                                           Request request,
+                                           int statusCode,
                                            Realm realm) throws Exception {
 
     if (followRedirect(config, request)) {
@@ -92,13 +91,13 @@ public class Redirect30xInterceptor {
                 && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
-        final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)//
-                .setChannelPoolPartitioning(request.getChannelPoolPartitioning())//
-                .setFollowRedirect(true)//
-                .setLocalAddress(request.getLocalAddress())//
-                .setNameResolver(request.getNameResolver())//
-                .setProxyServer(request.getProxyServer())//
-                .setRealm(request.getRealm())//
+        final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
+                .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
+                .setFollowRedirect(true)
+                .setLocalAddress(request.getLocalAddress())
+                .setNameResolver(request.getNameResolver())
+                .setProxyServer(request.getProxyServer())
+                .setRealm(request.getRealm())
                 .setRequestTimeout(request.getRequestTimeout());
 
         if (keepBody) {
@@ -173,8 +172,8 @@ public class Redirect30xInterceptor {
 
   private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
 
-    HttpHeaders headers = request.getHeaders()//
-            .remove(HOST)//
+    HttpHeaders headers = request.getHeaders()
+            .remove(HOST)
             .remove(CONTENT_LENGTH);
 
     if (!keepBody) {
@@ -182,7 +181,7 @@ public class Redirect30xInterceptor {
     }
 
     if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
-      headers.remove(AUTHORIZATION)//
+      headers.remove(AUTHORIZATION)
               .remove(PROXY_AUTHORIZATION);
     }
     return headers;

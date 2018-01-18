@@ -17,7 +17,7 @@ public class DefaultKeepAliveStrategy implements KeepAliveStrategy {
    */
   @Override
   public boolean keepAlive(Request ahcRequest, HttpRequest request, HttpResponse response) {
-    return HttpUtil.isKeepAlive(response)//
+    return HttpUtil.isKeepAlive(response)
             && HttpUtil.isKeepAlive(request)
             // support non standard Proxy-Connection
             && !response.headers().contains("Proxy-Connection", CLOSE, true);

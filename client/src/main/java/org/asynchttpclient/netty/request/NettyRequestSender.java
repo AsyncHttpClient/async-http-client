@@ -69,9 +69,9 @@ public final class NettyRequestSender {
   private final AsyncHttpClientState clientState;
   private final NettyRequestFactory requestFactory;
 
-  public NettyRequestSender(AsyncHttpClientConfig config, //
-                            ChannelManager channelManager, //
-                            Timer nettyTimer, //
+  public NettyRequestSender(AsyncHttpClientConfig config,
+                            ChannelManager channelManager,
+                            Timer nettyTimer,
                             AsyncHttpClientState clientState) {
     this.config = config;
     this.channelManager = channelManager;
@@ -125,11 +125,10 @@ public final class NettyRequestSender {
    * HttpRequest right away This reduces the probability of having a pooled
    * channel closed by the server by the time we build the request
    */
-  private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(//
-                                                                     Request request, //
-                                                                     AsyncHandler<T> asyncHandler, //
-                                                                     NettyResponseFuture<T> future, //
-                                                                     ProxyServer proxyServer, //
+  private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(Request request,
+                                                                     AsyncHandler<T> asyncHandler,
+                                                                     NettyResponseFuture<T> future,
+                                                                     ProxyServer proxyServer,
                                                                      boolean performConnectRequest) {
 
     NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer,
@@ -147,10 +146,9 @@ public final class NettyRequestSender {
    * until we get a valid channel from the pool and it's still valid once the
    * request is built @
    */
-  private <T> ListenableFuture<T> sendRequestThroughSslProxy(//
-                                                             Request request, //
-                                                             AsyncHandler<T> asyncHandler, //
-                                                             NettyResponseFuture<T> future, //
+  private <T> ListenableFuture<T> sendRequestThroughSslProxy(Request request,
+                                                             AsyncHandler<T> asyncHandler,
+                                                             NettyResponseFuture<T> future,
                                                              ProxyServer proxyServer) {
 
     NettyResponseFuture<T> newFuture = null;
@@ -179,7 +177,9 @@ public final class NettyRequestSender {
   }
 
   private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request,
-                                                                      final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture, ProxyServer proxy,
+                                                                      final AsyncHandler<T> asyncHandler,
+                                                                      NettyResponseFuture<T> originalFuture,
+                                                                      ProxyServer proxy,
                                                                       boolean performConnectRequest) {
 
     Realm realm;
@@ -266,10 +266,9 @@ public final class NettyRequestSender {
     return future;
   }
 
-  private <T> ListenableFuture<T> sendRequestWithNewChannel(//
-                                                            Request request, //
-                                                            ProxyServer proxy, //
-                                                            NettyResponseFuture<T> future, //
+  private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request,
+                                                            ProxyServer proxy,
+                                                            NettyResponseFuture<T> future,
                                                             AsyncHandler<T> asyncHandler) {
 
     // some headers are only set when performing the first request
@@ -297,7 +296,7 @@ public final class NettyRequestSender {
       return future;
     }
 
-    resolveAddresses(request, proxy, future, asyncHandler)//
+    resolveAddresses(request, proxy, future, asyncHandler)
             .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
               @Override
@@ -329,9 +328,9 @@ public final class NettyRequestSender {
     return future;
   }
 
-  private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, //
-                                                               ProxyServer proxy, //
-                                                               NettyResponseFuture<T> future, //
+  private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request,
+                                                               ProxyServer proxy,
+                                                               NettyResponseFuture<T> future,
                                                                AsyncHandler<T> asyncHandler) {
 
     Uri uri = request.getUri();
@@ -359,16 +358,18 @@ public final class NettyRequestSender {
     }
   }
 
-  private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request, AsyncHandler<T> asyncHandler,
-                                                            NettyRequest nettyRequest, ProxyServer proxyServer) {
+  private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request,
+                                                            AsyncHandler<T> asyncHandler,
+                                                            NettyRequest nettyRequest,
+                                                            ProxyServer proxyServer) {
 
-    NettyResponseFuture<T> future = new NettyResponseFuture<>(//
-            request, //
-            asyncHandler, //
-            nettyRequest, //
-            config.getMaxRequestRetry(), //
-            request.getChannelPoolPartitioning(), //
-            connectionSemaphore, //
+    NettyResponseFuture<T> future = new NettyResponseFuture<>(
+            request,
+            asyncHandler,
+            nettyRequest,
+            config.getMaxRequestRetry(),
+            request.getChannelPoolPartitioning(),
+            connectionSemaphore,
             proxyServer);
 
     String expectHeader = request.getHeaders().get(EXPECT);

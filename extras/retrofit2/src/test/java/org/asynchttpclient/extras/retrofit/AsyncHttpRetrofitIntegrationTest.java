@@ -163,8 +163,7 @@ public class AsyncHttpRetrofitIntegrationTest extends HttpTest {
     val retrofit = createRetrofitBuilder()
             .callFactory(callFactory)
             .build();
-    val service = retrofit.create(TestServices.GithubSync.class);
-    return service;
+    return retrofit.create(TestServices.GithubSync.class);
   }
   // end: synchronous execution
 
@@ -411,14 +410,14 @@ public class AsyncHttpRetrofitIntegrationTest extends HttpTest {
     list.add(new Contributor(UUID.randomUUID() + ": čćžšđ", 100));
     list.add(new Contributor(UUID.randomUUID() + ": ČĆŽŠĐ", 200));
 
-    IntStream.range(0, (int) (Math.random() * 100)).forEach(i -> {
-      list.add(new Contributor(UUID.randomUUID().toString(), (int) (Math.random() * 500)));
-    });
+    IntStream
+            .range(0, (int) (Math.random() * 100))
+            .forEach(i -> list.add(new Contributor(UUID.randomUUID().toString(), (int) (Math.random() * 500))));
 
     return list;
   }
 
-  private HttpServer configureTestServer(HttpServer server, int status,
+  private void configureTestServer(HttpServer server, int status,
                                          Collection<Contributor> contributors,
                                          String charset) {
     server.enqueueResponse(response -> {
@@ -432,7 +431,5 @@ public class AsyncHttpRetrofitIntegrationTest extends HttpTest {
         response.getOutputStream().write(errorMsg.getBytes());
       }
     });
-
-    return server;
   }
 }

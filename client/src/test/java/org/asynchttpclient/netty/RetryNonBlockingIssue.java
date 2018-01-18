@@ -59,9 +59,9 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
   }
 
   private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) {
-    RequestBuilder r = get(getTargetUrl())//
-            .addQueryParam(action, "1")//
-            .addQueryParam("maxRequests", "" + requests)//
+    RequestBuilder r = get(getTargetUrl())
+            .addQueryParam(action, "1")
+            .addQueryParam("maxRequests", "" + requests)
             .addQueryParam("id", id);
     return client.executeRequest(r);
   }
@@ -69,11 +69,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
   @Test
   public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
 
-    AsyncHttpClientConfig config = config()//
-            .setKeepAlive(true)//
-            .setMaxConnections(100)//
-            .setConnectTimeout(60000)//
-            .setRequestTimeout(30000)//
+    AsyncHttpClientConfig config = config()
+            .setKeepAlive(true)
+            .setMaxConnections(100)
+            .setConnectTimeout(60000)
+            .setRequestTimeout(30000)
             .build();
 
     try (AsyncHttpClient client = asyncHttpClient(config)) {
@@ -100,11 +100,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
   @Test
   public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
 
-    AsyncHttpClientConfig config = config()//
-            .setKeepAlive(true)//
-            .setMaxConnections(100)//
-            .setConnectTimeout(60000)//
-            .setRequestTimeout(30000)//
+    AsyncHttpClientConfig config = config()
+            .setKeepAlive(true)
+            .setMaxConnections(100)
+            .setConnectTimeout(60000)
+            .setRequestTimeout(30000)
             .build();
 
     try (AsyncHttpClient client = asyncHttpClient(config)) {

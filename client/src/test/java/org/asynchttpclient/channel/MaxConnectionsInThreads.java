@@ -46,12 +46,12 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     String[] urls = new String[]{getTargetUrl(), getTargetUrl()};
 
-    AsyncHttpClientConfig config = config()//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(5000)//
-            .setKeepAlive(true)//
-            .setMaxConnections(1)//
-            .setMaxConnectionsPerHost(1)//
+    AsyncHttpClientConfig config = config()
+            .setConnectTimeout(1000)
+            .setRequestTimeout(5000)
+            .setKeepAlive(true)
+            .setMaxConnections(1)
+            .setMaxConnectionsPerHost(1)
             .build();
 
     final CountDownLatch inThreadsLatch = new CountDownLatch(2);

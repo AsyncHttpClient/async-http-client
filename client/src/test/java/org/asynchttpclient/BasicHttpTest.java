@@ -234,7 +234,7 @@ public class BasicHttpTest extends HttpTest {
     withClient().run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
-        client.prepareGet(getTargetUrl())//
+        client.prepareGet(getTargetUrl())
                 .execute(new AsyncCompletionHandlerAdapter() {
                   @Override
                   public Response onCompleted(Response response) {
@@ -255,8 +255,8 @@ public class BasicHttpTest extends HttpTest {
         coo.setPath("/");
         server.enqueueEcho();
 
-        client.prepareGet(getTargetUrl())//
-                .addCookie(coo)//
+        client.prepareGet(getTargetUrl())
+                .addCookie(coo)
                 .execute(new AsyncCompletionHandlerAdapter() {
                   @Override
                   public Response onCompleted(Response response) {
@@ -275,8 +275,8 @@ public class BasicHttpTest extends HttpTest {
     withClient().run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
-        Response response = client.preparePost(getTargetUrl())//
-                .setBody("\u017D\u017D\u017D\u017D\u017D\u017D")//
+        Response response = client.preparePost(getTargetUrl())
+                .setBody("\u017D\u017D\u017D\u017D\u017D\u017D")
                 .execute().get();
         assertEquals(response.getResponseBodyAsBytes(), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(UTF_8));
       }));
@@ -296,9 +296,9 @@ public class BasicHttpTest extends HttpTest {
         sb.setLength(sb.length() - 1);
 
         server.enqueueEcho();
-        client.preparePost(getTargetUrl())//
-                .setHeaders(h)//
-                .setBody(sb.toString())//
+        client.preparePost(getTargetUrl())
+                .setHeaders(h)
+                .setBody(sb.toString())
                 .execute(new AsyncCompletionHandlerAdapter() {
 
                   @Override
@@ -327,9 +327,9 @@ public class BasicHttpTest extends HttpTest {
         sb.setLength(sb.length() - 1);
 
         server.enqueueEcho();
-        client.preparePost(getTargetUrl())//
-                .setHeaders(h)//
-                .setBody(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)))//
+        client.preparePost(getTargetUrl())
+                .setHeaders(h)
+                .setBody(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)))
                 .execute(new AsyncCompletionHandlerAdapter() {
 
                   @Override
@@ -359,9 +359,9 @@ public class BasicHttpTest extends HttpTest {
         ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
 
         server.enqueueEcho();
-        client.preparePut(getTargetUrl())//
-                .setHeaders(h)//
-                .setBody(is)//
+        client.preparePut(getTargetUrl())
+                .setHeaders(h)
+                .setBody(is)
                 .execute(new AsyncCompletionHandlerAdapter() {
 
                   @Override
@@ -381,8 +381,8 @@ public class BasicHttpTest extends HttpTest {
     withClient().run(client ->
       withServer(server).run(server -> {
         server.enqueueEcho();
-        client.preparePost(getTargetUrl())//
-                .addBodyPart(new StringPart("foo", "bar"))//
+        client.preparePost(getTargetUrl())
+                .addBodyPart(new StringPart("foo", "bar"))
                 .execute(new AsyncCompletionHandlerAdapter() {
                   @Override
                   public Response onCompleted(Response response) {
@@ -402,8 +402,8 @@ public class BasicHttpTest extends HttpTest {
         String virtualHost = "localhost:" + server.getHttpPort();
 
         server.enqueueEcho();
-        Response response = client.prepareGet(getTargetUrl())//
-                .setVirtualHost(virtualHost)//
+        Response response = client.prepareGet(getTargetUrl())
+                .setVirtualHost(virtualHost)
                 .execute(new AsyncCompletionHandlerAdapter()).get(TIMEOUT, SECONDS);
 
         assertEquals(response.getStatusCode(), 200);
@@ -511,7 +511,7 @@ public class BasicHttpTest extends HttpTest {
     withClient().run(client ->
       withServer(server).run(server -> {
         server.enqueueOk();
-        Response response = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter())//
+        Response response = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter())
                 .get(TIMEOUT, SECONDS);
         assertTrue(response.getResponseBody().isEmpty());
       }));
@@ -845,17 +845,17 @@ public class BasicHttpTest extends HttpTest {
         client.executeRequest(request, handler).get(3, SECONDS);
         handler.waitForCompletion(3, SECONDS);
 
-        Object[] expectedEvents = new Object[]{//
-                CONNECTION_POOL_EVENT,//
-                HOSTNAME_RESOLUTION_EVENT,//
-                HOSTNAME_RESOLUTION_SUCCESS_EVENT,//
-                CONNECTION_OPEN_EVENT,//
-                CONNECTION_SUCCESS_EVENT,//
-                REQUEST_SEND_EVENT,//
-                HEADERS_WRITTEN_EVENT,//
-                STATUS_RECEIVED_EVENT,//
-                HEADERS_RECEIVED_EVENT,//
-                CONNECTION_OFFER_EVENT,//
+        Object[] expectedEvents = new Object[]{
+                CONNECTION_POOL_EVENT,
+                HOSTNAME_RESOLUTION_EVENT,
+                HOSTNAME_RESOLUTION_SUCCESS_EVENT,
+                CONNECTION_OPEN_EVENT,
+                CONNECTION_SUCCESS_EVENT,
+                REQUEST_SEND_EVENT,
+                HEADERS_WRITTEN_EVENT,
+                STATUS_RECEIVED_EVENT,
+                HEADERS_RECEIVED_EVENT,
+                CONNECTION_OFFER_EVENT,
                 COMPLETED_EVENT};
 
         assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
@@ -896,9 +896,9 @@ public class BasicHttpTest extends HttpTest {
         });
         server.enqueueEcho();
 
-        client.preparePost(getTargetUrl())//
-                .setHeaders(h)//
-                .setBody(new ByteArrayInputStream("{}".getBytes(StandardCharsets.ISO_8859_1)))//
+        client.preparePost(getTargetUrl())
+                .setHeaders(h)
+                .setBody(new ByteArrayInputStream("{}".getBytes(StandardCharsets.ISO_8859_1)))
                 .execute(new AsyncCompletionHandlerAdapter() {
                   @Override
                   public Response onCompleted(Response response) {
@@ -923,7 +923,7 @@ public class BasicHttpTest extends HttpTest {
           public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
                   throws IOException, ServletException {
             assertNull(request.getHeader(TRANSFER_ENCODING.toString()));
-            assertEquals(request.getHeader(CONTENT_LENGTH.toString()),//
+            assertEquals(request.getHeader(CONTENT_LENGTH.toString()),
                     Integer.toString("{}".getBytes(StandardCharsets.ISO_8859_1).length));
             chain.handle(target, request, httpServletRequest, httpServletResponse);
           }
@@ -932,9 +932,9 @@ public class BasicHttpTest extends HttpTest {
         byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
         InputStream bodyStream = new ByteArrayInputStream(bodyBytes);
 
-        client.preparePost(getTargetUrl())//
-                .setHeaders(h)//
-                .setBody(new InputStreamBodyGenerator(bodyStream, bodyBytes.length))//
+        client.preparePost(getTargetUrl())
+                .setHeaders(h)
+                .setBody(new InputStreamBodyGenerator(bodyStream, bodyBytes.length))
                 .execute(new AsyncCompletionHandlerAdapter() {
 
                   @Override

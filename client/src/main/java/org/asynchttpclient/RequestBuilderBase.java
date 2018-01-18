@@ -618,30 +618,30 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     List<Param> formParamsCopy = rb.formParams == null ? Collections.emptyList() : new ArrayList<>(rb.formParams);
     List<Part> bodyPartsCopy = rb.bodyParts == null ? Collections.emptyList() : new ArrayList<>(rb.bodyParts);
 
-    return new DefaultRequest(rb.method,//
-            finalUri,//
-            rb.address,//
-            rb.localAddress,//
-            rb.headers,//
-            cookiesCopy,//
-            rb.byteData,//
-            rb.compositeByteData,//
-            rb.stringData,//
-            rb.byteBufferData,//
-            rb.streamData,//
-            rb.bodyGenerator,//
-            formParamsCopy,//
-            bodyPartsCopy,//
-            rb.virtualHost,//
-            rb.proxyServer,//
-            rb.realm,//
-            rb.file,//
-            rb.followRedirect,//
-            rb.requestTimeout,//
-            rb.readTimeout,//
-            rb.rangeOffset,//
-            rb.charset,//
-            rb.channelPoolPartitioning,//
+    return new DefaultRequest(rb.method,
+            finalUri,
+            rb.address,
+            rb.localAddress,
+            rb.headers,
+            cookiesCopy,
+            rb.byteData,
+            rb.compositeByteData,
+            rb.stringData,
+            rb.byteBufferData,
+            rb.streamData,
+            rb.bodyGenerator,
+            formParamsCopy,
+            bodyPartsCopy,
+            rb.virtualHost,
+            rb.proxyServer,
+            rb.realm,
+            rb.file,
+            rb.followRedirect,
+            rb.requestTimeout,
+            rb.readTimeout,
+            rb.rangeOffset,
+            rb.charset,
+            rb.channelPoolPartitioning,
             rb.nameResolver);
   }
 }

@@ -22,10 +22,10 @@ import org.jdeferred.impl.DeferredObject;
 import java.io.IOException;
 
 public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable, HttpProgress> {
-  public AsyncHttpDeferredObject(BoundRequestBuilder builder) throws IOException {
+  public AsyncHttpDeferredObject(BoundRequestBuilder builder) {
     builder.execute(new AsyncCompletionHandler<Void>() {
       @Override
-      public Void onCompleted(Response response) throws Exception {
+      public Void onCompleted(Response response) {
         AsyncHttpDeferredObject.this.resolve(response);
         return null;
       }
@@ -49,7 +49,7 @@ public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable,
     });
   }
 
-  public static Promise<Response, Throwable, HttpProgress> promise(final BoundRequestBuilder builder) throws IOException {
+  public static Promise<Response, Throwable, HttpProgress> promise(final BoundRequestBuilder builder) {
     return new AsyncHttpDeferredObject(builder).promise();
   }
 }

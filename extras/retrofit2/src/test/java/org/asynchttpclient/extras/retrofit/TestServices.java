@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Github DTOs and services.
  */
-public class TestServices {
+class TestServices {
   /**
    * Synchronous interface
    */
@@ -53,7 +53,7 @@ public class TestServices {
 
   @Value
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class Contributor implements Serializable {
+  static class Contributor implements Serializable {
     private static final long serialVersionUID = 1;
 
     @NonNull

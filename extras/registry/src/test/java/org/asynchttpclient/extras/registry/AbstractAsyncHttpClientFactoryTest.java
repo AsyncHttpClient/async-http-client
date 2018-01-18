@@ -68,7 +68,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
    * If the property is not found via the system property or properties file the default instance of AsyncHttpClient should be returned.
    */
   // ================================================================================================================
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClient() throws Exception {
     try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
       Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
@@ -76,7 +76,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientConfig() throws Exception {
     try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
       Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
@@ -84,7 +84,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientProvider() throws Exception {
     try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
       Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
@@ -98,7 +98,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
    * If the class is specified via a system property then that class should be returned
    */
   // ===================================================================================================================================
-  @Test(groups = "standalone")
+  @Test
   public void testFactoryWithSystemProperty() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -107,7 +107,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientConfigWithSystemProperty() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -116,7 +116,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientProviderWithSystemProperty() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -131,7 +131,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
    * If any of the constructors of the class fail then a AsyncHttpClientException is thrown.
    */
   // ===================================================================================================================================
-  @Test(groups = "standalone", expectedExceptions = BadAsyncHttpClientException.class)
+  @Test(expectedExceptions = BadAsyncHttpClientException.class)
   public void testFactoryWithBadAsyncHttpClient() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, BAD_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -140,7 +140,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientConfigWithBadAsyncHttpClient() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, BAD_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -152,7 +152,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     // Assert.fail("AsyncHttpClientImplException should have been thrown before this point");
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testGetAsyncHttpClientProviderWithBadAsyncHttpClient() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, BAD_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -169,7 +169,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
   /*
    * If the system property exists instantiate the class else if the class is not found throw an AsyncHttpClientException.
    */
-  @Test(groups = "standalone", expectedExceptions = AsyncHttpClientImplException.class)
+  @Test(expectedExceptions = AsyncHttpClientImplException.class)
   public void testFactoryWithNonExistentAsyncHttpClient() throws IOException {
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, NON_EXISTENT_CLIENT_CLASS_NAME);
     AsyncHttpClientConfigHelper.reloadProperties();
@@ -182,7 +182,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
   /**
    * If property is specified but the class can’t be created or found for any reason subsequent calls should throw an AsyncClientException.
    */
-  @Test(groups = "standalone", expectedExceptions = AsyncHttpClientImplException.class)
+  @Test(expectedExceptions = AsyncHttpClientImplException.class)
   public void testRepeatedCallsToBadAsyncHttpClient() throws IOException {
     boolean exceptionCaught = false;
     System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, NON_EXISTENT_CLIENT_CLASS_NAME);

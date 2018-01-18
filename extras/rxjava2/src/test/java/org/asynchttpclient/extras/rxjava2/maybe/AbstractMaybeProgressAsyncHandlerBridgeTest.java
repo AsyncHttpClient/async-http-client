@@ -65,7 +65,7 @@ public class AbstractMaybeProgressAsyncHandlerBridgeTest {
   }
 
   @Test
-  public void forwardsEvents() throws Exception {
+  public void forwardsEvents() {
     /* when */
     underTest.onHeadersWritten();
     then(delegate).should().onHeadersWritten();
@@ -81,10 +81,10 @@ public class AbstractMaybeProgressAsyncHandlerBridgeTest {
 
   @DataProvider
   public Object[][] httpEvents() {
-    return new Object[][]{ //
-            {named("onHeadersWritten", () -> underTest.onHeadersWritten())}, //
-            {named("onContentWriteProgress", () -> underTest.onContentWriteProgress(40, 60, 100))}, //
-            {named("onContentWritten", () -> underTest.onContentWritten())}, //
+    return new Object[][]{
+            {named("onHeadersWritten", () -> underTest.onHeadersWritten())},
+            {named("onContentWriteProgress", () -> underTest.onContentWriteProgress(40, 60, 100))},
+            {named("onContentWritten", () -> underTest.onContentWritten())},
     };
   }
 
@@ -112,9 +112,8 @@ public class AbstractMaybeProgressAsyncHandlerBridgeTest {
     }
 
     @Override
-    protected ProgressAsyncHandler<? extends Object> delegate() {
+    protected ProgressAsyncHandler<?> delegate() {
       return delegate;
     }
-
   }
 }

@@ -23,7 +23,7 @@ class Continue100Interceptor {
 
   private final NettyRequestSender requestSender;
 
-  public Continue100Interceptor(NettyRequestSender requestSender) {
+  Continue100Interceptor(NettyRequestSender requestSender) {
     this.requestSender = requestSender;
   }
 

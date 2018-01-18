@@ -37,8 +37,8 @@ import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 @Sharable
 public final class WebSocketHandler extends AsyncHttpClientHandler {
 
-  public WebSocketHandler(AsyncHttpClientConfig config,//
-                          ChannelManager channelManager,//
+  public WebSocketHandler(AsyncHttpClientConfig config,
+                          ChannelManager channelManager,
                           NettyRequestSender requestSender) {
     super(config, channelManager, requestSender);
   }

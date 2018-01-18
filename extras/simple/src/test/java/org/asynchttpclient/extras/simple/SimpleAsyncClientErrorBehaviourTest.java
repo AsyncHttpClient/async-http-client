@@ -33,10 +33,10 @@ import static org.testng.Assert.assertTrue;
  */
 public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
 
-  @Test(groups = "standalone")
+  @Test
   public void testAccumulateErrorBody() throws Exception {
-    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-            .setUrl(getTargetUrl() + "/nonexistent")//
+    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+            .setUrl(getTargetUrl() + "/nonexistent")
             .setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build()) {
       ByteArrayOutputStream o = new ByteArrayOutputStream(10);
       Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
@@ -49,10 +49,10 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
     }
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testOmitErrorBody() throws Exception {
-    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
-            .setUrl(getTargetUrl() + "/nonexistent")//
+    try (SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+            .setUrl(getTargetUrl() + "/nonexistent")
             .setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build()) {
       ByteArrayOutputStream o = new ByteArrayOutputStream(10);
       Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
@@ -66,10 +66,10 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
   }
 
   @Override
-  public AbstractHandler configureHandler() throws Exception {
+  public AbstractHandler configureHandler() {
     return new AbstractHandler() {
 
-      public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.sendError(404);
         baseRequest.setHandled(true);
       }

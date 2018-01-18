@@ -73,10 +73,10 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
   @Test
   public void testConfigProxy() throws Exception {
-    AsyncHttpClientConfig config = config()//
-            .setFollowRedirect(true)//
-            .setProxyServer(proxyServer("localhost", port1).build())//
-            .setUseInsecureTrustManager(true)//
+    AsyncHttpClientConfig config = config()
+            .setFollowRedirect(true)
+            .setProxyServer(proxyServer("localhost", port1).build())
+            .setUseInsecureTrustManager(true)
             .build();
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
       Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();

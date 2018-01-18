@@ -33,8 +33,7 @@ public class AsyncImplHelper {
   public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
     String asyncHttpClientImplClassName = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(propertyName);
     if (asyncHttpClientImplClassName != null) {
-      Class<AsyncHttpClient> asyncHttpClientImplClass = AsyncImplHelper.getClass(asyncHttpClientImplClassName);
-      return asyncHttpClientImplClass;
+      return AsyncImplHelper.getClass(asyncHttpClientImplClassName);
     }
     return null;
   }

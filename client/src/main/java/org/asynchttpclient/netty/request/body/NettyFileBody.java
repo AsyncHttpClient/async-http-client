@@ -65,7 +65,7 @@ public class NettyFileBody implements NettyBody {
     boolean noZeroCopy = ChannelManager.isSslHandlerConfigured(channel.pipeline()) || config.isDisableZeroCopy();
     Object body = noZeroCopy ? new ChunkedNioFile(fileChannel, offset, length, config.getChunkedFileChunkSize()) : new DefaultFileRegion(fileChannel, offset, length);
 
-    channel.write(body, channel.newProgressivePromise())//
+    channel.write(body, channel.newProgressivePromise())
             .addListener(new WriteProgressListener(future, false, length));
     channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
   }

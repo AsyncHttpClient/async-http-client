@@ -120,9 +120,9 @@ class OAuthSignatureCalculatorInstance {
 
     // List of all query and form parameters added to this request; needed for calculating request signature
     // Start with standard OAuth parameters we need
-    parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())//
+    parameters.add(KEY_OAUTH_CONSUMER_KEY, consumerAuth.getPercentEncodedKey())
             .add(KEY_OAUTH_NONCE, percentEncodedNonce)
-            .add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)//
+            .add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD)
             .add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
     if (userAuth.getKey() != null) {
       parameters.add(KEY_OAUTH_TOKEN, userAuth.getPercentEncodedKey());

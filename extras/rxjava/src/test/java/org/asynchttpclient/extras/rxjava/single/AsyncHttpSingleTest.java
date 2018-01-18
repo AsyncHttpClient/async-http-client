@@ -46,17 +46,17 @@ import static org.testng.Assert.assertEquals;
 
 public class AsyncHttpSingleTest {
 
-  @Test(groups = "standalone", expectedExceptions = {NullPointerException.class})
+  @Test(expectedExceptions = {NullPointerException.class})
   public void testFailsOnNullRequest() {
     AsyncHttpSingle.create((BoundRequestBuilder) null);
   }
 
-  @Test(groups = "standalone", expectedExceptions = {NullPointerException.class})
+  @Test(expectedExceptions = {NullPointerException.class})
   public void testFailsOnNullHandlerSupplier() {
     AsyncHttpSingle.create(mock(BoundRequestBuilder.class), null);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testSuccessfulCompletion() throws Exception {
 
     @SuppressWarnings("unchecked") final AsyncHandler<Object> handler = mock(AsyncHandler.class);
@@ -99,7 +99,7 @@ public class AsyncHttpSingleTest {
     subscriber.assertValue(handler);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testSuccessfulCompletionWithProgress() throws Exception {
 
     @SuppressWarnings("unchecked") final ProgressAsyncHandler<Object> handler = mock(ProgressAsyncHandler.class);
@@ -154,8 +154,8 @@ public class AsyncHttpSingleTest {
     subscriber.assertValue(handler);
   }
 
-  @Test(groups = "standalone")
-  public void testNewRequestForEachSubscription() throws Exception {
+  @Test
+  public void testNewRequestForEachSubscription() {
     final BoundRequestBuilder builder = mock(BoundRequestBuilder.class);
 
     final Single<?> underTest = AsyncHttpSingle.create(builder);
@@ -166,7 +166,7 @@ public class AsyncHttpSingleTest {
     verifyNoMoreInteractions(builder);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testErrorPropagation() throws Exception {
 
     final RuntimeException expectedException = new RuntimeException("expected");
@@ -209,7 +209,7 @@ public class AsyncHttpSingleTest {
     subscriber.assertError(expectedException);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testErrorInOnCompletedPropagation() throws Exception {
 
     final RuntimeException expectedException = new RuntimeException("expected");
@@ -237,8 +237,8 @@ public class AsyncHttpSingleTest {
     subscriber.assertError(expectedException);
   }
 
-  @Test(groups = "standalone")
-  public void testErrorInOnThrowablePropagation() throws Exception {
+  @Test
+  public void testErrorInOnThrowablePropagation() {
 
     final RuntimeException processingException = new RuntimeException("processing");
     final RuntimeException thrownException = new RuntimeException("thrown");
@@ -271,7 +271,7 @@ public class AsyncHttpSingleTest {
     assertEquals(error.getExceptions(), Arrays.asList(processingException, thrownException));
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testAbort() throws Exception {
     final TestSubscriber<Response> subscriber = new TestSubscriber<>();
 
@@ -294,7 +294,7 @@ public class AsyncHttpSingleTest {
     subscriber.assertValue(null);
   }
 
-  @Test(groups = "standalone")
+  @Test
   public void testUnsubscribe() throws Exception {
     @SuppressWarnings("unchecked") final AsyncHandler<Object> handler = mock(AsyncHandler.class);
     final Future<?> future = mock(Future.class);

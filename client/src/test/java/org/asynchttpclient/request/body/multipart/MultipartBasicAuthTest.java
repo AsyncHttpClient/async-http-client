@@ -61,8 +61,8 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     try (AsyncHttpClient client = asyncHttpClient()) {
       try {
         for (int i = 0; i < 20; i++) {
-          f.apply(client.preparePut(getTargetUrl())//
-                  .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))//
+          f.apply(client.preparePut(getTargetUrl())
+                  .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
                   .execute().get();
         }
       } catch (ExecutionException e) {
@@ -88,8 +88,8 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
 
     try (AsyncHttpClient client = asyncHttpClient()) {
       for (int i = 0; i < 20; i++) {
-        Response response = f.apply(client.preparePut(getTargetUrl())//
-                .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))//
+        Response response = f.apply(client.preparePut(getTargetUrl())
+                .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
                 .execute().get();
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getResponseBodyAsBytes().length, Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue());

@@ -35,12 +35,12 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
   public void testMaxTotalConnectionsExceedingException() throws IOException {
     String[] urls = new String[]{"http://google.com", "http://github.com/"};
 
-    AsyncHttpClientConfig config = config()//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(5000)//
-            .setKeepAlive(false)//
-            .setMaxConnections(1)//
-            .setMaxConnectionsPerHost(1)//
+    AsyncHttpClientConfig config = config()
+            .setConnectTimeout(1000)
+            .setRequestTimeout(5000)
+            .setKeepAlive(false)
+            .setMaxConnections(1)
+            .setMaxConnectionsPerHost(1)
             .build();
 
     try (AsyncHttpClient client = asyncHttpClient(config)) {
@@ -75,12 +75,12 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
     final AtomicReference<Throwable> ex = new AtomicReference<>();
     final AtomicReference<String> failedUrl = new AtomicReference<>();
 
-    AsyncHttpClientConfig config = config()//
-            .setConnectTimeout(1000)//
-            .setRequestTimeout(5000)//
-            .setKeepAlive(false)//
-            .setMaxConnections(2)//
-            .setMaxConnectionsPerHost(1)//
+    AsyncHttpClientConfig config = config()
+            .setConnectTimeout(1000)
+            .setRequestTimeout(5000)
+            .setKeepAlive(false)
+            .setMaxConnections(2)
+            .setMaxConnectionsPerHost(1)
             .build();
 
     try (AsyncHttpClient client = asyncHttpClient(config)) {
