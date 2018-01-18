@@ -33,6 +33,9 @@ public class Utf8ByteBufCharsetDecoder {
   private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
   protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
   private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
+  private int totalSize = 0;
+  private int totalNioBuffers = 0;
+  private boolean withoutArray = false;
 
   private static Utf8ByteBufCharsetDecoder pooledDecoder() {
     Utf8ByteBufCharsetDecoder decoder = POOL.get();
@@ -46,6 +49,14 @@ public class Utf8ByteBufCharsetDecoder {
 
   public static String decodeUtf8(ByteBuf... bufs) {
     return pooledDecoder().decode(bufs);
+  }
+
+  public static char[] decodeUtf8Chars(ByteBuf buf) {
+    return pooledDecoder().decodeChars(buf);
+  }
+
+  public static char[] decodeUtf8Chars(ByteBuf... bufs) {
+    return pooledDecoder().decodeChars(bufs);
   }
 
   private static CharsetDecoder configureReplaceCodingErrorActions(CharsetDecoder decoder) {
@@ -98,6 +109,9 @@ public class Utf8ByteBufCharsetDecoder {
     configureReplaceCodingErrorActions(decoder.reset());
     charBuffer.clear();
     splitCharBuffer.clear();
+    totalSize = 0;
+    totalNioBuffers = 0;
+    withoutArray = false;
   }
 
   private boolean stashContinuationBytes(ByteBuffer nioBuffer, int missingBytes) {
@@ -176,7 +190,47 @@ public class Utf8ByteBufCharsetDecoder {
     if (buf.isDirect()) {
       return buf.toString(UTF_8);
     }
+    decodeHead0(buf);
+    return charBuffer.toString();
+  }
 
+  public char[] decodeChars(ByteBuf buf) {
+    if (buf.isDirect()) {
+      return buf.toString(UTF_8).toCharArray();
+    }
+    decodeHead0(buf);
+    return toCharArray(charBuffer);
+  }
+
+  public String decode(ByteBuf... bufs) {
+    if (bufs.length == 1) {
+      return decode(bufs[0]);
+    }
+
+    inspectByteBufs(bufs);
+    if (withoutArray) {
+      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs);
+    } else {
+      decodeHeap0(bufs);
+      return charBuffer.toString();
+    }
+  }
+
+  public char[] decodeChars(ByteBuf... bufs) {
+    if (bufs.length == 1) {
+      return decodeChars(bufs[0]);
+    }
+
+    inspectByteBufs(bufs);
+    if (withoutArray) {
+      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs).toCharArray();
+    } else {
+      decodeHeap0(bufs);
+      return toCharArray(charBuffer);
+    }
+  }
+
+  private void decodeHead0(ByteBuf buf) {
     int length = buf.readableBytes();
     ensureCapacity(length);
 
@@ -185,18 +239,29 @@ public class Utf8ByteBufCharsetDecoder {
     } else {
       decode(buf.nioBuffers());
     }
-
-    return charBuffer.flip().toString();
+    charBuffer.flip();
   }
 
-  public String decode(ByteBuf... bufs) {
-    if (bufs.length == 1) {
-      return decode(bufs[0]);
+  private void decodeHeap0(ByteBuf[] bufs) {
+    ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
+    int i = 0;
+    for (ByteBuf buf : bufs) {
+      for (ByteBuffer nioBuffer : buf.nioBuffers()) {
+        nioBuffers[i++] = nioBuffer;
+      }
     }
+    ensureCapacity(totalSize);
+    decode(nioBuffers);
+    charBuffer.flip();
+  }
 
-    int totalSize = 0;
-    int totalNioBuffers = 0;
-    boolean withoutArray = false;
+  private static char[] toCharArray(CharBuffer charBuffer) {
+    char[] chars = new char[charBuffer.remaining()];
+    charBuffer.get(chars);
+    return chars;
+  }
+
+  private void inspectByteBufs(ByteBuf[] bufs) {
     for (ByteBuf buf : bufs) {
       if (!buf.hasArray()) {
         withoutArray = true;
@@ -204,24 +269,6 @@ public class Utf8ByteBufCharsetDecoder {
       }
       totalSize += buf.readableBytes();
       totalNioBuffers += buf.nioBufferCount();
-    }
-
-    if (withoutArray) {
-      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs);
-
-    } else {
-      ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
-      int i = 0;
-      for (ByteBuf buf : bufs) {
-        for (ByteBuffer nioBuffer : buf.nioBuffers()) {
-          nioBuffers[i++] = nioBuffer;
-        }
-      }
-
-      ensureCapacity(totalSize);
-      decode(nioBuffers);
-
-      return charBuffer.flip().toString();
     }
   }
 }
