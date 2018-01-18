@@ -19,16 +19,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class Parameters {
+final class Parameters {
 
   private List<Parameter> parameters = new ArrayList<>();
 
-  Parameters add(String key, String value) {
+  public Parameters add(String key, String value) {
     parameters.add(new Parameter(key, value));
     return this;
   }
 
-  void reset() {
+  public void reset() {
     parameters.clear();
   }
 

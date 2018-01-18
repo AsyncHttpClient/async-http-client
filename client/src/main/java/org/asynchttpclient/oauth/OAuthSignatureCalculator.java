@@ -41,7 +41,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
    * @param consumerAuth Consumer key to use for signature calculation
    * @param userAuth     Request/access token to use for signature calculation
    */
-  OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
+  public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
     this.consumerAuth = consumerAuth;
     this.userAuth = userAuth;
   }
