@@ -1,9 +1,23 @@
+/*
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at
+ *     http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient.config;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,6 +50,13 @@ public class AsyncHttpClientConfigHelper {
     private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
     private final Properties defaultProperties = parsePropertiesFile(DEFAULT_AHC_PROPERTIES, true);
     private volatile Properties customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
+
+    public Config() {
+    }
+
+    public Config(Properties properties) {
+            customProperties = properties;
+        }
 
     public void reload() {
       customProperties = parsePropertiesFile(CUSTOM_AHC_PROPERTIES, false);
@@ -92,6 +113,14 @@ public class AsyncHttpClientConfigHelper {
       });
     }
 
+    public Optional<String> getStringOpt(String key) {
+      try {
+        return Optional.ofNullable(getString(key));
+      } catch (Exception ex) {
+        return Optional.empty();
+      }
+    }
+
     public String[] getStringArray(String key) {
       String s = getString(key);
       s = s.trim();
@@ -105,12 +134,49 @@ public class AsyncHttpClientConfigHelper {
       return array;
     }
 
+    public Optional<String[]> getStringArrayOpt(String key) {
+      try {
+        return Optional.ofNullable(getStringArray(key));
+      } catch (Exception ex) {
+        return Optional.empty();
+      }
+    }
+
     public int getInt(String key) {
       return Integer.parseInt(getString(key));
     }
 
+    public Optional<Integer> getIntOpt(String key) {
+      try {
+        return Optional.of(getInt(key));
+      } catch (Exception ex) {
+        return Optional.empty();
+      }
+    }
+
+    public long getLong(String key) {
+      return Long.parseLong(getString(key));
+    }
+
+    public Optional<Long> getLongOpt(String key) {
+      try {
+        return Optional.of(getLong(key));
+      } catch (Exception ex) {
+        return Optional.empty();
+      }
+    }
+
+    public Integer getInteger(String key) {
+      String s = getString(key);
+      return s != null ? Integer.valueOf(s) : null;
+    }
+
     public boolean getBoolean(String key) {
       return Boolean.parseBoolean(getString(key));
+    }
+
+    public Optional<Boolean> getBooleanOpt(String key) {
+      return Optional.ofNullable(getString(key)).map(Boolean::parseBoolean);
     }
   }
 }

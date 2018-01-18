@@ -21,6 +21,12 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Timer;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
+
+import java.util.*;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
+
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
@@ -33,14 +39,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
-
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
-
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
  * -Dorg.asynchttpclient.nameOfTheProperty
@@ -48,18 +46,6 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
  * @see AsyncHttpClientConfig for documentation
  */
 public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
-
-  private static final String AHC_VERSION;
-
-  static {
-    try (InputStream is = DefaultAsyncHttpClientConfig.class.getResourceAsStream("/ahc-version.properties")) {
-      Properties prop = new Properties();
-      prop.load(is);
-      AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
-    } catch (IOException e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
 
   // http
   private final boolean followRedirect;
