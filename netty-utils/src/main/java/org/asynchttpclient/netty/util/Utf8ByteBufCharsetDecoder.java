@@ -29,7 +29,7 @@ public class Utf8ByteBufCharsetDecoder {
   private static final int UTF_8_MAX_BYTES_PER_CHAR = 4;
   private static final char INVALID_CHAR_REPLACEMENT = '�';
 
-  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = ThreadLocal.withInitial(() -> new Utf8ByteBufCharsetDecoder());
+  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = ThreadLocal.withInitial(Utf8ByteBufCharsetDecoder::new);
   private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
   protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
   private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
@@ -161,14 +161,14 @@ public class Utf8ByteBufCharsetDecoder {
     }
   }
 
-  private void decode(ByteBuffer[] nioBuffers, int length) {
+  private void decode(ByteBuffer[] nioBuffers) {
     int count = nioBuffers.length;
     for (int i = 0; i < count; i++) {
       decodePartial(nioBuffers[i].duplicate(), i == count - 1);
     }
   }
 
-  private void decodeSingleNioBuffer(ByteBuffer nioBuffer, int length) {
+  private void decodeSingleNioBuffer(ByteBuffer nioBuffer) {
     decoder.decode(nioBuffer, charBuffer, true);
   }
 
@@ -181,9 +181,9 @@ public class Utf8ByteBufCharsetDecoder {
     ensureCapacity(length);
 
     if (buf.nioBufferCount() == 1) {
-      decodeSingleNioBuffer(buf.internalNioBuffer(buf.readerIndex(), length).duplicate(), length);
+      decodeSingleNioBuffer(buf.internalNioBuffer(buf.readerIndex(), length).duplicate());
     } else {
-      decode(buf.nioBuffers(), buf.readableBytes());
+      decode(buf.nioBuffers());
     }
 
     return charBuffer.flip().toString();
@@ -219,7 +219,7 @@ public class Utf8ByteBufCharsetDecoder {
       }
 
       ensureCapacity(totalSize);
-      decode(nioBuffers, totalSize);
+      decode(nioBuffers);
 
       return charBuffer.flip().toString();
     }

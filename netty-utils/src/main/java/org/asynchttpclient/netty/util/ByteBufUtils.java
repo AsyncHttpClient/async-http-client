@@ -16,7 +16,6 @@ package org.asynchttpclient.netty.util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
 import static java.nio.charset.StandardCharsets.*;
@@ -49,11 +48,11 @@ public final class ByteBufUtils {
     }
   }
 
-  public static String byteBuf2String(Charset charset, ByteBuf buf) throws CharacterCodingException {
+  public static String byteBuf2String(Charset charset, ByteBuf buf) {
     return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(buf) : buf.toString(charset);
   }
 
-  public static String byteBuf2String(Charset charset, ByteBuf... bufs) throws CharacterCodingException {
+  public static String byteBuf2String(Charset charset, ByteBuf... bufs) {
     return isUtf8OrUsAscii(charset) ? Utf8ByteBufCharsetDecoder.decodeUtf8(bufs) : byteBuf2StringDefault(charset, bufs);
   }
 
