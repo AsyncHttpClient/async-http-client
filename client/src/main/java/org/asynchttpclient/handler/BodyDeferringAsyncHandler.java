@@ -257,13 +257,9 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
       try {
         getLastResponse();
       } catch (ExecutionException e) {
-        IOException ioe = new IOException(e.getMessage());
-        ioe.initCause(e.getCause());
-        throw ioe;
+        throw new IOException(e.getMessage(), e.getCause());
       } catch (InterruptedException e) {
-        IOException ioe = new IOException(e.getMessage());
-        ioe.initCause(e);
-        throw ioe;
+        throw new IOException(e.getMessage(), e);
       }
     }
 

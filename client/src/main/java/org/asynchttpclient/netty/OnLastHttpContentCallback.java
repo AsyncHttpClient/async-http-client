@@ -16,7 +16,7 @@ public abstract class OnLastHttpContentCallback {
 
   protected final NettyResponseFuture<?> future;
 
-  public OnLastHttpContentCallback(NettyResponseFuture<?> future) {
+  protected OnLastHttpContentCallback(NettyResponseFuture<?> future) {
     this.future = future;
   }
 

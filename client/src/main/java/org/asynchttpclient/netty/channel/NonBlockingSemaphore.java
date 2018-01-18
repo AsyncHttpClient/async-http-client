@@ -24,7 +24,7 @@ class NonBlockingSemaphore implements NonBlockingSemaphoreLike {
 
   private final AtomicInteger permits;
 
-  public NonBlockingSemaphore(int permits) {
+  NonBlockingSemaphore(int permits) {
     this.permits = new AtomicInteger(permits);
   }
 

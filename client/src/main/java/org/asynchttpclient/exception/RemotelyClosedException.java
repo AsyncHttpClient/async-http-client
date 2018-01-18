@@ -21,7 +21,7 @@ public final class RemotelyClosedException extends IOException {
 
   public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
 
-  public RemotelyClosedException() {
+  RemotelyClosedException() {
     super("Remotely closed");
   }
 }
