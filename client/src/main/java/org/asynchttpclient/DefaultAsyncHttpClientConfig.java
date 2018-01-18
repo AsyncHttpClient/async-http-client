@@ -24,6 +24,7 @@ import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -48,18 +49,6 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
  * @see AsyncHttpClientConfig for documentation
  */
 public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
-
-  private static final String AHC_VERSION;
-
-  static {
-    try (InputStream is = DefaultAsyncHttpClientConfig.class.getResourceAsStream("/ahc-version.properties")) {
-      Properties prop = new Properties();
-      prop.load(is);
-      AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
-    } catch (IOException e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
 
   // http
   private final boolean followRedirect;
@@ -302,7 +291,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
   @Override
   public String getAhcVersion() {
-    return AHC_VERSION;
+    return AsyncHttpClientConfigDefaults.AHC_VERSION;
   }
 
   // http
