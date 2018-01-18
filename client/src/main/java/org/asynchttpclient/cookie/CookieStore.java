@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 
 /**
  * This interface represents an abstract store for {@link Cookie} objects.
- * <p>
+ *
  * <p>{@link CookieManager} will call {@code CookieStore.add} to save cookies
  * for every incoming HTTP response, and call {@code CookieStore.get} to
  * retrieve cookie for every outgoing HTTP request. A CookieStore
@@ -35,13 +35,13 @@ public interface CookieStore {
   /**
    * Adds one {@link Cookie} to the store. This is called for every incoming HTTP response.
    * If the given cookie has already expired it will not be added, but existing values will still be removed.
-   * <p>
+   *
    * <p>A cookie to store may or may not be associated with an URI. If it
    * is not associated with an URI, the cookie's domain and path attribute
    * will indicate where it comes from. If it is associated with an URI and
    * its domain and path attribute are not specified, given URI will indicate
    * where this cookie comes from.
-   * <p>
+   *
    * <p>If a cookie corresponding to the given URI already exists,
    * then it is replaced with the new one.
    *

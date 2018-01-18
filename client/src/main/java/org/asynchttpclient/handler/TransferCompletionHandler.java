@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}
  * <br>
  * <blockquote>
- * <p>
  * <pre>
  * AsyncHttpClient client = new AsyncHttpClient();
  * TransferCompletionHandler tl = new TransferCompletionHandler();
@@ -52,7 +51,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  * Response response = httpClient.prepareGet("http://...").execute(tl).get();
  * </pre>
- * <p>
  * </blockquote>
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {

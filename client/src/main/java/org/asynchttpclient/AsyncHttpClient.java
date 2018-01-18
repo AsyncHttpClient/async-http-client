@@ -35,28 +35,28 @@ import java.util.function.Predicate;
  * <blockquote><pre>
  *       AsyncHttpClient c = new AsyncHttpClient();
  *       Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandler&lt;Response&gt;() &#123;
- * <p>
+ *
  *          &#64;Override
  *          public Response onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response;
  *          &#125;
- * <p>
+ *
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
  *      Response response = f.get();
- * <p>
+ *
  *      // We are just interested to retrieve the status code.
  *     Future&lt;Integer&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandler&lt;Integer&gt;() &#123;
- * <p>
+ *
  *          &#64;Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response.getStatusCode();
  *          &#125;
- * <p>
+ *
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
@@ -71,44 +71,44 @@ import java.util.function.Predicate;
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future&lt;String&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncHandler&lt;String&gt;() &#123;
  *          private StringBuilder builder = new StringBuilder();
- * <p>
+ *
  *          &#64;Override
  *          public STATE onStatusReceived(HttpResponseStatus s) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          }
- * <p>
+ *
  *          &#64;Override
  *          public STATE onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
- * <p>
+ *
  *          }
  *          &#64;Override
- * <p>
+ *
  *          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          &#125;
- * <p>
+ *
  *          &#64;Override
  *          public String onCompleted() throws Exception &#123;
  *               // Will be invoked once the response has been fully read or a ResponseComplete exception
  *               // has been thrown.
  *               return builder.toString();
  *          &#125;
- * <p>
+ *
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
- * <p>
+ *
  *      String bodyResponse = f.get();
  * </pre></blockquote>
  * You can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by returning a new {@link AsyncHandler.State#ABORT} at any moment.
- * <p>
+ *
  * This class can also be used without the need of {@link AsyncHandler}.
  * <br>
  * <blockquote><pre>
@@ -116,7 +116,7 @@ import java.util.function.Predicate;
  *      Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
- * <p>
+ *
  * Finally, you can configure the AsyncHttpClient using an {@link DefaultAsyncHttpClientConfig} instance.
  * <br>
  * <blockquote><pre>

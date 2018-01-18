@@ -52,18 +52,18 @@ import static org.asynchttpclient.util.MiscUtils.withDefault;
  * .setRequestTimeout(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
- * <p>
+ *
  * StringBuilder s = new StringBuilder();
  * Future&lt;Response&gt; future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
  * </pre></blockquote>
  * or
  * <blockquote><pre>
  * public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
- * <p>
+ *
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
  * .setUrl(getTargetUrl())
  * .build();
- * <p>
+ *
  * ByteArrayOutputStream o = new ByteArrayOutputStream(10);
  * Future&lt;Response&gt; future = client.post(new FileBodyGenerator(myFile), new OutputStreamBodyConsumer(o));
  * </pre></blockquote>
