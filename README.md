@@ -19,6 +19,16 @@ Binaries are deployed on Maven central:
 </dependency>
 ```
 
+## Version
+
+AHC doesn't use SEMVER, and won't.
+
+* MAJOR = huge refactoring
+* MINOR = new features and minor API changes, upgrading should require 1 hour of work to adapt sources
+* FIX = no API change, just bug fixes, only those are source and binary compatible with same minor version
+
+Check CHANGES.md for migration path between versions.
+
 ## Basics
 
 Feel free to check the [Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/) or the code for more information.

@@ -7,4 +7,11 @@
 * `AsyncHttpClient` now exposes stats with `getClientStats`.
 * `AsyncHandlerExtensions` was dropped in favor of default methods in `AsyncHandler`.
 * `WebSocket` and `WebSocketListener` methods were renamed to mention frames
-* `AsyncHttpClientConfig#isAggregateWebSocketFrameFragments` now lets you disable WebSocket fragmented frames aggregation
+* `AsyncHttpClientConfig` various changes:
+  * new `getCookieStore` now lets you configure a CookieStore (enabled by default)
+  * new `isAggregateWebSocketFrameFragments` now lets you disable WebSocket fragmented frames aggregation
+  * new `isUseLaxCookieEncoder` lets you loosen cookie chars validation
+  * `isAcceptAnyCertificate` was dropped, as it didn't do what its name stated
+  * new `isUseInsecureTrustManager` lets you use a permissive TrustManager, that would typically let you accept self-signed certificates
+  * new `isDisableHttpsEndpointIdentificationAlgorithm` disables setting `HTTPS` algorithm on the SSLEngines, typically disables SNI and HTTPS hostname verification
+  * new `isAggregateWebSocketFrameFragments` lets you disable fragmented WebSocket frames aggregation
