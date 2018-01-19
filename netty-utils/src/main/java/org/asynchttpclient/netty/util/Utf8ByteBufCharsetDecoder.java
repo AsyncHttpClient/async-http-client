@@ -22,6 +22,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.netty.util.ByteBufUtils.*;
 
 public class Utf8ByteBufCharsetDecoder {
 
@@ -209,7 +210,7 @@ public class Utf8ByteBufCharsetDecoder {
 
     inspectByteBufs(bufs);
     if (withoutArray) {
-      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs);
+      return ByteBufUtils.byteBuf2String0(UTF_8, bufs);
     } else {
       decodeHeap0(bufs);
       return charBuffer.toString();
@@ -223,7 +224,7 @@ public class Utf8ByteBufCharsetDecoder {
 
     inspectByteBufs(bufs);
     if (withoutArray) {
-      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs).toCharArray();
+      return ByteBufUtils.byteBuf2Chars0(UTF_8, bufs);
     } else {
       decodeHeap0(bufs);
       return toCharArray(charBuffer);
@@ -253,12 +254,6 @@ public class Utf8ByteBufCharsetDecoder {
     ensureCapacity(totalSize);
     decode(nioBuffers);
     charBuffer.flip();
-  }
-
-  private static char[] toCharArray(CharBuffer charBuffer) {
-    char[] chars = new char[charBuffer.remaining()];
-    charBuffer.get(chars);
-    return chars;
   }
 
   private void inspectByteBufs(ByteBuf[] bufs) {
