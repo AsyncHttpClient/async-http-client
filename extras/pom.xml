@@ -20,6 +20,7 @@
     <module>rxjava2</module>
     <module>simple</module>
     <module>retrofit2</module>
+    <module>typesafeconfig</module>
   </modules>
 
   <dependencies>
