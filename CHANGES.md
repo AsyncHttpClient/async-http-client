@@ -1,3 +1,8 @@
+## From 2.1 to 2.2
+
+* New [Typesafe config](https://github.com/lightbend/config) extra module
+* new `enableWebSocketCompression` config to enable per-message and per-frame WebSocket compression extension
+
 ## From 2.0 to 2.1
 
 * AHC 2.1 targets Netty 4.1.
