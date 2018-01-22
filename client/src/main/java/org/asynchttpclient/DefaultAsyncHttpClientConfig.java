@@ -34,8 +34,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
@@ -355,8 +353,23 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     return proxyServerSelector;
   }
 
-  // timeouts
+  // websocket
+  @Override
+  public boolean isAggregateWebSocketFrameFragments() {
+    return aggregateWebSocketFrameFragments;
+  }
 
+  @Override
+  public int getWebSocketMaxBufferSize() {
+    return webSocketMaxBufferSize;
+  }
+
+  @Override
+  public int getWebSocketMaxFrameSize() {
+    return webSocketMaxFrameSize;
+  }
+
+  // timeouts
   @Override
   public int getConnectTimeout() {
     return connectTimeout;
@@ -426,11 +439,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public boolean isValidateResponseHeaders() {
     return validateResponseHeaders;
-  }
-
-  @Override
-  public boolean isAggregateWebSocketFrameFragments() {
-    return aggregateWebSocketFrameFragments;
   }
 
   // ssl
@@ -564,16 +572,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
-  public int getWebSocketMaxBufferSize() {
-    return webSocketMaxBufferSize;
-  }
-
-  @Override
-  public int getWebSocketMaxFrameSize() {
-    return webSocketMaxFrameSize;
-  }
-
-  @Override
   public Map<ChannelOption<Object>, Object> getChannelOptions() {
     return channelOptions;
   }
@@ -648,13 +646,19 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private boolean useProxySelector = defaultUseProxySelector();
     private boolean useProxyProperties = defaultUseProxyProperties();
     private boolean validateResponseHeaders = defaultValidateResponseHeaders();
+
+    // websocket
     private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
+    private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
+    private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
+
     // timeouts
     private int connectTimeout = defaultConnectTimeout();
     private int requestTimeout = defaultRequestTimeout();
     private int readTimeout = defaultReadTimeout();
     private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
     private int shutdownTimeout = defaultShutdownTimeout();
+
     // keep-alive
     private boolean keepAlive = defaultKeepAlive();
     private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
@@ -664,6 +668,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
     private ChannelPool channelPool;
     private KeepAliveStrategy keepAliveStrategy = new DefaultKeepAliveStrategy();
+
     // ssl
     private boolean useOpenSsl = defaultUseOpenSsl();
     private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
@@ -675,6 +680,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int sslSessionTimeout = defaultSslSessionTimeout();
     private SslContext sslContext;
     private SslEngineFactory sslEngineFactory;
+
     // cookie store
     private CookieStore cookieStore = new ThreadSafeCookieStore();
 
@@ -692,8 +698,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
     private int httpClientCodecInitialBufferSize = defaultHttpClientCodecInitialBufferSize();
     private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
-    private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
-    private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
     private boolean useNativeTransport = defaultUseNativeTransport();
     private ByteBufAllocator allocator;
     private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
@@ -721,6 +725,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       disableZeroCopy = config.isDisableZeroCopy();
       keepEncodingHeader = config.isKeepEncodingHeader();
       proxyServerSelector = config.getProxyServerSelector();
+
+      // websocket
+      aggregateWebSocketFrameFragments = config.isAggregateWebSocketFrameFragments();
+      webSocketMaxBufferSize = config.getWebSocketMaxBufferSize();
+      webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
 
       // timeouts
       connectTimeout = config.getConnectTimeout();
@@ -766,8 +775,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       httpClientCodecMaxHeaderSize = config.getHttpClientCodecMaxHeaderSize();
       httpClientCodecMaxChunkSize = config.getHttpClientCodecMaxChunkSize();
       chunkedFileChunkSize = config.getChunkedFileChunkSize();
-      webSocketMaxBufferSize = config.getWebSocketMaxBufferSize();
-      webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
       channelOptions.putAll(config.getChannelOptions());
       eventLoopGroup = config.getEventLoopGroup();
       useNativeTransport = config.isUseNativeTransport();
@@ -851,11 +858,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
-    public Builder setAggregateWebSocketFrameFragments(boolean aggregateWebSocketFrameFragments) {
-      this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
-      return this;
-    }
-
     public Builder setProxyServer(ProxyServer proxyServer) {
       this.proxyServerSelector = uri -> proxyServer;
       return this;
@@ -872,6 +874,22 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setUseProxyProperties(boolean useProxyProperties) {
       this.useProxyProperties = useProxyProperties;
+      return this;
+    }
+
+    // websocket
+    public Builder setAggregateWebSocketFrameFragments(boolean aggregateWebSocketFrameFragments) {
+      this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
+      return this;
+    }
+
+    public Builder setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
+      this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+      return this;
+    }
+
+    public Builder setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
+      this.webSocketMaxFrameSize = webSocketMaxFrameSize;
       return this;
     }
 
@@ -1079,16 +1097,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setChunkedFileChunkSize(int chunkedFileChunkSize) {
       this.chunkedFileChunkSize = chunkedFileChunkSize;
-      return this;
-    }
-
-    public Builder setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
-      this.webSocketMaxBufferSize = webSocketMaxBufferSize;
-      return this;
-    }
-
-    public Builder setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
-      this.webSocketMaxFrameSize = webSocketMaxFrameSize;
       return this;
     }
 

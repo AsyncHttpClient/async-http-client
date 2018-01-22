@@ -260,12 +260,12 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   @Override
   public int getWebSocketMaxBufferSize() {
-    return getIntegerOpt(WEB_SOCKET_MAX_BUFFER_SIZE_CONFIG).orElse(defaultWebSocketMaxBufferSize());
+    return getIntegerOpt(WEBSOCKET_MAX_BUFFER_SIZE_CONFIG).orElse(defaultWebSocketMaxBufferSize());
   }
 
   @Override
   public int getWebSocketMaxFrameSize() {
-    return getIntegerOpt(WEB_SOCKET_MAX_FRAME_SIZE_CONFIG).orElse(defaultWebSocketMaxFrameSize());
+    return getIntegerOpt(WEBSOCKET_MAX_FRAME_SIZE_CONFIG).orElse(defaultWebSocketMaxFrameSize());
   }
 
   @Override
@@ -335,7 +335,7 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   @Override
   public boolean isAggregateWebSocketFrameFragments() {
-    return getBooleanOpt(AGGREGATE_WEB_SOCKET_FRAME_FRAGMENTS_CONFIG).orElse(defaultAggregateWebSocketFrameFragments());
+    return getBooleanOpt(AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG).orElse(defaultAggregateWebSocketFrameFragments());
   }
 
   @Override

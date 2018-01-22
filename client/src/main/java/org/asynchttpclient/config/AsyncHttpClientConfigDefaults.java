@@ -37,7 +37,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String USE_PROXY_SELECTOR_CONFIG = "useProxySelector";
   public static final String USE_PROXY_PROPERTIES_CONFIG = "useProxyProperties";
   public static final String VALIDATE_RESPONSE_HEADERS_CONFIG = "validateResponseHeaders";
-  public static final String AGGREGATE_WEB_SOCKET_FRAME_FRAGMENTS_CONFIG = "aggregateWebSocketFrameFragments";
+  public static final String AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG = "aggregateWebSocketFrameFragments";
   public static final String STRICT_302_HANDLING_CONFIG = "strict302Handling";
   public static final String KEEP_ALIVE_CONFIG = "keepAlive";
   public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
@@ -60,8 +60,8 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String DISABLE_ZERO_COPY_CONFIG = "disableZeroCopy";
   public static final String HANDSHAKE_TIMEOUT_CONFIG = "handshakeTimeout";
   public static final String CHUNKED_FILE_CHUNK_SIZE_CONFIG = "chunkedFileChunkSize";
-  public static final String WEB_SOCKET_MAX_BUFFER_SIZE_CONFIG = "webSocketMaxBufferSize";
-  public static final String WEB_SOCKET_MAX_FRAME_SIZE_CONFIG = "webSocketMaxFrameSize";
+  public static final String WEBSOCKET_MAX_BUFFER_SIZE_CONFIG = "webSocketMaxBufferSize";
+  public static final String WEBSOCKET_MAX_FRAME_SIZE_CONFIG = "webSocketMaxFrameSize";
   public static final String KEEP_ENCODING_HEADER_CONFIG = "keepEncodingHeader";
   public static final String SHUTDOWN_QUIET_PERIOD_CONFIG = "shutdownQuietPeriod";
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
@@ -156,7 +156,7 @@ public final class AsyncHttpClientConfigDefaults {
   }
 
   public static boolean defaultAggregateWebSocketFrameFragments() {
-    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + AGGREGATE_WEB_SOCKET_FRAME_FRAGMENTS_CONFIG);
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG);
   }
 
   public static boolean defaultStrict302Handling() {
@@ -248,11 +248,11 @@ public final class AsyncHttpClientConfigDefaults {
   }
 
   public static int defaultWebSocketMaxBufferSize() {
-    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEB_SOCKET_MAX_BUFFER_SIZE_CONFIG);
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEBSOCKET_MAX_BUFFER_SIZE_CONFIG);
   }
 
   public static int defaultWebSocketMaxFrameSize() {
-    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEB_SOCKET_MAX_FRAME_SIZE_CONFIG);
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEBSOCKET_MAX_FRAME_SIZE_CONFIG);
   }
 
   public static boolean defaultKeepEncodingHeader() {
