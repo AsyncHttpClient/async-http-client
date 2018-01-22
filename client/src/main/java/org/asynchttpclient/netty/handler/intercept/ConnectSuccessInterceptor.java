@@ -47,7 +47,7 @@ public class ConnectSuccessInterceptor {
     Uri requestUri = request.getUri();
     LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
-    channelManager.upgradeProtocol(channel.pipeline(), requestUri);
+    channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
     future.setReuseChannel(true);
     future.setConnectAllowed(false);
     requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());

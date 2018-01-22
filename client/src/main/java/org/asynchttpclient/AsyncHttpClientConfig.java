@@ -296,6 +296,8 @@ public interface AsyncHttpClientConfig {
 
   boolean isAggregateWebSocketFrameFragments();
 
+  boolean isEnableWebSocketCompression();
+
   boolean isTcpNoDelay();
 
   boolean isSoReuseAddress();

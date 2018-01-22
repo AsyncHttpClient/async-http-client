@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
@@ -71,6 +72,7 @@ public class ChannelManager {
   public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
   public static final String WS_DECODER_HANDLER = "ws-decoder";
   public static final String WS_FRAME_AGGREGATOR = "ws-aggregator";
+  public static final String WS_COMPRESSOR_HANDLER = "ws-compressor";
   public static final String WS_ENCODER_HANDLER = "ws-encoder";
   public static final String AHC_HTTP_HANDLER = "ahc-http";
   public static final String AHC_WS_HANDLER = "ahc-ws";
@@ -236,6 +238,10 @@ public class ChannelManager {
                 .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
                 .addLast(AHC_WS_HANDLER, wsHandler);
 
+        if (config.isEnableWebSocketCompression()) {
+          pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+        }
+
         if (LOGGER.isDebugEnabled()) {
           pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
         }
@@ -332,7 +338,7 @@ public class ChannelManager {
     return sslHandler;
   }
 
-  public void upgradeProtocol(ChannelPipeline pipeline, Uri requestUri) {
+  public void updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
     if (pipeline.get(HTTP_CLIENT_CODEC) != null)
       pipeline.remove(HTTP_CLIENT_CODEC);
 
@@ -430,7 +436,8 @@ public class ChannelManager {
 
   public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
     pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-    pipeline.addBefore(AHC_WS_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, config.getWebSocketMaxFrameSize()));
+    pipeline.addAfter(WS_ENCODER_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, config.isEnableWebSocketCompression(), config.getWebSocketMaxFrameSize()));
+
     if (config.isAggregateWebSocketFrameFragments()) {
       pipeline.addAfter(WS_DECODER_HANDLER, WS_FRAME_AGGREGATOR, new WebSocketFrameAggregator(config.getWebSocketMaxBufferSize()));
     }

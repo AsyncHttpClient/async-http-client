@@ -38,6 +38,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String USE_PROXY_PROPERTIES_CONFIG = "useProxyProperties";
   public static final String VALIDATE_RESPONSE_HEADERS_CONFIG = "validateResponseHeaders";
   public static final String AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG = "aggregateWebSocketFrameFragments";
+  public static final String ENABLE_WEBSOCKET_COMPRESSION_CONFIG= "enableWebSocketCompression";
   public static final String STRICT_302_HANDLING_CONFIG = "strict302Handling";
   public static final String KEEP_ALIVE_CONFIG = "keepAlive";
   public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
@@ -157,6 +158,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static boolean defaultAggregateWebSocketFrameFragments() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG);
+  }
+
+  public static boolean defaultEnableWebSocketCompression() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + ENABLE_WEBSOCKET_COMPRESSION_CONFIG);
   }
 
   public static boolean defaultStrict302Handling() {

@@ -339,6 +339,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isEnableWebSocketCompression() {
+    return getBooleanOpt(ENABLE_WEBSOCKET_COMPRESSION_CONFIG).orElse(defaultEnableWebSocketCompression());
+  }
+
+  @Override
   public boolean isTcpNoDelay() {
     return getBooleanOpt(TCP_NO_DELAY_CONFIG).orElse(defaultTcpNoDelay());
   }

@@ -62,7 +62,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final boolean keepEncodingHeader;
   private final ProxyServerSelector proxyServerSelector;
   private final boolean validateResponseHeaders;
+
+  // websockets
   private final boolean aggregateWebSocketFrameFragments;
+  private final boolean enablewebSocketCompression;
+  private final int webSocketMaxBufferSize;
+  private final int webSocketMaxFrameSize;
 
   // timeouts
   private final int connectTimeout;
@@ -108,8 +113,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final int httpClientCodecMaxChunkSize;
   private final int httpClientCodecInitialBufferSize;
   private final int chunkedFileChunkSize;
-  private final int webSocketMaxBufferSize;
-  private final int webSocketMaxFrameSize;
   private final Map<ChannelOption<Object>, Object> channelOptions;
   private final EventLoopGroup eventLoopGroup;
   private final boolean useNativeTransport;
@@ -141,6 +144,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        ProxyServerSelector proxyServerSelector,
                                        boolean validateResponseHeaders,
                                        boolean aggregateWebSocketFrameFragments,
+                                       boolean enablewebSocketCompression,
 
                                        // timeouts
                                        int connectTimeout,
@@ -220,7 +224,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.keepEncodingHeader = keepEncodingHeader;
     this.proxyServerSelector = proxyServerSelector;
     this.validateResponseHeaders = validateResponseHeaders;
+
+    // websocket
     this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
+    this.enablewebSocketCompression = enablewebSocketCompression;
+    this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+    this.webSocketMaxFrameSize = webSocketMaxFrameSize;
 
     // timeouts
     this.connectTimeout = connectTimeout;
@@ -273,8 +282,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
     this.httpClientCodecInitialBufferSize = httpClientCodecInitialBufferSize;
     this.chunkedFileChunkSize = chunkedFileChunkSize;
-    this.webSocketMaxBufferSize = webSocketMaxBufferSize;
-    this.webSocketMaxFrameSize = webSocketMaxFrameSize;
     this.channelOptions = channelOptions;
     this.eventLoopGroup = eventLoopGroup;
     this.useNativeTransport = useNativeTransport;
@@ -357,6 +364,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public boolean isAggregateWebSocketFrameFragments() {
     return aggregateWebSocketFrameFragments;
+  }
+
+  @Override
+  public boolean isEnableWebSocketCompression() {
+    return enablewebSocketCompression;
   }
 
   @Override
@@ -649,6 +661,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // websocket
     private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
+    private boolean enablewebSocketCompression = defaultEnableWebSocketCompression();
     private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
     private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
 
@@ -728,6 +741,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
       // websocket
       aggregateWebSocketFrameFragments = config.isAggregateWebSocketFrameFragments();
+      enablewebSocketCompression = config.isEnableWebSocketCompression();
       webSocketMaxBufferSize = config.getWebSocketMaxBufferSize();
       webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
 
@@ -880,6 +894,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // websocket
     public Builder setAggregateWebSocketFrameFragments(boolean aggregateWebSocketFrameFragments) {
       this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
+      return this;
+    }
+
+    public Builder setEnablewebSocketCompression(boolean enablewebSocketCompression) {
+      this.enablewebSocketCompression = enablewebSocketCompression;
       return this;
     }
 
@@ -1181,6 +1200,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               resolveProxyServerSelector(),
               validateResponseHeaders,
               aggregateWebSocketFrameFragments,
+              enablewebSocketCompression,
               connectTimeout,
               requestTimeout,
               readTimeout,

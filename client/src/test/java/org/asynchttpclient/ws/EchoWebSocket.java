@@ -15,11 +15,16 @@ package org.asynchttpclient.ws;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class EchoWebSocket extends WebSocketAdapter {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EchoWebSocket.class);
 
   @Override
   public void onWebSocketConnect(Session sess) {
@@ -39,6 +44,7 @@ public class EchoWebSocket extends WebSocketAdapter {
       return;
     }
     try {
+      LOGGER.debug("Received binary frame of size {}: {}", len, new String(payload, offset, len, UTF_8));
       getRemote().sendBytes(ByteBuffer.wrap(payload, offset, len));
     } catch (IOException e) {
       e.printStackTrace();
@@ -50,11 +56,15 @@ public class EchoWebSocket extends WebSocketAdapter {
     if (isNotConnected()) {
       return;
     }
+
+    if (message.equals("CLOSE")) {
+      getSession().close();
+      return;
+    }
+
     try {
-      if (message.equals("CLOSE"))
-        getSession().close();
-      else
-        getRemote().sendString(message);
+      LOGGER.debug("Received text frame of size: {}", message);
+      getRemote().sendString(message);
     } catch (IOException e) {
       e.printStackTrace();
     }

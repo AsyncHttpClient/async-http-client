@@ -20,17 +20,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
 import static org.testng.Assert.assertEquals;
 
 public class ByteMessageTest extends AbstractBasicWebSocketTest {
 
   private static final byte[] ECHO_BYTES = "ECHO".getBytes(StandardCharsets.UTF_8);
 
-  @Test
-  public void echoByte() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient()) {
+  private void echoByte0(boolean enableCompression) throws Exception {
+    try (AsyncHttpClient c = asyncHttpClient(config().setEnablewebSocketCompression(enableCompression))) {
       final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<byte[]> text = new AtomicReference<>(new byte[0]);
+      final AtomicReference<byte[]> receivedBytes = new AtomicReference<>(new byte[0]);
 
       WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
@@ -51,7 +51,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
 
         @Override
         public void onBinaryFrame(byte[] frame, boolean finalFragment, int rsv) {
-          text.set(frame);
+          receivedBytes.set(frame);
           latch.countDown();
         }
       }).build()).get();
@@ -59,8 +59,18 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
       websocket.sendBinaryFrame(ECHO_BYTES);
 
       latch.await();
-      assertEquals(text.get(), ECHO_BYTES);
+      assertEquals(receivedBytes.get(), ECHO_BYTES);
     }
+  }
+
+  @Test
+  public void echoByte() throws Exception {
+    echoByte0(false);
+  }
+
+  @Test
+  public void echoByteCompressed() throws Exception {
+    echoByte0(true);
   }
 
   @Test
