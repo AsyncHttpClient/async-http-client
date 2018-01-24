@@ -53,7 +53,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
     try (AsyncHttpClient ahc = asyncHttpClient()) {
       final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
       future.get();
-      future.addListener(() -> latch.countDown(), Runnable::run);
+      future.addListener(latch::countDown, Runnable::run);
     }
 
     latch.await(10, TimeUnit.SECONDS);
