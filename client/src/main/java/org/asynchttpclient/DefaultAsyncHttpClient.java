@@ -20,6 +20,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -82,15 +84,16 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     this.config = config;
     this.noRequestFilters = config.getRequestFilters().isEmpty();
     allowStopNettyTimer = config.getNettyTimer() == null;
-    nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
+    nettyTimer = allowStopNettyTimer ? newNettyTimer(config) : config.getNettyTimer();
 
     channelManager = new ChannelManager(config, nettyTimer);
     requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
     channelManager.configureBootstraps(requestSender);
   }
 
-  private Timer newNettyTimer() {
-    HashedWheelTimer timer = new HashedWheelTimer();
+  private Timer newNettyTimer(AsyncHttpClientConfig config) {
+    ThreadFactory threadFactory = new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
+    HashedWheelTimer timer = new HashedWheelTimer(threadFactory);
     timer.start();
     return timer;
   }
