@@ -28,7 +28,7 @@ public class JsseSslEngineFactory extends SslEngineFactoryBase {
 
   @Override
   public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
-    SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
+    SSLEngine sslEngine = sslContext.createSSLEngine(domain(peerHost), peerPort);
     configureSslEngine(sslEngine, config);
     return sslEngine;
   }

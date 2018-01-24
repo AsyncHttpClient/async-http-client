@@ -58,7 +58,7 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
   @Override
   public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
     // FIXME should be using ctx allocator
-    SSLEngine sslEngine = sslContext.newEngine(ByteBufAllocator.DEFAULT, peerHost, peerPort);
+    SSLEngine sslEngine = sslContext.newEngine(ByteBufAllocator.DEFAULT, domain(peerHost), peerPort);
     configureSslEngine(sslEngine, config);
     return sslEngine;
   }
