@@ -949,6 +949,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setConnectionPoolCleanerPeriod(int connectionPoolCleanerPeriod) {
+      this.connectionPoolCleanerPeriod = connectionPoolCleanerPeriod;
+      return this;
+    }
+
     public Builder setConnectionTtl(int connectionTtl) {
       this.connectionTtl = connectionTtl;
       return this;
