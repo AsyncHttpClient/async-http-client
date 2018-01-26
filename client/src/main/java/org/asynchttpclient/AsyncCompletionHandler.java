@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * @param <T> Type of the value that will be returned by the associated
  *            {@link java.util.concurrent.Future}
  */
-public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
+public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AsyncCompletionHandler.class);
   private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
