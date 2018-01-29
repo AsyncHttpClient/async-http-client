@@ -383,7 +383,7 @@ public class ChannelManager {
     if (hasSocksProxyHandler)
       pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
     else
-      pipeline.addFirst(SSL_HANDLER, sslHandler);
+      pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, sslHandler);
     return sslHandler;
   }
 
@@ -423,7 +423,7 @@ public class ChannelManager {
                 default:
                   throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
               }
-              channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
+              channel.pipeline().addAfter(PINNED_ENTRY, SOCKS_HANDLER, socksProxyHandler);
             }
           });
           promise.setSuccess(socksBootstrap);
