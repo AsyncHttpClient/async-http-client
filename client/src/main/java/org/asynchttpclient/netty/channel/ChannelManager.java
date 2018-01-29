@@ -359,7 +359,7 @@ public class ChannelManager {
     }
   }
 
-  public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost) {
+  public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {
     String peerHost;
     int peerPort;
 
@@ -379,7 +379,10 @@ public class ChannelManager {
     }
 
     SslHandler sslHandler = createSslHandler(peerHost, peerPort);
-    pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
+    if (hasSocksProxyHandler)
+      pipeline.addAfter(ChannelManager.SOCKS_HANDLER, ChannelManager.SSL_HANDLER, sslHandler);
+    else
+      pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
     return sslHandler;
   }
 

@@ -112,7 +112,7 @@ public final class NettyConnectListener<T> {
     if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
       SslHandler sslHandler;
       try {
-        sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost());
+        sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost(), proxyServer != null);
       } catch (Exception sslError) {
         onFailure(channel, sslError);
         return;
