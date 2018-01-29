@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -380,9 +381,9 @@ public class ChannelManager {
 
     SslHandler sslHandler = createSslHandler(peerHost, peerPort);
     if (hasSocksProxyHandler)
-      pipeline.addAfter(ChannelManager.SOCKS_HANDLER, ChannelManager.SSL_HANDLER, sslHandler);
+      pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
     else
-      pipeline.addFirst(ChannelManager.SSL_HANDLER, sslHandler);
+      pipeline.addFirst(SSL_HANDLER, sslHandler);
     return sslHandler;
   }
 
@@ -409,18 +410,20 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel channel) throws Exception {
               InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+              ProxyHandler socksProxyHandler;
               switch (proxy.getProxyType()) {
                 case SOCKS_V4:
-                  channel.pipeline().addFirst(SOCKS_HANDLER, new Socks4ProxyHandler(proxyAddress));
+                  socksProxyHandler = new Socks4ProxyHandler(proxyAddress);
                   break;
 
                 case SOCKS_V5:
-                  channel.pipeline().addFirst(SOCKS_HANDLER, new Socks5ProxyHandler(proxyAddress));
+                  socksProxyHandler = new Socks5ProxyHandler(proxyAddress);
                   break;
 
                 default:
                   throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
               }
+              channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
             }
           });
           promise.setSuccess(socksBootstrap);
