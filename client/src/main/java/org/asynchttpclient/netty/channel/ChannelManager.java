@@ -410,14 +410,17 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel channel) throws Exception {
               InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+              Realm realm = proxy.getRealm();
+              String username = realm != null ? realm.getPrincipal() : null;
+              String password = realm != null ? realm.getPassword() : null;
               ProxyHandler socksProxyHandler;
               switch (proxy.getProxyType()) {
                 case SOCKS_V4:
-                  socksProxyHandler = new Socks4ProxyHandler(proxyAddress);
+                  socksProxyHandler = new Socks4ProxyHandler(proxyAddress, username);
                   break;
 
                 case SOCKS_V5:
-                  socksProxyHandler = new Socks5ProxyHandler(proxyAddress);
+                  socksProxyHandler = new Socks5ProxyHandler(proxyAddress, username, password);
                   break;
 
                 default:
