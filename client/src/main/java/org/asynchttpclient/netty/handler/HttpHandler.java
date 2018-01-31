@@ -16,6 +16,7 @@ package org.asynchttpclient.netty.handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.handler.codec.DecoderResultProvider;
 import io.netty.handler.codec.http.*;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
@@ -125,8 +126,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
     AsyncHandler<?> handler = future.getAsyncHandler();
     try {
-      if (e instanceof HttpObject) {
-        HttpObject object = (HttpObject) e;
+      if (e instanceof DecoderResultProvider) {
+        DecoderResultProvider object = (DecoderResultProvider) e;
         Throwable t = object.decoderResult().cause();
         if (t != null) {
           readFailed(channel, future, t);
