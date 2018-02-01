@@ -10,14 +10,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.request;
+package org.asynchttpclient.netty.channel;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.netty.SimpleChannelFutureListener;
-import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,7 @@ public class NettyChannelConnector {
   private final AsyncHttpClientState clientState;
   private volatile int i = 0;
 
-  NettyChannelConnector(InetAddress localAddress,
+  public NettyChannelConnector(InetAddress localAddress,
                                List<InetSocketAddress> remoteAddresses,
                                AsyncHandler<?> asyncHandler,
                                AsyncHttpClientState clientState) {
