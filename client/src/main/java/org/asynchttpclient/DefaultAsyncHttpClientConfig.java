@@ -93,6 +93,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final int handshakeTimeout;
   private final String[] enabledProtocols;
   private final String[] enabledCipherSuites;
+  private final boolean filterInsecureCipherSuites;
   private final int sslSessionCacheSize;
   private final int sslSessionTimeout;
   private final SslContext sslContext;
@@ -170,6 +171,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        int handshakeTimeout,
                                        String[] enabledProtocols,
                                        String[] enabledCipherSuites,
+                                       boolean filterInsecureCipherSuites,
                                        int sslSessionCacheSize,
                                        int sslSessionTimeout,
                                        SslContext sslContext,
@@ -255,6 +257,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.handshakeTimeout = handshakeTimeout;
     this.enabledProtocols = enabledProtocols;
     this.enabledCipherSuites = enabledCipherSuites;
+    this.filterInsecureCipherSuites = filterInsecureCipherSuites;
     this.sslSessionCacheSize = sslSessionCacheSize;
     this.sslSessionTimeout = sslSessionTimeout;
     this.sslContext = sslContext;
@@ -485,6 +488,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isFilterInsecureCipherSuites() {
+    return filterInsecureCipherSuites;
+  }
+
+  @Override
   public int getSslSessionCacheSize() {
     return sslSessionCacheSize;
   }
@@ -689,6 +697,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int handshakeTimeout = defaultHandshakeTimeout();
     private String[] enabledProtocols = defaultEnabledProtocols();
     private String[] enabledCipherSuites = defaultEnabledCipherSuites();
+    private boolean filterInsecureCipherSuites = defaultFilterInsecureCipherSuites();
     private int sslSessionCacheSize = defaultSslSessionCacheSize();
     private int sslSessionTimeout = defaultSslSessionTimeout();
     private SslContext sslContext;
@@ -766,6 +775,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       handshakeTimeout = config.getHandshakeTimeout();
       enabledProtocols = config.getEnabledProtocols();
       enabledCipherSuites = config.getEnabledCipherSuites();
+      filterInsecureCipherSuites = config.isFilterInsecureCipherSuites();
       sslSessionCacheSize = config.getSslSessionCacheSize();
       sslSessionTimeout = config.getSslSessionTimeout();
       sslContext = config.getSslContext();
@@ -1010,6 +1020,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setFilterInsecureCipherSuites(boolean filterInsecureCipherSuites) {
+      this.filterInsecureCipherSuites = filterInsecureCipherSuites;
+      return this;
+    }
+
     public Builder setSslSessionCacheSize(Integer sslSessionCacheSize) {
       this.sslSessionCacheSize = sslSessionCacheSize;
       return this;
@@ -1225,6 +1240,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               handshakeTimeout,
               enabledProtocols,
               enabledCipherSuites,
+              filterInsecureCipherSuites,
               sslSessionCacheSize,
               sslSessionTimeout,
               sslContext,

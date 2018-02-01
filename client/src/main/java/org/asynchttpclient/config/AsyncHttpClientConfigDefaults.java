@@ -34,6 +34,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String USER_AGENT_CONFIG = "userAgent";
   public static final String ENABLED_PROTOCOLS_CONFIG = "enabledProtocols";
   public static final String ENABLED_CIPHER_SUITES_CONFIG = "enabledCipherSuites";
+  public static final String FILTER_INSECURE_CIPHER_SUITES_CONFIG = "filterInsecureCipherSuites";
   public static final String USE_PROXY_SELECTOR_CONFIG = "useProxySelector";
   public static final String USE_PROXY_PROPERTIES_CONFIG = "useProxyProperties";
   public static final String VALIDATE_RESPONSE_HEADERS_CONFIG = "validateResponseHeaders";
@@ -142,6 +143,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static String[] defaultEnabledCipherSuites() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + ENABLED_CIPHER_SUITES_CONFIG);
+  }
+
+  public static boolean defaultFilterInsecureCipherSuites() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + FILTER_INSECURE_CIPHER_SUITES_CONFIG);
   }
 
   public static boolean defaultUseProxySelector() {

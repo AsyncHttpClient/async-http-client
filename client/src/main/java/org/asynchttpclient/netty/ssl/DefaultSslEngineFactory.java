@@ -20,13 +20,32 @@ import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.asynchttpclient.AsyncHttpClientConfig;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class DefaultSslEngineFactory extends SslEngineFactoryBase {
+
+  // TODO replace with a custom CipherSuiteFilter once https://github.com/netty/netty/issues/7673 is fixed
+  private static final List<String> JDK_SUPPORTED_CIPHER_SUITES;
+
+  static {
+    SSLContext context;
+    try {
+      context = SSLContext.getInstance("TLS");
+      context.init(null, null, null);
+    } catch (Exception e) {
+      throw new Error("Failed to initialize the default SSL context", e);
+    }
+
+    SSLEngine engine = context.createSSLEngine();
+
+    JDK_SUPPORTED_CIPHER_SUITES = Arrays.asList(engine.getSupportedCipherSuites());
+  }
 
   private volatile SslContext sslContext;
 
@@ -46,6 +65,8 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
     if (isNonEmpty(config.getEnabledCipherSuites())) {
       sslContextBuilder.ciphers(Arrays.asList(config.getEnabledCipherSuites()));
+    } else if (!config.isFilterInsecureCipherSuites() && !config.isUseOpenSsl()) {
+      sslContextBuilder.ciphers(JDK_SUPPORTED_CIPHER_SUITES);
     }
 
     if (config.isUseInsecureTrustManager()) {

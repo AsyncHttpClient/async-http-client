@@ -209,6 +209,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isFilterInsecureCipherSuites() {
+    return getBooleanOpt(FILTER_INSECURE_CIPHER_SUITES_CONFIG).orElse(defaultFilterInsecureCipherSuites());
+  }
+
+  @Override
   public int getSslSessionCacheSize() {
     return getIntegerOpt(SSL_SESSION_CACHE_SIZE_CONFIG).orElse(defaultSslSessionCacheSize());
   }
