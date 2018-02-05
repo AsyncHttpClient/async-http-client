@@ -1,3 +1,7 @@
+## From 2.2 to 2.3
+
+* New `isFilterInsecureCipherSuites` config to disable unsecure and weak ciphers filtering performed internally in Netty.
+
 ## From 2.1 to 2.2
 
 * New [Typesafe config](https://github.com/lightbend/config) extra module
