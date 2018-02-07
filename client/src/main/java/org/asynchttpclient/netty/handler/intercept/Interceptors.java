@@ -40,6 +40,7 @@ public class Interceptors {
   private final ConnectSuccessInterceptor connectSuccessInterceptor;
   private final ResponseFiltersInterceptor responseFiltersInterceptor;
   private final boolean hasResponseFilters;
+  private final ClientCookieDecoder cookieDecoder;
 
   public Interceptors(AsyncHttpClientConfig config,
                       ChannelManager channelManager,
@@ -52,6 +53,7 @@ public class Interceptors {
     connectSuccessInterceptor = new ConnectSuccessInterceptor(channelManager, requestSender);
     responseFiltersInterceptor = new ResponseFiltersInterceptor(config, requestSender);
     hasResponseFilters = !config.getResponseFilters().isEmpty();
+    cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
   }
 
   public boolean exitAfterIntercept(Channel channel,
@@ -71,8 +73,11 @@ public class Interceptors {
     CookieStore cookieStore = config.getCookieStore();
     if (cookieStore != null) {
       for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
-        Cookie c = ClientCookieDecoder.STRICT.decode(cookieStr);
-        cookieStore.add(future.getCurrentRequest().getUri(), c);
+        Cookie c = cookieDecoder.decode(cookieStr);
+        if (c != null) {
+          // Set-Cookie header could be invalid/malformed
+          cookieStore.add(future.getCurrentRequest().getUri(), c);
+        }
       }
     }
 
