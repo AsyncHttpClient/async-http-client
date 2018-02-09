@@ -42,6 +42,11 @@ public class TestAsyncHttpClient implements AsyncHttpClient {
   }
 
   @Override
+  public BoundRequestBuilder prepare(String method, String url) {
+    return null;
+  }
+
+  @Override
   public BoundRequestBuilder prepareGet(String url) {
     return null;
   }
