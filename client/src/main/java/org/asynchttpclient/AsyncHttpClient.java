@@ -146,6 +146,15 @@ public interface AsyncHttpClient extends Closeable {
   AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator);
 
   /**
+   * Prepare an HTTP client request.
+   *
+   * @param method HTTP request method type. MUST BE in upper case
+   * @param url A well formed URL.
+   * @return {@link RequestBuilder}
+   */
+  BoundRequestBuilder prepareGet(String method, String url);
+
+  /**
    * Prepare an HTTP client GET request.
    *
    * @param url A well formed URL.
