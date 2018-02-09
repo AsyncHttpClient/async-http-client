@@ -37,12 +37,16 @@
 
 package org.asynchttpclient.spnego;
 
-import org.asynchttpclient.util.Base64;
-import org.ietf.jgss.*;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Base64;
 
 /**
  * SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) authentication scheme.
@@ -145,7 +149,7 @@ public class SpnegoEngine {
 
       gssContext.dispose();
 
-      String tokenstr = Base64.encode(token);
+      String tokenstr = Base64.getEncoder().encodeToString(token);
       log.debug("Sending response '{}' back to the server", tokenstr);
 
       return tokenstr;

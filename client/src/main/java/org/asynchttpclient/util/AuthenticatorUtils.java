@@ -21,6 +21,7 @@ import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
 
 import java.nio.charset.Charset;
+import java.util.Base64;
 import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
@@ -50,7 +51,7 @@ public final class AuthenticatorUtils {
 
   private static String computeBasicAuthentication(String principal, String password, Charset charset) {
     String s = principal + ":" + password;
-    return "Basic " + Base64.encode(s.getBytes(charset));
+    return "Basic " + Base64.getEncoder().encodeToString(s.getBytes(charset));
   }
 
   public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {
