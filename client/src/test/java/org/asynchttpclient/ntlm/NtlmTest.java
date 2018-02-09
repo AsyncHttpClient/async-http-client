@@ -19,7 +19,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
-import org.asynchttpclient.util.Base64;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -30,10 +29,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.get;
+import static org.asynchttpclient.Dsl.ntlmAuthRealm;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -85,14 +88,14 @@ public class NtlmTest extends AbstractBasicTest {
   @Test(expectedExceptions = NtlmEngineException.class)
   public void testGenerateType3MsgThrowsExceptionWhenChallengeTooShort() {
     NtlmEngine engine = new NtlmEngine();
-    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode("a".getBytes()));
+    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.getEncoder().encodeToString("a".getBytes()));
     fail("An NtlmEngineException must have occurred as challenge length is too short");
   }
 
   @Test(expectedExceptions = NtlmEngineException.class)
   public void testGenerateType3MsgThrowsExceptionWhenChallengeDoesNotFollowCorrectFormat() {
     NtlmEngine engine = new NtlmEngine();
-    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode("challenge".getBytes()));
+    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.getEncoder().encodeToString("challenge".getBytes()));
     fail("An NtlmEngineException must have occurred as challenge format is not correct");
   }
 
@@ -108,7 +111,7 @@ public class NtlmTest extends AbstractBasicTest {
     buf.write(0);
     buf.write("challenge".getBytes());
     NtlmEngine engine = new NtlmEngine();
-    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.getEncoder().encodeToString(buf.toByteArray()));
     buf.close();
     fail("An NtlmEngineException must have occurred as type 2 indicator is incorrect");
   }
@@ -134,7 +137,7 @@ public class NtlmTest extends AbstractBasicTest {
 
     buf.write(longToBytes(1L));// challenge
     NtlmEngine engine = new NtlmEngine();
-    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+    engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.getEncoder().encodeToString(buf.toByteArray()));
     buf.close();
     fail("An NtlmEngineException must have occurred as unicode support is not indicated");
   }
@@ -166,7 +169,8 @@ public class NtlmTest extends AbstractBasicTest {
 
     buf.write(longToBytes(1L));// challenge
     NtlmEngine engine = new NtlmEngine();
-    String type3Msg = engine.generateType3Msg("username", "password", "localhost", "workstation", Base64.encode(buf.toByteArray()));
+    String type3Msg = engine.generateType3Msg("username", "password", "localhost", "workstation", 
+            Base64.getEncoder().encodeToString(buf.toByteArray()));
     buf.close();
     assertEquals(
             type3Msg,

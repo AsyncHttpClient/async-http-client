@@ -14,7 +14,8 @@
 package org.asynchttpclient.ws;
 
 import io.netty.util.internal.ThreadLocalRandom;
-import org.asynchttpclient.util.Base64;
+
+import java.util.Base64;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDigest;
@@ -28,10 +29,11 @@ public final class WebSocketUtils {
     for (int i = 0; i < nonce.length; i++) {
       nonce[i] = (byte) random.nextInt(256);
     }
-    return Base64.encode(nonce);
+    return Base64.getEncoder().encodeToString(nonce);
   }
 
   public static String getAcceptKey(String key) {
-    return Base64.encode(pooledSha1MessageDigest().digest((key + MAGIC_GUID).getBytes(US_ASCII)));
+    return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest(
+              (key + MAGIC_GUID).getBytes(US_ASCII)));
   }
 }

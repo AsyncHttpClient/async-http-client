@@ -18,7 +18,6 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
-import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.Utf8UrlEncoder;
@@ -28,6 +27,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
@@ -77,7 +77,7 @@ class OAuthSignatureCalculatorInstance {
   private String generateNonce() {
     ThreadLocalRandom.current().nextBytes(nonceBuffer);
     // let's use base64 encoding over hex, slightly more compact than hex or decimals
-    return Base64.encode(nonceBuffer);
+    return Base64.getEncoder().encodeToString(nonceBuffer);
   }
 
   void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, long timestamp, String nonce) throws InvalidKeyException {
@@ -94,7 +94,7 @@ class OAuthSignatureCalculatorInstance {
     ByteBuffer rawBase = StringUtils.charSequence2ByteBuffer(sb, UTF_8);
     byte[] rawSignature = digest(consumerAuth, userAuth, rawBase);
     // and finally, base64 encoded... phew!
-    return Base64.encode(rawSignature);
+    return Base64.getEncoder().encodeToString(rawSignature);
   }
 
   StringBuilder signatureBaseString(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String percentEncodedNonce) {
