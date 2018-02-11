@@ -132,6 +132,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     this.file = prototype.getFile();
     this.followRedirect = prototype.getFollowRedirect();
     this.requestTimeout = prototype.getRequestTimeout();
+    this.readTimeout = prototype.getReadTimeout();
     this.rangeOffset = prototype.getRangeOffset();
     this.charset = prototype.getCharset();
     this.channelPoolPartitioning = prototype.getChannelPoolPartitioning();
