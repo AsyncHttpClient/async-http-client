@@ -26,76 +26,78 @@ public interface ChannelPoolPartitioning {
     INSTANCE;
 
     public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
-      String targetHostBaseUrl = virtualHost != null ? virtualHost : HttpUtils.getBaseUrl(uri);
-      if (proxyServer != null) {
-        return uri.isSecured() ? //
-                new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getSecuredPort(), true, targetHostBaseUrl, proxyServer.getProxyType())
-                : new ProxyPartitionKey(proxyServer.getHost(), proxyServer.getPort(), false, targetHostBaseUrl, proxyServer.getProxyType());
+      String targetHostBaseUrl = HttpUtils.getBaseUrl(uri);
+      if (proxyServer == null) {
+        if (virtualHost == null) {
+          return targetHostBaseUrl;
+        } else {
+          return new CompositePartitionKey(
+                  targetHostBaseUrl,
+                  virtualHost,
+                  null,
+                  0,
+                  null);
+        }
       } else {
-        return targetHostBaseUrl;
+        return new CompositePartitionKey(
+                targetHostBaseUrl,
+                virtualHost,
+                proxyServer.getHost(),
+                uri.isSecured() && proxyServer.getProxyType() == ProxyType.HTTP ?
+                        proxyServer.getSecuredPort() :
+                        proxyServer.getPort(),
+                proxyServer.getProxyType());
       }
     }
   }
 
-  class ProxyPartitionKey {
+  class CompositePartitionKey {
+    private final String targetHostBaseUrl;
+    private final String virtualHost;
     private final String proxyHost;
     private final int proxyPort;
-    private final boolean secured;
-    private final String targetHostBaseUrl;
     private final ProxyType proxyType;
 
-    public ProxyPartitionKey(String proxyHost, int proxyPort, boolean secured, String targetHostBaseUrl, ProxyType proxyType) {
+    CompositePartitionKey(String targetHostBaseUrl, String virtualHost, String proxyHost, int proxyPort, ProxyType proxyType) {
+      this.targetHostBaseUrl = targetHostBaseUrl;
+      this.virtualHost = virtualHost;
       this.proxyHost = proxyHost;
       this.proxyPort = proxyPort;
-      this.secured = secured;
-      this.targetHostBaseUrl = targetHostBaseUrl;
       this.proxyType = proxyType;
     }
 
     @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      CompositePartitionKey that = (CompositePartitionKey) o;
+
+      if (proxyPort != that.proxyPort) return false;
+      if (targetHostBaseUrl != null ? !targetHostBaseUrl.equals(that.targetHostBaseUrl) : that.targetHostBaseUrl != null)
+        return false;
+      if (virtualHost != null ? !virtualHost.equals(that.virtualHost) : that.virtualHost != null) return false;
+      if (proxyHost != null ? !proxyHost.equals(that.proxyHost) : that.proxyHost != null) return false;
+      return proxyType == that.proxyType;
+    }
+
+    @Override
     public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((proxyHost == null) ? 0 : proxyHost.hashCode());
-      result = prime * result + proxyPort;
-      result = prime * result + (secured ? 1231 : 1237);
-      result = prime * result + ((targetHostBaseUrl == null) ? 0 : targetHostBaseUrl.hashCode());
-      result = prime * result + proxyType.hashCode();
+      int result = targetHostBaseUrl != null ? targetHostBaseUrl.hashCode() : 0;
+      result = 31 * result + (virtualHost != null ? virtualHost.hashCode() : 0);
+      result = 31 * result + (proxyHost != null ? proxyHost.hashCode() : 0);
+      result = 31 * result + proxyPort;
+      result = 31 * result + (proxyType != null ? proxyType.hashCode() : 0);
       return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
-      if (this == obj)
-        return true;
-      if (obj == null)
-        return false;
-      if (getClass() != obj.getClass())
-        return false;
-      ProxyPartitionKey other = (ProxyPartitionKey) obj;
-      if (proxyHost == null) {
-        if (other.proxyHost != null)
-          return false;
-      } else if (!proxyHost.equals(other.proxyHost))
-        return false;
-      if (proxyPort != other.proxyPort)
-        return false;
-      if (secured != other.secured)
-        return false;
-      if (targetHostBaseUrl == null) {
-        if (other.targetHostBaseUrl != null)
-          return false;
-      } else if (!targetHostBaseUrl.equals(other.targetHostBaseUrl))
-        return false;
-      return proxyType == other.proxyType;
-    }
-
-    @Override
     public String toString() {
-      return "ProxyPartitionKey(proxyHost=" + proxyHost +
+      return "CompositePartitionKey(" +
+              "targetHostBaseUrl=" + targetHostBaseUrl +
+              ", virtualHost=" + virtualHost +
+              ", proxyHost=" + proxyHost +
               ", proxyPort=" + proxyPort +
-              ", secured=" + secured +
-              ", targetHostBaseUrl=" + targetHostBaseUrl +
               ", proxyType=" + proxyType;
     }
   }
