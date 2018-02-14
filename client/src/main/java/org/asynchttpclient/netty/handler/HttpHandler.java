@@ -146,7 +146,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
       // next request
       if (hasIOExceptionFilters//
               && t instanceof IOException//
-              && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {
+              && requestSender.applyIoExceptionFiltersAndReplayRequest(future, (IOException) t, channel)) {
         return;
       }
 
