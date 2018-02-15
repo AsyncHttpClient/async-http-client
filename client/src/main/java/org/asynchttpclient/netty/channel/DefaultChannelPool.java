@@ -15,7 +15,7 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
-import io.netty.util.Timeout;
+import io.netty.util.*;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -43,9 +43,9 @@ import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 public final class DefaultChannelPool implements ChannelPool {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
+  private static final AttributeKey<ChannelCreation> CHANNEL_CREATION_ATTRIBUTE_KEY = AttributeKey.valueOf("channelCreation");
 
   private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<IdleChannel>> partitions = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<ChannelId, ChannelCreation> channelId2Creation;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
   private final Timer nettyTimer;
   private final int connectionTtl;
@@ -81,7 +81,6 @@ public final class DefaultChannelPool implements ChannelPool {
     this.maxIdleTime = maxIdleTime;
     this.connectionTtl = connectionTtl;
     connectionTtlEnabled = connectionTtl > 0;
-    channelId2Creation = connectionTtlEnabled ? new ConcurrentHashMap<>() : null;
     this.nettyTimer = nettyTimer;
     maxIdleTimeEnabled = maxIdleTime > 0;
     this.poolLeaseStrategy = poolLeaseStrategy;
@@ -100,7 +99,7 @@ public final class DefaultChannelPool implements ChannelPool {
     if (!connectionTtlEnabled)
       return false;
 
-    ChannelCreation creation = channelId2Creation.get(channel.id());
+    ChannelCreation creation = channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY).get();
     return creation != null && now - creation.creationTime >= connectionTtl;
   }
 
@@ -134,8 +133,9 @@ public final class DefaultChannelPool implements ChannelPool {
 
   private void registerChannelCreation(Channel channel, Object partitionKey, long now) {
     ChannelId id = channel.id();
-    if (!channelId2Creation.containsKey(id)) {
-      channelId2Creation.putIfAbsent(id, new ChannelCreation(now, partitionKey));
+    Attribute<ChannelCreation> channelCreationAttribute = channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY);
+    if (channelCreationAttribute.get() == null) {
+      channelCreationAttribute.set(new ChannelCreation(now, partitionKey));
     }
   }
 
@@ -169,7 +169,7 @@ public final class DefaultChannelPool implements ChannelPool {
    * {@inheritDoc}
    */
   public boolean removeAll(Channel channel) {
-    ChannelCreation creation = connectionTtlEnabled ? channelId2Creation.remove(channel.id()) : null;
+    ChannelCreation creation = connectionTtlEnabled ? channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY).get() : null;
     return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(new IdleChannel(channel, Long.MIN_VALUE));
   }
 
@@ -188,17 +188,11 @@ public final class DefaultChannelPool implements ChannelPool {
       return;
 
     partitions.clear();
-    if (connectionTtlEnabled) {
-      channelId2Creation.clear();
-    }
   }
 
   private void close(Channel channel) {
     // FIXME pity to have to do this here
     Channels.setDiscard(channel);
-    if (connectionTtlEnabled) {
-      channelId2Creation.remove(channel.id());
-    }
     Channels.silentlyCloseChannel(channel);
   }
 
@@ -369,11 +363,6 @@ public final class DefaultChannelPool implements ChannelPool {
         List<IdleChannel> closedChannels = closeChannels(expiredChannels(partition, start));
 
         if (!closedChannels.isEmpty()) {
-          if (connectionTtlEnabled) {
-            for (IdleChannel closedChannel : closedChannels)
-              channelId2Creation.remove(closedChannel.channel.id());
-          }
-
           partition.removeAll(closedChannels);
           closedCount += closedChannels.size();
         }
