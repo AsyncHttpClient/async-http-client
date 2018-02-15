@@ -40,10 +40,10 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Hubert Iwaniuk
  */
-public class PostWithQSTest extends AbstractBasicTest {
+public class PostWithQueryStringTest extends AbstractBasicTest {
 
   @Test
-  public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  public void postWithQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
       Response resp = f.get(3, TimeUnit.SECONDS);
@@ -53,27 +53,7 @@ public class PostWithQSTest extends AbstractBasicTest {
   }
 
   @Test
-  public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
-
-        @Override
-        public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-          if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=")) {
-            throw new IOException(status.getUri().toUrl());
-          }
-          return super.onStatusReceived(status);
-        }
-
-      });
-      Response resp = f.get(3, TimeUnit.SECONDS);
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-    }
-  }
-
-  @Test
-  public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  public void postWithNullQueryParam() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
@@ -93,7 +73,7 @@ public class PostWithQSTest extends AbstractBasicTest {
   }
 
   @Test
-  public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  public void postWithEmptyParamsQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
@@ -114,13 +94,13 @@ public class PostWithQSTest extends AbstractBasicTest {
 
   @Override
   public AbstractHandler configureHandler() throws Exception {
-    return new PostWithQSHandler();
+    return new PostWithQueryStringHandler();
   }
 
   /**
-   * POST with QS server part.
+   * POST with QueryString server part.
    */
-  private class PostWithQSHandler extends AbstractHandler {
+  private class PostWithQueryStringHandler extends AbstractHandler {
     public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
       if ("POST".equalsIgnoreCase(request.getMethod())) {
         String qs = request.getQueryString();
