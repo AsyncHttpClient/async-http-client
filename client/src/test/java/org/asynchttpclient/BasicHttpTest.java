@@ -396,6 +396,22 @@ public class BasicHttpTest extends HttpTest {
   }
 
   @Test
+  public void postWithBody() throws Throwable {
+    withClient().run(client ->
+            withServer(server).run(server -> {
+              server.enqueueEcho();
+              client.preparePost(getTargetUrl())
+                      .execute(new AsyncCompletionHandlerAdapter() {
+                        @Override
+                        public Response onCompleted(Response response) {
+                          assertEquals(response.getHeader("X-" + CONTENT_LENGTH), "0");
+                          return response;
+                        }
+                      }).get(TIMEOUT, SECONDS);
+            }));
+  }
+
+  @Test
   public void getVirtualHost() throws Throwable {
     withClient().run(client ->
       withServer(server).run(server -> {

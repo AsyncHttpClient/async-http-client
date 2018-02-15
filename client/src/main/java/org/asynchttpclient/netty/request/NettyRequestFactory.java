@@ -41,6 +41,7 @@ public final class NettyRequestFactory {
 
   private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
   private static final String GZIP_DEFLATE = HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE;
+  private static final Integer ZERO_CONTENT_LENGTH = 0;
 
   private final AsyncHttpClientConfig config;
   private final ClientCookieEncoder cookieEncoder;
@@ -162,18 +163,20 @@ public final class NettyRequestFactory {
       }
     }
 
-    if (body != null) {
-      if (!headers.contains(CONTENT_LENGTH)) {
+    if (!headers.contains(CONTENT_LENGTH)) {
+      if (body != null) {
         if (body.getContentLength() < 0) {
           headers.set(TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
         } else {
           headers.set(CONTENT_LENGTH, body.getContentLength());
         }
+      } else if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+        headers.set(CONTENT_LENGTH, ZERO_CONTENT_LENGTH);
       }
+    }
 
-      if (body.getContentTypeOverride() != null) {
-        headers.set(CONTENT_TYPE, body.getContentTypeOverride());
-      }
+    if (body != null && body.getContentTypeOverride() != null) {
+      headers.set(CONTENT_TYPE, body.getContentTypeOverride());
     }
 
     // connection header and friends
