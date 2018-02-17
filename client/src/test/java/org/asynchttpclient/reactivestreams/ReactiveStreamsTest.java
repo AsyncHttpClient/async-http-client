@@ -25,6 +25,7 @@ import org.asynchttpclient.test.TestUtils;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.reactivestreams.example.unicast.AsyncIterablePublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -43,6 +44,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,9 +62,14 @@ public class ReactiveStreamsTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsTest.class);
   private Tomcat tomcat;
   private int port1;
-
+  private ExecutorService executor;
+    
   private static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
     return Flowable.fromIterable(new ByteBufIterable(bytes, chunkSize));
+  }
+  
+  private Publisher<ByteBuf> createAsyncPublisher(final byte[] bytes, final int chunkSize) {
+    return new AsyncIterablePublisher(new ByteBufIterable(bytes, chunkSize), executor);
   }
 
   private static byte[] getBytes(List<HttpResponseBodyPart> bodyParts) throws IOException {
@@ -202,11 +210,14 @@ public class ReactiveStreamsTest {
     ctx.addServletMappingDecoded("/*", "webdav");
     tomcat.start();
     port1 = tomcat.getConnector().getLocalPort();
+
+    executor = Executors.newSingleThreadExecutor();
   }
 
   @AfterClass(alwaysRun = true)
   public void tearDownGlobal() throws Exception {
     tomcat.stop();
+    executor.shutdown();
   }
 
   private String getTargetUrl() {
@@ -216,13 +227,24 @@ public class ReactiveStreamsTest {
   @Test
   public void testStreamingPutImage() throws Exception {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342))
+      Response response = client.preparePut(getTargetUrl()).setBody(createAsyncPublisher(LARGE_IMAGE_BYTES, 2342))
               .execute().get();
       assertEquals(response.getStatusCode(), 200);
       assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
     }
   }
 
+  @Test
+  public void testAsyncStreamingPutImage() throws Exception {
+    // test that streaming works with a publisher that does not invoke onSubscription synchronously from subscribe
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+      Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342))
+              .execute().get();
+      assertEquals(response.getStatusCode(), 200);
+      assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+    }
+  }
+    
   @Test
   public void testConnectionDoesNotGetClosed() throws Exception {
     // test that we can stream the same request multiple times

@@ -96,6 +96,7 @@ public class NettyReactiveStreamsBody implements NettyBody {
     private final Channel channel;
     private final NettyResponseFuture<?> future;
     private volatile Subscription deferredSubscription;
+    private volatile Boolean delayStart = true;      
 
     NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
       super(channel.eventLoop());
@@ -111,11 +112,18 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     @Override
     public void onSubscribe(Subscription subscription) {
-      deferredSubscription = subscription;
+      if (delayStart) {
+        deferredSubscription = subscription;
+      } else {
+        super.onSubscribe(subscription);
+      }
     }
 
     void delayedStart() {
-      super.onSubscribe(deferredSubscription);
+      delayStart = false;
+      if (deferredSubscription != null) {
+        super.onSubscribe(deferredSubscription);
+      }
     }
 
     @Override
