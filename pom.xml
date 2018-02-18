@@ -273,6 +273,11 @@
         <version>${reactive-streams.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams-examples</artifactId>
+        <version>${reactive-streams.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.typesafe.netty</groupId>
         <artifactId>netty-reactive-streams</artifactId>
         <version>${netty-reactive-streams.version}</version>

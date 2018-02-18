@@ -68,5 +68,10 @@
       <artifactId>rxjava</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams-examples</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

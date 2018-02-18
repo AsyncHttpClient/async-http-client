@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 
@@ -93,9 +94,14 @@ public class NettyReactiveStreamsBody implements NettyBody {
   private static class NettySubscriber extends HandlerSubscriber<HttpContent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettySubscriber.class);
 
+    private static final Subscription DO_NOT_DELAY = new Subscription() {
+      public void cancel() {}
+      public void request(long l) {}
+    };
+      
     private final Channel channel;
     private final NettyResponseFuture<?> future;
-    private volatile Subscription deferredSubscription;
+    private AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();      
 
     NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
       super(channel.eventLoop());
@@ -111,11 +117,18 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     @Override
     public void onSubscribe(Subscription subscription) {
-      deferredSubscription = subscription;
+      if (!deferredSubscription.compareAndSet(null, subscription)) {
+        super.onSubscribe(subscription);
+      }
     }
 
     void delayedStart() {
-      super.onSubscribe(deferredSubscription);
+      // If we won the race against onSubscribe, we need to tell it
+      // know not to delay, because we won't be called again.
+      Subscription subscription = deferredSubscription.getAndSet(DO_NOT_DELAY);
+      if (subscription != null) {
+        super.onSubscribe(subscription);
+      }
     }
 
     @Override
