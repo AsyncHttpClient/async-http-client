@@ -30,7 +30,6 @@ import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_OCTET_STREAM;
@@ -230,14 +229,12 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
           }
         }
 
-        if (wantFailure) {
-          if (i > CONTENT_LENGTH_VALUE / 2) {
-            // kaboom
-            // yes, response is committed, but Jetty does aborts and
-            // drops connection
-            httpResponse.sendError(500);
-            break;
-          }
+        if (wantFailure && i > CONTENT_LENGTH_VALUE / 2) {
+          // kaboom
+          // yes, response is committed, but Jetty does aborts and
+          // drops connection
+          httpResponse.sendError(500);
+          break;
         }
       }
 
