@@ -65,7 +65,6 @@ import java.util.stream.Collectors;
 
 public class ChannelManager {
 
-  public static final String PINNED_ENTRY = "entry";
   public static final String HTTP_CLIENT_CODEC = "http";
   public static final String SSL_HANDLER = "ssl";
   public static final String SOCKS_HANDLER = "socks";
@@ -208,22 +207,19 @@ public class ChannelManager {
     final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
     wsHandler = new WebSocketHandler(config, this, requestSender);
 
-    final NoopHandler pinnedEntry = new NoopHandler();
-
     final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.TRACE);
 
     httpBootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
         ChannelPipeline pipeline = ch.pipeline()
-                .addLast(PINNED_ENTRY, pinnedEntry)
                 .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
                 .addLast(INFLATER_HANDLER, newHttpContentDecompressor())
                 .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())
                 .addLast(AHC_HTTP_HANDLER, httpHandler);
 
         if (LOGGER.isTraceEnabled()) {
-          pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+          pipeline.addFirst(LOGGING_HANDLER, loggingHandler);
         }
 
         if (config.getHttpAdditionalChannelInitializer() != null)
@@ -235,7 +231,6 @@ public class ChannelManager {
       @Override
       protected void initChannel(Channel ch) {
         ChannelPipeline pipeline = ch.pipeline()
-                .addLast(PINNED_ENTRY, pinnedEntry)
                 .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
                 .addLast(AHC_WS_HANDLER, wsHandler);
 
@@ -244,7 +239,7 @@ public class ChannelManager {
         }
 
         if (LOGGER.isDebugEnabled()) {
-          pipeline.addAfter(PINNED_ENTRY, LOGGING_HANDLER, loggingHandler);
+          pipeline.addFirst(LOGGING_HANDLER, loggingHandler);
         }
 
         if (config.getWsAdditionalChannelInitializer() != null)
@@ -347,12 +342,12 @@ public class ChannelManager {
       if (isSslHandlerConfigured(pipeline)) {
         pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
       } else {
-        pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
-        pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
+        pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
+        pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
       }
 
     else
-      pipeline.addAfter(PINNED_ENTRY, HTTP_CLIENT_CODEC, newHttpClientCodec());
+      pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
 
     if (requestUri.isWebSocket()) {
       pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
@@ -383,7 +378,7 @@ public class ChannelManager {
     if (hasSocksProxyHandler)
       pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
     else
-      pipeline.addAfter(PINNED_ENTRY, SSL_HANDLER, sslHandler);
+      pipeline.addFirst(SSL_HANDLER, sslHandler);
     return sslHandler;
   }
 
@@ -426,7 +421,7 @@ public class ChannelManager {
                 default:
                   throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
               }
-              channel.pipeline().addAfter(PINNED_ENTRY, SOCKS_HANDLER, socksProxyHandler);
+              channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
             }
           });
           promise.setSuccess(socksBootstrap);
