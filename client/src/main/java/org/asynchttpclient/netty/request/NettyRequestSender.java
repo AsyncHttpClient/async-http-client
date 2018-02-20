@@ -94,18 +94,17 @@ public final class NettyRequestSender {
     ProxyServer proxyServer = getProxyServer(config, request);
 
     // WebSockets use connect tunneling to work with proxies
-    if (proxyServer != null //
-            && (request.getUri().isSecured() || request.getUri().isWebSocket()) //
-            && !isConnectDone(request, future) //
-            && proxyServer.getProxyType().isHttp()) {
+    if (proxyServer != null
+            && proxyServer.getProxyType().isHttp()
+            && (request.getUri().isSecured() || request.getUri().isWebSocket())
+            && !isConnectAlreadyDone(request, future)) {
       // Proxy with HTTPS or WebSocket: CONNECT for sure
       if (future != null && future.isConnectAllowed()) {
         // Perform CONNECT
         return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, true);
       } else {
-        // CONNECT will depend if we can pool or connection or if we have to open a new
-        // one
-        return sendRequestThroughSslProxy(request, asyncHandler, future, proxyServer);
+        // CONNECT will depend if we can pool or connection or if we have to open a new one
+        return sendRequestThroughProxy(request, asyncHandler, future, proxyServer);
       }
     } else {
       // no CONNECT for sure
@@ -113,10 +112,10 @@ public final class NettyRequestSender {
     }
   }
 
-  private boolean isConnectDone(Request request, NettyResponseFuture<?> future) {
-    return future != null //
-            && future.getNettyRequest() != null //
-            && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT //
+  private boolean isConnectAlreadyDone(Request request, NettyResponseFuture<?> future) {
+    return future != null
+            && future.getNettyRequest() != null
+            && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT
             && !request.getMethod().equals(CONNECT);
   }
 
@@ -146,10 +145,10 @@ public final class NettyRequestSender {
    * until we get a valid channel from the pool and it's still valid once the
    * request is built @
    */
-  private <T> ListenableFuture<T> sendRequestThroughSslProxy(Request request,
-                                                             AsyncHandler<T> asyncHandler,
-                                                             NettyResponseFuture<T> future,
-                                                             ProxyServer proxyServer) {
+  private <T> ListenableFuture<T> sendRequestThroughProxy(Request request,
+                                                          AsyncHandler<T> asyncHandler,
+                                                          NettyResponseFuture<T> future,
+                                                          ProxyServer proxyServer) {
 
     NettyResponseFuture<T> newFuture = null;
     for (int i = 0; i < 3; i++) {
