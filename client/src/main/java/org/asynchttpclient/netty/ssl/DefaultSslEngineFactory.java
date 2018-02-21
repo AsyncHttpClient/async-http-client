@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.ssl;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
@@ -47,7 +48,7 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
     if (isNonEmpty(config.getEnabledCipherSuites())) {
       sslContextBuilder.ciphers(Arrays.asList(config.getEnabledCipherSuites()));
     } else if (!config.isFilterInsecureCipherSuites()) {
-      sslContextBuilder.ciphers(null, IdentityCipherSuiteFilterWorkaround.INSTANCE);
+      sslContextBuilder.ciphers(null, IdentityCipherSuiteFilter.INSTANCE_DEFAULTING_TO_SUPPORTED_CIPHERS);
     }
 
     if (config.isUseInsecureTrustManager()) {
