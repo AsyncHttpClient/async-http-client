@@ -12,7 +12,7 @@
   <description>The Async Http Client Typesafe Config Extras.</description>
 
   <properties>
-    <typesafeconfig.version>1.3.2</typesafeconfig.version>
+    <typesafeconfig.version>1.3.3</typesafeconfig.version>
   </properties>
 
   <dependencies>
