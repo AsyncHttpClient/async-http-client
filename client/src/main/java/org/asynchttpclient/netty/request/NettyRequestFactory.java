@@ -187,7 +187,7 @@ public final class NettyRequestFactory {
               .set(SEC_WEBSOCKET_VERSION, "13");
 
       if (!headers.contains(ORIGIN)) {
-        headers.set(ORIGIN, computeOriginHeader(uri));
+        headers.set(ORIGIN, originHeader(uri));
       }
 
     } else if (!headers.contains(CONNECTION)) {

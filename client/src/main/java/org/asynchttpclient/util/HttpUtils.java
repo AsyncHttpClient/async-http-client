@@ -154,7 +154,7 @@ public class HttpUtils {
     }
   }
 
-  public static String computeOriginHeader(Uri uri) {
+  public static String originHeader(Uri uri) {
     StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
     sb.append(uri.isSecured() ? "https://" : "http://").append(uri.getHost());
     if (uri.getExplicitPort() != uri.getSchemeDefaultPort()) {

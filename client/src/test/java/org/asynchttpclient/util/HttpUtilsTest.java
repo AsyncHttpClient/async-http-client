@@ -209,31 +209,31 @@ public class HttpUtilsTest {
 
   @Test
   public void computeOriginForPlainUriWithImplicitPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com/bar")), "http://foo.com");
+    assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com/bar")), "http://foo.com");
   }
 
   @Test
   public void computeOriginForPlainUriWithDefaultPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com:80/bar")), "http://foo.com");
+    assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com:80/bar")), "http://foo.com");
   }
 
   @Test
   public void computeOriginForPlainUriWithNonDefaultPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("ws://foo.com:81/bar")), "http://foo.com:81");
+    assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com:81/bar")), "http://foo.com:81");
   }
 
   @Test
   public void computeOriginForSecuredUriWithImplicitPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com/bar")), "https://foo.com");
+    assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com/bar")), "https://foo.com");
   }
 
   @Test
   public void computeOriginForSecuredUriWithDefaultPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com:443/bar")), "https://foo.com");
+    assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com:443/bar")), "https://foo.com");
   }
 
   @Test
   public void computeOriginForSecuredUriWithNonDefaultPort() {
-    assertEquals(HttpUtils.computeOriginHeader(Uri.create("wss://foo.com:444/bar")), "https://foo.com:444");
+    assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com:444/bar")), "https://foo.com:444");
   }
 }
