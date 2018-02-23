@@ -142,7 +142,7 @@ public class Uri {
   }
 
   /**
-   * @return [scheme]://[hostname](:[port]). Port is omitted if it matches the scheme's default one.
+   * @return [scheme]://[hostname](:[port])/path. Port is omitted if it matches the scheme's default one.
    */
   public String toBaseUrl() {
     StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
