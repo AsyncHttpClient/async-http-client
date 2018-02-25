@@ -22,7 +22,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
 
   private final byte[] bytes;
 
-  ByteArrayBodyGenerator(byte[] bytes) {
+  public ByteArrayBodyGenerator(byte[] bytes) {
     this.bytes = bytes;
   }
 
