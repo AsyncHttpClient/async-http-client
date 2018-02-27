@@ -338,16 +338,15 @@ public class ChannelManager {
     if (pipeline.get(HTTP_CLIENT_CODEC) != null)
       pipeline.remove(HTTP_CLIENT_CODEC);
 
-    if (requestUri.isSecured())
-      if (isSslHandlerConfigured(pipeline)) {
-        pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
-      } else {
-        pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
-        pipeline.addFirst(SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
+    if (requestUri.isSecured()) {
+      if (!isSslHandlerConfigured(pipeline)) {
+        pipeline.addBefore(AHC_HTTP_HANDLER, SSL_HANDLER, createSslHandler(requestUri.getHost(), requestUri.getExplicitPort()));
       }
+      pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
-    else
-      pipeline.addFirst(HTTP_CLIENT_CODEC, newHttpClientCodec());
+    } else {
+      pipeline.addBefore(AHC_HTTP_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
+    }
 
     if (requestUri.isWebSocket()) {
       pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
