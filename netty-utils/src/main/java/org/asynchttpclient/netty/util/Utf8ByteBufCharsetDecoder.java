@@ -191,7 +191,7 @@ public class Utf8ByteBufCharsetDecoder {
     if (buf.isDirect()) {
       return buf.toString(UTF_8);
     }
-    decodeHead0(buf);
+    decodeHeap0(buf);
     return charBuffer.toString();
   }
 
@@ -199,7 +199,7 @@ public class Utf8ByteBufCharsetDecoder {
     if (buf.isDirect()) {
       return buf.toString(UTF_8).toCharArray();
     }
-    decodeHead0(buf);
+    decodeHeap0(buf);
     return toCharArray(charBuffer);
   }
 
@@ -231,7 +231,7 @@ public class Utf8ByteBufCharsetDecoder {
     }
   }
 
-  private void decodeHead0(ByteBuf buf) {
+  private void decodeHeap0(ByteBuf buf) {
     int length = buf.readableBytes();
     ensureCapacity(length);
 
