@@ -93,7 +93,7 @@ public class Utf8ByteBufCharsetDecoder {
     return CharBuffer.allocate(l);
   }
 
-  private void ensureCapacity(int l) {
+  protected void ensureCapacity(int l) {
     if (charBuffer.position() == 0) {
       if (charBuffer.capacity() < l) {
         charBuffer = allocateCharBuffer(l);
