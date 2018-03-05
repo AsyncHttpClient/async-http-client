@@ -71,7 +71,8 @@ class OAuthSignatureCalculatorInstance {
   public void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder) throws InvalidKeyException {
     String nonce = generateNonce();
     long timestamp = generateTimestamp();
-    sign(consumerAuth, userAuth, request, requestBuilder, timestamp, nonce);
+    String authorization = computeAuthorizationHeader(consumerAuth, userAuth, request, timestamp, nonce);
+    requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
   }
 
   private String generateNonce() {
@@ -80,11 +81,10 @@ class OAuthSignatureCalculatorInstance {
     return Base64.getEncoder().encodeToString(nonceBuffer);
   }
 
-  void sign(ConsumerKey consumerAuth, RequestToken userAuth, Request request, RequestBuilderBase<?> requestBuilder, long timestamp, String nonce) throws InvalidKeyException {
+  String computeAuthorizationHeader(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long timestamp, String nonce) throws InvalidKeyException {
     String percentEncodedNonce = Utf8UrlEncoder.percentEncodeQueryElement(nonce);
     String signature = calculateSignature(consumerAuth, userAuth, request, timestamp, percentEncodedNonce);
-    String headerValue = constructAuthHeader(consumerAuth, userAuth, signature, timestamp, percentEncodedNonce);
-    requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, headerValue);
+    return constructAuthHeader(consumerAuth, userAuth, signature, timestamp, percentEncodedNonce);
   }
 
   String calculateSignature(ConsumerKey consumerAuth, RequestToken userAuth, Request request, long oauthTimestamp, String percentEncodedNonce) throws InvalidKeyException {

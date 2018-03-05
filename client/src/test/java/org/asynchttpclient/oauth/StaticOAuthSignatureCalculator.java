@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.oauth;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
@@ -37,7 +38,8 @@ class StaticOAuthSignatureCalculator implements SignatureCalculator {
   @Override
   public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
     try {
-      new OAuthSignatureCalculatorInstance().sign(consumerKey, requestToken, request, requestBuilder, timestamp, nonce);
+      String authorization = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(consumerKey, requestToken, request, timestamp, nonce);
+      requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
     } catch (InvalidKeyException | NoSuchAlgorithmException e) {
       throw new IllegalArgumentException(e);
     }
