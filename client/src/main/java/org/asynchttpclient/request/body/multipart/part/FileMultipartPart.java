@@ -49,7 +49,7 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
   @Override
   protected long getContentLength() {
-    return part.getFile().length();
+    return length;
   }
 
   @Override
