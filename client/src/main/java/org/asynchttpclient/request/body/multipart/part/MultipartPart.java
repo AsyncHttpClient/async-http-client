@@ -39,11 +39,11 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
   /**
    * Carriage return/linefeed as a byte array
    */
-  private static final byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
+  protected static final byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
   /**
    * Extra characters as a byte array
    */
-  private static final byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
+  protected static final byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
 
   /**
    * Content disposition as a byte array

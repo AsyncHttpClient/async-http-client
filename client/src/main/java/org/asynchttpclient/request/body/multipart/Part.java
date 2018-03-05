@@ -17,19 +17,7 @@ import org.asynchttpclient.Param;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
 public interface Part {
-
-  /**
-   * Carriage return/linefeed as a byte array
-   */
-  byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
-
-  /**
-   * Extra characters as a byte array
-   */
-  byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
 
   /**
    * Return the name of this part.

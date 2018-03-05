@@ -21,9 +21,6 @@ import org.asynchttpclient.request.body.multipart.FileLikePart;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
-import static org.asynchttpclient.request.body.multipart.Part.CRLF_BYTES;
-import static org.asynchttpclient.request.body.multipart.Part.EXTRA_BYTES;
-
 public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
   // lazy
