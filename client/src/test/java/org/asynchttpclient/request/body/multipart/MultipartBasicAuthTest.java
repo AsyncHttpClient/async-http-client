@@ -34,7 +34,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
 
 public class MultipartBasicAuthTest extends AbstractBasicTest {
 
@@ -54,33 +54,35 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     return new BasicAuthTest.SimpleHandler();
   }
 
-  private void expectBrokenPipe(Function<BoundRequestBuilder, BoundRequestBuilder> f) throws Exception {
+  private void expectExecutionException(Function<BoundRequestBuilder, BoundRequestBuilder> f) throws Throwable {
     File file = createTempFile(1024 * 1024);
 
-    Throwable cause = null;
+    ExecutionException executionException = null;
     try (AsyncHttpClient client = asyncHttpClient()) {
       try {
         for (int i = 0; i < 20; i++) {
           f.apply(client.preparePut(getTargetUrl())
                   .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
-                  .execute().get();
+                  .execute()
+                  .get();
         }
       } catch (ExecutionException e) {
-        cause = e.getCause();
+        executionException = e;
       }
     }
 
-    assertTrue(cause instanceof IOException, "Expected an IOException");
+    assertNotNull(executionException, "Expected ExecutionException");
+    throw executionException.getCause();
   }
 
-  @Test
-  public void noRealmCausesServerToCloseSocket() throws Exception {
-    expectBrokenPipe(rb -> rb);
+  @Test(expectedExceptions = IOException.class)
+  public void noRealmCausesServerToCloseSocket() throws Throwable {
+    expectExecutionException(rb -> rb);
   }
 
-  @Test
-  public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Exception {
-    expectBrokenPipe(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)));
+  @Test(expectedExceptions = IOException.class)
+  public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Throwable {
+    expectExecutionException(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)));
   }
 
   private void expectSuccess(Function<BoundRequestBuilder, BoundRequestBuilder> f) throws Exception {
