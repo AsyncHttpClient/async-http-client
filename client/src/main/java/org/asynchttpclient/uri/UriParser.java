@@ -336,7 +336,7 @@ final class UriParser {
 
   public void parse(Uri context, final String originalUrl) {
 
-    assertNotNull(originalUrl, "orginalUri");
+    assertNotNull(originalUrl, "originalUrl");
     this.originalUrl = originalUrl;
     this.end = originalUrl.length();
 
