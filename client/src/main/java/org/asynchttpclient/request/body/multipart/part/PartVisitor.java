@@ -14,8 +14,6 @@ package org.asynchttpclient.request.body.multipart.part;
 
 import io.netty.buffer.ByteBuf;
 
-import java.nio.ByteBuffer;
-
 public interface PartVisitor {
 
   void withBytes(byte[] bytes);
@@ -38,25 +36,6 @@ public interface PartVisitor {
 
     public int getCount() {
       return count;
-    }
-  }
-
-  class ByteBufferVisitor implements PartVisitor {
-
-    private final ByteBuffer target;
-
-    public ByteBufferVisitor(ByteBuffer target) {
-      this.target = target;
-    }
-
-    @Override
-    public void withBytes(byte[] bytes) {
-      target.put(bytes);
-    }
-
-    @Override
-    public void withByte(byte b) {
-      target.put(b);
     }
   }
 
