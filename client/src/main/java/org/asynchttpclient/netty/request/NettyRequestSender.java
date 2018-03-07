@@ -344,14 +344,14 @@ public final class NettyRequestSender {
     } else {
       int port = uri.getExplicitPort();
 
+      InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
+      scheduleRequestTimeout(future, unresolvedRemoteAddress);
+
       if (request.getAddress() != null) {
         // bypass resolution
         InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
         return promise.setSuccess(singletonList(inetSocketAddress));
-
       } else {
-        InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
-        scheduleRequestTimeout(future, unresolvedRemoteAddress);
         return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
       }
     }
