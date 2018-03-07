@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.extras.retrofit;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -249,7 +250,8 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
 
     // body
     if (asyncHttpClientResponse.hasResponseBody()) {
-      val contentType = MediaType.parse(asyncHttpClientResponse.getContentType());
+      val contentType = asyncHttpClientResponse.getContentType() == null
+              ? null : MediaType.parse(asyncHttpClientResponse.getContentType());
       val okHttpBody = ResponseBody.create(contentType, asyncHttpClientResponse.getResponseBodyAsBytes());
       rspBuilder.body(okHttpBody);
     }
@@ -287,6 +289,9 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
     // set request body
     val body = request.body();
     if (body != null && body.contentLength() > 0) {
+      if (body.contentType() != null) {
+        requestBuilder.setHeader(HttpHeaderNames.CONTENT_TYPE, body.contentType().toString());
+      }
       // write body to buffer
       val okioBuffer = new Buffer();
       body.writeTo(okioBuffer);
