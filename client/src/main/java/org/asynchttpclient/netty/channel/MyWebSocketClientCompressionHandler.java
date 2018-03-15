@@ -3,7 +3,6 @@ package org.asynchttpclient.netty.channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 
@@ -17,7 +16,13 @@ public class MyWebSocketClientCompressionHandler extends WebSocketClientExtensio
     public static final MyWebSocketClientCompressionHandler INSTANCE = new MyWebSocketClientCompressionHandler();
 
     private MyWebSocketClientCompressionHandler() {
-        super(new PerMessageDeflateClientExtensionHandshaker(6, ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), 15, true, true),
+        super(new PerMessageDeflateClientExtensionHandshaker(
+                6,
+                        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(),
+                        15,
+                        true,
+                        CurrentBk.getBkId() == 10
+                ),
                 new DeflateFrameClientExtensionHandshaker(false),
                 new DeflateFrameClientExtensionHandshaker(true));
     }
