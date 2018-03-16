@@ -164,7 +164,7 @@ public interface AsyncHttpClientConfig {
   /**
    * Return the list of {@link RequestFilter}
    *
-   * @return Unmodifiable list of {@link ResponseFilter}
+   * @return Unmodifiable list of {@link RequestFilter}
    */
   List<RequestFilter> getRequestFilters();
 
