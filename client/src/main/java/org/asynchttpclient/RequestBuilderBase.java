@@ -42,7 +42,7 @@ import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.util.HttpUtils.extractCharset;
+import static org.asynchttpclient.util.HttpUtils.extractContentTypeCharsetAttribute;
 import static org.asynchttpclient.util.HttpUtils.validateSupportedScheme;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
@@ -588,7 +588,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
   private void updateCharset() {
     String contentTypeHeader = headers.get(CONTENT_TYPE);
-    Charset contentTypeCharset = extractCharset(contentTypeHeader);
+    Charset contentTypeCharset = extractContentTypeCharsetAttribute(contentTypeHeader);
     charset = withDefault(contentTypeCharset, withDefault(charset, UTF_8));
     if (contentTypeHeader != null && contentTypeHeader.regionMatches(true, 0, "text/", 0, 5) && contentTypeCharset == null) {
       // add explicit charset to content-type header

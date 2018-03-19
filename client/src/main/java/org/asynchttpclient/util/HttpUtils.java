@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -32,6 +33,97 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 public class HttpUtils {
 
   private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
+
+  private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
+
+  private HttpUtils() {
+  }
+
+  public static String hostHeader(Uri uri) {
+    String host = uri.getHost();
+    int port = uri.getPort();
+    return port == -1 || port == uri.getSchemeDefaultPort() ? host : host + ":" + port;
+  }
+
+  public static String originHeader(Uri uri) {
+    StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
+    sb.append(uri.isSecured() ? "https://" : "http://").append(uri.getHost());
+    if (uri.getExplicitPort() != uri.getSchemeDefaultPort()) {
+      sb.append(':').append(uri.getPort());
+    }
+    return sb.toString();
+  }
+
+  public static Charset extractContentTypeCharsetAttribute(String contentType) {
+    String charsetName = extractContentTypeAttribute(contentType, CONTENT_TYPE_CHARSET_ATTRIBUTE);
+    return charsetName != null ? Charset.forName(charsetName) : null;
+  }
+
+  public static String extractContentTypeBoundaryAttribute(String contentType) {
+    return extractContentTypeAttribute(contentType, CONTENT_TYPE_BOUNDARY_ATTRIBUTE);
+  }
+
+  private static String extractContentTypeAttribute(String contentType, String attribute) {
+    if (contentType == null) {
+      return null;
+    }
+
+    for (int i = 0; i < contentType.length(); i++) {
+      if (contentType.regionMatches(true, i, attribute, 0,
+              attribute.length())) {
+        int start = i + attribute.length();
+
+        // trim left
+        while (start < contentType.length()) {
+          char c = contentType.charAt(start);
+          if (c == ' ' || c == '\'' || c == '"') {
+            start++;
+          } else {
+            break;
+          }
+        }
+        if (start == contentType.length()) {
+          break;
+        }
+
+        // trim right
+        int end = start + 1;
+        while (end < contentType.length()) {
+          char c = contentType.charAt(end);
+          if (c == ' ' || c == '\'' || c == '"' || c == ';') {
+            break;
+          } else {
+            end++;
+          }
+        }
+
+        return contentType.substring(start, end);
+      }
+    }
+
+    return null;
+  }
+
+  // The pool of ASCII chars to be used for generating a multipart boundary.
+  private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
+
+  // a random size from 30 to 40
+  public static byte[] computeMultipartBoundary() {
+    ThreadLocalRandom random = ThreadLocalRandom.current();
+    byte[] bytes = new byte[random.nextInt(11) + 30];
+    for (int i = 0; i < bytes.length; i++) {
+      bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];
+    }
+    return bytes;
+  }
+
+  public static String patchContentTypeWithBoundaryAttribute(CharSequence base, byte[] boundary) {
+    StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append(base);
+    if (base.length() != 0 && base.charAt(base.length() - 1) != ';') {
+      sb.append(';');
+    }
+    return sb.append(' ').append(CONTENT_TYPE_BOUNDARY_ATTRIBUTE).append(new String(boundary, US_ASCII)).toString();
+  }
 
   public static void validateSupportedScheme(Uri uri) {
     final String scheme = uri.getScheme();
@@ -62,46 +154,6 @@ public class HttpUtils {
    */
   public static String getNonEmptyPath(Uri uri) {
     return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
-  }
-
-  public static Charset extractCharset(String contentType) {
-    if (contentType != null) {
-      for (int i = 0; i < contentType.length(); i++) {
-        if (contentType.regionMatches(true, i, CONTENT_TYPE_CHARSET_ATTRIBUTE, 0,
-                CONTENT_TYPE_CHARSET_ATTRIBUTE.length())) {
-          int start = i + CONTENT_TYPE_CHARSET_ATTRIBUTE.length();
-
-          // trim left
-          while (start < contentType.length()) {
-            char c = contentType.charAt(start);
-            if (c == ' ' || c == '\'' || c == '"') {
-              start++;
-            } else {
-              break;
-            }
-          }
-          if (start == contentType.length()) {
-            break;
-          }
-
-          // trim right
-          int end = start + 1;
-          while (end < contentType.length()) {
-            char c = contentType.charAt(end);
-            if (c == ' ' || c == '\'' || c == '"' || c == ';') {
-              break;
-            } else {
-              end++;
-            }
-          }
-
-          String charsetName = contentType.substring(start, end);
-          return Charset.forName(charsetName);
-        }
-      }
-    }
-
-    return null;
   }
 
   public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
@@ -141,25 +193,5 @@ public class HttpUtils {
         // can't happen, as Charset was already resolved
       }
     }
-  }
-
-  public static String hostHeader(Request request, Uri uri) {
-    String virtualHost = request.getVirtualHost();
-    if (virtualHost != null)
-      return virtualHost;
-    else {
-      String host = uri.getHost();
-      int port = uri.getPort();
-      return port == -1 || port == uri.getSchemeDefaultPort() ? host : host + ":" + port;
-    }
-  }
-
-  public static String originHeader(Uri uri) {
-    StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
-    sb.append(uri.isSecured() ? "https://" : "http://").append(uri.getHost());
-    if (uri.getExplicitPort() != uri.getSchemeDefaultPort()) {
-      sb.append(':').append(uri.getPort());
-    }
-    return sb.toString();
   }
 }

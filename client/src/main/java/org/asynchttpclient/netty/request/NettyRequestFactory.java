@@ -198,7 +198,8 @@ public final class NettyRequestFactory {
     }
 
     if (!headers.contains(HOST)) {
-      headers.set(HOST, hostHeader(request, uri));
+      String virtualHost = request.getVirtualHost();
+      headers.set(HOST, virtualHost != null ? virtualHost : hostHeader(uri));
     }
 
     // don't override authorization but append

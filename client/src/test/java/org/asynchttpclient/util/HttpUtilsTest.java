@@ -25,7 +25,6 @@ import org.testng.annotations.Test;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,7 @@ import static org.testng.Assert.*;
 
 public class HttpUtilsTest {
 
-  private static String toUsAsciiString(ByteBuffer buf) throws CharacterCodingException {
+  private static String toUsAsciiString(ByteBuffer buf) {
     ByteBuf bb = Unpooled.wrappedBuffer(buf);
     try {
       return ByteBufUtils.byteBuf2String(US_ASCII, bb);
@@ -110,48 +109,39 @@ public class HttpUtilsTest {
 
   @Test
   public void testExtractCharsetWithoutQuotes() {
-    Charset charset = HttpUtils.extractCharset("text/html; charset=iso-8859-1");
+    Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=iso-8859-1");
     assertEquals(charset, ISO_8859_1);
   }
 
   @Test
   public void testExtractCharsetWithSingleQuotes() {
-    Charset charset = HttpUtils.extractCharset("text/html; charset='iso-8859-1'");
+    Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset='iso-8859-1'");
     assertEquals(charset, ISO_8859_1);
   }
 
   @Test
   public void testExtractCharsetWithDoubleQuotes() {
-    Charset charset = HttpUtils.extractCharset("text/html; charset=\"iso-8859-1\"");
+    Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=\"iso-8859-1\"");
     assertEquals(charset, ISO_8859_1);
   }
 
   @Test
   public void testExtractCharsetWithDoubleQuotesAndSpaces() {
-    Charset charset = HttpUtils.extractCharset("text/html; charset= \"iso-8859-1\" ");
+    Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset= \"iso-8859-1\" ");
     assertEquals(charset, ISO_8859_1);
   }
 
   @Test
   public void testExtractCharsetFallsBackToUtf8() {
-    Charset charset = HttpUtils.extractCharset(APPLICATION_JSON.toString());
+    Charset charset = HttpUtils.extractContentTypeCharsetAttribute(APPLICATION_JSON.toString());
     assertNull(charset);
   }
 
   @Test
-  public void testGetHostHeaderNoVirtualHost() {
-    Request request = Dsl.get("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs").build();
+  public void testGetHostHeader() {
     Uri uri = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
-    String hostHeader = HttpUtils.hostHeader(request, uri);
+    String hostHeader = HttpUtils.hostHeader(uri);
     assertEquals(hostHeader, "stackoverflow.com", "Incorrect hostHeader returned");
-  }
-
-  @Test
-  public void testGetHostHeaderHasVirtualHost() {
-    Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setVirtualHost("example.com").build();
-    Uri uri = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
-    String hostHeader = HttpUtils.hostHeader(request, uri);
-    assertEquals(hostHeader, "example.com", "Incorrect hostHeader returned");
   }
 
   @Test

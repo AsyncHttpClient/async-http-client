@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.util.HttpUtils.extractCharset;
+import static org.asynchttpclient.util.HttpUtils.extractContentTypeCharsetAttribute;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
@@ -187,7 +187,7 @@ public class NettyResponse implements Response {
 
   @Override
   public String getResponseBody() {
-    return getResponseBody(withDefault(extractCharset(getContentType()), UTF_8));
+    return getResponseBody(withDefault(extractContentTypeCharsetAttribute(getContentType()), UTF_8));
   }
 
   @Override

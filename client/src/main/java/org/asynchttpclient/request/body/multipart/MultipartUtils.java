@@ -16,23 +16,17 @@ package org.asynchttpclient.request.body.multipart;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.request.body.multipart.part.*;
-import org.asynchttpclient.util.StringBuilderPool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class MultipartUtils {
-
-  /**
-   * The pool of ASCII chars to be used for generating a multipart boundary.
-   */
-  private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
 
   /**
    * Creates a new multipart entity containing the given parts.
@@ -56,12 +50,12 @@ public class MultipartUtils {
         boundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
       } else {
         // generate boundary and append it to existing Content-Type
-        boundary = generateBoundary();
-        contentType = computeContentType(contentTypeHeader, boundary);
+        boundary = computeMultipartBoundary();
+        contentType = patchContentTypeWithBoundaryAttribute(contentTypeHeader, boundary);
       }
     } else {
-      boundary = generateBoundary();
-      contentType = computeContentType(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
+      boundary = computeMultipartBoundary();
+      contentType = patchContentTypeWithBoundaryAttribute(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
     }
 
     List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
@@ -89,22 +83,5 @@ public class MultipartUtils {
     multipartParts.add(new MessageEndMultipartPart(boundary));
 
     return multipartParts;
-  }
-
-  // a random size from 30 to 40
-  private static byte[] generateBoundary() {
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-    byte[] bytes = new byte[random.nextInt(11) + 30];
-    for (int i = 0; i < bytes.length; i++) {
-      bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];
-    }
-    return bytes;
-  }
-
-  private static String computeContentType(CharSequence base, byte[] boundary) {
-    StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder().append(base);
-    if (base.length() != 0 && base.charAt(base.length() - 1) != ';')
-      buffer.append(';');
-    return buffer.append(" boundary=").append(new String(boundary, US_ASCII)).toString();
   }
 }
