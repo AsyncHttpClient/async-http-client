@@ -39,8 +39,6 @@ import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 
 public final class NettyRequestFactory {
 
-  private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
-  private static final String GZIP_DEFLATE = HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE;
   private static final Integer ZERO_CONTENT_LENGTH = 0;
 
   private final AsyncHttpClientConfig config;
@@ -154,9 +152,7 @@ public final class NettyRequestFactory {
       String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
       if (userDefinedAcceptEncoding != null) {
         // we don't support Brotly ATM
-        if (userDefinedAcceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
-          headers.set(ACCEPT_ENCODING, userDefinedAcceptEncoding.subSequence(0, userDefinedAcceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length()));
-        }
+        headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
 
       } else if (config.isCompressionEnforced()) {
         headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
@@ -211,7 +207,7 @@ public final class NettyRequestFactory {
 
     // Add default accept headers
     if (!headers.contains(ACCEPT)) {
-      headers.set(ACCEPT, "*/*");
+      headers.set(ACCEPT, ACCEPT_ALL_HEADER_VALUE);
     }
 
     // Add default user agent

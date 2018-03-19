@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.util;
 
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
@@ -32,9 +34,15 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
  */
 public class HttpUtils {
 
+  public static final AsciiString ACCEPT_ALL_HEADER_VALUE = new AsciiString("*/*");
+
+  public static final AsciiString GZIP_DEFLATE = new AsciiString(HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE);
+
   private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
 
   private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
+
+  private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
 
   private HttpUtils() {
   }
@@ -193,5 +201,13 @@ public class HttpUtils {
         // can't happen, as Charset was already resolved
       }
     }
+  }
+
+  public static CharSequence filterOutBrotliFromAcceptEncoding(String acceptEncoding) {
+    // we don't support Brotly ATM
+    if (acceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
+      return acceptEncoding.subSequence(0, acceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length());
+    }
+    return acceptEncoding;
   }
 }
