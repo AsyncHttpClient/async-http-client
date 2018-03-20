@@ -52,7 +52,10 @@ public class OAuthSignatureCalculatorTest {
             .signatureBaseString(//
                     new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET),
                     new RequestToken("kkk9d7dh3k39sjv7", TOKEN_SECRET),
-                    request,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
                     137131201,
                     "7d8f3e4a").toString();
 
@@ -78,7 +81,10 @@ public class OAuthSignatureCalculatorTest {
             .signatureBaseString(//
                     new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET),
                     new RequestToken("kkk9d7dh3k39sjv7", TOKEN_SECRET),
-                    request,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
                     137131201,
                     Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
@@ -135,9 +141,12 @@ public class OAuthSignatureCalculatorTest {
             .build();
 
     String signature = new OAuthSignatureCalculatorInstance()
-            .calculateSignature(new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET),
+            .computeSignature(new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET),
                     new RequestToken(TOKEN_KEY, TOKEN_SECRET),
-                    request,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
                     TIMESTAMP,
                     NONCE);
 
@@ -261,7 +270,10 @@ public class OAuthSignatureCalculatorTest {
             .signatureBaseString(//
                     new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET),
                     new RequestToken(null, null),
-                    request,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
                     137131201,
                     Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
@@ -282,7 +294,10 @@ public class OAuthSignatureCalculatorTest {
             .signatureBaseString(
                     new ConsumerKey("key", "secret"),
                     new RequestToken(null, null),
-                    request,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
                     1469019732,
                     "6ad17f97334700f3ec2df0631d5b7511").toString();
 
@@ -306,10 +321,18 @@ public class OAuthSignatureCalculatorTest {
     final Request request = get("http://example.com/oauth/example/*path/wi*th/asterisks*").build();
 
     String expectedSignature = "cswi/v3ZqhVkTyy5MGqW841BxDA=";
-    String actualSignature = new OAuthSignatureCalculatorInstance().calculateSignature(consumerKey, requestToken, request, timestamp, nonce);
+    String actualSignature = new OAuthSignatureCalculatorInstance().computeSignature(
+      consumerKey,
+      requestToken,
+      request.getUri(),
+      request.getMethod(),
+      request.getFormParams(),
+      request.getQueryParams(),
+      timestamp,
+      nonce);
     assertEquals(actualSignature, expectedSignature);
 
-    String generatedAuthHeader = new OAuthSignatureCalculatorInstance().constructAuthHeader(consumerKey, requestToken, actualSignature, timestamp, nonce);
+    String generatedAuthHeader = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(consumerKey, requestToken, actualSignature, timestamp, nonce);
     assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));
   }
 
