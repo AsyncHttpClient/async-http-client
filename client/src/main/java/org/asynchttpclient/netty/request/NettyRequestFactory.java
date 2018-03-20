@@ -221,7 +221,7 @@ public final class NettyRequestFactory {
   private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
     if (connect) {
       // proxy tunnelling, connect need host and explicit port
-      return getAuthority(uri);
+      return uri.getAuthority();
 
     } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType().isHttp()) {
       // proxy over HTTP, need full url

@@ -27,7 +27,6 @@ import java.util.List;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.asynchttpclient.Dsl.realm;
-import static org.asynchttpclient.util.HttpUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public final class AuthenticatorUtils {
@@ -58,7 +57,7 @@ public final class AuthenticatorUtils {
     if (useAbsoluteURI) {
       return omitQuery && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
     } else {
-      String path = getNonEmptyPath(uri);
+      String path = uri.getNonEmptyPath();
       return omitQuery || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
     }
   }

@@ -15,7 +15,6 @@ package org.asynchttpclient.channel;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.HttpUtils;
 
 public interface ChannelPoolPartitioning {
 
@@ -26,7 +25,7 @@ public interface ChannelPoolPartitioning {
     INSTANCE;
 
     public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
-      String targetHostBaseUrl = HttpUtils.getBaseUrl(uri);
+      String targetHostBaseUrl = uri.getBaseUrl();
       if (proxyServer == null) {
         if (virtualHost == null) {
           return targetHostBaseUrl;

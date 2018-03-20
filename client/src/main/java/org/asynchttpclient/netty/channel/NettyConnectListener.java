@@ -31,8 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
-import static org.asynchttpclient.util.HttpUtils.getBaseUrl;
-
 /**
  * Non Blocking connect.
  */
@@ -178,7 +176,7 @@ public final class NettyConnectListener<T> {
     LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
 
     boolean printCause = cause.getMessage() != null;
-    String printedCause = printCause ? cause.getMessage() : getBaseUrl(future.getUri());
+    String printedCause = printCause ? cause.getMessage() : future.getUri().getBaseUrl();
     ConnectException e = new ConnectException(printedCause);
     e.initCause(cause);
     future.abort(e);

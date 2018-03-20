@@ -269,4 +269,62 @@ public class UriTest {
   public void creatingUriWithMissingHostThrowsIllegalArgumentException() {
     Uri.create("http://");
   }
+
+  @Test
+  public void testGetAuthority() {
+    Uri uri = Uri.create("http://stackoverflow.com/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    assertEquals(uri.getAuthority(), "stackoverflow.com:80", "Incorrect authority returned from getAuthority");
+  }
+
+  @Test
+  public void testGetAuthorityWithPortInUrl() {
+    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    assertEquals(uri.getAuthority(), "stackoverflow.com:8443", "Incorrect authority returned from getAuthority");
+  }
+
+  @Test
+  public void testGetBaseUrl() {
+    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    assertEquals(uri.getBaseUrl(), "http://stackoverflow.com:8443", "Incorrect base URL returned from getBaseURL");
+  }
+
+  @Test
+  public void testIsSameBaseUrlReturnsFalseWhenPortDifferent() {
+    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    Uri uri2 = Uri.create("http://stackoverflow.com:8442/questions/1057564/pretty-git-branch-graphs");
+    assertFalse(uri1.isSameBase(uri2), "Base URLs should be different, but true was returned from isSameBase");
+  }
+
+  @Test
+  public void testIsSameBaseUrlReturnsFalseWhenSchemeDifferent() {
+    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    Uri uri2 = Uri.create("ws://stackoverflow.com:8443/questions/1057564/pretty-git-branch-graphs");
+    assertFalse(uri1.isSameBase(uri2), "Base URLs should be different, but true was returned from isSameBase");
+  }
+
+  @Test
+  public void testIsSameBaseUrlReturnsFalseWhenHostDifferent() {
+    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    Uri uri2 = Uri.create("http://example.com:8443/questions/1057564/pretty-git-branch-graphs");
+    assertFalse(uri1.isSameBase(uri2), "Base URLs should be different, but true was returned from isSameBase");
+  }
+
+  @Test
+  public void testIsSameBaseUrlReturnsTrueWhenOneUriHasDefaultPort() {
+    Uri uri1 = Uri.create("http://stackoverflow.com:80/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    Uri uri2 = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
+    assertTrue(uri1.isSameBase(uri2), "Base URLs should be same, but false was returned from isSameBase");
+  }
+
+  @Test
+  public void testGetPathWhenPathIsNonEmpty() {
+    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
+    assertEquals(uri.getNonEmptyPath(), "/questions/17814461/jacoco-maven-testng-0-test-coverage", "Incorrect path returned from getNonEmptyPath");
+  }
+
+  @Test
+  public void testGetPathWhenPathIsEmpty() {
+    Uri uri = Uri.create("http://stackoverflow.com");
+    assertEquals(uri.getNonEmptyPath(), "/", "Incorrect path returned from getNonEmptyPath");
+  }
 }

@@ -168,6 +168,24 @@ public class Uri {
     return sb.toString();
   }
 
+  public String getBaseUrl() {
+    return scheme + "://" + host + ":" + getExplicitPort();
+  }
+
+  public String getAuthority() {
+    return host + ":" + getExplicitPort();
+  }
+
+  public boolean isSameBase(Uri other) {
+    return scheme.equals(other.getScheme())
+      && host.equals(other.getHost())
+      && getExplicitPort() == other.getExplicitPort();
+  }
+
+  public String getNonEmptyPath() {
+    return isNonEmpty(path) ? path : "/";
+  }
+
   @Override
   public String toString() {
     // for now, but might change
@@ -242,5 +260,14 @@ public class Uri {
     } else if (!userInfo.equals(other.userInfo))
       return false;
     return true;
+  }
+
+  public static void validateSupportedScheme(Uri uri) {
+    final String scheme = uri.getScheme();
+    if (scheme == null || !scheme.equalsIgnoreCase(HTTP) && !scheme.equalsIgnoreCase(HTTPS)
+      && !scheme.equalsIgnoreCase(WS) && !scheme.equalsIgnoreCase(WSS)) {
+      throw new IllegalArgumentException("The URI scheme, of the URI " + uri
+        + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+    }
   }
 }

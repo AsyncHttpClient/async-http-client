@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
  * {@link org.asynchttpclient.AsyncHttpClient} common utilities.
@@ -131,37 +130,6 @@ public class HttpUtils {
       sb.append(';');
     }
     return sb.append(' ').append(CONTENT_TYPE_BOUNDARY_ATTRIBUTE).append(new String(boundary, US_ASCII)).toString();
-  }
-
-  public static void validateSupportedScheme(Uri uri) {
-    final String scheme = uri.getScheme();
-    if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")
-            && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
-      throw new IllegalArgumentException("The URI scheme, of the URI " + uri
-              + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
-    }
-  }
-
-  public static String getBaseUrl(Uri uri) {
-    // getAuthority duplicate but we don't want to re-concatenate
-    return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getExplicitPort();
-  }
-
-  public static String getAuthority(Uri uri) {
-    return uri.getHost() + ":" + uri.getExplicitPort();
-  }
-
-  public static boolean isSameBase(Uri uri1, Uri uri2) {
-    return uri1.getScheme().equals(uri2.getScheme()) && uri1.getHost().equals(uri2.getHost())
-            && uri1.getExplicitPort() == uri2.getExplicitPort();
-  }
-
-  /**
-   * @param uri the uri
-   * @return the raw path or "/" if it's null
-   */
-  public static String getNonEmptyPath(Uri uri) {
-    return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
   }
 
   public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {

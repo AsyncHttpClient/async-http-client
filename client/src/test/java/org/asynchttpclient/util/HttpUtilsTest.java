@@ -45,69 +45,6 @@ public class HttpUtilsTest {
   }
 
   @Test
-  public void testGetAuthority() {
-    Uri uri = Uri.create("http://stackoverflow.com/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    String authority = HttpUtils.getAuthority(uri);
-    assertEquals(authority, "stackoverflow.com:80", "Incorrect authority returned from getAuthority");
-  }
-
-  @Test
-  public void testGetAuthorityWithPortInUrl() {
-    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    String authority = HttpUtils.getAuthority(uri);
-    assertEquals(authority, "stackoverflow.com:8443", "Incorrect authority returned from getAuthority");
-  }
-
-  @Test
-  public void testGetBaseUrl() {
-    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    String baseUrl = HttpUtils.getBaseUrl(uri);
-    assertEquals(baseUrl, "http://stackoverflow.com:8443", "Incorrect base URL returned from getBaseURL");
-  }
-
-  @Test
-  public void testIsSameBaseUrlReturnsFalseWhenPortDifferent() {
-    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    Uri uri2 = Uri.create("http://stackoverflow.com:8442/questions/1057564/pretty-git-branch-graphs");
-    assertFalse(HttpUtils.isSameBase(uri1, uri2), "Base URLs should be different, but true was returned from isSameBase");
-  }
-
-  @Test
-  public void testIsSameBaseUrlReturnsFalseWhenSchemeDifferent() {
-    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    Uri uri2 = Uri.create("ws://stackoverflow.com:8443/questions/1057564/pretty-git-branch-graphs");
-    assertFalse(HttpUtils.isSameBase(uri1, uri2), "Base URLs should be different, but true was returned from isSameBase");
-  }
-
-  @Test
-  public void testIsSameBaseUrlReturnsFalseWhenHostDifferent() {
-    Uri uri1 = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    Uri uri2 = Uri.create("http://example.com:8443/questions/1057564/pretty-git-branch-graphs");
-    assertFalse(HttpUtils.isSameBase(uri1, uri2), "Base URLs should be different, but true was returned from isSameBase");
-  }
-
-  @Test
-  public void testGetPathWhenPathIsNonEmpty() {
-    Uri uri = Uri.create("http://stackoverflow.com:8443/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    String path = HttpUtils.getNonEmptyPath(uri);
-    assertEquals(path, "/questions/17814461/jacoco-maven-testng-0-test-coverage", "Incorrect path returned from getNonEmptyPath");
-  }
-
-  @Test
-  public void testGetPathWhenPathIsEmpty() {
-    Uri uri = Uri.create("http://stackoverflow.com");
-    String path = HttpUtils.getNonEmptyPath(uri);
-    assertEquals(path, "/", "Incorrect path returned from getNonEmptyPath");
-  }
-
-  @Test
-  public void testIsSameBaseUrlReturnsTrueWhenOneUriHasDefaultPort() {
-    Uri uri1 = Uri.create("http://stackoverflow.com:80/questions/17814461/jacoco-maven-testng-0-test-coverage");
-    Uri uri2 = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
-    assertTrue(HttpUtils.isSameBase(uri1, uri2), "Base URLs should be same, but false was returned from isSameBase");
-  }
-
-  @Test
   public void testExtractCharsetWithoutQuotes() {
     Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=iso-8859-1");
     assertEquals(charset, ISO_8859_1);

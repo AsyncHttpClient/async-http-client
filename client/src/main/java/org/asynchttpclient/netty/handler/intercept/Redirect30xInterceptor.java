@@ -40,7 +40,6 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.followRedirect;
-import static org.asynchttpclient.util.HttpUtils.isSameBase;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
@@ -136,7 +135,7 @@ public class Redirect30xInterceptor {
               requestBuilder.addOrReplaceCookie(cookie);
         }
 
-        boolean sameBase = isSameBase(request.getUri(), newUri);
+        boolean sameBase = request.getUri().isSameBase(newUri);
 
         if (sameBase) {
           // we can only assume the virtual host is still valid if the baseUrl is the same

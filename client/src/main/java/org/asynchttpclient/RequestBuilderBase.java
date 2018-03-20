@@ -43,7 +43,6 @@ import java.util.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.HttpUtils.extractContentTypeCharsetAttribute;
-import static org.asynchttpclient.util.HttpUtils.validateSupportedScheme;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
@@ -603,7 +602,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
       LOGGER.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
       tempUri = DEFAULT_REQUEST_URL;
     } else {
-      validateSupportedScheme(tempUri);
+      Uri.validateSupportedScheme(tempUri);
     }
 
     return uriEncoder.encode(tempUri, queryParams);
