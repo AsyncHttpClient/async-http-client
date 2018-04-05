@@ -73,7 +73,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String AHC_VERSION;
 
   static {
-    try (InputStream is = AsyncHttpClientConfigDefaults.class.getResourceAsStream("/ahc-version.properties")) {
+    try (InputStream is = AsyncHttpClientConfigDefaults.class.getResourceAsStream("ahc-version.properties")) {
       Properties prop = new Properties();
       prop.load(is);
       AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
