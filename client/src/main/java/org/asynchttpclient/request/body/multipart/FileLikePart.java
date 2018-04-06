@@ -27,7 +27,7 @@ public abstract class FileLikePart extends PartBase {
   private static final MimetypesFileTypeMap MIME_TYPES_FILE_TYPE_MAP;
 
   static {
-    try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("ahc-mime.types")) {
+    try (InputStream is = FileLikePart.class.getResourceAsStream("ahc-mime.types")) {
       MIME_TYPES_FILE_TYPE_MAP = new MimetypesFileTypeMap(is);
     } catch (IOException e) {
       throw new ExceptionInInitializerError(e);

@@ -2,8 +2,6 @@ package org.asynchttpclient.config;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,29 +43,7 @@ public class AsyncHttpClientConfigHelper {
     private Properties parsePropertiesFile(String file, boolean required) {
       Properties props = new Properties();
 
-      List<ClassLoader> cls = new ArrayList<>();
-
-      ClassLoader cl = Thread.currentThread().getContextClassLoader();
-      if (cl != null) {
-        cls.add(cl);
-      }
-      cl = getClass().getClassLoader();
-      if (cl != null) {
-        cls.add(cl);
-      }
-      cl = ClassLoader.getSystemClassLoader();
-      if (cl != null) {
-        cls.add(cl);
-      }
-
-      InputStream is = null;
-      for (ClassLoader classLoader : cls) {
-        is = classLoader.getResourceAsStream(file);
-        if (is != null) {
-          break;
-        }
-      }
-
+      InputStream is = getClass().getResourceAsStream(file);
       if (is != null) {
         try {
           props.load(is);
