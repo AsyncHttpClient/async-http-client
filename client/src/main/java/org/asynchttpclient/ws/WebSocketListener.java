@@ -61,8 +61,6 @@ public interface WebSocketListener {
   default void onTextFrame(String payload, boolean finalFragment, int rsv) {
   }
 
-  ;
-
   /**
    * Invoked when a ping frame is received
    *
