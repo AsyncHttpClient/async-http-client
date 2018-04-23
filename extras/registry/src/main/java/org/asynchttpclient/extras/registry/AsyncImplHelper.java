@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -21,44 +21,43 @@ import java.security.PrivilegedExceptionAction;
 
 public class AsyncImplHelper {
 
-    public static final String ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY = "org.async.http.client.impl";
-    public static final String ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY = "org.async.http.client.registry.impl";
+  public static final String ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY = "org.async.http.client.impl";
+  public static final String ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY = "org.async.http.client.registry.impl";
 
-    /*
-     * Returns the class specified by either a system property or a properties
-     * file as the class to instantiated for the AsyncHttpClient. Returns null
-     * if property is not found and throws an AsyncHttpClientImplException if
-     * the specified class couldn't be created.
-     */
-    public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
-        String asyncHttpClientImplClassName = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(propertyName);
-        if (asyncHttpClientImplClassName != null) {
-            Class<AsyncHttpClient> asyncHttpClientImplClass = AsyncImplHelper.getClass(asyncHttpClientImplClassName);
-            return asyncHttpClientImplClass;
-        }
-        return null;
+  /*
+   * Returns the class specified by either a system property or a properties
+   * file as the class to instantiated for the AsyncHttpClient. Returns null
+   * if property is not found and throws an AsyncHttpClientImplException if
+   * the specified class couldn't be created.
+   */
+  public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
+    String asyncHttpClientImplClassName = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(propertyName);
+    if (asyncHttpClientImplClassName != null) {
+      return AsyncImplHelper.getClass(asyncHttpClientImplClassName);
     }
+    return null;
+  }
 
-    private static Class<AsyncHttpClient> getClass(final String asyncImplClassName) {
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<Class<AsyncHttpClient>>() {
-                @SuppressWarnings("unchecked")
-                public Class<AsyncHttpClient> run() throws ClassNotFoundException {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    if (cl != null)
-                        try {
-                            return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
-                        } catch (ClassNotFoundException e) {
-                            AsyncHttpClientFactory.logger.info("Couldn't find class : " + asyncImplClassName + " in thread context classpath " + "checking system class path next",
-                                    e);
-                        }
+  private static Class<AsyncHttpClient> getClass(final String asyncImplClassName) {
+    try {
+      return AccessController.doPrivileged(new PrivilegedExceptionAction<Class<AsyncHttpClient>>() {
+        @SuppressWarnings("unchecked")
+        public Class<AsyncHttpClient> run() throws ClassNotFoundException {
+          ClassLoader cl = Thread.currentThread().getContextClassLoader();
+          if (cl != null)
+            try {
+              return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
+            } catch (ClassNotFoundException e) {
+              AsyncHttpClientFactory.logger.info("Couldn't find class : " + asyncImplClassName + " in thread context classpath " + "checking system class path next",
+                      e);
+            }
 
-                    cl = ClassLoader.getSystemClassLoader();
-                    return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new AsyncHttpClientImplException("Class : " + asyncImplClassName + " couldn't be found in " + " the classpath due to : " + e.getMessage(), e);
+          cl = ClassLoader.getSystemClassLoader();
+          return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
         }
+      });
+    } catch (PrivilegedActionException e) {
+      throw new AsyncHttpClientImplException("Class : " + asyncImplClassName + " couldn't be found in " + " the classpath due to : " + e.getMessage(), e);
     }
+  }
 }

@@ -14,10 +14,6 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpRequest;
-
-import java.io.IOException;
-
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -30,35 +26,32 @@ import org.slf4j.LoggerFactory;
 
 public class ConnectSuccessInterceptor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectSuccessInterceptor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConnectSuccessInterceptor.class);
 
-    private final ChannelManager channelManager;
-    private final NettyRequestSender requestSender;
+  private final ChannelManager channelManager;
+  private final NettyRequestSender requestSender;
 
-    public ConnectSuccessInterceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
-        this.channelManager = channelManager;
-        this.requestSender = requestSender;
-    }
+  ConnectSuccessInterceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
+    this.channelManager = channelManager;
+    this.requestSender = requestSender;
+  }
 
-    public boolean exitAfterHandlingConnect(//
-            final Channel channel,//
-            final NettyResponseFuture<?> future,//
-            final Request request,//
-            ProxyServer proxyServer,//
-            int statusCode,//
-            HttpRequest httpRequest) throws IOException {
+  public boolean exitAfterHandlingConnect(Channel channel,
+                                          NettyResponseFuture<?> future,
+                                          Request request,
+                                          ProxyServer proxyServer) {
 
-        if (future.isKeepAlive())
-            future.attachChannel(channel, true);
+    if (future.isKeepAlive())
+      future.attachChannel(channel, true);
 
-        Uri requestUri = request.getUri();
-        LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
+    Uri requestUri = request.getUri();
+    LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
-        channelManager.upgradeProtocol(channel.pipeline(), requestUri);
-        future.setReuseChannel(true);
-        future.setConnectAllowed(false);
-        requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
+    channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+    future.setReuseChannel(true);
+    future.setConnectAllowed(false);
+    requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
 
-        return true;
-    }
+    return true;
+  }
 }

@@ -13,10 +13,8 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
-
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseStatus;
@@ -26,45 +24,46 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+
 public class ResponseFiltersInterceptor {
 
-    private final AsyncHttpClientConfig config;
-    private final NettyRequestSender requestSender;
+  private final AsyncHttpClientConfig config;
+  private final NettyRequestSender requestSender;
 
-    public ResponseFiltersInterceptor(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
-        this.config = config;
-        this.requestSender = requestSender;
+  ResponseFiltersInterceptor(AsyncHttpClientConfig config, NettyRequestSender requestSender) {
+    this.config = config;
+    this.requestSender = requestSender;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public boolean exitAfterProcessingFilters(Channel channel,
+                                            NettyResponseFuture<?> future,
+                                            AsyncHandler<?> handler,
+                                            HttpResponseStatus status,
+                                            HttpHeaders responseHeaders) {
+
+    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
+            .responseHeaders(responseHeaders).build();
+
+    for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+      try {
+        fc = asyncFilter.filter(fc);
+        // FIXME Is it worth protecting against this?
+        assertNotNull("fc", "filterContext");
+      } catch (FilterException fe) {
+        requestSender.abort(channel, future, fe);
+      }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public boolean exitAfterProcessingFilters(//
-            Channel channel,//
-            NettyResponseFuture<?> future,//
-            AsyncHandler<?> handler, //
-            HttpResponseStatus status,//
-            HttpHeaders responseHeaders) {
+    // The handler may have been wrapped.
+    future.setAsyncHandler(fc.getAsyncHandler());
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
-                .responseHeaders(responseHeaders).build();
-
-        for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                // FIXME Is it worth protecting against this?
-                assertNotNull("fc", "filterContext");
-            } catch (FilterException efe) {
-                requestSender.abort(channel, future, efe);
-            }
-        }
-
-        // The handler may have been wrapped.
-        future.setAsyncHandler(fc.getAsyncHandler());
-
-        // The request has changed
-        if (fc.replayRequest()) {
-            requestSender.replayRequest(future, fc, channel);
-            return true;
-        }
-        return false;
+    // The request has changed
+    if (fc.replayRequest()) {
+      requestSender.replayRequest(future, fc, channel);
+      return true;
     }
+    return false;
+  }
 }

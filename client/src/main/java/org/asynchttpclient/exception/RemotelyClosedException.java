@@ -12,16 +12,16 @@
  */
 package org.asynchttpclient.exception;
 
-import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-
 import java.io.IOException;
+
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 @SuppressWarnings("serial")
 public final class RemotelyClosedException extends IOException {
 
-    public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
+  public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
 
-    public RemotelyClosedException() {
-        super("Remotely closed");
-    }
+  private RemotelyClosedException() {
+    super("Remotely closed");
+  }
 }

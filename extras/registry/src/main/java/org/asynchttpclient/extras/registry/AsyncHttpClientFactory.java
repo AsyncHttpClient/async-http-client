@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,18 +12,17 @@
  */
 package org.asynchttpclient.extras.registry;
 
-import static org.asynchttpclient.Dsl.asyncHttpClient;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 /**
  * The AsyncHttpClientFactory returns back an instance of AsyncHttpClient. The
@@ -40,51 +39,51 @@ import org.slf4j.LoggerFactory;
  */
 public class AsyncHttpClientFactory {
 
-    private static Class<AsyncHttpClient> asyncHttpClientImplClass = null;
-    private static volatile boolean instantiated = false;
-    public static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
-    private static Lock lock = new ReentrantLock();
+  public static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
+  private static Class<AsyncHttpClient> asyncHttpClientImplClass = null;
+  private static volatile boolean instantiated = false;
+  private static Lock lock = new ReentrantLock();
 
-    public static AsyncHttpClient getAsyncHttpClient() {
+  public static AsyncHttpClient getAsyncHttpClient() {
 
-        try {
-            if (attemptInstantiation())
-                return asyncHttpClientImplClass.newInstance();
-        } catch (InstantiationException e) {
-            throw new AsyncHttpClientImplException("Unable to create the class specified by system property : "
-                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
-        } catch (IllegalAccessException e) {
-            throw new AsyncHttpClientImplException("Unable to find the class specified by system property : "
-                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
-        }
-        return asyncHttpClient();
+    try {
+      if (attemptInstantiation())
+        return asyncHttpClientImplClass.newInstance();
+    } catch (InstantiationException e) {
+      throw new AsyncHttpClientImplException("Unable to create the class specified by system property : "
+              + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
+    } catch (IllegalAccessException e) {
+      throw new AsyncHttpClientImplException("Unable to find the class specified by system property : "
+              + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
     }
+    return asyncHttpClient();
+  }
 
-    public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (attemptInstantiation()) {
-            try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpClientConfig.class);
-                return constructor.newInstance(config);
-            } catch (Exception e) {
-                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
-                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
-            }
-        }
-        return asyncHttpClient(config);
+  public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    if (attemptInstantiation()) {
+      try {
+        Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpClientConfig.class);
+        return constructor.newInstance(config);
+      } catch (Exception e) {
+        throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
+                + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
+      }
     }
+    return asyncHttpClient(config);
+  }
 
-    private static boolean attemptInstantiation() {
+  private static boolean attemptInstantiation() {
+    if (!instantiated) {
+      lock.lock();
+      try {
         if (!instantiated) {
-            lock.lock();
-            try {
-                if (!instantiated) {
-                    asyncHttpClientImplClass = AsyncImplHelper.getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
-                    instantiated = true;
-                }
-            } finally {
-                lock.unlock();
-            }
+          asyncHttpClientImplClass = AsyncImplHelper.getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
+          instantiated = true;
         }
-        return asyncHttpClientImplClass != null;
+      } finally {
+        lock.unlock();
+      }
     }
+    return asyncHttpClientImplClass != null;
+  }
 }

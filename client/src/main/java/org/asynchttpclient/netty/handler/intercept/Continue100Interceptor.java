@@ -14,33 +14,30 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
-
-import java.io.IOException;
-
-import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
-public class Continue100Interceptor {
+class Continue100Interceptor {
 
-    private final NettyRequestSender requestSender;
+  private final NettyRequestSender requestSender;
 
-    public Continue100Interceptor(NettyRequestSender requestSender) {
-        this.requestSender = requestSender;
-    }
+  Continue100Interceptor(NettyRequestSender requestSender) {
+    this.requestSender = requestSender;
+  }
 
-    public boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
-        future.setHeadersAlreadyWrittenOnContinue(true);
-        future.setDontWriteBodyBecauseExpectContinue(false);
-        // directly send the body
-        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
-            @Override
-            public void call() throws IOException {
-                Channels.setAttribute(channel, future);
-                requestSender.writeRequest(future, channel);
-            }
-        });
-        return true;
-    }
+  public boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future) {
+    future.setHeadersAlreadyWrittenOnContinue(true);
+    future.setDontWriteBodyBecauseExpectContinue(false);
+    // directly send the body
+    Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
+      @Override
+      public void call() {
+        Channels.setAttribute(channel, future);
+        requestSender.writeRequest(future, channel);
+      }
+    });
+    return true;
+  }
 }

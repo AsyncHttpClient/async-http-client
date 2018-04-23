@@ -13,39 +13,37 @@
  */
 package org.asynchttpclient.extras.rxjava2.maybe;
 
-import org.asynchttpclient.handler.ProgressAsyncHandler;
-
 import io.reactivex.MaybeEmitter;
+import org.asynchttpclient.handler.ProgressAsyncHandler;
 
 /**
  * An extension to {@code AbstractMaybeAsyncHandlerBridge} for {@code ProgressAsyncHandlers}.
  *
- * @param <T>
- *            the result type produced by the wrapped {@code ProgressAsyncHandler} and emitted via RxJava
+ * @param <T> the result type produced by the wrapped {@code ProgressAsyncHandler} and emitted via RxJava
  */
 public abstract class AbstractMaybeProgressAsyncHandlerBridge<T> extends AbstractMaybeAsyncHandlerBridge<T>
         implements ProgressAsyncHandler<Void> {
 
-    protected AbstractMaybeProgressAsyncHandlerBridge(MaybeEmitter<T> emitter) {
-        super(emitter);
-    }
+  protected AbstractMaybeProgressAsyncHandlerBridge(MaybeEmitter<T> emitter) {
+    super(emitter);
+  }
 
-    @Override
-    public final State onHeadersWritten() {
-        return emitter.isDisposed() ? disposed() : delegate().onHeadersWritten();
-    }
+  @Override
+  public final State onHeadersWritten() {
+    return emitter.isDisposed() ? disposed() : delegate().onHeadersWritten();
+  }
 
-    @Override
-    public final State onContentWritten() {
-        return emitter.isDisposed() ? disposed() : delegate().onContentWritten();
-    }
+  @Override
+  public final State onContentWritten() {
+    return emitter.isDisposed() ? disposed() : delegate().onContentWritten();
+  }
 
-    @Override
-    public final State onContentWriteProgress(long amount, long current, long total) {
-        return emitter.isDisposed() ? disposed() : delegate().onContentWriteProgress(amount, current, total);
-    }
+  @Override
+  public final State onContentWriteProgress(long amount, long current, long total) {
+    return emitter.isDisposed() ? disposed() : delegate().onContentWriteProgress(amount, current, total);
+  }
 
-    @Override
-    protected abstract ProgressAsyncHandler<? extends T> delegate();
+  @Override
+  protected abstract ProgressAsyncHandler<? extends T> delegate();
 
 }

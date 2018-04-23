@@ -17,9 +17,9 @@ package org.asynchttpclient.handler;
  * Thrown when the {@link org.asynchttpclient.DefaultAsyncHttpClientConfig#getMaxRedirects()} has been reached.
  */
 public class MaxRedirectException extends Exception {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    public MaxRedirectException(String msg) {
-        super(msg, null, true, false);
-    }
+  public MaxRedirectException(String msg) {
+    super(msg, null, true, false);
+  }
 }

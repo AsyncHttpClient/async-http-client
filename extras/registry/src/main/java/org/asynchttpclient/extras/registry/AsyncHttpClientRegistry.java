@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,64 +18,64 @@ import java.util.Set;
 
 public interface AsyncHttpClientRegistry {
 
-    /**
-     * Returns back the AsyncHttpClient associated with this name
-     * 
-     * @param name the name of the client instance in the registry
-     * @return the client
-     */
-    AsyncHttpClient get(String name);
+  /**
+   * Returns back the AsyncHttpClient associated with this name
+   *
+   * @param name the name of the client instance in the registry
+   * @return the client
+   */
+  AsyncHttpClient get(String name);
 
-    /**
-     * Registers this instance of AsyncHttpClient with this name and returns
-     * back a null if an instance with the same name never existed but will return back the
-     * previous instance if there was another instance registered with the same
-     * name and has been replaced by this one.
-     * 
-     * @param name the name of the client instance in the registry
-     * @param client the client instance
-     * @return the previous instance
-     */
-    AsyncHttpClient addOrReplace(String name, AsyncHttpClient client);
+  /**
+   * Registers this instance of AsyncHttpClient with this name and returns
+   * back a null if an instance with the same name never existed but will return back the
+   * previous instance if there was another instance registered with the same
+   * name and has been replaced by this one.
+   *
+   * @param name   the name of the client instance in the registry
+   * @param client the client instance
+   * @return the previous instance
+   */
+  AsyncHttpClient addOrReplace(String name, AsyncHttpClient client);
 
-    /**
-     * Will register only if an instance with this name doesn't exist and if it
-     * does exist will not replace this instance and will return false. Use it in the 
-     * following way:
-     * <blockquote><pre>
-     *      AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();      
-     *      if(!AsyncHttpClientRegistryImpl.getInstance().registerIfNew(“MyAHC”,ahc)){
-     *          //An instance with this name is already registered so close ahc 
-     *          ahc.close(); 
-     *          //and do necessary cleanup
-     *      }
-     * </pre></blockquote>
-     * 
-     * @param name the name of the client instance in the registry
-     * @param client the client instance
-     * @return true is the client was indeed registered
-     */
+  /**
+   * Will register only if an instance with this name doesn't exist and if it
+   * does exist will not replace this instance and will return false. Use it in the
+   * following way:
+   * <blockquote><pre>
+   *      AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient();
+   *      if(!AsyncHttpClientRegistryImpl.getInstance().registerIfNew(“MyAHC”,ahc)){
+   *          //An instance with this name is already registered so close ahc
+   *          ahc.close();
+   *          //and do necessary cleanup
+   *      }
+   * </pre></blockquote>
+   *
+   * @param name   the name of the client instance in the registry
+   * @param client the client instance
+   * @return true is the client was indeed registered
+   */
 
-    boolean registerIfNew(String name, AsyncHttpClient client);
+  boolean registerIfNew(String name, AsyncHttpClient client);
 
-    /**
-     * Remove the instance associate with this name
-     * 
-     * @param name the name of the client instance in the registry
-     * @return true is the client was indeed unregistered
-     */
+  /**
+   * Remove the instance associate with this name
+   *
+   * @param name the name of the client instance in the registry
+   * @return true is the client was indeed unregistered
+   */
 
-    boolean unregister(String name);
+  boolean unregister(String name);
 
-    /**
-     * @return all registered names
-     */
+  /**
+   * @return all registered names
+   */
 
-    Set<String> getAllRegisteredNames();
+  Set<String> getAllRegisteredNames();
 
-    /**
-     * Removes all instances from this registry.
-     */
+  /**
+   * Removes all instances from this registry.
+   */
 
-    void clearAllInstances();
+  void clearAllInstances();
 }

@@ -13,41 +13,40 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import io.netty.util.Timeout;
-
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
 
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
+
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
-    private final long requestTimeout;
+  private final long requestTimeout;
 
-    public RequestTimeoutTimerTask(//
-            NettyResponseFuture<?> nettyResponseFuture,//
-            NettyRequestSender requestSender,//
-            TimeoutsHolder timeoutsHolder,//
-            int requestTimeout) {
-        super(nettyResponseFuture, requestSender, timeoutsHolder);
-        this.requestTimeout = requestTimeout;
-    }
+  RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
+                                 NettyRequestSender requestSender,
+                                 TimeoutsHolder timeoutsHolder,
+                                 int requestTimeout) {
+    super(nettyResponseFuture, requestSender, timeoutsHolder);
+    this.requestTimeout = requestTimeout;
+  }
 
-    public void run(Timeout timeout) throws Exception {
+  public void run(Timeout timeout) {
 
-        if (done.getAndSet(true) || requestSender.isClosed())
-            return;
+    if (done.getAndSet(true) || requestSender.isClosed())
+      return;
 
-        // in any case, cancel possible readTimeout sibling
-        timeoutsHolder.cancel();
+    // in any case, cancel possible readTimeout sibling
+    timeoutsHolder.cancel();
 
-        if (nettyResponseFuture.isDone())
-            return;
+    if (nettyResponseFuture.isDone())
+      return;
 
-        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
-        appendRemoteAddress(sb);
-        String message =  sb.append(" after ").append(requestTimeout).append(" ms").toString();
-        long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
-        expire(message, age);
-    }
+    StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
+    appendRemoteAddress(sb);
+    String message = sb.append(" after ").append(requestTimeout).append(" ms").toString();
+    long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
+    expire(message, age);
+  }
 }

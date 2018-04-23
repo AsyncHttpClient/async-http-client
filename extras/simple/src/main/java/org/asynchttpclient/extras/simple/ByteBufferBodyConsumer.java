@@ -20,25 +20,25 @@ import java.nio.ByteBuffer;
  */
 public class ByteBufferBodyConsumer implements BodyConsumer {
 
-    private final ByteBuffer byteBuffer;
+  private final ByteBuffer byteBuffer;
 
-    public ByteBufferBodyConsumer(ByteBuffer byteBuffer) {
-        this.byteBuffer = byteBuffer;
-    }
+  public ByteBufferBodyConsumer(ByteBuffer byteBuffer) {
+    this.byteBuffer = byteBuffer;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void consume(ByteBuffer byteBuffer) throws IOException {
-        byteBuffer.put(byteBuffer);
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void consume(ByteBuffer byteBuffer) throws IOException {
+    byteBuffer.put(byteBuffer);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() throws IOException {
-        byteBuffer.flip();
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void close() throws IOException {
+    byteBuffer.flip();
+  }
 }

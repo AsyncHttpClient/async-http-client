@@ -15,10 +15,6 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.fail;
-import io.netty.handler.codec.http.HttpHeaders;
-
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -28,88 +24,61 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+
 public abstract class AbstractBasicTest {
 
-    protected final static int TIMEOUT = 30;
+  protected final static int TIMEOUT = 30;
 
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+  protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected Server server;
-    protected int port1 = -1;
-    protected int port2  =-1;
+  protected Server server;
+  protected int port1 = -1;
+  protected int port2 = -1;
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
-        server = new Server();
-        ServerConnector connector1 = addHttpConnector(server);
-        server.setHandler(configureHandler());
-        ServerConnector connector2 = addHttpConnector(server);
-        server.start();
-        
-        port1 = connector1.getLocalPort();
-        port2 = connector2.getLocalPort();
+  @BeforeClass(alwaysRun = true)
+  public void setUpGlobal() throws Exception {
+    server = new Server();
+    ServerConnector connector1 = addHttpConnector(server);
+    server.setHandler(configureHandler());
+    ServerConnector connector2 = addHttpConnector(server);
+    server.start();
 
-        logger.info("Local HTTP server started successfully");
+    port1 = connector1.getLocalPort();
+    port2 = connector2.getLocalPort();
+
+    logger.info("Local HTTP server started successfully");
+  }
+
+  @AfterClass(alwaysRun = true)
+  public void tearDownGlobal() throws Exception {
+    if (server != null) {
+      server.stop();
+    }
+  }
+
+  protected String getTargetUrl() {
+    return String.format("http://localhost:%d/foo/test", port1);
+  }
+
+  protected String getTargetUrl2() {
+    return String.format("https://localhost:%d/foo/test", port2);
+  }
+
+  public AbstractHandler configureHandler() throws Exception {
+    return new EchoHandler();
+  }
+
+  public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
+
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+      return response;
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        if (server != null) {
-            server.stop();
-        }
+    @Override
+    public void onThrowable(Throwable t) {
+      t.printStackTrace();
     }
-
-    protected String getTargetUrl() {
-        return String.format("http://localhost:%d/foo/test", port1);
-    }
-
-    protected String getTargetUrl2() {
-        return String.format("https://localhost:%d/foo/test", port2);
-    }
-
-    public AbstractHandler configureHandler() throws Exception {
-        return new EchoHandler();
-    }
-
-    public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
-
-        @Override
-        public Response onCompleted(Response response) throws Exception {
-            return response;
-        }
-
-        @Override
-        public void onThrowable(Throwable t) {
-            t.printStackTrace();
-        }
-    }
-
-    public static class AsyncHandlerAdapter implements AsyncHandler<String> {
-
-        @Override
-        public void onThrowable(Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected exception", t);
-        }
-
-        @Override
-        public State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onHeadersReceived(HttpHeaders headers) throws Exception {
-            return State.CONTINUE;
-        }
-
-        @Override
-        public String onCompleted() throws Exception {
-            return "";
-        }
-    }
+  }
 }

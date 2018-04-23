@@ -12,39 +12,36 @@
  */
 package org.asynchttpclient.netty;
 
-import static org.asynchttpclient.Dsl.*;
+import org.asynchttpclient.*;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
 
 public class TimeToLiveIssue extends AbstractBasicTest {
-    @Test(enabled = false, description = "https://github.com/AsyncHttpClient/async-http-client/issues/1113")
-    public void testTTLBug() throws Throwable {
-        // The purpose of this test is to reproduce two issues:
-        // 1) Connections that are rejected by the pool are not closed and eventually use all available sockets.
-        // 2) It is possible for a connection to be closed while active by the timer task that checks for expired connections.
+  @Test(enabled = false, description = "https://github.com/AsyncHttpClient/async-http-client/issues/1113")
+  public void testTTLBug() throws Throwable {
+    // The purpose of this test is to reproduce two issues:
+    // 1) Connections that are rejected by the pool are not closed and eventually use all available sockets.
+    // 2) It is possible for a connection to be closed while active by the timer task that checks for expired connections.
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectionTtl(1).setPooledConnectionIdleTimeout(1))) {
+    try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectionTtl(1).setPooledConnectionIdleTimeout(1))) {
 
-            for (int i = 0; i < 200000; ++i) {
-                Request request = new RequestBuilder().setUrl(String.format("http://localhost:%d/", port1)).build();
+      for (int i = 0; i < 200000; ++i) {
+        Request request = new RequestBuilder().setUrl(String.format("http://localhost:%d/", port1)).build();
 
-                Future<Response> future = client.executeRequest(request);
-                future.get(5, TimeUnit.SECONDS);
+        Future<Response> future = client.executeRequest(request);
+        future.get(5, TimeUnit.SECONDS);
 
-                // This is to give a chance to the timer task that removes expired connection
-                // from sometimes winning over poll for the ownership of a connection.
-                if (System.currentTimeMillis() % 100 == 0) {
-                    Thread.sleep(5);
-                }
-            }
+        // This is to give a chance to the timer task that removes expired connection
+        // from sometimes winning over poll for the ownership of a connection.
+        if (System.currentTimeMillis() % 100 == 0) {
+          Thread.sleep(5);
         }
+      }
     }
+  }
 }

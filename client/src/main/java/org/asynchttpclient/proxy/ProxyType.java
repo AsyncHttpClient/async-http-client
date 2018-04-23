@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2018 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -11,14 +11,22 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.netty.channel;
+package org.asynchttpclient.proxy;
 
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelHandler.Sharable;
+public enum ProxyType {
+  HTTP(true), SOCKS_V4(false), SOCKS_V5(false);
 
-/**
- * A noop handler that just serves as a pinned reference for adding and removing handlers in the pipeline
- */
-@Sharable
-public class NoopHandler extends ChannelHandlerAdapter {
+  private final boolean http;
+
+  ProxyType(boolean http) {
+    this.http = http;
+  }
+
+  public boolean isHttp() {
+    return http;
+  }
+
+  public boolean isSocks() {
+    return !isHttp();
+  }
 }

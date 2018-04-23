@@ -12,18 +12,6 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.createTempFile;
-import static org.testng.Assert.assertEquals;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -31,45 +19,55 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.test.TestUtils.createTempFile;
+import static org.testng.Assert.assertEquals;
+
 public class PutFileTest extends AbstractBasicTest {
 
-    private void put(int fileSize) throws Exception {
-        File file = createTempFile(fileSize);
-        int timeout = (int) file.length() / 1000;
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(timeout))) {
-            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
-            assertEquals(response.getStatusCode(), 200);
-        }
+  private void put(int fileSize) throws Exception {
+    File file = createTempFile(fileSize);
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
+      Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
+      assertEquals(response.getStatusCode(), 200);
     }
+  }
 
-    @Test(groups = "standalone")
-    public void testPutLargeFile() throws Exception {
-        put(1024 * 1024);
-    }
+  @Test
+  public void testPutLargeFile() throws Exception {
+    put(1024 * 1024);
+  }
 
-    @Test(groups = "standalone")
-    public void testPutSmallFile() throws Exception {
-        put(1024);
-    }
+  @Test
+  public void testPutSmallFile() throws Exception {
+    put(1024);
+  }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new AbstractHandler() {
+  @Override
+  public AbstractHandler configureHandler() throws Exception {
+    return new AbstractHandler() {
 
-            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-                InputStream is = baseRequest.getInputStream();
-                int read = 0;
-                do {
-                    // drain upload
-                    read = is.read();
-                } while (read >= 0);
+        InputStream is = baseRequest.getInputStream();
+        int read;
+        do {
+          // drain upload
+          read = is.read();
+        } while (read >= 0);
 
-                response.setStatus(200);
-                response.getOutputStream().flush();
-                response.getOutputStream().close();
-                baseRequest.setHandled(true);
-            }
-        };
-    }
+        response.setStatus(200);
+        response.getOutputStream().flush();
+        response.getOutputStream().close();
+        baseRequest.setHandled(true);
+      }
+    };
+  }
 }

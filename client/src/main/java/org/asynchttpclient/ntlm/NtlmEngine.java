@@ -27,20 +27,18 @@
 // fork from Apache HttpComponents
 package org.asynchttpclient.ntlm;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Locale;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.asynchttpclient.util.Base64;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM
@@ -763,7 +761,7 @@ public final class NtlmEngine {
 
         /** Constructor to use when message contents are known */
         NTLMMessage(final String messageBody, final int expectedType) throws NtlmEngineException {
-            messageContents = Base64.decode(messageBody);
+            messageContents = Base64.getDecoder().decode(messageBody);
             // Look for NTLM message
             if (messageContents.length < SIGNATURE.length) {
                 throw new NtlmEngineException("NTLM message decoding error - packet too short");
@@ -901,7 +899,7 @@ public final class NtlmEngine {
             } else {
                 resp = messageContents;
             }
-            return Base64.encode(resp);
+            return Base64.getEncoder().encodeToString(resp);
         }
 
     }

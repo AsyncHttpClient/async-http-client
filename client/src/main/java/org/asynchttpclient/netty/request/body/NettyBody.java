@@ -14,18 +14,17 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.channel.Channel;
+import org.asynchttpclient.netty.NettyResponseFuture;
 
 import java.io.IOException;
 
-import org.asynchttpclient.netty.NettyResponseFuture;
-
 public interface NettyBody {
 
-    long getContentLength();
+  long getContentLength();
 
-    default CharSequence getContentTypeOverride() {
-        return null;
-    }
+  default CharSequence getContentTypeOverride() {
+    return null;
+  }
 
-    void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
+  void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
 }

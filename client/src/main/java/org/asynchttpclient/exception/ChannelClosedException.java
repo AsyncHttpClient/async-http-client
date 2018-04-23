@@ -12,16 +12,16 @@
  */
 package org.asynchttpclient.exception;
 
-import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-
 import java.io.IOException;
+
+import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 @SuppressWarnings("serial")
 public final class ChannelClosedException extends IOException {
 
-    public static final ChannelClosedException INSTANCE = unknownStackTrace(new ChannelClosedException(), ChannelClosedException.class, "INSTANCE");
+  public static final ChannelClosedException INSTANCE = unknownStackTrace(new ChannelClosedException(), ChannelClosedException.class, "INSTANCE");
 
-    private ChannelClosedException() {
-        super("Channel closed");
-    }
+  private ChannelClosedException() {
+    super("Channel closed");
+  }
 }

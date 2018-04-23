@@ -15,20 +15,20 @@ package org.asynchttpclient.util;
 
 public final class Assertions {
 
-    private Assertions() {
-    }
+  private Assertions() {
+  }
 
-    public static <T> T assertNotNull(T value, String name) {
-        if (value == null)
-            throw new NullPointerException(name);
-        return value;
+  public static <T> T assertNotNull(T value, String name) {
+    if (value == null)
+      throw new NullPointerException(name);
+    return value;
 
-    }
+  }
 
-    public static String assertNotEmpty(String value, String name) {
-        assertNotNull(value, name);
-        if (value.length() == 0)
-            throw new IllegalArgumentException("empty " + name);
-        return value;
-    }
+  public static String assertNotEmpty(String value, String name) {
+    assertNotNull(value, name);
+    if (value.length() == 0)
+      throw new IllegalArgumentException("empty " + name);
+    return value;
+  }
 }

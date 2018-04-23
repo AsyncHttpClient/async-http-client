@@ -14,15 +14,15 @@ package org.asynchttpclient.netty;
 
 public abstract class OnLastHttpContentCallback {
 
-    protected final NettyResponseFuture<?> future;
+  protected final NettyResponseFuture<?> future;
 
-    public OnLastHttpContentCallback(NettyResponseFuture<?> future) {
-        this.future = future;
-    }
+  protected OnLastHttpContentCallback(NettyResponseFuture<?> future) {
+    this.future = future;
+  }
 
-    abstract public void call() throws Exception;
+  abstract public void call() throws Exception;
 
-    public NettyResponseFuture<?> future() {
-        return future;
-    }
+  public NettyResponseFuture<?> future() {
+    return future;
+  }
 }

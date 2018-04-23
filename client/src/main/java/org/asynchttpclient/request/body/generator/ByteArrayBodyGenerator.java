@@ -13,9 +13,6 @@
 package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
-
-import java.io.IOException;
-
 import org.asynchttpclient.request.body.Body;
 
 /**
@@ -23,49 +20,49 @@ import org.asynchttpclient.request.body.Body;
  */
 public final class ByteArrayBodyGenerator implements BodyGenerator {
 
-    private final byte[] bytes;
+  private final byte[] bytes;
 
-    public ByteArrayBodyGenerator(byte[] bytes) {
-        this.bytes = bytes;
+  public ByteArrayBodyGenerator(byte[] bytes) {
+    this.bytes = bytes;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Body createBody() {
+    return new ByteBody();
+  }
+
+  protected final class ByteBody implements Body {
+    private boolean eof = false;
+    private int lastPosition = 0;
+
+    public long getContentLength() {
+      return bytes.length;
     }
 
-    protected final class ByteBody implements Body {
-        private boolean eof = false;
-        private int lastPosition = 0;
+    public BodyState transferTo(ByteBuf target) {
 
-        public long getContentLength() {
-            return bytes.length;
-        }
+      if (eof) {
+        return BodyState.STOP;
+      }
 
-        public BodyState transferTo(ByteBuf target) throws IOException {
-
-            if (eof) {
-                return BodyState.STOP;
-            }
-
-            final int remaining = bytes.length - lastPosition;
-            final int initialTargetWritableBytes = target.writableBytes();
-            if (remaining <= initialTargetWritableBytes) {
-                target.writeBytes(bytes, lastPosition, remaining);
-                eof = true;
-            } else {
-                target.writeBytes(bytes, lastPosition, initialTargetWritableBytes);
-                lastPosition += initialTargetWritableBytes;
-            }
-            return BodyState.CONTINUE;
-        }
-
-        public void close() throws IOException {
-            lastPosition = 0;
-            eof = false;
-        }
+      final int remaining = bytes.length - lastPosition;
+      final int initialTargetWritableBytes = target.writableBytes();
+      if (remaining <= initialTargetWritableBytes) {
+        target.writeBytes(bytes, lastPosition, remaining);
+        eof = true;
+      } else {
+        target.writeBytes(bytes, lastPosition, initialTargetWritableBytes);
+        lastPosition += initialTargetWritableBytes;
+      }
+      return BodyState.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Body createBody() {
-        return new ByteBody();
+    public void close() {
+      lastPosition = 0;
+      eof = false;
     }
+  }
 }

@@ -1,4 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<<<<<<< HEAD
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>async-http-client-extras-parent</artifactId>
@@ -8,4 +9,15 @@
     <artifactId>async-http-client-extras-simple</artifactId>
     <name>Asynchronous Http Simple Client</name>
     <description>The Async Http Simple Client.</description>
+=======
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>async-http-client-extras-parent</artifactId>
+    <groupId>org.asynchttpclient</groupId>
+    <version>2.4.5</version>
+  </parent>
+  <artifactId>async-http-client-extras-simple</artifactId>
+  <name>Asynchronous Http Simple Client</name>
+  <description>The Async Http Simple Client.</description>
+>>>>>>> async-http-client-project-2.4.5
 </project>

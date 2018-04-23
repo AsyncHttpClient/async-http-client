@@ -13,69 +13,84 @@
  */
 package org.asynchttpclient.request.body.multipart.part;
 
-import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import io.netty.buffer.ByteBuf;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
-
 import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.multipart.FilePart;
 
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
+
 public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
-    private final FileChannel channel;
-    private final long length;
-    private long position = 0L;
+  private final long length;
+  private FileChannel channel;
+  private long position = 0L;
 
-    @SuppressWarnings("resource")
-    public FileMultipartPart(FilePart part, byte[] boundary) {
-        super(part, boundary);
-        try {
-            channel = new RandomAccessFile(part.getFile(), "r").getChannel();
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("File part doesn't exist: " + part.getFile().getAbsolutePath(), e);
-        }
-        length = part.getFile().length();
+  public FileMultipartPart(FilePart part, byte[] boundary) {
+    super(part, boundary);
+    File file = part.getFile();
+    if (!file.exists()) {
+      throw new IllegalArgumentException("File part doesn't exist: " + file.getAbsolutePath());
+    } else if (!file.canRead()) {
+      throw new IllegalArgumentException("File part can't be read: " + file.getAbsolutePath());
     }
+    length = file.length();
+  }
 
-    @Override
-    protected long getContentLength() {
-        return part.getFile().length();
+  private FileChannel getChannel() throws IOException {
+    if (channel == null) {
+      channel = new RandomAccessFile(part.getFile(), "r").getChannel();
     }
+    return channel;
+  }
 
-    @Override
-    protected long transferContentTo(ByteBuf target) throws IOException {
-        int transferred = target.writeBytes(channel, target.writableBytes());
-        position += transferred;
-        if (position == length) {
-            state = MultipartState.POST_CONTENT;
-            channel.close();
-        }
-        return transferred;
-    }
+  @Override
+  protected long getContentLength() {
+    return length;
+  }
 
-    @Override
-    protected long transferContentTo(WritableByteChannel target) throws IOException {
-        // WARN: don't use channel.position(), it's always 0 here
-        // from FileChannel javadoc: "This method does not modify this channel's position."
-        long transferred = channel.transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
-        position += transferred;
-        if (position == length) {
-            state = MultipartState.POST_CONTENT;
-            channel.close();
-        } else {
-            slowTarget = true;
-        }
-        return transferred;
+  @Override
+  protected long transferContentTo(ByteBuf target) throws IOException {
+    // can return -1 if file is empty or FileChannel was closed
+    int transferred = target.writeBytes(getChannel(), target.writableBytes());
+    if (transferred > 0) {
+      position += transferred;
     }
+    if (position == length || transferred < 0) {
+      state = MultipartState.POST_CONTENT;
+      if (channel.isOpen()) {
+        channel.close();
+      }
+    }
+    return transferred;
+  }
 
-    @Override
-    public void close() {
-        super.close();
-        closeSilently(channel);
+  @Override
+  protected long transferContentTo(WritableByteChannel target) throws IOException {
+    // WARN: don't use channel.position(), it's always 0 here
+    // from FileChannel javadoc: "This method does not modify this channel's
+    // position."
+    long transferred = getChannel().transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
+    if (transferred > 0) {
+      position += transferred;
     }
+    if (position == length || transferred < 0) {
+      state = MultipartState.POST_CONTENT;
+      if (channel.isOpen()) {
+        channel.close();
+      }
+    } else {
+      slowTarget = true;
+    }
+    return transferred;
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    closeSilently(channel);
+  }
 }

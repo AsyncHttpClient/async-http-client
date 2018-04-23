@@ -21,25 +21,25 @@ import java.nio.ByteBuffer;
  */
 public class OutputStreamBodyConsumer implements BodyConsumer {
 
-    private final OutputStream outputStream;
+  private final OutputStream outputStream;
 
-    public OutputStreamBodyConsumer(OutputStream outputStream) {
-        this.outputStream = outputStream;
-    }
+  public OutputStreamBodyConsumer(OutputStream outputStream) {
+    this.outputStream = outputStream;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void consume(ByteBuffer byteBuffer) throws IOException {
-        outputStream.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void consume(ByteBuffer byteBuffer) throws IOException {
+    outputStream.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() throws IOException {
-        outputStream.close();
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void close() throws IOException {
+    outputStream.close();
+  }
 }

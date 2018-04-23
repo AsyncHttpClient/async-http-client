@@ -13,31 +13,30 @@
 package org.asynchttpclient.extras.rxjava.single;
 
 import org.asynchttpclient.handler.ProgressAsyncHandler;
-
 import rx.SingleSubscriber;
 
 abstract class AbstractProgressSingleSubscriberBridge<T> extends AbstractSingleSubscriberBridge<T> implements ProgressAsyncHandler<Void> {
 
-    protected AbstractProgressSingleSubscriberBridge(SingleSubscriber<T> subscriber) {
-        super(subscriber);
-    }
+  protected AbstractProgressSingleSubscriberBridge(SingleSubscriber<T> subscriber) {
+    super(subscriber);
+  }
 
-    @Override
-    public State onHeadersWritten() {
-        return subscriber.isUnsubscribed() ? abort() : delegate().onHeadersWritten();
-    }
+  @Override
+  public State onHeadersWritten() {
+    return subscriber.isUnsubscribed() ? abort() : delegate().onHeadersWritten();
+  }
 
-    @Override
-    public State onContentWritten() {
-        return subscriber.isUnsubscribed() ? abort() : delegate().onContentWritten();
-    }
+  @Override
+  public State onContentWritten() {
+    return subscriber.isUnsubscribed() ? abort() : delegate().onContentWritten();
+  }
 
-    @Override
-    public State onContentWriteProgress(long amount, long current, long total) {
-        return subscriber.isUnsubscribed() ? abort() : delegate().onContentWriteProgress(amount, current, total);
-    }
+  @Override
+  public State onContentWriteProgress(long amount, long current, long total) {
+    return subscriber.isUnsubscribed() ? abort() : delegate().onContentWriteProgress(amount, current, total);
+  }
 
-    @Override
-    protected abstract ProgressAsyncHandler<? extends T> delegate();
+  @Override
+  protected abstract ProgressAsyncHandler<? extends T> delegate();
 
 }

@@ -17,5 +17,5 @@ package org.asynchttpclient.netty;
  * Simple marker for stopping publishing bytes
  */
 public enum DiscardEvent {
-    DISCARD
+  DISCARD
 }

@@ -19,6 +19,11 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
+import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.request.body.generator.BodyGenerator;
+import org.asynchttpclient.request.body.multipart.Part;
+import org.asynchttpclient.uri.Uri;
 
 import java.io.File;
 import java.io.InputStream;
@@ -26,12 +31,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
-
-import org.asynchttpclient.channel.ChannelPoolPartitioning;
-import org.asynchttpclient.proxy.ProxyServer;
-import org.asynchttpclient.request.body.generator.BodyGenerator;
-import org.asynchttpclient.request.body.multipart.Part;
-import org.asynchttpclient.uri.Uri;
 
 /**
  * The Request class can be used to construct HTTP request:
@@ -47,139 +46,138 @@ import org.asynchttpclient.uri.Uri;
  */
 public interface Request {
 
-    /**
-     * @return the request's HTTP method (GET, POST, etc.)
-     */
-    String getMethod();
+  /**
+   * @return the request's HTTP method (GET, POST, etc.)
+   */
+  String getMethod();
 
-    /**
-     * 
-     * @return the uri
-     */
-    Uri getUri();
+  /**
+   * @return the uri
+   */
+  Uri getUri();
 
-    /**
-     * @return the url (the uri's String form)
-     */
-    String getUrl();
+  /**
+   * @return the url (the uri's String form)
+   */
+  String getUrl();
 
-    /**
-     * @return the InetAddress to be used to bypass uri's hostname resolution
-     */
-    InetAddress getAddress();
+  /**
+   * @return the InetAddress to be used to bypass uri's hostname resolution
+   */
+  InetAddress getAddress();
 
-    /**
-     * @return the local address to bind from
-     */
-    InetAddress getLocalAddress();
+  /**
+   * @return the local address to bind from
+   */
+  InetAddress getLocalAddress();
 
-    /**
-     * @return the HTTP headers
-     */
-    HttpHeaders getHeaders();
+  /**
+   * @return the HTTP headers
+   */
+  HttpHeaders getHeaders();
 
-    /**
-     * @return the HTTP cookies
-     */
-    List<Cookie> getCookies();
+  /**
+   * @return the HTTP cookies
+   */
+  List<Cookie> getCookies();
 
-    /**
-     * @return the request's body byte array (only non null if it was set this way)
-     */
-    byte[] getByteData();
+  /**
+   * @return the request's body byte array (only non null if it was set this way)
+   */
+  byte[] getByteData();
 
-    /**
-     * @return the request's body array of byte arrays (only non null if it was set this way)
-     */
-    List<byte[]> getCompositeByteData();
-    
-    /**
-     * @return the request's body string (only non null if it was set this way)
-     */
-    String getStringData();
+  /**
+   * @return the request's body array of byte arrays (only non null if it was set this way)
+   */
+  List<byte[]> getCompositeByteData();
 
-    /**
-     * @return the request's body ByteBuffer (only non null if it was set this way)
-     */
-    ByteBuffer getByteBufferData();
+  /**
+   * @return the request's body string (only non null if it was set this way)
+   */
+  String getStringData();
 
-    /**
-     * @return the request's body InputStream (only non null if it was set this way)
-     */
-    InputStream getStreamData();
+  /**
+   * @return the request's body ByteBuffer (only non null if it was set this way)
+   */
+  ByteBuffer getByteBufferData();
 
-    /**
-     * @return the request's body BodyGenerator (only non null if it was set this way)
-     */
-    BodyGenerator getBodyGenerator();
+  /**
+   * @return the request's body InputStream (only non null if it was set this way)
+   */
+  InputStream getStreamData();
 
-    /**
-     * @return the request's form parameters
-     */
-    List<Param> getFormParams();
+  /**
+   * @return the request's body BodyGenerator (only non null if it was set this way)
+   */
+  BodyGenerator getBodyGenerator();
 
-    /**
-     * @return the multipart parts
-     */
-    List<Part> getBodyParts();
+  /**
+   * @return the request's form parameters
+   */
+  List<Param> getFormParams();
 
-    /**
-     * @return the virtual host to connect to
-     */
-    String getVirtualHost();
+  /**
+   * @return the multipart parts
+   */
+  List<Part> getBodyParts();
 
-    /**
-     * @return the query params resolved from the url/uri
-     */
-    List<Param> getQueryParams();
+  /**
+   * @return the virtual host to connect to
+   */
+  String getVirtualHost();
 
-    /**
-     * @return the proxy server to be used to perform this request (overrides the one defined in config)
-     */
-    ProxyServer getProxyServer();
+  /**
+   * @return the query params resolved from the url/uri
+   */
+  List<Param> getQueryParams();
 
-    /**
-     * @return the realm to be used to perform this request (overrides the one defined in config)
-     */
-    Realm getRealm();
+  /**
+   * @return the proxy server to be used to perform this request (overrides the one defined in config)
+   */
+  ProxyServer getProxyServer();
 
-    /**
-     * @return the file to be uploaded
-     */
-    File getFile();
+  /**
+   * @return the realm to be used to perform this request (overrides the one defined in config)
+   */
+  Realm getRealm();
 
-    /**
-     * @return if this request is to follow redirects. Non null values means "override config value".
-     */
-    Boolean getFollowRedirect();
+  /**
+   * @return the file to be uploaded
+   */
+  File getFile();
 
-    /**
-     * @return the request timeout. Non zero values means "override config value".
-     */
-    int getRequestTimeout();
+  /**
+   * @return if this request is to follow redirects. Non null values means "override config value".
+   */
+  Boolean getFollowRedirect();
 
-    /**
-     * @return the read timeout. Non zero values means "override config value".
-     */
-    int getReadTimeout();
+  /**
+   * @return the request timeout. Non zero values means "override config value".
+   */
+  int getRequestTimeout();
 
-    /**
-     * @return the range header value, or 0 is not set.
-     */
-    long getRangeOffset();
+  /**
+   * @return the read timeout. Non zero values means "override config value".
+   */
+  int getReadTimeout();
 
-    /**
-     * @return the charset value used when decoding the request's body.
-     */
-    Charset getCharset();
+  /**
+   * @return the range header value, or 0 is not set.
+   */
+  long getRangeOffset();
 
-    /**
-     * @return the strategy to compute ChannelPool's keys
-     */
-    ChannelPoolPartitioning getChannelPoolPartitioning();
+  /**
+   * @return the charset value used when decoding the request's body.
+   */
+  Charset getCharset();
 
-    /**
-     * @return the NameResolver to be used to resolve hostnams's IP
-     */
-    NameResolver<InetAddress> getNameResolver();
+  /**
+   * @return the strategy to compute ChannelPool's keys
+   */
+  ChannelPoolPartitioning getChannelPoolPartitioning();
+
+  /**
+   * @return the NameResolver to be used to resolve hostnams's IP
+   */
+  NameResolver<InetAddress> getNameResolver();
 }

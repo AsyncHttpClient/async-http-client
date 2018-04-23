@@ -16,130 +16,152 @@
  */
 package org.asynchttpclient.proxy;
 
-import static org.asynchttpclient.util.Assertions.*;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import org.asynchttpclient.Realm;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.asynchttpclient.Realm;
+import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
  * Represents a proxy server.
  */
 public class ProxyServer {
 
-    private final String host;
-    private final int port;
-    private final int securedPort;
-    private final Realm realm;
-    private final List<String> nonProxyHosts;
+  private final String host;
+  private final int port;
+  private final int securedPort;
+  private final Realm realm;
+  private final List<String> nonProxyHosts;
+  private final ProxyType proxyType;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts) {
-        this.host = host;
-        this.port = port;
-        this.securedPort = securedPort;
-        this.realm = realm;
-        this.nonProxyHosts = nonProxyHosts;
+  public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
+                     ProxyType proxyType) {
+    this.host = host;
+    this.port = port;
+    this.securedPort = securedPort;
+    this.realm = realm;
+    this.nonProxyHosts = nonProxyHosts;
+    this.proxyType = proxyType;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public int getSecuredPort() {
+    return securedPort;
+  }
+
+  public List<String> getNonProxyHosts() {
+    return nonProxyHosts;
+  }
+
+  public Realm getRealm() {
+    return realm;
+  }
+
+  public ProxyType getProxyType() {
+    return proxyType;
+  }
+
+  /**
+   * Checks whether proxy should be used according to nonProxyHosts settings of
+   * it, or we want to go directly to target host. If <code>null</code> proxy is
+   * passed in, this method returns true -- since there is NO proxy, we should
+   * avoid to use it. Simple hostname pattern matching using "*" are supported,
+   * but only as prefixes.
+   *
+   * @param hostname the hostname
+   * @return true if we have to ignore proxy use (obeying non-proxy hosts
+   * settings), false otherwise.
+   * @see <a href=
+   * "https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking
+   * Properties</a>
+   */
+  public boolean isIgnoredForHost(String hostname) {
+    assertNotNull(hostname, "hostname");
+    if (isNonEmpty(nonProxyHosts)) {
+      for (String nonProxyHost : nonProxyHosts) {
+        if (matchNonProxyHost(hostname, nonProxyHost))
+          return true;
+      }
     }
 
-    public String getHost() {
-        return host;
+    return false;
+  }
+
+  private boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
+
+    if (nonProxyHost.length() > 1) {
+      if (nonProxyHost.charAt(0) == '*') {
+        return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
+                nonProxyHost.length() - 1);
+      } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
+        return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
     }
 
-    public int getPort() {
-        return port;
+    return nonProxyHost.equalsIgnoreCase(targetHost);
+  }
+
+  public static class Builder {
+
+    private String host;
+    private int port;
+    private int securedPort;
+    private Realm realm;
+    private List<String> nonProxyHosts;
+    private ProxyType proxyType;
+
+    public Builder(String host, int port) {
+      this.host = host;
+      this.port = port;
+      this.securedPort = port;
     }
 
-    public int getSecuredPort() {
-        return securedPort;
+    public Builder setSecuredPort(int securedPort) {
+      this.securedPort = securedPort;
+      return this;
     }
 
-    public List<String> getNonProxyHosts() {
-        return nonProxyHosts;
+    public Builder setRealm(Realm realm) {
+      this.realm = realm;
+      return this;
     }
 
-    public Realm getRealm() {
-        return realm;
+    public Builder setRealm(Realm.Builder realm) {
+      this.realm = realm.build();
+      return this;
     }
 
-    /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to target host. If <code>null</code> proxy is passed in, this method
-     * returns true -- since there is NO proxy, we should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * 
-     * @param hostname the hostname
-     * @return true if we have to ignore proxy use (obeying non-proxy hosts settings), false otherwise.
-     * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
-     */
-    public boolean isIgnoredForHost(String hostname) {
-        assertNotNull(hostname, "hostname");
-        if (isNonEmpty(nonProxyHosts)) {
-            for (String nonProxyHost : nonProxyHosts) {
-                if (matchNonProxyHost(hostname, nonProxyHost))
-                    return true;
-            }
-        }
-
-        return false;
+    public Builder setNonProxyHost(String nonProxyHost) {
+      if (nonProxyHosts == null)
+        nonProxyHosts = new ArrayList<>(1);
+      nonProxyHosts.add(nonProxyHost);
+      return this;
     }
 
-    private boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
-
-        if (nonProxyHost.length() > 1) {
-            if (nonProxyHost.charAt(0) == '*') {
-                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1, nonProxyHost.length() - 1);
-            } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
-                return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
-        }
-
-        return nonProxyHost.equalsIgnoreCase(targetHost);
+    public Builder setNonProxyHosts(List<String> nonProxyHosts) {
+      this.nonProxyHosts = nonProxyHosts;
+      return this;
     }
 
-    public static class Builder {
-
-        private String host;
-        private int port;
-        private int securedPort;
-        private Realm realm;
-        private List<String> nonProxyHosts;
-
-        public Builder(String host, int port) {
-            this.host = host;
-            this.port = port;
-            this.securedPort = port;
-        }
-
-        public Builder setSecuredPort(int securedPort) {
-            this.securedPort = securedPort;
-            return this;
-        }
-
-        public Builder setRealm(Realm realm) {
-            this.realm = realm;
-            return this;
-        }
-
-        public Builder setRealm(Realm.Builder realm) {
-            this.realm = realm.build();
-            return this;
-        }
-
-        public Builder setNonProxyHost(String nonProxyHost) {
-            if (nonProxyHosts == null)
-                nonProxyHosts = new ArrayList<>(1);
-            nonProxyHosts.add(nonProxyHost);
-            return this;
-        }
-
-        public Builder setNonProxyHosts(List<String> nonProxyHosts) {
-            this.nonProxyHosts = nonProxyHosts;
-            return this;
-        }
-
-        public ProxyServer build() {
-            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
-            return new ProxyServer(host, port, securedPort, realm, nonProxyHosts);
-        }
+    public Builder setProxyType(ProxyType proxyType) {
+      this.proxyType = proxyType;
+      return this;
     }
+
+    public ProxyServer build() {
+      List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
+              : Collections.emptyList();
+      ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
+      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType);
+    }
+  }
 }

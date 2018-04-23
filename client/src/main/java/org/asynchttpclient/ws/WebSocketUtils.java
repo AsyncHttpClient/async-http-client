@@ -13,58 +13,27 @@
  */
 package org.asynchttpclient.ws;
 
+import io.netty.util.internal.ThreadLocalRandom;
+
+import java.util.Base64;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
-
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import org.asynchttpclient.util.Base64;
+import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDigest;
 
 public final class WebSocketUtils {
-    public static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+  private static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-    public static String getKey() {
-        byte[] nonce = createRandomBytes(16);
-        return Base64.encode(nonce);
+  public static String getWebSocketKey() {
+    byte[] nonce = new byte[16];
+    ThreadLocalRandom random = ThreadLocalRandom.current();
+    for (int i = 0; i < nonce.length; i++) {
+      nonce[i] = (byte) random.nextInt(256);
     }
+    return Base64.getEncoder().encodeToString(nonce);
+  }
 
-    public static String getAcceptKey(String key) throws UnsupportedEncodingException {
-        String acceptSeed = key + MAGIC_GUID;
-        byte[] sha1 = sha1(acceptSeed.getBytes(US_ASCII));
-        return Base64.encode(sha1);
-    }
-
-    public static byte[] md5(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            return md.digest(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new InternalError("MD5 not supported on this platform");
-        }
-    }
-
-    public static byte[] sha1(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA1");
-            return md.digest(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new InternalError("SHA-1 not supported on this platform");
-        }
-    }
-
-    public static byte[] createRandomBytes(int size) {
-        byte[] bytes = new byte[size];
-
-        for (int i = 0; i < size; i++) {
-            bytes[i] = (byte) createRandomNumber(0, 255);
-        }
-
-        return bytes;
-    }
-
-    public static int createRandomNumber(int min, int max) {
-        return (int) (Math.random() * max + min);
-    }
-
+  public static String getAcceptKey(String key) {
+    return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest(
+              (key + MAGIC_GUID).getBytes(US_ASCII)));
+  }
 }

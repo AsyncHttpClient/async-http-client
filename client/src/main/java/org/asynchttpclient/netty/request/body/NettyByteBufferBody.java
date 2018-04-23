@@ -20,35 +20,35 @@ import java.nio.ByteBuffer;
 
 public class NettyByteBufferBody extends NettyDirectBody {
 
-    private final ByteBuffer bb;
-    private final CharSequence contentTypeOverride;
-    private final long length;
+  private final ByteBuffer bb;
+  private final CharSequence contentTypeOverride;
+  private final long length;
 
-    public NettyByteBufferBody(ByteBuffer bb) {
-        this(bb, null);
-    }
+  public NettyByteBufferBody(ByteBuffer bb) {
+    this(bb, null);
+  }
 
-    public NettyByteBufferBody(ByteBuffer bb, CharSequence contentTypeOverride) {
-        this.bb = bb;
-        length = bb.remaining();
-        bb.mark();
-        this.contentTypeOverride = contentTypeOverride;
-    }
+  public NettyByteBufferBody(ByteBuffer bb, CharSequence contentTypeOverride) {
+    this.bb = bb;
+    length = bb.remaining();
+    bb.mark();
+    this.contentTypeOverride = contentTypeOverride;
+  }
 
-    @Override
-    public long getContentLength() {
-        return length;
-    }
+  @Override
+  public long getContentLength() {
+    return length;
+  }
 
-    @Override
-    public CharSequence getContentTypeOverride() {
-        return contentTypeOverride;
-    }
+  @Override
+  public CharSequence getContentTypeOverride() {
+    return contentTypeOverride;
+  }
 
-    @Override
-    public ByteBuf byteBuf() {
-        // for retry
-        bb.reset();
-        return Unpooled.wrappedBuffer(bb);
-    }
+  @Override
+  public ByteBuf byteBuf() {
+    // for retry
+    bb.reset();
+    return Unpooled.wrappedBuffer(bb);
+  }
 }

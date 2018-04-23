@@ -16,22 +16,21 @@ package org.asynchttpclient.netty.request.body;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-
 public class NettyByteArrayBody extends NettyDirectBody {
 
-    private final byte[] bytes;
+  private final byte[] bytes;
 
-    public NettyByteArrayBody(byte[] bytes) {
-        this.bytes = bytes;
-    }
+  public NettyByteArrayBody(byte[] bytes) {
+    this.bytes = bytes;
+  }
 
-    @Override
-    public long getContentLength() {
-        return bytes.length;
-    }
+  @Override
+  public long getContentLength() {
+    return bytes.length;
+  }
 
-    @Override
-    public ByteBuf byteBuf() {
-        return Unpooled.wrappedBuffer(bytes);
-    }
+  @Override
+  public ByteBuf byteBuf() {
+    return Unpooled.wrappedBuffer(bytes);
+  }
 }

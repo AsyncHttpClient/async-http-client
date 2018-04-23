@@ -19,17 +19,17 @@ import io.netty.channel.ChannelFutureListener;
 
 public abstract class SimpleChannelFutureListener implements ChannelFutureListener {
 
-    @Override
-    public final void operationComplete(ChannelFuture future) throws Exception {
-        Channel channel = future.channel();
-        if (future.isSuccess()) {
-            onSuccess(channel);
-        } else {
-            onFailure(channel, future.cause());
-        }
+  @Override
+  public final void operationComplete(ChannelFuture future) {
+    Channel channel = future.channel();
+    if (future.isSuccess()) {
+      onSuccess(channel);
+    } else {
+      onFailure(channel, future.cause());
     }
+  }
 
-    public abstract void onSuccess(Channel channel);
+  public abstract void onSuccess(Channel channel);
 
-    public abstract void onFailure(Channel channel, Throwable cause);
+  public abstract void onFailure(Channel channel, Throwable cause);
 }

@@ -15,44 +15,40 @@
  */
 package org.asynchttpclient.request.body;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.testng.Assert.assertEquals;
+import org.asynchttpclient.*;
+import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.Dsl.*;
+import static org.testng.Assert.assertEquals;
 
 public class BodyChunkTest extends AbstractBasicTest {
 
-    private static final String MY_MESSAGE = "my message";
+  private static final String MY_MESSAGE = "my message";
 
-    @Test(groups = "standalone")
-    public void negativeContentTypeTest() throws Exception {
+  @Test
+  public void negativeContentTypeTest() throws Exception {
 
-        AsyncHttpClientConfig config = config()//
-                .setConnectTimeout(100)//
-                .setMaxConnections(50)//
-                .setRequestTimeout(5 * 60 * 1000) // 5 minutes
-                .build();
+    AsyncHttpClientConfig config = config()
+            .setConnectTimeout(100)
+            .setMaxConnections(50)
+            .setRequestTimeout(5 * 60 * 1000) // 5 minutes
+            .build();
 
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
-            RequestBuilder requestBuilder = post(getTargetUrl())//
-                    .setHeader("Content-Type", "message/rfc822")//
-                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
+    try (AsyncHttpClient client = asyncHttpClient(config)) {
+      RequestBuilder requestBuilder = post(getTargetUrl())
+              .setHeader("Content-Type", "message/rfc822")
+              .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
-            Future<Response> future = client.executeRequest(requestBuilder.build());
+      Future<Response> future = client.executeRequest(requestBuilder.build());
 
-            System.out.println("waiting for response");
-            Response response = future.get();
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBody(), MY_MESSAGE);
-        }
+      System.out.println("waiting for response");
+      Response response = future.get();
+      assertEquals(response.getStatusCode(), 200);
+      assertEquals(response.getResponseBody(), MY_MESSAGE);
     }
+  }
 }

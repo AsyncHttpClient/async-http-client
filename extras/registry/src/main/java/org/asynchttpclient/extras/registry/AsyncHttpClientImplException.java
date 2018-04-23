@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2015 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -15,11 +15,11 @@ package org.asynchttpclient.extras.registry;
 @SuppressWarnings("serial")
 public class AsyncHttpClientImplException extends RuntimeException {
 
-    public AsyncHttpClientImplException(String msg) {
-        super(msg);
-    }
+  public AsyncHttpClientImplException(String msg) {
+    super(msg);
+  }
 
-    public AsyncHttpClientImplException(String msg, Exception e) {
-        super(msg, e);
-    }
+  public AsyncHttpClientImplException(String msg, Exception e) {
+    super(msg, e);
+  }
 }

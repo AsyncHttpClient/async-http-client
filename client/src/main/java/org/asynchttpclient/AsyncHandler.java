@@ -15,7 +15,12 @@
  */
 package org.asynchttpclient;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.netty.request.NettyRequest;
+
+import java.net.InetSocketAddress;
+import java.util.List;
 
 
 /**
@@ -24,11 +29,11 @@ import io.netty.handler.codec.http.HttpHeaders;
  * <br>
  * Callback methods get invoked in the following order:
  * <ol>
- *  <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
- *  <li>{@link #onHeadersReceived(HttpHeaders)},</li>
- *  <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
- *  <li>{@link #onTrailingHeadersReceived(HttpHeaders)}, which is only invoked if trailing HTTP headers are received</li>
- *  <li>{@link #onCompleted()}, once the response has been fully read.</li>
+ * <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
+ * <li>{@link #onHeadersReceived(HttpHeaders)},</li>
+ * <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
+ * <li>{@link #onTrailingHeadersReceived(HttpHeaders)}, which is only invoked if trailing HTTP headers are received</li>
+ * <li>{@link #onCompleted()}, once the response has been fully read.</li>
  * </ol>
  * <br>
  * Returning a {@link AsyncHandler.State#ABORT} from any of those callback methods will interrupt asynchronous response
@@ -43,7 +48,7 @@ import io.netty.handler.codec.http.HttpHeaders;
  *   client.prepareGet("http://...").execute(ah);
  * </pre></blockquote>
  * It is recommended to create a new instance instead.
- * 
+ * <p>
  * Do NOT perform any blocking operation in there, typically trying to send another request and call get() on its future.
  * There's a chance you might end up in a dead lock.
  * If you really to perform blocking operation, executed it in a different dedicated thread pool.
@@ -52,71 +57,195 @@ import io.netty.handler.codec.http.HttpHeaders;
  */
 public interface AsyncHandler<T> {
 
-    enum State {
+  /**
+   * Invoked as soon as the HTTP status line has been received
+   *
+   * @param responseStatus the status code and test of the response
+   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+   * @throws Exception if something wrong happens
+   */
+  State onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
-        /**
-         * Stop the processing.
-         */
-        ABORT,
-        /**
-         * Continue the processing
-         */
-        CONTINUE
-    }
+  /**
+   * Invoked as soon as the HTTP headers have been received.
+   *
+   * @param headers the HTTP headers.
+   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+   * @throws Exception if something wrong happens
+   */
+  State onHeadersReceived(HttpHeaders headers) throws Exception;
+
+  /**
+   * Invoked as soon as some response body part are received. Could be invoked many times.
+   * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
+   *
+   * @param bodyPart response's body part.
+   * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
+   * @throws Exception if something wrong happens
+   */
+  State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
+
+  /**
+   * Invoked when trailing headers have been received.
+   *
+   * @param headers the trailing HTTP headers.
+   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+   * @throws Exception if something wrong happens
+   */
+  default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+    return State.CONTINUE;
+  }
+
+  /**
+   * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
+   * produced by implementation of onXXXReceived method invocation.
+   *
+   * @param t a {@link Throwable}
+   */
+  void onThrowable(Throwable t);
+
+  /**
+   * Invoked once the HTTP response processing is finished.
+   * <br>
+   * Gets always invoked as last callback method.
+   *
+   * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
+   * @throws Exception if something wrong happens
+   */
+  T onCompleted() throws Exception;
+
+  /**
+   * Notify the callback before hostname resolution
+   *
+   * @param name the name to be resolved
+   */
+  default void onHostnameResolutionAttempt(String name) {
+  }
+
+  // ////////// DNS /////////////////
+
+  /**
+   * Notify the callback after hostname resolution was successful.
+   *
+   * @param name      the name to be resolved
+   * @param addresses the resolved addresses
+   */
+  default void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+  }
+
+  /**
+   * Notify the callback after hostname resolution failed.
+   *
+   * @param name  the name to be resolved
+   * @param cause the failure cause
+   */
+  default void onHostnameResolutionFailure(String name, Throwable cause) {
+  }
+
+  /**
+   * Notify the callback when trying to open a new connection.
+   * <p>
+   * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
+   *
+   * @param remoteAddress the address we try to connect to
+   */
+  default void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+  }
+
+  // ////////////// TCP CONNECT ////////
+
+  /**
+   * Notify the callback after a successful connect
+   *
+   * @param remoteAddress the address we try to connect to
+   * @param connection    the connection
+   */
+  default void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+  }
+
+  /**
+   * Notify the callback after a failed connect.
+   * <p>
+   * Might be called several times, or be followed by onTcpConnectSuccess when the name was resolved to multiple addresses.
+   *
+   * @param remoteAddress the address we try to connect to
+   * @param cause         the cause of the failure
+   */
+  default void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
+  }
+
+  /**
+   * Notify the callback before TLS handshake
+   */
+  default void onTlsHandshakeAttempt() {
+  }
+
+  // ////////////// TLS ///////////////
+
+  /**
+   * Notify the callback after the TLS was successful
+   */
+  default void onTlsHandshakeSuccess() {
+  }
+
+  /**
+   * Notify the callback after the TLS failed
+   *
+   * @param cause the cause of the failure
+   */
+  default void onTlsHandshakeFailure(Throwable cause) {
+  }
+
+  /**
+   * Notify the callback when trying to fetch a connection from the pool.
+   */
+  default void onConnectionPoolAttempt() {
+  }
+
+  // /////////// POOLING /////////////
+
+  /**
+   * Notify the callback when a new connection was successfully fetched from the pool.
+   *
+   * @param connection the connection
+   */
+  default void onConnectionPooled(Channel connection) {
+  }
+
+  /**
+   * Notify the callback when trying to offer a connection to the pool.
+   *
+   * @param connection the connection
+   */
+  default void onConnectionOffer(Channel connection) {
+  }
+
+  /**
+   * Notify the callback when a request is being written on the channel. If the original request causes multiple requests to be sent, for example, because of authorization or
+   * retry, it will be notified multiple times.
+   *
+   * @param request the real request object as passed to the provider
+   */
+  default void onRequestSend(NettyRequest request) {
+  }
+
+  // //////////// SENDING //////////////
+
+  /**
+   * Notify the callback every time a request is being retried.
+   */
+  default void onRetry() {
+  }
+
+  enum State {
 
     /**
-     * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
-     * produced by implementation of onXXXReceived method invocation.
-     *
-     * @param t a {@link Throwable}
+     * Stop the processing.
      */
-    void onThrowable(Throwable t);
-
+    ABORT,
     /**
-     * Invoked as soon as some response body part are received. Could be invoked many times.
-     * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
-     *
-     * @param bodyPart response's body part.
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
-     * @throws Exception if something wrong happens
+     * Continue the processing
      */
-    State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
-
-    /**
-     * Invoked as soon as the HTTP status line has been received
-     *
-     * @param responseStatus the status code and test of the response
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-     * @throws Exception if something wrong happens
-     */
-    State onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
-
-    /**
-     * Invoked as soon as the HTTP headers have been received.
-     *
-     * @param headers the HTTP headers.
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-     * @throws Exception if something wrong happens
-     */
-    State onHeadersReceived(HttpHeaders headers) throws Exception;
-    
-    /**
-     * Invoked when trailing headers have been received. 
-     * @param headers the trailing HTTP headers.
-     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-     * @throws Exception if something wrong happens
-     */
-    default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
-        return State.CONTINUE;
-    }
-
-    /**
-     * Invoked once the HTTP response processing is finished.
-     * <br>
-     * Gets always invoked as last callback method.
-     *
-     * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
-     * @throws Exception if something wrong happens
-     */
-    T onCompleted() throws Exception;
+    CONTINUE
+  }
 }

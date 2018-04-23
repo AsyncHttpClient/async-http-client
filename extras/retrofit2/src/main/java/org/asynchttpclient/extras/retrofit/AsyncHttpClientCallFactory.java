@@ -12,11 +12,7 @@
  */
 package org.asynchttpclient.extras.retrofit;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Singular;
-import lombok.Value;
-import lombok.val;
+import lombok.*;
 import okhttp3.Call;
 import okhttp3.Request;
 import org.asynchttpclient.AsyncHttpClient;
@@ -32,28 +28,28 @@ import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsume
 @Value
 @Builder(toBuilder = true)
 public class AsyncHttpClientCallFactory implements Call.Factory {
-    /**
-     * {@link AsyncHttpClient} in use.
-     */
-    @NonNull
-    AsyncHttpClient httpClient;
+  /**
+   * {@link AsyncHttpClient} in use.
+   */
+  @NonNull
+  AsyncHttpClient httpClient;
 
-    /**
-     * List of {@link Call} builder customizers that are invoked just before creating it.
-     */
-    @Singular("callCustomizer")
-    List<Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder>> callCustomizers;
+  /**
+   * List of {@link Call} builder customizers that are invoked just before creating it.
+   */
+  @Singular("callCustomizer")
+  List<Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder>> callCustomizers;
 
-    @Override
-    public Call newCall(Request request) {
-        val callBuilder = AsyncHttpClientCall.builder()
-                .httpClient(httpClient)
-                .request(request);
+  @Override
+  public Call newCall(Request request) {
+    val callBuilder = AsyncHttpClientCall.builder()
+            .httpClient(httpClient)
+            .request(request);
 
-        // customize builder before creating a call
-        runConsumers(this.callCustomizers, callBuilder);
+    // customize builder before creating a call
+    runConsumers(this.callCustomizers, callBuilder);
 
-        // create a call
-        return callBuilder.build();
-    }
+    // create a call
+    return callBuilder.build();
+  }
 }

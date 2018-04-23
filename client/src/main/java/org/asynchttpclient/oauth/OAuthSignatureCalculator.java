@@ -13,47 +13,53 @@
  */
 package org.asynchttpclient.oauth;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
+
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * OAuth {@link SignatureCalculator} that delegates to {@link OAuthSignatureCalculatorInstance}s.
  */
 public class OAuthSignatureCalculator implements SignatureCalculator {
 
-    private static final ThreadLocal<OAuthSignatureCalculatorInstance> INSTANCES = new ThreadLocal<OAuthSignatureCalculatorInstance>() {
-        protected OAuthSignatureCalculatorInstance initialValue() {
-            try {
-                return new OAuthSignatureCalculatorInstance();
-            } catch (NoSuchAlgorithmException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        };
-    };
-
-    private final ConsumerKey consumerAuth;
-
-    private final RequestToken userAuth;
-
-    /**
-     * @param consumerAuth Consumer key to use for signature calculation
-     * @param userAuth Request/access token to use for signature calculation
-     */
-    public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
-        this.consumerAuth = consumerAuth;
-        this.userAuth = userAuth;
+  private static final ThreadLocal<OAuthSignatureCalculatorInstance> INSTANCES = ThreadLocal.withInitial(() -> {
+    try {
+      return new OAuthSignatureCalculatorInstance();
+    } catch (NoSuchAlgorithmException e) {
+      throw new ExceptionInInitializerError(e);
     }
+  });
 
-    @Override
-    public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
-        try {
-            INSTANCES.get().sign(consumerAuth, userAuth, request, requestBuilder);
-        } catch (InvalidKeyException e) {
-            throw new IllegalArgumentException("Failed to compute a valid key from consumer and user secrets", e);
-        }
+  private final ConsumerKey consumerAuth;
+
+  private final RequestToken userAuth;
+
+  /**
+   * @param consumerAuth Consumer key to use for signature calculation
+   * @param userAuth     Request/access token to use for signature calculation
+   */
+  public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
+    this.consumerAuth = consumerAuth;
+    this.userAuth = userAuth;
+  }
+
+  @Override
+  public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
+    try {
+      String authorization = INSTANCES.get().computeAuthorizationHeader(
+        consumerAuth,
+        userAuth,
+        request.getUri(),
+        request.getMethod(),
+        request.getFormParams(),
+        request.getQueryParams());
+      requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
+    } catch (InvalidKeyException e) {
+      throw new IllegalArgumentException("Failed to compute a valid key from consumer and user secrets", e);
     }
+  }
 }

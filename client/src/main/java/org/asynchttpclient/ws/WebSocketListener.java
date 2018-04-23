@@ -17,64 +17,63 @@ package org.asynchttpclient.ws;
  */
 public interface WebSocketListener {
 
-    /**
-     * Invoked when the {@link WebSocket} is open.
-     *
-     * @param websocket the WebSocket
-     */
-    void onOpen(WebSocket websocket);
+  /**
+   * Invoked when the {@link WebSocket} is open.
+   *
+   * @param websocket the WebSocket
+   */
+  void onOpen(WebSocket websocket);
 
-    /**
-     * Invoked when the {@link WebSocket} is closed.
-     * 
-     * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
-     *
-     * @param websocket the WebSocket
-     * @param code the status code
-     * @param reason the reason message
-     */
-    void onClose(WebSocket websocket, int code, String reason);
+  /**
+   * Invoked when the {@link WebSocket} is closed.
+   *
+   * @param websocket the WebSocket
+   * @param code      the status code
+   * @param reason    the reason message
+   * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
+   */
+  void onClose(WebSocket websocket, int code, String reason);
 
-    /**
-     * Invoked when the {@link WebSocket} crashes.
-     *
-     * @param t a {@link Throwable}
-     */
-    void onError(Throwable t);
+  /**
+   * Invoked when the {@link WebSocket} crashes.
+   *
+   * @param t a {@link Throwable}
+   */
+  void onError(Throwable t);
 
-    /**
-     * Invoked when a binary frame is received.
-     * 
-     * @param payload a byte array
-     * @param finalFragment true if this frame is the final fragment
-     * @param rsv extension bits
-     */
-    default void onBinaryFrame(byte[] payload, boolean finalFragment, int rsv) {
-    };
+  /**
+   * Invoked when a binary frame is received.
+   *
+   * @param payload       a byte array
+   * @param finalFragment true if this frame is the final fragment
+   * @param rsv           extension bits
+   */
+  default void onBinaryFrame(byte[] payload, boolean finalFragment, int rsv) {
+  }
 
-    /**
-     * Invoked when a text frame is received.
-     * 
-     * @param payload a UTF-8 {@link String} message
-     * @param finalFragment true if this frame is the final fragment
-     * @param rsv extension bits
-     */
-    default void onTextFrame(String payload, boolean finalFragment, int rsv) {
-    };
+  /**
+   * Invoked when a text frame is received.
+   *
+   * @param payload       a UTF-8 {@link String} message
+   * @param finalFragment true if this frame is the final fragment
+   * @param rsv           extension bits
+   */
+  default void onTextFrame(String payload, boolean finalFragment, int rsv) {
+  }
 
-    /**
-     * Invoked when a ping frame is received
-     * 
-     * @param payload a byte array
-     */
-    default void onPingFrame(byte[] payload) {
-    };
+  /**
+   * Invoked when a ping frame is received
+   *
+   * @param payload a byte array
+   */
+  default void onPingFrame(byte[] payload) {
+  }
 
-    /**
-     * Invoked when a pong frame is received
-     * 
-     * @param payload a byte array
-     */
-    default void onPongFrame(byte[] payload) {
-    };
+  /**
+   * Invoked when a pong frame is received
+   *
+   * @param payload a byte array
+   */
+  default void onPongFrame(byte[] payload) {
+  }
 }

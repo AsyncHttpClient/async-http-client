@@ -14,68 +14,64 @@
 package org.asynchttpclient.netty.request;
 
 import io.netty.channel.Channel;
-
-import java.nio.channels.ClosedChannelException;
-
 import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.ClosedChannelException;
+
 public abstract class WriteListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteListener.class);
-    protected final NettyResponseFuture<?> future;
-    protected final ProgressAsyncHandler<?> progressAsyncHandler;
-    protected final boolean notifyHeaders;
+  private static final Logger LOGGER = LoggerFactory.getLogger(WriteListener.class);
+  protected final NettyResponseFuture<?> future;
+  final ProgressAsyncHandler<?> progressAsyncHandler;
+  final boolean notifyHeaders;
 
-    public WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
-        this.future = future;
-        this.progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
-        this.notifyHeaders = notifyHeaders;
+  WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
+    this.future = future;
+    this.progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
+    this.notifyHeaders = notifyHeaders;
+  }
+
+  private boolean abortOnThrowable(Channel channel, Throwable cause) {
+    if (cause != null) {
+      if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
+        LOGGER.debug(cause.getMessage(), cause);
+        Channels.silentlyCloseChannel(channel);
+
+      } else {
+        future.abort(cause);
+      }
+      return true;
     }
 
-    private boolean abortOnThrowable(Channel channel, Throwable cause) {
-        if (cause != null && future.getChannelState() != ChannelState.NEW) {
-            if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
-                LOGGER.debug(cause.getMessage(), cause);
-                Channels.silentlyCloseChannel(channel);
+    return false;
+  }
 
-            } else {
-                future.abort(cause);
-            }
-            return true;
-        }
+  void operationComplete(Channel channel, Throwable cause) {
+    future.touch();
 
-        return false;
+    // The write operation failed. If the channel was cached, it means it got asynchronously closed.
+    // Let's retry a second time.
+    if (abortOnThrowable(channel, cause)) {
+      return;
     }
 
-    protected void operationComplete(Channel channel, Throwable cause) {
-        future.touch();
+    if (progressAsyncHandler != null) {
+       // We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+       // causing unpredictable behavior.
+      boolean startPublishing = !future.isInAuth() && !future.isInProxyAuth();
+      if (startPublishing) {
 
-        // The write operation failed. If the channel was cached, it means it got asynchronously closed.
-        // Let's retry a second time.
-        if (abortOnThrowable(channel, cause)) {
-            return;
+        if (notifyHeaders) {
+          progressAsyncHandler.onHeadersWritten();
+        } else {
+          progressAsyncHandler.onContentWritten();
         }
-
-        if (progressAsyncHandler != null) {
-            /**
-             * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
-             * causing unpredictable behavior.
-             */
-            boolean startPublishing = !future.isInAuth() && !future.isInProxyAuth();
-            if (startPublishing) {
-                
-                if (notifyHeaders) {
-                    progressAsyncHandler.onHeadersWritten();
-                } else {
-                    progressAsyncHandler.onContentWritten();
-                }
-            }
-        }
+      }
     }
+  }
 }

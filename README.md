@@ -1,20 +1,15 @@
-Async Http Client ([@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on twitter) [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client)
----------------------------------------------------
+# Async Http Client [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
 
-[Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/)
+Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 
-[Getting](https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/) [started](https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/), and use [WebSockets](http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/)
+The AsyncHttpClient (AHC) library allows Java applications to easily execute HTTP requests and asynchronously process HTTP responses.
+The library also supports the WebSocket Protocol.
 
-The Async Http Client library's purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses.
-The library also supports the WebSocket Protocol. The Async HTTP Client library is simple to use.
-
-It's built on top of [Netty](https://github.com/netty/netty) and currently requires JDK8.
-
-Latest `version`: [![Maven](https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.asynchttpclient%22%20AND%20a%3A%22async-http-client%22)
+It's built on top of [Netty](https://github.com/netty/netty). I's currently compiled on Java 8 but runs on Java 9 too.
 
 ## Installation
 
-First, in order to add it to your Maven project, simply download from Maven central or add this dependency:
+Binaries are deployed on Maven central:
 
 ```xml
 <dependency>
@@ -24,177 +19,220 @@ First, in order to add it to your Maven project, simply download from Maven cent
 </dependency>
 ```
 
-## Usage
+## Version
 
-Then in your code you can simply do
+AHC doesn't use SEMVER, and won't.
+
+* MAJOR = huge refactoring
+* MINOR = new features and minor API changes, upgrading should require 1 hour of work to adapt sources
+* FIX = no API change, just bug fixes, only those are source and binary compatible with same minor version
+
+Check CHANGES.md for migration path between versions.
+
+## Basics
+
+Feel free to check the [Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/) or the code for more information.
+
+### Dsl
+
+Import the Dsl helpers to use convenient methods to bootstrap components:
 
 ```java
-import org.asynchttpclient.*;
-import java.util.concurrent.Future;
-
-AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
-Future<Response> f = asyncHttpClient.prepareGet("http://www.example.com/").execute();
-Response r = f.get();
+import static org.asynchttpclient.Dsl.*;
 ```
 
-Note that in this case all the content must be read fully in memory, even if you used `getResponseBodyAsStream()` method on returned `Response` object.
-
-You can also accomplish asynchronous (non-blocking) operation without using a Future if you want to receive and process the response in your handler:
-
-```java
-import org.asynchttpclient.*;
-import java.util.concurrent.Future;
-
-AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
-asyncHttpClient.prepareGet("http://www.example.com/").execute(new AsyncCompletionHandler<Response>(){
-    
-    @Override
-    public Response onCompleted(Response response) throws Exception{
-        // Do something with the Response
-        // ...
-        return response;
-    }
-    
-    @Override
-    public void onThrowable(Throwable t){
-        // Something wrong happened.
-    }
-});
-```
-
-(this will also fully read `Response` in memory before calling `onCompleted`)
-
-Alternatively you may use continuations (through Java 8 class `CompletableFuture<T>`) to accomplish asynchronous (non-blocking) solution. The equivalent continuation approach to the previous example is:
+### Client
 
 ```java
 import static org.asynchttpclient.Dsl.*;
 
-import org.asynchttpclient.*;
-import java.util.concurrent.CompletableFuture;
-
 AsyncHttpClient asyncHttpClient = asyncHttpClient();
-CompletableFuture<Response> promise = asyncHttpClient
+```
+
+AsyncHttpClient instances must be closed (call the `close` method) once you're done with them, typically when shutting down your application.
+If you don't, you'll experience threads hanging and resource leaks.
+
+AsyncHttpClient instances are intended to be global resources that share the same lifecycle as the application.
+Typically, AHC will usually underperform if you create a new client for each request, as it will create new threads and connection pools for each.
+It's possible to create shared resources (EventLoop and Timer) beforehand and pass them to multiple client instances in the config. You'll then be responsible for closing those shared resources.
+
+## Configuration
+
+Finally, you can also configure the AsyncHttpClient instance via its AsyncHttpClientConfig object:
+
+```java
+import static org.asynchttpclient.Dsl.*;
+
+AsyncHttpClient c = asyncHttpClient(config().setProxyServer(proxyServer("127.0.0.1", 38080)));
+```
+
+## HTTP
+
+### Sending Requests
+
+### Basics
+
+AHC provides 2 APIs for defining requests: bound and unbound.
+`AsyncHttpClient` and Dls` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
+
+```java
+import org.asynchttpclient.*;
+
+// bound
+Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.com/").execute();
+
+// unbound
+Request request = get("http://www.example.com/").build();
+Future<Response> whenResponse = asyncHttpClient.execute(request);
+```
+
+#### Setting Request Body
+
+Use the `setBody` method to add a body to the request.
+
+This body can be of type:
+* `java.io.File`
+* `byte[]`
+* `List<byte[]>`
+* `String`
+* `java.nio.ByteBuffer`
+* `java.io.InputStream`
+* `Publisher<io.netty.bufferByteBuf>`
+* `org.asynchttpclient.request.body.generator.BodyGenerator`
+
+`BodyGenerator` is a generic abstraction that let you create request bodies on the fly.
+Have a look at `FeedableBodyGenerator` if you're looking for a way to pass requests chunks on the fly. 
+
+#### Multipart
+
+Use the `addBodyPart` method to add a multipart part to the request.
+
+This part can be of type:
+* `ByteArrayPart`
+* `FilePart`
+* `StringPart`
+
+### Dealing with Responses
+
+#### Blocking on the Future
+
+`execute` methods return a `java.util.concurrent.Future`. You can simply both the calling thread to get the response.
+
+```java
+Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.com/").execute();
+Response response = whenResponse.get();
+```
+
+This is useful for debugging but you'll most likely hurt performance or create bugs when running such code on production.
+The point of using a non blocking client is to *NOT BLOCK* the calling thread!
+
+### Setting callbacks on the ListenableFuture
+
+`execute` methods actually return a `org.asynchttpclient.ListenableFuture` similar to Guava's.
+You can configure listeners to be notified of the Future's completion. 
+
+```java
+ListenableFuture<Response> whenResponse = ???;
+Runnable callback = () -> {
+	try  {
+		Response response = whenResponse.get();
+		System.out.println(response);
+	} catch (InterruptedException | ExecutionException e) {
+		e.printStackTrace();
+	}
+};
+java.util.concurrent.Executor executor = ???;
+whenResponse.addListener(() -> ???, executor);
+```
+
+If the `executor` parameter is null, callback will be executed in the IO thread.
+You *MUST NEVER PERFORM BLOCKING* operations in there, typically sending another request and block on a future.
+
+#### Using custom AsyncHandlers
+
+`execute` methods can take an `org.asynchttpclient.AsyncHandler` to be notified on the different events, such as receiving the status, the headers and body chunks.
+When you don't specify one, AHC will use a `org.asynchttpclient.AsyncCompletionHandler`;
+
+`AsyncHandler` methods can let you abort processing early (return `AsyncHandler.State.ABORT`) and can let you return a computation result from `onCompleted` that will be used as the Future's result.
+See `AsyncCompletionHandler` implementation as an example.
+
+The below sample just capture the response status and skips processing the response body chunks.
+
+Note that returning `ABORT` closed the underlying connection.
+
+```java
+import static org.asynchttpclient.Dsl.*;
+import org.asynchttpclient.*;
+import io.netty.handler.codec.http.HttpHeaders;
+
+Future<Integer> whenStatusCode = asyncHttpClient.prepareGet("http://www.example.com/")
+.execute(new AsyncHandler<Integer>() {
+	private Integer status;
+	@Override
+	public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+		status = responseStatus.getStatusCode();
+		return State.ABORT;
+	}
+	@Override
+	public State onHeadersReceived(HttpHeaders headers) throws Exception {
+		return State.ABORT;
+	}
+	@Override
+	public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+		return State.ABORT;
+	}
+	@Override
+	public Integer onCompleted() throws Exception {
+		return status;
+	}
+	@Override
+	public void onThrowable(Throwable t) {
+	}
+});
+
+Integer statusCode = whenStatusCode.get();
+```
+
+#### Using Continuations
+
+`ListenableFuture` has a `toCompletableFuture` that returns a `CompletableFuture`.
+Beware that canceling this `CompletableFuture` won't properly cancel the ongoing request.
+There's a very good chance we'll return a `CompletionStage` instead in the next release.
+
+```java
+CompletableFuture<Response> whenResponse = asyncHttpClient
             .prepareGet("http://www.example.com/")
             .execute()
             .toCompletableFuture()
             .exceptionally(t -> { /* Something wrong happened... */  } )
-            .thenApply(resp -> { /*  Do something with the Response */ return resp; });
-promise.join(); // wait for completion
+            .thenApply(response -> { /*  Do something with the Response */ return resp; });
+whenResponse.join(); // wait for completion
 ```
 
 You may get the complete maven project for this simple demo from [org.asynchttpclient.example](https://github.com/AsyncHttpClient/async-http-client/tree/master/example/src/main/java/org/asynchttpclient/example)
 
-You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
-
-```java
-import org.asynchttpclient.*;
-import java.util.concurrent.Future;
-
-AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient();
-Future<Integer> f = asyncHttpClient.prepareGet("http://www.example.com/").execute(
-   new AsyncCompletionHandler<Integer>(){
-    
-    @Override
-    public Integer onCompleted(Response response) throws Exception{
-        // Do something with the Response
-        return response.getStatusCode();
-    }
-    
-    @Override
-    public void onThrowable(Throwable t){
-        // Something wrong happened.
-    }
-});
-
-int statusCode = f.get();
-```
-
-which is something you want to do for large responses: this way you can process content as soon as it becomes available, piece by piece, without having to buffer it all in memory.
-
- You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
-
-```java
-import static org.asynchttpclient.Dsl.*;
-
-import org.asynchttpclient.*;
-import java.util.concurrent.Future;
-
-AsyncHttpClient c = asyncHttpClient();
-Future<String> f = c.prepareGet("http://www.example.com/").execute(new AsyncHandler<String>() {
-    private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-
-    @Override
-    public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-        int statusCode = status.getStatusCode();
-        // The Status have been read
-        // If you don't want to read the headers,body or stop processing the response
-        if (statusCode >= 500) {
-            return STATE.ABORT;
-        }
-    }
-
-    @Override
-    public STATE onHeadersReceived(HttpResponseHeaders h) throws Exception {
-        Headers headers = h.getHeaders();
-         // The headers have been read
-         // If you don't want to read the body, or stop processing the response
-         return STATE.ABORT;
-    }
-
-    @Override
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-         bytes.write(bodyPart.getBodyPartBytes());
-         return STATE.CONTINUE;
-    }
-
-    @Override
-    public String onCompleted() throws Exception {
-         // Will be invoked once the response has been fully read or a ResponseComplete exception
-         // has been thrown.
-         // NOTE: should probably use Content-Encoding from headers
-         return bytes.toString("UTF-8");
-    }
-
-    @Override
-    public void onThrowable(Throwable t) {
-    }
-});
-
-String bodyResponse = f.get();
-```
-
-## Configuration
-
-Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfig object:
-
-```java
-AsyncHttpClientConfig cf = new DefaultAsyncHttpClientConfig.Builder()
-    .setProxyServer(new ProxyServer.Builder("127.0.0.1", 38080)).build();
-
-AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
-```
-
 ## WebSocket
 
-Async Http Client also supports WebSocket by simply doing:
+Async Http Client also supports WebSocket.
+You need to pass a `WebSocketUpgradeHandler` where you would register a `WebSocketListener`.
 
 ```java
-WebSocket websocket = c.prepareGet(getTargetUrl())
+WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
       .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
-          new WebSocketTextListener() {
-
-          @Override
-          public void onMessage(String message) {
-          }
+          new WebSocketListener() {
 
           @Override
           public void onOpen(WebSocket websocket) {
-              websocket.sendTextMessage("...").sendMessage("...");
+              websocket.sendTextFrame("...").sendTextFrame("...");
           }
 
           @Override
           public void onClose(WebSocket websocket) {
-              latch.countDown();
+          }
+          
+    		  @Override
+          public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+          	System.out.println(payload);
           }
 
           @Override
@@ -202,6 +240,41 @@ WebSocket websocket = c.prepareGet(getTargetUrl())
           }
       }).build()).get();
 ```
+
+## Reactive Streams
+
+AsyncHttpClient has build in support for reactive streams.
+
+You can pass a request body as a `Publisher<ByteBuf>` or a `ReactiveStreamsBodyGenerator`.
+
+You can also pass a `StreamedAsyncHandler<T>` whose `onStream` method will be notified with a `Publisher<HttpResponseBodyPart>`.
+
+See tests in package `org.asynchttpclient.reactivestreams` for examples.
+
+## WebDAV
+
+AsyncHttpClient has build in support for the WebDAV protocol.
+The API can be used the same way normal HTTP request are made:
+
+```java
+Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://host:port/folder1").build();
+Response response = c.executeRequest(mkcolRequest).get();
+```
+or
+
+```java
+Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://host:port).build();
+Response response = c.executeRequest(propFindRequest, new AsyncHandler(){...}).get();
+```
+
+## More
+
+You can find more information on Jean-François Arcand's blog.  Jean-François is the original author of this library.
+Code is sometimes not up-to-date but gives a pretty good idea of advanced features.
+
+* https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/
+* https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/
+* https://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/
 
 ## User Group
 
@@ -216,9 +289,7 @@ Of course, Pull Requests are welcome.
 Here a the few rules we'd like you to respect if you do so:
 
 * Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
-* Respect the formatting rules:
-  * Indent with 4 spaces
-* Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash them into a single one
+* Use IntelliJ default formatting rules.
 * Regarding licensing:
   * You must be the original author of the code you suggest.
   * You must give the copyright to "the AsyncHttpClient Project"

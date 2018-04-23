@@ -14,7 +14,7 @@
 package org.asynchttpclient.request.body.generator;
 
 public interface FeedListener {
-    void onContentAdded();
+  void onContentAdded();
 
-    void onError(Throwable t);
+  void onError(Throwable t);
 }

@@ -13,39 +13,38 @@
  */
 package org.asynchttpclient.oauth;
 
+import org.asynchttpclient.util.StringBuilderPool;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.asynchttpclient.util.StringBuilderPool;
+final class Parameters {
 
-class Parameters {
+  private List<Parameter> parameters = new ArrayList<>();
 
-    private List<Parameter> parameters = new ArrayList<>();
+  public Parameters add(String key, String value) {
+    parameters.add(new Parameter(key, value));
+    return this;
+  }
 
-    Parameters add(String key, String value) {
-        parameters.add(new Parameter(key, value));
-        return this;
+  public void reset() {
+    parameters.clear();
+  }
+
+  String sortAndConcat() {
+    // then sort them (AFTER encoding, important)
+    Collections.sort(parameters);
+
+    // and build parameter section using pre-encoded pieces:
+    StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
+    for (Parameter param : parameters) {
+      encodedParams.append(param.key).append('=').append(param.value).append('&');
     }
-
-    void reset() {
-        parameters.clear();
+    int length = encodedParams.length();
+    if (length > 0) {
+      encodedParams.setLength(length - 1);
     }
-
-    String sortAndConcat() {
-        // then sort them (AFTER encoding, important)
-        Collections.sort(parameters);
-
-        // and build parameter section using pre-encoded pieces:
-        StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
-        for (int i = 0; i < parameters.size(); i++) {
-            Parameter param = parameters.get(i);
-            encodedParams.append(param.key).append('=').append(param.value).append('&');
-        }
-        int length = encodedParams.length();
-        if (length > 0) {
-            encodedParams.setLength(length - 1);
-        }
-        return encodedParams.toString();
-    }
+    return encodedParams.toString();
+  }
 }

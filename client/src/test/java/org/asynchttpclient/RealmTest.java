@@ -12,97 +12,97 @@
  */
 package org.asynchttpclient;
 
-import static java.nio.charset.StandardCharsets.UTF_16;
-import static org.asynchttpclient.Dsl.*;
-import static org.testng.Assert.assertEquals;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static org.asynchttpclient.Dsl.*;
+import static org.testng.Assert.assertEquals;
+
 public class RealmTest {
-    @Test(groups = "standalone")
-    public void testClone() {
-        Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)//
-                .setUsePreemptiveAuth(true)//
-                .setRealmName("realm")//
-                .setAlgorithm("algo").build();
+  @Test
+  public void testClone() {
+    Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)
+            .setUsePreemptiveAuth(true)
+            .setRealmName("realm")
+            .setAlgorithm("algo").build();
 
-        Realm clone = realm(orig).build();
-        assertEquals(clone.getPrincipal(), orig.getPrincipal());
-        assertEquals(clone.getPassword(), orig.getPassword());
-        assertEquals(clone.getCharset(), orig.getCharset());
-        assertEquals(clone.isUsePreemptiveAuth(), orig.isUsePreemptiveAuth());
-        assertEquals(clone.getRealmName(), orig.getRealmName());
-        assertEquals(clone.getAlgorithm(), orig.getAlgorithm());
-        assertEquals(clone.getScheme(), orig.getScheme());
-    }
+    Realm clone = realm(orig).build();
+    assertEquals(clone.getPrincipal(), orig.getPrincipal());
+    assertEquals(clone.getPassword(), orig.getPassword());
+    assertEquals(clone.getCharset(), orig.getCharset());
+    assertEquals(clone.isUsePreemptiveAuth(), orig.isUsePreemptiveAuth());
+    assertEquals(clone.getRealmName(), orig.getRealmName());
+    assertEquals(clone.getAlgorithm(), orig.getAlgorithm());
+    assertEquals(clone.getScheme(), orig.getScheme());
+  }
 
-    @Test(groups = "standalone")
-    public void testOldDigestEmptyString() throws Exception {
-        testOldDigest("");
-    }
+  @Test
+  public void testOldDigestEmptyString() throws Exception {
+    testOldDigest("");
+  }
 
-    @Test(groups = "standalone")
-    public void testOldDigestNull() throws Exception {
-        testOldDigest(null);
-    }
+  @Test
+  public void testOldDigestNull() throws Exception {
+    testOldDigest(null);
+  }
 
-    private void testOldDigest(String qop) throws Exception {
-        String user = "user";
-        String pass = "pass";
-        String realm = "realm";
-        String nonce = "nonce";
-        String method = "GET";
-        Uri uri = Uri.create("http://ahc.io/foo");
-        Realm orig = digestAuthRealm(user, pass)//
-                .setNonce(nonce)//
-                .setUri(uri)//
-                .setMethodName(method)//
-                .setRealmName(realm)//
-                .setQop(qop)//
-                .build();
+  private void testOldDigest(String qop) throws Exception {
+    String user = "user";
+    String pass = "pass";
+    String realm = "realm";
+    String nonce = "nonce";
+    String method = "GET";
+    Uri uri = Uri.create("http://ahc.io/foo");
+    Realm orig = digestAuthRealm(user, pass)
+            .setNonce(nonce)
+            .setUri(uri)
+            .setMethodName(method)
+            .setRealmName(realm)
+            .setQop(qop)
+            .build();
 
-        String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri.getPath());
-        String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + ha2);
+    String ha1 = getMd5(user + ":" + realm + ":" + pass);
+    String ha2 = getMd5(method + ":" + uri.getPath());
+    String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + ha2);
 
-        assertEquals(orig.getResponse(), expectedResponse);
-    }
+    assertEquals(orig.getResponse(), expectedResponse);
+  }
 
-    @Test(groups = "standalone")
-    public void testStrongDigest() throws Exception {
-        String user = "user";
-        String pass = "pass";
-        String realm = "realm";
-        String nonce = "nonce";
-        String method = "GET";
-        Uri uri = Uri.create("http://ahc.io/foo");
-        String qop = "auth";
-        Realm orig = digestAuthRealm(user, pass)//
-                .setNonce(nonce)//
-                .setUri(uri)//
-                .setMethodName(method)//
-                .setRealmName(realm)//
-                .setQop(qop)//
-                .build();
+  @Test
+  public void testStrongDigest() throws Exception {
+    String user = "user";
+    String pass = "pass";
+    String realm = "realm";
+    String nonce = "nonce";
+    String method = "GET";
+    Uri uri = Uri.create("http://ahc.io/foo");
+    String qop = "auth";
+    Realm orig = digestAuthRealm(user, pass)
+            .setNonce(nonce)
+            .setUri(uri)
+            .setMethodName(method)
+            .setRealmName(realm)
+            .setQop(qop)
+            .build();
 
-        String nc = orig.getNc();
-        String cnonce = orig.getCnonce();
-        String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri.getPath());
-        String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
+    String nc = orig.getNc();
+    String cnonce = orig.getCnonce();
+    String ha1 = getMd5(user + ":" + realm + ":" + pass);
+    String ha2 = getMd5(method + ":" + uri.getPath());
+    String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
 
-        assertEquals(orig.getResponse(), expectedResponse);
-    }
+    assertEquals(orig.getResponse(), expectedResponse);
+  }
 
-    private String getMd5(String what) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(what.getBytes(StandardCharsets.ISO_8859_1));
-        byte[] hash = md.digest();
-        return StringUtils.toHexString(hash);
-    }
+  private String getMd5(String what) throws Exception {
+    MessageDigest md = MessageDigest.getInstance("MD5");
+    md.update(what.getBytes(StandardCharsets.ISO_8859_1));
+    byte[] hash = md.digest();
+    return StringUtils.toHexString(hash);
+  }
 }

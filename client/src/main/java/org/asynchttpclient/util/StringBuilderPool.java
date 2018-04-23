@@ -14,18 +14,18 @@ package org.asynchttpclient.util;
 
 public class StringBuilderPool {
 
-    public static final StringBuilderPool DEFAULT = new StringBuilderPool();
+  public static final StringBuilderPool DEFAULT = new StringBuilderPool();
 
-    private final ThreadLocal<StringBuilder> pool = ThreadLocal.withInitial(() -> new StringBuilder(512));
+  private final ThreadLocal<StringBuilder> pool = ThreadLocal.withInitial(() -> new StringBuilder(512));
 
-    /**
-     * BEWARE: MUSN'T APPEND TO ITSELF!
-     * 
-     * @return a pooled StringBuilder
-     */
-    public StringBuilder stringBuilder() {
-        StringBuilder sb = pool.get();
-        sb.setLength(0);
-        return sb;
-    }
+  /**
+   * BEWARE: MUSN'T APPEND TO ITSELF!
+   *
+   * @return a pooled StringBuilder
+   */
+  public StringBuilder stringBuilder() {
+    StringBuilder sb = pool.get();
+    sb.setLength(0);
+    return sb;
+  }
 }

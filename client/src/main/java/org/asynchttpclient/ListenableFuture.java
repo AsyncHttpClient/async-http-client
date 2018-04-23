@@ -30,12 +30,7 @@
  */
 package org.asynchttpclient;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * Extended {@link Future}
@@ -44,109 +39,109 @@ import java.util.concurrent.TimeoutException;
  */
 public interface ListenableFuture<V> extends Future<V> {
 
-    /**
-     * Terminate and if there is no exception, mark this Future as done and release the internal lock.
-     */
-    void done();
+  /**
+   * Terminate and if there is no exception, mark this Future as done and release the internal lock.
+   */
+  void done();
 
-    /**
-     * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}
-     *
-     * @param t the exception
-     */
-    void abort(Throwable t);
+  /**
+   * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}
+   *
+   * @param t the exception
+   */
+  void abort(Throwable t);
 
-    /**
-     * Touch the current instance to prevent external service to times out.
-     */
-    void touch();
+  /**
+   * Touch the current instance to prevent external service to times out.
+   */
+  void touch();
 
-    /**
-     * Adds a listener and executor to the ListenableFuture.
-     * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
-     * to the executor} for execution when the {@code Future}'s computation is
-     * {@linkplain Future#isDone() complete}.
-     * <br>
-     * Executor can be <code>null</code>, in that case executor will be executed
-     * in the thread where completion happens.
-     * <br>
-     * There is no guaranteed ordering of execution of listeners, they may get
-     * called in the order they were added and they may get called out of order,
-     * but any listener added through this method is guaranteed to be called once
-     * the computation is complete.
-     *
-     * @param listener the listener to run when the computation is complete.
-     * @param exec     the executor to run the listener in.
-     * @return this Future
-     */
-    ListenableFuture<V> addListener(Runnable listener, Executor exec);
+  /**
+   * Adds a listener and executor to the ListenableFuture.
+   * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
+   * to the executor} for execution when the {@code Future}'s computation is
+   * {@linkplain Future#isDone() complete}.
+   * <br>
+   * Executor can be <code>null</code>, in that case executor will be executed
+   * in the thread where completion happens.
+   * <br>
+   * There is no guaranteed ordering of execution of listeners, they may get
+   * called in the order they were added and they may get called out of order,
+   * but any listener added through this method is guaranteed to be called once
+   * the computation is complete.
+   *
+   * @param listener the listener to run when the computation is complete.
+   * @param exec     the executor to run the listener in.
+   * @return this Future
+   */
+  ListenableFuture<V> addListener(Runnable listener, Executor exec);
 
-    CompletableFuture<V> toCompletableFuture();
-    
-    class CompletedFailure<T> implements ListenableFuture<T>{
+  CompletableFuture<V> toCompletableFuture();
 
-        private final ExecutionException e;
+  class CompletedFailure<T> implements ListenableFuture<T> {
 
-        public CompletedFailure(Throwable t) {
-            e = new ExecutionException(t);
-        }
+    private final ExecutionException e;
 
-        public CompletedFailure(String message, Throwable t) {
-            e = new ExecutionException(message, t);
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return true;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public T get() throws InterruptedException, ExecutionException {
-            throw e;
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            throw e;
-        }
-
-        @Override
-        public void done() {
-        }
-
-        @Override
-        public void abort(Throwable t) {
-        }
-
-        @Override
-        public void touch() {
-        }
-
-        @Override
-        public ListenableFuture<T> addListener(Runnable listener, Executor exec) {
-            if (exec != null) {
-                exec.execute(listener);
-            } else {
-                listener.run();
-            }
-            return this;
-        }
-        
-        @Override
-        public CompletableFuture<T> toCompletableFuture() {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            future.completeExceptionally(e);
-            return future;
-        }
+    public CompletedFailure(Throwable t) {
+      e = new ExecutionException(t);
     }
+
+    public CompletedFailure(String message, Throwable t) {
+      e = new ExecutionException(message, t);
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return true;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+
+    @Override
+    public T get() throws ExecutionException {
+      throw e;
+    }
+
+    @Override
+    public T get(long timeout, TimeUnit unit) throws ExecutionException {
+      throw e;
+    }
+
+    @Override
+    public void done() {
+    }
+
+    @Override
+    public void abort(Throwable t) {
+    }
+
+    @Override
+    public void touch() {
+    }
+
+    @Override
+    public ListenableFuture<T> addListener(Runnable listener, Executor exec) {
+      if (exec != null) {
+        exec.execute(listener);
+      } else {
+        listener.run();
+      }
+      return this;
+    }
+
+    @Override
+    public CompletableFuture<T> toCompletableFuture() {
+      CompletableFuture<T> future = new CompletableFuture<>();
+      future.completeExceptionally(e);
+      return future;
+    }
+  }
 }

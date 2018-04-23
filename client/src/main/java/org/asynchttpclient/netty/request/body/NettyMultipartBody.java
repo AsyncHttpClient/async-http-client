@@ -13,30 +13,30 @@
  */
 package org.asynchttpclient.netty.request.body;
 
-import static org.asynchttpclient.request.body.multipart.MultipartUtils.newMultipartBody;
 import io.netty.handler.codec.http.HttpHeaders;
-
-import java.util.List;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.request.body.multipart.MultipartBody;
 import org.asynchttpclient.request.body.multipart.Part;
 
+import java.util.List;
+
+import static org.asynchttpclient.request.body.multipart.MultipartUtils.newMultipartBody;
+
 public class NettyMultipartBody extends NettyBodyBody {
 
-    private final String contentTypeOverride;
+  private final String contentTypeOverride;
 
-    public NettyMultipartBody(List<Part> parts, HttpHeaders headers, AsyncHttpClientConfig config) {
-        this(newMultipartBody(parts, headers), config);
-    }
+  public NettyMultipartBody(List<Part> parts, HttpHeaders headers, AsyncHttpClientConfig config) {
+    this(newMultipartBody(parts, headers), config);
+  }
 
-    private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
-        super(body, config);
-        contentTypeOverride = body.getContentType();
-    }
+  private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
+    super(body, config);
+    contentTypeOverride = body.getContentType();
+  }
 
-    @Override
-    public String getContentTypeOverride() {
-        return contentTypeOverride;
-    }
+  @Override
+  public String getContentTypeOverride() {
+    return contentTypeOverride;
+  }
 }

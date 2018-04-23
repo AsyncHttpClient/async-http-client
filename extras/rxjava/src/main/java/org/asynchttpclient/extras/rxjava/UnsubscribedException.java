@@ -20,10 +20,10 @@ import java.util.concurrent.CancellationException;
 @SuppressWarnings("serial")
 public class UnsubscribedException extends CancellationException {
 
-    public UnsubscribedException() {
-    }
+  public UnsubscribedException() {
+  }
 
-    public UnsubscribedException(final Throwable cause) {
-        initCause(cause);
-    }
+  public UnsubscribedException(final Throwable cause) {
+    initCause(cause);
+  }
 }

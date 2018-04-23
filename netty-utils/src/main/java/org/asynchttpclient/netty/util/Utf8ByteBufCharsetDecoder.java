@@ -13,7 +13,6 @@
  */
 package org.asynchttpclient.netty.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
@@ -22,17 +21,22 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.asynchttpclient.netty.util.ByteBufUtils.*;
+
 public class Utf8ByteBufCharsetDecoder {
 
   private static final int INITIAL_CHAR_BUFFER_SIZE = 1024;
   private static final int UTF_8_MAX_BYTES_PER_CHAR = 4;
   private static final char INVALID_CHAR_REPLACEMENT = '�';
 
-  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = new ThreadLocal<Utf8ByteBufCharsetDecoder>() {
-    protected Utf8ByteBufCharsetDecoder initialValue() {
-      return new Utf8ByteBufCharsetDecoder();
-    }
-  };
+  private static final ThreadLocal<Utf8ByteBufCharsetDecoder> POOL = ThreadLocal.withInitial(Utf8ByteBufCharsetDecoder::new);
+  private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
+  protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
+  private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
+  private int totalSize = 0;
+  private int totalNioBuffers = 0;
+  private boolean withoutArray = false;
 
   private static Utf8ByteBufCharsetDecoder pooledDecoder() {
     Utf8ByteBufCharsetDecoder decoder = POOL.get();
@@ -48,35 +52,16 @@ public class Utf8ByteBufCharsetDecoder {
     return pooledDecoder().decode(bufs);
   }
 
+  public static char[] decodeUtf8Chars(ByteBuf buf) {
+    return pooledDecoder().decodeChars(buf);
+  }
+
+  public static char[] decodeUtf8Chars(ByteBuf... bufs) {
+    return pooledDecoder().decodeChars(bufs);
+  }
+
   private static CharsetDecoder configureReplaceCodingErrorActions(CharsetDecoder decoder) {
     return decoder.onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
-  }
-
-  private final CharsetDecoder decoder = configureReplaceCodingErrorActions(UTF_8.newDecoder());
-  protected CharBuffer charBuffer = allocateCharBuffer(INITIAL_CHAR_BUFFER_SIZE);
-  private ByteBuffer splitCharBuffer = ByteBuffer.allocate(UTF_8_MAX_BYTES_PER_CHAR);
-
-  protected CharBuffer allocateCharBuffer(int l) {
-    return CharBuffer.allocate(l);
-  }
-
-  private void ensureCapacity(int l) {
-    if (charBuffer.position() == 0) {
-      if (charBuffer.capacity() < l) {
-        charBuffer = allocateCharBuffer(l);
-      }
-    } else if (charBuffer.remaining() < l) {
-      CharBuffer newCharBuffer = allocateCharBuffer(charBuffer.position() + l);
-      charBuffer.flip();
-      newCharBuffer.put(charBuffer);
-      charBuffer = newCharBuffer;
-    }
-  }
-
-  public void reset() {
-    configureReplaceCodingErrorActions(decoder.reset());
-    charBuffer.clear();
-    splitCharBuffer.clear();
   }
 
   private static int moreThanOneByteCharSize(byte firstByte) {
@@ -102,6 +87,32 @@ public class Utf8ByteBufCharsetDecoder {
   private static boolean isContinuation(byte b) {
     // 10xxxxxx
     return b >> 6 == -2;
+  }
+
+  protected CharBuffer allocateCharBuffer(int l) {
+    return CharBuffer.allocate(l);
+  }
+
+  protected void ensureCapacity(int l) {
+    if (charBuffer.position() == 0) {
+      if (charBuffer.capacity() < l) {
+        charBuffer = allocateCharBuffer(l);
+      }
+    } else if (charBuffer.remaining() < l) {
+      CharBuffer newCharBuffer = allocateCharBuffer(charBuffer.position() + l);
+      charBuffer.flip();
+      newCharBuffer.put(charBuffer);
+      charBuffer = newCharBuffer;
+    }
+  }
+
+  public void reset() {
+    configureReplaceCodingErrorActions(decoder.reset());
+    charBuffer.clear();
+    splitCharBuffer.clear();
+    totalSize = 0;
+    totalNioBuffers = 0;
+    withoutArray = false;
   }
 
   private boolean stashContinuationBytes(ByteBuffer nioBuffer, int missingBytes) {
@@ -165,14 +176,14 @@ public class Utf8ByteBufCharsetDecoder {
     }
   }
 
-  private void decode(ByteBuffer[] nioBuffers, int length) {
+  private void decode(ByteBuffer[] nioBuffers) {
     int count = nioBuffers.length;
     for (int i = 0; i < count; i++) {
       decodePartial(nioBuffers[i].duplicate(), i == count - 1);
     }
   }
 
-  private void decodeSingleNioBuffer(ByteBuffer nioBuffer, int length) {
+  private void decodeSingleNioBuffer(ByteBuffer nioBuffer) {
     decoder.decode(nioBuffer, charBuffer, true);
   }
 
@@ -180,17 +191,16 @@ public class Utf8ByteBufCharsetDecoder {
     if (buf.isDirect()) {
       return buf.toString(UTF_8);
     }
+    decodeHeap0(buf);
+    return charBuffer.toString();
+  }
 
-    int length = buf.readableBytes();
-    ensureCapacity(length);
-
-    if (buf.nioBufferCount() == 1) {
-      decodeSingleNioBuffer(buf.internalNioBuffer(buf.readerIndex(), length).duplicate(), length);
-    } else {
-      decode(buf.nioBuffers(), buf.readableBytes());
+  public char[] decodeChars(ByteBuf buf) {
+    if (buf.isDirect()) {
+      return buf.toString(UTF_8).toCharArray();
     }
-
-    return charBuffer.flip().toString();
+    decodeHeap0(buf);
+    return toCharArray(charBuffer);
   }
 
   public String decode(ByteBuf... bufs) {
@@ -198,9 +208,55 @@ public class Utf8ByteBufCharsetDecoder {
       return decode(bufs[0]);
     }
 
-    int totalSize = 0;
-    int totalNioBuffers = 0;
-    boolean withoutArray = false;
+    inspectByteBufs(bufs);
+    if (withoutArray) {
+      return ByteBufUtils.byteBuf2String0(UTF_8, bufs);
+    } else {
+      decodeHeap0(bufs);
+      return charBuffer.toString();
+    }
+  }
+
+  public char[] decodeChars(ByteBuf... bufs) {
+    if (bufs.length == 1) {
+      return decodeChars(bufs[0]);
+    }
+
+    inspectByteBufs(bufs);
+    if (withoutArray) {
+      return ByteBufUtils.byteBuf2Chars0(UTF_8, bufs);
+    } else {
+      decodeHeap0(bufs);
+      return toCharArray(charBuffer);
+    }
+  }
+
+  private void decodeHeap0(ByteBuf buf) {
+    int length = buf.readableBytes();
+    ensureCapacity(length);
+
+    if (buf.nioBufferCount() == 1) {
+      decodeSingleNioBuffer(buf.internalNioBuffer(buf.readerIndex(), length).duplicate());
+    } else {
+      decode(buf.nioBuffers());
+    }
+    charBuffer.flip();
+  }
+
+  private void decodeHeap0(ByteBuf[] bufs) {
+    ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
+    int i = 0;
+    for (ByteBuf buf : bufs) {
+      for (ByteBuffer nioBuffer : buf.nioBuffers()) {
+        nioBuffers[i++] = nioBuffer;
+      }
+    }
+    ensureCapacity(totalSize);
+    decode(nioBuffers);
+    charBuffer.flip();
+  }
+
+  private void inspectByteBufs(ByteBuf[] bufs) {
     for (ByteBuf buf : bufs) {
       if (!buf.hasArray()) {
         withoutArray = true;
@@ -208,24 +264,6 @@ public class Utf8ByteBufCharsetDecoder {
       }
       totalSize += buf.readableBytes();
       totalNioBuffers += buf.nioBufferCount();
-    }
-
-    if (withoutArray) {
-      return ByteBufUtils.byteBuf2StringDefault(UTF_8, bufs);
-
-    } else {
-      ByteBuffer[] nioBuffers = new ByteBuffer[totalNioBuffers];
-      int i = 0;
-      for (ByteBuf buf : bufs) {
-        for (ByteBuffer nioBuffer : buf.nioBuffers()) {
-          nioBuffers[i++] = nioBuffer;
-        }
-      }
-
-      ensureCapacity(totalSize);
-      decode(nioBuffers, totalSize);
-
-      return charBuffer.flip().toString();
     }
   }
 }

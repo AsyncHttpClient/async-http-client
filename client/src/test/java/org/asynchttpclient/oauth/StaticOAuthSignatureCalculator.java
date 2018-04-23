@@ -13,33 +13,43 @@
  */
 package org.asynchttpclient.oauth;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 class StaticOAuthSignatureCalculator implements SignatureCalculator {
 
-    private final ConsumerKey consumerKey;
-    private final RequestToken requestToken;
-    private final String nonce;
-    private final long timestamp;
+  private final ConsumerKey consumerKey;
+  private final RequestToken requestToken;
+  private final String nonce;
+  private final long timestamp;
 
-    public StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
-        this.consumerKey = consumerKey;
-        this.requestToken = requestToken;
-        this.nonce = nonce;
-        this.timestamp = timestamp;
-    }
+  StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
+    this.consumerKey = consumerKey;
+    this.requestToken = requestToken;
+    this.nonce = nonce;
+    this.timestamp = timestamp;
+  }
 
-    @Override
-    public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
-        try {
-            new OAuthSignatureCalculatorInstance().sign(consumerKey, requestToken, request, requestBuilder, timestamp, nonce);
-        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException(e);
-        }
+  @Override
+  public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
+    try {
+      String authorization = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(
+        consumerKey,
+        requestToken,
+        request.getUri(),
+        request.getMethod(),
+        request.getFormParams(),
+        request.getQueryParams(),
+        timestamp,
+        nonce);
+      requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
+    } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+      throw new IllegalArgumentException(e);
     }
+  }
 }
