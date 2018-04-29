@@ -12,8 +12,8 @@
   <description>The Async Http Client Retrofit2 Extras.</description>
 
   <properties>
-    <retrofit2.version>2.3.0</retrofit2.version>
-    <lombok.version>1.16.18</lombok.version>
+    <retrofit2.version>2.4.0</retrofit2.version>
+    <lombok.version>1.16.20</lombok.version>
   </properties>
 
   <dependencies>

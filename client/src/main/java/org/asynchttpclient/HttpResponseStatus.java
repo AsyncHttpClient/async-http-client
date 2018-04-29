@@ -36,7 +36,7 @@ public abstract class HttpResponseStatus {
    *
    * @return the request {@link Uri}
    */
-  public final Uri getUri() {
+  public Uri getUri() {
     return uri;
   }
 

@@ -86,7 +86,7 @@ public class AsyncHttpClientCallTest {
 
         when(httpClient.executeRequest((org.asynchttpclient.Request) any(), any())).then(invocationOnMock -> {
             @SuppressWarnings("rawtypes")
-            val handler = invocationOnMock.getArgumentAt(1, AsyncCompletionHandler.class);
+            AsyncCompletionHandler<?> handler = invocationOnMock.getArgument(1);
             handlerConsumer.accept(handler);
             return null;
         });
@@ -283,7 +283,7 @@ public class AsyncHttpClientCallTest {
 
     private void givenResponseIsProduced(AsyncHttpClient client, Response response) {
         when(client.executeRequest(any(org.asynchttpclient.Request.class), any())).thenAnswer(invocation -> {
-            AsyncCompletionHandler<Response> handler = invocation.getArgumentAt(1, AsyncCompletionHandler.class);
+            AsyncCompletionHandler<Response> handler = invocation.getArgument(1);
             handler.onCompleted(response);
             return null;
         });

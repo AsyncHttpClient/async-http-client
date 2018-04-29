@@ -17,9 +17,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.*;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.uri.Uri;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -28,19 +25,14 @@ import java.nio.ByteBuffer;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
 import static org.asynchttpclient.Dsl.get;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
 /**
  * @author Benjamin Hanzelmann
  */
-@PrepareForTest({HttpResponseStatus.class, State.class})
-public class ResumableAsyncHandlerTest extends PowerMockTestCase {
+public class ResumableAsyncHandlerTest {
   @Test
   public void testAdjustRange() {
     MapResumableProcessor proc = new MapResumableProcessor();
@@ -89,14 +81,13 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
 
     @SuppressWarnings("unchecked")
     AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
-    State mockState = mock(State.class);
-    when(decoratedAsyncHandler.onStatusReceived(mockResponseStatus)).thenReturn(mockState);
+    when(decoratedAsyncHandler.onStatusReceived(mockResponseStatus)).thenReturn(State.CONTINUE);
 
     ResumableAsyncHandler handler = new ResumableAsyncHandler(decoratedAsyncHandler);
 
     State state = handler.onStatusReceived(mockResponseStatus);
     verify(decoratedAsyncHandler).onStatusReceived(mockResponseStatus);
-    assertEquals(state, mockState, "State returned should be equal to the one returned from decoratedAsyncHandler");
+    assertEquals(state, State.CONTINUE, "State returned should be equal to the one returned from decoratedAsyncHandler");
   }
 
   @Test
@@ -113,7 +104,7 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
   @Test
   public void testOnBodyPartReceived() throws Exception {
     ResumableAsyncHandler handler = new ResumableAsyncHandler();
-    HttpResponseBodyPart bodyPart = PowerMockito.mock(HttpResponseBodyPart.class);
+    HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
     when(bodyPart.getBodyPartBytes()).thenReturn(new byte[0]);
     ByteBuffer buffer = ByteBuffer.allocate(0);
     when(bodyPart.getBodyByteBuffer()).thenReturn(buffer);
@@ -125,11 +116,11 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
   public void testOnBodyPartReceivedWithResumableListenerThrowsException() throws Exception {
     ResumableAsyncHandler handler = new ResumableAsyncHandler();
 
-    ResumableListener resumableListener = PowerMockito.mock(ResumableListener.class);
-    doThrow(new IOException()).when(resumableListener).onBytesReceived(anyObject());
+    ResumableListener resumableListener = mock(ResumableListener.class);
+    doThrow(new IOException()).when(resumableListener).onBytesReceived(any());
     handler.setResumableListener(resumableListener);
 
-    HttpResponseBodyPart bodyPart = PowerMockito.mock(HttpResponseBodyPart.class);
+    HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
     State state = handler.onBodyPartReceived(bodyPart);
     assertEquals(state, AsyncHandler.State.ABORT,
             "State should be ABORT if the resumableListener threw an exception in onBodyPartReceived");
@@ -137,28 +128,26 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
 
   @Test
   public void testOnBodyPartReceivedWithDecoratedAsyncHandler() throws Exception {
-    HttpResponseBodyPart bodyPart = PowerMockito.mock(HttpResponseBodyPart.class);
+    HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
     when(bodyPart.getBodyPartBytes()).thenReturn(new byte[0]);
     ByteBuffer buffer = ByteBuffer.allocate(0);
     when(bodyPart.getBodyByteBuffer()).thenReturn(buffer);
 
     @SuppressWarnings("unchecked")
     AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
-    State mockState = mock(State.class);
-    when(decoratedAsyncHandler.onBodyPartReceived(bodyPart)).thenReturn(mockState);
+    when(decoratedAsyncHandler.onBodyPartReceived(bodyPart)).thenReturn(State.CONTINUE);
 
     // following is needed to set the url variable
     HttpResponseStatus mockResponseStatus = mock(HttpResponseStatus.class);
     when(mockResponseStatus.getStatusCode()).thenReturn(200);
-    Uri mockUri = mock(Uri.class);
-    when(mockUri.toUrl()).thenReturn("http://non.null");
-    when(mockResponseStatus.getUri()).thenReturn(mockUri);
+    Uri uri = Uri.create("http://non.null");
+    when(mockResponseStatus.getUri()).thenReturn(uri);
 
     ResumableAsyncHandler handler = new ResumableAsyncHandler(decoratedAsyncHandler);
     handler.onStatusReceived(mockResponseStatus);
 
     State state = handler.onBodyPartReceived(bodyPart);
-    assertEquals(state, mockState, "State should be equal to the state returned from decoratedAsyncHandler");
+    assertEquals(state, State.CONTINUE, "State should be equal to the state returned from decoratedAsyncHandler");
 
   }
 
@@ -176,12 +165,11 @@ public class ResumableAsyncHandlerTest extends PowerMockTestCase {
 
     @SuppressWarnings("unchecked")
     AsyncHandler<Response> decoratedAsyncHandler = mock(AsyncHandler.class);
-    State mockState = mock(State.class);
-    when(decoratedAsyncHandler.onHeadersReceived(responseHeaders)).thenReturn(mockState);
+    when(decoratedAsyncHandler.onHeadersReceived(responseHeaders)).thenReturn(State.CONTINUE);
 
     ResumableAsyncHandler handler = new ResumableAsyncHandler(decoratedAsyncHandler);
     State status = handler.onHeadersReceived(responseHeaders);
-    assertEquals(status, mockState, "State should be equal to the state returned from decoratedAsyncHandler");
+    assertEquals(status, State.CONTINUE, "State should be equal to the state returned from decoratedAsyncHandler");
   }
 
   @Test

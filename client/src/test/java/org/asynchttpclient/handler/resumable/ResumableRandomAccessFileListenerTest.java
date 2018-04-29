@@ -13,20 +13,19 @@
  */
 package org.asynchttpclient.handler.resumable;
 
-import org.powermock.api.mockito.PowerMockito;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class ResumableRandomAccessFileListenerTest {
 
   @Test
   public void testOnBytesReceivedBufferHasArray() throws IOException {
-    RandomAccessFile file = PowerMockito.mock(RandomAccessFile.class);
+    RandomAccessFile file = mock(RandomAccessFile.class);
     ResumableRandomAccessFileListener listener = new ResumableRandomAccessFileListener(file);
     byte[] array = new byte[]{1, 2, 23, 33};
     ByteBuffer buf = ByteBuffer.wrap(array);
@@ -36,7 +35,7 @@ public class ResumableRandomAccessFileListenerTest {
 
   @Test
   public void testOnBytesReceivedBufferHasNoArray() throws IOException {
-    RandomAccessFile file = PowerMockito.mock(RandomAccessFile.class);
+    RandomAccessFile file = mock(RandomAccessFile.class);
     ResumableRandomAccessFileListener listener = new ResumableRandomAccessFileListener(file);
 
     byte[] byteArray = new byte[]{1, 2, 23, 33};

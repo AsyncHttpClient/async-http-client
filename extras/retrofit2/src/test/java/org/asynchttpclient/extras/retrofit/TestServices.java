@@ -13,8 +13,7 @@
 package org.asynchttpclient.extras.retrofit;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
@@ -51,7 +50,9 @@ class TestServices {
     io.reactivex.Single<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
   }
 
-  @Value
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   static class Contributor implements Serializable {
     private static final long serialVersionUID = 1;
