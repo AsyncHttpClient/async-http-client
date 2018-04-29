@@ -110,8 +110,8 @@ public class OAuthSignatureCalculatorInstance {
       userAuth,
       uri,
       method,
-      queryParams,
       formParams,
+      queryParams,
       oauthTimestamp,
       percentEncodedNonce);
 
