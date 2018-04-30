@@ -10,11 +10,11 @@
 ## From 2.0 to 2.1
 
 * AHC 2.1 targets Netty 4.1.
-* `org.asynchttpclient.HttpResponseHeaders` was dropped in favor of `io.netty.handler.codec.http.HttpHeaders`.
-* `org.asynchttpclient.cookie.Cookie` was dropped in favor of `io.netty.handler.codec.http.cookie.Cookie` as AHC's cookie parsers were contributed to Netty.
+* `org.asynchttpclient.HttpResponseHeaders` was [dropped](https://github.com/AsyncHttpClient/async-http-client/commit/f4786f3ac7699f8f8664e7c7db0b7097585a0786) in favor of `io.netty.handler.codec.http.HttpHeaders`.
+* `org.asynchttpclient.cookie.Cookie` was [dropped](https://github.com/AsyncHttpClient/async-http-client/commit/a6d659ea0cc11fa5131304d8a04a7ba89c7a66af) in favor of `io.netty.handler.codec.http.cookie.Cookie` as AHC's cookie parsers were contributed to Netty.
 * AHC now has a RFC6265 `CookieStore` that is enabled by default. Implementation can be changed in `AsyncHttpClientConfig`.
 * `AsyncHttpClient` now exposes stats with `getClientStats`.
-* `AsyncHandlerExtensions` was dropped in favor of default methods in `AsyncHandler`.
+* `AsyncHandlerExtensions` was [dropped](https://github.com/AsyncHttpClient/async-http-client/commit/1972c9b9984d6d9f9faca6edd4f2159013205aea) in favor of default methods in `AsyncHandler`.
 * `WebSocket` and `WebSocketListener` methods were renamed to mention frames
 * `AsyncHttpClientConfig` various changes:
   * new `getCookieStore` now lets you configure a CookieStore (enabled by default)
