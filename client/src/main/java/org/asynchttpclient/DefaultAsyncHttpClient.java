@@ -92,7 +92,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
   }
 
   private Timer newNettyTimer(AsyncHttpClientConfig config) {
-    ThreadFactory threadFactory = new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
+    ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
+
     HashedWheelTimer timer = new HashedWheelTimer(threadFactory);
     timer.start();
     return timer;
