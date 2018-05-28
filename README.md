@@ -116,7 +116,7 @@ This part can be of type:
 
 #### Blocking on the Future
 
-`execute` methods return a `java.util.concurrent.Future`. You can simply both the calling thread to get the response.
+`execute` methods return a `java.util.concurrent.Future`. You can simply block the calling thread to get the response.
 
 ```java
 Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.com/").execute();
