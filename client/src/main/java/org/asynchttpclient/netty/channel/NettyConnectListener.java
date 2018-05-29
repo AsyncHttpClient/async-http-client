@@ -175,9 +175,8 @@ public final class NettyConnectListener<T> {
 
     LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
 
-    boolean printCause = cause.getMessage() != null;
-    String printedCause = printCause ? cause.getMessage() : future.getUri().getBaseUrl();
-    ConnectException e = new ConnectException(printedCause);
+    String message = cause.getMessage() != null ? cause.getMessage() : future.getUri().getBaseUrl();
+    ConnectException e = new ConnectException(message);
     e.initCause(cause);
     future.abort(e);
   }
