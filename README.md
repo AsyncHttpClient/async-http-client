@@ -263,8 +263,10 @@ Response response = c.executeRequest(mkcolRequest).get();
 or
 
 ```java
-Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://host:port).build();
-Response response = c.executeRequest(propFindRequest, new AsyncHandler(){...}).get();
+Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://host:port").build();
+Response response = c.executeRequest(propFindRequest, new AsyncHandler() {
+  // ...
+}).get();
 ```
 
 ## More
