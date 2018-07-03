@@ -13,15 +13,18 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import java.io.IOException;
+import org.asynchttpclient.AsyncHttpClientConfig;
 
-/**
- * Connections limiter.
- */
-public interface ConnectionSemaphore {
+public class DefaultConnectionSemaphoreFactory implements ConnectionSemaphoreFactory {
 
-    void acquireChannelLock(Object partitionKey) throws IOException;
-
-    void releaseChannelLock(Object partitionKey);
-
+    public ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config) {
+        ConnectionSemaphore semaphore = new NoopConnectionSemaphore();
+        if (config.getMaxConnections() > 0) {
+            semaphore = new MaxConnectionSemaphore(config.getMaxConnections());
+        }
+        if (config.getMaxConnectionsPerHost() > 0) {
+            semaphore = new PerHostConnectionSemaphore(config.getMaxConnectionsPerHost(), semaphore);
+        }
+        return semaphore;
+    }
 }

@@ -30,6 +30,7 @@ import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
@@ -84,6 +85,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final int maxConnections;
   private final int maxConnectionsPerHost;
   private final ChannelPool channelPool;
+  private final ConnectionSemaphoreFactory connectionSemaphoreFactory;
   private final KeepAliveStrategy keepAliveStrategy;
 
   // ssl
@@ -162,6 +164,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        int maxConnections,
                                        int maxConnectionsPerHost,
                                        ChannelPool channelPool,
+                                       ConnectionSemaphoreFactory connectionSemaphoreFactory,
                                        KeepAliveStrategy keepAliveStrategy,
 
                                        // ssl
@@ -248,6 +251,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.maxConnections = maxConnections;
     this.maxConnectionsPerHost = maxConnectionsPerHost;
     this.channelPool = channelPool;
+    this.connectionSemaphoreFactory = connectionSemaphoreFactory;
     this.keepAliveStrategy = keepAliveStrategy;
 
     // ssl
@@ -444,6 +448,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public ChannelPool getChannelPool() {
     return channelPool;
+  }
+
+  @Override
+  public ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
+    return connectionSemaphoreFactory;
   }
 
   @Override
@@ -688,6 +697,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int maxConnections = defaultMaxConnections();
     private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
     private ChannelPool channelPool;
+    private ConnectionSemaphoreFactory connectionSemaphoreFactory;
     private KeepAliveStrategy keepAliveStrategy = new DefaultKeepAliveStrategy();
 
     // ssl
@@ -768,6 +778,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       maxConnections = config.getMaxConnections();
       maxConnectionsPerHost = config.getMaxConnectionsPerHost();
       channelPool = config.getChannelPool();
+      connectionSemaphoreFactory = config.getConnectionSemaphoreFactory();
       keepAliveStrategy = config.getKeepAliveStrategy();
 
       // ssl
@@ -981,6 +992,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setChannelPool(ChannelPool channelPool) {
       this.channelPool = channelPool;
+      return this;
+    }
+
+    public Builder setConnectionSemaphoreFactory(ConnectionSemaphoreFactory connectionSemaphoreFactory) {
+      this.connectionSemaphoreFactory = connectionSemaphoreFactory;
       return this;
     }
 
@@ -1233,6 +1249,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               maxConnections,
               maxConnectionsPerHost,
               channelPool,
+              connectionSemaphoreFactory,
               keepAliveStrategy,
               useOpenSsl,
               useInsecureTrustManager,

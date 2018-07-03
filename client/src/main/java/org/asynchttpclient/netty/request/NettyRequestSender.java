@@ -75,7 +75,9 @@ public final class NettyRequestSender {
                             AsyncHttpClientState clientState) {
     this.config = config;
     this.channelManager = channelManager;
-    this.connectionSemaphore = ConnectionSemaphore.newConnectionSemaphore(config);
+    this.connectionSemaphore = config.getConnectionSemaphoreFactory() == null
+            ? new DefaultConnectionSemaphoreFactory().newConnectionSemaphore(config)
+            : config.getConnectionSemaphoreFactory().newConnectionSemaphore(config);
     this.nettyTimer = nettyTimer;
     this.clientState = clientState;
     requestFactory = new NettyRequestFactory(config);

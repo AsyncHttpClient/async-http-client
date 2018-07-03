@@ -31,6 +31,7 @@ import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
 import java.util.*;
@@ -320,6 +321,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   @Override
   public ChannelPool getChannelPool() {
+    return null;
+  }
+
+  @Override
+  public ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
     return null;
   }
 

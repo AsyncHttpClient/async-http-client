@@ -28,6 +28,7 @@ import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.EagerResponseBodyPart;
 import org.asynchttpclient.netty.LazyResponseBodyPart;
+import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
@@ -292,6 +293,8 @@ public interface AsyncHttpClientConfig {
   ResponseBodyPartFactory getResponseBodyPartFactory();
 
   ChannelPool getChannelPool();
+
+  ConnectionSemaphoreFactory getConnectionSemaphoreFactory();
 
   Timer getNettyTimer();
 
