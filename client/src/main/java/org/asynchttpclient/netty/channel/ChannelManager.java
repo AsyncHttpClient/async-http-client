@@ -141,15 +141,7 @@ public class ChannelManager {
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
                     if (removed) {
-                        freeChannels.release();
-                        if (maxConnectionsPerHostEnabled) {
-                            Object partitionKey = Channel.class.cast(o).attr(partitionKeyAttr).getAndSet(null);
-                            if (partitionKey != null) {
-                                NonBlockingSemaphore hostFreeChannels = freeChannelsPerHost.get(partitionKey);
-                                if (hostFreeChannels != null)
-                                    hostFreeChannels.release();
-                            }
-                        }
+                        releaseChannelLock(Channel.class.cast(o).attr(partitionKeyAttr).getAndSet(null));
                     }
                     return removed;
                 }
