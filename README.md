@@ -177,6 +177,9 @@ AsyncHttpClientConfig cf = new DefaultAsyncHttpClientConfig.Builder()
 AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
 ```
 
+It's possible to create shared resources (EventLoop, Timer, ChannelManager) beforehand and pass them to multiple client instances in the config. 
+You'll then be responsible for closing those shared resources.
+
 ## WebSocket
 
 Async Http Client also support WebSocket by simply doing:
