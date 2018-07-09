@@ -42,6 +42,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
+    private final boolean allowStopChannelManager;
     private final NettyRequestSender requestSender;
     private final boolean allowStopNettyTimer;
     private final Timer nettyTimer;
@@ -82,7 +83,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         allowStopNettyTimer = config.getNettyTimer() == null;
         nettyTimer = allowStopNettyTimer ? newNettyTimer() : config.getNettyTimer();
 
-        channelManager = new ChannelManager(config, nettyTimer);
+        allowStopChannelManager = config.getChannelManager() == null;
+        channelManager = allowStopChannelManager ? new ChannelManager(config, nettyTimer) : config.getChannelManager();
         requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
         channelManager.configureBootstraps(requestSender);
     }
@@ -96,10 +98,12 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                channelManager.close();
-            } catch (Throwable t) {
-                LOGGER.warn("Unexpected error on ChannelManager close", t);
+            if (allowStopChannelManager) {
+                try {
+                    channelManager.close();
+                } catch (Throwable t) {
+                    LOGGER.warn("Unexpected error on ChannelManager close", t);
+                }
             }
             if (allowStopNettyTimer) {
                 try {
