@@ -31,7 +31,7 @@ public class MaxConnectionSemaphore implements ConnectionSemaphore {
 
   MaxConnectionSemaphore(int maxConnections) {
     tooManyConnections = unknownStackTrace(new TooManyConnectionsException(maxConnections), MaxConnectionSemaphore.class, "acquireChannelLock");
-    freeChannels = new NonBlockingSemaphore(maxConnections);
+    freeChannels = maxConnections > 0 ? new NonBlockingSemaphore(maxConnections) : NonBlockingSemaphoreInfinite.INSTANCE;
   }
 
   @Override

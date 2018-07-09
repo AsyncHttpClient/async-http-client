@@ -54,6 +54,8 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
   }
 
   private NonBlockingSemaphoreLike getFreeConnectionsForHost(Object partitionKey) {
-    return freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new NonBlockingSemaphore(maxConnectionsPerHost));
+    return maxConnectionsPerHost > 0 ?
+            freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new NonBlockingSemaphore(maxConnectionsPerHost)) :
+            NonBlockingSemaphoreInfinite.INSTANCE;
   }
 }
