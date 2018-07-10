@@ -460,7 +460,7 @@ public final class NettyRequestSender {
 
   public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
 
-    if (channel != null) {
+    if (channel != null && channel.isActive()) {
       channelManager.closeChannel(channel);
     }
 
@@ -604,7 +604,8 @@ public final class NettyRequestSender {
     return clientState.isClosed();
   }
 
-  public void drainChannelAndExecuteNextRequest(final Channel channel, final NettyResponseFuture<?> future,
+  public void drainChannelAndExecuteNextRequest(final Channel channel,
+                                                final NettyResponseFuture<?> future,
                                                 Request nextRequest) {
     Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
       @Override
@@ -613,4 +614,24 @@ public final class NettyRequestSender {
       }
     });
   }
+
+  public void drainChannelAndExecuteNextRequest(final Channel channel,
+                                                final NettyResponseFuture<?> future,
+                                                Request nextRequest,
+                                                Future<Channel> whenHandshaked) {
+    Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
+      @Override
+      public void call() {
+        whenHandshaked.addListener(f -> {
+          if (f.isSuccess()) {
+            sendNextRequest(nextRequest, future);
+          } else {
+            future.abort(f.cause());
+          }
+        }
+        );
+      }
+    });
+  }
+
 }

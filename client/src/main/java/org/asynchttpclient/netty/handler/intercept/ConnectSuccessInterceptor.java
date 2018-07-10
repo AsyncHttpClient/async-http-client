@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
+import io.netty.util.concurrent.Future;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -47,10 +48,16 @@ public class ConnectSuccessInterceptor {
     Uri requestUri = request.getUri();
     LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
-    channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+    Future<Channel> whenHandshaked =  channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+
     future.setReuseChannel(true);
     future.setConnectAllowed(false);
-    requestSender.drainChannelAndExecuteNextRequest(channel, future, new RequestBuilder(future.getTargetRequest()).build());
+    Request targetRequest = new RequestBuilder(future.getTargetRequest()).build();
+    if (whenHandshaked == null) {
+      requestSender.drainChannelAndExecuteNextRequest(channel, future, targetRequest);
+    } else {
+      requestSender.drainChannelAndExecuteNextRequest(channel, future, targetRequest, whenHandshaked);
+    }
 
     return true;
   }
