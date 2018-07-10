@@ -13,15 +13,10 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import java.io.IOException;
+import org.asynchttpclient.AsyncHttpClientConfig;
 
-/**
- * Connections limiter.
- */
-public interface ConnectionSemaphore {
+public interface ConnectionSemaphoreFactory {
 
-    void acquireChannelLock(Object partitionKey) throws IOException;
-
-    void releaseChannelLock(Object partitionKey);
+    ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config);
 
 }

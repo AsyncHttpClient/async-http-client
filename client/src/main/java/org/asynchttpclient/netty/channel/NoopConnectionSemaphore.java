@@ -16,12 +16,15 @@ package org.asynchttpclient.netty.channel;
 import java.io.IOException;
 
 /**
- * Connections limiter.
+ * No-op implementation of {@link ConnectionSemaphore}.
  */
-public interface ConnectionSemaphore {
+public class NoopConnectionSemaphore implements ConnectionSemaphore {
 
-    void acquireChannelLock(Object partitionKey) throws IOException;
+  @Override
+  public void acquireChannelLock(Object partitionKey) throws IOException {
+  }
 
-    void releaseChannelLock(Object partitionKey);
-
+  @Override
+  public void releaseChannelLock(Object partitionKey) {
+  }
 }
