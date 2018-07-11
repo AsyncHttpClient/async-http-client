@@ -34,6 +34,7 @@ public class Uri {
   private final int port;
   private final String query;
   private final String path;
+  private final String fragment;
   private String url;
   private boolean secured;
   private boolean webSocket;
@@ -43,7 +44,8 @@ public class Uri {
              String host,
              int port,
              String path,
-             String query) {
+             String query,
+             String fragment) {
 
     this.scheme = assertNotEmpty(scheme, "scheme");
     this.userInfo = userInfo;
@@ -51,6 +53,7 @@ public class Uri {
     this.port = port;
     this.path = path;
     this.query = query;
+    this.fragment = fragment;
     this.secured = HTTPS.equals(scheme) || WSS.equals(scheme);
     this.webSocket = WS.equals(scheme) || WSS.equalsIgnoreCase(scheme);
   }
@@ -75,7 +78,8 @@ public class Uri {
             parser.host,
             parser.port,
             parser.path,
-            parser.query);
+            parser.query,
+            parser.fragment);
   }
 
   public String getQuery() {
@@ -100,6 +104,10 @@ public class Uri {
 
   public String getHost() {
     return host;
+  }
+
+  public String getFragment() {
+    return fragment;
   }
 
   public boolean isSecured() {
@@ -168,6 +176,10 @@ public class Uri {
     return sb.toString();
   }
 
+  public String toFullUrl() {
+    return fragment == null ? toUrl() : toUrl() + "#" + fragment;
+  }
+
   public String getBaseUrl() {
     return scheme + "://" + host + ":" + getExplicitPort();
   }
@@ -198,7 +210,8 @@ public class Uri {
             host,
             port,
             path,
-            query);
+            query,
+            fragment);
   }
 
   public Uri withNewQuery(String newQuery) {
@@ -207,7 +220,8 @@ public class Uri {
             host,
             port,
             path,
-            newQuery);
+            newQuery,
+            fragment);
   }
 
   @Override
@@ -220,6 +234,7 @@ public class Uri {
     result = prime * result + ((query == null) ? 0 : query.hashCode());
     result = prime * result + ((scheme == null) ? 0 : scheme.hashCode());
     result = prime * result + ((userInfo == null) ? 0 : userInfo.hashCode());
+    result = prime * result + ((fragment == null) ? 0 : fragment.hashCode());
     return result;
   }
 
@@ -258,6 +273,11 @@ public class Uri {
       if (other.userInfo != null)
         return false;
     } else if (!userInfo.equals(other.userInfo))
+      return false;
+    if (fragment == null) {
+      if (other.fragment != null)
+        return false;
+    } else if (!fragment.equals(other.fragment))
       return false;
     return true;
   }

@@ -21,6 +21,7 @@ final class UriParser {
   public String host;
   public int port = -1;
   public String query;
+  public String fragment;
   private String authority;
   public String path;
   public String userInfo;
@@ -116,6 +117,9 @@ final class UriParser {
     int charpPosition = findWithinCurrentRange('#');
     if (charpPosition >= 0) {
       end = charpPosition;
+      if (charpPosition + 1 < originalUrl.length()) {
+        fragment = originalUrl.substring(charpPosition + 1);
+      }
     }
   }
 
@@ -123,6 +127,7 @@ final class UriParser {
     // see RFC2396 5.2.2: query and fragment inheritance
     if (isRelative && currentIndex == end) {
       query = context.getQuery();
+      fragment = context.getFragment();
     }
   }
 
