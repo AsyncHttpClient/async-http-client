@@ -12,12 +12,6 @@
  */
 package org.asynchttpclient.handler;
 
-import io.netty.handler.codec.http.HttpHeaders;
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +20,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+
+import io.netty.handler.codec.http.HttpHeaders;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 
 /**
  * An AsyncHandler that returns Response (without body, so status code and
@@ -137,6 +138,11 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
   public State onTrailingHeadersReceived(HttpHeaders headers) {
     responseBuilder.accumulate(headers);
     return State.CONTINUE;
+  }
+
+  @Override
+  public void onRetry() {
+    throw new UnsupportedOperationException(this.getClass().getSimpleName() + " cannot retry a request.");
   }
 
   @Override
