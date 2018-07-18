@@ -23,6 +23,8 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 
+import javax.servlet.http.HttpServletResponse;
+
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_FILE;
@@ -45,6 +47,13 @@ public class ChunkingTest extends AbstractBasicTest {
   }
 
   @Test
+  public void testBufferSmallThanFileWithStreamBodyGeneratorAndFailOnServerSide() throws Throwable {
+    for (int i = 0; i < 5; i++) {
+      doTestWithInputStreamBodyGeneratorAndFailOnServerSide(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath())));
+    }
+  }
+
+  @Test
   public void testDirectFileWithStreamBodyGenerator() throws Throwable {
     doTestWithInputStreamBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
   }
@@ -59,6 +68,21 @@ public class ChunkingTest extends AbstractBasicTest {
       try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
         ListenableFuture<Response> responseFuture = c.executeRequest(post(getTargetUrl()).setBody(new InputStreamBodyGenerator(is)));
         waitForAndAssertResponse(responseFuture);
+      }
+    } finally {
+      is.close();
+    }
+  }
+
+  private void doTestWithInputStreamBodyGeneratorAndFailOnServerSide(InputStream is) throws Throwable {
+    try {
+      try (AsyncHttpClient c = asyncHttpClient(httpClientBuilder())) {
+        ListenableFuture<Response> responseFuture = c.executeRequest(post(getTargetUrl())
+              .setHeader("X-fail", "true")
+              .setBody(new InputStreamBodyGenerator(is)));
+        Response response = responseFuture.get();
+        assertEquals(response.getStatusCode(), HttpServletResponse.SC_EXPECTATION_FAILED);
+        assertEquals(response.getResponseBody(), "custom error message");
       }
     } finally {
       is.close();

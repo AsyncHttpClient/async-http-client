@@ -15,6 +15,8 @@ package org.asynchttpclient.netty.future;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
+import io.netty.channel.socket.ChannelOutputShutdownException;
+
 public class StackTraceInspector {
 
   private static boolean exceptionInMethod(Throwable t, String className, String methodName) {
@@ -37,6 +39,11 @@ public class StackTraceInspector {
     return t instanceof ClosedChannelException
             || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
             || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
+  }
+
+  public static boolean recoverOnChunkedUploadFailed(Throwable t) {
+    return t instanceof ChannelOutputShutdownException
+          && exceptionInMethod(t, "io.netty.handler.stream.ChunkedWriteHandler", "flush");
   }
 
   public static boolean recoverOnReadOrWriteException(Throwable t) {

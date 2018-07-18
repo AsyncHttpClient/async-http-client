@@ -36,7 +36,7 @@ public abstract class WriteListener {
     this.notifyHeaders = notifyHeaders;
   }
 
-  private boolean abortOnThrowable(Channel channel, Throwable cause) {
+  protected boolean abortOnThrowable(Channel channel, Throwable cause) {
     if (cause != null) {
       if (cause instanceof IllegalStateException || cause instanceof ClosedChannelException || StackTraceInspector.recoverOnReadOrWriteException(cause)) {
         LOGGER.debug(cause.getMessage(), cause);

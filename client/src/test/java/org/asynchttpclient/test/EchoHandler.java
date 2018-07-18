@@ -69,6 +69,13 @@ public class EchoHandler extends AbstractHandler {
         httpResponse.sendRedirect(httpRequest.getHeader("X-redirect"));
         return;
       }
+      if (headerName.startsWith("X-fail")) {
+        httpResponse.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
+        httpResponse.getOutputStream().write("custom error message".getBytes());
+        httpResponse.getOutputStream().flush();
+        httpResponse.getOutputStream().close();
+        return;
+      }
       httpResponse.addHeader("X-" + headerName, httpRequest.getHeader(headerName));
     }
 

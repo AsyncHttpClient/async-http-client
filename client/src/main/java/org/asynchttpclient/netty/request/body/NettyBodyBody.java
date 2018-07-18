@@ -20,6 +20,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
@@ -77,9 +78,17 @@ public class NettyBodyBody implements NettyBody {
 
     channel.write(msg, channel.newProgressivePromise())
             .addListener(new WriteProgressListener(future, false, getContentLength()) {
+              @Override
               public void operationComplete(ChannelProgressiveFuture cf) {
                 closeSilently(body);
                 super.operationComplete(cf);
+              }
+
+              @Override
+              protected boolean abortOnThrowable(Channel channel, Throwable cause) {
+                // FIXME dirty hack until netty issue is not resolved, see https://github.com/netty/netty/issues/6706
+                return StackTraceInspector.recoverOnChunkedUploadFailed(cause)
+                      || super.abortOnThrowable(channel, cause);
               }
             });
     channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
