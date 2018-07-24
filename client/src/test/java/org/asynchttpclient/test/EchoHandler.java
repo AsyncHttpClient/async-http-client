@@ -24,6 +24,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
@@ -71,7 +72,9 @@ public class EchoHandler extends AbstractHandler {
       }
       if (headerName.startsWith("X-fail")) {
         httpResponse.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
-        httpResponse.getOutputStream().write("custom error message".getBytes());
+        byte[] responseBytes = "custom error message".getBytes(StandardCharsets.UTF_8);
+        httpResponse.addIntHeader(CONTENT_LENGTH.toString(), responseBytes.length);
+        httpResponse.getOutputStream().write(responseBytes);
         httpResponse.getOutputStream().flush();
         httpResponse.getOutputStream().close();
         return;
