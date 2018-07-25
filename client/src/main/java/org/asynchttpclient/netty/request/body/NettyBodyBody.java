@@ -15,12 +15,12 @@ package org.asynchttpclient.netty.request.body;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.RandomAccessBody;
@@ -87,7 +87,7 @@ public class NettyBodyBody implements NettyBody {
               @Override
               protected boolean abortOnThrowable(Channel channel, Throwable cause) {
                 // FIXME dirty hack until netty issue is not resolved, see https://github.com/netty/netty/issues/6706
-                return StackTraceInspector.recoverOnChunkedUploadFailed(cause)
+                return cause instanceof ChannelOutputShutdownException
                       || super.abortOnThrowable(channel, cause);
               }
             });
