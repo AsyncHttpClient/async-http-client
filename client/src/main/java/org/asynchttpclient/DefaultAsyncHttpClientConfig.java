@@ -25,8 +25,6 @@ import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
-import org.asynchttpclient.cookie.CookieStore;
-import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -106,9 +104,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final List<ResponseFilter> responseFilters;
   private final List<IOExceptionFilter> ioExceptionFilters;
 
-  // cookie store
-  private final CookieStore cookieStore;
-
   // internals
   private final String threadPoolName;
   private final int httpClientCodecMaxInitialLineLength;
@@ -184,9 +179,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        List<RequestFilter> requestFilters,
                                        List<ResponseFilter> responseFilters,
                                        List<IOExceptionFilter> ioExceptionFilters,
-
-                                       // cookie store
-                                       CookieStore cookieStore,
 
                                        // tuning
                                        boolean tcpNoDelay,
@@ -271,9 +263,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
     this.ioExceptionFilters = ioExceptionFilters;
-
-    // cookie store
-    this.cookieStore = cookieStore;
 
     // tuning
     this.tcpNoDelay = tcpNoDelay;
@@ -537,12 +526,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     return ioExceptionFilters;
   }
 
-  // cookie store
-  @Override
-  public CookieStore getCookieStore() {
-    return cookieStore;
-  }
-
   // tuning
   @Override
   public boolean isTcpNoDelay() {
@@ -712,9 +695,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int sslSessionTimeout = defaultSslSessionTimeout();
     private SslContext sslContext;
     private SslEngineFactory sslEngineFactory;
-
-    // cookie store
-    private CookieStore cookieStore = new ThreadSafeCookieStore();
 
     // tuning
     private boolean tcpNoDelay = defaultTcpNoDelay();
@@ -1092,12 +1072,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
-    // cookie store
-    public Builder setCookieStore(CookieStore cookieStore) {
-      this.cookieStore = cookieStore;
-      return this;
-    }
-
     // tuning
     public Builder setTcpNoDelay(boolean tcpNoDelay) {
       this.tcpNoDelay = tcpNoDelay;
@@ -1265,7 +1239,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters),
               responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),
               ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),
-              cookieStore,
               tcpNoDelay,
               soReuseAddress,
               soLinger,

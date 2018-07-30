@@ -17,13 +17,13 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -60,11 +59,13 @@ public class Redirect30xInterceptor {
   private final AsyncHttpClientConfig config;
   private final NettyRequestSender requestSender;
   private final MaxRedirectException maxRedirectException;
+  private final ClientCookieDecoder cookieDecoder;
 
   Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
     this.channelManager = channelManager;
     this.config = config;
     this.requestSender = requestSender;
+    this.cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
     maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()), Redirect30xInterceptor.class,
             "exitAfterHandlingRedirect");
   }
@@ -91,6 +92,7 @@ public class Redirect30xInterceptor {
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
+                .setCookies(request.getCookies())
                 .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
                 .setFollowRedirect(true)
                 .setLocalAddress(request.getLocalAddress())
@@ -125,14 +127,12 @@ public class Redirect30xInterceptor {
         Uri newUri = Uri.create(future.getUri(), location);
 
         LOGGER.debug("Redirecting to {}", newUri);
-
-        CookieStore cookieStore = config.getCookieStore();
-        if (cookieStore != null) {
-          // Update request's cookies assuming that cookie store is already updated by Interceptors
-          List<Cookie> cookies = cookieStore.get(newUri);
-          if (!cookies.isEmpty())
-            for (Cookie cookie : cookies)
-              requestBuilder.addOrReplaceCookie(cookie);
+        
+        for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
+          Cookie c = cookieDecoder.decode(cookieStr);
+          if (c != null) {
+            requestBuilder.addOrReplaceCookie(c);
+          }
         }
 
         boolean sameBase = request.getUri().isSameBase(newUri);
