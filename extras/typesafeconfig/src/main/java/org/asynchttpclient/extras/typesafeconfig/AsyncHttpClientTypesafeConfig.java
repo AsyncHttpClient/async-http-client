@@ -26,8 +26,6 @@ import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
-import org.asynchttpclient.cookie.CookieStore;
-import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -152,11 +150,6 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   @Override
   public List<IOExceptionFilter> getIoExceptionFilters() {
     return new LinkedList<>();
-  }
-
-  @Override
-  public CookieStore getCookieStore() {
-    return new ThreadSafeCookieStore();
   }
 
   @Override

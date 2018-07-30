@@ -17,7 +17,6 @@
 package org.asynchttpclient;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -31,7 +30,6 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -190,22 +188,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
   @Override
   public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
-    if (config.getCookieStore() != null) {
-      try {
-        List<Cookie> cookies = config.getCookieStore().get(request.getUri());
-        if (!cookies.isEmpty()) {
-          RequestBuilder requestBuilder = new RequestBuilder(request);
-          for (Cookie cookie : cookies) {
-            requestBuilder.addOrReplaceCookie(cookie);
-          }
-          request = requestBuilder.build();
-        }
-      } catch (Exception e) {
-        handler.onThrowable(e);
-        return new ListenableFuture.CompletedFailure<>("Failed to set cookies of request", e);
-      }
-    }
-
     if (noRequestFilters) {
       return execute(request, handler);
     } else {

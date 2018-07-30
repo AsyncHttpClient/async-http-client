@@ -18,16 +18,12 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.*;
-import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.proxy.ProxyServer;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 
 public class Interceptors {
@@ -40,7 +36,6 @@ public class Interceptors {
   private final ConnectSuccessInterceptor connectSuccessInterceptor;
   private final ResponseFiltersInterceptor responseFiltersInterceptor;
   private final boolean hasResponseFilters;
-  private final ClientCookieDecoder cookieDecoder;
 
   public Interceptors(AsyncHttpClientConfig config,
                       ChannelManager channelManager,
@@ -53,7 +48,6 @@ public class Interceptors {
     connectSuccessInterceptor = new ConnectSuccessInterceptor(channelManager, requestSender);
     responseFiltersInterceptor = new ResponseFiltersInterceptor(config, requestSender);
     hasResponseFilters = !config.getResponseFilters().isEmpty();
-    cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
   }
 
   public boolean exitAfterIntercept(Channel channel,
@@ -68,18 +62,6 @@ public class Interceptors {
     int statusCode = response.status().code();
     Request request = future.getCurrentRequest();
     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
-    // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
-    CookieStore cookieStore = config.getCookieStore();
-    if (cookieStore != null) {
-      for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
-        Cookie c = cookieDecoder.decode(cookieStr);
-        if (c != null) {
-          // Set-Cookie header could be invalid/malformed
-          cookieStore.add(future.getCurrentRequest().getUri(), c);
-        }
-      }
-    }
 
     if (hasResponseFilters && responseFiltersInterceptor.exitAfterProcessingFilters(channel, future, handler, status, responseHeaders)) {
       return true;
