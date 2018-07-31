@@ -82,7 +82,7 @@ public class Interceptors {
           }
 
           if (requestCookieStore != null) {
-            cookieStore.add(request.getUri(), c);
+            requestCookieStore.add(request.getUri(), c);
           }
         }
       }
