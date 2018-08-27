@@ -24,6 +24,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
@@ -67,6 +68,15 @@ public class EchoHandler extends AbstractHandler {
 
       if (headerName.startsWith("X-redirect")) {
         httpResponse.sendRedirect(httpRequest.getHeader("X-redirect"));
+        return;
+      }
+      if (headerName.startsWith("X-fail")) {
+        byte[] body = "custom error message".getBytes(StandardCharsets.US_ASCII);
+        httpResponse.addHeader(CONTENT_LENGTH.toString(), String.valueOf(body.length));
+        httpResponse.setStatus(HttpServletResponse.SC_EXPECTATION_FAILED);
+        httpResponse.getOutputStream().write(body);
+        httpResponse.getOutputStream().flush();
+        httpResponse.getOutputStream().close();
         return;
       }
       httpResponse.addHeader("X-" + headerName, httpRequest.getHeader(headerName));
