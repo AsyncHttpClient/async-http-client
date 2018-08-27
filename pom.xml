@@ -402,7 +402,7 @@
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
-    <netty.version>4.1.27.Final</netty.version>
+    <netty.version>4.1.29.Final</netty.version>
     <slf4j.version>1.7.25</slf4j.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <activation.version>1.2.0</activation.version>
