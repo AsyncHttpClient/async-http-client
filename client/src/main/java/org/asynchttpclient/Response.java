@@ -147,10 +147,15 @@ public interface Response {
   boolean hasResponseHeaders();
 
   /**
-   * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
-   * or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
+   * Return true if the response's body has been computed by an {@link AsyncHandler}.
+   * It will return false if:
+   * <ul>
+   *   <li>either the {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} returned {@link AsyncHandler.State#ABORT}</li>
+   *   <li>or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}</li>
+   *   <li>response body was empty</li>
+   * </ul>
    *
-   * @return true if the response's body has been computed by an {@link AsyncHandler}
+   * @return true if the response's body has been computed by an {@link AsyncHandler} to new empty bytes
    */
   boolean hasResponseBody();
 
