@@ -754,6 +754,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       realm = config.getRealm();
       maxRequestRetry = config.getMaxRequestRetry();
       disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
+      useLaxCookieEncoder = config.isUseLaxCookieEncoder();
       disableZeroCopy = config.isDisableZeroCopy();
       keepEncodingHeader = config.isKeepEncodingHeader();
       proxyServerSelector = config.getProxyServerSelector();
