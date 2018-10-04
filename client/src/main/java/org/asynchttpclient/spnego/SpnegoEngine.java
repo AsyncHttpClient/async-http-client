@@ -140,7 +140,7 @@ public class SpnegoEngine {
           final Oid negotiationOidFinal = negotiationOid;
           final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
             GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
-          myCred = loginContext != null ? Subject.doAs(loginContext.getSubject(), action) : null;
+          myCred = Subject.doAs(loginContext.getSubject(), action);
         }
         gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, myCred, GSSContext.DEFAULT_LIFETIME);
         gssContext.requestMutualAuth(true);
