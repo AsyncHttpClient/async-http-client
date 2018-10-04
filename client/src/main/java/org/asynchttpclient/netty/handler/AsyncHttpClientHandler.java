@@ -67,8 +67,10 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     Object attribute = Channels.getAttribute(channel);
 
     try {
-      if (attribute instanceof OnLastHttpContentCallback && msg instanceof LastHttpContent) {
-        ((OnLastHttpContentCallback) attribute).call();
+      if (attribute instanceof OnLastHttpContentCallback) {
+        if (msg instanceof LastHttpContent) {
+          ((OnLastHttpContentCallback) attribute).call();
+        }
 
       } else if (attribute instanceof NettyResponseFuture) {
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
