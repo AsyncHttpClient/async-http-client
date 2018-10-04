@@ -84,8 +84,8 @@ public class Realm {
                 Map<String, String> customLoginConfig) {
 
     this.scheme = assertNotNull(scheme, "scheme");
-    this.principal = assertNotNull(principal, "principal");
-    this.password = assertNotNull(password, "password");
+    this.principal = principal;
+    this.password = password;
     this.realmName = realmName;
     this.nonce = nonce;
     this.algorithm = algorithm;

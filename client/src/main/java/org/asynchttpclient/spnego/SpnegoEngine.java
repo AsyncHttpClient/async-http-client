@@ -67,7 +67,7 @@ public class SpnegoEngine {
 
   private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
   private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
-  private static SpnegoEngine instance;
+  private static Map<String, SpnegoEngine> instances = new HashMap<>();
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final SpnegoTokenGenerator spnegoGenerator;
   private final Map<String, String> customLoginConfig;
@@ -82,9 +82,19 @@ public class SpnegoEngine {
   }
 
   public static SpnegoEngine instance(final Map<String, String> customLoginConfig) {
-    if (instance == null)
-      instance = new SpnegoEngine(customLoginConfig, null);
-    return instance;
+    String key = "";
+    if (customLoginConfig != null) {
+      StringBuilder customLoginConfigKeyValues = new StringBuilder();
+      for (String loginConfigKey : customLoginConfig.keySet()) {
+        customLoginConfigKeyValues.append(loginConfigKey).append("=")
+          .append(customLoginConfig.get(loginConfigKey));
+      }
+      key = customLoginConfigKeyValues.toString();
+    }
+    if (!instances.containsKey(key)) {
+      instances.put(key, new SpnegoEngine(customLoginConfig, null));
+    }
+    return instances.get(key);
   }
 
   public String generateToken(String server) throws SpnegoEngineException {
