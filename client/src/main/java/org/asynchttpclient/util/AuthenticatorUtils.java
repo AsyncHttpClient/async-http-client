@@ -175,7 +175,7 @@ public final class AuthenticatorUtils {
             host = request.getUri().getHost();
 
           try {
-            authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance().generateToken(host);
+            authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance(realm.getSpnegoKeytabFilePath(), realm.getSpnegoPrincipal()).generateToken(host);
           } catch (SpnegoEngineException e) {
             throw new RuntimeException(e);
           }

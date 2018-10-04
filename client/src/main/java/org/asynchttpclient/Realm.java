@@ -60,6 +60,8 @@ public class Realm {
   private final String ntlmDomain;
   private final boolean useAbsoluteURI;
   private final boolean omitQuery;
+  private final String spnegoKeytabFilePath;
+  private final String spnegoPrincipal;
 
   private Realm(AuthScheme scheme,
                 String principal,
@@ -78,7 +80,9 @@ public class Realm {
                 String ntlmDomain,
                 String ntlmHost,
                 boolean useAbsoluteURI,
-                boolean omitQuery) {
+                boolean omitQuery,
+                String spnegoKeytabFilePath,
+                String spnegoPrincipal) {
 
     this.scheme = assertNotNull(scheme, "scheme");
     this.principal = assertNotNull(principal, "principal");
@@ -98,6 +102,8 @@ public class Realm {
     this.ntlmHost = ntlmHost;
     this.useAbsoluteURI = useAbsoluteURI;
     this.omitQuery = omitQuery;
+    this.spnegoKeytabFilePath = spnegoKeytabFilePath;
+    this.spnegoPrincipal = spnegoPrincipal;
   }
 
   public String getPrincipal() {
@@ -187,6 +193,14 @@ public class Realm {
     return omitQuery;
   }
 
+  public String getSpnegoKeytabFilePath() {
+    return spnegoKeytabFilePath;
+  }
+
+  public String getSpnegoPrincipal() {
+    return spnegoPrincipal;
+  }
+
   @Override
   public String toString() {
     return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\''
@@ -207,6 +221,8 @@ public class Realm {
     private final String principal;
     private final String password;
     private AuthScheme scheme;
+    private String spnegoKeytabFilePath;
+    private String spnegoPrincipal;
     private String realmName;
     private String nonce;
     private String algorithm;
@@ -223,6 +239,11 @@ public class Realm {
     private String ntlmHost = "localhost";
     private boolean useAbsoluteURI = false;
     private boolean omitQuery;
+
+    public Builder() {
+      this.principal = null;
+      this.password = null;
+    }
 
     public Builder(String principal, String password) {
       this.principal = principal;
@@ -308,6 +329,16 @@ public class Realm {
 
     public Builder setCharset(Charset charset) {
       this.charset = charset;
+      return this;
+    }
+
+    public Builder setSpnegoKeytabFilePath(String spnegoKeytabFilePath) {
+      this.spnegoKeytabFilePath = spnegoKeytabFilePath;
+      return this;
+    }
+
+    public Builder setSpnegoPrincipal(String spnegoPrincipal) {
+      this.spnegoPrincipal = spnegoPrincipal;
       return this;
     }
 
@@ -501,7 +532,9 @@ public class Realm {
               ntlmDomain,
               ntlmHost,
               useAbsoluteURI,
-              omitQuery);
+              omitQuery,
+              spnegoKeytabFilePath,
+              spnegoPrincipal);
     }
   }
 }

@@ -38,6 +38,7 @@
 package org.asynchttpclient.spnego;
 
 import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
@@ -45,8 +46,17 @@ import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) authentication scheme.
@@ -60,18 +70,22 @@ public class SpnegoEngine {
   private static SpnegoEngine instance;
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final SpnegoTokenGenerator spnegoGenerator;
+  private final String spnegoPrincipal;
+  private final String spnegoKeytabFilePath;
 
-  public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
+  public SpnegoEngine(final String spnegoPrincipal, final String spnegoKeytabFilePath, final SpnegoTokenGenerator spnegoGenerator) {
     this.spnegoGenerator = spnegoGenerator;
+    this.spnegoPrincipal = spnegoPrincipal;
+    this.spnegoKeytabFilePath = spnegoKeytabFilePath;
   }
 
   public SpnegoEngine() {
-    this(null);
+    this(null, null, null);
   }
 
-  public static SpnegoEngine instance() {
+  public static SpnegoEngine instance(final String spnegoKeytabFilePath, final String spnegoPrincipal) {
     if (instance == null)
-      instance = new SpnegoEngine();
+      instance = new SpnegoEngine(spnegoPrincipal, spnegoKeytabFilePath, null);
     return instance;
   }
 
@@ -102,8 +116,38 @@ public class SpnegoEngine {
       try {
         GSSManager manager = GSSManager.getInstance();
         GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
-        gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null,
-                GSSContext.DEFAULT_LIFETIME);
+        LoginContext loginContext;
+        try {
+          loginContext = new LoginContext("", new Subject(), null, new Configuration() {
+            @Override
+            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+              Map<String, String> options = new HashMap<>();
+              options.put("useKeyTab", "true");
+              options.put("storeKey", "true");
+              options.put("refreshKrb5Config", "true");
+              options.put("keyTab", spnegoKeytabFilePath);
+              options.put("principal", spnegoPrincipal);
+              options.put("useTicketCache", "true");
+              options.put("debug", String.valueOf(true));
+              return new AppConfigurationEntry[]{
+                new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
+                  AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+                  options)};
+            }
+          });
+          loginContext.login();
+        } catch (LoginException e) {
+          throw new RuntimeException(e);
+        }
+        final Oid negotiationOidFinal = negotiationOid;
+        final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
+          GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
+        try {
+          gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, Subject.doAs(loginContext.getSubject(), action),
+                  GSSContext.DEFAULT_LIFETIME);
+        } catch (PrivilegedActionException e) {
+          throw new RuntimeException(e);
+        }
         gssContext.requestMutualAuth(true);
         gssContext.requestCredDeleg(true);
       } catch (GSSException ex) {
