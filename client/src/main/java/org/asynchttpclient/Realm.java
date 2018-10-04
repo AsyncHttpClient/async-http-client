@@ -23,6 +23,7 @@ import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.*;
@@ -60,8 +61,7 @@ public class Realm {
   private final String ntlmDomain;
   private final boolean useAbsoluteURI;
   private final boolean omitQuery;
-  private final String spnegoKeytabFilePath;
-  private final String spnegoPrincipal;
+  private final Map<String, String> customLoginConfig;
 
   private Realm(AuthScheme scheme,
                 String principal,
@@ -81,8 +81,7 @@ public class Realm {
                 String ntlmHost,
                 boolean useAbsoluteURI,
                 boolean omitQuery,
-                String spnegoKeytabFilePath,
-                String spnegoPrincipal) {
+                Map<String, String> customLoginConfig) {
 
     this.scheme = assertNotNull(scheme, "scheme");
     this.principal = assertNotNull(principal, "principal");
@@ -102,8 +101,7 @@ public class Realm {
     this.ntlmHost = ntlmHost;
     this.useAbsoluteURI = useAbsoluteURI;
     this.omitQuery = omitQuery;
-    this.spnegoKeytabFilePath = spnegoKeytabFilePath;
-    this.spnegoPrincipal = spnegoPrincipal;
+    this.customLoginConfig = customLoginConfig;
   }
 
   public String getPrincipal() {
@@ -193,20 +191,33 @@ public class Realm {
     return omitQuery;
   }
 
-  public String getSpnegoKeytabFilePath() {
-    return spnegoKeytabFilePath;
-  }
-
-  public String getSpnegoPrincipal() {
-    return spnegoPrincipal;
+  public Map<String, String> getCustomLoginConfig() {
+    return customLoginConfig;
   }
 
   @Override
   public String toString() {
-    return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\''
-            + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm + '\'' + ", response='" + response + '\''
-            + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
-            + ", useAbsoluteURI='" + useAbsoluteURI + '\'' + ", omitQuery='" + omitQuery + '\'' + '}';
+    return "Realm{" +
+      "principal='" + principal + '\'' +
+      ", password='" + password + '\'' +
+      ", scheme=" + scheme +
+      ", realmName='" + realmName + '\'' +
+      ", nonce='" + nonce + '\'' +
+      ", algorithm='" + algorithm + '\'' +
+      ", response='" + response + '\'' +
+      ", opaque='" + opaque + '\'' +
+      ", qop='" + qop + '\'' +
+      ", nc='" + nc + '\'' +
+      ", cnonce='" + cnonce + '\'' +
+      ", uri=" + uri +
+      ", usePreemptiveAuth=" + usePreemptiveAuth +
+      ", charset=" + charset +
+      ", ntlmHost='" + ntlmHost + '\'' +
+      ", ntlmDomain='" + ntlmDomain + '\'' +
+      ", useAbsoluteURI=" + useAbsoluteURI +
+      ", omitQuery=" + omitQuery +
+      ", customLoginConfig=" + customLoginConfig +
+      '}';
   }
 
   public enum AuthScheme {
@@ -221,8 +232,6 @@ public class Realm {
     private final String principal;
     private final String password;
     private AuthScheme scheme;
-    private String spnegoKeytabFilePath;
-    private String spnegoPrincipal;
     private String realmName;
     private String nonce;
     private String algorithm;
@@ -239,6 +248,7 @@ public class Realm {
     private String ntlmHost = "localhost";
     private boolean useAbsoluteURI = false;
     private boolean omitQuery;
+    private Map<String, String> customLoginConfig;
 
     public Builder() {
       this.principal = null;
@@ -332,13 +342,8 @@ public class Realm {
       return this;
     }
 
-    public Builder setSpnegoKeytabFilePath(String spnegoKeytabFilePath) {
-      this.spnegoKeytabFilePath = spnegoKeytabFilePath;
-      return this;
-    }
-
-    public Builder setSpnegoPrincipal(String spnegoPrincipal) {
-      this.spnegoPrincipal = spnegoPrincipal;
+    public Builder setCustomLoginConfig(Map<String, String> customLoginConfig) {
+      this.customLoginConfig = customLoginConfig;
       return this;
     }
 
@@ -533,8 +538,7 @@ public class Realm {
               ntlmHost,
               useAbsoluteURI,
               omitQuery,
-              spnegoKeytabFilePath,
-              spnegoPrincipal);
+              customLoginConfig);
     }
   }
 }

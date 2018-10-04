@@ -188,7 +188,7 @@ public class ProxyUnauthorized407Interceptor {
                                       ProxyServer proxyServer,
                                       HttpHeaders headers) throws SpnegoEngineException {
 
-    String challengeHeader = SpnegoEngine.instance(proxyRealm.getSpnegoKeytabFilePath(), proxyRealm.getSpnegoPrincipal()).generateToken(proxyServer.getHost());
+    String challengeHeader = SpnegoEngine.instance(proxyRealm.getCustomLoginConfig()).generateToken(proxyServer.getHost());
     headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 

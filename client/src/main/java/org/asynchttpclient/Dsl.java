@@ -100,8 +100,7 @@ public final class Dsl {
             .setNtlmHost(prototype.getNtlmHost())
             .setUseAbsoluteURI(prototype.isUseAbsoluteURI())
             .setOmitQuery(prototype.isOmitQuery())
-            .setSpnegoKeytabFilePath(prototype.getSpnegoKeytabFilePath())
-            .setSpnegoPrincipal(prototype.getSpnegoPrincipal());
+            .setCustomLoginConfig(prototype.getCustomLoginConfig());
   }
 
   public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {

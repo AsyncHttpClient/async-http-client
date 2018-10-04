@@ -70,22 +70,20 @@ public class SpnegoEngine {
   private static SpnegoEngine instance;
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final SpnegoTokenGenerator spnegoGenerator;
-  private final String spnegoPrincipal;
-  private final String spnegoKeytabFilePath;
+  private final Map<String, String> customLoginConfig;
 
-  public SpnegoEngine(final String spnegoPrincipal, final String spnegoKeytabFilePath, final SpnegoTokenGenerator spnegoGenerator) {
+  public SpnegoEngine(final Map<String, String> customLoginConfig, final SpnegoTokenGenerator spnegoGenerator) {
     this.spnegoGenerator = spnegoGenerator;
-    this.spnegoPrincipal = spnegoPrincipal;
-    this.spnegoKeytabFilePath = spnegoKeytabFilePath;
+    this.customLoginConfig = customLoginConfig;
   }
 
   public SpnegoEngine() {
-    this(null, null, null);
+    this(null, null);
   }
 
-  public static SpnegoEngine instance(final String spnegoKeytabFilePath, final String spnegoPrincipal) {
+  public static SpnegoEngine instance(final Map<String, String> customLoginConfig) {
     if (instance == null)
-      instance = new SpnegoEngine(spnegoPrincipal, spnegoKeytabFilePath, null);
+      instance = new SpnegoEngine(customLoginConfig, null);
     return instance;
   }
 
@@ -117,24 +115,15 @@ public class SpnegoEngine {
         GSSManager manager = GSSManager.getInstance();
         GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
         GSSCredential myCred = null;
-        if (spnegoKeytabFilePath != null && spnegoKeytabFilePath.trim().length() > 0 &&
-          spnegoPrincipal != null && spnegoPrincipal.trim().length() > 0) {
+        if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
           LoginContext loginContext;
           loginContext = new LoginContext("", new Subject(), null, new Configuration() {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-              Map<String, String> options = new HashMap<>();
-              options.put("useKeyTab", "true");
-              options.put("storeKey", "true");
-              options.put("refreshKrb5Config", "true");
-              options.put("keyTab", spnegoKeytabFilePath);
-              options.put("principal", spnegoPrincipal);
-              options.put("useTicketCache", "true");
-              options.put("debug", String.valueOf(true));
               return new AppConfigurationEntry[] {
                 new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
                   AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                  options)};
+                  customLoginConfig)};
             }
           });
           loginContext.login();
