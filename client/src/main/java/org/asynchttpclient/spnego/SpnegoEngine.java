@@ -116,8 +116,10 @@ public class SpnegoEngine {
       try {
         GSSManager manager = GSSManager.getInstance();
         GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
-        LoginContext loginContext;
-        try {
+        GSSCredential myCred = null;
+        if (spnegoKeytabFilePath != null && spnegoKeytabFilePath.trim().length() > 0 &&
+          spnegoPrincipal != null && spnegoPrincipal.trim().length() > 0) {
+          LoginContext loginContext;
           loginContext = new LoginContext("", new Subject(), null, new Configuration() {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
@@ -129,25 +131,19 @@ public class SpnegoEngine {
               options.put("principal", spnegoPrincipal);
               options.put("useTicketCache", "true");
               options.put("debug", String.valueOf(true));
-              return new AppConfigurationEntry[]{
+              return new AppConfigurationEntry[] {
                 new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
                   AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
                   options)};
             }
           });
           loginContext.login();
-        } catch (LoginException e) {
-          throw new RuntimeException(e);
+          final Oid negotiationOidFinal = negotiationOid;
+          final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
+            GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
+          myCred = loginContext != null ? Subject.doAs(loginContext.getSubject(), action) : null;
         }
-        final Oid negotiationOidFinal = negotiationOid;
-        final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
-          GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
-        try {
-          gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, Subject.doAs(loginContext.getSubject(), action),
-                  GSSContext.DEFAULT_LIFETIME);
-        } catch (PrivilegedActionException e) {
-          throw new RuntimeException(e);
-        }
+        gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, myCred, GSSContext.DEFAULT_LIFETIME);
         gssContext.requestMutualAuth(true);
         gssContext.requestCredDeleg(true);
       } catch (GSSException ex) {
@@ -208,7 +204,7 @@ public class SpnegoEngine {
         throw new SpnegoEngineException(gsse.getMessage(), gsse);
       // other error
       throw new SpnegoEngineException(gsse.getMessage());
-    } catch (IOException ex) {
+    } catch (IOException | LoginException | PrivilegedActionException ex) {
       throw new SpnegoEngineException(ex.getMessage());
     }
   }
