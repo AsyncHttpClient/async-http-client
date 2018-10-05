@@ -100,6 +100,23 @@ public class HttpsProxyTest extends AbstractBasicTest {
   }
 
   @Test
+  public void testDecompressBodyWithProxy() throws Exception {
+    AsyncHttpClientConfig config = config()
+      .setFollowRedirect(true)
+      .setProxyServer(proxyServer("localhost", port1).build())
+      .setUseInsecureTrustManager(true)
+      .build();
+    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+      String body = "hello world";
+      Response r = asyncHttpClient.executeRequest(post(getTargetUrl2())
+        .setHeader("X-COMPRESS", "true")
+        .setBody(body)).get();
+      assertEquals(r.getStatusCode(), 200);
+      assertEquals(r.getResponseBody(), body);
+    }
+  }
+
+  @Test
   public void testPooledConnectionsWithProxy() throws Exception {
 
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {

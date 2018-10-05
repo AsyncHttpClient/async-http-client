@@ -23,12 +23,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.zip.Deflater;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_MD5;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderValues.CHUNKED;
+import static io.netty.handler.codec.http.HttpHeaderValues.DEFLATE;
 
 public class EchoHandler extends AbstractHandler {
 
@@ -115,18 +118,14 @@ public class EchoHandler extends AbstractHandler {
       }
     }
 
-    String requestBodyLength = httpRequest.getHeader("X-" + CONTENT_LENGTH);
+    if (httpRequest.getHeader("X-COMPRESS") != null) {
+      byte[] compressed = deflate(IOUtils.toByteArray(httpRequest.getInputStream()));
+      httpResponse.addIntHeader(CONTENT_LENGTH.toString(), compressed.length);
+      httpResponse.addHeader(CONTENT_ENCODING.toString(), DEFLATE.toString());
+      httpResponse.getOutputStream().write(compressed, 0, compressed.length);
 
-    if (requestBodyLength != null) {
-      byte[] requestBodyBytes = IOUtils.toByteArray(httpRequest.getInputStream());
-      int total = requestBodyBytes.length;
-
-      httpResponse.addIntHeader("X-" + CONTENT_LENGTH, total);
-      String md5 = TestUtils.md5(requestBodyBytes, 0, total);
-      httpResponse.addHeader(CONTENT_MD5.toString(), md5);
-
-      httpResponse.getOutputStream().write(requestBodyBytes, 0, total);
     } else {
+      httpResponse.addHeader(TRANSFER_ENCODING.toString(), CHUNKED.toString());
       int size = 16384;
       if (httpRequest.getContentLength() > 0) {
         size = httpRequest.getContentLength();
@@ -147,5 +146,22 @@ public class EchoHandler extends AbstractHandler {
     httpResponse.getOutputStream().flush();
     // FIXME don't always close, depends on the test, cf ReactiveStreamsTest
     httpResponse.getOutputStream().close();
+  }
+
+  private static byte[] deflate(byte[] input) throws IOException {
+    Deflater compressor = new Deflater();
+    compressor.setLevel(Deflater.BEST_COMPRESSION);
+
+    compressor.setInput(input);
+    compressor.finish();
+
+    try (ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length)) {
+      byte[] buf = new byte[1024];
+      while (!compressor.finished()) {
+        int count = compressor.deflate(buf);
+        bos.write(buf, 0, count);
+      }
+      return bos.toByteArray();
+    }
   }
 }
