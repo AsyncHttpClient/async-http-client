@@ -41,6 +41,7 @@ import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsume
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class AsyncHttpClientCallTest {
@@ -281,6 +282,19 @@ public class AsyncHttpClientCallTest {
 
     }
 
+    @Test
+    public void bodyIsNotNullInResponse() throws Exception {
+        AsyncHttpClient client = mock(AsyncHttpClient.class);
+
+        givenResponseIsProduced(client, responseWithNoBody());
+
+        okhttp3.Response response = whenRequestIsMade(client, REQUEST);
+
+        assertEquals(response.code(), 200);
+        assertEquals(response.header("Server"), "nginx");
+        assertNotEquals(response.body(), null);
+    }
+
     private void givenResponseIsProduced(AsyncHttpClient client, Response response) {
         when(client.executeRequest(any(org.asynchttpclient.Request.class), any())).thenAnswer(invocation -> {
             AsyncCompletionHandler<Response> handler = invocation.getArgument(1);
@@ -320,6 +334,13 @@ public class AsyncHttpClientCallTest {
         when(response.hasResponseBody()).thenReturn(true);
         when(response.getContentType()).thenReturn(contentType);
         when(response.getResponseBodyAsBytes()).thenReturn(content.getBytes(StandardCharsets.UTF_8));
+        return response;
+    }
+
+    private Response responseWithNoBody() {
+        Response response = aResponse();
+        when(response.hasResponseBody()).thenReturn(false);
+        when(response.getContentType()).thenReturn(null);
         return response;
     }
 

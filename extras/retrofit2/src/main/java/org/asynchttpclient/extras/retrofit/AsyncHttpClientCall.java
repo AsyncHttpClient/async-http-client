@@ -254,6 +254,8 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
               ? null : MediaType.parse(asyncHttpClientResponse.getContentType());
       val okHttpBody = ResponseBody.create(contentType, asyncHttpClientResponse.getResponseBodyAsBytes());
       rspBuilder.body(okHttpBody);
+    } else {
+      rspBuilder.body(ResponseBody.create(null, ""));
     }
 
     return rspBuilder.build();
