@@ -45,6 +45,8 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
    * @see #executeTimeoutMillis
    */
   public static final long DEFAULT_EXECUTE_TIMEOUT_MILLIS = 30_000;
+
+  private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
   /**
    * Tells whether call has been executed.
    *
@@ -255,7 +257,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
       val okHttpBody = ResponseBody.create(contentType, asyncHttpClientResponse.getResponseBodyAsBytes());
       rspBuilder.body(okHttpBody);
     } else {
-      rspBuilder.body(ResponseBody.create(null, ""));
+      rspBuilder.body(EMPTY_BODY);
     }
 
     return rspBuilder.build();
