@@ -3,7 +3,6 @@ package org.asynchttpclient.spnego;
 import org.apache.commons.io.FileUtils;
 import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -61,8 +60,6 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     kerbyServer.start();
 
     FileUtils.copyInputStreamToFile(SpnegoEngine.class.getResourceAsStream("/kerberos.jaas"), loginConfig);
-
-    LoggerFactory.getLogger(SpnegoEngineTest.class).info("Able to log in as {} successfully. Kerby server is ready.", alice);
   }
 
   @Test
