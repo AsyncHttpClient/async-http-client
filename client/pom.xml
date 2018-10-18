@@ -73,5 +73,11 @@
       <artifactId>reactive-streams-examples</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>kerb-simplekdc</artifactId>
+      <version>${cxf.kerby.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

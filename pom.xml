@@ -292,6 +292,12 @@
         <artifactId>rxjava</artifactId>
         <version>${rxjava2.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerb-simplekdc</artifactId>
+        <version>${cxf.kerby.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -418,5 +424,6 @@
     <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
     <mockito.version>2.19.0</mockito.version>
     <hamcrest.version>2.0.0.0</hamcrest.version>
+    <cxf.kerby.version>1.1.1</cxf.kerby.version>
   </properties>
 </project>

@@ -1,0 +1,8 @@
+
+alice {
+    com.sun.security.auth.module.Krb5LoginModule required refreshKrb5Config=true useKeyTab=false principal="alice";
+};
+
+bob {
+    com.sun.security.auth.module.Krb5LoginModule required refreshKrb5Config=true useKeyTab=false storeKey=true principal="bob/service.ws.apache.org";
+};

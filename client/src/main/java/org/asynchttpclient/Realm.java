@@ -62,6 +62,8 @@ public class Realm {
   private final boolean useAbsoluteURI;
   private final boolean omitQuery;
   private final Map<String, String> customLoginConfig;
+  private final String servicePrincipalName;
+  private final boolean useCanonicalHostname;
 
   private Realm(AuthScheme scheme,
                 String principal,
@@ -81,6 +83,8 @@ public class Realm {
                 String ntlmHost,
                 boolean useAbsoluteURI,
                 boolean omitQuery,
+                String servicePrincipalName,
+                boolean useCanonicalHostname,
                 Map<String, String> customLoginConfig) {
 
     this.scheme = assertNotNull(scheme, "scheme");
@@ -101,6 +105,8 @@ public class Realm {
     this.ntlmHost = ntlmHost;
     this.useAbsoluteURI = useAbsoluteURI;
     this.omitQuery = omitQuery;
+    this.servicePrincipalName = servicePrincipalName;
+    this.useCanonicalHostname = useCanonicalHostname;
     this.customLoginConfig = customLoginConfig;
   }
 
@@ -195,29 +201,39 @@ public class Realm {
     return customLoginConfig;
   }
 
+  public String getServicePrincipalName() {
+    return servicePrincipalName;
+  }
+
+  public boolean isUseCanonicalHostname() {
+    return useCanonicalHostname;
+  }
+
   @Override
   public String toString() {
     return "Realm{" +
-      "principal='" + principal + '\'' +
-      ", password='" + password + '\'' +
-      ", scheme=" + scheme +
-      ", realmName='" + realmName + '\'' +
-      ", nonce='" + nonce + '\'' +
-      ", algorithm='" + algorithm + '\'' +
-      ", response='" + response + '\'' +
-      ", opaque='" + opaque + '\'' +
-      ", qop='" + qop + '\'' +
-      ", nc='" + nc + '\'' +
-      ", cnonce='" + cnonce + '\'' +
-      ", uri=" + uri +
-      ", usePreemptiveAuth=" + usePreemptiveAuth +
-      ", charset=" + charset +
-      ", ntlmHost='" + ntlmHost + '\'' +
-      ", ntlmDomain='" + ntlmDomain + '\'' +
-      ", useAbsoluteURI=" + useAbsoluteURI +
-      ", omitQuery=" + omitQuery +
-      ", customLoginConfig=" + customLoginConfig +
-      '}';
+        "principal='" + principal + '\'' +
+        ", password='" + password + '\'' +
+        ", scheme=" + scheme +
+        ", realmName='" + realmName + '\'' +
+        ", nonce='" + nonce + '\'' +
+        ", algorithm='" + algorithm + '\'' +
+        ", response='" + response + '\'' +
+        ", opaque='" + opaque + '\'' +
+        ", qop='" + qop + '\'' +
+        ", nc='" + nc + '\'' +
+        ", cnonce='" + cnonce + '\'' +
+        ", uri=" + uri +
+        ", usePreemptiveAuth=" + usePreemptiveAuth +
+        ", charset=" + charset +
+        ", ntlmHost='" + ntlmHost + '\'' +
+        ", ntlmDomain='" + ntlmDomain + '\'' +
+        ", useAbsoluteURI=" + useAbsoluteURI +
+        ", omitQuery=" + omitQuery +
+        ", customLoginConfig=" + customLoginConfig +
+        ", servicePrincipalName='" + servicePrincipalName + '\'' +
+        ", useCanonicalHostname=" + useCanonicalHostname +
+        '}';
   }
 
   public enum AuthScheme {
@@ -248,7 +264,12 @@ public class Realm {
     private String ntlmHost = "localhost";
     private boolean useAbsoluteURI = false;
     private boolean omitQuery;
+    /**
+     * Kerberos/Spnego properties
+     */
     private Map<String, String> customLoginConfig;
+    private String servicePrincipalName;
+    private boolean useCanonicalHostname;
 
     public Builder() {
       this.principal = null;
@@ -344,6 +365,16 @@ public class Realm {
 
     public Builder setCustomLoginConfig(Map<String, String> customLoginConfig) {
       this.customLoginConfig = customLoginConfig;
+      return this;
+    }
+
+    public Builder setServicePrincipalName(String servicePrincipalName) {
+      this.servicePrincipalName = servicePrincipalName;
+      return this;
+    }
+
+    public Builder setUseCanonicalHostname(boolean useCanonicalHostname) {
+      this.useCanonicalHostname = useCanonicalHostname;
       return this;
     }
 
@@ -538,6 +569,8 @@ public class Realm {
               ntlmHost,
               useAbsoluteURI,
               omitQuery,
+              servicePrincipalName,
+              useCanonicalHostname,
               customLoginConfig);
     }
   }

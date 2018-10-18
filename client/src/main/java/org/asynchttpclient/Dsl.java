@@ -100,6 +100,8 @@ public final class Dsl {
             .setNtlmHost(prototype.getNtlmHost())
             .setUseAbsoluteURI(prototype.isUseAbsoluteURI())
             .setOmitQuery(prototype.isOmitQuery())
+            .setServicePrincipalName(prototype.getServicePrincipalName())
+            .setUseCanonicalHostname(prototype.isUseCanonicalHostname())
             .setCustomLoginConfig(prototype.getCustomLoginConfig());
   }
 
