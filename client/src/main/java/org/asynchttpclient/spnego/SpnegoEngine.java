@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
@@ -71,31 +72,50 @@ public class SpnegoEngine {
   private static Map<String, SpnegoEngine> instances = new HashMap<>();
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final SpnegoTokenGenerator spnegoGenerator;
-  private final String realmName;
+  private final String username;
+  private final String password;
   private final String servicePrincipalName;
+  private final String realmName;
   private final boolean useCanonicalHostname;
+  private final String loginContextName;
   private final Map<String, String> customLoginConfig;
 
-  public SpnegoEngine(final String servicePrincipalName,
+  public SpnegoEngine(final String username,
+                      final String password,
+                      final String servicePrincipalName,
                       final String realmName,
                       final boolean useCanonicalHostname,
                       final Map<String, String> customLoginConfig,
+                      final String loginContextName,
                       final SpnegoTokenGenerator spnegoGenerator) {
-    this.useCanonicalHostname = useCanonicalHostname;
-    this.realmName = realmName;
+    this.username = username;
+    this.password = password;
     this.servicePrincipalName = servicePrincipalName;
+    this.realmName = realmName;
+    this.useCanonicalHostname = useCanonicalHostname;
     this.customLoginConfig = customLoginConfig;
     this.spnegoGenerator = spnegoGenerator;
+    this.loginContextName = loginContextName;
   }
 
   public SpnegoEngine() {
-    this(null, null, false, null, null);
+    this(null,
+        null,
+        null,
+        null,
+        true,
+        null,
+        null,
+        null);
   }
 
-  public static SpnegoEngine instance(final String servicePrincipalName,
-                                      final String realm,
+  public static SpnegoEngine instance(final String username,
+                                      final String password,
+                                      final String servicePrincipalName,
+                                      final String realmName,
                                       final boolean useCanonicalHostname,
-                                      final Map<String, String> customLoginConfig) {
+                                      final Map<String, String> customLoginConfig,
+                                      final String loginContextName) {
     String key = "";
     if (customLoginConfig != null) {
       StringBuilder customLoginConfigKeyValues = new StringBuilder();
@@ -106,10 +126,13 @@ public class SpnegoEngine {
       key = customLoginConfigKeyValues.toString();
     }
     if (!instances.containsKey(key)) {
-      instances.put(key, new SpnegoEngine(servicePrincipalName,
-          realm,
+      instances.put(key, new SpnegoEngine(username,
+          password,
+          servicePrincipalName,
+          realmName,
           useCanonicalHostname,
           customLoginConfig,
+          loginContextName,
           null));
     }
     return instances.get(key);
@@ -143,17 +166,15 @@ public class SpnegoEngine {
         GSSManager manager = GSSManager.getInstance();
         GSSName serverName = manager.createName(spn, GSSName.NT_HOSTBASED_SERVICE);
         GSSCredential myCred = null;
-        if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
-          LoginContext loginContext;
-          loginContext = new LoginContext("", new Subject(), null, new Configuration() {
-            @Override
-            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-              return new AppConfigurationEntry[] {
-                new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
-                  AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                  customLoginConfig)};
-            }
-          });
+        if (username != null || loginContextName != null || (customLoginConfig != null && !customLoginConfig.isEmpty())) {
+          String contextName = loginContextName;
+          if (contextName == null) {
+            contextName = "";
+          }
+          LoginContext loginContext = new LoginContext(contextName,
+              null,
+              getUsernamePasswordHandler(),
+              getLoginConfiguration());
           loginContext.login();
           final Oid negotiationOidFinal = negotiationOid;
           final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
@@ -256,5 +277,27 @@ public class SpnegoEngine {
       log.warn("Unable to resolve canonical hostname", e);
     }
     return canonicalHostname;
+  }
+
+  public CallbackHandler getUsernamePasswordHandler() {
+    if (username == null) {
+      return null;
+    }
+    return new NamePasswordCallbackHandler(username, password);
+  }
+
+  public Configuration getLoginConfiguration() {
+    if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
+      return new Configuration() {
+        @Override
+        public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+          return new AppConfigurationEntry[] {
+              new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
+                  AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+                  customLoginConfig)};
+        }
+      };
+    }
+    return null;
   }
 }

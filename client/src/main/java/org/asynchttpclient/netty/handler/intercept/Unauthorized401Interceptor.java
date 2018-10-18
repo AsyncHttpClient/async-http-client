@@ -206,10 +206,13 @@ public class Unauthorized401Interceptor {
 
     Uri uri = request.getUri();
     String host = withDefault(request.getVirtualHost(), uri.getHost());
-    String challengeHeader = SpnegoEngine.instance(realm.getServicePrincipalName(),
+    String challengeHeader = SpnegoEngine.instance(realm.getPrincipal(),
+        realm.getPassword(),
+        realm.getServicePrincipalName(),
         realm.getRealmName(),
         realm.isUseCanonicalHostname(),
-        realm.getCustomLoginConfig()).generateToken(host);
+        realm.getCustomLoginConfig(),
+        realm.getLoginContextName()).generateToken(host);
     headers.set(AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 }

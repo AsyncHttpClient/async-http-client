@@ -9,10 +9,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.security.auth.Subject;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginContext;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +21,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
   private static String bob;
   private static File aliceKeytab;
   private static File bobKeytab;
+  private static File loginConfig;
 
   @BeforeClass
   public static void startServers() throws Exception {
@@ -36,6 +33,8 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     // System.setProperty("sun.security.krb5.debug", "true");
     System.setProperty("java.security.krb5.conf",
         new File(basedir + File.separator + "target" + File.separator + "krb5.conf").getCanonicalPath());
+    loginConfig = new File(basedir + File.separator + "target" + File.separator + "kerberos.jaas");
+    System.setProperty("java.security.auth.login.config", loginConfig.getCanonicalPath());
 
     kerbyServer = new SimpleKdcServer();
 
@@ -61,28 +60,37 @@ public class SpnegoEngineTest extends AbstractBasicTest {
 
     kerbyServer.start();
 
-    Map<String, String> loginConfig = new HashMap<>();
-    loginConfig.put("useKeyTab", "true");
-    loginConfig.put("refreshKrb5Config", "true");
-    loginConfig.put("keyTab", bobKeytab.getCanonicalPath());
-    loginConfig.put("principal", bob);
-    loginConfig.put("debug", String.valueOf(true));
-
-    LoginContext loginContext;
-    loginContext = new LoginContext("", new Subject(), null, new Configuration() {
-      @Override
-      public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-        return new AppConfigurationEntry[] {
-            new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
-                AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                loginConfig)};
-      }
-    });
-    loginContext.login();
+    FileUtils.copyInputStreamToFile(SpnegoEngine.class.getResourceAsStream("/kerberos.jaas"), loginConfig);
 
     LoggerFactory.getLogger(SpnegoEngineTest.class).info("Able to log in as {} successfully. Kerby server is ready.", alice);
+  }
 
-    loginContext.logout();
+  @Test
+  public void testSpnegoGenerateTokenWithUsernamePassword() throws Exception {
+    SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
+        "alice",
+        "bob",
+        "service.ws.apache.org",
+        false,
+        null,
+        "alice",
+        null);
+    String token = spnegoEngine.generateToken("localhost");
+    Assert.assertNotNull(token);
+    Assert.assertTrue(token.startsWith("YII"));
+  }
+
+  @Test(expectedExceptions = SpnegoEngineException.class)
+  public void testSpnegoGenerateTokenWithUsernamePasswordFail() throws Exception {
+    SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
+        "wrong password",
+        "bob",
+        "service.ws.apache.org",
+        false,
+        null,
+        "alice",
+        null);
+    spnegoEngine.generateToken("localhost");
   }
 
   @Test
@@ -94,10 +102,13 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     loginConfig.put("keyTab", aliceKeytab.getCanonicalPath());
     loginConfig.put("principal", alice);
     loginConfig.put("debug", String.valueOf(true));
-    SpnegoEngine spnegoEngine = new SpnegoEngine("bob",
+    SpnegoEngine spnegoEngine = new SpnegoEngine(null,
+        null,
+        "bob",
         "service.ws.apache.org",
         false,
         loginConfig,
+        null,
         null);
 
     String token = spnegoEngine.generateToken("localhost");
@@ -112,5 +123,6 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     }
     FileUtils.deleteQuietly(aliceKeytab);
     FileUtils.deleteQuietly(bobKeytab);
+    FileUtils.deleteQuietly(loginConfig);
   }
 }

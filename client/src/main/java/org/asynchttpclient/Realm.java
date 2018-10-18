@@ -64,6 +64,7 @@ public class Realm {
   private final Map<String, String> customLoginConfig;
   private final String servicePrincipalName;
   private final boolean useCanonicalHostname;
+  private final String loginContextName;
 
   private Realm(AuthScheme scheme,
                 String principal,
@@ -85,7 +86,8 @@ public class Realm {
                 boolean omitQuery,
                 String servicePrincipalName,
                 boolean useCanonicalHostname,
-                Map<String, String> customLoginConfig) {
+                Map<String, String> customLoginConfig,
+                String loginContextName) {
 
     this.scheme = assertNotNull(scheme, "scheme");
     this.principal = principal;
@@ -108,6 +110,7 @@ public class Realm {
     this.servicePrincipalName = servicePrincipalName;
     this.useCanonicalHostname = useCanonicalHostname;
     this.customLoginConfig = customLoginConfig;
+    this.loginContextName = loginContextName;
   }
 
   public String getPrincipal() {
@@ -209,6 +212,10 @@ public class Realm {
     return useCanonicalHostname;
   }
 
+  public String getLoginContextName() {
+    return loginContextName;
+  }
+
   @Override
   public String toString() {
     return "Realm{" +
@@ -233,6 +240,7 @@ public class Realm {
         ", customLoginConfig=" + customLoginConfig +
         ", servicePrincipalName='" + servicePrincipalName + '\'' +
         ", useCanonicalHostname=" + useCanonicalHostname +
+        ", loginContextName='" + loginContextName + '\'' +
         '}';
   }
 
@@ -270,6 +278,7 @@ public class Realm {
     private Map<String, String> customLoginConfig;
     private String servicePrincipalName;
     private boolean useCanonicalHostname;
+    private String loginContextName;
 
     public Builder() {
       this.principal = null;
@@ -375,6 +384,11 @@ public class Realm {
 
     public Builder setUseCanonicalHostname(boolean useCanonicalHostname) {
       this.useCanonicalHostname = useCanonicalHostname;
+      return this;
+    }
+
+    public Builder setLoginContextName(String loginContextName) {
+      this.loginContextName = loginContextName;
       return this;
     }
 
@@ -571,7 +585,8 @@ public class Realm {
               omitQuery,
               servicePrincipalName,
               useCanonicalHostname,
-              customLoginConfig);
+              customLoginConfig,
+              loginContextName);
     }
   }
 }

@@ -102,7 +102,8 @@ public final class Dsl {
             .setOmitQuery(prototype.isOmitQuery())
             .setServicePrincipalName(prototype.getServicePrincipalName())
             .setUseCanonicalHostname(prototype.isUseCanonicalHostname())
-            .setCustomLoginConfig(prototype.getCustomLoginConfig());
+            .setCustomLoginConfig(prototype.getCustomLoginConfig())
+            .setLoginContextName(prototype.getLoginContextName());
   }
 
   public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {
