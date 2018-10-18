@@ -117,13 +117,19 @@ public class SpnegoEngine {
                                       final Map<String, String> customLoginConfig,
                                       final String loginContextName) {
     String key = "";
-    if (customLoginConfig != null) {
+    if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
       StringBuilder customLoginConfigKeyValues = new StringBuilder();
       for (String loginConfigKey : customLoginConfig.keySet()) {
         customLoginConfigKeyValues.append(loginConfigKey).append("=")
           .append(customLoginConfig.get(loginConfigKey));
       }
       key = customLoginConfigKeyValues.toString();
+    }
+    if (username != null) {
+      key += username;
+    }
+    if (loginContextName != null) {
+      key += loginContextName;
     }
     if (!instances.containsKey(key)) {
       instances.put(key, new SpnegoEngine(username,
