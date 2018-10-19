@@ -380,7 +380,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
     DerivedBuilder setFormParams(Map<String, List<String>> params);
 
-    DerivedBuilder setHeaders(Map<CharSequence, Collection<?>> headers);
+    DerivedBuilder setHeaders(Map<? extends CharSequence, Collection<?>> headers);
 
     DerivedBuilder setHeaders(HttpHeaders headers);
 
@@ -465,7 +465,7 @@ public class SimpleAsyncHttpClient implements Closeable {
       return this;
     }
 
-    public Builder setHeaders(Map<CharSequence, Collection<?>> headers) {
+    public Builder setHeaders(Map<? extends CharSequence, Collection<?>> headers) {
       requestBuilder.setHeaders(headers);
       return this;
     }
