@@ -20,10 +20,7 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
@@ -173,5 +170,17 @@ public class RequestBuilderTest {
     requestBuilder.setUrl("http://localhost");
     Request request = requestBuilder.build();
     assertEquals(request.getUrl(), "http://localhost?key=value");
+  }
+
+  @Test
+  public void testSettingHeadersUsingMapWithStringKeys() {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put("X-Forwarded-For", singletonList("10.0.0.1"));
+
+    RequestBuilder requestBuilder = new RequestBuilder();
+    requestBuilder.setHeaders(headers);
+    requestBuilder.setUrl("http://localhost");
+    Request request =  requestBuilder.build();
+    assertEquals(request.getHeaders().get("X-Forwarded-For"), "10.0.0.1");
   }
 }
