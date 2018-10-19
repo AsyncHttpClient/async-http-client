@@ -256,7 +256,7 @@ public class SpnegoEngine {
     }
   }
 
-  protected String getCompleteServicePrincipalName(String host) {
+  String getCompleteServicePrincipalName(String host) {
     String name;
     if (servicePrincipalName == null) {
       if (useCanonicalHostname) {
@@ -285,7 +285,7 @@ public class SpnegoEngine {
     return canonicalHostname;
   }
 
-  public CallbackHandler getUsernamePasswordHandler() {
+  private CallbackHandler getUsernamePasswordHandler() {
     if (username == null) {
       return null;
     }
