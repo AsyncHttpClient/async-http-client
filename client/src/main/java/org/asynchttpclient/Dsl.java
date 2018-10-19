@@ -99,7 +99,11 @@ public final class Dsl {
             .setNtlmDomain(prototype.getNtlmDomain())
             .setNtlmHost(prototype.getNtlmHost())
             .setUseAbsoluteURI(prototype.isUseAbsoluteURI())
-            .setOmitQuery(prototype.isOmitQuery());
+            .setOmitQuery(prototype.isOmitQuery())
+            .setServicePrincipalName(prototype.getServicePrincipalName())
+            .setUseCanonicalHostname(prototype.isUseCanonicalHostname())
+            .setCustomLoginConfig(prototype.getCustomLoginConfig())
+            .setLoginContextName(prototype.getLoginContextName());
   }
 
   public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {

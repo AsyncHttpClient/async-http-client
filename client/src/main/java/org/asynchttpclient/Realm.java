@@ -23,6 +23,7 @@ import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.*;
@@ -60,6 +61,10 @@ public class Realm {
   private final String ntlmDomain;
   private final boolean useAbsoluteURI;
   private final boolean omitQuery;
+  private final Map<String, String> customLoginConfig;
+  private final String servicePrincipalName;
+  private final boolean useCanonicalHostname;
+  private final String loginContextName;
 
   private Realm(AuthScheme scheme,
                 String principal,
@@ -78,11 +83,15 @@ public class Realm {
                 String ntlmDomain,
                 String ntlmHost,
                 boolean useAbsoluteURI,
-                boolean omitQuery) {
+                boolean omitQuery,
+                String servicePrincipalName,
+                boolean useCanonicalHostname,
+                Map<String, String> customLoginConfig,
+                String loginContextName) {
 
     this.scheme = assertNotNull(scheme, "scheme");
-    this.principal = assertNotNull(principal, "principal");
-    this.password = assertNotNull(password, "password");
+    this.principal = principal;
+    this.password = password;
     this.realmName = realmName;
     this.nonce = nonce;
     this.algorithm = algorithm;
@@ -98,6 +107,10 @@ public class Realm {
     this.ntlmHost = ntlmHost;
     this.useAbsoluteURI = useAbsoluteURI;
     this.omitQuery = omitQuery;
+    this.servicePrincipalName = servicePrincipalName;
+    this.useCanonicalHostname = useCanonicalHostname;
+    this.customLoginConfig = customLoginConfig;
+    this.loginContextName = loginContextName;
   }
 
   public String getPrincipal() {
@@ -187,12 +200,48 @@ public class Realm {
     return omitQuery;
   }
 
+  public Map<String, String> getCustomLoginConfig() {
+    return customLoginConfig;
+  }
+
+  public String getServicePrincipalName() {
+    return servicePrincipalName;
+  }
+
+  public boolean isUseCanonicalHostname() {
+    return useCanonicalHostname;
+  }
+
+  public String getLoginContextName() {
+    return loginContextName;
+  }
+
   @Override
   public String toString() {
-    return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\''
-            + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm + '\'' + ", response='" + response + '\''
-            + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
-            + ", useAbsoluteURI='" + useAbsoluteURI + '\'' + ", omitQuery='" + omitQuery + '\'' + '}';
+    return "Realm{" +
+        "principal='" + principal + '\'' +
+        ", password='" + password + '\'' +
+        ", scheme=" + scheme +
+        ", realmName='" + realmName + '\'' +
+        ", nonce='" + nonce + '\'' +
+        ", algorithm='" + algorithm + '\'' +
+        ", response='" + response + '\'' +
+        ", opaque='" + opaque + '\'' +
+        ", qop='" + qop + '\'' +
+        ", nc='" + nc + '\'' +
+        ", cnonce='" + cnonce + '\'' +
+        ", uri=" + uri +
+        ", usePreemptiveAuth=" + usePreemptiveAuth +
+        ", charset=" + charset +
+        ", ntlmHost='" + ntlmHost + '\'' +
+        ", ntlmDomain='" + ntlmDomain + '\'' +
+        ", useAbsoluteURI=" + useAbsoluteURI +
+        ", omitQuery=" + omitQuery +
+        ", customLoginConfig=" + customLoginConfig +
+        ", servicePrincipalName='" + servicePrincipalName + '\'' +
+        ", useCanonicalHostname=" + useCanonicalHostname +
+        ", loginContextName='" + loginContextName + '\'' +
+        '}';
   }
 
   public enum AuthScheme {
@@ -223,6 +272,18 @@ public class Realm {
     private String ntlmHost = "localhost";
     private boolean useAbsoluteURI = false;
     private boolean omitQuery;
+    /**
+     * Kerberos/Spnego properties
+     */
+    private Map<String, String> customLoginConfig;
+    private String servicePrincipalName;
+    private boolean useCanonicalHostname;
+    private String loginContextName;
+
+    public Builder() {
+      this.principal = null;
+      this.password = null;
+    }
 
     public Builder(String principal, String password) {
       this.principal = principal;
@@ -308,6 +369,26 @@ public class Realm {
 
     public Builder setCharset(Charset charset) {
       this.charset = charset;
+      return this;
+    }
+
+    public Builder setCustomLoginConfig(Map<String, String> customLoginConfig) {
+      this.customLoginConfig = customLoginConfig;
+      return this;
+    }
+
+    public Builder setServicePrincipalName(String servicePrincipalName) {
+      this.servicePrincipalName = servicePrincipalName;
+      return this;
+    }
+
+    public Builder setUseCanonicalHostname(boolean useCanonicalHostname) {
+      this.useCanonicalHostname = useCanonicalHostname;
+      return this;
+    }
+
+    public Builder setLoginContextName(String loginContextName) {
+      this.loginContextName = loginContextName;
       return this;
     }
 
@@ -501,7 +582,11 @@ public class Realm {
               ntlmDomain,
               ntlmHost,
               useAbsoluteURI,
-              omitQuery);
+              omitQuery,
+              servicePrincipalName,
+              useCanonicalHostname,
+              customLoginConfig,
+              loginContextName);
     }
   }
 }

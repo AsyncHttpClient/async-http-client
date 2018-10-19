@@ -139,7 +139,7 @@ public class Unauthorized401Interceptor {
           return false;
         }
         try {
-          kerberosChallenge(request, requestHeaders);
+          kerberosChallenge(realm, request, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
@@ -200,12 +200,19 @@ public class Unauthorized401Interceptor {
     }
   }
 
-  private void kerberosChallenge(Request request,
+  private void kerberosChallenge(Realm realm,
+                                 Request request,
                                  HttpHeaders headers) throws SpnegoEngineException {
 
     Uri uri = request.getUri();
     String host = withDefault(request.getVirtualHost(), uri.getHost());
-    String challengeHeader = SpnegoEngine.instance().generateToken(host);
+    String challengeHeader = SpnegoEngine.instance(realm.getPrincipal(),
+        realm.getPassword(),
+        realm.getServicePrincipalName(),
+        realm.getRealmName(),
+        realm.isUseCanonicalHostname(),
+        realm.getCustomLoginConfig(),
+        realm.getLoginContextName()).generateToken(host);
     headers.set(AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 }

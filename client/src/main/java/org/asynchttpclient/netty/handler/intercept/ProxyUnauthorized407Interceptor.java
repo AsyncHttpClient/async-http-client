@@ -140,7 +140,7 @@ public class ProxyUnauthorized407Interceptor {
           return false;
         }
         try {
-          kerberosProxyChallenge(proxyServer, requestHeaders);
+          kerberosProxyChallenge(proxyRealm, proxyServer, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
@@ -184,10 +184,17 @@ public class ProxyUnauthorized407Interceptor {
     return true;
   }
 
-  private void kerberosProxyChallenge(ProxyServer proxyServer,
+  private void kerberosProxyChallenge(Realm proxyRealm,
+                                      ProxyServer proxyServer,
                                       HttpHeaders headers) throws SpnegoEngineException {
 
-    String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
+    String challengeHeader = SpnegoEngine.instance(proxyRealm.getPrincipal(),
+        proxyRealm.getPassword(),
+        proxyRealm.getServicePrincipalName(),
+        proxyRealm.getRealmName(),
+        proxyRealm.isUseCanonicalHostname(),
+        proxyRealm.getCustomLoginConfig(),
+        proxyRealm.getLoginContextName()).generateToken(proxyServer.getHost());
     headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 
