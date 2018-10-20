@@ -256,18 +256,18 @@ public class SpnegoEngine {
     }
   }
 
-  protected String getCompleteServicePrincipalName(String host) {
+  String getCompleteServicePrincipalName(String host) {
     String name;
     if (servicePrincipalName == null) {
       if (useCanonicalHostname) {
         host = getCanonicalHostname(host);
       }
-      name = "HTTP/" + host;
+      name = "HTTP@" + host;
     } else {
       name = servicePrincipalName;
-    }
-    if (realmName != null) {
-      name += "@" + realmName;
+      if (realmName != null && !name.contains("@")) {
+        name += "@" + realmName;
+      }
     }
     log.debug("Service Principal Name is {}", name);
     return name;
@@ -285,7 +285,7 @@ public class SpnegoEngine {
     return canonicalHostname;
   }
 
-  public CallbackHandler getUsernamePasswordHandler() {
+  private CallbackHandler getUsernamePasswordHandler() {
     if (username == null) {
       return null;
     }

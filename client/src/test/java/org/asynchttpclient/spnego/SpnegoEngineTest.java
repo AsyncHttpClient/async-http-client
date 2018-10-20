@@ -113,6 +113,44 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     Assert.assertTrue(token.startsWith("YII"));
   }
 
+  @Test
+  public void testGetCompleteServicePrincipalName() throws Exception {
+    {
+      SpnegoEngine spnegoEngine = new SpnegoEngine(null,
+          null,
+          "bob",
+          "service.ws.apache.org",
+          false,
+          null,
+          null,
+          null);
+      Assert.assertEquals("bob@service.ws.apache.org", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+    }
+    {
+      SpnegoEngine spnegoEngine = new SpnegoEngine(null,
+          null,
+          null,
+          "service.ws.apache.org",
+          true,
+          null,
+          null,
+          null);
+      Assert.assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+      Assert.assertTrue(spnegoEngine.getCompleteServicePrincipalName("localhost").startsWith("HTTP@"));
+    }
+    {
+      SpnegoEngine spnegoEngine = new SpnegoEngine(null,
+          null,
+          null,
+          "service.ws.apache.org",
+          false,
+          null,
+          null,
+          null);
+      Assert.assertEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+    }
+  }
+
   @AfterClass
   public static void cleanup() throws Exception {
     if (kerbyServer != null) {
