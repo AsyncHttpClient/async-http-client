@@ -69,6 +69,15 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
   }
 
   @Test
+  public void testPutImageFileUnknownSize() throws Exception {
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+      InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
+      Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
+      assertEquals(response.getStatusCode(), 200);
+    }
+  }
+
+  @Test
   public void testPutLargeTextFile() throws Exception {
     File file = createTempFile(1024 * 1024);
     InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -76,6 +85,18 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
     try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Response response = client.preparePut(getTargetUrl())
               .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(), "application/octet-stream", UTF_8)).execute().get();
+      assertEquals(response.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testPutLargeTextFileUnknownSize() throws Exception {
+    File file = createTempFile(1024 * 1024);
+    InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+      Response response = client.preparePut(getTargetUrl())
+              .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
       assertEquals(response.getStatusCode(), 200);
     }
   }
