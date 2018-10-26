@@ -10,24 +10,28 @@ public class InputStreamPart extends FileLikePart {
   private final InputStream inputStream;
   private final long contentLength;
 
-  public InputStreamPart(String name, InputStream inputStream, long contentLength, String fileName) {
-    this(name, inputStream, contentLength, fileName, null);
+  public InputStreamPart(String name, InputStream inputStream, String fileName) {
+    this(name, inputStream, fileName, -1);
   }
 
-  public InputStreamPart(String name, InputStream inputStream, long contentLength, String fileName, String contentType) {
-    this(name, inputStream, contentLength, fileName, contentType, null);
+  public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength) {
+    this(name, inputStream, fileName, contentLength, null);
   }
 
-  public InputStreamPart(String name, InputStream inputStream, long contentLength, String fileName, String contentType, Charset charset) {
-    this(name, inputStream, contentLength, fileName, contentType, charset, null);
+  public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength, String contentType) {
+    this(name, inputStream, fileName, contentLength, contentType, null);
   }
 
-  public InputStreamPart(String name, InputStream inputStream, long contentLength, String fileName, String contentType, Charset charset,
+  public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength, String contentType, Charset charset) {
+    this(name, inputStream, fileName, contentLength, contentType, charset, null);
+  }
+
+  public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength, String contentType, Charset charset,
                          String contentId) {
-    this(name, inputStream, contentLength, fileName, contentType, charset, contentId, null);
+    this(name, inputStream, fileName, contentLength, contentType, charset, contentId, null);
   }
 
-  public InputStreamPart(String name, InputStream inputStream, long contentLength, String fileName, String contentType, Charset charset,
+  public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength, String contentType, Charset charset,
                          String contentId, String transferEncoding) {
     super(name,
             contentType,

@@ -66,7 +66,7 @@ public class MultipartBodyTest {
     try {
       File testFile = getTestfile();
       InputStream inputStream = new BufferedInputStream(new FileInputStream(testFile));
-      parts.add(new InputStreamPart("isPart", inputStream, testFile.length(), testFile.getName()));
+      parts.add(new InputStreamPart("isPart", inputStream, testFile.getName(), testFile.length()));
     } catch (URISyntaxException | FileNotFoundException e) {
       throw new ExceptionInInitializerError(e);
     }

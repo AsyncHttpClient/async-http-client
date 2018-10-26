@@ -121,11 +121,11 @@ public class MultipartUploadTest extends AbstractBasicTest {
               .addBodyPart(new StringPart("Name", "Dominic"))
               .addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8))
               .addBodyPart(new StringPart("Age", "3")).addBodyPart(new StringPart("Height", "shrimplike"))
-              .addBodyPart(new InputStreamPart("inputStream3", inputStreamFile3, testResource3File.length(), testResource3File.getName(), "text/plain", UTF_8))
-              .addBodyPart(new InputStreamPart("inputStream2", inputStreamFile2, testResource2File.length(), testResource2File.getName(), "application/x-gzip", null))
+              .addBodyPart(new InputStreamPart("inputStream3", inputStreamFile3, testResource3File.getName(), testResource3File.length(), "text/plain", UTF_8))
+              .addBodyPart(new InputStreamPart("inputStream2", inputStreamFile2, testResource2File.getName(), testResource2File.length(), "application/x-gzip", null))
               .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
                       expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
-              .addBodyPart(new InputStreamPart("inputStream1", inputStreamFile1, testResource1File.length(), testResource1File.getName(), "text/plain", UTF_8))
+              .addBodyPart(new InputStreamPart("inputStream1", inputStreamFile1, testResource1File.getName(), testResource1File.length(), "text/plain", UTF_8))
               .build();
 
       Response res = c.executeRequest(r).get();
@@ -157,12 +157,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
     sendEmptyFile0(false);
   }
 
-  private void sendEmptyFileInputStream0(boolean disableZeroCopy) throws Exception {
+  private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
     File file = getClasspathFile("empty.txt");
     try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
       InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
       Request r = post("http://localhost" + ":" + port1 + "/upload")
-              .addBodyPart(new InputStreamPart("file", inputStream, file.length(), file.getName(), "text/plain", UTF_8)).build();
+              .addBodyPart(new InputStreamPart("file", inputStream, file.getName(), file.length(), "text/plain", UTF_8)).build();
 
       Response res = c.executeRequest(r).get();
       assertEquals(res.getStatusCode(), 200);
@@ -170,13 +170,50 @@ public class MultipartUploadTest extends AbstractBasicTest {
   }
 
   @Test
-  public void sendEmptyFileInputStream() throws Exception {
-    sendEmptyFileInputStream0(true);
+  public void testSendEmptyFileInputStream() throws Exception {
+    sendEmptyFileInputStream(true);
   }
 
   @Test
-  public void sendEmptyFileInputStreamZeroCopy() throws Exception {
-    sendEmptyFileInputStream0(false);
+  public void testSendEmptyFileInputStreamZeroCopy() throws Exception {
+    sendEmptyFileInputStream(false);
+  }
+
+  private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
+    File file = getClasspathFile("textfile.txt");
+    try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
+      InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+      InputStreamPart part;
+      if (useContentLength) {
+        part = new InputStreamPart("file", inputStream, file.getName(), file.length());
+      } else {
+        part = new InputStreamPart("file", inputStream, file.getName());
+      }
+      Request r = post("http://localhost" + ":" + port1 + "/upload").addBodyPart(part).build();
+
+      Response res = c.executeRequest(r).get();
+      assertEquals(res.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testSendFileInputStreamUnknownContentLength() throws Exception {
+    sendFileInputStream(false, true);
+  }
+
+  @Test
+  public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
+    sendFileInputStream(false, false);
+  }
+
+  @Test
+  public void testSendFileInputStreamKnownContentLength() throws Exception {
+    sendFileInputStream(true, true);
+  }
+
+  @Test
+  public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
+    sendFileInputStream(true, false);
   }
 
   /**
