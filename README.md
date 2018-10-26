@@ -110,6 +110,7 @@ Use the `addBodyPart` method to add a multipart part to the request.
 This part can be of type:
 * `ByteArrayPart`
 * `FilePart`
+* `InputStreamPart`
 * `StringPart`
 
 ### Dealing with Responses
