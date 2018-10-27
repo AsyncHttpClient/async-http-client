@@ -113,8 +113,6 @@ This part can be of type:
 * `InputStreamPart`
 * `StringPart`
 
-**NOTE**: `InputStreamPart` does not support zero-copy transfers. Explicitly disable zero-copy using `config.setDisableZeroCopy(true)` when one of the body parts is an `InputStreamPart`.
-
 ### Dealing with Responses
 
 #### Blocking on the Future
