@@ -53,14 +53,8 @@ public class NettyBodyBody implements NettyBody {
   public void write(final Channel channel, NettyResponseFuture<?> future) {
 
     Object msg;
-    if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy()) {
-      long contentLength = getContentLength();
-      if (contentLength < 0) {
-        // contentLength unknown in advance, use chunked input
-        msg = new BodyChunkedInput(body);
-      } else {
-        msg = new BodyFileRegion((RandomAccessBody) body);
-      }
+    if (body instanceof RandomAccessBody && !ChannelManager.isSslHandlerConfigured(channel.pipeline()) && !config.isDisableZeroCopy() && getContentLength() > 0) {
+      msg = new BodyFileRegion((RandomAccessBody) body);
 
     } else {
       msg = new BodyChunkedInput(body);
