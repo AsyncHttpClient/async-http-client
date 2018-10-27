@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -86,13 +85,22 @@ public class MultipartUploadTest extends AbstractBasicTest {
     testFiles.add(testResource1File);
     testFiles.add(testResource2File);
     testFiles.add(testResource3File);
+    testFiles.add(testResource3File);
+    testFiles.add(testResource2File);
+    testFiles.add(testResource1File);
 
     List<String> expected = new ArrayList<>();
     expected.add(expectedContents);
     expected.add(expectedContents2);
     expected.add(expectedContents3);
+    expected.add(expectedContents3);
+    expected.add(expectedContents2);
+    expected.add(expectedContents);
 
     List<Boolean> gzipped = new ArrayList<>();
+    gzipped.add(false);
+    gzipped.add(true);
+    gzipped.add(false);
     gzipped.add(false);
     gzipped.add(true);
     gzipped.add(false);
@@ -113,41 +121,10 @@ public class MultipartUploadTest extends AbstractBasicTest {
               .addBodyPart(new StringPart("Name", "Dominic"))
               .addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8))
               .addBodyPart(new StringPart("Age", "3")).addBodyPart(new StringPart("Height", "shrimplike"))
-              .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
-                      expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
-              .build();
-
-      Response res = c.executeRequest(r).get();
-
-      assertEquals(res.getStatusCode(), 200);
-
-      testSentFile(expected, testFiles, res, gzipped);
-    }
-
-    testFiles.add(testResource3File);
-    testFiles.add(testResource2File);
-    testFiles.add(testResource1File);
-
-    expected.add(expectedContents3);
-    expected.add(expectedContents2);
-    expected.add(expectedContents);
-
-    gzipped.add(false);
-    gzipped.add(true);
-    gzipped.add(false);
-
-    // Zero-copy should be disabled when using InputStreamPart
-    try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(true))) {
-      Request r = post("http://localhost" + ":" + port1 + "/upload")
-              .addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8))
-              .addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null))
-              .addBodyPart(new StringPart("Name", "Dominic"))
-              .addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8))
-              .addBodyPart(new StringPart("Age", "3")).addBodyPart(new StringPart("Height", "shrimplike"))
-              .addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
               .addBodyPart(new InputStreamPart("inputStream3", inputStreamFile3, testResource3File.getName(), testResource3File.length(), "text/plain", UTF_8))
               .addBodyPart(new InputStreamPart("inputStream2", inputStreamFile2, testResource2File.getName(), testResource2File.length(), "application/x-gzip", null))
-              .addBodyPart(new StringPart("Hair", "ridiculous"))
+              .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
+                      expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
               .addBodyPart(new InputStreamPart("inputStream1", inputStreamFile1, testResource1File.getName(), testResource1File.length(), "text/plain", UTF_8))
               .build();
 
@@ -197,7 +174,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     sendEmptyFileInputStream(true);
   }
 
-  @Test(expectedExceptions = ExecutionException.class)
+  @Test
   public void testSendEmptyFileInputStreamZeroCopy() throws Exception {
     sendEmptyFileInputStream(false);
   }
@@ -224,7 +201,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     sendFileInputStream(false, true);
   }
 
-  @Test(expectedExceptions = ExecutionException.class)
+  @Test
   public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
     sendFileInputStream(false, false);
   }
@@ -234,7 +211,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     sendFileInputStream(true, true);
   }
 
-  @Test(expectedExceptions = ExecutionException.class)
+  @Test
   public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
     sendFileInputStream(true, false);
   }

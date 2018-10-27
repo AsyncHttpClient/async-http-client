@@ -24,7 +24,6 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.concurrent.ExecutionException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -60,61 +59,20 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
     };
   }
 
-  @Test(expectedExceptions = ExecutionException.class)
-  public void testPutImageFileThrowsExecutionException() throws Exception {
-    // Should throw ExecutionException when zero-copy is enabled
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
-      client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
-    }
-  }
-
-  @Test(expectedExceptions = ExecutionException.class)
-  public void testPutImageFileUnknownSizeThrowsExecutionException() throws Exception {
-    // Should throw ExecutionException when zero-copy is enabled
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
-      client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
-    }
-  }
-
   @Test
   public void testPutImageFile() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).setDisableZeroCopy(true))) {
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
-      client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
+      Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
+      assertEquals(response.getStatusCode(), 200);
     }
   }
 
   @Test
   public void testPutImageFileUnknownSize() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).setDisableZeroCopy(true))) {
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
       Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
-    }
-  }
-
-  @Test(expectedExceptions = ExecutionException.class)
-  public void testPutLargeTextFileThrowsExecutionException() throws Exception {
-    File file = createTempFile(1024 * 1024);
-    InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl())
-              .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(), "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
-    }
-  }
-
-  @Test(expectedExceptions = ExecutionException.class)
-  public void testPutLargeTextFileUnknownSizeThrowsExecutionException() throws Exception {
-    File file = createTempFile(1024 * 1024);
-    InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl())
-              .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
       assertEquals(response.getStatusCode(), 200);
     }
   }
@@ -124,7 +82,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
     File file = createTempFile(1024 * 1024);
     InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).setDisableZeroCopy(true))) {
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Response response = client.preparePut(getTargetUrl())
               .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(), "application/octet-stream", UTF_8)).execute().get();
       assertEquals(response.getStatusCode(), 200);
@@ -136,7 +94,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
     File file = createTempFile(1024 * 1024);
     InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000).setDisableZeroCopy(true))) {
+    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
       Response response = client.preparePut(getTargetUrl())
               .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
       assertEquals(response.getStatusCode(), 200);

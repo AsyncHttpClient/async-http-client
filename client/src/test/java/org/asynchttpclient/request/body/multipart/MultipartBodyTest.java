@@ -36,7 +36,6 @@ public class MultipartBodyTest {
 
   private static final List<Part> PARTS = new ArrayList<>();
   private static long MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE;
-  private static long MAX_MULTIPART_CONTENT_LENGTH_WITH_INPUT_STREAM_PART_ESTIMATE;
 
   static {
     try {
@@ -55,13 +54,6 @@ public class MultipartBodyTest {
     }
   }
 
-  static {
-    try (MultipartBody dummyBody = buildMultipartWithInputStreamPart()) {
-      // separator is random
-      MAX_MULTIPART_CONTENT_LENGTH_WITH_INPUT_STREAM_PART_ESTIMATE = dummyBody.getContentLength() + 100;
-    }
-  }
-
   private static File getTestfile() throws URISyntaxException {
     final ClassLoader cl = MultipartBodyTest.class.getClassLoader();
     final URL url = cl.getResource("textfile.txt");
@@ -70,10 +62,6 @@ public class MultipartBodyTest {
   }
 
   private static MultipartBody buildMultipart() {
-    return MultipartUtils.newMultipartBody(PARTS, EmptyHttpHeaders.INSTANCE);
-  }
-
-  private static MultipartBody buildMultipartWithInputStreamPart() {
     List<Part> parts = new ArrayList<>(PARTS);
     try {
       File testFile = getTestfile();
@@ -141,30 +129,11 @@ public class MultipartBodyTest {
   }
 
   @Test
-  public void transferWithCopyAndInputStreamPart() throws Exception {
-    for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_WITH_INPUT_STREAM_PART_ESTIMATE + 1; bufferLength++) {
-      try (MultipartBody multipartBody = buildMultipartWithInputStreamPart()) {
-        long transferred = transferWithCopy(multipartBody, bufferLength);
-        assertEquals(transferred, multipartBody.getContentLength());
-      }
-    }
-  }
-
-  @Test
   public void transferZeroCopy() throws Exception {
     for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
       try (MultipartBody multipartBody = buildMultipart()) {
         long tranferred = transferZeroCopy(multipartBody, bufferLength);
         assertEquals(tranferred, multipartBody.getContentLength());
-      }
-    }
-  }
-
-  @Test(expectedExceptions = UnsupportedOperationException.class)
-  public void transferZeroCopyWithInputStreamPart() throws Exception {
-    for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_WITH_INPUT_STREAM_PART_ESTIMATE + 1; bufferLength++) {
-      try (MultipartBody multipartBody = buildMultipartWithInputStreamPart()) {
-        transferZeroCopy(multipartBody, bufferLength);
       }
     }
   }
