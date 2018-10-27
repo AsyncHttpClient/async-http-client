@@ -106,6 +106,10 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
   }
 
   public long length() {
+    long contentLength = getContentLength();
+    if (contentLength < 0) {
+      return contentLength;
+    }
     return preContentLength + postContentLength + getContentLength();
   }
 

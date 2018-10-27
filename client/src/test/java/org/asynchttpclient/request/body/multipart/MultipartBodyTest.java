@@ -19,8 +19,7 @@ import io.netty.handler.codec.http.EmptyHttpHeaders;
 import org.asynchttpclient.request.body.Body.BodyState;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -63,7 +62,15 @@ public class MultipartBodyTest {
   }
 
   private static MultipartBody buildMultipart() {
-    return MultipartUtils.newMultipartBody(PARTS, EmptyHttpHeaders.INSTANCE);
+    List<Part> parts = new ArrayList<>(PARTS);
+    try {
+      File testFile = getTestfile();
+      InputStream inputStream = new BufferedInputStream(new FileInputStream(testFile));
+      parts.add(new InputStreamPart("isPart", inputStream, testFile.getName(), testFile.length()));
+    } catch (URISyntaxException | FileNotFoundException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+    return MultipartUtils.newMultipartBody(parts, EmptyHttpHeaders.INSTANCE);
   }
 
   private static long transferWithCopy(MultipartBody multipartBody, int bufferSize) throws IOException {

@@ -77,18 +77,30 @@ public class MultipartUploadTest extends AbstractBasicTest {
     File testResource1File = getClasspathFile(testResource1);
     File testResource2File = getClasspathFile(testResource2);
     File testResource3File = getClasspathFile(testResource3);
+    InputStream inputStreamFile1 = new BufferedInputStream(new FileInputStream(testResource1File));
+    InputStream inputStreamFile2 = new BufferedInputStream(new FileInputStream(testResource2File));
+    InputStream inputStreamFile3 = new BufferedInputStream(new FileInputStream(testResource3File));
 
     List<File> testFiles = new ArrayList<>();
     testFiles.add(testResource1File);
     testFiles.add(testResource2File);
     testFiles.add(testResource3File);
+    testFiles.add(testResource3File);
+    testFiles.add(testResource2File);
+    testFiles.add(testResource1File);
 
     List<String> expected = new ArrayList<>();
     expected.add(expectedContents);
     expected.add(expectedContents2);
     expected.add(expectedContents3);
+    expected.add(expectedContents3);
+    expected.add(expectedContents2);
+    expected.add(expectedContents);
 
     List<Boolean> gzipped = new ArrayList<>();
+    gzipped.add(false);
+    gzipped.add(true);
+    gzipped.add(false);
     gzipped.add(false);
     gzipped.add(true);
     gzipped.add(false);
@@ -109,8 +121,11 @@ public class MultipartUploadTest extends AbstractBasicTest {
               .addBodyPart(new StringPart("Name", "Dominic"))
               .addBodyPart(new FilePart("file3", testResource3File, "text/plain", UTF_8))
               .addBodyPart(new StringPart("Age", "3")).addBodyPart(new StringPart("Height", "shrimplike"))
+              .addBodyPart(new InputStreamPart("inputStream3", inputStreamFile3, testResource3File.getName(), testResource3File.length(), "text/plain", UTF_8))
+              .addBodyPart(new InputStreamPart("inputStream2", inputStreamFile2, testResource2File.getName(), testResource2File.length(), "application/x-gzip", null))
               .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
                       expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
+              .addBodyPart(new InputStreamPart("inputStream1", inputStreamFile1, testResource1File.getName(), testResource1File.length(), "text/plain", UTF_8))
               .build();
 
       Response res = c.executeRequest(r).get();
@@ -140,6 +155,65 @@ public class MultipartUploadTest extends AbstractBasicTest {
   @Test
   public void sendEmptyFileZeroCopy() throws Exception {
     sendEmptyFile0(false);
+  }
+
+  private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
+    File file = getClasspathFile("empty.txt");
+    try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
+      InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+      Request r = post("http://localhost" + ":" + port1 + "/upload")
+              .addBodyPart(new InputStreamPart("file", inputStream, file.getName(), file.length(), "text/plain", UTF_8)).build();
+
+      Response res = c.executeRequest(r).get();
+      assertEquals(res.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testSendEmptyFileInputStream() throws Exception {
+    sendEmptyFileInputStream(true);
+  }
+
+  @Test
+  public void testSendEmptyFileInputStreamZeroCopy() throws Exception {
+    sendEmptyFileInputStream(false);
+  }
+
+  private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
+    File file = getClasspathFile("textfile.txt");
+    try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
+      InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+      InputStreamPart part;
+      if (useContentLength) {
+        part = new InputStreamPart("file", inputStream, file.getName(), file.length());
+      } else {
+        part = new InputStreamPart("file", inputStream, file.getName());
+      }
+      Request r = post("http://localhost" + ":" + port1 + "/upload").addBodyPart(part).build();
+
+      Response res = c.executeRequest(r).get();
+      assertEquals(res.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testSendFileInputStreamUnknownContentLength() throws Exception {
+    sendFileInputStream(false, true);
+  }
+
+  @Test
+  public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
+    sendFileInputStream(false, false);
+  }
+
+  @Test
+  public void testSendFileInputStreamKnownContentLength() throws Exception {
+    sendFileInputStream(true, true);
+  }
+
+  @Test
+  public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
+    sendFileInputStream(true, false);
   }
 
   /**

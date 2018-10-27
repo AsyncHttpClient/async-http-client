@@ -75,6 +75,9 @@ public class MultipartUtils {
       } else if (part instanceof StringPart) {
         multipartParts.add(new StringMultipartPart((StringPart) part, boundary));
 
+      } else if (part instanceof InputStreamPart) {
+        multipartParts.add(new InputStreamMultipartPart((InputStreamPart) part, boundary));
+
       } else {
         throw new IllegalArgumentException("Unknown part type: " + part);
       }
