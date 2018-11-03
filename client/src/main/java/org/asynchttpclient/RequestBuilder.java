@@ -18,7 +18,7 @@ package org.asynchttpclient;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 
 /**
- * Builder for a {@link Request}. Warning: mutable and not thread-safe! Beware that it holds a reference on the Request instance it builds, so modifying the builder will modify the
+ * Builder for a {@link Request}. Warning: mutable and not thread-safe! Beware that it holds a reference to the Request instance it builds, so modifying the builder will modify the
  * request even after it has been built.
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {

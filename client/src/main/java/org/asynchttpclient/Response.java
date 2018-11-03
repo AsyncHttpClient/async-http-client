@@ -160,16 +160,16 @@ public interface Response {
   boolean hasResponseBody();
 
   /**
-   * Get remote address client initiated request to.
+   * Get the remote address that the client initiated the request to.
    *
-   * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
+   * @return The remote address that the client initiated the request to. May be {@code null} if asynchronous provider is unable to provide the remote address
    */
   SocketAddress getRemoteAddress();
 
   /**
-   * Get local address client initiated request from.
+   * Get the local address that the client initiated the request from.
    *
-   * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
+   * @return The local address that the client initiated the request from. May be {@code null} if asynchronous provider is unable to provide the local address
    */
   SocketAddress getLocalAddress();
 

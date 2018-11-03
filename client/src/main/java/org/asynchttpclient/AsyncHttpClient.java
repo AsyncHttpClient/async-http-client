@@ -21,15 +21,15 @@ import java.util.concurrent.Future;
 import java.util.function.Predicate;
 
 /**
- * This class support asynchronous and synchronous HTTP request.
+ * This class support asynchronous and synchronous HTTP requests.
  * <br>
- * To execute synchronous HTTP request, you just need to do
+ * To execute a synchronous HTTP request, you just need to do
  * <blockquote><pre>
  *    AsyncHttpClient c = new AsyncHttpClient();
  *    Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
  * </pre></blockquote>
  * <br>
- * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
+ * The code above will block until the response is fully received. To execute an asynchronous HTTP request, you
  * create an {@link AsyncHandler} or its abstract implementation, {@link AsyncCompletionHandler}
  * <br>
  * <blockquote><pre>
@@ -48,7 +48,7 @@ import java.util.function.Predicate;
  *      &#125;);
  *      Response response = f.get();
  *
- *      // We are just interested to retrieve the status code.
+ *      // We are just interested in retrieving the status code.
  *     Future&lt;Integer&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandler&lt;Integer&gt;() &#123;
  *
  *          &#64;Override
@@ -63,10 +63,10 @@ import java.util.function.Predicate;
  *      &#125;);
  *      Integer statusCode = f.get();
  * </pre></blockquote>
- * The {@link AsyncCompletionHandler#onCompleted(Response)} will be invoked once the http response has been fully read, which include
- * the http headers and the response body. Note that the entire response will be buffered in memory.
+ * The {@link AsyncCompletionHandler#onCompleted(Response)} method will be invoked once the http response has been fully read.
+ * The {@link Response} object includes the http headers and the response body. Note that the entire response will be buffered in memory.
  * <br>
- * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
+ * You can also have more control about the how the response is asynchronously processed by using an {@link AsyncHandler}
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future&lt;String&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncHandler&lt;String&gt;() &#123;
@@ -106,8 +106,8 @@ import java.util.function.Predicate;
  *
  *      String bodyResponse = f.get();
  * </pre></blockquote>
- * You can asynchronously process the response status,headers and body and decide when to
- * stop the processing the response by returning a new {@link AsyncHandler.State#ABORT} at any moment.
+ * You can asynchronously process the response status, headers and body and decide when to
+ * stop processing the response by returning a new {@link AsyncHandler.State#ABORT} at any moment.
  *
  * This class can also be used without the need of {@link AsyncHandler}.
  * <br>
@@ -125,8 +125,8 @@ import java.util.function.Predicate;
  *      Response r = f.get();
  * </pre></blockquote>
  * <br>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link DefaultAsyncHttpClientConfig#getReadTimeout()}
- * expires. This object can hold many persistent connections to different host.
+ * An instance of this class will cache every HTTP 1.1 connection and close them when the {@link DefaultAsyncHttpClientConfig#getReadTimeout()}
+ * expires. This object can hold many persistent connections to different hosts.
  */
 public interface AsyncHttpClient extends Closeable {
 
@@ -138,7 +138,7 @@ public interface AsyncHttpClient extends Closeable {
   boolean isClosed();
 
   /**
-   * Set default signature calculator to use for requests build by this client instance
+   * Set default signature calculator to use for requests built by this client instance
    *
    * @param signatureCalculator a signature calculator
    * @return {@link RequestBuilder}
