@@ -130,7 +130,7 @@ public final class NettyConnectListener<T> {
         @Override
         protected void onSuccess(Channel value) {
           try {
-            asyncHandler.onTlsHandshakeSuccess();
+            asyncHandler.onTlsHandshakeSuccess(sslHandler.engine().getSession());
           } catch (Exception e) {
             LOGGER.error("onTlsHandshakeSuccess crashed", e);
             NettyConnectListener.this.onFailure(channel, e);
