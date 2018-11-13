@@ -130,6 +130,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
 
   @Override
   public void onTlsHandshakeSuccess(SSLSession sslSession) {
+    Assert.assertNotNull(sslSession);
     firedEvents.add(TLS_HANDSHAKE_SUCCESS_EVENT);
   }
 
