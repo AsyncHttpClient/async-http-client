@@ -23,12 +23,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Alex Maltinsky
  */
-public class BlockingSemaphoreInfinite extends Semaphore {
+public class InfiniteSemaphore extends Semaphore {
 
-  public static final BlockingSemaphoreInfinite INSTANCE = new BlockingSemaphoreInfinite();
+  public static final InfiniteSemaphore INSTANCE = new InfiniteSemaphore();
   private static final long serialVersionUID = 1L;
 
-  private BlockingSemaphoreInfinite() {
+  private InfiniteSemaphore() {
     super(Integer.MAX_VALUE);
   }
 
