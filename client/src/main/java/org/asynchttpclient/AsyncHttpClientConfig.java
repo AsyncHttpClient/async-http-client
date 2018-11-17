@@ -66,6 +66,14 @@ public interface AsyncHttpClientConfig {
   int getMaxConnectionsPerHost();
 
   /**
+   * Return the maximum duration in milliseconds an {@link AsyncHttpClient} can wait to acquire a free channel
+   *
+   * @return Return the maximum duration in milliseconds an {@link AsyncHttpClient} can wait to acquire a free channel
+   */
+  int getAcquireFreeChannelTimeout();
+
+
+  /**
    * Return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
    *
    * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
