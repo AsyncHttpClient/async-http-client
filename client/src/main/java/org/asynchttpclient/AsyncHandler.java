@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.netty.request.NettyRequest;
 
+import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -186,7 +187,7 @@ public interface AsyncHandler<T> {
   /**
    * Notify the callback after the TLS was successful
    */
-  default void onTlsHandshakeSuccess() {
+  default void onTlsHandshakeSuccess(SSLSession sslSession) {
   }
 
   /**

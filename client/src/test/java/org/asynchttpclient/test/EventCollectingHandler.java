@@ -20,6 +20,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
 
+import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Queue;
@@ -128,7 +129,8 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
   }
 
   @Override
-  public void onTlsHandshakeSuccess() {
+  public void onTlsHandshakeSuccess(SSLSession sslSession) {
+    Assert.assertNotNull(sslSession);
     firedEvents.add(TLS_HANDSHAKE_SUCCESS_EVENT);
   }
 
