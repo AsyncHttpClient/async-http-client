@@ -22,6 +22,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String THREAD_POOL_NAME_CONFIG = "threadPoolName";
   public static final String MAX_CONNECTIONS_CONFIG = "maxConnections";
   public static final String MAX_CONNECTIONS_PER_HOST_CONFIG = "maxConnectionsPerHost";
+  public static final String ACQUIRE_FREE_CHANNEL_TIMEOUT = "acquireFreeChannelTimeout";
   public static final String CONNECTION_TIMEOUT_CONFIG = "connectTimeout";
   public static final String POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG = "pooledConnectionIdleTimeout";
   public static final String CONNECTION_POOL_CLEANER_PERIOD_CONFIG = "connectionPoolCleanerPeriod";
@@ -39,7 +40,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String USE_PROXY_PROPERTIES_CONFIG = "useProxyProperties";
   public static final String VALIDATE_RESPONSE_HEADERS_CONFIG = "validateResponseHeaders";
   public static final String AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG = "aggregateWebSocketFrameFragments";
-  public static final String ENABLE_WEBSOCKET_COMPRESSION_CONFIG= "enableWebSocketCompression";
+  public static final String ENABLE_WEBSOCKET_COMPRESSION_CONFIG = "enableWebSocketCompression";
   public static final String STRICT_302_HANDLING_CONFIG = "strict302Handling";
   public static final String KEEP_ALIVE_CONFIG = "keepAlive";
   public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
@@ -95,6 +96,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static int defaultMaxConnectionsPerHost() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + MAX_CONNECTIONS_PER_HOST_CONFIG);
+  }
+
+  public static int defaultAcquireFreeChannelTimeout() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + ACQUIRE_FREE_CHANNEL_TIMEOUT);
   }
 
   public static int defaultConnectTimeout() {

@@ -70,6 +70,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public int getAcquireFreeChannelTimeout() {
+    return getIntegerOpt(ACQUIRE_FREE_CHANNEL_TIMEOUT).orElse(defaultAcquireFreeChannelTimeout());
+  }
+
+  @Override
   public int getConnectTimeout() {
     return getIntegerOpt(CONNECTION_TIMEOUT_CONFIG).orElse(defaultConnectTimeout());
   }
@@ -407,7 +412,7 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   private <T> Optional<T> getOpt(Function<String, T> func, String key) {
     return config.hasPath(key)
-        ? Optional.ofNullable(func.apply(key))
-        : Optional.empty();
+            ? Optional.ofNullable(func.apply(key))
+            : Optional.empty();
   }
 }
