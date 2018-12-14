@@ -30,7 +30,7 @@ import static org.testng.Assert.assertTrue;
 
 public class RequestBuilderTest {
 
-  private final static String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_*.";
+  private final static String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890~-_.";
   private final static String HEX_CHARS = "0123456789ABCDEF";
 
   @Test
