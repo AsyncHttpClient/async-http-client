@@ -31,4 +31,20 @@ public class Utf8UrlEncoderTest {
     assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");
     assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"), "foo~b_ar");
   }
+
+	@Test
+	public void testencodeAndAppendQueryElement() {
+		StringBuilder sb = new StringBuilder();
+		Utf8UrlEncoder.encodeAndAppendQueryElement(
+				sb,
+				"-._~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+		);
+		assertEquals( sb.toString(), "-._~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
+		sb = new StringBuilder();
+		Utf8UrlEncoder.encodeAndAppendQueryElement(
+				sb,
+				"foo*bar"
+		);
+		assertEquals( sb.toString(), "foo%2Abar" );
+	}
 }

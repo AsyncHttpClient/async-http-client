@@ -135,7 +135,7 @@ public final class Utf8UrlEncoder {
   }
 
   public static StringBuilder encodeAndAppendQueryElement(StringBuilder sb, CharSequence input) {
-    return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, false);
+    return encodeAndAppendPercentEncoded(sb, input);
   }
 
   public static StringBuilder encodeAndAppendFormElement(StringBuilder sb, CharSequence input) {
