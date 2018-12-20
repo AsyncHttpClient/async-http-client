@@ -23,6 +23,6 @@ public abstract class NettyDirectBody implements NettyBody {
 
   @Override
   public void write(Channel channel, NettyResponseFuture<?> future) {
-    throw new UnsupportedOperationException("This kind of body is supposed to be writen directly");
+    throw new UnsupportedOperationException("This kind of body is supposed to be written directly");
   }
 }
