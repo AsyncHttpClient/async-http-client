@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -208,8 +210,9 @@ public class HttpServer implements Closeable {
         response.addHeader("X-" + headerName, request.getHeader(headerName));
       }
 
+      StringBuilder requestBody = new StringBuilder();
       for (Entry<String, String[]> e : baseRequest.getParameterMap().entrySet()) {
-        response.addHeader("X-" + e.getKey(), e.getValue()[0]);
+        response.addHeader("X-" + e.getKey(), URLEncoder.encode(e.getValue()[0], StandardCharsets.UTF_8.name()));
       }
 
       Cookie[] cs = request.getCookies();
@@ -219,14 +222,6 @@ public class HttpServer implements Closeable {
         }
       }
 
-      Enumeration<String> parameterNames = request.getParameterNames();
-      StringBuilder requestBody = new StringBuilder();
-      while (parameterNames.hasMoreElements()) {
-        String param = parameterNames.nextElement();
-        response.addHeader("X-" + param, request.getParameter(param));
-        requestBody.append(param);
-        requestBody.append("_");
-      }
       if (requestBody.length() > 0) {
         response.getOutputStream().write(requestBody.toString().getBytes());
       }
