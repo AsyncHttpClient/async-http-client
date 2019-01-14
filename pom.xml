@@ -151,6 +151,28 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.0.1</version>
+        <extensions>true</extensions>
+        <configuration>
+          <manifestLocation>META-INF</manifestLocation>
+          <instructions>
+            <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
+            <Bundle-Vendor>The AsyncHttpClient Project</Bundle-Vendor>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <id>osgi-bundle</id>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
