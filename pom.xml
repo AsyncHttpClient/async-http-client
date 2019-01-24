@@ -218,17 +218,14 @@
     </profile>
   </profiles>
   <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Release</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2
-      </url>
-    </repository>
     <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>sonatype-nexus-snapshots</name>
-      <url>${distMgmtSnapshotsUrl}</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
   </distributionManagement>
   <modules>
     <module>netty-utils</module>
@@ -427,7 +424,6 @@
     </dependency>
   </dependencies>
   <properties>
-    <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
