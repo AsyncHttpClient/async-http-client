@@ -17,6 +17,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okio.Buffer;
+import okio.Timeout;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
@@ -165,6 +166,11 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   public boolean isCanceled() {
     val future = futureRef.get();
     return future != null && future.isCancelled();
+  }
+
+  @Override
+  public Timeout timeout() {
+    return new Timeout().timeout(executeTimeoutMillis, TimeUnit.MILLISECONDS);
   }
 
   @Override
