@@ -18,7 +18,9 @@ import okhttp3.Request;
 import org.asynchttpclient.AsyncHttpClient;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumers;
 
@@ -30,9 +32,17 @@ import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsume
 public class AsyncHttpClientCallFactory implements Call.Factory {
   /**
    * {@link AsyncHttpClient} in use.
+   *
+   * @see #httpClientSupplier
    */
-  @NonNull
+  @Getter(AccessLevel.NONE)
   AsyncHttpClient httpClient;
+
+  /**
+   * Supplier of {@link AsyncHttpClient}, takes precedence over {@link #httpClient}.
+   */
+  @Getter(AccessLevel.NONE)
+  Supplier<AsyncHttpClient> httpClientSupplier;
 
   /**
    * List of {@link Call} builder customizers that are invoked just before creating it.
@@ -51,5 +61,18 @@ public class AsyncHttpClientCallFactory implements Call.Factory {
 
     // create a call
     return callBuilder.build();
+  }
+
+  /**
+   * {@link AsyncHttpClient} in use by this factory.
+   *
+   * @return
+   */
+  public AsyncHttpClient getHttpClient() {
+    return Optional.ofNullable(httpClientSupplier)
+            .map(Supplier::get)
+            .map(Optional::of)
+            .orElseGet(() -> Optional.ofNullable(httpClient))
+            .orElseThrow(() -> new IllegalStateException("HTTP client is not set."));
   }
 }

@@ -109,12 +109,12 @@ public class AsyncHttpClientCallFactoryTest {
     };
 
     Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder ->
-      callBuilder
-              .requestCustomizer(requestCustomizer)
-              .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
-              .onRequestSuccess(createConsumer(numRequestSuccess))
-              .onRequestFailure(createConsumer(numRequestFailure))
-              .onRequestStart(createConsumer(numRequestStart));
+            callBuilder
+                    .requestCustomizer(requestCustomizer)
+                    .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
+                    .onRequestSuccess(createConsumer(numRequestSuccess))
+                    .onRequestFailure(createConsumer(numRequestFailure))
+                    .onRequestStart(createConsumer(numRequestStart));
 
     // create factory
     val factory = AsyncHttpClientCallFactory.builder()
@@ -150,5 +150,52 @@ public class AsyncHttpClientCallFactoryTest {
 
     assertNotNull(call.getRequestCustomizers());
     assertTrue(call.getRequestCustomizers().size() == 2);
+  }
+
+  @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "HTTP client is not set.")
+  void shouldThrowISEIfHttpClientIsNotDefined() {
+    // given
+    val factory = AsyncHttpClientCallFactory.builder()
+            .build();
+
+    // when
+    val httpClient = factory.getHttpClient();
+
+    // then
+    assertNull(httpClient);
+  }
+
+  @Test
+  void shouldUseHttpClientInstanceIfSupplierIsNotAvailable() {
+    // given
+    val httpClientA = mock(AsyncHttpClient.class);
+
+    val factory = AsyncHttpClientCallFactory.builder()
+            .httpClient(httpClientA)
+            .build();
+
+    // when
+    val usedHttpClient = factory.getHttpClient();
+
+    // then
+    assertTrue(usedHttpClient == httpClientA);
+  }
+
+  @Test
+  void shouldPreferHttpClientSupplierOverHttpClient() {
+    // given
+    val httpClientA = mock(AsyncHttpClient.class);
+    val httpClientB = mock(AsyncHttpClient.class);
+
+    val factory = AsyncHttpClientCallFactory.builder()
+            .httpClient(httpClientA)
+            .httpClientSupplier(() -> httpClientB)
+            .build();
+
+    // when
+    val usedHttpClient = factory.getHttpClient();
+
+    // then
+    assertTrue(usedHttpClient == httpClientB);
   }
 }
