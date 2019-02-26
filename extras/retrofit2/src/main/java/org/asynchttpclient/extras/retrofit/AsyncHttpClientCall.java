@@ -149,7 +149,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   @Override
   public void cancel() {
     val future = futureRef.get();
-    if (future != null) {
+    if (future != null && !future.isDone()) {
       if (!future.cancel(true)) {
         log.warn("Cannot cancel future: {}", future);
       }
