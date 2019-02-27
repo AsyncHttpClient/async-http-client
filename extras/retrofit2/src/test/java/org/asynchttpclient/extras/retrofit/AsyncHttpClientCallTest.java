@@ -24,6 +24,7 @@ import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.mockito.ArgumentCaptor;
 import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -35,10 +36,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumer;
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumers;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
@@ -47,6 +49,14 @@ import static org.testng.Assert.assertTrue;
 public class AsyncHttpClientCallTest {
     static final Request REQUEST = new Request.Builder().url("http://www.google.com/").build();
 
+    private AsyncHttpClient httpClient;
+    private Supplier<AsyncHttpClient> httpClientSupplier = () -> httpClient;
+
+    @BeforeMethod
+    void setup() {
+      this.httpClient = mock(AsyncHttpClient.class);
+    }
+
     @Test(expectedExceptions = NullPointerException.class, dataProvider = "first")
     void builderShouldThrowInCaseOfMissingProperties(AsyncHttpClientCall.AsyncHttpClientCallBuilder builder) {
         builder.build();
@@ -54,12 +64,10 @@ public class AsyncHttpClientCallTest {
 
     @DataProvider(name = "first")
     Object[][] dataProviderFirst() {
-        val httpClient = mock(AsyncHttpClient.class);
-
         return new Object[][]{
                 {AsyncHttpClientCall.builder()},
                 {AsyncHttpClientCall.builder().request(REQUEST)},
-                {AsyncHttpClientCall.builder().httpClient(httpClient)}
+                {AsyncHttpClientCall.builder().httpClientSupplier(httpClientSupplier)}
         };
     }
 
@@ -77,7 +85,7 @@ public class AsyncHttpClientCallTest {
         val numRequestCustomizer = new AtomicInteger();
 
         // prepare http client mock
-        val httpClient = mock(AsyncHttpClient.class);
+        this.httpClient = mock(AsyncHttpClient.class);
 
         val mockRequest = mock(org.asynchttpclient.Request.class);
         when(mockRequest.getHeaders()).thenReturn(EmptyHttpHeaders.INSTANCE);
@@ -94,7 +102,7 @@ public class AsyncHttpClientCallTest {
 
         // create call instance
         val call = AsyncHttpClientCall.builder()
-                .httpClient(httpClient)
+                .httpClientSupplier(httpClientSupplier)
                 .request(REQUEST)
                 .onRequestStart(e -> numStarted.incrementAndGet())
                 .onRequestFailure(t -> numFailed.incrementAndGet())
@@ -163,7 +171,7 @@ public class AsyncHttpClientCallTest {
     void toIOExceptionShouldProduceExpectedResult(Throwable exception) {
         // given
         val call = AsyncHttpClientCall.builder()
-                .httpClient(mock(AsyncHttpClient.class))
+                .httpClientSupplier(httpClientSupplier)
                 .request(REQUEST)
                 .build();
 
@@ -295,6 +303,18 @@ public class AsyncHttpClientCallTest {
         assertNotEquals(response.body(), null);
     }
 
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*returned null.")
+    void getHttpClientShouldThrowISEIfSupplierReturnsNull() {
+      // given:
+      val call = AsyncHttpClientCall.builder()
+              .httpClientSupplier(() -> null)
+              .request(requestWithBody())
+              .build();
+
+      // when: should throw ISE
+      call.getHttpClient();
+    }
+
     private void givenResponseIsProduced(AsyncHttpClient client, Response response) {
         when(client.executeRequest(any(org.asynchttpclient.Request.class), any())).thenAnswer(invocation -> {
             AsyncCompletionHandler<Response> handler = invocation.getArgument(1);
@@ -304,9 +324,11 @@ public class AsyncHttpClientCallTest {
     }
 
     private okhttp3.Response whenRequestIsMade(AsyncHttpClient client, Request request) throws IOException {
-        AsyncHttpClientCall call = AsyncHttpClientCall.builder().httpClient(client).request(request).build();
-
-        return call.execute();
+        return AsyncHttpClientCall.builder()
+                .httpClientSupplier(() -> client)
+                .request(request)
+                .build()
+                .execute();
     }
 
     private Request requestWithBody() {
