@@ -6,7 +6,7 @@ before_script:
   - travis/before_script.sh
 
 script: 
-  - mvn test -Ptest-output
+  - ./mvnw test -Ptest-output
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
@@ -26,3 +26,4 @@ addons:
 cache:
   directories:
     - $HOME/.m2/repository
+    - $HOME/.m2/wrapper
