@@ -6,7 +6,7 @@ before_script:
   - travis/before_script.sh
 
 script: 
-  - mvn test -Ptest-output
+  - mvn test javadoc:javadoc -Ptest-output
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
