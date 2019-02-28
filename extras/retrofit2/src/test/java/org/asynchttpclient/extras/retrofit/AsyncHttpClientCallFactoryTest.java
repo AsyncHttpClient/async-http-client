@@ -14,23 +14,34 @@ package org.asynchttpclient.extras.retrofit;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import okhttp3.MediaType;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.testng.annotations.Test;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.REQUEST;
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCallTest.createConsumer;
 import static org.mockito.Mockito.mock;
 import static org.testng.Assert.*;
 
 @Slf4j
 public class AsyncHttpClientCallFactoryTest {
+  private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
+  private static final String JSON_BODY = "{\"foo\": \"bar\"}";
+  private static final RequestBody BODY = RequestBody.create(MEDIA_TYPE, JSON_BODY);
+  private static final String URL = "http://localhost:11000/foo/bar?a=b&c=d";
+  private static final Request REQUEST = new Request.Builder()
+          .post(BODY)
+          .addHeader("X-Foo", "Bar")
+          .url(URL)
+          .build();
   @Test
   void newCallShouldProduceExpectedResult() {
     // given
@@ -152,7 +163,8 @@ public class AsyncHttpClientCallFactoryTest {
     assertTrue(call.getRequestCustomizers().size() == 2);
   }
 
-  @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "HTTP client is not set.")
+  @Test(expectedExceptions = NullPointerException.class,
+          expectedExceptionsMessageRegExp = "httpClientSupplier is marked @NonNull but is null")
   void shouldThrowISEIfHttpClientIsNotDefined() {
     // given
     val factory = AsyncHttpClientCallFactory.builder()
@@ -168,17 +180,23 @@ public class AsyncHttpClientCallFactoryTest {
   @Test
   void shouldUseHttpClientInstanceIfSupplierIsNotAvailable() {
     // given
-    val httpClientA = mock(AsyncHttpClient.class);
+    val httpClient = mock(AsyncHttpClient.class);
 
     val factory = AsyncHttpClientCallFactory.builder()
-            .httpClient(httpClientA)
+            .httpClient(httpClient)
             .build();
 
     // when
     val usedHttpClient = factory.getHttpClient();
 
     // then
-    assertTrue(usedHttpClient == httpClientA);
+    assertTrue(usedHttpClient == httpClient);
+
+    // when
+    val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+
+    // then: call should contain correct http client
+    assertTrue(call.getHttpClient()== httpClient);
   }
 
   @Test
@@ -197,5 +215,12 @@ public class AsyncHttpClientCallFactoryTest {
 
     // then
     assertTrue(usedHttpClient == httpClientB);
+
+    // when: try to create new call
+    val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+
+    // then: call should contain correct http client
+    assertNotNull(call);
+    assertTrue(call.getHttpClient() == httpClientB);
   }
 }

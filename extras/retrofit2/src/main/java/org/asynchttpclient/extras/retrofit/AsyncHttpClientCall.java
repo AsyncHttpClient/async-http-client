@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * {@link AsyncHttpClient} <a href="http://square.github.io/retrofit/">Retrofit2</a> {@link okhttp3.Call}
@@ -48,6 +49,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   public static final long DEFAULT_EXECUTE_TIMEOUT_MILLIS = 30_000;
 
   private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
+
   /**
    * Tells whether call has been executed.
    *
@@ -55,37 +57,44 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
    * @see #isCanceled()
    */
   private final AtomicReference<CompletableFuture<Response>> futureRef = new AtomicReference<>();
+
   /**
-   * HttpClient instance.
+   * {@link AsyncHttpClient} supplier
    */
   @NonNull
-  AsyncHttpClient httpClient;
+  Supplier<AsyncHttpClient> httpClientSupplier;
+
   /**
    * {@link #execute()} response timeout in milliseconds.
    */
   @Builder.Default
   long executeTimeoutMillis = DEFAULT_EXECUTE_TIMEOUT_MILLIS;
+
   /**
    * Retrofit request.
    */
   @NonNull
   @Getter(AccessLevel.NONE)
   Request request;
+
   /**
    * List of consumers that get called just before actual async-http-client request is being built.
    */
   @Singular("requestCustomizer")
   List<Consumer<RequestBuilder>> requestCustomizers;
+
   /**
    * List of consumers that get called just before actual HTTP request is being fired.
    */
   @Singular("onRequestStart")
   List<Consumer<Request>> onRequestStart;
+
   /**
    * List of consumers that get called when HTTP request finishes with an exception.
    */
   @Singular("onRequestFailure")
   List<Consumer<Throwable>> onRequestFailure;
+
   /**
    * List of consumers that get called when HTTP request finishes successfully.
    */
@@ -234,6 +243,20 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
     });
 
     return future;
+  }
+
+  /**
+   * Returns HTTP client.
+   *
+   * @return http client
+   * @throws IllegalArgumentException if {@link #httpClientSupplier} returned {@code null}.
+   */
+  protected AsyncHttpClient getHttpClient() {
+    val httpClient = httpClientSupplier.get();
+    if (httpClient == null) {
+      throw new IllegalStateException("Async HTTP client instance supplier " + httpClientSupplier + " returned null.");
+    }
+    return httpClient;
   }
 
   /**
