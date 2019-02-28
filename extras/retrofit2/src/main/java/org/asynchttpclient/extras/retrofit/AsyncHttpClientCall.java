@@ -40,14 +40,6 @@ import java.util.function.Supplier;
 @Builder(toBuilder = true)
 @Slf4j
 class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
-  /**
-   * Default {@link #execute()} timeout in milliseconds (value: <b>{@value}</b>)
-   *
-   * @see #execute()
-   * @see #executeTimeoutMillis
-   */
-  public static final long DEFAULT_EXECUTE_TIMEOUT_MILLIS = 30_000;
-
   private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
 
   /**
@@ -63,12 +55,6 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
    */
   @NonNull
   Supplier<AsyncHttpClient> httpClientSupplier;
-
-  /**
-   * {@link #execute()} response timeout in milliseconds.
-   */
-  @Builder.Default
-  long executeTimeoutMillis = DEFAULT_EXECUTE_TIMEOUT_MILLIS;
 
   /**
    * Retrofit request.
@@ -140,7 +126,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   @Override
   public Response execute() throws IOException {
     try {
-      return executeHttpRequest().get(getExecuteTimeoutMillis(), TimeUnit.MILLISECONDS);
+      return executeHttpRequest().get(getRequestTimeoutMillis(), TimeUnit.MILLISECONDS);
     } catch (ExecutionException e) {
       throw toIOException(e.getCause());
     } catch (Exception e) {
@@ -179,7 +165,16 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
 
   @Override
   public Timeout timeout() {
-    return new Timeout().timeout(executeTimeoutMillis, TimeUnit.MILLISECONDS);
+    return new Timeout().timeout(getRequestTimeoutMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Returns HTTP request timeout in milliseconds, retrieved from http client configuration.
+   *
+   * @return request timeout in milliseconds.
+   */
+  protected long getRequestTimeoutMillis() {
+    return Math.abs(getHttpClient().getConfig().getRequestTimeout());
   }
 
   @Override
