@@ -91,6 +91,7 @@ public class Redirect30xInterceptor {
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
+                .setCookieStore(request.getCookieStore())
                 .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
                 .setFollowRedirect(true)
                 .setLocalAddress(request.getLocalAddress())
@@ -126,7 +127,8 @@ public class Redirect30xInterceptor {
 
         LOGGER.debug("Redirecting to {}", newUri);
 
-        CookieStore cookieStore = config.getCookieStore();
+        CookieStore cookieStore =
+            request.getCookieStore() != null ? request.getCookieStore() : config.getCookieStore();
         if (cookieStore != null) {
           // Update request's cookies assuming that cookie store is already updated by Interceptors
           List<Cookie> cookies = cookieStore.get(newUri);

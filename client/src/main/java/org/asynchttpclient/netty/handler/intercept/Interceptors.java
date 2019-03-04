@@ -71,12 +71,19 @@ public class Interceptors {
 
     // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
     CookieStore cookieStore = config.getCookieStore();
-    if (cookieStore != null) {
+    CookieStore requestCookieStore = request.getCookieStore();
+    if (cookieStore != null || requestCookieStore != null) {
       for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
         Cookie c = cookieDecoder.decode(cookieStr);
         if (c != null) {
           // Set-Cookie header could be invalid/malformed
-          cookieStore.add(future.getCurrentRequest().getUri(), c);
+          if (cookieStore != null) {
+            cookieStore.add(future.getCurrentRequest().getUri(), c);
+          }
+
+          if (requestCookieStore != null) {
+            requestCookieStore.add(request.getUri(), c);
+          }
         }
       }
     }
