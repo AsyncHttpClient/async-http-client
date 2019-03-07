@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.channel;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import org.asynchttpclient.Request;
@@ -22,10 +23,11 @@ public interface KeepAliveStrategy {
   /**
    * Determines whether the connection should be kept alive after this HTTP message exchange.
    *
+   * @param channel       the underlying channel
    * @param ahcRequest    the Request, as built by AHC
    * @param nettyRequest  the HTTP request sent to Netty
    * @param nettyResponse the HTTP response received from Netty
    * @return true if the connection should be kept alive, false if it should be closed.
    */
-  boolean keepAlive(Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
+  boolean keepAlive(Channel channel, Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
 }
