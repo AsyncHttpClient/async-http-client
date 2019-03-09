@@ -33,6 +33,8 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.resolver.AddressResolver;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.*;
@@ -56,6 +58,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadFactory;
@@ -430,6 +433,10 @@ public class ChannelManager {
               channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
             }
           });
+          AddressResolver<SocketAddress> addressResolver = proxy.getAddressResolver();
+          if (addressResolver != null) {
+            socksBootstrap.resolver((AddressResolverGroup<?>) addressResolver);
+          }
           promise.setSuccess(socksBootstrap);
 
         } else {
