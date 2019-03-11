@@ -16,10 +16,9 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.netty.resolver.AddressResolver;
+import io.netty.resolver.AddressResolverGroup;
 import org.asynchttpclient.Realm;
 
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +37,7 @@ public class ProxyServer {
   private final Realm realm;
   private final List<String> nonProxyHosts;
   private final ProxyType proxyType;
-  private AddressResolver<SocketAddress> addressResolver;
+  private AddressResolverGroup addressResolverGroup;
   // server can resolve domain in socks 5
 
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
@@ -52,9 +51,9 @@ public class ProxyServer {
   }
 
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
-                     ProxyType proxyType, AddressResolver<SocketAddress> addressResolver) {
+                     ProxyType proxyType, AddressResolverGroup addressResolverGroup) {
     this(host, port, securedPort, realm, nonProxyHosts, proxyType);
-    this.addressResolver = addressResolver;
+    this.addressResolverGroup = addressResolverGroup;
   }
 
   public String getHost() {
@@ -81,12 +80,12 @@ public class ProxyServer {
     return proxyType;
   }
 
-  public AddressResolver<SocketAddress> getAddressResolver() {
-    return addressResolver;
+  public AddressResolverGroup getAddressResolverGroup() {
+    return addressResolverGroup;
   }
 
   public boolean isResolveDomain() {
-    return addressResolver != null;
+    return addressResolverGroup != null;
   }
 
   /**
@@ -136,7 +135,7 @@ public class ProxyServer {
     private Realm realm;
     private List<String> nonProxyHosts;
     private ProxyType proxyType;
-    private AddressResolver<SocketAddress> addressResolver;
+    private AddressResolverGroup addressResolverGroup;
 
     public Builder(String host, int port) {
       this.host = host;
@@ -176,8 +175,8 @@ public class ProxyServer {
       return this;
     }
 
-    public Builder setAddressResolver(AddressResolver<SocketAddress> addressResolver) {
-      this.addressResolver = addressResolver;
+    public Builder setAddressResolverGroup(AddressResolverGroup addressResolverGroup) {
+      this.addressResolverGroup = addressResolverGroup;
       return this;
     }
 
@@ -185,7 +184,7 @@ public class ProxyServer {
       List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
               : Collections.emptyList();
       ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
-      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType, this.addressResolver);
+      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType, this.addressResolverGroup);
     }
   }
 }

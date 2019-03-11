@@ -33,7 +33,6 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
@@ -58,7 +57,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadFactory;
@@ -395,58 +393,78 @@ public class ChannelManager {
 
     final Promise<Bootstrap> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
-    if (uri.isWebSocket() && proxy == null) {
-      return promise.setSuccess(wsBootstrap);
+    // direct connect
+    if (proxy == null) {
+      if (uri.isWebSocket()) {
+        promise.setSuccess(wsBootstrap);
+      } else {
+        promise.setSuccess(httpBootstrap);
+      }
+      return promise;
+    }
 
-    } else if (proxy != null && proxy.getProxyType().isSocks()) {
-      Bootstrap socksBootstrap = httpBootstrap.clone();
-      ChannelHandler httpBootstrapHandler = socksBootstrap.config().handler();
+    // http proxy
+    if (proxy.getProxyType().isHttp()) {
+      promise.setSuccess(httpBootstrap);
+      return promise;
+    }
 
-      nameResolver.resolve(proxy.getHost()).addListener((Future<InetAddress> whenProxyAddress) -> {
-        if (whenProxyAddress.isSuccess()) {
-          socksBootstrap.handler(new ChannelInitializer<Channel>() {
-            @Override
-            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-              httpBootstrapHandler.handlerAdded(ctx);
-              super.handlerAdded(ctx);
-            }
+    // socks proxy
+    Bootstrap bs;
+    ChannelHandler handler;
+    if (uri.isWebSocket()) {
+      bs = wsBootstrap;
+      handler = wsBootstrap.config().handler();
+    } else {
+      bs = httpBootstrap;
+      handler = httpBootstrap.config().handler();
+    }
 
-            @Override
-            protected void initChannel(Channel channel) throws Exception {
-              InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
-              Realm realm = proxy.getRealm();
-              String username = realm != null ? realm.getPrincipal() : null;
-              String password = realm != null ? realm.getPassword() : null;
-              ProxyHandler socksProxyHandler;
-              switch (proxy.getProxyType()) {
-                case SOCKS_V4:
-                  socksProxyHandler = new Socks4ProxyHandler(proxyAddress, username);
-                  break;
+    final Bootstrap wrapFinalBs = bs;
+    final ChannelHandler wrapFinalHandler = handler;
 
-                case SOCKS_V5:
-                  socksProxyHandler = new Socks5ProxyHandler(proxyAddress, username, password);
-                  break;
+    nameResolver.resolve(proxy.getHost()).addListener((Future<InetAddress> whenProxyAddress) -> {
+      if (!whenProxyAddress.isSuccess()) {
+        promise.setFailure(whenProxyAddress.cause());
+        return;
+      }
+      wrapFinalBs.handler(new ChannelInitializer<Channel>() {
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+          wrapFinalHandler.handlerAdded(ctx);
+          super.handlerAdded(ctx);
+        }
 
-                default:
-                  throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
-              }
-              channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
-            }
-          });
-          AddressResolver<SocketAddress> addressResolver = proxy.getAddressResolver();
-          if (addressResolver != null) {
-            socksBootstrap.resolver((AddressResolverGroup<?>) addressResolver);
+        @Override
+        protected void initChannel(Channel channel) throws Exception {
+          InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+          Realm realm = proxy.getRealm();
+          String username = realm != null ? realm.getPrincipal() : null;
+          String password = realm != null ? realm.getPassword() : null;
+          ProxyHandler socksProxyHandler;
+          switch (proxy.getProxyType()) {
+            case SOCKS_V4:
+              socksProxyHandler = new Socks4ProxyHandler(proxyAddress, username);
+              break;
+
+            case SOCKS_V5:
+              socksProxyHandler = new Socks5ProxyHandler(proxyAddress, username, password);
+              break;
+
+            default:
+              throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
           }
-          promise.setSuccess(socksBootstrap);
-
-        } else {
-          promise.setFailure(whenProxyAddress.cause());
+          channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
         }
       });
-
-    } else {
-      promise.setSuccess(httpBootstrap);
-    }
+      if (proxy.getProxyType().isSocks()) {
+        AddressResolverGroup addressResolverGroup = proxy.getAddressResolverGroup();
+        if (addressResolverGroup != null) {
+          wrapFinalBs.resolver(addressResolverGroup);
+        }
+      }
+      promise.setSuccess(wrapFinalBs);
+    });
 
     return promise;
   }

@@ -351,6 +351,7 @@ public final class NettyRequestSender {
       final Promise<List<InetSocketAddress>> unResolvedPromise = ImmediateEventExecutor.INSTANCE.newPromise();
       List<InetSocketAddress> unresolvedLiWrapper = new ArrayList<>(1);
       unresolvedLiWrapper.add(unresolvedRemoteAddress);
+      scheduleRequestTimeout(future, unresolvedRemoteAddress);
       unResolvedPromise.trySuccess(unresolvedLiWrapper);
       return unResolvedPromise;
     } else {
