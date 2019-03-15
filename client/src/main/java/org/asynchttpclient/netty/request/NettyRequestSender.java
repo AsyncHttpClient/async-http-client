@@ -344,7 +344,7 @@ public final class NettyRequestSender {
       InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
       scheduleRequestTimeout(future, unresolvedRemoteAddress);
       return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
-    } else if (proxy != null && proxy.isResolveDomain() && ProxyType.SOCKS_V5 == proxy.getProxyType()) {
+    } else if (proxy != null && proxy.isResolveDomain() && proxy.getProxyType().isSocks()) {
       // resolve domain in socks 5 server
       int port = uri.getExplicitPort();
       InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
