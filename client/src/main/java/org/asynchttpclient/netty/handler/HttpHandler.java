@@ -22,7 +22,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.channel.RealConnection;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
@@ -71,8 +70,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
     logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
 
-    RealConnection realConnection = new RealConnection((InetSocketAddress) channel.localAddress(), (InetSocketAddress) channel.remoteAddress());
-    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(realConnection, future.getTargetRequest(), httpRequest, response));
+    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive((InetSocketAddress) channel.remoteAddress(), future.getTargetRequest(), httpRequest, response));
 
     NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
     HttpHeaders responseHeaders = response.headers();
