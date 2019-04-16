@@ -1,6 +1,5 @@
 package org.asynchttpclient.channel;
 
-import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
@@ -17,7 +16,7 @@ public class DefaultKeepAliveStrategy implements KeepAliveStrategy {
    * Implemented in accordance with RFC 7230 section 6.1 https://tools.ietf.org/html/rfc7230#section-6.1
    */
   @Override
-  public boolean keepAlive(Channel channel, Request ahcRequest, HttpRequest request, HttpResponse response) {
+  public boolean keepAlive(RealConnection realConnection, Request ahcRequest, HttpRequest request, HttpResponse response) {
     return HttpUtil.isKeepAlive(response)
             && HttpUtil.isKeepAlive(request)
             // support non standard Proxy-Connection
