@@ -156,7 +156,7 @@ public final class ProxyUtils {
                     return null;
                   } else {
                     InetSocketAddress address = (InetSocketAddress) proxy.address();
-                    return proxyServer(address.getHostName(), address.getPort()).build();
+                    return proxyServer(address.getHostString(), address.getPort()).build();
                   }
                 case DIRECT:
                   return null;
