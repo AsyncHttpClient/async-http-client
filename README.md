@@ -73,7 +73,7 @@ AsyncHttpClient c = asyncHttpClient(config().setProxyServer(proxyServer("127.0.0
 ### Basics
 
 AHC provides 2 APIs for defining requests: bound and unbound.
-`AsyncHttpClient` and Dls` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
+`AsyncHttpClient` and Dsl` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
 
 ```java
 import org.asynchttpclient.*;
