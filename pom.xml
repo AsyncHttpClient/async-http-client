@@ -77,6 +77,11 @@
         <artifactId>maven-scm-manager-plexus</artifactId>
         <version>1.6</version>
       </extension>
+      <extension>
+        <groupId>com.gkatzioura.maven.cloud</groupId>
+        <artifactId>s3-storage-wagon</artifactId>
+        <version>1.8</version>
+       </extension>
     </extensions>
     <defaultGoal>install</defaultGoal>
     <plugins>
@@ -194,19 +199,18 @@
       </properties>
     </profile>
   </profiles>
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Release</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2
-      </url>
-    </repository>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>sonatype-nexus-snapshots</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
-  </distributionManagement>
+   <distributionManagement>
+     <repository>
+       <id>dist-release</id>
+       <name>dist-release</name>
+       <url>${distMgmtReleasesUrl}</url>
+     </repository>
+     <snapshotRepository>
+       <id>dist-snapshots</id>
+       <name>dist-snapshots</name>
+       <url>${distMgmtSnapshotsUrl}</url>
+     </snapshotRepository>
+   </distributionManagement>
   <modules>
     <module>netty-utils</module>
     <module>client</module>
@@ -399,6 +403,7 @@
   </dependencies>
   <properties>
     <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+    <distMgmtReleasesUrl></distMgmtReleasesUrl>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
