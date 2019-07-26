@@ -9,7 +9,7 @@
   <groupId>org.asynchttpclient</groupId>
   <artifactId>async-http-client-project</artifactId>
   <name>Asynchronous Http Client Project</name>
-  <version>2.5.3-SNAPSHOT</version>
+  <version>${version}</version>
   <packaging>pom</packaging>
   <description>
     The Async Http Client (AHC) library's purpose is to allow Java
@@ -402,8 +402,9 @@
     </dependency>
   </dependencies>
   <properties>
+    <version></version>
     <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
-    <distMgmtReleasesUrl></distMgmtReleasesUrl>
+    <distMgmtReleasesUrl>http://oss.sonatype.org/content/repositories/releases</distMgmtReleasesUrl>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
