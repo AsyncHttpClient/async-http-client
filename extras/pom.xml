@@ -2,7 +2,7 @@
   <parent>
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>${version}</version>
+    <version>${project.version}</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>async-http-client-extras-parent</artifactId>
