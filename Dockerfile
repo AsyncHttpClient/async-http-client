@@ -12,7 +12,7 @@ RUN apt-get -qq update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Read repo args
-ARG VERSION
+ARG REVISION
 ARG AWS_DEFAULT_REGION
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
@@ -28,4 +28,4 @@ RUN mvn deploy -U \
   -Dgpg.skip \
   -DdistMgmtReleasesUrl=${REPO_URL}/releases \
   -DAWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-  -Dproject.version=${VERSION}
+  -Dproject.version=${REVISION}
