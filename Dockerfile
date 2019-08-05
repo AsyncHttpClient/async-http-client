@@ -1,5 +1,5 @@
 # wego-async-http-client stage
-FROM maven:3.6-jdk-11-slim as builder
+FROM maven:3.6-jdk-11-slim
 
 # Install build dependencies
 RUN apt-get -qq update && \
