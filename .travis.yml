@@ -1,6 +1,6 @@
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 before_script:
   - travis/before_script.sh
@@ -15,12 +15,6 @@ after_success:
   - travis/after_success.sh
 
 sudo: false
-
-# https://github.com/travis-ci/travis-ci/issues/3259
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 # Cache settings
 cache:
