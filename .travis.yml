@@ -1,28 +1,26 @@
-language: java
-jdk:
-  - oraclejdk8
+dist: xenial
+language: minimal
+sudo: true
+services:
+- docker
 
-before_script:
-  - travis/before_script.sh
+env:
+  global:
+  - SERVICE_NAME=asyc-http-client
+  - AWS_DEFAULT_REGION=ap-southeast-1
+  - secure: LkF6B+nBS6hUpb/E6uaXvKcai8Bw46sGJknfVj5W+0Q6ifhI+tDxRkh7Ug+VPmD+zberfJ1zczSBnCitS+POb3JhVBpuuXaec6WppAf6HamoJZHUU3EOAu22RjY60AMx9ACR4ZDvuSDq72Og2IGZHuDYd+Pp+fCb/4sKZfXG5PrYH1xaW1WhZYlq+G8J6KEjqObeZr2q77WyzJnwPmfSleuSiqBFsotQAgSYP+0BtZ2YlsqhdasHkcZWKlVH/PFGwItBgK5g63SLJaVBOoXx/Jm448N/ybubkmSXj1MHgMi4NsjS+IM5wD/tNQ/cAy0ilb94amQFIXy8La07bAqYV5Xzx2HOvUA+IkZKtGfXHR3RgtAUQb2U8B1J3tp06fk+CZAPiy8hk9GnKV5uV3g/QjC2FzzjzFSEIHLxEzHPTHlgXfIasMowAwr+E2iZUweP0EVYfY7D9lUcc5yNg8TnkTt5NgSaCnKsYsI5JfjzBNUBfcZzsgC8Z5yiC0ZVLiLFzt/WUaBnvzuzFq9vq/A8YwyZ8/ktqcRSc4+C09sfLZxSz9+HjA7ZY2C3GTjOgw3ApIGCCLXNiKLdn878Dl0cA1wNeAojfodtniEeMnrDs9i9jME7P6nkB+f4WnHzG8RBsAZZwkVGxkQeIsNP5a/ABAP/YLGPDVDpV2HI/cLUQro=
+  - secure: l2qENS1Eoc7Y9cYUlN/HUZgAnsz3qizA2xh+H4OUdMlXYbf+deS9bCUWEJB/6FDhAEx25SeJWTvf90e6E7B18mktS6BoH+tAbxF/JP8NN+MxGfGRDtOiP9GdWrwy0RzFpGZldOizfy6GNEFxi1wtE95Dm4XIsJu17IRdt6AS9bJZ3Vm3fRifJrS/c6OmeWRGHXx1ftlBClVDgb987+u8I7PJ9WQ+rgKjJvZ4PaBRxAZVKnHN0olU/OJr/zSdtygXUN4q7b9kPpf7Uc4ZFWj3K7Fh0kfEdxZILBz/B6Zr//Ht7KWQAQ61yH+NO2VHCHD5/nGfk4cQ7PuE4SdoUlq/Jf8NheY/eXujFoakrxo2UtYOl+kRk0Z7s+1XryekLrEkEF3gvovSYAB1Ln1NR/0ccLbOXtNFMwDomNkiHKcx5txWZGohLhL9yn1hhOtHwBZ7+8qUe5WsuCSpgoJ5cU3JGeW/o/F3bBoLT5m3Ff4y889cWLHoW0nCgbyp0FXulNy4IOR0j2JTuihI8H2/ZnDEQpVV7HFlSR7mgJq23e0lSEMZXvbRo2+iLR766uM7GPyYKpGHJ3nEW5wMaWQocyvPThMxu8XVqGk+q56MOA8G7gSMkSWIzqJwHLmm+YEdJgklWj9epX3V2rUXjtSP4L5jvKu8IKZ9qLaHeu+fbDIxvRs=
+  - secure: XrNa9rZ8SRsF+BmNMNyPThLwq9MzfIAK5C3zSGNxF4LBXpCet8xS1zfS/WUjhVIQnvRdgJvgcbZSswkj8lyZpI9WcCTyYH+eMdZf6kmyg2Adkygh3y23aN5/2EuAbsPckSc+U9EWjymEDEcbuIlDZ/+bhSpgo2J1UBwXuiY4TP9LyEPWrSP3DxCf3Bu1VyLnbvaQEy6xC4m1akutyCnBfkAWwQUbf7AQhXvLtkdNuw48mltcw2Itl3qgvA1dMXE06qGg68lNX3u2Bvwo7v8sylHrW2J+FbOOg7tT4Ru9SXFE9v37Lq45Y1tP1TXTjRyiOEeuUajBw85XU1a/xisdXZwGaXeqf50f3R/KPQj8oeBgCoA4xgy3YRTTx1QB0Aj/9I5cA7IY9Ld4R1RYM4jNni2vUZANOEqIqC8Gwh1EOoqfcQcTewnVRm/2gGnMg+dsSpX6REmUpqx4ivOrI1CGUasEg46+4y+LcKPBQI56EvxEKZ1YaXRqzd6kBGsDxriqlvz8pGbpds9skcIuB3W54jDweHv88XkSZD8fdUkMJyHdatQYxchujqH9MeQpeiXT/jwYEJxXCRcJ2OCJOj+xGqQmvwo5Ubect0QDm0kwOFYJ0LCqGONUtc4tkUuYxmIgJ4Yhb5mwvo7LGC4ypxhxRimmUkE4Pa7wL03YR2k9l+Y=
 
-script: 
-  - mvn test -Ptest-output
-  - find $HOME/.m2 -name "_remote.repositories" | xargs rm
-  - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
-  
-# If building master, Publish to Sonatype
-after_success: 
-  - travis/after_success.sh
-
-sudo: false
-
-# https://github.com/travis-ci/travis-ci/issues/3259
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
-
-# Cache settings
 cache:
   directories:
-    - $HOME/.m2/repository
+  - build-cache
+
+script:
+- docker build . --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  --build-arg REPO_URL=${REPO_URL} --build-arg REVISION=${TRAVIS_COMMIT} --build-arg
+  AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+before_cache:
+- docker-compose -f docker-compose.yml run --rm -v `pwd`/build-cache:/app/build-cache
+  ${SERVICE_NAME} bash docker-utils.sh save-cache
