@@ -427,6 +427,7 @@
   </dependencies>
   <properties>
     <version></version>
+    <project.version>2.5.3-SNAPSHOT</project.version>
     <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
     <distMgmtReleasesUrl>http://oss.sonatype.org/content/repositories/releases</distMgmtReleasesUrl>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
