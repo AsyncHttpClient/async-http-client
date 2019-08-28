@@ -23,6 +23,8 @@ script:
     --build-arg REPO_URL=${REPO_URL}
     --build-arg REVISION=${TRAVIS_COMMIT}
     --build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    -t wego/${SERVICE_NAME}:${TRAVIS_COMMIT}
+    - wego/${SERVICE_NAME}:latest
 
 before_cache:
-  - docker run --rm -v `pwd`/build-cache:/app/build-cache ${SERVICE_NAME} bash docker-utils.sh save-cache
+  - docker run --rm -v `pwd`/build-cache:/app/build-cache ${SERVICE_NAME}:${TRAVIS_COMMIT} bash docker-utils.sh save-cache
