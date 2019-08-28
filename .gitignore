@@ -18,3 +18,7 @@ test-output
 MANIFEST.MF
 work
 atlassian-ide-plugin.xml
+
+# Cached artifacts
+/build-cache/*
+!/build-cache/.keep
