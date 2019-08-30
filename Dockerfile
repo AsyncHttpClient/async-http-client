@@ -5,30 +5,33 @@ FROM maven:3.6-jdk-11-slim
 RUN apt-get -qq update && \
   apt-get -qq install -y --no-install-recommends \
   build-essential \
-  git \
   openssh-client \
-  locales \
-  wget \
   && rm -rf /var/lib/apt/lists/*
 
 # Read repo args
-ARG REVISION
+ARG VERSION
 ARG AWS_DEFAULT_REGION
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
-ARG AWS_SESSION_TOKEN
 ARG REPO_URL
 ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-ENV AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
 
 WORKDIR /app
 COPY . .
 
-RUN mvn deploy -U \
+RUN mvn compile -U \
   -Dmaven.test.skip=true \
   -Dgpg.skip \
   -DdistMgmtReleasesUrl=${REPO_URL}/releases \
   -DdistMgmtSnapshotsUrl=${REPO_URL}/snapshots \
   -DAWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-  -Dproject.version=${REVISION}
+  -Dproject.version=${VERSION}
+
+CMD mvn deploy -U \
+  -Dmaven.test.skip=true \
+  -Dgpg.skip \
+  -DdistMgmtReleasesUrl=${REPO_URL}/releases \
+  -DdistMgmtSnapshotsUrl=${REPO_URL}/snapshots \
+  -DAWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+  -Dproject.version=${VERSION}
