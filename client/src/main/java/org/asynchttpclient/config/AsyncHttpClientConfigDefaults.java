@@ -65,6 +65,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String CHUNKED_FILE_CHUNK_SIZE_CONFIG = "chunkedFileChunkSize";
   public static final String WEBSOCKET_MAX_BUFFER_SIZE_CONFIG = "webSocketMaxBufferSize";
   public static final String WEBSOCKET_MAX_FRAME_SIZE_CONFIG = "webSocketMaxFrameSize";
+  public static final String WEBSOCKET_PERFORM_MASKING = "webSocketPerformMasking";
   public static final String KEEP_ENCODING_HEADER_CONFIG = "keepEncodingHeader";
   public static final String SHUTDOWN_QUIET_PERIOD_CONFIG = "shutdownQuietPeriod";
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
@@ -268,6 +269,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static int defaultWebSocketMaxFrameSize() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEBSOCKET_MAX_FRAME_SIZE_CONFIG);
+  }
+
+  public static boolean defaultWebSocketPerformMasking() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + WEBSOCKET_PERFORM_MASKING);
   }
 
   public static boolean defaultKeepEncodingHeader() {

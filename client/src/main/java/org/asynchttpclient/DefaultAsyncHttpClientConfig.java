@@ -69,6 +69,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final boolean enablewebSocketCompression;
   private final int webSocketMaxBufferSize;
   private final int webSocketMaxFrameSize;
+  private final boolean webSocketPerformMasking;
 
   // timeouts
   private final int connectTimeout;
@@ -149,6 +150,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        boolean validateResponseHeaders,
                                        boolean aggregateWebSocketFrameFragments,
                                        boolean enablewebSocketCompression,
+                                       boolean webSocketPerformMasking,
 
                                        // timeouts
                                        int connectTimeout,
@@ -237,6 +239,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.enablewebSocketCompression = enablewebSocketCompression;
     this.webSocketMaxBufferSize = webSocketMaxBufferSize;
     this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+    this.webSocketPerformMasking = webSocketPerformMasking;
 
     // timeouts
     this.connectTimeout = connectTimeout;
@@ -389,6 +392,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public int getWebSocketMaxFrameSize() {
     return webSocketMaxFrameSize;
+  }
+
+  @Override
+  public boolean isWebSocketPerformMasking() {
+  	return webSocketPerformMasking;
   }
 
   // timeouts
@@ -687,6 +695,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private boolean enablewebSocketCompression = defaultEnableWebSocketCompression();
     private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
     private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
+    private boolean webSocketPerformMasking = defaultWebSocketPerformMasking();
 
     // timeouts
     private int connectTimeout = defaultConnectTimeout();
@@ -1255,6 +1264,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               validateResponseHeaders,
               aggregateWebSocketFrameFragments,
               enablewebSocketCompression,
+              webSocketPerformMasking,
               connectTimeout,
               requestTimeout,
               readTimeout,
@@ -1310,4 +1320,5 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               ioThreadsCount);
     }
   }
+
 }
