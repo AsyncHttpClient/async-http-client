@@ -24,7 +24,7 @@ before_script:
   - docker-compose -f docker-compose.yml run ${SERVICE_NAME}
 
 script:
-  - docker inspect --format "{{json .State.ExitCode }}" $(docker-compose ps -q ${SERVICE_NAME})
+  - docker inspect --format "{{json .State.ExitCode }}" $(docker-compose ps -a -q ${SERVICE_NAME})
 
 before_cache:
   - docker-compose -f docker-compose.yml run --rm -v `pwd`/build-cache:/app/build-cache
