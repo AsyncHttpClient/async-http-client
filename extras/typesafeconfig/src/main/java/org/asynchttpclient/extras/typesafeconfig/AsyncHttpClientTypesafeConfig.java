@@ -281,7 +281,7 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   @Override
   public boolean isWebSocketPerformMasking() {
-	    return getBooleanOpt(WEBSOCKET_PERFORM_MASKING).orElse(defaultWebSocketPerformMasking());
+    return getBooleanOpt(WEBSOCKET_PERFORM_MASKING).orElse(defaultWebSocketPerformMasking());
   }
 
   @Override
