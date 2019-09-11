@@ -4,10 +4,10 @@ services:
     build:
       context: .
       args:
-        REPO_URL: ${REPO_URL:?REPO_URL}
-        AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:?AWS_DEFAULT_REGION}
         VERSION: ${REVISION:?REVISION}
     image: wego/async-http-client
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:?AWS_DEFAULT_REGION}
+      REPO_URL: ${REPO_URL:?REPO_URL}
