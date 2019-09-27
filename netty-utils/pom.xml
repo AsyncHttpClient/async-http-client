@@ -8,6 +8,10 @@
   <artifactId>async-http-client-netty-utils</artifactId>
   <name>Asynchronous Http Client Netty Utils</name>
 
+  <properties>
+    <javaModuleName>org.asynchttpclient.utils</javaModuleName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
