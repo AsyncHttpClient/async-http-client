@@ -9,6 +9,10 @@
   <name>Asynchronous Http Client</name>
   <description>The Async Http Client (AHC) classes.</description>
 
+  <properties>
+    <javaModuleName>org.asynchttpclient.client</javaModuleName>
+  </properties>
+
   <build>
     <plugins>
       <plugin>

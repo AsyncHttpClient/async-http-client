@@ -14,6 +14,7 @@
   <properties>
     <retrofit2.version>2.5.0</retrofit2.version>
     <lombok.version>1.18.6</lombok.version>
+    <javaModuleName>org.asynchttpclient.extras.retrofit2</javaModuleName>
   </properties>
 
   <dependencies>

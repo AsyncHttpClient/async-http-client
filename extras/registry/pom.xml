@@ -10,4 +10,9 @@
   <description>
     The Async Http Client Registry Extras.
   </description>
+
+  <properties>
+    <javaModuleName>org.asynchttpclient.extras.registry</javaModuleName>
+  </properties>
+
 </project>

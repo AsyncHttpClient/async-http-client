@@ -8,4 +8,9 @@
   <artifactId>async-http-client-extras-simple</artifactId>
   <name>Asynchronous Http Simple Client</name>
   <description>The Async Http Simple Client.</description>
+
+  <properties>
+    <javaModuleName>org.asynchttpclient.extras.simple</javaModuleName>
+  </properties>
+
 </project>
