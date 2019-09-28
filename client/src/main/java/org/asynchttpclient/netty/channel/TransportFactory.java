@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2019 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,15 +13,14 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.EventLoopGroup;
 
-enum NioSocketChannelFactory implements ChannelFactory<NioSocketChannel> {
+import java.util.concurrent.ThreadFactory;
 
-  INSTANCE;
+public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
-  @Override
-  public NioSocketChannel newChannel() {
-    return new NioSocketChannel();
-  }
+  L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
+
 }
