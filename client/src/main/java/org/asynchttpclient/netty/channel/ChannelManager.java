@@ -16,10 +16,11 @@ package org.asynchttpclient.netty.channel;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -119,31 +120,31 @@ public class ChannelManager {
     // check if external EventLoopGroup is defined
     ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
     allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
-    ChannelFactory<? extends Channel> channelFactory;
+    TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {
       if (config.isUseNativeTransport()) {
-        eventLoopGroup = newEpollEventLoopGroup(config.getIoThreadsCount(), threadFactory);
-        channelFactory = getEpollSocketChannelFactory();
-
+        transportFactory = getNativeTransportFactory();
       } else {
-        eventLoopGroup = new NioEventLoopGroup(config.getIoThreadsCount(), threadFactory);
-        channelFactory = NioSocketChannelFactory.INSTANCE;
+        transportFactory = NioTransportFactory.INSTANCE;
       }
+      eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
 
     } else {
       eventLoopGroup = config.getEventLoopGroup();
-      if (eventLoopGroup instanceof OioEventLoopGroup)
-        throw new IllegalArgumentException("Oio is not supported");
 
       if (eventLoopGroup instanceof NioEventLoopGroup) {
-        channelFactory = NioSocketChannelFactory.INSTANCE;
+        transportFactory = NioTransportFactory.INSTANCE;
+      } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+        transportFactory = new EpollTransportFactory();
+      } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
+        transportFactory = new KQueueTransportFactory();
       } else {
-        channelFactory = getEpollSocketChannelFactory();
+        throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }
     }
 
-    httpBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
-    wsBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
+    httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
+    wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
 
     // for reactive streams
     httpBootstrap.option(ChannelOption.AUTO_READ, false);
@@ -184,21 +185,16 @@ public class ChannelManager {
     return bootstrap;
   }
 
-  private EventLoopGroup newEpollEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-    try {
-      Class<?> epollEventLoopGroupClass = Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
-      return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(ioThreadsCount, threadFactory);
-    } catch (Exception e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
-
   @SuppressWarnings("unchecked")
-  private ChannelFactory<? extends Channel> getEpollSocketChannelFactory() {
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory() {
     try {
-      return (ChannelFactory<? extends Channel>) Class.forName("org.asynchttpclient.netty.channel.EpollSocketChannelFactory").newInstance();
+      return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.EpollTransportFactory").newInstance();
     } catch (Exception e) {
-      throw new IllegalArgumentException(e);
+      try {
+        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueTransportFactory").newInstance();
+      } catch (Exception e1) {
+        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
+      }
     }
   }
 
