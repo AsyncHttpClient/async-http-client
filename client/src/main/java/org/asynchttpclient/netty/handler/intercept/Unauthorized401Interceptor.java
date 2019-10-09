@@ -77,7 +77,7 @@ public class Unauthorized401Interceptor {
 
     // FIXME what's this???
     future.setChannelState(ChannelState.NEW);
-    HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
+    HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
     switch (realm.getScheme()) {
       case BASIC:
