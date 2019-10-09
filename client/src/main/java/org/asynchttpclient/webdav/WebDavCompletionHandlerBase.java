@@ -23,7 +23,6 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -43,7 +42,20 @@ import org.xml.sax.SAXException;
  * @param <T> the result type
  */
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
-    private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebDavCompletionHandlerBase.class);
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
+
+    static {
+        DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+        if (Boolean.getBoolean("org.asynchttpclient.webdav.enableDtd")) {
+            try {
+                DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            } catch (ParserConfigurationException e) {
+                LOGGER.error("Failed to disable doctype declaration");
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+    }
 
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
@@ -77,19 +89,18 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     }
 
     private Document readXMLResponse(InputStream stream) {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         Document document = null;
         try {
-            document = factory.newDocumentBuilder().parse(stream);
+            document = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(stream);
             parse(document);
         } catch (SAXException e) {
-            logger.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } catch (ParserConfigurationException e) {
-            logger.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
         return document;
@@ -130,7 +141,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      */
     @Override
     public void onThrowable(Throwable t) {
-        logger.debug(t.getMessage(), t);
+        LOGGER.debug(t.getMessage(), t);
     }
 
     /**
