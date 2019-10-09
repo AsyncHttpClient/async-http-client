@@ -81,7 +81,7 @@ public class ProxyUnauthorized407Interceptor {
 
         // FIXME what's this???
         future.setChannelState(ChannelState.NEW);
-        HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
+        HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
         switch (proxyRealm.getScheme()) {
         case BASIC:
