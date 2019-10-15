@@ -18,6 +18,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -287,8 +288,9 @@ public class ChannelManager {
   }
 
   private void doClose() {
-    openChannels.close();
+    ChannelGroupFuture groupFuture = openChannels.close();
     channelPool.destroy();
+    groupFuture.addListener(future -> sslEngineFactory.destroy());
   }
 
   public void close() {
