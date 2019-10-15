@@ -378,7 +378,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+        <distMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
         <source.property>1.8</source.property>
         <target.property>1.8</target.property>
