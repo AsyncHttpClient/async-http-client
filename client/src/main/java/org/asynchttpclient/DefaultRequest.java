@@ -247,16 +247,6 @@ public class DefaultRequest implements Request {
   }
 
   @Override
-  public RequestBuilder toBuilder() {
-    return new RequestBuilder(this);
-  }
-
-  @Override
-  public RequestBuilder toBuilder(boolean disableUrlEncoding, boolean validateHeaders) {
-    return new RequestBuilder(this, disableUrlEncoding, validateHeaders);
-  }
-
-  @Override
   public List<Param> getQueryParams() {
     if (queryParams == null)
       // lazy load
