@@ -52,7 +52,7 @@ public class ConnectSuccessInterceptor {
 
     future.setReuseChannel(true);
     future.setConnectAllowed(false);
-    Request targetRequest = new RequestBuilder(future.getTargetRequest()).build();
+    Request targetRequest = future.getTargetRequest().toBuilder().build();
     if (whenHandshaked == null) {
       requestSender.drainChannelAndExecuteNextRequest(channel, future, targetRequest);
     } else {

@@ -162,7 +162,7 @@ public class Unauthorized401Interceptor {
         throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
     }
 
-    final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
+    final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
 
     LOGGER.debug("Sending authentication to {}", request.getUri());
     if (future.isKeepAlive()

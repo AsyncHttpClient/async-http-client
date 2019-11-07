@@ -180,4 +180,16 @@ public interface Request {
    * @return the NameResolver to be used to resolve hostnams's IP
    */
   NameResolver<InetAddress> getNameResolver();
+
+  /**
+   * @return a new request builder using this request as a prototype
+   */
+  RequestBuilder toBuilder();
+
+  /**
+   * @param disableUrlEncoding whether to disable url encoding or not
+   * @param validateHeaders whether to enable header validation or not
+   * @return a new request builder using this request as a prototype
+   */
+  RequestBuilder toBuilder(boolean disableUrlEncoding, boolean validateHeaders);
 }
