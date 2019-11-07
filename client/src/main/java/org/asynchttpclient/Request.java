@@ -180,4 +180,12 @@ public interface Request {
    * @return the NameResolver to be used to resolve hostnams's IP
    */
   NameResolver<InetAddress> getNameResolver();
+
+  /**
+   * @return a new request builder using this request as a prototype
+   */
+  @SuppressWarnings("deprecation")
+  default RequestBuilder toBuilder() {
+    return new RequestBuilder(this);
+  }
 }

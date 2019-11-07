@@ -163,7 +163,7 @@ public class ProxyUnauthorized407Interceptor {
         throw new IllegalStateException("Invalid Authentication scheme " + proxyRealm.getScheme());
     }
 
-    RequestBuilder nextRequestBuilder = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders);
+    RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
     if (future.getCurrentRequest().getUri().isSecured()) {
       nextRequestBuilder.setMethod(CONNECT);
     }

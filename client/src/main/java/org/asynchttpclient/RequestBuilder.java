@@ -39,10 +39,15 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     super(method, disableUrlEncoding, validateHeaders);
   }
 
+  /**
+   * @deprecated Use request.toBuilder() instead
+   */
+  @Deprecated
   public RequestBuilder(Request prototype) {
     super(prototype);
   }
 
+  @Deprecated
   public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
     super(prototype, disableUrlEncoding, validateHeaders);
   }

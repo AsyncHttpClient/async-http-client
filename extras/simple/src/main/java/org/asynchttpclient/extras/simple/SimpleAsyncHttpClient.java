@@ -275,7 +275,7 @@ public class SimpleAsyncHttpClient implements Closeable {
   }
 
   private RequestBuilder rebuildRequest(Request rb) {
-    return new RequestBuilder(rb);
+    return rb.toBuilder();
   }
 
   private Future<Response> execute(RequestBuilder rb, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
@@ -422,7 +422,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     }
 
     private Builder(SimpleAsyncHttpClient client) {
-      this.requestBuilder = new RequestBuilder(client.requestBuilder.build());
+      this.requestBuilder = client.requestBuilder.build().toBuilder();
       this.defaultThrowableHandler = client.defaultThrowableHandler;
       this.errorDocumentBehaviour = client.errorDocumentBehaviour;
       this.enableResumableDownload = client.resumeEnabled;

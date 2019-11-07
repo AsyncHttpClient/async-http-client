@@ -194,7 +194,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
       try {
         List<Cookie> cookies = config.getCookieStore().get(request.getUri());
         if (!cookies.isEmpty()) {
-          RequestBuilder requestBuilder = new RequestBuilder(request);
+          RequestBuilder requestBuilder = request.toBuilder();
           for (Cookie cookie : cookies) {
             requestBuilder.addOrReplaceCookie(cookie);
           }
@@ -264,7 +264,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     if (request.getRangeOffset() != 0) {
-      RequestBuilder builder = new RequestBuilder(request);
+      RequestBuilder builder = request.toBuilder();
       builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
       request = builder.build();
     }
