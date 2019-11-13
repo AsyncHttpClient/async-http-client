@@ -61,10 +61,6 @@
       <classifier>osx-x86_64</classifier>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-resolver-dns</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.reactivestreams</groupId>
       <artifactId>reactive-streams</artifactId>
     </dependency>
