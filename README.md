@@ -9,15 +9,36 @@ It's built on top of [Netty](https://github.com/netty/netty). It's currently com
 
 ## Installation
 
-Binaries are deployed on Maven central:
+Binaries are deployed on Maven Central.
+
+Import the AsyncHttpClient Bill of Materials (BOM) to add dependency management for AsyncHttpClient artifacts to your project:
 
 ```xml
-<dependency>
-	<groupId>org.asynchttpclient</groupId>
-	<artifactId>async-http-client</artifactId>
-	<version>LATEST_VERSION</version>
-</dependency>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client-bom</artifactId>
+            <version>LATEST_VERSION</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 ```
+
+Add a dependency on the main AsyncHttpClient artifact: 
+
+```xml
+<dependencies>
+    <dependency>
+    	<groupId>org.asynchttpclient</groupId>
+    	<artifactId>async-http-client</artifactId>
+    </dependency>
+</dependencies>
+```
+
+The `async-http-client-extras-*` and other modules can also be added without having to specify the version for each dependency, because they are all managed via the BOM.
 
 ## Version
 
