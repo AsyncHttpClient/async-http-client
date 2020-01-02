@@ -52,7 +52,7 @@ public interface AsyncHttpClientConfig {
   String getThreadPoolName();
 
   /**
-   * Return the name of {@link org.asynchttpclient.netty.channel.ChannelManager}, which is used for thread naming and debugging.
+   * Return the name of threadPool for {@link org.asynchttpclient.netty.channel.ChannelManager}, which is used for thread naming and debugging.
    *
    * @return the name.
    */
@@ -157,9 +157,9 @@ public interface AsyncHttpClientConfig {
   ThreadFactory getThreadFactory();
 
   /**
-   * Return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels.
+   * Return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels (I/O).
    *
-   * @return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels.
+   * @return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels (I/O).
    * If no {@link ThreadFactory} has been explicitly provided, this method will return <code>null</code>
    */
   ThreadFactory getChannelThreadFactory();
