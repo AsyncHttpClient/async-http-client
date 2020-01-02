@@ -60,6 +60,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public String getChannelThreadPoolName() {
+    return getStringOpt(CHANNEL_THREAD_POOL_NAME_CONFIG).orElse(defaultChannelThreadPoolName());
+  }
+
+  @Override
   public int getMaxConnections() {
     return getIntegerOpt(MAX_CONNECTIONS_CONFIG).orElse(defaultMaxConnections());
   }
@@ -126,6 +131,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   @Override
   public ThreadFactory getThreadFactory() {
+    return null;
+  }
+
+  @Override
+  public ThreadFactory getChannelThreadFactory() {
     return null;
   }
 

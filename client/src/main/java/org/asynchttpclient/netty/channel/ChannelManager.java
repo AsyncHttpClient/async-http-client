@@ -119,7 +119,7 @@ public class ChannelManager {
     handshakeTimeout = config.getHandshakeTimeout();
 
     // check if external EventLoopGroup is defined
-    ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
+    ThreadFactory threadFactory = config.getChannelThreadFactory() != null ? config.getChannelThreadFactory() : new DefaultThreadFactory(config.getChannelThreadPoolName());
     allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
     TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {

@@ -52,6 +52,13 @@ public interface AsyncHttpClientConfig {
   String getThreadPoolName();
 
   /**
+   * Return the name of {@link org.asynchttpclient.netty.channel.ChannelManager}, which is used for thread naming and debugging.
+   *
+   * @return the name.
+   */
+  String getChannelThreadPoolName();
+
+  /**
    * Return the maximum number of connections an {@link AsyncHttpClient} can handle.
    *
    * @return the maximum number of connections an {@link AsyncHttpClient} can handle.
@@ -148,6 +155,14 @@ public interface AsyncHttpClientConfig {
    * provided, this method will return <code>null</code>
    */
   ThreadFactory getThreadFactory();
+
+  /**
+   * Return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels.
+   *
+   * @return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels.
+   * If no {@link ThreadFactory} has been explicitly provided, this method will return <code>null</code>
+   */
+  ThreadFactory getChannelThreadFactory();
 
   /**
    * An instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
