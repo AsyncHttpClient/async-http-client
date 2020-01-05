@@ -157,9 +157,9 @@ public interface AsyncHttpClientConfig {
   ThreadFactory getThreadFactory();
 
   /**
-   * Return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels (I/O).
+   * Return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling I/O.
    *
-   * @return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling channels (I/O).
+   * @return the {@link java.util.concurrent.ThreadFactory} an {@link org.asynchttpclient.netty.channel.ChannelManager} use for handling I/O.
    * If no {@link ThreadFactory} has been explicitly provided, this method will return <code>null</code>
    */
   ThreadFactory getChannelThreadFactory();
