@@ -310,6 +310,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public String getUnixSocket() {
+    return getStringOpt(UNIX_SOCKET).orElse(defaultUnixSocket());
+  }
+
+  @Override
   public Consumer<Channel> getHttpAdditionalChannelInitializer() {
     return null;
   }

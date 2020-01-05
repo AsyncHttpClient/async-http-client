@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -34,16 +35,16 @@ public class NettyChannelConnector {
           .newUpdater(NettyChannelConnector.class, "i");
 
   private final AsyncHandler<?> asyncHandler;
-  private final InetSocketAddress localAddress;
-  private final List<InetSocketAddress> remoteAddresses;
+  private final SocketAddress localAddress;
+  private final List<? extends SocketAddress> remoteAddresses;
   private final AsyncHttpClientState clientState;
   private volatile int i = 0;
 
-  public NettyChannelConnector(InetAddress localAddress,
-                               List<InetSocketAddress> remoteAddresses,
+  public NettyChannelConnector(SocketAddress localAddress,
+                               List<? extends SocketAddress> remoteAddresses,
                                AsyncHandler<?> asyncHandler,
                                AsyncHttpClientState clientState) {
-    this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
+    this.localAddress = localAddress ;
     this.remoteAddresses = remoteAddresses;
     this.asyncHandler = asyncHandler;
     this.clientState = clientState;
@@ -55,7 +56,7 @@ public class NettyChannelConnector {
   }
 
   public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
-    final InetSocketAddress remoteAddress = remoteAddresses.get(i);
+    final SocketAddress remoteAddress = remoteAddresses.get(i);
 
     try {
       asyncHandler.onTcpConnectAttempt(remoteAddress);
@@ -76,7 +77,7 @@ public class NettyChannelConnector {
     }
   }
 
-  private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
+  private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, SocketAddress remoteAddress) {
 
     bootstrap.connect(remoteAddress, localAddress)
             .addListener(new SimpleChannelFutureListener() {

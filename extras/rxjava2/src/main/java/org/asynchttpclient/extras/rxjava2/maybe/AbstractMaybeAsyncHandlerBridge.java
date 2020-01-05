@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -155,7 +156,7 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
   }
 
   @Override
-  public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+  public void onHostnameResolutionSuccess(String name, List<? extends SocketAddress> addresses) {
     executeUnlessEmitterDisposed(() -> delegate().onHostnameResolutionSuccess(name, addresses));
   }
 
@@ -165,17 +166,17 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
   }
 
   @Override
-  public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+  public void onTcpConnectAttempt(SocketAddress remoteAddress) {
     executeUnlessEmitterDisposed(() -> delegate().onTcpConnectAttempt(remoteAddress));
   }
 
   @Override
-  public void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+  public void onTcpConnectSuccess(SocketAddress remoteAddress, Channel connection) {
     executeUnlessEmitterDisposed(() -> delegate().onTcpConnectSuccess(remoteAddress, connection));
   }
 
   @Override
-  public void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
+  public void onTcpConnectFailure(SocketAddress remoteAddress, Throwable cause) {
     executeUnlessEmitterDisposed(() -> delegate().onTcpConnectFailure(remoteAddress, cause));
   }
 

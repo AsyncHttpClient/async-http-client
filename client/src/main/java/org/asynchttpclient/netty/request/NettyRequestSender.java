@@ -18,6 +18,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.handler.codec.http.*;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
@@ -296,35 +297,65 @@ public final class NettyRequestSender {
       // exit and don't try to resolve address
       return future;
     }
+    if (config.isUseUnixDomain()){
+      resolveDomainAddresses(request, proxy, future, asyncHandler)
+              .addListener(new SimpleFutureListener<List<DomainSocketAddress>>() {
 
-    resolveAddresses(request, proxy, future, asyncHandler)
-            .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
-
-              @Override
-              protected void onSuccess(List<InetSocketAddress> addresses) {
-                NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
-                        NettyRequestSender.this, channelManager, connectionSemaphore);
-                NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
-                        addresses, asyncHandler, clientState);
-                if (!future.isDone()) {
-                  // Do not throw an exception when we need an extra connection for a redirect
-                  // FIXME why? This violate the max connection per host handling, right?
-                  channelManager.getBootstrap(request.getUri(), request.getNameResolver(), proxy)
-                          .addListener((Future<Bootstrap> whenBootstrap) -> {
-                            if (whenBootstrap.isSuccess()) {
-                              connector.connect(whenBootstrap.get(), connectListener);
-                            } else {
-                              abort(null, future, whenBootstrap.cause());
-                            }
-                          });
+                @Override
+                protected void onSuccess(List<DomainSocketAddress> addresses) {
+                  NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
+                          NettyRequestSender.this, channelManager, connectionSemaphore);
+                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
+                          addresses, asyncHandler, clientState);
+                  if (!future.isDone()) {
+                    // Do not throw an exception when we need an extra connection for a redirect
+                    // FIXME why? This violate the max connection per host handling, right?
+                    channelManager.getBootstrap(request.getUri(), null, null)
+                            .addListener((Future<Bootstrap> whenBootstrap) -> {
+                              if (whenBootstrap.isSuccess()) {
+                                connector.connect(whenBootstrap.get(), connectListener);
+                              } else {
+                                abort(null, future, whenBootstrap.cause());
+                              }
+                            });
+                  }
                 }
-              }
 
-              @Override
-              protected void onFailure(Throwable cause) {
-                abort(null, future, getCause(cause));
-              }
-            });
+                @Override
+                protected void onFailure(Throwable cause) {
+                  abort(null, future, getCause(cause));
+                }
+              });
+    }else {
+      resolveAddresses(request, proxy, future, asyncHandler)
+              .addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+
+                @Override
+                protected void onSuccess(List<InetSocketAddress> addresses) {
+                  NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
+                          NettyRequestSender.this, channelManager, connectionSemaphore);
+                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
+                          addresses, asyncHandler, clientState);
+                  if (!future.isDone()) {
+                    // Do not throw an exception when we need an extra connection for a redirect
+                    // FIXME why? This violate the max connection per host handling, right?
+                    channelManager.getBootstrap(request.getUri(), request.getNameResolver(), proxy)
+                            .addListener((Future<Bootstrap> whenBootstrap) -> {
+                              if (whenBootstrap.isSuccess()) {
+                                connector.connect(whenBootstrap.get(), connectListener);
+                              } else {
+                                abort(null, future, whenBootstrap.cause());
+                              }
+                            });
+                  }
+                }
+
+                @Override
+                protected void onFailure(Throwable cause) {
+                  abort(null, future, getCause(cause));
+                }
+              });
+    }
 
     return future;
   }
@@ -351,10 +382,32 @@ public final class NettyRequestSender {
 
       if (request.getAddress() != null) {
         // bypass resolution
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
-        return promise.setSuccess(singletonList(inetSocketAddress));
+        InetSocketAddress address = (InetSocketAddress) request.getAddress();
+        if (address.getPort() != port){
+          address = new InetSocketAddress(address.getAddress(), port);
+        }
+        return promise.setSuccess(singletonList(address));
       } else {
         return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
+      }
+    }
+  }
+  private <T> Future<List<DomainSocketAddress>> resolveDomainAddresses(Request request,
+                                                                       ProxyServer proxy,
+                                                                       NettyResponseFuture<T> future,
+                                                                       AsyncHandler<T> asyncHandler) {
+
+    if (proxy != null ) {
+      throw new IllegalArgumentException("Unix domain socket not support proxy");
+    } else {
+
+      DomainSocketAddress socketAddress = new DomainSocketAddress(config.getUnixSocket());
+      scheduleRequestTimeout(future, socketAddress);
+
+      if (request.getAddress() != null) {
+        throw new IllegalArgumentException("Unix domain socket not support set address !");
+      } else {
+        return RequestHostnameResolver.INSTANCE.resolve(request.getDomainNameResolver(), socketAddress, asyncHandler);
       }
     }
   }
@@ -442,7 +495,7 @@ public final class NettyRequestSender {
   }
 
   private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture,
-                                      InetSocketAddress originalRemoteAddress) {
+                                      SocketAddress originalRemoteAddress) {
     nettyResponseFuture.touch();
     TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config,
             originalRemoteAddress);

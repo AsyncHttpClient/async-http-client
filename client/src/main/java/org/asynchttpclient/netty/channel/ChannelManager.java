@@ -38,6 +38,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.*;
+import io.netty.util.internal.StringUtil;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -51,6 +52,7 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +126,11 @@ public class ChannelManager {
     TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {
       if (config.isUseNativeTransport()) {
-        transportFactory = getNativeTransportFactory();
+        if (config.isUseUnixDomain()){
+          transportFactory = getDomainTransportFactory();
+        }else {
+          transportFactory = getNativeTransportFactory();
+        }
       } else {
         transportFactory = NioTransportFactory.INSTANCE;
       }
@@ -134,11 +140,22 @@ public class ChannelManager {
       eventLoopGroup = config.getEventLoopGroup();
 
       if (eventLoopGroup instanceof NioEventLoopGroup) {
+        if (config.isUseUnixDomain()){
+          throw new IllegalArgumentException("Unix domain socket not support  NioEventLoopGroup now!");
+        }
         transportFactory = NioTransportFactory.INSTANCE;
       } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
-        transportFactory = new EpollTransportFactory();
+        if (config.isUseUnixDomain()){
+          transportFactory = new EpollDomainTransportFactory();
+        }else {
+          transportFactory = new EpollTransportFactory();
+        }
       } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
-        transportFactory = new KQueueTransportFactory();
+        if (config.isUseUnixDomain()){
+          transportFactory = new KQueueDomainTransportFactory();
+        }else {
+          transportFactory = new KQueueTransportFactory();
+        }
       } else {
         throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }
@@ -193,6 +210,18 @@ public class ChannelManager {
     } catch (Exception e) {
       try {
         return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueTransportFactory").newInstance();
+      } catch (Exception e1) {
+        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
+      }
+    }
+  }
+
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getDomainTransportFactory() {
+    try {
+      return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.EpollDomainTransportFactory").newInstance();
+    } catch (Exception e) {
+      try {
+        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueDomainTransportFactory").newInstance();
       } catch (Exception e1) {
         throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
       }

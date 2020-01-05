@@ -70,7 +70,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
     logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
 
-    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive((InetSocketAddress) channel.remoteAddress(), future.getTargetRequest(), httpRequest, response));
+    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(channel.remoteAddress(), future.getTargetRequest(), httpRequest, response));
 
     NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
     HttpHeaders responseHeaders = response.headers();

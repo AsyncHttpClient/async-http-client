@@ -294,6 +294,13 @@ public interface AsyncHttpClientConfig {
 
   boolean isUseNativeTransport();
 
+  String getUnixSocket();
+
+  default boolean isUseUnixDomain(){
+    String unixSocket = getUnixSocket();
+    return unixSocket !=null && !unixSocket.isEmpty();
+  }
+
   Consumer<Channel> getHttpAdditionalChannelInitializer();
 
   Consumer<Channel> getWsAdditionalChannelInitializer();

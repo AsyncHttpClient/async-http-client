@@ -18,6 +18,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import org.asynchttpclient.Request;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public interface KeepAliveStrategy {
 
@@ -30,5 +31,5 @@ public interface KeepAliveStrategy {
    * @param nettyResponse  the HTTP response received from Netty
    * @return true if the connection should be kept alive, false if it should be closed.
    */
-  boolean keepAlive(InetSocketAddress remoteAddress, Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
+  boolean keepAlive(SocketAddress remoteAddress, Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
 }
