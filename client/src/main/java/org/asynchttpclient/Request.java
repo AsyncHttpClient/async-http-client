@@ -64,7 +64,7 @@ public interface Request {
   String getUrl();
 
   /**
-   * @return the InetAddress to be used to bypass uri's hostname resolution
+   * @return the SocketAddress to be used to bypass uri's hostname  or unix domain path resolution
    */
   SocketAddress getAddress();
 

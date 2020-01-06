@@ -30,7 +30,6 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {

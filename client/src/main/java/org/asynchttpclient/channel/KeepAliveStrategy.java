@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import org.asynchttpclient.Request;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 public interface KeepAliveStrategy {
@@ -25,7 +24,7 @@ public interface KeepAliveStrategy {
   /**
    * Determines whether the connection should be kept alive after this HTTP message exchange.
    *
-   * @param remoteAddress  the remote InetSocketAddress associated with the request
+   * @param remoteAddress  the remote SocketAddress associated with the request
    * @param ahcRequest     the Request, as built by AHC
    * @param nettyRequest   the HTTP request sent to Netty
    * @param nettyResponse  the HTTP response received from Netty

@@ -167,16 +167,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     return asDerivedType();
   }
 
-  public T setLocalAddress(InetAddress address) {
-    this.localAddress = new InetSocketAddress(address,0);
-    return asDerivedType();
-  }
-  public T setDomainAddress(DomainSocketAddress address) {
+  public T setAddress(SocketAddress address) {
     this.address = address;
     return asDerivedType();
   }
 
-  public T setDomainLocalAddress(DomainSocketAddress address) {
+  public T setLocalAddress(InetAddress address) {
+    this.localAddress = new InetSocketAddress(address,0);
+    return asDerivedType();
+  }
+
+  public T setLocalAddress(SocketAddress address) {
     this.localAddress = address;
     return asDerivedType();
   }

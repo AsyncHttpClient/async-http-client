@@ -48,9 +48,6 @@ public class CompletableFutures {
                 .thenApply(Response::getResponseBody)
                 .thenAccept(System.out::println)
                 .join();
-      }
-      // support unix domain socket
-      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
         asyncHttpClient
                 .prepareGet("/hello/unix") // will add http:127.0.0.1:80
                 .execute()

@@ -21,7 +21,6 @@ import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
 
 import javax.net.ssl.SSLSession;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Queue;

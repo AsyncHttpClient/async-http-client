@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
@@ -240,7 +241,7 @@ public final class NettyRequestSender {
     SocketAddress channelRemoteAddress = channel.remoteAddress();
     if (channelRemoteAddress != null) {
       // otherwise, bad luck, the channel was closed, see bellow
-      scheduleRequestTimeout(future, (InetSocketAddress) channelRemoteAddress);
+      scheduleRequestTimeout(future,  channelRemoteAddress);
     }
 
     future.setChannelState(ChannelState.POOLED);
@@ -400,12 +401,15 @@ public final class NettyRequestSender {
     if (proxy != null ) {
       throw new IllegalArgumentException("Unix domain socket not support proxy");
     } else {
-
       DomainSocketAddress socketAddress = new DomainSocketAddress(config.getUnixSocket());
       scheduleRequestTimeout(future, socketAddress);
-
-      if (request.getAddress() != null) {
-        throw new IllegalArgumentException("Unix domain socket not support set address !");
+      SocketAddress address = request.getAddress();
+      if (address != null) {
+        final Promise<List<DomainSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+        if (!(address instanceof DomainSocketAddress)){
+          throw new IllegalArgumentException("address must be instance of DomainSocketAddress");
+        }
+        return promise.setSuccess(singletonList((DomainSocketAddress) address));
       } else {
         return RequestHostnameResolver.INSTANCE.resolve(request.getDomainNameResolver(), socketAddress, asyncHandler);
       }

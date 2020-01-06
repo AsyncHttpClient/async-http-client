@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.netty.request.NettyRequest;
 
 import javax.net.ssl.SSLSession;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 

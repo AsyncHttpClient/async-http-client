@@ -32,9 +32,6 @@ import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -93,11 +90,10 @@ public class Redirect30xInterceptor {
                 && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
-        InetSocketAddress localAddress = (InetSocketAddress) request.getLocalAddress();
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
                 .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
                 .setFollowRedirect(true)
-                .setLocalAddress(localAddress.getAddress())
+                .setLocalAddress(request.getLocalAddress())
                 .setNameResolver(request.getNameResolver())
                 .setDomainNameResolver(request.getDomainNameResolver())
                 .setProxyServer(request.getProxyServer())

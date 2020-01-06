@@ -20,8 +20,6 @@ import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;

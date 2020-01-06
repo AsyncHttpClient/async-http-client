@@ -5,7 +5,6 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import org.asynchttpclient.Request;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
