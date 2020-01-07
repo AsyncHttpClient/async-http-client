@@ -38,6 +38,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.*;
+import io.netty.util.internal.PlatformDependent;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -188,15 +189,20 @@ public class ChannelManager {
 
   @SuppressWarnings("unchecked")
   private TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory() {
-    try {
-      return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.EpollTransportFactory").newInstance();
-    } catch (Exception e) {
-      try {
-        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueTransportFactory").newInstance();
-      } catch (Exception e1) {
-        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
-      }
+    String nativeTransportFactoryClassName = null;
+    if (PlatformDependent.isOsx()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueTransportFactory";
+    } else if (!PlatformDependent.isWindows()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollTransportFactory";
     }
+
+    try {
+      if (nativeTransportFactoryClassName != null) {
+        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName(nativeTransportFactoryClassName).newInstance();
+      }
+    } catch (Exception e) {
+    }
+    throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
   }
 
   public void configureBootstraps(NettyRequestSender requestSender) {
