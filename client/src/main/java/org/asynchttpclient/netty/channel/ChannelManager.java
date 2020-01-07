@@ -353,6 +353,11 @@ public class ChannelManager {
 
     if (requestUri.isWebSocket()) {
       pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
+
+      if (config.isEnableWebSocketCompression()) {
+        pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+      }
+
       pipeline.remove(AHC_HTTP_HANDLER);
     }
     return whenHanshaked;
