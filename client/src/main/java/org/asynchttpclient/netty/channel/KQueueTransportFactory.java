@@ -13,23 +13,16 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueSocketChannel;
+import org.asynchttpclient.util.ReflectionUtil;
 
 import java.util.concurrent.ThreadFactory;
 
 class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQueueEventLoopGroup> {
 
   KQueueTransportFactory() {
-    try {
-      Class.forName("io.netty.channel.kqueue.KQueue");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("The kqueue transport is not available");
-    }
-    if (!KQueue.isAvailable()) {
-      throw new IllegalStateException("The kqueue transport is not supported");
-    }
+    ReflectionUtil.loadKQueueClass();
   }
 
   @Override

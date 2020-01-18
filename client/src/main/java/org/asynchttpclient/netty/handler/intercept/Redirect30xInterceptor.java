@@ -93,7 +93,7 @@ public class Redirect30xInterceptor {
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
                 .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
                 .setFollowRedirect(true)
-                .setLocalAddress(request.getLocalAddress())
+                .setLocalAddress(request.getLocalSocketAddress())
                 .setNameResolver(request.getNameResolver())
                 .setDomainNameResolver(request.getDomainNameResolver())
                 .setProxyServer(request.getProxyServer())

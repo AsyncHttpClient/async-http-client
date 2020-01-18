@@ -64,14 +64,24 @@ public interface Request {
   String getUrl();
 
   /**
-   * @return the SocketAddress to be used to bypass uri's hostname  or unix domain path resolution
+   * @return the InetAddress to be used to bypass uri's hostname  or unix domain path resolution
    */
-  SocketAddress getAddress();
+  InetAddress getAddress();
 
   /**
    * @return the local address to bind from
    */
-  SocketAddress getLocalAddress();
+  InetAddress getLocalAddress();
+
+  /**
+   * @return the local address to bind from
+   */
+  SocketAddress getLocalSocketAddress();
+
+  /**
+   * @return the SocketAddress to be used to bypass uri's hostname  or unix domain path resolution
+   */
+  SocketAddress getSocketAddress();
 
   /**
    * @return the HTTP headers

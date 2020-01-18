@@ -112,8 +112,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     this.method = prototype.getMethod();
     this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
     this.uri = prototype.getUri();
-    this.address = prototype.getAddress();
-    this.localAddress = prototype.getLocalAddress();
+    this.address = prototype.getSocketAddress();
+    this.localAddress = prototype.getLocalSocketAddress();
     this.headers = new DefaultHttpHeaders(validateHeaders);
     this.headers.add(prototype.getHeaders());
     if (isNonEmpty(prototype.getCookies())) {
@@ -151,9 +151,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   }
 
   public T setUrl(String url) {
-    if (!url.contains("://")){
-      url = "http://127.0.0.1:80" + url;
-    }
     return setUri(Uri.create(url));
   }
 

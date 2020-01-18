@@ -36,27 +36,21 @@ public class CompletableFutures {
               .thenAccept(System.out::println)
               .join();
     }
-    if (!isWindows()) {
-      // support unix domain socket
-      DefaultAsyncHttpClientConfig.Builder config = config();
-      config.setUnixSocket("/root/server.socket"); // when the unixSocket is set, the useNativeTransport will be true.
-      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-        asyncHttpClient
-                .prepareGet("http://www.example.com/")
-                .execute()
-                .toCompletableFuture()
-                .thenApply(Response::getResponseBody)
-                .thenAccept(System.out::println)
-                .join();
-        asyncHttpClient
-                .prepareGet("/hello/unix") // will add http:127.0.0.1:80
-                .execute()
-                .toCompletableFuture()
-                .thenApply(Response::getResponseBody)
-                .thenAccept(System.out::println)
-                .join();
-      }
-    }
+//    example of use unix domain socket
+//    if (!isWindows()) {
+//      // support unix domain socket
+//      DefaultAsyncHttpClientConfig.Builder config = config();
+//      config.setUnixSocket("/root/server.socket"); // when the unixSocket is set, the useNativeTransport will be true.
+//      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+//        asyncHttpClient
+//                .prepareGet("http://www.example.com/")
+//                .execute()
+//                .toCompletableFuture()
+//                .thenApply(Response::getResponseBody)
+//                .thenAccept(System.out::println)
+//                .join();
+//      }
+//    }
 
   }
 

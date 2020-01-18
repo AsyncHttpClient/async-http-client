@@ -306,7 +306,7 @@ public final class NettyRequestSender {
                 protected void onSuccess(List<DomainSocketAddress> addresses) {
                   NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
                           NettyRequestSender.this, channelManager, connectionSemaphore);
-                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
+                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalSocketAddress(),
                           addresses, asyncHandler, clientState);
                   if (!future.isDone()) {
                     // Do not throw an exception when we need an extra connection for a redirect
@@ -335,7 +335,7 @@ public final class NettyRequestSender {
                 protected void onSuccess(List<InetSocketAddress> addresses) {
                   NettyConnectListener<T> connectListener = new NettyConnectListener<>(future,
                           NettyRequestSender.this, channelManager, connectionSemaphore);
-                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(),
+                  NettyChannelConnector connector = new NettyChannelConnector(request.getLocalSocketAddress(),
                           addresses, asyncHandler, clientState);
                   if (!future.isDone()) {
                     // Do not throw an exception when we need an extra connection for a redirect
@@ -381,9 +381,9 @@ public final class NettyRequestSender {
       InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
       scheduleRequestTimeout(future, unresolvedRemoteAddress);
 
-      if (request.getAddress() != null) {
+      if (request.getSocketAddress() != null) {
         // bypass resolution
-        InetSocketAddress address = (InetSocketAddress) request.getAddress();
+        InetSocketAddress address = (InetSocketAddress) request.getSocketAddress();
         if (address.getPort() != port){
           address = new InetSocketAddress(address.getAddress(), port);
         }
@@ -403,7 +403,7 @@ public final class NettyRequestSender {
     } else {
       DomainSocketAddress socketAddress = new DomainSocketAddress(config.getUnixSocket());
       scheduleRequestTimeout(future, socketAddress);
-      SocketAddress address = request.getAddress();
+      SocketAddress address = request.getSocketAddress();
       if (address != null) {
         final Promise<List<DomainSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
         if (!(address instanceof DomainSocketAddress)){

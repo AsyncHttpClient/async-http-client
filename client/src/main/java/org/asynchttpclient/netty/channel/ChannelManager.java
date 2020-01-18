@@ -38,7 +38,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.*;
-import io.netty.util.internal.StringUtil;
+import io.netty.util.internal.PlatformDependent;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -52,7 +52,6 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,11 +125,7 @@ public class ChannelManager {
     TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {
       if (config.isUseNativeTransport()) {
-        if (config.isUseUnixDomain()){
-          transportFactory = getDomainTransportFactory();
-        }else {
-          transportFactory = getNativeTransportFactory();
-        }
+        transportFactory = config.isUseUnixDomain() ? getDomainTransportFactory() : getNativeTransportFactory();
       } else {
         transportFactory = NioTransportFactory.INSTANCE;
       }
@@ -145,17 +140,9 @@ public class ChannelManager {
         }
         transportFactory = NioTransportFactory.INSTANCE;
       } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
-        if (config.isUseUnixDomain()){
-          transportFactory = new EpollDomainTransportFactory();
-        }else {
-          transportFactory = new EpollTransportFactory();
-        }
+        transportFactory = config.isUseUnixDomain() ? new EpollDomainTransportFactory() : new EpollTransportFactory();
       } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
-        if (config.isUseUnixDomain()){
-          transportFactory = new KQueueDomainTransportFactory();
-        }else {
-          transportFactory = new KQueueTransportFactory();
-        }
+        transportFactory = config.isUseUnixDomain()? new KQueueDomainTransportFactory():new KQueueTransportFactory();
       } else {
         throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }
@@ -205,27 +192,33 @@ public class ChannelManager {
 
   @SuppressWarnings("unchecked")
   private TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory() {
-    try {
-      return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.EpollTransportFactory").newInstance();
-    } catch (Exception e) {
-      try {
-        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueTransportFactory").newInstance();
-      } catch (Exception e1) {
-        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
-      }
+    String nativeTransportFactoryClassName = null;
+    if (PlatformDependent.isOsx()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueTransportFactory";
+    } else if (!PlatformDependent.isWindows()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollTransportFactory";
     }
+    return loadNativeTransportFactory(nativeTransportFactoryClassName);
   }
 
-  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getDomainTransportFactory() {
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> loadNativeTransportFactory(String nativeTransportFactoryClassName) {
     try {
-      return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.EpollDomainTransportFactory").newInstance();
-    } catch (Exception e) {
-      try {
-        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName("org.asynchttpclient.netty.channel.KQueueDomainTransportFactory").newInstance();
-      } catch (Exception e1) {
-        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
+      if (nativeTransportFactoryClassName != null) {
+        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName(nativeTransportFactoryClassName).newInstance();
       }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
+    throw new IllegalArgumentException("No suitable native transport available");
+  }
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getDomainTransportFactory() {
+    String nativeTransportFactoryClassName = null;
+    if (PlatformDependent.isOsx()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueDomainTransportFactory";
+    } else if (!PlatformDependent.isWindows()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollDomainTransportFactory";
+    }
+    return loadNativeTransportFactory(nativeTransportFactoryClassName);
   }
 
   public void configureBootstraps(NettyRequestSender requestSender) {
@@ -382,6 +375,11 @@ public class ChannelManager {
 
     if (requestUri.isWebSocket()) {
       pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
+
+      if (config.isEnableWebSocketCompression()) {
+        pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+      }
+
       pipeline.remove(AHC_HTTP_HANDLER);
     }
     return whenHanshaked;

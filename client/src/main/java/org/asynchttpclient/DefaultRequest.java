@@ -26,6 +26,7 @@ import org.asynchttpclient.uri.Uri;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -137,12 +138,28 @@ public class DefaultRequest implements Request {
   }
 
   @Override
-  public SocketAddress getAddress() {
+  public InetAddress getAddress() {
+    if (!(address instanceof InetSocketAddress)) {
+      throw new IllegalArgumentException("address can't cast to InetAddress, please use the method of getSocketAddress");
+    }
+    return ((InetSocketAddress) address).getAddress();
+  }
+
+  @Override
+  public InetAddress getLocalAddress() {
+    if (!(localAddress instanceof InetSocketAddress)) {
+      throw new IllegalArgumentException("localAddress can't cast to InetAddress, please use the method of getLocalSocketAddress");
+    }
+    return ((InetSocketAddress) localAddress).getAddress();
+  }
+
+  @Override
+  public SocketAddress getSocketAddress() {
     return address;
   }
 
   @Override
-  public SocketAddress getLocalAddress() {
+  public SocketAddress getLocalSocketAddress() {
     return localAddress;
   }
 
