@@ -98,7 +98,6 @@
                                 <properties>remove</properties>
                                 <dependencies>remove</dependencies>
                                 <build>remove</build>
-                                <scm>remove</scm>
                             </pomElements>
                         </configuration>
                     </execution>
