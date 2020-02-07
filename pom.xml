@@ -36,9 +36,6 @@
     </mailingList>
   </mailingLists>
 
-  <prerequisites>
-    <maven>3.0.0</maven>
-  </prerequisites>
   <developers>
     <developer>
       <id>slandelle</id>
