@@ -1,26 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>org.asynchttpclient</groupId>
   <artifactId>async-http-client-project</artifactId>
-  <name>Asynchronous Http Client Project</name>
   <version>2.10.5-SNAPSHOT</version>
   <packaging>pom</packaging>
+
+  <name>Asynchronous Http Client Project</name>
   <description>
     The Async Http Client (AHC) library's purpose is to allow Java
     applications to easily execute HTTP requests and
     asynchronously process the response.
   </description>
   <url>http://github.com/AsyncHttpClient/async-http-client</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>slandelle</id>
+      <name>Stephane Landelle</name>
+      <email>slandelle@gatling.io</email>
+    </developer>
+  </developers>
+
   <scm>
-    <url>https://github.com/AsyncHttpClient/async-http-client</url>
     <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
     <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
+    <url>https://github.com/AsyncHttpClient/async-http-client/tree/master</url>
   </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <issueManagement>
-    <system>jira</system>
-    <url>https://issues.sonatype.org/browse/AHC</url>
+    <system>github</system>
+    <url>https://github.com/AsyncHttpClient/async-http-client/issues</url>
   </issueManagement>
+
   <mailingLists>
     <mailingList>
       <name>asynchttpclient</name>
@@ -31,20 +62,6 @@
     </mailingList>
   </mailingLists>
 
-  <developers>
-    <developer>
-      <id>slandelle</id>
-      <name>Stephane Landelle</name>
-      <email>slandelle@gatling.io</email>
-    </developer>
-  </developers>
-  <licenses>
-    <license>
-      <name>Apache License 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
   <build>
     <resources>
       <resource>
@@ -57,17 +74,17 @@
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-ssh-external</artifactId>
-        <version>1.0-beta-6</version>
+        <version>3.3.4</version>
       </extension>
       <extension>
         <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-provider-gitexe</artifactId>
-        <version>1.6</version>
+        <version>1.11.2</version>
       </extension>
       <extension>
         <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-manager-plexus</artifactId>
-        <version>1.6</version>
+        <version>1.11.2</version>
       </extension>
     </extensions>
     <defaultGoal>install</defaultGoal>
@@ -75,7 +92,7 @@
       <plugins>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
-          <version>3.0.0-M1</version>
+          <version>2.5.3</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -193,35 +210,31 @@
         <configuration>
           <doclint>none</doclint>
         </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>release-sign-artifacts</id>
-      <activation>
-        <property>
-          <name>performRelease</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>test-output</id>
       <properties>
@@ -229,16 +242,7 @@
       </properties>
     </profile>
   </profiles>
-  <distributionManagement>
-    <snapshotRepository>
-      <id>sonatype-nexus-staging</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
+
   <modules>
     <module>bom</module>
     <module>netty-utils</module>
