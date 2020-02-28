@@ -468,6 +468,6 @@
     <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
     <mockito.version>3.3.0</mockito.version>
     <hamcrest.version>2.2</hamcrest.version>
-    <kerby.version>1.1.1</kerby.version>
+    <kerby.version>2.0.0</kerby.version>
   </properties>
 </project>
