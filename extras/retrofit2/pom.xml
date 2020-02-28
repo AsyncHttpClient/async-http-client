@@ -12,7 +12,7 @@
   <description>The Async Http Client Retrofit2 Extras.</description>
 
   <properties>
-    <retrofit2.version>2.5.0</retrofit2.version>
+    <retrofit2.version>2.7.2</retrofit2.version>
     <lombok.version>1.18.12</lombok.version>
     <javaModuleName>org.asynchttpclient.extras.retrofit2</javaModuleName>
   </properties>
