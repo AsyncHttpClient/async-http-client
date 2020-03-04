@@ -318,6 +318,8 @@ public interface AsyncHttpClientConfig {
 
   boolean isSoReuseAddress();
 
+  boolean isSoKeepAlive();
+
   int getSoLinger();
 
   int getSoSndBuf();

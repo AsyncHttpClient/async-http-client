@@ -162,6 +162,7 @@ public class ChannelManager {
             .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)
             .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())
             .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())
+            .option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive())
             .option(ChannelOption.AUTO_CLOSE, false);
 
     if (config.getConnectTimeout() > 0) {

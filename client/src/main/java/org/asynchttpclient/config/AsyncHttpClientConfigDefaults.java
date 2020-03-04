@@ -53,6 +53,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String SSL_SESSION_TIMEOUT_CONFIG = "sslSessionTimeout";
   public static final String TCP_NO_DELAY_CONFIG = "tcpNoDelay";
   public static final String SO_REUSE_ADDRESS_CONFIG = "soReuseAddress";
+  public static final String SO_KEEP_ALIVE_CONFIG = "soKeepAlive";
   public static final String SO_LINGER_CONFIG = "soLinger";
   public static final String SO_SND_BUF_CONFIG = "soSndBuf";
   public static final String SO_RCV_BUF_CONFIG = "soRcvBuf";
@@ -220,6 +221,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static boolean defaultSoReuseAddress() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + SO_REUSE_ADDRESS_CONFIG);
+  }
+
+  public static boolean defaultSoKeepAlive() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + SO_KEEP_ALIVE_CONFIG);
   }
 
   public static int defaultSoLinger() {

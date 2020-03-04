@@ -123,6 +123,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final ByteBufAllocator allocator;
   private final boolean tcpNoDelay;
   private final boolean soReuseAddress;
+  private final boolean soKeepAlive;
   private final int soLinger;
   private final int soSndBuf;
   private final int soRcvBuf;
@@ -193,6 +194,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        // tuning
                                        boolean tcpNoDelay,
                                        boolean soReuseAddress,
+                                       boolean soKeepAlive,
                                        int soLinger,
                                        int soSndBuf,
                                        int soRcvBuf,
@@ -281,6 +283,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // tuning
     this.tcpNoDelay = tcpNoDelay;
     this.soReuseAddress = soReuseAddress;
+    this.soKeepAlive = soKeepAlive;
     this.soLinger = soLinger;
     this.soSndBuf = soSndBuf;
     this.soRcvBuf = soRcvBuf;
@@ -561,6 +564,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isSoKeepAlive() {
+    return soKeepAlive;
+  }
+
+  @Override
   public int getSoLinger() {
     return soLinger;
   }
@@ -726,6 +734,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // tuning
     private boolean tcpNoDelay = defaultTcpNoDelay();
     private boolean soReuseAddress = defaultSoReuseAddress();
+    private boolean soKeepAlive = defaultSoKeepAlive();
     private int soLinger = defaultSoLinger();
     private int soSndBuf = defaultSoSndBuf();
     private int soRcvBuf = defaultSoRcvBuf();
@@ -808,6 +817,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       // tuning
       tcpNoDelay = config.isTcpNoDelay();
       soReuseAddress = config.isSoReuseAddress();
+      soKeepAlive = config.isSoKeepAlive();
       soLinger = config.getSoLinger();
       soSndBuf = config.getSoSndBuf();
       soRcvBuf = config.getSoRcvBuf();
@@ -1127,6 +1137,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setSoKeepAlive(boolean soKeepAlive) {
+      this.soKeepAlive = soKeepAlive;
+      return this;
+    }
+
     public Builder setSoLinger(int soLinger) {
       this.soLinger = soLinger;
       return this;
@@ -1287,6 +1302,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               cookieStore,
               tcpNoDelay,
               soReuseAddress,
+              soKeepAlive,
               soLinger,
               soSndBuf,
               soRcvBuf,

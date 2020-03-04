@@ -370,6 +370,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isSoKeepAlive() {
+    return getBooleanOpt(SO_KEEP_ALIVE_CONFIG).orElse(defaultSoKeepAlive());
+  }
+
+  @Override
   public int getSoLinger() {
     return getIntegerOpt(SO_LINGER_CONFIG).orElse(defaultSoLinger());
   }
