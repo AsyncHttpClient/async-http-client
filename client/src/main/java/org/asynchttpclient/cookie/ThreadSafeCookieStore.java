@@ -21,12 +21,14 @@ import org.asynchttpclient.util.MiscUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
-  private Map<CookieKey, StoredCookie> cookieJar = new ConcurrentHashMap<>();
+  private Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
 
   @Override
   public void add(Uri uri, Cookie cookie) {
@@ -45,15 +47,16 @@ public final class ThreadSafeCookieStore implements CookieStore {
   public List<Cookie> getAll() {
     final boolean[] removeExpired = {false};
     List<Cookie> result = cookieJar
-            .entrySet()
+            .values()
             .stream()
+            .flatMap(map -> map.values().stream())
             .filter(pair -> {
-              boolean hasCookieExpired = hasCookieExpired(pair.getValue().cookie, pair.getValue().createdAt);
+              boolean hasCookieExpired = hasCookieExpired(pair.cookie, pair.createdAt);
               if (hasCookieExpired && !removeExpired[0])
                 removeExpired[0] = true;
               return !hasCookieExpired;
             })
-            .map(pair -> pair.getValue().cookie)
+            .map(pair -> pair.cookie)
             .collect(Collectors.toList());
 
     if (removeExpired[0])
@@ -64,7 +67,13 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   @Override
   public boolean remove(Predicate<Cookie> predicate) {
-    return cookieJar.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
+    final boolean[] removed = {false};
+    cookieJar.values().forEach(cookieMap -> {
+      if (!removed[0]) {
+        removed[0] = cookieMap.values().removeIf(v -> predicate.test(v.cookie));
+      }
+    });
+    return removed[0];
   }
 
   @Override
@@ -145,26 +154,28 @@ public final class ThreadSafeCookieStore implements CookieStore {
     String keyDomain = pair.getKey();
     boolean hostOnly = pair.getValue();
     String keyPath = cookiePath(cookie.path(), requestPath);
-    CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyDomain, keyPath);
+    CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyPath);
 
     if (hasCookieExpired(cookie, 0))
-      cookieJar.remove(key);
-    else
-      cookieJar.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
+      cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
+    else {
+      cookieJar.putIfAbsent(keyDomain, new ConcurrentHashMap<>());
+      cookieJar.get(keyDomain).put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
+    }
   }
 
   private List<Cookie> get(String domain, String path, boolean secure) {
 
     final boolean[] removeExpired = {false};
+    boolean exactDomainMatch = true;
+    String subDomain = domain;
 
-    List<Cookie> result = cookieJar.entrySet().stream().filter(pair -> {
-      CookieKey key = pair.getKey();
-      StoredCookie storedCookie = pair.getValue();
-      boolean hasCookieExpired = hasCookieExpired(storedCookie.cookie, storedCookie.createdAt);
-      if (hasCookieExpired && !removeExpired[0])
-        removeExpired[0] = true;
-      return !hasCookieExpired && domainsMatch(key.domain, domain, storedCookie.hostOnly) && pathsMatch(key.path, path) && (secure || !storedCookie.cookie.isSecure());
-    }).map(v -> v.getValue().cookie).collect(Collectors.toList());
+    final List<Cookie> result = new ArrayList<>();
+    while (subDomain != null) {
+      result.addAll(getStoredCookies(subDomain, path, secure, removeExpired, exactDomainMatch));
+      exactDomainMatch = false;
+      subDomain = DomainUtils.getHigherDomain(subDomain);
+    }
 
     if (removeExpired[0])
       removeExpired();
@@ -172,18 +183,37 @@ public final class ThreadSafeCookieStore implements CookieStore {
     return result;
   }
 
+  private List<Cookie> getStoredCookies(String domain, String path, boolean secure,
+                                        boolean[] removeExpired, boolean isExactMatch) {
+    if (!cookieJar.containsKey(domain)) {
+      return Collections.emptyList();
+    }
+
+    return cookieJar.get(domain).entrySet().stream().filter(pair -> {
+      CookieKey key = pair.getKey();
+      StoredCookie storedCookie = pair.getValue();
+      boolean hasCookieExpired = hasCookieExpired(storedCookie.cookie, storedCookie.createdAt);
+      if (hasCookieExpired && !removeExpired[0])
+        removeExpired[0] = true;
+      return !hasCookieExpired &&
+             (isExactMatch || !storedCookie.hostOnly) &&
+             pathsMatch(key.path, path) &&
+             (secure || !storedCookie.cookie.isSecure());
+    }).map(v -> v.getValue().cookie).collect(Collectors.toList());
+  }
+
   private void removeExpired() {
-    cookieJar.entrySet().removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt));
+    cookieJar.values().forEach(cookieMap -> {
+      cookieMap.values().removeIf(v -> hasCookieExpired(v.cookie, v.createdAt));
+    });
   }
 
   private static class CookieKey implements Comparable<CookieKey> {
     final String name;
-    final String domain;
     final String path;
 
-    CookieKey(String name, String domain, String path) {
+    CookieKey(String name, String path) {
       this.name = name;
-      this.domain = domain;
       this.path = path;
     }
 
@@ -192,7 +222,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
       Assertions.assertNotNull(o, "Parameter can't be null");
       int result;
       if ((result = this.name.compareTo(o.name)) == 0)
-        if ((result = this.domain.compareTo(o.domain)) == 0)
           result = this.path.compareTo(o.path);
 
       return result;
@@ -207,14 +236,13 @@ public final class ThreadSafeCookieStore implements CookieStore {
     public int hashCode() {
       int result = 17;
       result = 31 * result + name.hashCode();
-      result = 31 * result + domain.hashCode();
       result = 31 * result + path.hashCode();
       return result;
     }
 
     @Override
     public String toString() {
-      return String.format("%s: %s; %s", name, domain, path);
+      return String.format("%s: %s", name, path);
     }
   }
 
@@ -234,5 +262,21 @@ public final class ThreadSafeCookieStore implements CookieStore {
     public String toString() {
       return String.format("%s; hostOnly %s; persistent %s", cookie.toString(), hostOnly, persistent);
     }
+  }
+
+  public static final class DomainUtils {
+    private static final char DOT = '.';
+      public static String getHigherDomain(String domain) {
+        if (domain == null || domain.isEmpty()) {
+          return null;
+        }
+        final int indexOfDot = domain.indexOf(DOT);
+        if (indexOfDot == -1) {
+          return null;
+        }
+        return domain.substring(indexOfDot + 1);
+      }
+
+    private DomainUtils() {}
   }
 }

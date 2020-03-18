@@ -27,6 +27,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertTrue;
 
@@ -284,8 +285,9 @@ public class CookieStoreTest {
     assertTrue(cookies1.size() == 2);
     assertTrue(cookies1.stream().filter(c -> c.value().equals("FOO") || c.value().equals("BAR")).count() == 2);
 
-    String result = ClientCookieEncoder.LAX.encode(cookies1.get(0), cookies1.get(1));
-    assertTrue(result.equals("JSESSIONID=FOO; JSESSIONID=BAR"));
+    List<String> encodedCookieStrings = cookies1.stream().map(ClientCookieEncoder.LAX::encode).collect(Collectors.toList());
+    assertTrue(encodedCookieStrings.contains("JSESSIONID=FOO"));
+    assertTrue(encodedCookieStrings.contains("JSESSIONID=BAR"));
   }
 
   // rfc6265#section-1 Cookies for a given host are shared  across all the ports on that host
