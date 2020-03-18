@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public final class ThreadSafeCookieStore implements CookieStore, Closeable {
+public final class ThreadSafeCookieStore implements CookieStore {
   private static final Logger log = LoggerFactory.getLogger(ThreadSafeCookieStore.class);
 
   private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
