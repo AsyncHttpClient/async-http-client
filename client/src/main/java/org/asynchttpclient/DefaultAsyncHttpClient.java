@@ -31,6 +31,7 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -112,6 +113,13 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
           nettyTimer.stop();
         } catch (Throwable t) {
           LOGGER.warn("Unexpected error on HashedWheelTimer close", t);
+        }
+      }
+      if (config.getCookieStore() != null) {
+        try {
+          config.getCookieStore().close();
+        } catch (IOException e) {
+          LOGGER.warn("IOException closing CookieStore", e);
         }
       }
     }

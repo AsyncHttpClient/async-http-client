@@ -17,6 +17,7 @@ package org.asynchttpclient.cookie;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
+import java.io.Closeable;
 import java.net.CookieManager;
 import java.util.List;
 import java.util.function.Predicate;
@@ -31,7 +32,7 @@ import java.util.function.Predicate;
  *
  * @since 2.1
  */
-public interface CookieStore {
+public interface CookieStore extends Closeable {
   /**
    * Adds one {@link Cookie} to the store. This is called for every incoming HTTP response.
    * If the given cookie has already expired it will not be added, but existing values will still be removed.

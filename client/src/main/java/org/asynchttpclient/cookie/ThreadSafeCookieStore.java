@@ -18,15 +18,24 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public final class ThreadSafeCookieStore implements CookieStore {
+public final class ThreadSafeCookieStore implements CookieStore, Closeable {
+  private static final Logger log = LoggerFactory.getLogger(ThreadSafeCookieStore.class);
 
-  private Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
+  private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
+  private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
   @Override
   public void add(Uri uri, Cookie cookie) {
@@ -34,6 +43,20 @@ public final class ThreadSafeCookieStore implements CookieStore {
     String thisRequestPath = requestPath(uri);
 
     add(thisRequestDomain, thisRequestPath, cookie);
+  }
+
+  public ThreadSafeCookieStore() {
+    scheduleExpiredCookiesRemoval();
+  }
+
+  private void scheduleExpiredCookiesRemoval() {
+    scheduledExecutor.scheduleWithFixedDelay(() -> {
+      if (cookieJar.isEmpty()) {
+        return;
+      }
+
+      removeExpired();
+    }, 10, 10, TimeUnit.SECONDS);
   }
 
   @Override
@@ -57,18 +80,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
             .map(pair -> pair.cookie)
             .collect(Collectors.toList());
 
-    if (removeExpired[0])
-      removeExpired();
-
     return result;
   }
 
   @Override
   public boolean remove(Predicate<Cookie> predicate) {
     final boolean[] removed = {false};
-    cookieJar.values().forEach(cookieMap -> {
+    cookieJar.entrySet().forEach(cookieMap -> {
       if (!removed[0]) {
-        removed[0] = cookieMap.values().removeIf(v -> predicate.test(v.cookie));
+        removed[0] = cookieMap.getValue().entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
       }
     });
     return removed[0];
@@ -133,13 +153,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
       return false;
   }
 
-  // rfc6265#section-5.1.3
-  // check "The string is a host name (i.e., not an IP address)" ignored
-  private boolean domainsMatch(String cookieDomain, String requestDomain, boolean hostOnly) {
-    return (hostOnly && Objects.equals(requestDomain, cookieDomain)) ||
-            (Objects.equals(requestDomain, cookieDomain) || requestDomain.endsWith("." + cookieDomain));
-  }
-
   // rfc6265#section-5.1.4
   private boolean pathsMatch(String cookiePath, String requestPath) {
     return Objects.equals(cookiePath, requestPath) ||
@@ -165,20 +178,17 @@ public final class ThreadSafeCookieStore implements CookieStore {
   private List<Cookie> get(String domain, String path, boolean secure) {
 
     final boolean[] removeExpired = {false};
+    final List<Cookie> results = new ArrayList<>();
     boolean exactDomainMatch = true;
     String subDomain = domain;
 
-    final List<Cookie> result = new ArrayList<>();
-    while (subDomain != null) {
-      result.addAll(getStoredCookies(subDomain, path, secure, removeExpired, exactDomainMatch));
+    while (MiscUtils.isNonEmpty(subDomain)) {
+      results.addAll(getStoredCookies(subDomain, path, secure, removeExpired, exactDomainMatch));
       exactDomainMatch = false;
-      subDomain = DomainUtils.getHigherDomain(subDomain);
+      subDomain = DomainUtils.getSubDomain(subDomain);
     }
 
-    if (removeExpired[0])
-      removeExpired();
-
-    return result;
+    return results;
   }
 
   private List<Cookie> getStoredCookies(String domain, String path, boolean secure,
@@ -202,8 +212,20 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   private void removeExpired() {
     cookieJar.values().forEach(cookieMap -> {
-      cookieMap.values().removeIf(v -> hasCookieExpired(v.cookie, v.createdAt));
+      cookieMap.entrySet().removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt));
     });
+    cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
+  }
+
+  @Override
+  public void close() throws IOException {
+    scheduledExecutor.shutdown();
+    try {
+      scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      log.debug("Interrupted while shutting down " + ThreadSafeCookieStore.class.getName());
+      Thread.currentThread().interrupt();
+    }
   }
 
   private static class CookieKey implements Comparable<CookieKey> {
@@ -264,7 +286,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   public static final class DomainUtils {
     private static final char DOT = '.';
-      public static String getHigherDomain(String domain) {
+      public static String getSubDomain(String domain) {
         if (domain == null || domain.isEmpty()) {
           return null;
         }
