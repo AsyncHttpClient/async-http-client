@@ -36,7 +36,6 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 
 import java.util.*;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -343,11 +342,6 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   @Override
   public long getHashedWheelTimerTickDuration() {
     return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
-  }
-
-  @Override
-  public TimeUnit getHashedWheelTimerTimeUnit() {
-    return TimeUnit.valueOf(getStringOpt(HASHED_WHEEL_TIMER_TIME_UNIT).orElse(defaultHashedWheelTimerTimeUnit()).toUpperCase());
   }
 
   @Override

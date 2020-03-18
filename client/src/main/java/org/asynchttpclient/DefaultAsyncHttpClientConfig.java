@@ -37,7 +37,6 @@ import org.asynchttpclient.util.ProxyUtils;
 
 import java.util.*;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
@@ -135,7 +134,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final ResponseBodyPartFactory responseBodyPartFactory;
   private final int ioThreadsCount;
   private final long hashedWheelTimerTickDuration;
-  private final TimeUnit hashedWheelTimerTimeUnit;
   private final int hashedWheelTimerSize;
 
   private DefaultAsyncHttpClientConfig(// http
@@ -223,7 +221,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        ResponseBodyPartFactory responseBodyPartFactory,
                                        int ioThreadsCount,
                                        long hashedWheelTimerTickDuration,
-                                       TimeUnit hashedWheelTimerTimeUnit,
                                        int hashedWheelTimerSize) {
 
     // http
@@ -313,7 +310,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.responseBodyPartFactory = responseBodyPartFactory;
     this.ioThreadsCount = ioThreadsCount;
     this.hashedWheelTimerTickDuration = hashedWheelTimerTickDuration;
-    this.hashedWheelTimerTimeUnit = hashedWheelTimerTimeUnit;
     this.hashedWheelTimerSize = hashedWheelTimerSize;
   }
 
@@ -655,11 +651,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
-  public TimeUnit getHashedWheelTimerTimeUnit() {
-    return hashedWheelTimerTimeUnit;
-  }
-
-  @Override
   public int getHashedWheelTimerSize() {
     return hashedWheelTimerSize;
   }
@@ -782,7 +773,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
     private int ioThreadsCount = defaultIoThreadsCount();
     private long hashedWheelTickDuration = defaultHashedWheelTimerTickDuration();
-    private TimeUnit hashedWheelTimeUnit = TimeUnit.valueOf(defaultHashedWheelTimerTimeUnit());
     private int hashedWheelSize = defaultHashedWheelTimerSize();
 
     public Builder() {
@@ -867,7 +857,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       responseBodyPartFactory = config.getResponseBodyPartFactory();
       ioThreadsCount = config.getIoThreadsCount();
       hashedWheelTickDuration = config.getHashedWheelTimerTickDuration();
-      hashedWheelTimeUnit = config.getHashedWheelTimerTimeUnit();
       hashedWheelSize = config.getHashedWheelTimerSize();
     }
 
@@ -1224,11 +1213,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
-    public Builder setHashedWheelTimeUnit(TimeUnit hashedWheelTimeUnit) {
-      this.hashedWheelTimeUnit = hashedWheelTimeUnit;
-      return this;
-    }
-
     public Builder setHashedWheelSize(int hashedWheelSize) {
       this.hashedWheelSize = hashedWheelSize;
       return this;
@@ -1371,7 +1355,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               responseBodyPartFactory,
               ioThreadsCount,
               hashedWheelTickDuration,
-              hashedWheelTimeUnit,
               hashedWheelSize);
     }
   }

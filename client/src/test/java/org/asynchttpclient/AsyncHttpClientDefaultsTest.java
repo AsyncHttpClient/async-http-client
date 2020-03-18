@@ -120,11 +120,6 @@ public class AsyncHttpClientDefaultsTest {
     testIntegerSystemProperty("hashedWheelTimerTickDuration", "defaultHashedWheelTimerTickDuration", "100");
   }
 
-  public void testDefaultHashedWheelTimerTimeUnit() {
-    Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTimeUnit(), "MILLISECONDS");
-    testStringSystemProperty("hashedWheelTimerTimeUnit", "defaultHashedWheelTimerTimeUnit", "MILLISECONDS");
-  }
-
   public void testDefaultHashedWheelTimerSize() {
     Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize(), 512);
     testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");

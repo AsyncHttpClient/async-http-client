@@ -35,7 +35,6 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface AsyncHttpClientConfig {
@@ -311,11 +310,6 @@ public interface AsyncHttpClientConfig {
    * @return the duration between tick of {@link io.netty.util.HashedWheelTimer}
    */
   long getHashedWheelTimerTickDuration();
-
-  /**
-   * @return the time unit of the {@link io.netty.util.HashedWheelTimer}
-   */
-  TimeUnit getHashedWheelTimerTimeUnit();
 
   /**
    * @return the size of the hashed wheel {@link io.netty.util.HashedWheelTimer}
