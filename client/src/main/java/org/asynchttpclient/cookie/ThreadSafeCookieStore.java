@@ -84,6 +84,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
         removed[0] = value.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
       }
     });
+    if (removed[0]) {
+      cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
+    }
     return removed[0];
   }
 
@@ -202,10 +205,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
   }
 
   private void removeExpired() {
+    final boolean[] removed = {false};
     cookieJar.values().forEach(cookieMap -> {
-      cookieMap.entrySet().removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt));
+      if (!removed[0]) {
+        removed[0] = cookieMap.entrySet().removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt));
+      }
     });
-    cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
+    if (removed[0]) {
+      cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
+    }
   }
 
   @Override
