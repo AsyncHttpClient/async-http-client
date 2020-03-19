@@ -65,17 +65,11 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   @Override
   public List<Cookie> getAll() {
-    final boolean[] removeExpired = {false};
     List<Cookie> result = cookieJar
             .values()
             .stream()
             .flatMap(map -> map.values().stream())
-            .filter(pair -> {
-              boolean hasCookieExpired = hasCookieExpired(pair.cookie, pair.createdAt);
-              if (hasCookieExpired && !removeExpired[0])
-                removeExpired[0] = true;
-              return !hasCookieExpired;
-            })
+            .filter(pair -> !hasCookieExpired(pair.cookie, pair.createdAt))
             .map(pair -> pair.cookie)
             .collect(Collectors.toList());
 
@@ -85,9 +79,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
   @Override
   public boolean remove(Predicate<Cookie> predicate) {
     final boolean[] removed = {false};
-    cookieJar.entrySet().forEach(cookieMap -> {
+    cookieJar.forEach((key, value) -> {
       if (!removed[0]) {
-        removed[0] = cookieMap.getValue().entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
+        removed[0] = value.entrySet().removeIf(v -> predicate.test(v.getValue().cookie));
       }
     });
     return removed[0];
@@ -200,8 +194,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
       CookieKey key = pair.getKey();
       StoredCookie storedCookie = pair.getValue();
       boolean hasCookieExpired = hasCookieExpired(storedCookie.cookie, storedCookie.createdAt);
-      if (hasCookieExpired && !removeExpired[0])
-        removeExpired[0] = true;
       return !hasCookieExpired &&
              (isExactMatch || !storedCookie.hostOnly) &&
              pathsMatch(key.path, path) &&
