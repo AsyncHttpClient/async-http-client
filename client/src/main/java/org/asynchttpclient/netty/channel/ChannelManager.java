@@ -61,6 +61,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -490,7 +491,7 @@ public class ChannelManager {
   }
 
   public ClientStats getClientStats() {
-    Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(a -> a.getClass() == InetSocketAddress.class)
+    Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(Objects::nonNull).filter(a -> a.getClass() == InetSocketAddress.class)
             .map(a -> (InetSocketAddress) a).map(InetSocketAddress::getHostString).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
     Map<String, HostStats> statsPerHost = totalConnectionsPerHost.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> {
