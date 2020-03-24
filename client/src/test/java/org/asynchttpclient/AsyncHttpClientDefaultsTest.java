@@ -115,6 +115,16 @@ public class AsyncHttpClientDefaultsTest {
     testBooleanSystemProperty("useInsecureTrustManager", "defaultUseInsecureTrustManager", "false");
   }
 
+  public void testDefaultHashedWheelTimerTickDuration() {
+    Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration(), 100);
+    testIntegerSystemProperty("hashedWheelTimerTickDuration", "defaultHashedWheelTimerTickDuration", "100");
+  }
+
+  public void testDefaultHashedWheelTimerSize() {
+    Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize(), 512);
+    testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");
+  }
+
   private void testIntegerSystemProperty(String propertyName, String methodName, String value) {
     String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
     System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);

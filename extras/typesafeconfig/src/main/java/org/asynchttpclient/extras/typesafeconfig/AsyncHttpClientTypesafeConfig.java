@@ -340,6 +340,16 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public long getHashedWheelTimerTickDuration() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
+  }
+
+  @Override
+  public int getHashedWheelTimerSize() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_SIZE).orElse(defaultHashedWheelTimerSize());
+  }
+
+  @Override
   public KeepAliveStrategy getKeepAliveStrategy() {
     return new DefaultKeepAliveStrategy();
   }

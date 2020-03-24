@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -93,8 +94,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
   private Timer newNettyTimer(AsyncHttpClientConfig config) {
     ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
-
-    HashedWheelTimer timer = new HashedWheelTimer(threadFactory);
+    HashedWheelTimer timer = new HashedWheelTimer(threadFactory, config.getHashedWheelTimerTickDuration(), TimeUnit.MILLISECONDS, config.getHashedWheelTimerSize());
     timer.start();
     return timer;
   }

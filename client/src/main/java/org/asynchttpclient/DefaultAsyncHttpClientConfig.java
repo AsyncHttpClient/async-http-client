@@ -133,6 +133,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final Consumer<Channel> wsAdditionalChannelInitializer;
   private final ResponseBodyPartFactory responseBodyPartFactory;
   private final int ioThreadsCount;
+  private final long hashedWheelTimerTickDuration;
+  private final int hashedWheelTimerSize;
 
   private DefaultAsyncHttpClientConfig(// http
                                        boolean followRedirect,
@@ -217,7 +219,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        Consumer<Channel> httpAdditionalChannelInitializer,
                                        Consumer<Channel> wsAdditionalChannelInitializer,
                                        ResponseBodyPartFactory responseBodyPartFactory,
-                                       int ioThreadsCount) {
+                                       int ioThreadsCount,
+                                       long hashedWheelTimerTickDuration,
+                                       int hashedWheelTimerSize) {
 
     // http
     this.followRedirect = followRedirect;
@@ -305,6 +309,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
     this.responseBodyPartFactory = responseBodyPartFactory;
     this.ioThreadsCount = ioThreadsCount;
+    this.hashedWheelTimerTickDuration = hashedWheelTimerTickDuration;
+    this.hashedWheelTimerSize = hashedWheelTimerSize;
   }
 
   @Override
@@ -640,6 +646,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public long getHashedWheelTimerTickDuration() {
+    return hashedWheelTimerTickDuration;
+  }
+
+  @Override
+  public int getHashedWheelTimerSize() {
+    return hashedWheelTimerSize;
+  }
+
+  @Override
   public ThreadFactory getThreadFactory() {
     return threadFactory;
   }
@@ -756,6 +772,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private Consumer<Channel> wsAdditionalChannelInitializer;
     private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
     private int ioThreadsCount = defaultIoThreadsCount();
+    private long hashedWheelTickDuration = defaultHashedWheelTimerTickDuration();
+    private int hashedWheelSize = defaultHashedWheelTimerSize();
 
     public Builder() {
     }
@@ -838,6 +856,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
       responseBodyPartFactory = config.getResponseBodyPartFactory();
       ioThreadsCount = config.getIoThreadsCount();
+      hashedWheelTickDuration = config.getHashedWheelTimerTickDuration();
+      hashedWheelSize = config.getHashedWheelTimerSize();
     }
 
     // http
@@ -1188,6 +1208,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setHashedWheelTickDuration(long hashedWheelTickDuration) {
+      this.hashedWheelTickDuration = hashedWheelTickDuration;
+      return this;
+    }
+
+    public Builder setHashedWheelSize(int hashedWheelSize) {
+      this.hashedWheelSize = hashedWheelSize;
+      return this;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> Builder addChannelOption(ChannelOption<T> name, T value) {
       channelOptions.put((ChannelOption<Object>) name, value);
@@ -1323,7 +1353,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               httpAdditionalChannelInitializer,
               wsAdditionalChannelInitializer,
               responseBodyPartFactory,
-              ioThreadsCount);
+              ioThreadsCount,
+              hashedWheelTickDuration,
+              hashedWheelSize);
     }
   }
 }

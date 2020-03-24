@@ -71,6 +71,8 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
   public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
   public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
+  public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
+  public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
 
   public static final String AHC_VERSION;
 
@@ -293,5 +295,13 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static int defaultIoThreadsCount() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + IO_THREADS_COUNT_CONFIG);
+  }
+
+  public static int defaultHashedWheelTimerTickDuration() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HASHED_WHEEL_TIMER_TICK_DURATION);
+  }
+
+  public static int defaultHashedWheelTimerSize() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HASHED_WHEEL_TIMER_SIZE);
   }
 }

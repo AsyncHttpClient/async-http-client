@@ -306,6 +306,16 @@ public interface AsyncHttpClientConfig {
 
   Timer getNettyTimer();
 
+  /**
+   * @return the duration between tick of {@link io.netty.util.HashedWheelTimer}
+   */
+  long getHashedWheelTimerTickDuration();
+
+  /**
+   * @return the size of the hashed wheel {@link io.netty.util.HashedWheelTimer}
+   */
+  int getHashedWheelTimerSize();
+
   KeepAliveStrategy getKeepAliveStrategy();
 
   boolean isValidateResponseHeaders();

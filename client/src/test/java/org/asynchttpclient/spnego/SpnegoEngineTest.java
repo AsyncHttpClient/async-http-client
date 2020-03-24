@@ -135,9 +135,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
           null,
           null,
           null);
-      // FIXME see https://github.com/AsyncHttpClient/async-http-client/issues/1706
-      // InetAddress.getByName("localhost").getCanonicalHostName() returns 127.0.0.1 with JDK8 and localhost with JDK11.
-      // Assert.assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+      Assert.assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
       Assert.assertTrue(spnegoEngine.getCompleteServicePrincipalName("localhost").startsWith("HTTP@"));
     }
     {
