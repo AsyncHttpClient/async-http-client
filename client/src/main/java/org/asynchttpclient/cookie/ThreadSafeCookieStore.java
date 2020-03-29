@@ -15,7 +15,6 @@
 package org.asynchttpclient.cookie;
 
 import io.netty.handler.codec.http.cookie.Cookie;
-
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;

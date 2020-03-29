@@ -17,7 +17,6 @@ package org.asynchttpclient.cookie;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 
-import java.io.Closeable;
 import java.net.CookieManager;
 import java.util.List;
 import java.util.function.Predicate;
