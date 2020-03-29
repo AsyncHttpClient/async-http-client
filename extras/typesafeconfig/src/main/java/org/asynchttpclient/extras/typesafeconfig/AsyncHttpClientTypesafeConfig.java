@@ -165,6 +165,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public int expiredCookieEvictionDelay() {
+    return getIntegerOpt(EXPIRED_COOKIE_EVICTION_DELAY).orElse(defaultExpiredCookieEvictionDelay());
+  }
+
+  @Override
   public int getMaxRequestRetry() {
     return getIntegerOpt(MAX_REQUEST_RETRY_CONFIG).orElse(defaultMaxRequestRetry());
   }

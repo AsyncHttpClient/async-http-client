@@ -73,6 +73,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
   public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
   public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
+  public static final String EXPIRED_COOKIE_EVICTION_DELAY = "expiredCookieEvictionDelay";
 
   public static final String AHC_VERSION;
 
@@ -303,5 +304,9 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static int defaultHashedWheelTimerSize() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HASHED_WHEEL_TIMER_SIZE);
+  }
+
+  public static int defaultExpiredCookieEvictionDelay() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + EXPIRED_COOKIE_EVICTION_DELAY);
   }
 }

@@ -22,6 +22,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -31,7 +32,6 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +91,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     channelManager = new ChannelManager(config, nettyTimer);
     requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
     channelManager.configureBootstraps(requestSender);
+    nettyTimer.newTimeout(new CookieEvictionTask(config.expiredCookieEvictionDelay(), config.getCookieStore()),
+                          config.expiredCookieEvictionDelay(), TimeUnit.MILLISECONDS);
   }
 
   private Timer newNettyTimer(AsyncHttpClientConfig config) {
@@ -113,13 +115,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
           nettyTimer.stop();
         } catch (Throwable t) {
           LOGGER.warn("Unexpected error on HashedWheelTimer close", t);
-        }
-      }
-      if (config.getCookieStore() != null) {
-        try {
-          config.getCookieStore().close();
-        } catch (IOException e) {
-          LOGGER.warn("IOException closing CookieStore", e);
         }
       }
     }

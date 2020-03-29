@@ -15,26 +15,19 @@
 package org.asynchttpclient.cookie;
 
 import io.netty.handler.codec.http.cookie.Cookie;
+
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class ThreadSafeCookieStore implements CookieStore {
-  private static final Logger log = LoggerFactory.getLogger(ThreadSafeCookieStore.class);
 
   private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
   @Override
   public void add(Uri uri, Cookie cookie) {
@@ -42,20 +35,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
     String thisRequestPath = requestPath(uri);
 
     add(thisRequestDomain, thisRequestPath, cookie);
-  }
-
-  public ThreadSafeCookieStore() {
-    scheduleExpiredCookiesRemoval();
-  }
-
-  private void scheduleExpiredCookiesRemoval() {
-    scheduledExecutor.scheduleWithFixedDelay(() -> {
-      if (cookieJar.isEmpty()) {
-        return;
-      }
-
-      removeExpired();
-    }, 10, 10, TimeUnit.SECONDS);
   }
 
   @Override
@@ -97,7 +76,17 @@ public final class ThreadSafeCookieStore implements CookieStore {
     return result;
   }
 
+  @Override
+  public void evictExpired() {
+    removeExpired();
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // Visible for test
+  public Map<String, Map<CookieKey, StoredCookie>> getUnderlying() {
+    return new HashMap<>(cookieJar);
+  }
 
   private String requestDomain(Uri requestUri) {
     return requestUri.getHost().toLowerCase();
@@ -206,24 +195,10 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   private void removeExpired() {
     final boolean[] removed = {false};
-    cookieJar.values().forEach(cookieMap -> {
-      if (!removed[0]) {
-        removed[0] = cookieMap.entrySet().removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt));
-      }
-    });
+    cookieJar.values().forEach(cookieMap -> removed[0] |= cookieMap.entrySet().removeIf(
+            v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt)));
     if (removed[0]) {
       cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
-    }
-  }
-
-  @Override
-  public void close() throws IOException {
-    scheduledExecutor.shutdown();
-    try {
-      scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      log.debug("Interrupted while shutting down " + ThreadSafeCookieStore.class.getName());
-      Thread.currentThread().interrupt();
     }
   }
 

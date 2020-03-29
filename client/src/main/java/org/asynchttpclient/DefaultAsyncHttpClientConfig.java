@@ -109,6 +109,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
   // cookie store
   private final CookieStore cookieStore;
+  private final int expiredCookieEvictionDelay;
 
   // internals
   private final String threadPoolName;
@@ -192,6 +193,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
                                        // cookie store
                                        CookieStore cookieStore,
+                                       int expiredCookieEvictionDelay,
 
                                        // tuning
                                        boolean tcpNoDelay,
@@ -283,6 +285,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // cookie store
     this.cookieStore = cookieStore;
+    this.expiredCookieEvictionDelay = expiredCookieEvictionDelay;
 
     // tuning
     this.tcpNoDelay = tcpNoDelay;
@@ -558,6 +561,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     return cookieStore;
   }
 
+  @Override
+  public int expiredCookieEvictionDelay() {
+    return expiredCookieEvictionDelay;
+  }
+
   // tuning
   @Override
   public boolean isTcpNoDelay() {
@@ -746,6 +754,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // cookie store
     private CookieStore cookieStore = new ThreadSafeCookieStore();
+    private int expiredCookieEvictionDelay = defaultExpiredCookieEvictionDelay();
 
     // tuning
     private boolean tcpNoDelay = defaultTcpNoDelay();
@@ -1146,6 +1155,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setExpiredCookieEvictionDelay(int expiredCookieEvictionDelay) {
+      this.expiredCookieEvictionDelay = expiredCookieEvictionDelay;
+      return this;
+    }
+
     // tuning
     public Builder setTcpNoDelay(boolean tcpNoDelay) {
       this.tcpNoDelay = tcpNoDelay;
@@ -1330,6 +1344,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),
               ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),
               cookieStore,
+              expiredCookieEvictionDelay,
               tcpNoDelay,
               soReuseAddress,
               soKeepAlive,
