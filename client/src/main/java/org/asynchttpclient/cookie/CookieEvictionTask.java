@@ -9,13 +9,13 @@ import io.netty.util.TimerTask;
 
 /**
  * Evicts expired cookies from the {@linkplain CookieStore} periodically.
- * The default delay is 30 seconds. Ypu may override the default using
+ * The default delay is 30 seconds. You may override the default using
  * {@linkplain AsyncHttpClientConfig#expiredCookieEvictionDelay()}.
  */
 public class CookieEvictionTask implements TimerTask {
 
-    private long evictDelayInMs;
-    private CookieStore cookieStore;
+    private final long evictDelayInMs;
+    private final CookieStore cookieStore;
 
     public CookieEvictionTask(long evictDelayInMs, CookieStore cookieStore) {
         this.evictDelayInMs = evictDelayInMs;
