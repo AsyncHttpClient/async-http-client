@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.print.attribute.standard.NumberUp;
+
 public final class ThreadSafeCookieStore implements CookieStore {
 
   private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
@@ -144,7 +146,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
   }
 
   private void add(String requestDomain, String requestPath, Cookie cookie) {
-
     AbstractMap.SimpleEntry<String, Boolean> pair = cookieDomain(cookie.domain(), requestDomain);
     String keyDomain = pair.getKey();
     boolean hostOnly = pair.getValue();
@@ -154,34 +155,39 @@ public final class ThreadSafeCookieStore implements CookieStore {
     if (hasCookieExpired(cookie, 0))
       cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
     else {
-      cookieJar.putIfAbsent(keyDomain, new ConcurrentHashMap<>());
-      cookieJar.get(keyDomain).put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
+      final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
+      innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
     }
   }
 
   private List<Cookie> get(String domain, String path, boolean secure) {
-
-    final boolean[] removeExpired = {false};
-    final List<Cookie> results = new ArrayList<>();
     boolean exactDomainMatch = true;
     String subDomain = domain;
+    List<Cookie> results = null;
 
     while (MiscUtils.isNonEmpty(subDomain)) {
-      results.addAll(getStoredCookies(subDomain, path, secure, removeExpired, exactDomainMatch));
-      exactDomainMatch = false;
+      final List<Cookie> storedCookies = getStoredCookies(subDomain, path, secure, exactDomainMatch);
       subDomain = DomainUtils.getSubDomain(subDomain);
+      exactDomainMatch = false;
+      if (storedCookies.isEmpty()) {
+        continue;
+      }
+      if (results == null) {
+        results = new ArrayList<>(4);
+      }
+      results.addAll(storedCookies);
     }
 
-    return results;
+    return results == null ? Collections.emptyList() : results;
   }
 
-  private List<Cookie> getStoredCookies(String domain, String path, boolean secure,
-                                        boolean[] removeExpired, boolean isExactMatch) {
-    if (!cookieJar.containsKey(domain)) {
+  private List<Cookie> getStoredCookies(String domain, String path, boolean secure, boolean isExactMatch) {
+    final Map<CookieKey, StoredCookie> innerMap = cookieJar.get(domain);
+    if (innerMap == null) {
       return Collections.emptyList();
     }
 
-    return cookieJar.get(domain).entrySet().stream().filter(pair -> {
+    return innerMap.entrySet().stream().filter(pair -> {
       CookieKey key = pair.getKey();
       StoredCookie storedCookie = pair.getValue();
       boolean hasCookieExpired = hasCookieExpired(storedCookie.cookie, storedCookie.createdAt);
