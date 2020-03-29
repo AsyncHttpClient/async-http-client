@@ -82,7 +82,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // Visible for test
   public Map<String, Map<CookieKey, StoredCookie>> getUnderlying() {
     return new HashMap<>(cookieJar);
   }
