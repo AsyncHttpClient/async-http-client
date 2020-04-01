@@ -16,6 +16,7 @@ package org.asynchttpclient.cookie;
 
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.Counted;
 
 import java.net.CookieManager;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.function.Predicate;
  *
  * @since 2.1
  */
-public interface CookieStore {
+public interface CookieStore extends Counted {
   /**
    * Adds one {@link Cookie} to the store. This is called for every incoming HTTP response.
    * If the given cookie has already expired it will not be added.

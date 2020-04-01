@@ -21,12 +21,14 @@ import org.asynchttpclient.util.MiscUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
   private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
+  private final AtomicInteger counter = new AtomicInteger();
 
   @Override
   public void add(Uri uri, Cookie cookie) {
@@ -78,6 +80,22 @@ public final class ThreadSafeCookieStore implements CookieStore {
   @Override
   public void evictExpired() {
     removeExpired();
+  }
+
+
+  @Override
+  public int incrementAndGet() {
+    return counter.incrementAndGet();
+  }
+
+  @Override
+  public int decrementAndGet() {
+    return counter.decrementAndGet();
+  }
+
+  @Override
+  public int count() {
+    return counter.get();
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
