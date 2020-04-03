@@ -104,7 +104,7 @@ Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.c
 
 // unbound
 Request request = get("http://www.example.com/").build();
-Future<Response> whenResponse = asyncHttpClient.execute(request);
+Future<Response> whenResponse = asyncHttpClient.executeRequest(request);
 ```
 
 #### Setting Request Body
