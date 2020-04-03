@@ -199,6 +199,13 @@ public interface AsyncHttpClientConfig {
   CookieStore getCookieStore();
 
   /**
+   * Return the delay in milliseconds to evict expired cookies from {@linkplain CookieStore}
+   *
+   * @return the delay in milliseconds to evict expired cookies from {@linkplain CookieStore}
+   */
+  int expiredCookieEvictionDelay();
+
+  /**
    * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
    *
    * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server

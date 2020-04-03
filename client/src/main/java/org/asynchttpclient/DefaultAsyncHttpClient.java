@@ -22,6 +22,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -90,6 +91,22 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     channelManager = new ChannelManager(config, nettyTimer);
     requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
     channelManager.configureBootstraps(requestSender);
+    boolean scheduleCookieEviction = false;
+
+    final int cookieStoreCount = config.getCookieStore().incrementAndGet();
+    if (!allowStopNettyTimer) {
+      if (cookieStoreCount == 1) {
+        // If this is the first AHC instance for the shared (user-provided) netty timer.
+        scheduleCookieEviction = true;
+      }
+    } else {
+      // If Timer is not shared.
+      scheduleCookieEviction = true;
+    }
+    if (scheduleCookieEviction) {
+      nettyTimer.newTimeout(new CookieEvictionTask(config.expiredCookieEvictionDelay(), config.getCookieStore()),
+                            config.expiredCookieEvictionDelay(), TimeUnit.MILLISECONDS);
+    }
   }
 
   private Timer newNettyTimer(AsyncHttpClientConfig config) {
