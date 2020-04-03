@@ -4,7 +4,7 @@
 
   <groupId>org.asynchttpclient</groupId>
   <artifactId>async-http-client-project</artifactId>
-  <version>2.12.0</version>
+  <version>2.12.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Asynchronous Http Client Project</name>
@@ -34,7 +34,7 @@
     <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
     <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
     <url>https://github.com/AsyncHttpClient/async-http-client/tree/master</url>
-    <tag>async-http-client-project-2.12.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
