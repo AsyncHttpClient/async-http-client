@@ -23,6 +23,7 @@ import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.cookie.CookieEvictionTask;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -91,21 +92,17 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     channelManager = new ChannelManager(config, nettyTimer);
     requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
     channelManager.configureBootstraps(requestSender);
-    boolean scheduleCookieEviction = false;
 
-    final int cookieStoreCount = config.getCookieStore().incrementAndGet();
-    if (!allowStopNettyTimer) {
-      if (cookieStoreCount == 1) {
-        // If this is the first AHC instance for the shared (user-provided) netty timer.
-        scheduleCookieEviction = true;
+    CookieStore cookieStore = config.getCookieStore();
+    if (cookieStore != null) {
+      int cookieStoreCount = config.getCookieStore().incrementAndGet();
+      if (
+        allowStopNettyTimer // timer is not shared
+        || cookieStoreCount == 1 // this is the first AHC instance for the shared (user-provided) timer
+      ) {
+        nettyTimer.newTimeout(new CookieEvictionTask(config.expiredCookieEvictionDelay(), cookieStore),
+          config.expiredCookieEvictionDelay(), TimeUnit.MILLISECONDS);
       }
-    } else {
-      // If Timer is not shared.
-      scheduleCookieEviction = true;
-    }
-    if (scheduleCookieEviction) {
-      nettyTimer.newTimeout(new CookieEvictionTask(config.expiredCookieEvictionDelay(), config.getCookieStore()),
-                            config.expiredCookieEvictionDelay(), TimeUnit.MILLISECONDS);
     }
   }
 
@@ -123,6 +120,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         channelManager.close();
       } catch (Throwable t) {
         LOGGER.warn("Unexpected error on ChannelManager close", t);
+      }
+      CookieStore cookieStore = config.getCookieStore();
+      if (cookieStore != null) {
+        cookieStore.decrementAndGet();
       }
       if (allowStopNettyTimer) {
         try {
