@@ -191,7 +191,7 @@
           <instructions>
             <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
             <Bundle-Vendor>The AsyncHttpClient Project</Bundle-Vendor>
-            <Import-Package>javax.activation;version="[1.1,2)", *</Import-Package>
+            <Import-Package>javax.activation;version="[1.1,2)", io.netty.channel.kqueue;resolution:=optional, io.netty.channel.epoll;resolution:=optional, *</Import-Package>
           </instructions>
         </configuration>
         <executions>
