@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)}
  * convenience method which gets called when the {@link Response} processing is
- * finished. This class also implement the {@link ProgressAsyncHandler}
+ * finished. This class also implements the {@link ProgressAsyncHandler}
  * callback, all doing nothing except returning
  * {@link org.asynchttpclient.AsyncHandler.State#CONTINUE}
  *

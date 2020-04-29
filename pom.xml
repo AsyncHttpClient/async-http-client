@@ -157,38 +157,37 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.0.0</version>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.0.1</version>
+        <extensions>true</extensions>
         <configuration>
-          <updatePomFile>true</updatePomFile>
+          <manifestLocation>META-INF</manifestLocation>
+          <instructions>
+            <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
+            <Bundle-Vendor>The AsyncHttpClient Project</Bundle-Vendor>
+            <Import-Package>javax.activation;version="[1.1,2)", *</Import-Package>
+          </instructions>
         </configuration>
         <executions>
           <execution>
-            <id>flatten</id>
-            <phase>process-resources</phase>
+            <id>osgi-bundle</id>
+            <phase>package</phase>
             <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>flatten.clean</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>clean</goal>
+              <goal>bundle</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.0.1</version>
+        <configuration>
+          <doclint>none</doclint>
+        </configuration>
+      </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.4</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <profiles>
     <profile>
@@ -223,18 +222,16 @@
       </properties>
     </profile>
   </profiles>
-   <distributionManagement>
-     <repository>
-       <id>dist-release</id>
-       <name>dist-release</name>
-       <url>${distMgmtReleasesUrl}</url>
-     </repository>
-     <snapshotRepository>
-       <id>dist-snapshots</id>
-       <name>dist-snapshots</name>
-       <url>${distMgmtSnapshotsUrl}</url>
-     </snapshotRepository>
-   </distributionManagement>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
   <modules>
     <module>netty-utils</module>
     <module>client</module>
@@ -319,6 +316,12 @@
         <groupId>io.reactivex.rxjava2</groupId>
         <artifactId>rxjava</artifactId>
         <version>${rxjava2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerb-simplekdc</artifactId>
+        <version>${kerby.version}</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -420,34 +423,35 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>java-hamcrest</artifactId>
+      <artifactId>hamcrest</artifactId>
       <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
   <properties>
     <version></version>
-    <project.version>2.5.3-SNAPSHOT</project.version>
+    <project.version>2.8.1-SNAPSHOT</project.version>
     <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
     <distMgmtReleasesUrl>http://oss.sonatype.org/content/repositories/releases</distMgmtReleasesUrl>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
-    <netty.version>4.1.27.Final</netty.version>
+    <netty.version>4.1.33.Final</netty.version>
     <slf4j.version>1.7.25</slf4j.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <activation.version>1.2.0</activation.version>
     <netty-reactive-streams.version>2.0.0</netty-reactive-streams.version>
     <rxjava.version>1.3.8</rxjava.version>
-    <rxjava2.version>2.1.16</rxjava2.version>
+    <rxjava2.version>2.2.5</rxjava2.version>
     <logback.version>1.2.3</logback.version>
     <testng.version>6.13.1</testng.version>
-    <jetty.version>9.4.11.v20180605</jetty.version>
-    <tomcat.version>9.0.10</tomcat.version>
+    <jetty.version>9.4.14.v20181114</jetty.version>
+    <tomcat.version>9.0.14</tomcat.version>
     <commons-io.version>2.6</commons-io.version>
     <commons-fileupload.version>1.3.3</commons-fileupload.version>
     <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
-    <mockito.version>2.19.0</mockito.version>
-    <hamcrest.version>2.0.0.0</hamcrest.version>
+    <mockito.version>2.23.4</mockito.version>
+    <hamcrest.version>2.1</hamcrest.version>
+    <kerby.version>1.1.1</kerby.version>
   </properties>
 </project>

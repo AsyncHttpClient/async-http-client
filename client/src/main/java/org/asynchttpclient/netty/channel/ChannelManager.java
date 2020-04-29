@@ -345,7 +345,7 @@ public class ChannelManager {
       if (!isSslHandlerConfigured(pipeline)) {
         SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
         whenHanshaked = sslHandler.handshakeFuture();
-        pipeline.addBefore(AHC_HTTP_HANDLER, SSL_HANDLER, sslHandler);
+        pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
       }
       pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
@@ -380,10 +380,11 @@ public class ChannelManager {
     }
 
     SslHandler sslHandler = createSslHandler(peerHost, peerPort);
-    if (hasSocksProxyHandler)
+    if (hasSocksProxyHandler) {
       pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
-    else
+    } else {
       pipeline.addFirst(SSL_HANDLER, sslHandler);
+    }
     return sslHandler;
   }
 

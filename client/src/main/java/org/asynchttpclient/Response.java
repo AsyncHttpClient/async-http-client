@@ -147,24 +147,29 @@ public interface Response {
   boolean hasResponseHeaders();
 
   /**
-   * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
-   * or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}
+   * Return true if the response's body has been computed by an {@link AsyncHandler}.
+   * It will return false if:
+   * <ul>
+   *   <li>either the {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} returned {@link AsyncHandler.State#ABORT}</li>
+   *   <li>or {@link AsyncHandler#onHeadersReceived(HttpHeaders)} returned {@link AsyncHandler.State#ABORT}</li>
+   *   <li>response body was empty</li>
+   * </ul>
    *
-   * @return true if the response's body has been computed by an {@link AsyncHandler}
+   * @return true if the response's body has been computed by an {@link AsyncHandler} to new empty bytes
    */
   boolean hasResponseBody();
 
   /**
-   * Get remote address client initiated request to.
+   * Get the remote address that the client initiated the request to.
    *
-   * @return remote address client initiated request to, may be {@code null} if asynchronous provider is unable to provide the remote address
+   * @return The remote address that the client initiated the request to. May be {@code null} if asynchronous provider is unable to provide the remote address
    */
   SocketAddress getRemoteAddress();
 
   /**
-   * Get local address client initiated request from.
+   * Get the local address that the client initiated the request from.
    *
-   * @return local address client initiated request from, may be {@code null} if asynchronous provider is unable to provide the local address
+   * @return The local address that the client initiated the request from. May be {@code null} if asynchronous provider is unable to provide the local address
    */
   SocketAddress getLocalAddress();
 

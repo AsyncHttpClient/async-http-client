@@ -25,6 +25,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +42,7 @@ import static org.testng.Assert.*;
 
 public class AsyncStreamHandlerTest extends HttpTest {
 
-  private static final String RESPONSE = "param_1_";
+  private static final String RESPONSE = "param_1=value_1";
 
   private static HttpServer server;
 
@@ -93,18 +95,25 @@ public class AsyncStreamHandlerTest extends HttpTest {
                   @Override
                   public State onHeadersReceived(HttpHeaders headers) {
                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
+                    for (Map.Entry<String, String> header : headers) {
+                      if (header.getKey().startsWith("X-param")) {
+                        builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+                      }
+                    }
                     return State.CONTINUE;
                   }
 
                   @Override
                   public State onBodyPartReceived(HttpResponseBodyPart content) {
-                    builder.append(new String(content.getBodyPartBytes(), US_ASCII));
                     return State.CONTINUE;
                   }
 
                   @Override
                   public String onCompleted() {
-                    return builder.toString().trim();
+                    if (builder.length() > 0) {
+                      builder.setLength(builder.length() - 1);
+                    }
+                    return builder.toString();
                   }
                 }).get(10, TimeUnit.SECONDS);
 
@@ -174,17 +183,24 @@ public class AsyncStreamHandlerTest extends HttpTest {
                   public State onHeadersReceived(HttpHeaders headers) {
                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     onHeadersReceived.set(true);
+                    for (Map.Entry<String, String> header : headers) {
+                      if (header.getKey().startsWith("X-param")) {
+                        builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+                      }
+                    }
                     return State.CONTINUE;
                   }
 
                   @Override
                   public State onBodyPartReceived(HttpResponseBodyPart content) {
-                    builder.append(new String(content.getBodyPartBytes()));
                     return State.CONTINUE;
                   }
 
                   @Override
                   public String onCompleted() {
+                    if (builder.length() > 0) {
+                      builder.setLength(builder.length() - 1);
+                    }
                     return builder.toString().trim();
                   }
 
@@ -254,17 +270,24 @@ public class AsyncStreamHandlerTest extends HttpTest {
           @Override
           public State onHeadersReceived(HttpHeaders headers) {
             responseHeaders.set(headers);
+            for (Map.Entry<String, String> header : headers) {
+              if (header.getKey().startsWith("X-param")) {
+                builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+              }
+            }
             return State.CONTINUE;
           }
 
           @Override
           public State onBodyPartReceived(HttpResponseBodyPart content) {
-            builder.append(new String(content.getBodyPartBytes()));
             return State.CONTINUE;
           }
 
           @Override
           public String onCompleted() {
+            if (builder.length() > 0) {
+              builder.setLength(builder.length() - 1);
+            }
             return builder.toString();
           }
         });

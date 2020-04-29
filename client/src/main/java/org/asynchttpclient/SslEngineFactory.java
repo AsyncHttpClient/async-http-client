@@ -19,7 +19,7 @@ import javax.net.ssl.SSLException;
 public interface SslEngineFactory {
 
   /**
-   * Creates new {@link SSLEngine}.
+   * Creates a new {@link SSLEngine}.
    *
    * @param config   the client config
    * @param peerHost the peer hostname

@@ -17,6 +17,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okio.Buffer;
+import okio.Timeout;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * {@link AsyncHttpClient} <a href="http://square.github.io/retrofit/">Retrofit2</a> {@link okhttp3.Call}
@@ -38,13 +40,8 @@ import java.util.function.Consumer;
 @Builder(toBuilder = true)
 @Slf4j
 class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
-  /**
-   * Default {@link #execute()} timeout in milliseconds (value: <b>{@value}</b>)
-   *
-   * @see #execute()
-   * @see #executeTimeoutMillis
-   */
-  public static final long DEFAULT_EXECUTE_TIMEOUT_MILLIS = 30_000;
+  private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
+
   /**
    * Tells whether call has been executed.
    *
@@ -52,37 +49,38 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
    * @see #isCanceled()
    */
   private final AtomicReference<CompletableFuture<Response>> futureRef = new AtomicReference<>();
+
   /**
-   * HttpClient instance.
+   * {@link AsyncHttpClient} supplier
    */
   @NonNull
-  AsyncHttpClient httpClient;
-  /**
-   * {@link #execute()} response timeout in milliseconds.
-   */
-  @Builder.Default
-  long executeTimeoutMillis = DEFAULT_EXECUTE_TIMEOUT_MILLIS;
+  Supplier<AsyncHttpClient> httpClientSupplier;
+
   /**
    * Retrofit request.
    */
   @NonNull
   @Getter(AccessLevel.NONE)
   Request request;
+
   /**
    * List of consumers that get called just before actual async-http-client request is being built.
    */
   @Singular("requestCustomizer")
   List<Consumer<RequestBuilder>> requestCustomizers;
+
   /**
    * List of consumers that get called just before actual HTTP request is being fired.
    */
   @Singular("onRequestStart")
   List<Consumer<Request>> onRequestStart;
+
   /**
    * List of consumers that get called when HTTP request finishes with an exception.
    */
   @Singular("onRequestFailure")
   List<Consumer<Throwable>> onRequestFailure;
+
   /**
    * List of consumers that get called when HTTP request finishes successfully.
    */
@@ -128,7 +126,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   @Override
   public Response execute() throws IOException {
     try {
-      return executeHttpRequest().get(getExecuteTimeoutMillis(), TimeUnit.MILLISECONDS);
+      return executeHttpRequest().get(getRequestTimeoutMillis(), TimeUnit.MILLISECONDS);
     } catch (ExecutionException e) {
       throw toIOException(e.getCause());
     } catch (Exception e) {
@@ -146,7 +144,7 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   @Override
   public void cancel() {
     val future = futureRef.get();
-    if (future != null) {
+    if (future != null && !future.isDone()) {
       if (!future.cancel(true)) {
         log.warn("Cannot cancel future: {}", future);
       }
@@ -163,6 +161,20 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   public boolean isCanceled() {
     val future = futureRef.get();
     return future != null && future.isCancelled();
+  }
+
+  @Override
+  public Timeout timeout() {
+    return new Timeout().timeout(getRequestTimeoutMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Returns HTTP request timeout in milliseconds, retrieved from http client configuration.
+   *
+   * @return request timeout in milliseconds.
+   */
+  protected long getRequestTimeoutMillis() {
+    return Math.abs(getHttpClient().getConfig().getRequestTimeout());
   }
 
   @Override
@@ -229,6 +241,20 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   }
 
   /**
+   * Returns HTTP client.
+   *
+   * @return http client
+   * @throws IllegalArgumentException if {@link #httpClientSupplier} returned {@code null}.
+   */
+  protected AsyncHttpClient getHttpClient() {
+    val httpClient = httpClientSupplier.get();
+    if (httpClient == null) {
+      throw new IllegalStateException("Async HTTP client instance supplier " + httpClientSupplier + " returned null.");
+    }
+    return httpClient;
+  }
+
+  /**
    * Converts async-http-client response to okhttp response.
    *
    * @param asyncHttpClientResponse async-http-client response
@@ -254,6 +280,8 @@ class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
               ? null : MediaType.parse(asyncHttpClientResponse.getContentType());
       val okHttpBody = ResponseBody.create(contentType, asyncHttpClientResponse.getResponseBodyAsBytes());
       rspBuilder.body(okHttpBody);
+    } else {
+      rspBuilder.body(EMPTY_BODY);
     }
 
     return rspBuilder.build();

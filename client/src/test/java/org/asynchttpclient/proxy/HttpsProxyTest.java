@@ -13,6 +13,7 @@
 package org.asynchttpclient.proxy;
 
 import org.asynchttpclient.*;
+import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
@@ -23,6 +24,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.testng.Assert.assertEquals;
@@ -81,6 +83,36 @@ public class HttpsProxyTest extends AbstractBasicTest {
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
       Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
       assertEquals(r.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testNoDirectRequestBodyWithProxy() throws Exception {
+    AsyncHttpClientConfig config = config()
+      .setFollowRedirect(true)
+      .setProxyServer(proxyServer("localhost", port1).build())
+      .setUseInsecureTrustManager(true)
+      .build();
+    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+      Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
+      assertEquals(r.getStatusCode(), 200);
+    }
+  }
+
+  @Test
+  public void testDecompressBodyWithProxy() throws Exception {
+    AsyncHttpClientConfig config = config()
+      .setFollowRedirect(true)
+      .setProxyServer(proxyServer("localhost", port1).build())
+      .setUseInsecureTrustManager(true)
+      .build();
+    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+      String body = "hello world";
+      Response r = asyncHttpClient.executeRequest(post(getTargetUrl2())
+        .setHeader("X-COMPRESS", "true")
+        .setBody(body)).get();
+      assertEquals(r.getStatusCode(), 200);
+      assertEquals(r.getResponseBody(), body);
     }
   }
 

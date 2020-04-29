@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.netty.request.NettyRequest;
 
+import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -37,9 +38,9 @@ import java.util.List;
  * </ol>
  * <br>
  * Returning a {@link AsyncHandler.State#ABORT} from any of those callback methods will interrupt asynchronous response
- * processing, after that only {@link #onCompleted()} is going to be called.
+ * processing. After that, only {@link #onCompleted()} is going to be called.
  * <br>
- * AsyncHandler aren't thread safe, hence you should avoid re-using the same instance when doing concurrent requests.
+ * AsyncHandlers aren't thread safe. Hence, you should avoid re-using the same instance when doing concurrent requests.
  * As an example, the following may produce unexpected results:
  * <blockquote><pre>
  *   AsyncHandler ah = new AsyncHandler() {....};
@@ -49,9 +50,10 @@ import java.util.List;
  * </pre></blockquote>
  * It is recommended to create a new instance instead.
  * <p>
- * Do NOT perform any blocking operation in there, typically trying to send another request and call get() on its future.
+ * Do NOT perform any blocking operations in any of these methods. A typical example would be trying to send another
+ * request and calling get() on its future.
  * There's a chance you might end up in a dead lock.
- * If you really to perform blocking operation, executed it in a different dedicated thread pool.
+ * If you really need to perform a blocking operation, execute it in a different dedicated thread pool.
  *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
@@ -142,6 +144,8 @@ public interface AsyncHandler<T> {
   default void onHostnameResolutionFailure(String name, Throwable cause) {
   }
 
+  // ////////////// TCP CONNECT ////////
+
   /**
    * Notify the callback when trying to open a new connection.
    * <p>
@@ -151,8 +155,6 @@ public interface AsyncHandler<T> {
    */
   default void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
   }
-
-  // ////////////// TCP CONNECT ////////
 
   /**
    * Notify the callback after a successful connect
@@ -174,18 +176,18 @@ public interface AsyncHandler<T> {
   default void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
   }
 
+  // ////////////// TLS ///////////////
+
   /**
    * Notify the callback before TLS handshake
    */
   default void onTlsHandshakeAttempt() {
   }
 
-  // ////////////// TLS ///////////////
-
   /**
    * Notify the callback after the TLS was successful
    */
-  default void onTlsHandshakeSuccess() {
+  default void onTlsHandshakeSuccess(SSLSession sslSession) {
   }
 
   /**
@@ -196,13 +198,13 @@ public interface AsyncHandler<T> {
   default void onTlsHandshakeFailure(Throwable cause) {
   }
 
+  // /////////// POOLING /////////////
+
   /**
    * Notify the callback when trying to fetch a connection from the pool.
    */
   default void onConnectionPoolAttempt() {
   }
-
-  // /////////// POOLING /////////////
 
   /**
    * Notify the callback when a new connection was successfully fetched from the pool.
@@ -220,6 +222,8 @@ public interface AsyncHandler<T> {
   default void onConnectionOffer(Channel connection) {
   }
 
+  // //////////// SENDING //////////////
+
   /**
    * Notify the callback when a request is being written on the channel. If the original request causes multiple requests to be sent, for example, because of authorization or
    * retry, it will be notified multiple times.
@@ -228,8 +232,6 @@ public interface AsyncHandler<T> {
    */
   default void onRequestSend(NettyRequest request) {
   }
-
-  // //////////// SENDING //////////////
 
   /**
    * Notify the callback every time a request is being retried.

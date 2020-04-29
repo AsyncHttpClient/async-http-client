@@ -270,7 +270,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
    * @param headers map of header names as the map keys and header values {@link Iterable} as the map values
    * @return {@code this}
    */
-  public T setHeaders(Map<CharSequence, ? extends Iterable<?>> headers) {
+  public T setHeaders(Map<? extends CharSequence, ? extends Iterable<?>> headers) {
     clearHeaders();
     if (headers != null) {
       headers.forEach((name, values) -> this.headers.add(name, values));
@@ -285,7 +285,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
    * @param headers map of header names as the map keys and header values as the map values
    * @return {@code this}
    */
-  public T setSingleHeaders(Map<CharSequence, ?> headers) {
+  public T setSingleHeaders(Map<? extends CharSequence, ?> headers) {
     clearHeaders();
     if (headers != null) {
       headers.forEach((name, value) -> this.headers.add(name, value));
