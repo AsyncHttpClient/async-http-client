@@ -24,6 +24,5 @@ CMD mvn deploy -U \
   -Dmaven.test.skip=true \
   -Dgpg.skip \
   -DdistMgmtReleasesUrl=${REPO_URL}/releases \
-  -DdistMgmtSnapshotsUrl=${REPO_URL}/snapshots \
   -DAWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
   -Dproject.version=${VERSION}
