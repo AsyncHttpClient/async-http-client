@@ -225,12 +225,10 @@
   <distributionManagement>
     <snapshotRepository>
       <id>dist-snapshots</id>
-      <name>dist-snapshots</name>
       <url>${distMgmtSnapshotsUrl}</url>
     </snapshotRepository>
     <repository>
       <id>dist-release</id>
-      <name>dist-release</name>
       <url>${distMgmtReleasesUrl}</url>
     </repository>
   </distributionManagement>
