@@ -156,29 +156,30 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>3.0.1</version>
-        <extensions>true</extensions>
-        <configuration>
-          <manifestLocation>META-INF</manifestLocation>
-          <instructions>
-            <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
-            <Bundle-Vendor>The AsyncHttpClient Project</Bundle-Vendor>
-            <Import-Package>javax.activation;version="[1.1,2)", *</Import-Package>
-          </instructions>
-        </configuration>
-        <executions>
-          <execution>
-            <id>osgi-bundle</id>
-            <phase>package</phase>
-            <goals>
-              <goal>bundle</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+	  <plugin>
+	  	<groupId>org.codehaus.mojo</groupId>
+		<artifactId>flatten-maven-plugin</artifactId>
+		<version>1.0.0</version>
+		<configuration>
+			<updatePomFile>true</updatePomFile>
+		</configuration>
+		<executions>
+			<execution>
+				<id>flatten</id>
+				<phase>process-resources</phase>
+				<goals>
+					<goal>flatten</goal>
+				</goals>
+			</execution>
+			<execution>
+				<id>flatten.clean</id>
+				<phase>clean</phase>
+				<goals>
+					<goal>clean</goal>
+				</goals>
+			</execution>
+		</executions>
+	  </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
