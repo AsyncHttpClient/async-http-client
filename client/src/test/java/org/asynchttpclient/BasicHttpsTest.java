@@ -107,7 +107,7 @@ public class BasicHttpsTest extends HttpTest {
   public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy() throws Throwable {
     logger.debug(">>> multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
 
-    KeepAliveStrategy keepAliveStrategy = (ahcRequest, nettyRequest, nettyResponse) -> !ahcRequest.getUri().isSecured();
+    KeepAliveStrategy keepAliveStrategy = (remoteAddress, ahcRequest, nettyRequest, nettyResponse) -> !ahcRequest.getUri().isSecured();
 
     withClient(config().setSslEngineFactory(createSslEngineFactory()).setKeepAliveStrategy(keepAliveStrategy)).run(client ->
       withServer(server).run(server -> {

@@ -17,14 +17,21 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class DefaultConnectionSemaphoreFactory implements ConnectionSemaphoreFactory {
 
-    public ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config) {
-        ConnectionSemaphore semaphore = new NoopConnectionSemaphore();
-        if (config.getMaxConnections() > 0) {
-            semaphore = new MaxConnectionSemaphore(config.getMaxConnections());
-        }
-        if (config.getMaxConnectionsPerHost() > 0) {
-            semaphore = new PerHostConnectionSemaphore(config.getMaxConnectionsPerHost(), semaphore);
-        }
-        return semaphore;
+  public ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config) {
+    int acquireFreeChannelTimeout = Math.max(0, config.getAcquireFreeChannelTimeout());
+    int maxConnections = config.getMaxConnections();
+    int maxConnectionsPerHost = config.getMaxConnectionsPerHost();
+
+    if (maxConnections > 0 && maxConnectionsPerHost > 0) {
+      return new CombinedConnectionSemaphore(maxConnections, maxConnectionsPerHost, acquireFreeChannelTimeout);
     }
+    if (maxConnections > 0) {
+      return new MaxConnectionSemaphore(maxConnections, acquireFreeChannelTimeout);
+    }
+    if (maxConnectionsPerHost > 0) {
+      return new CombinedConnectionSemaphore(maxConnections, maxConnectionsPerHost, acquireFreeChannelTimeout);
+    }
+
+    return new NoopConnectionSemaphore();
+  }
 }

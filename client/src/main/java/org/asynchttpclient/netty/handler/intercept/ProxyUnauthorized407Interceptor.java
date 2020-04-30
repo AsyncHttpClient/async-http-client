@@ -79,7 +79,7 @@ public class ProxyUnauthorized407Interceptor {
 
     // FIXME what's this???
     future.setChannelState(ChannelState.NEW);
-    HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
+    HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
     switch (proxyRealm.getScheme()) {
       case BASIC:
@@ -140,7 +140,7 @@ public class ProxyUnauthorized407Interceptor {
           return false;
         }
         try {
-          kerberosProxyChallenge(proxyServer, requestHeaders);
+          kerberosProxyChallenge(proxyRealm, proxyServer, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
@@ -163,7 +163,7 @@ public class ProxyUnauthorized407Interceptor {
         throw new IllegalStateException("Invalid Authentication scheme " + proxyRealm.getScheme());
     }
 
-    RequestBuilder nextRequestBuilder = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders);
+    RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
     if (future.getCurrentRequest().getUri().isSecured()) {
       nextRequestBuilder.setMethod(CONNECT);
     }
@@ -184,10 +184,17 @@ public class ProxyUnauthorized407Interceptor {
     return true;
   }
 
-  private void kerberosProxyChallenge(ProxyServer proxyServer,
+  private void kerberosProxyChallenge(Realm proxyRealm,
+                                      ProxyServer proxyServer,
                                       HttpHeaders headers) throws SpnegoEngineException {
 
-    String challengeHeader = SpnegoEngine.instance().generateToken(proxyServer.getHost());
+    String challengeHeader = SpnegoEngine.instance(proxyRealm.getPrincipal(),
+        proxyRealm.getPassword(),
+        proxyRealm.getServicePrincipalName(),
+        proxyRealm.getRealmName(),
+        proxyRealm.isUseCanonicalHostname(),
+        proxyRealm.getCustomLoginConfig(),
+        proxyRealm.getLoginContextName()).generateToken(proxyServer.getHost());
     headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 

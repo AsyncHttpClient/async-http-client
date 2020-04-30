@@ -1,12 +1,12 @@
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 before_script:
   - travis/before_script.sh
 
 script: 
-  - mvn test -Ptest-output
+  - mvn test javadoc:javadoc -Ptest-output
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
   
@@ -15,12 +15,6 @@ after_success:
   - travis/after_success.sh
 
 sudo: false
-
-# https://github.com/travis-ci/travis-ci/issues/3259
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 # Cache settings
 cache:

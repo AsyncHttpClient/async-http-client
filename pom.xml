@@ -1,31 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>9</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>org.asynchttpclient</groupId>
   <artifactId>async-http-client-project</artifactId>
-  <name>Asynchronous Http Client Project</name>
-  <version>2.5.3-SNAPSHOT</version>
+  <version>2.12.2-SNAPSHOT</version>
   <packaging>pom</packaging>
+
+  <name>Asynchronous Http Client Project</name>
   <description>
     The Async Http Client (AHC) library's purpose is to allow Java
     applications to easily execute HTTP requests and
     asynchronously process the response.
   </description>
   <url>http://github.com/AsyncHttpClient/async-http-client</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>slandelle</id>
+      <name>Stephane Landelle</name>
+      <email>slandelle@gatling.io</email>
+    </developer>
+  </developers>
+
   <scm>
-    <url>https://github.com/AsyncHttpClient/async-http-client</url>
     <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
     <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
+    <url>https://github.com/AsyncHttpClient/async-http-client/tree/master</url>
+    <tag>HEAD</tag>
   </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <issueManagement>
-    <system>jira</system>
-    <url>https://issues.sonatype.org/browse/AHC</url>
+    <system>github</system>
+    <url>https://github.com/AsyncHttpClient/async-http-client/issues</url>
   </issueManagement>
+
   <mailingLists>
     <mailingList>
       <name>asynchttpclient</name>
@@ -36,23 +63,6 @@
     </mailingList>
   </mailingLists>
 
-  <prerequisites>
-    <maven>3.0.0</maven>
-  </prerequisites>
-  <developers>
-    <developer>
-      <id>slandelle</id>
-      <name>Stephane Landelle</name>
-      <email>slandelle@gatling.io</email>
-    </developer>
-  </developers>
-  <licenses>
-    <license>
-      <name>Apache License 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
   <build>
     <resources>
       <resource>
@@ -65,20 +75,28 @@
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-ssh-external</artifactId>
-        <version>1.0-beta-6</version>
+        <version>3.3.4</version>
       </extension>
       <extension>
         <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-provider-gitexe</artifactId>
-        <version>1.6</version>
+        <version>1.11.2</version>
       </extension>
       <extension>
         <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-manager-plexus</artifactId>
-        <version>1.6</version>
+        <version>1.11.2</version>
       </extension>
     </extensions>
     <defaultGoal>install</defaultGoal>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.3</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -136,11 +154,23 @@
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Automatic-Module-Name>${javaModuleName}</Automatic-Module-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>3.2.1</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -151,15 +181,46 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.0.1</version>
+        <extensions>true</extensions>
+        <configuration>
+          <manifestLocation>META-INF</manifestLocation>
+          <instructions>
+            <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
+            <Bundle-Vendor>The AsyncHttpClient Project</Bundle-Vendor>
+            <Import-Package>javax.activation;version="[1.1,2)", io.netty.channel.kqueue;resolution:=optional, io.netty.channel.epoll;resolution:=optional, *</Import-Package>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <id>osgi-bundle</id>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <doclint>none</doclint>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.4</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <profiles>
     <profile>
@@ -174,6 +235,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -194,20 +256,9 @@
       </properties>
     </profile>
   </profiles>
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Release</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2
-      </url>
-    </repository>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>sonatype-nexus-snapshots</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
-  </distributionManagement>
+
   <modules>
+    <module>bom</module>
     <module>netty-utils</module>
     <module>client</module>
     <module>extras</module>
@@ -268,6 +319,13 @@
         <optional>true</optional>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-kqueue</artifactId>
+        <classifier>osx-x86_64</classifier>
+        <version>${netty.version}</version>
+        <optional>true</optional>
+      </dependency>
+      <dependency>
         <groupId>org.reactivestreams</groupId>
         <artifactId>reactive-streams</artifactId>
         <version>${reactive-streams.version}</version>
@@ -292,6 +350,12 @@
         <artifactId>rxjava</artifactId>
         <version>${rxjava2.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerb-simplekdc</artifactId>
+        <version>${kerby.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -302,7 +366,7 @@
     </dependency>
     <dependency>
       <groupId>com.sun.activation</groupId>
-      <artifactId>javax.activation</artifactId>
+      <artifactId>jakarta.activation</artifactId>
       <version>${activation.version}</version>
     </dependency>
     <!-- Test dependencies -->
@@ -392,31 +456,32 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>java-hamcrest</artifactId>
+      <artifactId>hamcrest</artifactId>
       <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
   <properties>
-    <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <source.property>1.8</source.property>
     <target.property>1.8</target.property>
-    <netty.version>4.1.27.Final</netty.version>
-    <slf4j.version>1.7.25</slf4j.version>
-    <reactive-streams.version>1.0.2</reactive-streams.version>
-    <activation.version>1.2.0</activation.version>
-    <netty-reactive-streams.version>2.0.0</netty-reactive-streams.version>
+    <netty.version>4.1.48.Final</netty.version>
+    <slf4j.version>1.7.30</slf4j.version>
+    <reactive-streams.version>1.0.3</reactive-streams.version>
+    <activation.version>1.2.2</activation.version>
+    <netty-reactive-streams.version>2.0.4</netty-reactive-streams.version>
     <rxjava.version>1.3.8</rxjava.version>
-    <rxjava2.version>2.1.16</rxjava2.version>
+    <rxjava2.version>2.2.18</rxjava2.version>
     <logback.version>1.2.3</logback.version>
-    <testng.version>6.13.1</testng.version>
-    <jetty.version>9.4.11.v20180605</jetty.version>
-    <tomcat.version>9.0.10</tomcat.version>
+    <testng.version>7.1.0</testng.version>
+    <jetty.version>9.4.18.v20190429</jetty.version>
+    <tomcat.version>9.0.31</tomcat.version>
     <commons-io.version>2.6</commons-io.version>
     <commons-fileupload.version>1.3.3</commons-fileupload.version>
     <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
-    <mockito.version>2.19.0</mockito.version>
-    <hamcrest.version>2.0.0.0</hamcrest.version>
+    <mockito.version>3.3.0</mockito.version>
+    <hamcrest.version>2.2</hamcrest.version>
+    <kerby.version>2.0.0</kerby.version>
   </properties>
 </project>

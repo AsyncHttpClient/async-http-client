@@ -70,6 +70,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public int getAcquireFreeChannelTimeout() {
+    return getIntegerOpt(ACQUIRE_FREE_CHANNEL_TIMEOUT).orElse(defaultAcquireFreeChannelTimeout());
+  }
+
+  @Override
   public int getConnectTimeout() {
     return getIntegerOpt(CONNECTION_TIMEOUT_CONFIG).orElse(defaultConnectTimeout());
   }
@@ -157,6 +162,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   @Override
   public CookieStore getCookieStore() {
     return new ThreadSafeCookieStore();
+  }
+
+  @Override
+  public int expiredCookieEvictionDelay() {
+    return getIntegerOpt(EXPIRED_COOKIE_EVICTION_DELAY).orElse(defaultExpiredCookieEvictionDelay());
   }
 
   @Override
@@ -335,6 +345,16 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public long getHashedWheelTimerTickDuration() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
+  }
+
+  @Override
+  public int getHashedWheelTimerSize() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_SIZE).orElse(defaultHashedWheelTimerSize());
+  }
+
+  @Override
   public KeepAliveStrategy getKeepAliveStrategy() {
     return new DefaultKeepAliveStrategy();
   }
@@ -362,6 +382,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   @Override
   public boolean isSoReuseAddress() {
     return getBooleanOpt(SO_REUSE_ADDRESS_CONFIG).orElse(defaultSoReuseAddress());
+  }
+
+  @Override
+  public boolean isSoKeepAlive() {
+    return getBooleanOpt(SO_KEEP_ALIVE_CONFIG).orElse(defaultSoKeepAlive());
   }
 
   @Override
@@ -407,7 +432,7 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   private <T> Optional<T> getOpt(Function<String, T> func, String key) {
     return config.hasPath(key)
-        ? Optional.ofNullable(func.apply(key))
-        : Optional.empty();
+            ? Optional.ofNullable(func.apply(key))
+            : Optional.empty();
   }
 }

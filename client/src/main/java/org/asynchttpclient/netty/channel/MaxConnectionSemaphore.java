@@ -16,6 +16,8 @@ package org.asynchttpclient.netty.channel;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
@@ -23,21 +25,29 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  * Max connections limiter.
  *
  * @author Stepan Koltsov
+ * @author Alex Maltinsky
  */
 public class MaxConnectionSemaphore implements ConnectionSemaphore {
 
-  private final NonBlockingSemaphoreLike freeChannels;
-  private final IOException tooManyConnections;
+  protected final Semaphore freeChannels;
+  protected final IOException tooManyConnections;
+  protected final int acquireTimeout;
 
-  MaxConnectionSemaphore(int maxConnections) {
+  MaxConnectionSemaphore(int maxConnections, int acquireTimeout) {
     tooManyConnections = unknownStackTrace(new TooManyConnectionsException(maxConnections), MaxConnectionSemaphore.class, "acquireChannelLock");
-    freeChannels = maxConnections > 0 ? new NonBlockingSemaphore(maxConnections) : NonBlockingSemaphoreInfinite.INSTANCE;
+    freeChannels = maxConnections > 0 ? new Semaphore(maxConnections) : InfiniteSemaphore.INSTANCE;
+    this.acquireTimeout = Math.max(0, acquireTimeout);
   }
 
   @Override
   public void acquireChannelLock(Object partitionKey) throws IOException {
-    if (!freeChannels.tryAcquire())
-      throw tooManyConnections;
+    try {
+      if (!freeChannels.tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
+        throw tooManyConnections;
+      }
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

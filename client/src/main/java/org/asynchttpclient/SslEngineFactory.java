@@ -19,7 +19,7 @@ import javax.net.ssl.SSLException;
 public interface SslEngineFactory {
 
   /**
-   * Creates new {@link SSLEngine}.
+   * Creates a new {@link SSLEngine}.
    *
    * @param config   the client config
    * @param peerHost the peer hostname
@@ -39,4 +39,12 @@ public interface SslEngineFactory {
   default void init(AsyncHttpClientConfig config) throws SSLException {
     // no op
   }
+
+  /**
+   * Perform any necessary cleanup.
+   */
+  default void destroy() {
+    // no op
+  }
+
 }

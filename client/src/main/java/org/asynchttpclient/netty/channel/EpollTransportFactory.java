@@ -13,13 +13,32 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.channel.ChannelFactory;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 
-class EpollSocketChannelFactory implements ChannelFactory<EpollSocketChannel> {
+import java.util.concurrent.ThreadFactory;
+
+class EpollTransportFactory implements TransportFactory<EpollSocketChannel, EpollEventLoopGroup> {
+
+  EpollTransportFactory() {
+    try {
+      Class.forName("io.netty.channel.epoll.Epoll");
+    } catch (ClassNotFoundException e) {
+      throw new IllegalStateException("The epoll transport is not available");
+    }
+    if (!Epoll.isAvailable()) {
+      throw new IllegalStateException("The epoll transport is not supported");
+    }
+  }
 
   @Override
   public EpollSocketChannel newChannel() {
     return new EpollSocketChannel();
+  }
+
+  @Override
+  public EpollEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+    return new EpollEventLoopGroup(ioThreadsCount, threadFactory);
   }
 }

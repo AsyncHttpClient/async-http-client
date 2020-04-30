@@ -4,7 +4,7 @@
   <parent>
     <artifactId>async-http-client-extras-parent</artifactId>
     <groupId>org.asynchttpclient</groupId>
-    <version>2.5.3-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>async-http-client-extras-retrofit2</artifactId>
@@ -12,8 +12,9 @@
   <description>The Async Http Client Retrofit2 Extras.</description>
 
   <properties>
-    <retrofit2.version>2.4.0</retrofit2.version>
-    <lombok.version>1.16.20</lombok.version>
+    <retrofit2.version>2.7.2</retrofit2.version>
+    <lombok.version>1.18.12</lombok.version>
+    <javaModuleName>org.asynchttpclient.extras.retrofit2</javaModuleName>
   </properties>
 
   <dependencies>

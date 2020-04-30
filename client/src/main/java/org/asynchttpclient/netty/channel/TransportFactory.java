@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2019 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,27 +13,14 @@
  */
 package org.asynchttpclient.netty.channel;
 
-/**
- * Non-blocking semaphore-like object with infinite permits.
- * <p>
- * So try-acquire always succeeds.
- *
- * @author Stepan Koltsov
- */
-enum NonBlockingSemaphoreInfinite implements NonBlockingSemaphoreLike {
-  INSTANCE;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFactory;
+import io.netty.channel.EventLoopGroup;
 
-  @Override
-  public void release() {
-  }
+import java.util.concurrent.ThreadFactory;
 
-  @Override
-  public boolean tryAcquire() {
-    return true;
-  }
+public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
-  @Override
-  public String toString() {
-    return NonBlockingSemaphore.class.getName();
-  }
+  L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
+
 }

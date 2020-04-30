@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2019 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,13 +13,22 @@
  */
 package org.asynchttpclient.netty.channel;
 
-/**
- * Non-blocking semaphore API.
- *
- * @author Stepan Koltsov
- */
-interface NonBlockingSemaphoreLike {
-  void release();
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
-  boolean tryAcquire();
+import java.util.concurrent.ThreadFactory;
+
+enum NioTransportFactory implements TransportFactory<NioSocketChannel, NioEventLoopGroup> {
+
+  INSTANCE;
+
+  @Override
+  public NioSocketChannel newChannel() {
+    return new NioSocketChannel();
+  }
+
+  @Override
+  public NioEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+    return new NioEventLoopGroup(ioThreadsCount, threadFactory);
+  }
 }

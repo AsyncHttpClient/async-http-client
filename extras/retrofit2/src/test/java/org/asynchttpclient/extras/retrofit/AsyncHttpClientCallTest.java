@@ -14,16 +14,18 @@ package org.asynchttpclient.extras.retrofit;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
-import lombok.val;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.mockito.ArgumentCaptor;
 import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -35,16 +37,32 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumer;
 import static org.asynchttpclient.extras.retrofit.AsyncHttpClientCall.runConsumers;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
+@Slf4j
 public class AsyncHttpClientCallTest {
     static final Request REQUEST = new Request.Builder().url("http://www.google.com/").build();
+    static final DefaultAsyncHttpClientConfig DEFAULT_AHC_CONFIG = new DefaultAsyncHttpClientConfig.Builder()
+            .setRequestTimeout(1_000)
+            .build();
+
+    private AsyncHttpClient httpClient;
+    private Supplier<AsyncHttpClient> httpClientSupplier = () -> httpClient;
+
+    @BeforeMethod
+    void setup() {
+      httpClient = mock(AsyncHttpClient.class);
+      when(httpClient.getConfig()).thenReturn(DEFAULT_AHC_CONFIG);
+    }
 
     @Test(expectedExceptions = NullPointerException.class, dataProvider = "first")
     void builderShouldThrowInCaseOfMissingProperties(AsyncHttpClientCall.AsyncHttpClientCallBuilder builder) {
@@ -53,12 +71,10 @@ public class AsyncHttpClientCallTest {
 
     @DataProvider(name = "first")
     Object[][] dataProviderFirst() {
-        val httpClient = mock(AsyncHttpClient.class);
-
         return new Object[][]{
                 {AsyncHttpClientCall.builder()},
                 {AsyncHttpClientCall.builder().request(REQUEST)},
-                {AsyncHttpClientCall.builder().httpClient(httpClient)}
+                {AsyncHttpClientCall.builder().httpClientSupplier(httpClientSupplier)}
         };
     }
 
@@ -76,7 +92,7 @@ public class AsyncHttpClientCallTest {
         val numRequestCustomizer = new AtomicInteger();
 
         // prepare http client mock
-        val httpClient = mock(AsyncHttpClient.class);
+        this.httpClient = mock(AsyncHttpClient.class);
 
         val mockRequest = mock(org.asynchttpclient.Request.class);
         when(mockRequest.getHeaders()).thenReturn(EmptyHttpHeaders.INSTANCE);
@@ -93,13 +109,12 @@ public class AsyncHttpClientCallTest {
 
         // create call instance
         val call = AsyncHttpClientCall.builder()
-                .httpClient(httpClient)
+                .httpClientSupplier(httpClientSupplier)
                 .request(REQUEST)
                 .onRequestStart(e -> numStarted.incrementAndGet())
                 .onRequestFailure(t -> numFailed.incrementAndGet())
                 .onRequestSuccess(r -> numOk.incrementAndGet())
                 .requestCustomizer(rb -> numRequestCustomizer.incrementAndGet())
-                .executeTimeoutMillis(1000)
                 .build();
 
         // when
@@ -162,7 +177,7 @@ public class AsyncHttpClientCallTest {
     void toIOExceptionShouldProduceExpectedResult(Throwable exception) {
         // given
         val call = AsyncHttpClientCall.builder()
-                .httpClient(mock(AsyncHttpClient.class))
+                .httpClientSupplier(httpClientSupplier)
                 .request(REQUEST)
                 .build();
 
@@ -236,13 +251,12 @@ public class AsyncHttpClientCallTest {
         Request request = requestWithBody();
 
         ArgumentCaptor<org.asynchttpclient.Request> capture = ArgumentCaptor.forClass(org.asynchttpclient.Request.class);
-        AsyncHttpClient client = mock(AsyncHttpClient.class);
 
-        givenResponseIsProduced(client, aResponse());
+        givenResponseIsProduced(httpClient, aResponse());
 
-        whenRequestIsMade(client, request);
+        whenRequestIsMade(httpClient, request);
 
-        verify(client).executeRequest(capture.capture(), any());
+        verify(httpClient).executeRequest(capture.capture(), any());
 
         org.asynchttpclient.Request ahcRequest = capture.getValue();
 
@@ -254,11 +268,9 @@ public class AsyncHttpClientCallTest {
 
     @Test
     public void contenTypeIsOptionalInResponse() throws Exception {
-        AsyncHttpClient client = mock(AsyncHttpClient.class);
+        givenResponseIsProduced(httpClient, responseWithBody(null, "test"));
 
-        givenResponseIsProduced(client, responseWithBody(null, "test"));
-
-        okhttp3.Response response = whenRequestIsMade(client, REQUEST);
+        okhttp3.Response response = whenRequestIsMade(httpClient, REQUEST);
 
         assertEquals(response.code(), 200);
         assertEquals(response.header("Server"), "nginx");
@@ -268,17 +280,82 @@ public class AsyncHttpClientCallTest {
 
     @Test
     public void contentTypeIsProperlyParsedIfPresent() throws Exception {
-        AsyncHttpClient client = mock(AsyncHttpClient.class);
+        givenResponseIsProduced(httpClient, responseWithBody("text/plain", "test"));
 
-        givenResponseIsProduced(client, responseWithBody("text/plain", "test"));
-
-        okhttp3.Response response = whenRequestIsMade(client, REQUEST);
+        okhttp3.Response response = whenRequestIsMade(httpClient, REQUEST);
 
         assertEquals(response.code(), 200);
         assertEquals(response.header("Server"), "nginx");
         assertEquals(response.body().contentType(), MediaType.parse("text/plain"));
         assertEquals(response.body().string(), "test");
 
+    }
+
+    @Test
+    public void bodyIsNotNullInResponse() throws Exception {
+        givenResponseIsProduced(httpClient, responseWithNoBody());
+
+        okhttp3.Response response = whenRequestIsMade(httpClient, REQUEST);
+
+        assertEquals(response.code(), 200);
+        assertEquals(response.header("Server"), "nginx");
+        assertNotEquals(response.body(), null);
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*returned null.")
+    void getHttpClientShouldThrowISEIfSupplierReturnsNull() {
+      // given:
+      val call = AsyncHttpClientCall.builder()
+              .httpClientSupplier(() -> null)
+              .request(requestWithBody())
+              .build();
+
+      // when: should throw ISE
+      call.getHttpClient();
+    }
+
+    @Test
+    void shouldReturnTimeoutSpecifiedInAHCInstanceConfig() {
+        // given:
+        val cfgBuilder = new DefaultAsyncHttpClientConfig.Builder();
+        AsyncHttpClientConfig config = null;
+
+        // and: setup call
+        val call = AsyncHttpClientCall.builder()
+                .httpClientSupplier(httpClientSupplier)
+                .request(requestWithBody())
+                .build();
+
+        // when: set read timeout to 5s, req timeout to 6s
+        config = cfgBuilder.setReadTimeout((int) SECONDS.toMillis(5))
+                .setRequestTimeout((int) SECONDS.toMillis(6))
+                .build();
+        when(httpClient.getConfig()).thenReturn(config);
+
+        // then: expect request timeout
+        assertEquals(call.getRequestTimeoutMillis(), SECONDS.toMillis(6));
+        assertEquals(call.timeout().timeoutNanos(), SECONDS.toNanos(6));
+
+        // when: set read timeout to 10 seconds, req timeout to 7s
+        config = cfgBuilder.setReadTimeout((int) SECONDS.toMillis(10))
+                .setRequestTimeout((int) SECONDS.toMillis(7))
+                .build();
+        when(httpClient.getConfig()).thenReturn(config);
+
+        // then: expect request timeout
+        assertEquals(call.getRequestTimeoutMillis(), SECONDS.toMillis(7));
+        assertEquals(call.timeout().timeoutNanos(), SECONDS.toNanos(7));
+
+        // when: set request timeout to a negative value, just for fun.
+        config = cfgBuilder.setRequestTimeout(-1000)
+                .setReadTimeout(2000)
+                .build();
+
+        when(httpClient.getConfig()).thenReturn(config);
+
+        // then: expect request timeout, but as positive value
+        assertEquals(call.getRequestTimeoutMillis(), SECONDS.toMillis(1));
+        assertEquals(call.timeout().timeoutNanos(), SECONDS.toNanos(1));
     }
 
     private void givenResponseIsProduced(AsyncHttpClient client, Response response) {
@@ -290,9 +367,11 @@ public class AsyncHttpClientCallTest {
     }
 
     private okhttp3.Response whenRequestIsMade(AsyncHttpClient client, Request request) throws IOException {
-        AsyncHttpClientCall call = AsyncHttpClientCall.builder().httpClient(client).request(request).build();
-
-        return call.execute();
+        return AsyncHttpClientCall.builder()
+                .httpClientSupplier(() -> client)
+                .request(request)
+                .build()
+                .execute();
     }
 
     private Request requestWithBody() {
@@ -320,6 +399,13 @@ public class AsyncHttpClientCallTest {
         when(response.hasResponseBody()).thenReturn(true);
         when(response.getContentType()).thenReturn(contentType);
         when(response.getResponseBodyAsBytes()).thenReturn(content.getBytes(StandardCharsets.UTF_8));
+        return response;
+    }
+
+    private Response responseWithNoBody() {
+        Response response = aResponse();
+        when(response.hasResponseBody()).thenReturn(false);
+        when(response.getContentType()).thenReturn(null);
         return response;
     }
 

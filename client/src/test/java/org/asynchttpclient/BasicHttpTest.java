@@ -38,7 +38,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -200,6 +203,40 @@ public class BasicHttpTest extends HttpTest {
             for (int i = 1; i < 5; i++) {
               assertEquals(response.getHeader("X-param_" + i), "value_" + i);
             }
+            return response;
+          }
+        }).get(TIMEOUT, SECONDS);
+      }));
+  }
+
+  @Test
+  public void postChineseChar() throws Throwable {
+    withClient().run(client ->
+      withServer(server).run(server -> {
+        HttpHeaders h = new DefaultHttpHeaders();
+        h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        String chineseChar = "是";
+
+        Map<String, List<String>> m = new HashMap<>();
+        m.put("param", Collections.singletonList(chineseChar));
+
+        Request request = post(getTargetUrl()).setHeaders(h).setFormParams(m).build();
+
+        server.enqueueEcho();
+
+        client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
+          @Override
+          public Response onCompleted(Response response) {
+            assertEquals(response.getStatusCode(), 200);
+            String value;
+            try {
+              // headers must be encoded
+              value = URLDecoder.decode(response.getHeader("X-param"), StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+              throw new RuntimeException(e);
+            }
+            assertEquals(value, chineseChar);
             return response;
           }
         }).get(TIMEOUT, SECONDS);

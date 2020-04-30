@@ -2,7 +2,7 @@
   <parent>
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-extras-parent</artifactId>
-    <version>2.5.3-SNAPSHOT</version>
+    <version>2.12.2-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>async-http-client-extras-guava</artifactId>
@@ -11,11 +11,15 @@
     The Async Http Client Guava Extras.
   </description>
 
+  <properties>
+    <javaModuleName>org.asynchttpclient.extras.guava</javaModuleName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
+      <version>28.2-jre</version>
     </dependency>
   </dependencies>
 </project>

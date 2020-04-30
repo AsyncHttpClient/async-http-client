@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.extras.rxjava2.maybe;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.reactivex.MaybeEmitter;
 import io.reactivex.exceptions.CompositeException;
@@ -21,10 +22,14 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.extras.rxjava2.DisposedException;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLSession;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
@@ -144,6 +149,76 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
     emitOnError(error);
   }
 
+  @Override
+  public void onHostnameResolutionAttempt(String name) {
+    executeUnlessEmitterDisposed(() -> delegate().onHostnameResolutionAttempt(name));
+  }
+
+  @Override
+  public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+    executeUnlessEmitterDisposed(() -> delegate().onHostnameResolutionSuccess(name, addresses));
+  }
+
+  @Override
+  public void onHostnameResolutionFailure(String name, Throwable cause) {
+    executeUnlessEmitterDisposed(() -> delegate().onHostnameResolutionFailure(name, cause));
+  }
+
+  @Override
+  public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+    executeUnlessEmitterDisposed(() -> delegate().onTcpConnectAttempt(remoteAddress));
+  }
+
+  @Override
+  public void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+    executeUnlessEmitterDisposed(() -> delegate().onTcpConnectSuccess(remoteAddress, connection));
+  }
+
+  @Override
+  public void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
+    executeUnlessEmitterDisposed(() -> delegate().onTcpConnectFailure(remoteAddress, cause));
+  }
+
+  @Override
+  public void onTlsHandshakeAttempt() {
+    executeUnlessEmitterDisposed(() -> delegate().onTlsHandshakeAttempt());
+  }
+
+  @Override
+  public void onTlsHandshakeSuccess(SSLSession sslSession) {
+    executeUnlessEmitterDisposed(() -> delegate().onTlsHandshakeSuccess(sslSession));
+  }
+
+  @Override
+  public void onTlsHandshakeFailure(Throwable cause) {
+    executeUnlessEmitterDisposed(() -> delegate().onTlsHandshakeFailure(cause));
+  }
+
+  @Override
+  public void onConnectionPoolAttempt() {
+    executeUnlessEmitterDisposed(() -> delegate().onConnectionPoolAttempt());
+  }
+
+  @Override
+  public void onConnectionPooled(Channel connection) {
+    executeUnlessEmitterDisposed(() -> delegate().onConnectionPooled(connection));
+  }
+
+  @Override
+  public void onConnectionOffer(Channel connection) {
+    executeUnlessEmitterDisposed(() -> delegate().onConnectionOffer(connection));
+  }
+
+  @Override
+  public void onRequestSend(NettyRequest request) {
+    executeUnlessEmitterDisposed(() -> delegate().onRequestSend(request));
+  }
+
+  @Override
+  public void onRetry() {
+    executeUnlessEmitterDisposed(() -> delegate().onRetry());
+  }
+
   /**
    * Called to indicate that request processing is to be aborted because the linked Rx stream has been disposed. If
    * the {@link #delegate() delegate} didn't already receive a terminal event,
@@ -182,6 +257,14 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
       emitter.onError(error);
     } else {
       LOGGER.debug("Not propagating onError after disposal: {}", error.getMessage(), error);
+    }
+  }
+
+  private void executeUnlessEmitterDisposed(Runnable runnable) {
+    if (emitter.isDisposed()) {
+      disposed();
+    } else {
+      runnable.run();
     }
   }
 }

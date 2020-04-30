@@ -19,6 +19,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.util.ReferenceCountUtil;
 import org.asynchttpclient.AsyncHttpClientConfig;
 
 import javax.net.ssl.SSLEngine;
@@ -71,6 +72,11 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
   @Override
   public void init(AsyncHttpClientConfig config) throws SSLException {
     sslContext = buildSslContext(config);
+  }
+
+  @Override
+  public void destroy() {
+    ReferenceCountUtil.release(sslContext);
   }
 
   /**

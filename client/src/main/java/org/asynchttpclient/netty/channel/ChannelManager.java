@@ -16,10 +16,12 @@ package org.asynchttpclient.netty.channel;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -36,6 +38,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.*;
+import io.netty.util.internal.PlatformDependent;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -58,6 +61,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -119,31 +123,31 @@ public class ChannelManager {
     // check if external EventLoopGroup is defined
     ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
     allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
-    ChannelFactory<? extends Channel> channelFactory;
+    TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {
       if (config.isUseNativeTransport()) {
-        eventLoopGroup = newEpollEventLoopGroup(config.getIoThreadsCount(), threadFactory);
-        channelFactory = getEpollSocketChannelFactory();
-
+        transportFactory = getNativeTransportFactory();
       } else {
-        eventLoopGroup = new NioEventLoopGroup(config.getIoThreadsCount(), threadFactory);
-        channelFactory = NioSocketChannelFactory.INSTANCE;
+        transportFactory = NioTransportFactory.INSTANCE;
       }
+      eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
 
     } else {
       eventLoopGroup = config.getEventLoopGroup();
-      if (eventLoopGroup instanceof OioEventLoopGroup)
-        throw new IllegalArgumentException("Oio is not supported");
 
       if (eventLoopGroup instanceof NioEventLoopGroup) {
-        channelFactory = NioSocketChannelFactory.INSTANCE;
+        transportFactory = NioTransportFactory.INSTANCE;
+      } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+        transportFactory = new EpollTransportFactory();
+      } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
+        transportFactory = new KQueueTransportFactory();
       } else {
-        channelFactory = getEpollSocketChannelFactory();
+        throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }
     }
 
-    httpBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
-    wsBootstrap = newBootstrap(channelFactory, eventLoopGroup, config);
+    httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
+    wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
 
     // for reactive streams
     httpBootstrap.option(ChannelOption.AUTO_READ, false);
@@ -159,6 +163,7 @@ public class ChannelManager {
             .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)
             .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())
             .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())
+            .option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive())
             .option(ChannelOption.AUTO_CLOSE, false);
 
     if (config.getConnectTimeout() > 0) {
@@ -184,22 +189,22 @@ public class ChannelManager {
     return bootstrap;
   }
 
-  private EventLoopGroup newEpollEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-    try {
-      Class<?> epollEventLoopGroupClass = Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
-      return (EventLoopGroup) epollEventLoopGroupClass.getConstructor(int.class, ThreadFactory.class).newInstance(ioThreadsCount, threadFactory);
-    } catch (Exception e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
-
   @SuppressWarnings("unchecked")
-  private ChannelFactory<? extends Channel> getEpollSocketChannelFactory() {
-    try {
-      return (ChannelFactory<? extends Channel>) Class.forName("org.asynchttpclient.netty.channel.EpollSocketChannelFactory").newInstance();
-    } catch (Exception e) {
-      throw new IllegalArgumentException(e);
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory() {
+    String nativeTransportFactoryClassName = null;
+    if (PlatformDependent.isOsx()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueTransportFactory";
+    } else if (!PlatformDependent.isWindows()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollTransportFactory";
     }
+
+    try {
+      if (nativeTransportFactoryClassName != null) {
+        return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName(nativeTransportFactoryClassName).newInstance();
+      }
+    } catch (Exception e) {
+    }
+    throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
   }
 
   public void configureBootstraps(NettyRequestSender requestSender) {
@@ -291,8 +296,9 @@ public class ChannelManager {
   }
 
   private void doClose() {
-    openChannels.close();
+    ChannelGroupFuture groupFuture = openChannels.close();
     channelPool.destroy();
+    groupFuture.addListener(future -> sslEngineFactory.destroy());
   }
 
   public void close() {
@@ -345,7 +351,7 @@ public class ChannelManager {
       if (!isSslHandlerConfigured(pipeline)) {
         SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
         whenHanshaked = sslHandler.handshakeFuture();
-        pipeline.addBefore(AHC_HTTP_HANDLER, SSL_HANDLER, sslHandler);
+        pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
       }
       pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
@@ -355,6 +361,11 @@ public class ChannelManager {
 
     if (requestUri.isWebSocket()) {
       pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
+
+      if (config.isEnableWebSocketCompression()) {
+        pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+      }
+
       pipeline.remove(AHC_HTTP_HANDLER);
     }
     return whenHanshaked;
@@ -380,10 +391,11 @@ public class ChannelManager {
     }
 
     SslHandler sslHandler = createSslHandler(peerHost, peerPort);
-    if (hasSocksProxyHandler)
+    if (hasSocksProxyHandler) {
       pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
-    else
+    } else {
       pipeline.addFirst(SSL_HANDLER, sslHandler);
+    }
     return sslHandler;
   }
 
@@ -479,8 +491,8 @@ public class ChannelManager {
   }
 
   public ClientStats getClientStats() {
-    Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(a -> a.getClass() == InetSocketAddress.class)
-            .map(a -> (InetSocketAddress) a).map(InetSocketAddress::getHostName).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(a -> a instanceof InetSocketAddress)
+            .map(a -> (InetSocketAddress) a).map(InetSocketAddress::getHostString).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
     Map<String, HostStats> statsPerHost = totalConnectionsPerHost.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> {
       final long totalConnectionCount = entry.getValue();

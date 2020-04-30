@@ -77,7 +77,7 @@ public class Unauthorized401Interceptor {
 
     // FIXME what's this???
     future.setChannelState(ChannelState.NEW);
-    HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
+    HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
     switch (realm.getScheme()) {
       case BASIC:
@@ -139,7 +139,7 @@ public class Unauthorized401Interceptor {
           return false;
         }
         try {
-          kerberosChallenge(request, requestHeaders);
+          kerberosChallenge(realm, request, requestHeaders);
 
         } catch (SpnegoEngineException e) {
           // FIXME
@@ -162,7 +162,7 @@ public class Unauthorized401Interceptor {
         throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
     }
 
-    final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
+    final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
 
     LOGGER.debug("Sending authentication to {}", request.getUri());
     if (future.isKeepAlive()
@@ -200,12 +200,19 @@ public class Unauthorized401Interceptor {
     }
   }
 
-  private void kerberosChallenge(Request request,
+  private void kerberosChallenge(Realm realm,
+                                 Request request,
                                  HttpHeaders headers) throws SpnegoEngineException {
 
     Uri uri = request.getUri();
     String host = withDefault(request.getVirtualHost(), uri.getHost());
-    String challengeHeader = SpnegoEngine.instance().generateToken(host);
+    String challengeHeader = SpnegoEngine.instance(realm.getPrincipal(),
+        realm.getPassword(),
+        realm.getServicePrincipalName(),
+        realm.getRealmName(),
+        realm.isUseCanonicalHostname(),
+        realm.getCustomLoginConfig(),
+        realm.getLoginContextName()).generateToken(host);
     headers.set(AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
   }
 }

@@ -437,8 +437,8 @@ public final class NettyRequestSender {
   }
 
   private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
-    HttpHeaders h = new DefaultHttpHeaders(false).set(httpRequest.headers());
-    TransferCompletionHandler.class.cast(handler).headers(h);
+    HttpHeaders h = new DefaultHttpHeaders().set(httpRequest.headers());
+    ((TransferCompletionHandler) handler).headers(h);
   }
 
   private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture,

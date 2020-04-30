@@ -38,6 +38,7 @@
 package org.asynchttpclient.spnego;
 
 import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
@@ -45,8 +46,19 @@ import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) authentication scheme.
@@ -57,31 +69,87 @@ public class SpnegoEngine {
 
   private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
   private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
-  private static SpnegoEngine instance;
+  private static Map<String, SpnegoEngine> instances = new HashMap<>();
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final SpnegoTokenGenerator spnegoGenerator;
+  private final String username;
+  private final String password;
+  private final String servicePrincipalName;
+  private final String realmName;
+  private final boolean useCanonicalHostname;
+  private final String loginContextName;
+  private final Map<String, String> customLoginConfig;
 
-  public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
+  public SpnegoEngine(final String username,
+                      final String password,
+                      final String servicePrincipalName,
+                      final String realmName,
+                      final boolean useCanonicalHostname,
+                      final Map<String, String> customLoginConfig,
+                      final String loginContextName,
+                      final SpnegoTokenGenerator spnegoGenerator) {
+    this.username = username;
+    this.password = password;
+    this.servicePrincipalName = servicePrincipalName;
+    this.realmName = realmName;
+    this.useCanonicalHostname = useCanonicalHostname;
+    this.customLoginConfig = customLoginConfig;
     this.spnegoGenerator = spnegoGenerator;
+    this.loginContextName = loginContextName;
   }
 
   public SpnegoEngine() {
-    this(null);
+    this(null,
+        null,
+        null,
+        null,
+        true,
+        null,
+        null,
+        null);
   }
 
-  public static SpnegoEngine instance() {
-    if (instance == null)
-      instance = new SpnegoEngine();
-    return instance;
+  public static SpnegoEngine instance(final String username,
+                                      final String password,
+                                      final String servicePrincipalName,
+                                      final String realmName,
+                                      final boolean useCanonicalHostname,
+                                      final Map<String, String> customLoginConfig,
+                                      final String loginContextName) {
+    String key = "";
+    if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
+      StringBuilder customLoginConfigKeyValues = new StringBuilder();
+      for (String loginConfigKey : customLoginConfig.keySet()) {
+        customLoginConfigKeyValues.append(loginConfigKey).append("=")
+          .append(customLoginConfig.get(loginConfigKey));
+      }
+      key = customLoginConfigKeyValues.toString();
+    }
+    if (username != null) {
+      key += username;
+    }
+    if (loginContextName != null) {
+      key += loginContextName;
+    }
+    if (!instances.containsKey(key)) {
+      instances.put(key, new SpnegoEngine(username,
+          password,
+          servicePrincipalName,
+          realmName,
+          useCanonicalHostname,
+          customLoginConfig,
+          loginContextName,
+          null));
+    }
+    return instances.get(key);
   }
 
-  public String generateToken(String server) throws SpnegoEngineException {
+  public String generateToken(String host) throws SpnegoEngineException {
     GSSContext gssContext = null;
     byte[] token = null; // base64 decoded challenge
     Oid negotiationOid;
 
     try {
-      log.debug("init {}", server);
       /*
        * Using the SPNEGO OID is the correct method. Kerberos v5 works for IIS but not JBoss. Unwrapping the initial token when using SPNEGO OID looks like what is described
        * here...
@@ -99,11 +167,30 @@ public class SpnegoEngine {
       negotiationOid = new Oid(SPNEGO_OID);
 
       boolean tryKerberos = false;
+      String spn = getCompleteServicePrincipalName(host);
       try {
         GSSManager manager = GSSManager.getInstance();
-        GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
-        gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null,
-                GSSContext.DEFAULT_LIFETIME);
+        GSSName serverName = manager.createName(spn, GSSName.NT_HOSTBASED_SERVICE);
+        GSSCredential myCred = null;
+        if (username != null || loginContextName != null || (customLoginConfig != null && !customLoginConfig.isEmpty())) {
+          String contextName = loginContextName;
+          if (contextName == null) {
+            contextName = "";
+          }
+          LoginContext loginContext = new LoginContext(contextName,
+              null,
+              getUsernamePasswordHandler(),
+              getLoginConfiguration());
+          loginContext.login();
+          final Oid negotiationOidFinal = negotiationOid;
+          final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
+            GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
+          myCred = Subject.doAs(loginContext.getSubject(), action);
+        }
+        gssContext = manager.createContext(useCanonicalHostname ? serverName.canonicalize(negotiationOid) : serverName,
+            negotiationOid,
+            myCred,
+            GSSContext.DEFAULT_LIFETIME);
         gssContext.requestMutualAuth(true);
         gssContext.requestCredDeleg(true);
       } catch (GSSException ex) {
@@ -123,7 +210,7 @@ public class SpnegoEngine {
         log.debug("Using Kerberos MECH {}", KERBEROS_OID);
         negotiationOid = new Oid(KERBEROS_OID);
         GSSManager manager = GSSManager.getInstance();
-        GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
+        GSSName serverName = manager.createName(spn, GSSName.NT_HOSTBASED_SERVICE);
         gssContext = manager.createContext(serverName.canonicalize(negotiationOid), negotiationOid, null,
                 GSSContext.DEFAULT_LIFETIME);
         gssContext.requestMutualAuth(true);
@@ -164,8 +251,59 @@ public class SpnegoEngine {
         throw new SpnegoEngineException(gsse.getMessage(), gsse);
       // other error
       throw new SpnegoEngineException(gsse.getMessage());
-    } catch (IOException ex) {
+    } catch (IOException | LoginException | PrivilegedActionException ex) {
       throw new SpnegoEngineException(ex.getMessage());
     }
+  }
+
+  String getCompleteServicePrincipalName(String host) {
+    String name;
+    if (servicePrincipalName == null) {
+      if (useCanonicalHostname) {
+        host = getCanonicalHostname(host);
+      }
+      name = "HTTP@" + host;
+    } else {
+      name = servicePrincipalName;
+      if (realmName != null && !name.contains("@")) {
+        name += "@" + realmName;
+      }
+    }
+    log.debug("Service Principal Name is {}", name);
+    return name;
+  }
+
+  private String getCanonicalHostname(String hostname) {
+    String canonicalHostname = hostname;
+    try {
+      InetAddress in = InetAddress.getByName(hostname);
+      canonicalHostname = in.getCanonicalHostName();
+      log.debug("Resolved hostname={} to canonicalHostname={}", hostname, canonicalHostname);
+    } catch (Exception e) {
+      log.warn("Unable to resolve canonical hostname", e);
+    }
+    return canonicalHostname;
+  }
+
+  private CallbackHandler getUsernamePasswordHandler() {
+    if (username == null) {
+      return null;
+    }
+    return new NamePasswordCallbackHandler(username, password);
+  }
+
+  public Configuration getLoginConfiguration() {
+    if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
+      return new Configuration() {
+        @Override
+        public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+          return new AppConfigurationEntry[] {
+              new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
+                  AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+                  customLoginConfig)};
+        }
+      };
+    }
+    return null;
   }
 }

@@ -112,6 +112,9 @@ public class Redirect30xInterceptor {
             requestBuilder.setBody(request.getByteBufferData());
           else if (request.getBodyGenerator() != null)
             requestBuilder.setBody(request.getBodyGenerator());
+          else if (isNonEmpty(request.getBodyParts())) {
+            requestBuilder.setBodyParts(request.getBodyParts());
+          }
         }
 
         requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody));

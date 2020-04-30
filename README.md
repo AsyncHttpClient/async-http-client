@@ -5,19 +5,40 @@ Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 The AsyncHttpClient (AHC) library allows Java applications to easily execute HTTP requests and asynchronously process HTTP responses.
 The library also supports the WebSocket Protocol.
 
-It's built on top of [Netty](https://github.com/netty/netty). I's currently compiled on Java 8 but runs on Java 9 too.
+It's built on top of [Netty](https://github.com/netty/netty). It's currently compiled on Java 8 but runs on Java 9 too.
 
 ## Installation
 
-Binaries are deployed on Maven central:
+Binaries are deployed on Maven Central.
+
+Import the AsyncHttpClient Bill of Materials (BOM) to add dependency management for AsyncHttpClient artifacts to your project:
 
 ```xml
-<dependency>
-	<groupId>org.asynchttpclient</groupId>
-	<artifactId>async-http-client</artifactId>
-	<version>LATEST_VERSION</version>
-</dependency>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client-bom</artifactId>
+            <version>LATEST_VERSION</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 ```
+
+Add a dependency on the main AsyncHttpClient artifact: 
+
+```xml
+<dependencies>
+    <dependency>
+    	<groupId>org.asynchttpclient</groupId>
+    	<artifactId>async-http-client</artifactId>
+    </dependency>
+</dependencies>
+```
+
+The `async-http-client-extras-*` and other modules can also be added without having to specify the version for each dependency, because they are all managed via the BOM.
 
 ## Version
 
@@ -73,7 +94,7 @@ AsyncHttpClient c = asyncHttpClient(config().setProxyServer(proxyServer("127.0.0
 ### Basics
 
 AHC provides 2 APIs for defining requests: bound and unbound.
-`AsyncHttpClient` and Dls` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
+`AsyncHttpClient` and Dsl` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
 
 ```java
 import org.asynchttpclient.*;
@@ -83,7 +104,7 @@ Future<Response> whenResponse = asyncHttpClient.prepareGet("http://www.example.c
 
 // unbound
 Request request = get("http://www.example.com/").build();
-Future<Response> whenResponse = asyncHttpClient.execute(request);
+Future<Response> whenResponse = asyncHttpClient.executeRequest(request);
 ```
 
 #### Setting Request Body
@@ -110,6 +131,7 @@ Use the `addBodyPart` method to add a multipart part to the request.
 This part can be of type:
 * `ByteArrayPart`
 * `FilePart`
+* `InputStreamPart`
 * `StringPart`
 
 ### Dealing with Responses
@@ -158,7 +180,7 @@ See `AsyncCompletionHandler` implementation as an example.
 
 The below sample just capture the response status and skips processing the response body chunks.
 
-Note that returning `ABORT` closed the underlying connection.
+Note that returning `ABORT` closes the underlying connection.
 
 ```java
 import static org.asynchttpclient.Dsl.*;
@@ -195,7 +217,7 @@ Integer statusCode = whenStatusCode.get();
 
 #### Using Continuations
 
-`ListenableFuture` has a `toCompletableFuture` that returns a `CompletableFuture`.
+`ListenableFuture` has a `toCompletableFuture` method that returns a `CompletableFuture`.
 Beware that canceling this `CompletableFuture` won't properly cancel the ongoing request.
 There's a very good chance we'll return a `CompletionStage` instead in the next release.
 
@@ -243,7 +265,7 @@ WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
 
 ## Reactive Streams
 
-AsyncHttpClient has build in support for reactive streams.
+AsyncHttpClient has built-in support for reactive streams.
 
 You can pass a request body as a `Publisher<ByteBuf>` or a `ReactiveStreamsBodyGenerator`.
 
@@ -288,7 +310,7 @@ Keep up to date on the library development by joining the Asynchronous HTTP Clie
 
 Of course, Pull Requests are welcome.
 
-Here a the few rules we'd like you to respect if you do so:
+Here are the few rules we'd like you to respect if you do so:
 
 * Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
 * Use IntelliJ default formatting rules.
