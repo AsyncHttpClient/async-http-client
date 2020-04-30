@@ -70,20 +70,13 @@ public class Interceptors {
     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
     // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
-    CookieStore cookieStore = config.getCookieStore();
-    CookieStore requestCookieStore = request.getCookieStore();
-    if (cookieStore != null || requestCookieStore != null) {
+    CookieStore cookieStore = request.getCookieStore() != null ? request.getCookieStore() : config.getCookieStore();
+    if (cookieStore != null) {
       for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
         Cookie c = cookieDecoder.decode(cookieStr);
         if (c != null) {
           // Set-Cookie header could be invalid/malformed
-          if (cookieStore != null) {
-            cookieStore.add(future.getCurrentRequest().getUri(), c);
-          }
-
-          if (requestCookieStore != null) {
-            requestCookieStore.add(request.getUri(), c);
-          }
+          cookieStore.add(future.getCurrentRequest().getUri(), c);
         }
       }
     }
