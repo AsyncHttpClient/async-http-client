@@ -39,8 +39,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     super(config, channelManager, requestSender);
   }
 
-  private boolean abortAfterHandlingStatus(//
-                                           AsyncHandler<?> handler,
+  private boolean abortAfterHandlingStatus(AsyncHandler<?> handler,
                                            NettyResponseStatus status) throws Exception {
     return handler.onStatusReceived(status) == State.ABORT;
   }

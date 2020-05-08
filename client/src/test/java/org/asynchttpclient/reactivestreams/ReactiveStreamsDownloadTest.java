@@ -39,11 +39,11 @@ import java.util.concurrent.CountDownLatch;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.testng.Assert.assertEquals;
 
-public class ReactiveStreamsDownLoadTest {
+public class ReactiveStreamsDownloadTest {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsDownLoadTest.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsDownloadTest.class);
 
-  private int serverPort = 8080;
+  private final int serverPort = 8080;
   private File largeFile;
   private File smallFile;
 
@@ -104,7 +104,7 @@ public class ReactiveStreamsDownLoadTest {
     }
 
     @Override
-    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
       LOGGER.debug("SimpleStreamedAsyncHandleronCompleted onBodyPartReceived");
       throw new AssertionError("Should not have received body part");
     }
@@ -115,12 +115,12 @@ public class ReactiveStreamsDownLoadTest {
     }
 
     @Override
-    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) {
       return State.CONTINUE;
     }
 
     @Override
-    public SimpleStreamedAsyncHandler onCompleted() throws Exception {
+    public SimpleStreamedAsyncHandler onCompleted() {
       LOGGER.debug("SimpleStreamedAsyncHandleronCompleted onSubscribe");
       return this;
     }
