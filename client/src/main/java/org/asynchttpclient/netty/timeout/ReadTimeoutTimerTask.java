@@ -15,6 +15,8 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timeout;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.channel.Channels;
+import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
 
@@ -47,7 +49,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
     long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
     long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
 
-    if (durationBeforeCurrentReadTimeout <= 0L) {
+    if (durationBeforeCurrentReadTimeout <= 0L && !isReactiveWithNoOutstandingRequest()) {
       // idleConnectTimeout reached
       StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
       appendRemoteAddress(sb);
@@ -61,5 +63,11 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
       done.set(false);
       timeoutsHolder.startReadTimeout(this);
     }
+  }
+
+  private boolean isReactiveWithNoOutstandingRequest() {
+    Object attribute = Channels.getAttribute(nettyResponseFuture.channel());
+    return attribute instanceof StreamedResponsePublisher &&
+            !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
   }
 }

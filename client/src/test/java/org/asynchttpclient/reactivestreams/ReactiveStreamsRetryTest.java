@@ -32,7 +32,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.testng.Assert.assertTrue;
 
-public class FailingReactiveStreamsTest extends AbstractBasicTest {
+public class ReactiveStreamsRetryTest extends AbstractBasicTest {
 
   @Test
   public void testRetryingOnFailingStream() throws Exception {
