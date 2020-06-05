@@ -78,6 +78,10 @@ public class MultipartUtils {
       } else if (part instanceof InputStreamPart) {
         multipartParts.add(new InputStreamMultipartPart((InputStreamPart) part, boundary));
 
+      } else if (part instanceof InputStreamSupplierPart) {
+        InputStreamSupplierPart streamSupplierPart = (InputStreamSupplierPart)part;
+        multipartParts.add(new InputStreamMultipartPart(streamSupplierPart.createInputStreamPart(), boundary));
+
       } else {
         throw new IllegalArgumentException("Unknown part type: " + part);
       }
