@@ -7,6 +7,11 @@ The library also supports the WebSocket Protocol.
 
 It's built on top of [Netty](https://github.com/netty/netty). It's currently compiled on Java 8 but runs on Java 9 too.
 
+## :warning: :warning: :warning: Maintainer Wanted!!!
+
+Saldy, I (@slandelle) no longer have time to maintain this project.
+If you're interested, please chime in!
+
 ## Installation
 
 Binaries are deployed on Maven Central.
