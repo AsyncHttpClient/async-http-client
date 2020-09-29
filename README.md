@@ -296,15 +296,6 @@ Response response = c.executeRequest(propFindRequest, new AsyncHandler() {
 }).get();
 ```
 
-## More
-
-You can find more information on Jean-François Arcand's blog.  Jean-François is the original author of this library.
-Code is sometimes not up-to-date but gives a pretty good idea of advanced features.
-
-* https://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/
-* https://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/
-* https://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/
-
 ## User Group
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
