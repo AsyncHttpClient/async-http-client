@@ -505,8 +505,8 @@ public class SimpleAsyncHttpClient implements Closeable {
       return this;
     }
 
-    public Builder setConnectTimeout(int connectTimeuot) {
-      configBuilder.setConnectTimeout(connectTimeuot);
+    public Builder setConnectTimeout(int connectTimeout) {
+      configBuilder.setConnectTimeout(connectTimeout);
       return this;
     }
 

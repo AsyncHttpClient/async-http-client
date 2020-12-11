@@ -94,7 +94,7 @@ public abstract class AbstractMaybeAsyncHandlerBridge<T> implements AsyncHandler
    * {@inheritDoc}
    * <p>
    * <p>
-   * The value returned by the wrapped {@code AsyncHandler} won't be returned by this method, but emtited via RxJava.
+   * The value returned by the wrapped {@code AsyncHandler} won't be returned by this method, but emitted via RxJava.
    * </p>
    *
    * @return always {@code null}

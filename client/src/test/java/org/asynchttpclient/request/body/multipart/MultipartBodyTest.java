@@ -122,8 +122,8 @@ public class MultipartBodyTest {
   public void transferWithCopy() throws Exception {
     for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
       try (MultipartBody multipartBody = buildMultipart()) {
-        long tranferred = transferWithCopy(multipartBody, bufferLength);
-        assertEquals(tranferred, multipartBody.getContentLength());
+        long transferred = transferWithCopy(multipartBody, bufferLength);
+        assertEquals(transferred, multipartBody.getContentLength());
       }
     }
   }
@@ -132,8 +132,8 @@ public class MultipartBodyTest {
   public void transferZeroCopy() throws Exception {
     for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
       try (MultipartBody multipartBody = buildMultipart()) {
-        long tranferred = transferZeroCopy(multipartBody, bufferLength);
-        assertEquals(tranferred, multipartBody.getContentLength());
+        long transferred = transferZeroCopy(multipartBody, bufferLength);
+        assertEquals(transferred, multipartBody.getContentLength());
       }
     }
   }

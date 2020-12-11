@@ -93,7 +93,7 @@ public class ReactiveStreamsDownloadTest {
 
     @Override
     public State onStream(Publisher<HttpResponseBodyPart> publisher) {
-      LOGGER.debug("SimpleStreamedAsyncHandleronCompleted onStream");
+      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onStream");
       publisher.subscribe(subscriber);
       return State.CONTINUE;
     }
@@ -105,7 +105,7 @@ public class ReactiveStreamsDownloadTest {
 
     @Override
     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
-      LOGGER.debug("SimpleStreamedAsyncHandleronCompleted onBodyPartReceived");
+      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onBodyPartReceived");
       throw new AssertionError("Should not have received body part");
     }
 
@@ -121,7 +121,7 @@ public class ReactiveStreamsDownloadTest {
 
     @Override
     public SimpleStreamedAsyncHandler onCompleted() {
-      LOGGER.debug("SimpleStreamedAsyncHandleronCompleted onSubscribe");
+      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onSubscribe");
       return this;
     }
 

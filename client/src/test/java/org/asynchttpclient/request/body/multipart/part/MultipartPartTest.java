@@ -239,12 +239,12 @@ public class MultipartPartTest {
       this(name, contentType, charset, contentId, null);
     }
 
-    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding) {
-      this(name, contentType, charset, contentId, transfertEncoding, null);
+    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transferEncoding) {
+      this(name, contentType, charset, contentId, transferEncoding, null);
     }
 
-    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transfertEncoding, String fileName) {
-      super(name, contentType, charset, fileName, contentId, transfertEncoding);
+    TestFileLikePart(String name, String contentType, Charset charset, String contentId, String transferEncoding, String fileName) {
+      super(name, contentType, charset, fileName, contentId, transferEncoding);
     }
   }
 
