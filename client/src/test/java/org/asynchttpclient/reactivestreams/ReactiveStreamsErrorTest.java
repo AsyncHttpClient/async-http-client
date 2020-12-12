@@ -46,8 +46,8 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
   public void initClient() {
     client = asyncHttpClient(config()
             .setMaxRequestRetry(0)
-            .setRequestTimeout(5_000)
-            .setReadTimeout(3_000));
+            .setRequestTimeout(3_000)
+            .setReadTimeout(1_000));
   }
 
   @AfterTest
