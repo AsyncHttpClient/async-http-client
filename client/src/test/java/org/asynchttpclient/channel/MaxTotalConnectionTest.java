@@ -69,7 +69,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
   @Test(groups = "online")
   public void testMaxTotalConnections() throws Exception {
-    String[] urls = new String[]{"https://google.com", "https://github.com"};
+    String[] urls = new String[]{"https://www.google.com", "https://www.youtube.com"};
 
     final CountDownLatch latch = new CountDownLatch(2);
     final AtomicReference<Throwable> ex = new AtomicReference<>();
