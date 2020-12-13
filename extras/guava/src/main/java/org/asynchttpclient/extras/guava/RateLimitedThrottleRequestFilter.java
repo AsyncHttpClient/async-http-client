@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * {@link ThrottleRequestFilter} by allowing rate limiting per second in addition to the
  * number of concurrent connections.
  * <p>
- * The <code>maxWaitMs</code> argument is respected accross both permit acquistions. For
+ * The <code>maxWaitMs</code> argument is respected across both permit acquisitions. For
  * example, if 1000 ms is given, and the filter spends 500 ms waiting for a connection,
  * it will only spend another 500 ms waiting for the rate limiter.
  */
@@ -44,9 +44,9 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
       }
 
       long startOfWait = System.currentTimeMillis();
-      attemptConcurrencyPermitAcquistion(ctx);
+      attemptConcurrencyPermitAcquisition(ctx);
 
-      attemptRateLimitedPermitAcquistion(ctx, startOfWait);
+      attemptRateLimitedPermitAcquisition(ctx, startOfWait);
     } catch (InterruptedException e) {
       throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
     }
@@ -56,7 +56,7 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
             .build();
   }
 
-  private <T> void attemptRateLimitedPermitAcquistion(FilterContext<T> ctx, long startOfWait) throws FilterException {
+  private <T> void attemptRateLimitedPermitAcquisition(FilterContext<T> ctx, long startOfWait) throws FilterException {
     long wait = getMillisRemainingInMaxWait(startOfWait);
 
     if (!rateLimiter.tryAcquire(wait, TimeUnit.MILLISECONDS)) {
@@ -65,7 +65,7 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
     }
   }
 
-  private <T> void attemptConcurrencyPermitAcquistion(FilterContext<T> ctx) throws InterruptedException, FilterException {
+  private <T> void attemptConcurrencyPermitAcquisition(FilterContext<T> ctx) throws InterruptedException, FilterException {
     if (!available.tryAcquire(maxWaitMs, TimeUnit.MILLISECONDS)) {
       throw new FilterException(String.format("No slot available for processing Request %s with AsyncHandler %s", ctx.getRequest(),
               ctx.getAsyncHandler()));

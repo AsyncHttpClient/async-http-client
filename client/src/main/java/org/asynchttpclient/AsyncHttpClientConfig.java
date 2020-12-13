@@ -255,7 +255,7 @@ public interface AsyncHttpClientConfig {
   String[] getEnabledCipherSuites();
 
   /**
-   * @return if insecured cipher suites must be filtered out (only used when not explicitly passing enabled cipher suites)
+   * @return if insecure cipher suites must be filtered out (only used when not explicitly passing enabled cipher suites)
    */
   boolean isFilterInsecureCipherSuites();
 

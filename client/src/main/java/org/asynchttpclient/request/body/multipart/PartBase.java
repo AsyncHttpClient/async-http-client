@@ -127,7 +127,7 @@ public abstract class PartBase implements Part {
             " name=" + getName() +
             " contentType=" + getContentType() +
             " charset=" + getCharset() +
-            " tranferEncoding=" + getTransferEncoding() +
+            " transferEncoding=" + getTransferEncoding() +
             " contentId=" + getContentId() +
             " dispositionType=" + getDispositionType();
   }

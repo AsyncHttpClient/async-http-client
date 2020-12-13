@@ -342,7 +342,7 @@ public class ChannelManager {
 
   public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
 
-    Future<Channel> whenHanshaked = null;
+    Future<Channel> whenHandshaked = null;
 
     if (pipeline.get(HTTP_CLIENT_CODEC) != null)
       pipeline.remove(HTTP_CLIENT_CODEC);
@@ -350,7 +350,7 @@ public class ChannelManager {
     if (requestUri.isSecured()) {
       if (!isSslHandlerConfigured(pipeline)) {
         SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
-        whenHanshaked = sslHandler.handshakeFuture();
+        whenHandshaked = sslHandler.handshakeFuture();
         pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
       }
       pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
@@ -368,7 +368,7 @@ public class ChannelManager {
 
       pipeline.remove(AHC_HTTP_HANDLER);
     }
-    return whenHanshaked;
+    return whenHandshaked;
   }
 
   public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {

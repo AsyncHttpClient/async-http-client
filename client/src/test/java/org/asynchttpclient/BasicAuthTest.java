@@ -65,7 +65,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     server2.start();
     port2 = connector2.getLocalPort();
 
-    // need noAuth server to verify the preemptive auth mode (see basicAuthTestPreemtiveTest)
+    // need noAuth server to verify the preemptive auth mode (see basicAuthTestPreemptiveTest)
     serverNoAuth = new Server();
     ServerConnector connectorNoAuth = addHttpConnector(serverNoAuth);
     serverNoAuth.setHandler(new SimpleHandler());
@@ -170,7 +170,7 @@ public class BasicAuthTest extends AbstractBasicTest {
   }
 
   @Test
-  public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+  public void basicAuthTestPreemptiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
     try (AsyncHttpClient client = asyncHttpClient()) {
       // send the request to the no-auth endpoint to be able to verify the
       // auth header is really sent preemptively for the initial call.
