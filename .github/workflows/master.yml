@@ -1,0 +1,25 @@
+# This workflow is designed to build mergers to master for AHC and publish a new version to Maven Central.
+# Docs: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Build & Publish Master
+on:
+  push:
+    branches:
+      - master
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          server-id: sonatype-nexus-snapshots
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+      - name: Publish package
+        run: mvn deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN }}
