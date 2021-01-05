@@ -428,6 +428,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
       }));
   }
 
+  // This test is flaky - see https://github.com/AsyncHttpClient/async-http-client/issues/1728#issuecomment-699962325
+  // For now, just run again if fails
   @Test(groups = "online")
   public void asyncOptionsTest() throws Throwable {
 
