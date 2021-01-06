@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient.proxy;
 
+import io.netty.resolver.AddressResolverGroup;
 import org.asynchttpclient.Realm;
 
 import java.util.ArrayList;
@@ -36,6 +37,8 @@ public class ProxyServer {
   private final Realm realm;
   private final List<String> nonProxyHosts;
   private final ProxyType proxyType;
+  private AddressResolverGroup addressResolverGroup;
+  // server can resolve domain in socks 5
 
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
                      ProxyType proxyType) {
@@ -45,6 +48,12 @@ public class ProxyServer {
     this.realm = realm;
     this.nonProxyHosts = nonProxyHosts;
     this.proxyType = proxyType;
+  }
+
+  public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
+                     ProxyType proxyType, AddressResolverGroup addressResolverGroup) {
+    this(host, port, securedPort, realm, nonProxyHosts, proxyType);
+    this.addressResolverGroup = addressResolverGroup;
   }
 
   public String getHost() {
@@ -69,6 +78,14 @@ public class ProxyServer {
 
   public ProxyType getProxyType() {
     return proxyType;
+  }
+
+  public AddressResolverGroup getAddressResolverGroup() {
+    return addressResolverGroup;
+  }
+
+  public boolean isResolveDomain() {
+    return addressResolverGroup != null;
   }
 
   /**
@@ -118,6 +135,7 @@ public class ProxyServer {
     private Realm realm;
     private List<String> nonProxyHosts;
     private ProxyType proxyType;
+    private AddressResolverGroup addressResolverGroup;
 
     public Builder(String host, int port) {
       this.host = host;
@@ -157,11 +175,16 @@ public class ProxyServer {
       return this;
     }
 
+    public Builder setAddressResolverGroup(AddressResolverGroup addressResolverGroup) {
+      this.addressResolverGroup = addressResolverGroup;
+      return this;
+    }
+
     public ProxyServer build() {
       List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
               : Collections.emptyList();
       ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
-      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType);
+      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType, this.addressResolverGroup);
     }
   }
 }

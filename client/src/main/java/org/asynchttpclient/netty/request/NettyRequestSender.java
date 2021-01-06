@@ -38,6 +38,7 @@ import org.asynchttpclient.netty.channel.*;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
@@ -343,7 +345,16 @@ public final class NettyRequestSender {
       InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
       scheduleRequestTimeout(future, unresolvedRemoteAddress);
       return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
-
+    } else if (proxy != null && proxy.isResolveDomain() && proxy.getProxyType().isSocks()) {
+      // resolve domain in socks 5 server
+      int port = uri.getExplicitPort();
+      InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
+      final Promise<List<InetSocketAddress>> unResolvedPromise = ImmediateEventExecutor.INSTANCE.newPromise();
+      List<InetSocketAddress> unresolvedLiWrapper = new ArrayList<>(1);
+      unresolvedLiWrapper.add(unresolvedRemoteAddress);
+      scheduleRequestTimeout(future, unresolvedRemoteAddress);
+      unResolvedPromise.trySuccess(unresolvedLiWrapper);
+      return unResolvedPromise;
     } else {
       int port = uri.getExplicitPort();
 
