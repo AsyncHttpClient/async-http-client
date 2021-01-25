@@ -123,7 +123,7 @@ Let's turn our eyes to the two arguments passed to `executeRequest`, then, since
 
 1. `get(url)` is the functional equivalent of `new RequestBuilder("GET").setUrl(url)`. `RequestBuilder` is in charge of scaffolding an instance of [AHC's `Request` object](https://github.com/AsyncHttpClient/async-http-client/blob/c5eff423ebdd0cddd00bc6fcf17682651a151028/client/src/main/java/org/asynchttpclient/Request.java) and providing it with sane defaults - mostly regarding HTTP headers (`RequestBuilder` does for `Request` what `DefaultAsyncHttpClientConfig.Builder()` does for `DefaultAsyncHttpClient`).  
    1. In our case, the `Request` contains no body (it's a simple `GET`), but of course that `POST` is a thing and people send payloads to servers via HTTP.  We'll be talking about `Request` in more detail [here](#working-with-request-bodies), including how to work with request bodies.  
-2. To fully understand what `AsyncCompletionHandlerAdapter` is, and why it's such a core piece of everything that goes on here, a bit of Netty background is required.
+2. To fully understand what `AsyncCompletionHandlerAdapter` is, and why it's such a core piece of everything that goes on here, a bit of Netty background is required. 
 
 #### Netty `Channel`s and their associated entities ( `ChannelPipeline`s, `ChannelHandler`s and `ChannelAdapter`s)
 
@@ -134,13 +134,24 @@ Recall that AHC is built on - and thus heavily relies on - [Netty](https://netty
    2. **I/O Options** - Can we read from it? Can we write to it?
    3. **Configuration** - What is the receive buffer size? What is the connect timeout?
    4. `ChannelPipleine` - A reference to this `Channel`'s `ChannelPipeline`.
-2.  [`ChannelPipeline`](https://netty.io/4.1/api/io/netty/channel/ChannelPipeline.html) - Note that a channel, in and of itself, is **blocking** - that is, any operation that is performed on it blocks any other operations from being performed on it at that point in time. This is contrary to the Asynchronous nature Netty purports to support. To solve the issue, Netty adds a `ChannelPipeline` to every new `Channel` that is initialised. A `ChannelPipeline` is nothing but a container for `ChannelHandlers`. 
+2.  [`ChannelPipeline`](https://netty.io/4.1/api/io/netty/channel/ChannelPipeline.html) - Note that operations on a channel, in and of themselves, are **blocking** - that is, any operation that is performed on a channel blocks any other operations from being performed on it at any given point in time. This is contrary to the Asynchronous nature Netty purports to support. To solve the issue, Netty adds a `ChannelPipeline` to every new `Channel` that is initialised. A `ChannelPipeline` is nothing but a container for `ChannelHandlers`. 
+3. [`ChannelHandler`](https://netty.io/4.1/api/io/netty/channel/ChannelHandler.html)s encapsulate the application logic of a Netty application. To be more precise, a *chain* of `ChannelHandler`s, each in charge of one or more small pieces of logic that - combined - describe the entire data processing that is supposed to take place during the lifetime of the applicatio. 
+4. [`ChannelHandlerContext`](https://netty.io/4.0/api/io/netty/channel/ChannelHandlerContext.html) is also worth mentioning in this context to - it's the actual mechanism a `ChannelHandler` uses to talk to the `ChannelPipeline` that encapsulates it. In thr [`ChannelInboundHandlerAdapter`](https://netty.io/4.0/api/io/netty/channel/ChannelInboundHandlerAdapter.html) for examplem 
+5. `ChannelXHandlerAdapter`s are a set of *default* handler implementations - "sugar" that should make the development of applicaiton logic easier. `X` can be `Inbound ` (`ChannelInboundHandlerAdapter`), `Oubound` (`ChannelOutboundHandlerAdapter`) or one of many other options Netty provides out of the box. 
 
-#### `AsyncCompletionHandler`
+#### `ChannelXHandlerAdapter` VS. `AsyncXHandlerAdapter`
 
-TODO
+This where it's important to note the difference between `ChannelXHandlerAdapter` (i.e. `ChannelInboundHandlerAdapater`) and `AsyncXHandlerAdapter` (i.e. `AsyncCompletionHandlerAdapater`). 
 
-### Executing a request - During execution
+The former is a **Netty construct** that provides a default implementation of a `ChannelHandler`. The latter is an **AHC construct** that provides a default implementation of an `AsyncHandler`. 
+
+A `ChannelXHandlerAdapter` has methods that are called when *handler-related* and *channel-related* events occur. When the events "fire",  a piece of logic is performed inside the relevant method, and the operation is then **passed on to the** **next `ChannelHandler` in line.** *The methods return nothing.* 
+
+An `AsyncXHandlerAdapter` works a bit differently. It has methods that are triggered when *some piece of data is available during an asynchronous response processing*. The methods are invoked in a pre-determined order, based on the expected arrival of each piece of data (when the status code arrives, when the headers arrive, etc.).  When the events "fire", a piece of logic is performed inside the method and **a `STATE` is returned**. This `STATE` enum instructs the current implementation of the `AsyncHandler` (in our case, `AsyncXHandlerAdapater`) whether it should `CONTINUE` or `ABORT` the current processing.
+
+This is **the core of AHC** - an asynchronous mechanism that encodes - and allows a developer to "hook" into - the various stages of the asynchronous processing of an HTTP response.
+
+###  Executing a request - During execution
 
 TODO
 
