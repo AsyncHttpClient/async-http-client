@@ -464,7 +464,7 @@ public final class NettyRequestSender {
   public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
 
     if (channel != null) {
-      Object attribute = Channels.getAttribute(future.channel());
+      Object attribute = Channels.getAttribute(channel);
       if (attribute instanceof StreamedResponsePublisher) {
         ((StreamedResponsePublisher) attribute).setError(t);
       }

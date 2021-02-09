@@ -41,12 +41,11 @@ public class NettyConnectionResetByPeerTest {
                     .build();
             new DefaultAsyncHttpClient(config).executeRequest(
                     new RequestBuilder("GET").setUrl(resettingServerAddress)
-            ).get();
+            )
+                    .get();
         } catch (ExecutionException e) {
             Throwable ex = e.getCause();
-            assertThat(ex, is(not(instanceOf(TimeoutException.class))));
             assertThat(ex, is(instanceOf(IOException.class)));
-//            assertTrue(ex.getMessage().equalsIgnoreCase("Connection reset by peer"));
         }
     }
 
@@ -79,7 +78,8 @@ public class NettyConnectionResetByPeerTest {
                 }
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
+                    Thread.currentThread()
+                            .interrupt();
                 }
                 throw new RuntimeException(e);
             }
@@ -93,7 +93,8 @@ public class NettyConnectionResetByPeerTest {
         try {
             return "http://localhost:" + portHolder.exchange(0);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            Thread.currentThread()
+                    .interrupt();
             throw new RuntimeException(e);
         }
     }
