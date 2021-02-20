@@ -52,6 +52,7 @@ public class ProxyServer {
     this.proxyType = proxyType;
     this.customHeaders = customHeaders;
   }
+
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
                      ProxyType proxyType) {
     this(host, port, securedPort, realm, nonProxyHosts, proxyType, null);

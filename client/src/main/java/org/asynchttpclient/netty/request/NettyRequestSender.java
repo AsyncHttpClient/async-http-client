@@ -275,9 +275,9 @@ public final class NettyRequestSender {
 
     // some headers are only set when performing the first request
     HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
-    if(proxy.getCustomHeaders()!=null) {
-      HttpHeaders customHeaders =proxy.getCustomHeaders().apply(request);
-      if(customHeaders!=null) {
+    if(proxy.getCustomHeaders() != null) {
+      HttpHeaders customHeaders = proxy.getCustomHeaders().apply(request);
+      if(customHeaders != null) {
         headers.add(customHeaders);
       }
     }
