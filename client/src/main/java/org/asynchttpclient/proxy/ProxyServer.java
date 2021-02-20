@@ -17,6 +17,7 @@
 package org.asynchttpclient.proxy;
 
 import io.netty.handler.codec.http.HttpHeaders;
+
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 
@@ -24,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
