@@ -107,7 +107,8 @@ public final class NettyRequestSender {
         return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, true);
       } else {
         // CONNECT will depend if we can pool or connection or if we have to open a new one
-        return sendRequestThroughProxy(request, asyncHandler, future, proxyServer);
+        HttpHeaders customProxyHeaders = proxyServer.getCustomHeaders().apply(request);
+        return sendRequestThroughProxy(request, asyncHandler, future, proxyServer, customProxyHeaders);
       }
     } else {
       // no CONNECT for sure
@@ -151,7 +152,8 @@ public final class NettyRequestSender {
   private <T> ListenableFuture<T> sendRequestThroughProxy(Request request,
                                                           AsyncHandler<T> asyncHandler,
                                                           NettyResponseFuture<T> future,
-                                                          ProxyServer proxyServer) {
+                                                          ProxyServer proxyServer,
+                                                          HttpHeaders customHeaders) {
 
     NettyResponseFuture<T> newFuture = null;
     for (int i = 0; i < 3; i++) {
@@ -175,7 +177,7 @@ public final class NettyRequestSender {
 
     // couldn't poll an active channel
     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, true);
-    return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler);
+    return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler, customHeaders);
   }
 
   private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request,
@@ -271,7 +273,14 @@ public final class NettyRequestSender {
   private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request,
                                                             ProxyServer proxy,
                                                             NettyResponseFuture<T> future,
-                                                            AsyncHandler<T> asyncHandler) {
+                                                            AsyncHandler<T> asyncHandler){
+    return sendRequestWithNewChannel(request, proxy, future, asyncHandler, null);
+  }
+  private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request,
+                                                            ProxyServer proxy,
+                                                            NettyResponseFuture<T> future,
+                                                            AsyncHandler<T> asyncHandler,
+                                                            HttpHeaders customHeaders) {
 
     // some headers are only set when performing the first request
     HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
@@ -279,6 +288,9 @@ public final class NettyRequestSender {
     Realm proxyRealm = future.getProxyRealm();
     requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
     requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
+    if(customHeaders!=null) {
+      headers.add(customHeaders);
+    }
 
     future.setInAuth(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
     future.setInProxyAuth(
@@ -633,12 +645,12 @@ public final class NettyRequestSender {
       @Override
       public void call() {
         whenHandshaked.addListener(f -> {
-          if (f.isSuccess()) {
-            sendNextRequest(nextRequest, future);
-          } else {
-            future.abort(f.cause());
-          }
-        }
+                  if (f.isSuccess()) {
+                    sendNextRequest(nextRequest, future);
+                  } else {
+                    future.abort(f.cause());
+                  }
+                }
         );
       }
     });
