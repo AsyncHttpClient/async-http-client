@@ -107,7 +107,10 @@ public final class NettyRequestSender {
         return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, true);
       } else {
         // CONNECT will depend if we can pool or connection or if we have to open a new one
-        HttpHeaders customProxyHeaders = proxyServer.getCustomHeaders().apply(request);
+        HttpHeaders customProxyHeaders = null;
+        if(proxyServer.getCustomHeaders()!=null) {
+          customProxyHeaders = proxyServer.getCustomHeaders().apply(request);
+        }
         return sendRequestThroughProxy(request, asyncHandler, future, proxyServer, customProxyHeaders);
       }
     } else {
@@ -284,13 +287,13 @@ public final class NettyRequestSender {
 
     // some headers are only set when performing the first request
     HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
+    if(customHeaders!=null) {
+      headers.add(customHeaders);
+    }
     Realm realm = future.getRealm();
     Realm proxyRealm = future.getProxyRealm();
     requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
     requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
-    if(customHeaders!=null) {
-      headers.add(customHeaders);
-    }
 
     future.setInAuth(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
     future.setInProxyAuth(
