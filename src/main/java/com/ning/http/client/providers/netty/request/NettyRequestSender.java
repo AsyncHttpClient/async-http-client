@@ -106,7 +106,7 @@ public final class NettyRequestSender {
                 && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        if (useProxy && useProxyConnect(uri))
+        if (useProxy && useProxyConnect(Uri.create(proxyServer.getUrl())))
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced
