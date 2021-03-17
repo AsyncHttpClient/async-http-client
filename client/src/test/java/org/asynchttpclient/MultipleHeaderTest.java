@@ -53,8 +53,8 @@ public class MultipleHeaderTest extends AbstractBasicTest {
           socket.shutdownInput();
           if (req.endsWith("MultiEnt")) {
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-            outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 2\n"
-                    + "Content-Length: 1\n" + "\n0\n");
+            outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "X-Duplicated-Header: 2\n"
+                    + "X-Duplicated-Header: 1\n" + "\n0\n");
             outputStreamWriter.flush();
             socket.shutdownOutput();
           } else if (req.endsWith("MultiOther")) {
@@ -148,7 +148,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         public State onHeadersReceived(HttpHeaders response) {
           try {
             int i = 0;
-            for (String header : response.getAll(CONTENT_LENGTH)) {
+            for (String header : response.getAll("X-Duplicated-Header")) {
               clHeaders[i++] = header;
             }
           } finally {
