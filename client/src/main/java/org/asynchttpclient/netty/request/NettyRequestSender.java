@@ -275,6 +275,12 @@ public final class NettyRequestSender {
 
     // some headers are only set when performing the first request
     HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
+    if(proxy != null && proxy.getCustomHeaders() != null ) {
+      HttpHeaders customHeaders = proxy.getCustomHeaders().apply(request);
+      if(customHeaders != null) {
+        headers.add(customHeaders);
+      }
+    }
     Realm realm = future.getRealm();
     Realm proxyRealm = future.getProxyRealm();
     requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
