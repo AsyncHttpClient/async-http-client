@@ -112,15 +112,11 @@ public class NettyReactiveStreamsBody implements NettyBody {
     @Override
     protected void complete() {
       if (channel.isActive()) {
-        if (channel.eventLoop().inEventLoop()) {
+          //Always remove, as we are no longer caring about this subscriber
+          removeFromPipeline();
+          //No need to schedule this on the event thread, this is done by the caller.
           channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-
-        } else {
-          channel.eventLoop().execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT));
-        }
       }
-      //Always remove, as we are no longer caring about this subscriber
-      removeFromPipeline();
     }
 
     @Override

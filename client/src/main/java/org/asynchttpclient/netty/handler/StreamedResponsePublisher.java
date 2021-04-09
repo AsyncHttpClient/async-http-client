@@ -64,8 +64,8 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    hasOutstandingRequest = false;
     super.channelReadComplete(ctx);
+    hasOutstandingRequest = false;
   }
 
   @Override
