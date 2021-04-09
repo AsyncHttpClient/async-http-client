@@ -17,7 +17,6 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
-import org.asynchttpclient.test.TestUtils.*;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.testng.annotations.AfterClass;
@@ -25,8 +24,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.*;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
@@ -49,6 +47,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
   @BeforeClass
   public static void start() throws Throwable {
     server = new HttpServer();
+    server.enqueueEcho();
     server.start();
   }
 
@@ -442,7 +441,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
           // FIXME: Actually refactor this test to account for both cases
         final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
         final String[] expectedWithTrace = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
-        Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
+        Future<String> f = client.prepareOptions(server.getHttpUrl()).execute(new AsyncHandlerAdapter() {
 
           @Override
           public State onHeadersReceived(HttpHeaders headers) {
