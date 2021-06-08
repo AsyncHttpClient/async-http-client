@@ -11,10 +11,6 @@ It's built on top of [Netty](https://github.com/netty/netty). It's currently com
 
 Well, not really RFCs, but as [I](https://github.com/TomGranot) am ramping up to release a new version, I would appreciate the comments from the community. Please add an issue and [label it RFC](https://github.com/AsyncHttpClient/async-http-client/labels/RFC) and I'll take a look! 
 
-## This Repository is Actively Maintained
-
-[@TomGranot](https://github.com/TomGranot) is the current maintainer of this repository. You should feel free to reach out to him in an issue here or on [Twitter](https://twitter.com/TomGranot) for anything regarding this repository.
-
 ## Installation
 
 Binaries are deployed on Maven Central.
