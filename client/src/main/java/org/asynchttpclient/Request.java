@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
@@ -80,6 +81,11 @@ public interface Request {
    * @return the HTTP cookies
    */
   List<Cookie> getCookies();
+  
+  /**
+   * @return the cookie store
+   */
+  CookieStore getCookieStore();
 
   /**
    * @return the request's body byte array (only non null if it was set this way)

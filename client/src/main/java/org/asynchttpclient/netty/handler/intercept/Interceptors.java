@@ -70,7 +70,7 @@ public class Interceptors {
     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
     // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
-    CookieStore cookieStore = config.getCookieStore();
+    CookieStore cookieStore = request.getCookieStore() != null ? request.getCookieStore() : config.getCookieStore();
     if (cookieStore != null) {
       for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
         Cookie c = cookieDecoder.decode(cookieStr);

@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
@@ -43,6 +44,7 @@ public class DefaultRequest implements Request {
   private final InetAddress localAddress;
   private final HttpHeaders headers;
   private final List<Cookie> cookies;
+  private final CookieStore cookieStore;
   private final byte[] byteData;
   private final List<byte[]> compositeByteData;
   private final String stringData;
@@ -70,6 +72,7 @@ public class DefaultRequest implements Request {
                         InetAddress localAddress,
                         HttpHeaders headers,
                         List<Cookie> cookies,
+                        CookieStore cookieStore,
                         byte[] byteData,
                         List<byte[]> compositeByteData,
                         String stringData,
@@ -95,6 +98,7 @@ public class DefaultRequest implements Request {
     this.localAddress = localAddress;
     this.headers = headers;
     this.cookies = cookies;
+    this.cookieStore = cookieStore;
     this.byteData = byteData;
     this.compositeByteData = compositeByteData;
     this.stringData = stringData;
@@ -149,6 +153,11 @@ public class DefaultRequest implements Request {
   @Override
   public List<Cookie> getCookies() {
     return cookies;
+  }
+  
+  @Override
+  public CookieStore getCookieStore() {
+    return cookieStore;
   }
 
   @Override

@@ -23,6 +23,7 @@ import io.netty.resolver.DefaultNameResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
@@ -68,6 +69,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   protected InetAddress localAddress;
   protected HttpHeaders headers;
   protected ArrayList<Cookie> cookies;
+  protected CookieStore cookieStore;
   protected byte[] byteData;
   protected List<byte[]> compositeByteData;
   protected String stringData;
@@ -113,6 +115,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     if (isNonEmpty(prototype.getCookies())) {
       this.cookies = new ArrayList<>(prototype.getCookies());
     }
+    this.cookieStore = prototype.getCookieStore();
     this.byteData = prototype.getByteData();
     this.compositeByteData = prototype.getCompositeByteData();
     this.stringData = prototype.getStringData();
@@ -334,6 +337,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   public void resetCookies() {
     if (this.cookies != null)
       this.cookies.clear();
+  }
+  
+  public T setCookieStore(CookieStore cookieStore) {
+    this.cookieStore = cookieStore;
+    return asDerivedType();
   }
 
   public void resetQuery() {
@@ -580,6 +588,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     rb.charset = this.charset;
     rb.channelPoolPartitioning = this.channelPoolPartitioning;
     rb.nameResolver = this.nameResolver;
+    rb.cookieStore = this.cookieStore;
     Request unsignedRequest = rb.build();
     signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
     return rb;
@@ -624,6 +633,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             rb.localAddress,
             rb.headers,
             cookiesCopy,
+            rb.cookieStore,
             rb.byteData,
             rb.compositeByteData,
             rb.stringData,
