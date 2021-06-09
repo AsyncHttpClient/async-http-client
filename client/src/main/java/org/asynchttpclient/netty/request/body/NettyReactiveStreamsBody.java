@@ -98,10 +98,10 @@ public class NettyReactiveStreamsBody implements NettyBody {
       public void cancel() {}
       public void request(long l) {}
     };
-      
+
     private final Channel channel;
     private final NettyResponseFuture<?> future;
-    private AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();      
+    private AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();
 
     NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
       super(channel.eventLoop());
@@ -111,8 +111,12 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     @Override
     protected void complete() {
-      channel.eventLoop().execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
-              .addListener(future -> removeFromPipeline()));
+      if (channel.isActive()) {
+          //Always remove, as we are no longer caring about this subscriber
+          removeFromPipeline();
+          //No need to schedule this on the event thread, this is done by the caller.
+          channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+      }
     }
 
     @Override
