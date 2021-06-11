@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -114,6 +115,16 @@ public class MultipartUploadTest extends AbstractBasicTest {
       gzipped.add(false);
     }
 
+    testFiles.add(testResource1File);
+    testFiles.add(testResource2File);
+    testFiles.add(testResource3File);
+    expected.add(expectedContents);
+    expected.add(expectedContents2);
+    expected.add(expectedContents3);
+    gzipped.add(false);
+    gzipped.add(true);
+    gzipped.add(false);
+
     try (AsyncHttpClient c = asyncHttpClient(config())) {
       Request r = post("http://localhost" + ":" + port1 + "/upload")
               .addBodyPart(new FilePart("file1", testResource1File, "text/plain", UTF_8))
@@ -126,6 +137,9 @@ public class MultipartUploadTest extends AbstractBasicTest {
               .addBodyPart(new StringPart("Hair", "ridiculous")).addBodyPart(new ByteArrayPart("file4",
                       expectedContents.getBytes(UTF_8), "text/plain", UTF_8, "bytearray.txt"))
               .addBodyPart(new InputStreamPart("inputStream1", inputStreamFile1, testResource1File.getName(), testResource1File.length(), "text/plain", UTF_8))
+              .addBodyPart(new InputStreamSupplierPart("inputStream1", createInputStreamSupplier(testResource1File), testResource1File.getName(), testResource1File.length(), "text/plain", UTF_8))
+              .addBodyPart(new InputStreamSupplierPart("inputStream2", createInputStreamSupplier(testResource2File), testResource2File.getName(), testResource2File.length(), "application/x-gzip", null))
+              .addBodyPart(new InputStreamSupplierPart("inputStream3", createInputStreamSupplier(testResource3File), testResource3File.getName(), testResource3File.length(), "text/plain", UTF_8))
               .build();
 
       Response res = c.executeRequest(r).get();
@@ -134,6 +148,17 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
       testSentFile(expected, testFiles, res, gzipped);
     }
+  }
+
+  private Supplier<InputStream> createInputStreamSupplier(File file) {
+    return () -> {
+      try {
+        logger.info("supplying new for " + file.getName());
+        return new BufferedInputStream(new FileInputStream(file));
+      } catch (FileNotFoundException e) {
+        return null;
+      }
+    };
   }
 
   private void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
