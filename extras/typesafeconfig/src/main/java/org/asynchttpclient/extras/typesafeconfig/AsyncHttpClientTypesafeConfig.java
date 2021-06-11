@@ -285,6 +285,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isWebSocketPerformMasking() {
+    return getBooleanOpt(WEBSOCKET_PERFORM_MASKING).orElse(defaultWebSocketPerformMasking());
+  }
+
+  @Override
   public boolean isKeepEncodingHeader() {
     return getBooleanOpt(KEEP_ENCODING_HEADER_CONFIG).orElse(defaultKeepEncodingHeader());
   }

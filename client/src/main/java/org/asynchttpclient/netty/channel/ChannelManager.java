@@ -456,7 +456,7 @@ public class ChannelManager {
   }
 
   public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
-    pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+    pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(config.isWebSocketPerformMasking()));
     pipeline.addAfter(WS_ENCODER_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, config.isEnableWebSocketCompression(), config.getWebSocketMaxFrameSize()));
 
     if (config.isAggregateWebSocketFrameFragments()) {

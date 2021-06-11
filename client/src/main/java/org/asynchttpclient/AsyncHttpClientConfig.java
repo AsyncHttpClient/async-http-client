@@ -289,6 +289,8 @@ public interface AsyncHttpClientConfig {
 
   int getWebSocketMaxFrameSize();
 
+  boolean isWebSocketPerformMasking();
+
   boolean isKeepEncodingHeader();
 
   int getShutdownQuietPeriod();
