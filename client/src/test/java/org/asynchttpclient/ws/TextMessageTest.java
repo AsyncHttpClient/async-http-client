@@ -17,6 +17,8 @@ import org.testng.annotations.Test;
 
 import java.net.UnknownHostException;
 import java.net.ConnectException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -76,10 +78,11 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     try (AsyncHttpClient c = asyncHttpClient()) {
       c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
     } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      List<String> messages = Arrays.asList("DNS name not found", "Temporary failure in name resolution");
+      assertTrue(messages.stream().anyMatch((msg) -> cause.toString().contains(msg)));
 
-      String expectedMessage = "DNS name not found";
-      assertTrue(e.getCause().toString().contains(expectedMessage));
-      throw e.getCause();
+      throw cause;
     }
   }
 
