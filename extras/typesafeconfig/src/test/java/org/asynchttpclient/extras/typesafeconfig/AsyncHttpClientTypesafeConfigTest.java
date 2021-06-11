@@ -29,6 +29,10 @@ public class AsyncHttpClientTypesafeConfigTest {
     test(AsyncHttpClientTypesafeConfig::getThreadPoolName, "threadPoolName", "MyHttpClient", "AsyncHttpClient");
   }
 
+  public void testChannelThreadPoolName() {
+    test(AsyncHttpClientTypesafeConfig::getChannelThreadPoolName, "channelThreadPoolName", "MyHttpClient", "AHC-Channel");
+  }
+
   public void testMaxTotalConnections() {
     test(AsyncHttpClientTypesafeConfig::getMaxConnections, "maxConnections", 100, -1);
   }

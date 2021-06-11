@@ -113,6 +113,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
   // internals
   private final String threadPoolName;
+  private final String channelThreadPoolName;
   private final int httpClientCodecMaxInitialLineLength;
   private final int httpClientCodecMaxHeaderSize;
   private final int httpClientCodecMaxChunkSize;
@@ -130,6 +131,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final int soRcvBuf;
   private final Timer nettyTimer;
   private final ThreadFactory threadFactory;
+  private final ThreadFactory channelThreadFactory;
   private final Consumer<Channel> httpAdditionalChannelInitializer;
   private final Consumer<Channel> wsAdditionalChannelInitializer;
   private final ResponseBodyPartFactory responseBodyPartFactory;
@@ -205,6 +207,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
                                        // internals
                                        String threadPoolName,
+                                       String channelThreadPoolName,
                                        int httpClientCodecMaxInitialLineLength,
                                        int httpClientCodecMaxHeaderSize,
                                        int httpClientCodecMaxChunkSize,
@@ -218,6 +221,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        ByteBufAllocator allocator,
                                        Timer nettyTimer,
                                        ThreadFactory threadFactory,
+                                       ThreadFactory channelThreadFactory,
                                        Consumer<Channel> httpAdditionalChannelInitializer,
                                        Consumer<Channel> wsAdditionalChannelInitializer,
                                        ResponseBodyPartFactory responseBodyPartFactory,
@@ -297,6 +301,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // internals
     this.threadPoolName = threadPoolName;
+    this.channelThreadPoolName = channelThreadPoolName;
     this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
     this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
     this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
@@ -308,6 +313,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.allocator = allocator;
     this.nettyTimer = nettyTimer;
     this.threadFactory = threadFactory;
+    this.channelThreadFactory = channelThreadFactory;
     this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
     this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
     this.responseBodyPartFactory = responseBodyPartFactory;
@@ -604,6 +610,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public String getChannelThreadPoolName() {
+    return channelThreadPoolName;
+  }
+
+  @Override
   public int getHttpClientCodecMaxInitialLineLength() {
     return httpClientCodecMaxInitialLineLength;
   }
@@ -666,6 +677,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public ThreadFactory getThreadFactory() {
     return threadFactory;
+  }
+
+  @Override
+  public ThreadFactory getChannelThreadFactory() {
+    return channelThreadFactory;
   }
 
   @Override
@@ -766,6 +782,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // internals
     private String threadPoolName = defaultThreadPoolName();
+    private String channelThreadPoolName = defaultChannelThreadPoolName();
     private int httpClientCodecMaxInitialLineLength = defaultHttpClientCodecMaxInitialLineLength();
     private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
     private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
@@ -777,6 +794,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private EventLoopGroup eventLoopGroup;
     private Timer nettyTimer;
     private ThreadFactory threadFactory;
+    private ThreadFactory channelThreadFactory;
     private Consumer<Channel> httpAdditionalChannelInitializer;
     private Consumer<Channel> wsAdditionalChannelInitializer;
     private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
@@ -851,6 +869,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
       // internals
       threadPoolName = config.getThreadPoolName();
+      channelThreadPoolName = config.getChannelThreadPoolName();
       httpClientCodecMaxInitialLineLength = config.getHttpClientCodecMaxInitialLineLength();
       httpClientCodecMaxHeaderSize = config.getHttpClientCodecMaxHeaderSize();
       httpClientCodecMaxChunkSize = config.getHttpClientCodecMaxChunkSize();
@@ -861,6 +880,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       allocator = config.getAllocator();
       nettyTimer = config.getNettyTimer();
       threadFactory = config.getThreadFactory();
+      channelThreadFactory = config.getChannelThreadFactory();
       httpAdditionalChannelInitializer = config.getHttpAdditionalChannelInitializer();
       wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
       responseBodyPartFactory = config.getResponseBodyPartFactory();
@@ -1197,6 +1217,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       return this;
     }
 
+    public Builder setChannelThreadPoolName(String channelThreadPoolName) {
+      this.channelThreadPoolName = channelThreadPoolName;
+      return this;
+    }
+
     public Builder setHttpClientCodecMaxInitialLineLength(int httpClientCodecMaxInitialLineLength) {
       this.httpClientCodecMaxInitialLineLength = httpClientCodecMaxInitialLineLength;
       return this;
@@ -1260,6 +1285,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setThreadFactory(ThreadFactory threadFactory) {
       this.threadFactory = threadFactory;
+      return this;
+    }
+
+    public Builder setChannelThreadFactory(ThreadFactory channelThreadFactory) {
+      this.channelThreadFactory = channelThreadFactory;
       return this;
     }
 
@@ -1352,6 +1382,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               soSndBuf,
               soRcvBuf,
               threadPoolName,
+              channelThreadPoolName,
               httpClientCodecMaxInitialLineLength,
               httpClientCodecMaxHeaderSize,
               httpClientCodecMaxChunkSize,
@@ -1365,6 +1396,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               allocator,
               nettyTimer,
               threadFactory,
+              channelThreadFactory,
               httpAdditionalChannelInitializer,
               wsAdditionalChannelInitializer,
               responseBodyPartFactory,

@@ -20,6 +20,7 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static final String ASYNC_CLIENT_CONFIG_ROOT = "org.asynchttpclient.";
   public static final String THREAD_POOL_NAME_CONFIG = "threadPoolName";
+  public static final String CHANNEL_THREAD_POOL_NAME_CONFIG = "channelThreadPoolName";
   public static final String MAX_CONNECTIONS_CONFIG = "maxConnections";
   public static final String MAX_CONNECTIONS_PER_HOST_CONFIG = "maxConnectionsPerHost";
   public static final String ACQUIRE_FREE_CHANNEL_TIMEOUT = "acquireFreeChannelTimeout";
@@ -92,6 +93,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static String defaultThreadPoolName() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + THREAD_POOL_NAME_CONFIG);
+  }
+
+  public static String defaultChannelThreadPoolName() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + CHANNEL_THREAD_POOL_NAME_CONFIG);
   }
 
   public static int defaultMaxConnections() {
