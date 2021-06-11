@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
@@ -25,6 +26,8 @@ import org.asynchttpclient.uri.Uri;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -39,8 +42,8 @@ public class DefaultRequest implements Request {
   public final ProxyServer proxyServer;
   private final String method;
   private final Uri uri;
-  private final InetAddress address;
-  private final InetAddress localAddress;
+  private final SocketAddress address;
+  private final SocketAddress localAddress;
   private final HttpHeaders headers;
   private final List<Cookie> cookies;
   private final byte[] byteData;
@@ -61,13 +64,14 @@ public class DefaultRequest implements Request {
   private final Charset charset;
   private final ChannelPoolPartitioning channelPoolPartitioning;
   private final NameResolver<InetAddress> nameResolver;
+  private final NameResolver<DomainSocketAddress> domainNameResolver;
   // lazily loaded
   private List<Param> queryParams;
 
   public DefaultRequest(String method,
                         Uri uri,
-                        InetAddress address,
-                        InetAddress localAddress,
+                        SocketAddress address,
+                        SocketAddress localAddress,
                         HttpHeaders headers,
                         List<Cookie> cookies,
                         byte[] byteData,
@@ -88,7 +92,8 @@ public class DefaultRequest implements Request {
                         long rangeOffset,
                         Charset charset,
                         ChannelPoolPartitioning channelPoolPartitioning,
-                        NameResolver<InetAddress> nameResolver) {
+                        NameResolver<InetAddress> nameResolver,
+                        NameResolver<DomainSocketAddress> domainNameResolver) {
     this.method = method;
     this.uri = uri;
     this.address = address;
@@ -114,6 +119,7 @@ public class DefaultRequest implements Request {
     this.charset = charset;
     this.channelPoolPartitioning = channelPoolPartitioning;
     this.nameResolver = nameResolver;
+    this.domainNameResolver = domainNameResolver;
   }
 
   @Override
@@ -133,11 +139,27 @@ public class DefaultRequest implements Request {
 
   @Override
   public InetAddress getAddress() {
-    return address;
+    if (!(address instanceof InetSocketAddress)) {
+      throw new IllegalArgumentException("address can't cast to InetAddress, please use the method of getSocketAddress");
+    }
+    return ((InetSocketAddress) address).getAddress();
   }
 
   @Override
   public InetAddress getLocalAddress() {
+    if (!(localAddress instanceof InetSocketAddress)) {
+      throw new IllegalArgumentException("localAddress can't cast to InetAddress, please use the method of getLocalSocketAddress");
+    }
+    return ((InetSocketAddress) localAddress).getAddress();
+  }
+
+  @Override
+  public SocketAddress getSocketAddress() {
+    return address;
+  }
+
+  @Override
+  public SocketAddress getLocalSocketAddress() {
     return localAddress;
   }
 
@@ -244,6 +266,11 @@ public class DefaultRequest implements Request {
   @Override
   public NameResolver<InetAddress> getNameResolver() {
     return nameResolver;
+  }
+
+  @Override
+  public NameResolver<DomainSocketAddress> getDomainNameResolver() {
+    return domainNameResolver;
   }
 
   @Override

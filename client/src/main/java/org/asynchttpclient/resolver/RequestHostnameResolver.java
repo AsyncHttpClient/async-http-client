@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.resolver;
 
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -32,6 +33,50 @@ public enum RequestHostnameResolver {
   INSTANCE;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestHostnameResolver.class);
+
+  public Future<List<DomainSocketAddress>> resolve(NameResolver<DomainSocketAddress> nameResolver, DomainSocketAddress address, AsyncHandler<?> asyncHandler) {
+
+    final Promise<List<DomainSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+
+    try {
+      asyncHandler.onHostnameResolutionAttempt(address.path());
+    } catch (Exception e) {
+      LOGGER.error("onHostnameResolutionAttempt crashed", e);
+      promise.tryFailure(e);
+      return promise;
+    }
+
+    final Future<List<DomainSocketAddress>> whenResolved = nameResolver.resolveAll(address.path());
+
+    whenResolved.addListener(new SimpleFutureListener<List<DomainSocketAddress>>() {
+
+      @Override
+      protected void onSuccess(List<DomainSocketAddress> socketAddresses) {
+        try {
+          asyncHandler.onHostnameResolutionSuccess(address.path(), socketAddresses);
+        } catch (Exception e) {
+          LOGGER.error("onHostnameResolutionSuccess crashed", e);
+          promise.tryFailure(e);
+          return;
+        }
+        promise.trySuccess(socketAddresses);
+      }
+
+      @Override
+      protected void onFailure(Throwable t) {
+        try {
+          asyncHandler.onHostnameResolutionFailure(address.path(), t);
+        } catch (Exception e) {
+          LOGGER.error("onHostnameResolutionFailure crashed", e);
+          promise.tryFailure(e);
+          return;
+        }
+        promise.tryFailure(t);
+      }
+    });
+
+    return promise;
+  }
 
   public Future<List<InetSocketAddress>> resolve(NameResolver<InetAddress> nameResolver, InetSocketAddress unresolvedAddress, AsyncHandler<?> asyncHandler) {
 

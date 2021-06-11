@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * Non Blocking connect.
@@ -80,7 +80,7 @@ public final class NettyConnectListener<T> {
     requestSender.writeRequest(future, channel);
   }
 
-  public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
+  public void onSuccess(Channel channel, SocketAddress remoteAddress) {
 
     if (connectionSemaphore != null) {
       // transfer lock from future to channel

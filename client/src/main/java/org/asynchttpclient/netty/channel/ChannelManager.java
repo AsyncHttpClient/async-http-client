@@ -126,7 +126,7 @@ public class ChannelManager {
     TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
     if (allowReleaseEventLoopGroup) {
       if (config.isUseNativeTransport()) {
-        transportFactory = getNativeTransportFactory();
+        transportFactory = config.isUseUnixDomain() ? getDomainTransportFactory() : getNativeTransportFactory();
       } else {
         transportFactory = NioTransportFactory.INSTANCE;
       }
@@ -136,11 +136,14 @@ public class ChannelManager {
       eventLoopGroup = config.getEventLoopGroup();
 
       if (eventLoopGroup instanceof NioEventLoopGroup) {
+        if (config.isUseUnixDomain()){
+          throw new IllegalArgumentException("Unix domain socket not support  NioEventLoopGroup now!");
+        }
         transportFactory = NioTransportFactory.INSTANCE;
       } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
-        transportFactory = new EpollTransportFactory();
+        transportFactory = config.isUseUnixDomain() ? new EpollDomainTransportFactory() : new EpollTransportFactory();
       } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
-        transportFactory = new KQueueTransportFactory();
+        transportFactory = config.isUseUnixDomain()? new KQueueDomainTransportFactory():new KQueueTransportFactory();
       } else {
         throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }
@@ -197,14 +200,27 @@ public class ChannelManager {
     } else if (!PlatformDependent.isWindows()) {
       nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollTransportFactory";
     }
+    return loadNativeTransportFactory(nativeTransportFactoryClassName);
+  }
 
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> loadNativeTransportFactory(String nativeTransportFactoryClassName) {
     try {
       if (nativeTransportFactoryClassName != null) {
         return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName(nativeTransportFactoryClassName).newInstance();
       }
     } catch (Exception e) {
+      e.printStackTrace();
     }
-    throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
+    throw new IllegalArgumentException("No suitable native transport available");
+  }
+  private TransportFactory<? extends Channel, ? extends EventLoopGroup> getDomainTransportFactory() {
+    String nativeTransportFactoryClassName = null;
+    if (PlatformDependent.isOsx()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueDomainTransportFactory";
+    } else if (!PlatformDependent.isWindows()) {
+      nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollDomainTransportFactory";
+    }
+    return loadNativeTransportFactory(nativeTransportFactoryClassName);
   }
 
   public void configureBootstraps(NettyRequestSender requestSender) {

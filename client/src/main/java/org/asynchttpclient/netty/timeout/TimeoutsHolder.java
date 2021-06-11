@@ -21,7 +21,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,9 +37,9 @@ public class TimeoutsHolder {
   private final int readTimeoutValue;
   private volatile Timeout readTimeout;
   private volatile NettyResponseFuture<?> nettyResponseFuture;
-  private volatile InetSocketAddress remoteAddress;
+  private volatile SocketAddress remoteAddress;
 
-  public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
+  public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config, SocketAddress originalRemoteAddress) {
     this.nettyTimer = nettyTimer;
     this.nettyResponseFuture = nettyResponseFuture;
     this.requestSender = requestSender;
@@ -64,11 +64,11 @@ public class TimeoutsHolder {
     }
   }
 
-  public void setResolvedRemoteAddress(InetSocketAddress address) {
+  public void setResolvedRemoteAddress(SocketAddress address) {
     remoteAddress = address;
   }
 
-  InetSocketAddress remoteAddress() {
+  SocketAddress remoteAddress() {
     return remoteAddress;
   }
 

@@ -70,6 +70,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String SHUTDOWN_QUIET_PERIOD_CONFIG = "shutdownQuietPeriod";
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
   public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
+  public static final String UNIX_SOCKET = "unixSocket";
   public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
   public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
   public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
@@ -292,6 +293,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static boolean defaultUseNativeTransport() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_NATIVE_TRANSPORT_CONFIG);
+  }
+
+  public static String defaultUnixSocket() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + UNIX_SOCKET);
   }
 
   public static int defaultIoThreadsCount() {

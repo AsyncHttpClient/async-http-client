@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.netty.timeout;
 
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.util.TimerTask;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -20,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -54,11 +56,16 @@ public abstract class TimeoutTimerTask implements TimerTask {
   }
 
   void appendRemoteAddress(StringBuilder sb) {
-    InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
-    sb.append(remoteAddress.getHostString());
-    if (!remoteAddress.isUnresolved()) {
-      sb.append('/').append(remoteAddress.getAddress().getHostAddress());
+    SocketAddress socketAddress = timeoutsHolder.remoteAddress();
+    if (socketAddress instanceof InetSocketAddress){
+      InetSocketAddress remoteAddress = (InetSocketAddress) socketAddress;
+      sb.append(remoteAddress.getHostString());
+      if (!remoteAddress.isUnresolved()) {
+        sb.append('/').append(remoteAddress.getAddress().getHostAddress());
+      }
+      sb.append(':').append(remoteAddress.getPort());
+    }else if (socketAddress instanceof DomainSocketAddress){
+      sb.append(((DomainSocketAddress) socketAddress).path());
     }
-    sb.append(':').append(remoteAddress.getPort());
   }
 }
