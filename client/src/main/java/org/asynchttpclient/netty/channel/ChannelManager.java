@@ -51,6 +51,7 @@ import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,7 @@ public class ChannelManager {
 
   public static final String HTTP_CLIENT_CODEC = "http";
   public static final String SSL_HANDLER = "ssl";
+  public static final String SSL_TUNNEL_HANDLER = "ssl-tunnel";
   public static final String SOCKS_HANDLER = "socks";
   public static final String INFLATER_HANDLER = "inflater";
   public static final String CHUNKED_WRITER_HANDLER = "chunked-writer";
@@ -155,6 +157,10 @@ public class ChannelManager {
 
   public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
     return pipeline.get(SSL_HANDLER) != null;
+  }
+  
+  public static boolean isSslTunnelHandlerConfigured(ChannelPipeline pipeline) {
+    return pipeline.get(SSL_TUNNEL_HANDLER) != null;
   }
 
   private Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
@@ -340,7 +346,7 @@ public class ChannelManager {
     return sslHandler;
   }
 
-  public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
+  public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyType proxyType) {
 
     Future<Channel> whenHandshaked = null;
 
@@ -354,6 +360,11 @@ public class ChannelManager {
         pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
       }
       pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
+      if(ProxyType.HTTPS.equals(proxyType) && !isSslTunnelHandlerConfigured(pipeline)) {
+        SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
+        whenHandshaked = sslHandler.handshakeFuture();
+        pipeline.addAfter(SSL_HANDLER, SSL_TUNNEL_HANDLER, sslHandler);
+      }
 
     } else {
       pipeline.addBefore(AHC_HTTP_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
