@@ -442,7 +442,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
           // FIXME: Actually refactor this test to account for both cases
         final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
         final String[] expectedWithTrace = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
-        Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
+        Future<String> f = client.prepareOptions("https://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
           @Override
           public State onHeadersReceived(HttpHeaders headers) {

@@ -14,7 +14,7 @@
 package org.asynchttpclient.proxy;
 
 public enum ProxyType {
-  HTTP(true), SOCKS_V4(false), SOCKS_V5(false);
+  HTTP(true), HTTPS(true), SOCKS_V4(false), SOCKS_V5(false);
 
   private final boolean http;
 

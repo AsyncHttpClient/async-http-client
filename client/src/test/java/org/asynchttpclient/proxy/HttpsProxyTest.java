@@ -12,15 +12,19 @@
  */
 package org.asynchttpclient.proxy;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.asynchttpclient.*;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.asynchttpclient.Dsl.*;
@@ -34,50 +38,67 @@ import static org.testng.Assert.assertEquals;
  */
 public class HttpsProxyTest extends AbstractBasicTest {
 
-  private Server server2;
+  private List<Server> servers;
+  private int httpsProxyPort;
 
   public AbstractHandler configureHandler() throws Exception {
     return new ConnectHandler();
   }
+  
+  @DataProvider (name = "serverPorts")
+  public Object[][] serverPorts() {
+    return new Object[][] {{port1, ProxyType.HTTP}, {httpsProxyPort, ProxyType.HTTPS}};
+  }
+  
 
   @BeforeClass(alwaysRun = true)
   public void setUpGlobal() throws Exception {
-    server = new Server();
-    ServerConnector connector = addHttpConnector(server);
-    server.setHandler(configureHandler());
-    server.start();
-    port1 = connector.getLocalPort();
+    servers = new ArrayList<>();
+    port1 = startServer(configureHandler(), false);
 
-    server2 = new Server();
-    ServerConnector connector2 = addHttpsConnector(server2);
-    server2.setHandler(new EchoHandler());
-    server2.start();
-    port2 = connector2.getLocalPort();
+    port2 = startServer(new EchoHandler(), true);
+
+    httpsProxyPort = startServer(configureHandler(), true);
 
     logger.info("Local HTTP server started successfully");
   }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws Exception {
-    server.stop();
-    server2.stop();
+  
+  private int startServer(Handler handler, boolean secure) throws Exception {
+    Server server = new Server();
+    @SuppressWarnings("resource")
+    ServerConnector connector = secure ? addHttpsConnector(server) : addHttpConnector(server);
+    server.setHandler(handler);
+    server.start();
+    servers.add(server);
+    return connector.getLocalPort();
   }
 
-  @Test
-  public void testRequestProxy() throws Exception {
+  @AfterClass(alwaysRun = true)
+  public void tearDownGlobal() {
+    servers.forEach(t -> {
+      try {
+        t.stop();
+      } catch (Exception e) {
+        // couldn't stop server
+      }
+    });
+  }
+
+  @Test(dataProvider = "serverPorts")
+  public void testRequestProxy(int proxyPort, ProxyType type) throws Exception {
 
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
-      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
+      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", proxyPort).setProxyType(type));
       Response r = asyncHttpClient.executeRequest(rb.build()).get();
       assertEquals(r.getStatusCode(), 200);
     }
   }
 
-  @Test
-  public void testConfigProxy() throws Exception {
+  @Test(dataProvider = "serverPorts")
+  public void testConfigProxy(int proxyPort, ProxyType type) throws Exception {
     AsyncHttpClientConfig config = config()
             .setFollowRedirect(true)
-            .setProxyServer(proxyServer("localhost", port1).build())
+            .setProxyServer(proxyServer("localhost", proxyPort).setProxyType(type).build())
             .setUseInsecureTrustManager(true)
             .build();
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
@@ -86,11 +107,11 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test
-  public void testNoDirectRequestBodyWithProxy() throws Exception {
+  @Test(dataProvider = "serverPorts")
+  public void testNoDirectRequestBodyWithProxy(int proxyPort, ProxyType type) throws Exception {
     AsyncHttpClientConfig config = config()
       .setFollowRedirect(true)
-      .setProxyServer(proxyServer("localhost", port1).build())
+      .setProxyServer(proxyServer("localhost", proxyPort).setProxyType(type).build())
       .setUseInsecureTrustManager(true)
       .build();
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
@@ -99,11 +120,11 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test
-  public void testDecompressBodyWithProxy() throws Exception {
+  @Test(dataProvider = "serverPorts")
+  public void testDecompressBodyWithProxy(int proxyPort, ProxyType type) throws Exception {
     AsyncHttpClientConfig config = config()
       .setFollowRedirect(true)
-      .setProxyServer(proxyServer("localhost", port1).build())
+      .setProxyServer(proxyServer("localhost", proxyPort).setProxyType(type).build())
       .setUseInsecureTrustManager(true)
       .build();
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
@@ -116,11 +137,11 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
   }
 
-  @Test
-  public void testPooledConnectionsWithProxy() throws Exception {
+  @Test(dataProvider = "serverPorts")
+  public void testPooledConnectionsWithProxy(int proxyPort, ProxyType type) throws Exception {
 
     try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
-      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
+      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", proxyPort).setProxyType(type));
 
       Response r1 = asyncHttpClient.executeRequest(rb.build()).get();
       assertEquals(r1.getStatusCode(), 200);
