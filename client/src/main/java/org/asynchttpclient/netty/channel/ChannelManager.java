@@ -141,6 +141,9 @@ public class ChannelManager {
         transportFactory = new EpollTransportFactory();
       } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
         transportFactory = new KQueueTransportFactory();
+      } else if (eventLoopGroup.getClass().getSimpleName().equals("IOUringEventLoopGroup")) {
+        // NOTE: instanceof is not used since this is an optional dependency
+        transportFactory = new IOUringTransportFactory();
       } else {
         throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
       }

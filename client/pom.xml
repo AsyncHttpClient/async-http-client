@@ -61,6 +61,13 @@
       <classifier>osx-x86_64</classifier>
     </dependency>
     <dependency>
+      <groupId>io.netty.incubator</groupId>
+      <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+      <version>0.0.8.Final</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.reactivestreams</groupId>
       <artifactId>reactive-streams</artifactId>
     </dependency>
