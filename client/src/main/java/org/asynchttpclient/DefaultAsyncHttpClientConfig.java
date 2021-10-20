@@ -117,6 +117,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final int httpClientCodecMaxHeaderSize;
   private final int httpClientCodecMaxChunkSize;
   private final int httpClientCodecInitialBufferSize;
+  private final boolean httpClientCodecParseHttpAfterConnectRequest;
+  private final boolean httpClientCodecAllowDuplicateContentLengths;
+  private final boolean httpClientCodecAllowPartialChunks;
   private final int chunkedFileChunkSize;
   private final Map<ChannelOption<Object>, Object> channelOptions;
   private final EventLoopGroup eventLoopGroup;
@@ -209,6 +212,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        int httpClientCodecMaxHeaderSize,
                                        int httpClientCodecMaxChunkSize,
                                        int httpClientCodecInitialBufferSize,
+                                       boolean httpClientCodecParseHttpAfterConnectRequest,
+                                       boolean httpClientCodecAllowDuplicateContentLengths,
+                                       boolean httpClientCodecAllowPartialChunks,
                                        int chunkedFileChunkSize,
                                        int webSocketMaxBufferSize,
                                        int webSocketMaxFrameSize,
@@ -301,6 +307,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
     this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
     this.httpClientCodecInitialBufferSize = httpClientCodecInitialBufferSize;
+    this.httpClientCodecParseHttpAfterConnectRequest = httpClientCodecParseHttpAfterConnectRequest;
+    this.httpClientCodecAllowDuplicateContentLengths = httpClientCodecAllowDuplicateContentLengths;
+    this.httpClientCodecAllowPartialChunks = httpClientCodecAllowPartialChunks;
     this.chunkedFileChunkSize = chunkedFileChunkSize;
     this.channelOptions = channelOptions;
     this.eventLoopGroup = eventLoopGroup;
@@ -624,6 +633,15 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean setHttpClientCodecParseHttpAfterConnectRequest() { return httpClientCodecParseHttpAfterConnectRequest}
+
+  @Override
+  public boolean setHttpClientCodecAllowDuplicateContentLengths() { return httpClientCodecAllowDuplicateContentLengths}
+
+  @Override
+  public boolean setHttpClientCodecAllowPartialChunks() { return httpClientCodecAllowPartialChunks}
+
+  @Override
   public int getChunkedFileChunkSize() {
     return chunkedFileChunkSize;
   }
@@ -770,6 +788,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
     private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
     private int httpClientCodecInitialBufferSize = defaultHttpClientCodecInitialBufferSize();
+    private boolean httpClientCodecParseHttpAfterConnectRequest = defaultHttpClientCodecParseHttpAfterConnectRequest();
+    private boolean httpClientCodecAllowDuplicateContentLengths = defaultHttpClientCodecAllowDuplicateContentLengths();
+    private boolean httpClientCodecAllowPartialChunks = defaultHttpClientCodecAllowPartialChunks();
     private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
     private boolean useNativeTransport = defaultUseNativeTransport();
     private ByteBufAllocator allocator;
@@ -1214,6 +1235,19 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setHttpClientCodecInitialBufferSize(int httpClientCodecInitialBufferSize) {
       this.httpClientCodecInitialBufferSize = httpClientCodecInitialBufferSize;
+      return this;
+    }
+
+    public Builder setHttpClientCodecParseHttpAfterConnectRequest(boolean httpClientCodecParseHttpAfterConnectRequest) {
+      this.httpClientCodecParseHttpAfterConnectRequest = httpClientCodecParseHttpAfterConnectRequest;
+      return this;
+    }
+    public Builder setHttpClientCodecAllowDuplicateContentLength(boolean httpClientCodecAllowDuplicateContentLengths) {
+      this.httpClientCodecAllowDuplicateContentLengths = httpClientCodecAllowDuplicateContentLengths;
+      return this;
+    }
+    public Builder setHttpClientCodecAllowPartialChunk(boolean httpClientCodecAllowPartialChunks) {
+      this.httpClientCodecAllowPartialChunks = httpClientCodecAllowPartialChunks;
       return this;
     }
 
