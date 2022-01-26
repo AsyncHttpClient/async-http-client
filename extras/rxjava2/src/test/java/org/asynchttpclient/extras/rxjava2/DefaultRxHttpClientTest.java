@@ -32,13 +32,13 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class DefaultRxHttpClientTest {
 
@@ -157,7 +157,7 @@ public class DefaultRxHttpClientTest {
     then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
     final AsyncHandler<Object> bridge = handlerCaptor.getValue();
     then(responseFuture).should().cancel(true);
-    verifyZeroInteractions(handler);
+    verifyNoInteractions(handler);
     assertThat(bridge.onStatusReceived(null), is(AsyncHandler.State.ABORT));
     verify(handler).onThrowable(isA(DisposedException.class));
     verifyNoMoreInteractions(handler);

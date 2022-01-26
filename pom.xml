@@ -480,7 +480,7 @@
     <commons-io.version>2.6</commons-io.version>
     <commons-fileupload.version>1.3.3</commons-fileupload.version>
     <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
-    <mockito.version>3.4.6</mockito.version>
+    <mockito.version>4.3.1</mockito.version>
     <hamcrest.version>2.2</hamcrest.version>
     <kerby.version>2.0.0</kerby.version>
   </properties>

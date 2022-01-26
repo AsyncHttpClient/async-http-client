@@ -29,7 +29,7 @@ public class NettyResponseFutureTest {
     AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
     NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
     boolean result = nettyResponseFuture.cancel(false);
-    verify(asyncHandler).onThrowable(anyObject());
+    verify(asyncHandler).onThrowable(any());
     assertTrue(result, "Cancel should return true if the Future was cancelled successfully");
     assertTrue(nettyResponseFuture.isCancelled(), "isCancelled should return true for a cancelled Future");
   }

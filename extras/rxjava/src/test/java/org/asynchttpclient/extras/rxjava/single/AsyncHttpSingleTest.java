@@ -297,7 +297,7 @@ public class AsyncHttpSingleTest {
 
     underTest.subscribe().unsubscribe();
     verify(future).cancel(true);
-    verifyZeroInteractions(handler);
+    verifyNoInteractions(handler);
 
     assertThat(bridgeRef.get().onStatusReceived(null), is(AsyncHandler.State.ABORT));
     verify(handler).onThrowable(isA(UnsubscribedException.class));
