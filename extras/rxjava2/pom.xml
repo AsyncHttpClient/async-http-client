@@ -8,6 +8,11 @@
   <artifactId>async-http-client-extras-rxjava2</artifactId>
   <name>Asynchronous Http Client RxJava2 Extras</name>
   <description>The Async Http Client RxJava2 Extras.</description>
+
+  <properties>
+    <javaModuleName>org.asynchttpclient.extras.rxjava2</javaModuleName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.reactivex.rxjava2</groupId>

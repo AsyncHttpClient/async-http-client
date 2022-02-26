@@ -155,7 +155,7 @@ public final class NettyWebSocket implements WebSocket {
   @Override
   public Future<Void> sendCloseFrame(int statusCode, String reasonText) {
     if (channel.isOpen()) {
-      return channel.writeAndFlush(new CloseWebSocketFrame(1000, "normal closure"));
+      return channel.writeAndFlush(new CloseWebSocketFrame(statusCode, reasonText));
     }
     return ImmediateEventExecutor.INSTANCE.newSucceededFuture(null);
   }

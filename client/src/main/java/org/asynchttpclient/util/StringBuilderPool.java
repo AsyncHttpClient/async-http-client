@@ -19,7 +19,7 @@ public class StringBuilderPool {
   private final ThreadLocal<StringBuilder> pool = ThreadLocal.withInitial(() -> new StringBuilder(512));
 
   /**
-   * BEWARE: MUSN'T APPEND TO ITSELF!
+   * BEWARE: MUSTN'T APPEND TO ITSELF!
    *
    * @return a pooled StringBuilder
    */

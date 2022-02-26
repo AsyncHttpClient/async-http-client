@@ -38,6 +38,8 @@ import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpConstants.Methods.HEAD;
+import static org.asynchttpclient.util.HttpConstants.Methods.OPTIONS;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.*;
 import static org.asynchttpclient.util.HttpUtils.followRedirect;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -87,7 +89,7 @@ public class Redirect30xInterceptor {
 
         String originalMethod = request.getMethod();
         boolean switchToGet = !originalMethod.equals(GET)
-                && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
+                && !originalMethod.equals(OPTIONS) && !originalMethod.equals(HEAD) && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
@@ -112,6 +114,9 @@ public class Redirect30xInterceptor {
             requestBuilder.setBody(request.getByteBufferData());
           else if (request.getBodyGenerator() != null)
             requestBuilder.setBody(request.getBodyGenerator());
+          else if (isNonEmpty(request.getBodyParts())) {
+            requestBuilder.setBodyParts(request.getBodyParts());
+          }
         }
 
         requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody));
@@ -124,7 +129,6 @@ public class Redirect30xInterceptor {
         HttpHeaders responseHeaders = response.headers();
         String location = responseHeaders.get(LOCATION);
         Uri newUri = Uri.create(future.getUri(), location);
-
         LOGGER.debug("Redirecting to {}", newUri);
 
         CookieStore cookieStore =

@@ -11,11 +11,15 @@
     The Async Http Client Guava Extras.
   </description>
 
+  <properties>
+    <javaModuleName>org.asynchttpclient.extras.guava</javaModuleName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
+      <version>28.2-jre</version>
     </dependency>
   </dependencies>
 </project>

@@ -57,7 +57,7 @@ public interface RxHttpClient {
    * @param request         the request that is to be executed
    * @param handlerSupplier supplies the desired {@code AsyncHandler} instances that are used to produce results
    * @return a {@code Maybe} that executes {@code request} upon subscription and that emits the results produced by
-   * the supplied handers
+   * the supplied handlers
    * @throws NullPointerException if at least one of the parameters is {@code null}
    */
   <T> Maybe<T> prepare(Request request, Supplier<? extends AsyncHandler<T>> handlerSupplier);

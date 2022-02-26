@@ -11,6 +11,11 @@
   <description>
     The Async Http Client example.
   </description>
+
+  <properties>
+    <javaModuleName>org.asynchttpclient.example</javaModuleName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.asynchttpclient</groupId>

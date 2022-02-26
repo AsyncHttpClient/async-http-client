@@ -30,7 +30,7 @@ public interface ResumableBodyConsumer extends BodyConsumer {
   /**
    * Get the previously transferred bytes, for example the current file size.
    *
-   * @return the number of tranferred bytes
+   * @return the number of transferred bytes
    * @throws IOException IO exception
    */
   long getTransferredBytes() throws IOException;

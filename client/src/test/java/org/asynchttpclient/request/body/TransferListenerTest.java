@@ -98,8 +98,8 @@ public class TransferListenerTest extends AbstractBasicTest {
     final AtomicReference<Throwable> throwable = new AtomicReference<>();
     final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
     final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
-    final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-    final AtomicLong bbSentLenght = new AtomicLong(0L);
+    final AtomicInteger bbReceivedLength = new AtomicInteger(0);
+    final AtomicLong bbSentLength = new AtomicLong(0L);
 
     final AtomicBoolean completed = new AtomicBoolean(false);
 
@@ -120,11 +120,11 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
 
         public void onBytesReceived(byte[] b) {
-          bbReceivedLenght.addAndGet(b.length);
+          bbReceivedLength.addAndGet(b.length);
         }
 
         public void onBytesSent(long amount, long current, long total) {
-          bbSentLenght.addAndGet(amount);
+          bbSentLength.addAndGet(amount);
         }
 
         public void onRequestResponseCompleted() {
@@ -142,8 +142,8 @@ public class TransferListenerTest extends AbstractBasicTest {
       assertEquals(response.getStatusCode(), 200);
       assertNotNull(hRead.get());
       assertNotNull(hSent.get());
-      assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
-      assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
+      assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
+      assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
     }
   }
 
@@ -153,8 +153,8 @@ public class TransferListenerTest extends AbstractBasicTest {
       final AtomicReference<Throwable> throwable = new AtomicReference<>();
       final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
       final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
-      final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-      final AtomicLong bbSentLenght = new AtomicLong(0L);
+      final AtomicInteger bbReceivedLength = new AtomicInteger(0);
+      final AtomicLong bbSentLength = new AtomicLong(0L);
 
       final AtomicBoolean completed = new AtomicBoolean(false);
 
@@ -172,11 +172,11 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
 
         public void onBytesReceived(byte[] b) {
-          bbReceivedLenght.addAndGet(b.length);
+          bbReceivedLength.addAndGet(b.length);
         }
 
         public void onBytesSent(long amount, long current, long total) {
-          bbSentLenght.addAndGet(amount);
+          bbSentLength.addAndGet(amount);
         }
 
         public void onRequestResponseCompleted() {
@@ -194,8 +194,8 @@ public class TransferListenerTest extends AbstractBasicTest {
       assertEquals(response.getStatusCode(), 200);
       assertNotNull(hRead.get());
       assertNotNull(hSent.get());
-      assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
-      assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
+      assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
+      assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
     }
   }
 

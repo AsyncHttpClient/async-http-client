@@ -13,6 +13,7 @@
 
   <properties>
     <typesafeconfig.version>1.3.3</typesafeconfig.version>
+    <javaModuleName>org.asynchttpclient.extras.typesafeconfig</javaModuleName>
   </properties>
 
   <dependencies>

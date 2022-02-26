@@ -198,7 +198,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
       byteTransferred.set(resumableListener.length());
     }
 
-    RequestBuilder builder = new RequestBuilder(request);
+    RequestBuilder builder = request.toBuilder();
     if (request.getHeaders().get(RANGE) == null && byteTransferred.get() != 0) {
       builder.setHeader(RANGE, "bytes=" + byteTransferred.get() + "-");
     }

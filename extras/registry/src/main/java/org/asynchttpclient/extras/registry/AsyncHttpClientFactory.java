@@ -33,7 +33,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
  * an instance of that class. If there is an exception while reading the
  * properties file or system property it throws a RuntimeException
  * AsyncHttpClientImplException. If any of the constructors of the instance
- * throws an exception it thows a AsyncHttpClientImplException. By default if
+ * throws an exception it throws a AsyncHttpClientImplException. By default if
  * neither the system property or the property file exists then it will return
  * the default instance of {@link DefaultAsyncHttpClient}
  */

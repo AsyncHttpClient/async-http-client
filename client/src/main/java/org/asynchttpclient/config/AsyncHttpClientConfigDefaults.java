@@ -53,6 +53,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String SSL_SESSION_TIMEOUT_CONFIG = "sslSessionTimeout";
   public static final String TCP_NO_DELAY_CONFIG = "tcpNoDelay";
   public static final String SO_REUSE_ADDRESS_CONFIG = "soReuseAddress";
+  public static final String SO_KEEP_ALIVE_CONFIG = "soKeepAlive";
   public static final String SO_LINGER_CONFIG = "soLinger";
   public static final String SO_SND_BUF_CONFIG = "soSndBuf";
   public static final String SO_RCV_BUF_CONFIG = "soRcvBuf";
@@ -70,6 +71,9 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
   public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
   public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
+  public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
+  public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
+  public static final String EXPIRED_COOKIE_EVICTION_DELAY = "expiredCookieEvictionDelay";
 
   public static final String AHC_VERSION;
 
@@ -222,6 +226,10 @@ public final class AsyncHttpClientConfigDefaults {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + SO_REUSE_ADDRESS_CONFIG);
   }
 
+  public static boolean defaultSoKeepAlive() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + SO_KEEP_ALIVE_CONFIG);
+  }
+
   public static int defaultSoLinger() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + SO_LINGER_CONFIG);
   }
@@ -288,5 +296,17 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static int defaultIoThreadsCount() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + IO_THREADS_COUNT_CONFIG);
+  }
+
+  public static int defaultHashedWheelTimerTickDuration() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HASHED_WHEEL_TIMER_TICK_DURATION);
+  }
+
+  public static int defaultHashedWheelTimerSize() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HASHED_WHEEL_TIMER_SIZE);
+  }
+
+  public static int defaultExpiredCookieEvictionDelay() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + EXPIRED_COOKIE_EVICTION_DELAY);
   }
 }

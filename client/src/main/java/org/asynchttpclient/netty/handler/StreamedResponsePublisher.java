@@ -14,10 +14,13 @@ package org.asynchttpclient.netty.handler;
 
 import com.typesafe.netty.HandlerPublisher;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.EventExecutor;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,8 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
   private final ChannelManager channelManager;
   private final NettyResponseFuture<?> future;
   private final Channel channel;
+  private volatile boolean hasOutstandingRequest = false;
+  private Throwable error;
 
   StreamedResponsePublisher(EventExecutor executor, ChannelManager channelManager, NettyResponseFuture<?> future, Channel channel) {
     super(executor, HttpResponseBodyPart.class);
@@ -51,7 +56,66 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     channelManager.closeChannel(channel);
   }
 
+  @Override
+  protected void requestDemand() {
+    hasOutstandingRequest = true;
+    super.requestDemand();
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    hasOutstandingRequest = false;
+    super.channelReadComplete(ctx);
+  }
+
+  @Override
+  public void subscribe(Subscriber<? super HttpResponseBodyPart> subscriber) {
+    super.subscribe(new ErrorReplacingSubscriber(subscriber));
+  }
+
+  public boolean hasOutstandingRequest() {
+    return hasOutstandingRequest;
+  }
+
   NettyResponseFuture<?> future() {
     return future;
+  }
+
+  public void setError(Throwable t) {
+    this.error = t;
+  }
+
+  private class ErrorReplacingSubscriber implements Subscriber<HttpResponseBodyPart> {
+
+    private final Subscriber<? super HttpResponseBodyPart> subscriber;
+
+    ErrorReplacingSubscriber(Subscriber<? super HttpResponseBodyPart> subscriber) {
+      this.subscriber = subscriber;
+    }
+
+    @Override
+    public void onSubscribe(Subscription s) {
+      subscriber.onSubscribe(s);
+    }
+
+    @Override
+    public void onNext(HttpResponseBodyPart httpResponseBodyPart) {
+      subscriber.onNext(httpResponseBodyPart);
+    }
+
+    @Override
+    public void onError(Throwable t) {
+      subscriber.onError(t);
+    }
+
+    @Override
+    public void onComplete() {
+      Throwable replacementError = error;
+      if (replacementError == null) {
+        subscriber.onComplete();
+      } else {
+        subscriber.onError(replacementError);
+      }
+    }
   }
 }
