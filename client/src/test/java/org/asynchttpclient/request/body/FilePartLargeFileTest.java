@@ -51,7 +51,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
           total += count;
         }
         resp.setStatus(200);
-        resp.addHeader("X-TRANFERED", String.valueOf(total));
+        resp.addHeader("X-TRANSFERRED", String.valueOf(total));
         resp.getOutputStream().flush();
         resp.getOutputStream().close();
 

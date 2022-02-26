@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.extras.rxjava2.maybe;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.reactivex.MaybeEmitter;
 import io.reactivex.exceptions.CompositeException;
@@ -26,7 +27,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.SSLSession;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -35,10 +39,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.only;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class AbstractMaybeAsyncHandlerBridgeTest {
 
@@ -57,6 +57,20 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
   @Mock
   private HttpResponseBodyPart bodyPart;
 
+  private final String hostname = "service:8080";
+
+  @Mock
+  private InetSocketAddress remoteAddress;
+
+  @Mock
+  private Channel channel;
+
+  @Mock
+  private SSLSession sslSession;
+
+  @Mock
+  private Throwable error;
+
   @Captor
   private ArgumentCaptor<Throwable> throwable;
 
@@ -72,6 +86,20 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
       @Override
       public T call() throws Exception {
         return callable.call();
+      }
+    };
+  }
+
+  private static Runnable named(String name, Runnable runnable) {
+    return new Runnable() {
+      @Override
+      public String toString() {
+        return name;
+      }
+
+      @Override
+      public void run() {
+        runnable.run();
       }
     };
   }
@@ -105,9 +133,67 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
     then(delegate).should().onTrailingHeadersReceived(headers);
 
     /* when */
+    underTest.onHostnameResolutionAttempt(hostname);
+    then(delegate).should().onHostnameResolutionAttempt(hostname);
+
+    /* when */
+    List<InetSocketAddress> remoteAddresses = Collections.singletonList(remoteAddress);
+    underTest.onHostnameResolutionSuccess(hostname, remoteAddresses);
+    then(delegate).should().onHostnameResolutionSuccess(hostname, remoteAddresses);
+
+    /* when */
+    underTest.onHostnameResolutionFailure(hostname, error);
+    then(delegate).should().onHostnameResolutionFailure(hostname, error);
+
+    /* when */
+    underTest.onTcpConnectAttempt(remoteAddress);
+    then(delegate).should().onTcpConnectAttempt(remoteAddress);
+
+    /* when */
+    underTest.onTcpConnectSuccess(remoteAddress, channel);
+    then(delegate).should().onTcpConnectSuccess(remoteAddress, channel);
+
+    /* when */
+    underTest.onTcpConnectFailure(remoteAddress, error);
+    then(delegate).should().onTcpConnectFailure(remoteAddress, error);
+
+    /* when */
+    underTest.onTlsHandshakeAttempt();
+    then(delegate).should().onTlsHandshakeAttempt();
+
+    /* when */
+    underTest.onTlsHandshakeSuccess(sslSession);
+    then(delegate).should().onTlsHandshakeSuccess(sslSession);
+
+    /* when */
+    underTest.onTlsHandshakeFailure(error);
+    then(delegate).should().onTlsHandshakeFailure(error);
+
+    /* when */
+    underTest.onConnectionPoolAttempt();
+    then(delegate).should().onConnectionPoolAttempt();
+
+    /* when */
+    underTest.onConnectionPooled(channel);
+    then(delegate).should().onConnectionPooled(channel);
+
+    /* when */
+    underTest.onConnectionOffer(channel);
+    then(delegate).should().onConnectionOffer(channel);
+
+    /* when */
+    underTest.onRequestSend(null);
+    then(delegate).should().onRequestSend(null);
+
+    /* when */
+    underTest.onRetry();
+    then(delegate).should().onRetry();
+
+    /* when */
     underTest.onCompleted();
     then(delegate).should().onCompleted();
     then(emitter).should().onSuccess(this);
+
     /* then */
     verifyNoMoreInteractions(delegate);
   }
@@ -250,6 +336,42 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
     final AsyncHandler.State secondState = httpEvent.call();
     /* then */
     assertThat(secondState, is(State.ABORT));
+    /* then */
+    verifyNoMoreInteractions(delegate);
+  }
+
+  @DataProvider
+  public Object[][] variousEvents() {
+    return new Object[][]{
+            {named("onHostnameResolutionAttempt", () -> underTest.onHostnameResolutionAttempt("service:8080"))},
+            {named("onHostnameResolutionSuccess", () -> underTest.onHostnameResolutionSuccess("service:8080",
+                    Collections.singletonList(remoteAddress)))},
+            {named("onHostnameResolutionFailure", () -> underTest.onHostnameResolutionFailure("service:8080", error))},
+            {named("onTcpConnectAttempt", () -> underTest.onTcpConnectAttempt(remoteAddress))},
+            {named("onTcpConnectSuccess", () -> underTest.onTcpConnectSuccess(remoteAddress, channel))},
+            {named("onTcpConnectFailure", () -> underTest.onTcpConnectFailure(remoteAddress, error))},
+            {named("onTlsHandshakeAttempt", () -> underTest.onTlsHandshakeAttempt())},
+            {named("onTlsHandshakeSuccess", () -> underTest.onTlsHandshakeSuccess(sslSession))},
+            {named("onTlsHandshakeFailure", () -> underTest.onTlsHandshakeFailure(error))},
+            {named("onConnectionPoolAttempt", () -> underTest.onConnectionPoolAttempt())},
+            {named("onConnectionPooled", () -> underTest.onConnectionPooled(channel))},
+            {named("onConnectionOffer", () -> underTest.onConnectionOffer(channel))},
+            {named("onRequestSend", () -> underTest.onRequestSend(null))},
+            {named("onRetry", () -> underTest.onRetry())},
+    };
+  }
+
+  @Test(dataProvider = "variousEvents")
+  public void variousEventCallbacksCheckDisposal(Runnable event) {
+    given(emitter.isDisposed()).willReturn(true);
+
+    /* when */
+    event.run();
+    /* then */
+    then(delegate).should(only()).onThrowable(isA(DisposedException.class));
+
+    /* when */
+    event.run();
     /* then */
     verifyNoMoreInteractions(delegate);
   }

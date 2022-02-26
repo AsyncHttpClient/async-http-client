@@ -33,7 +33,7 @@ import static org.testng.FileAssert.fail;
 public class ChunkingTest extends AbstractBasicTest {
 
   // So we can just test the returned data is the image,
-  // and doesn't contain the chunked delimeters.
+  // and doesn't contain the chunked delimiters.
   @Test
   public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
     doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath()), 400000));

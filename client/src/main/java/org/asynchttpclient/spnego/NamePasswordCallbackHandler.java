@@ -57,7 +57,7 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
   /*
    * This method is called from the handle(Callback[]) method when the specified callback
    * did not match any of the known callback classes. It looks for the callback method
-   * having the specified method name with one of the suppported parameter types.
+   * having the specified method name with one of the supported parameter types.
    * If found, it invokes the callback method on the object and returns true.
    * If not, it returns false.
    */

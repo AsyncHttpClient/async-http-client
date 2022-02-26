@@ -39,4 +39,12 @@ public interface SslEngineFactory {
   default void init(AsyncHttpClientConfig config) throws SSLException {
     // no op
   }
+
+  /**
+   * Perform any necessary cleanup.
+   */
+  default void destroy() {
+    // no op
+  }
+
 }

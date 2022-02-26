@@ -22,6 +22,8 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.cookie.CookieEvictionTask;
+import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -33,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -89,12 +92,23 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     channelManager = new ChannelManager(config, nettyTimer);
     requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
     channelManager.configureBootstraps(requestSender);
+
+    CookieStore cookieStore = config.getCookieStore();
+    if (cookieStore != null) {
+      int cookieStoreCount = config.getCookieStore().incrementAndGet();
+      if (
+        allowStopNettyTimer // timer is not shared
+        || cookieStoreCount == 1 // this is the first AHC instance for the shared (user-provided) timer
+      ) {
+        nettyTimer.newTimeout(new CookieEvictionTask(config.expiredCookieEvictionDelay(), cookieStore),
+          config.expiredCookieEvictionDelay(), TimeUnit.MILLISECONDS);
+      }
+    }
   }
 
   private Timer newNettyTimer(AsyncHttpClientConfig config) {
     ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
-
-    HashedWheelTimer timer = new HashedWheelTimer(threadFactory);
+    HashedWheelTimer timer = new HashedWheelTimer(threadFactory, config.getHashedWheelTimerTickDuration(), TimeUnit.MILLISECONDS, config.getHashedWheelTimerSize());
     timer.start();
     return timer;
   }
@@ -106,6 +120,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         channelManager.close();
       } catch (Throwable t) {
         LOGGER.warn("Unexpected error on ChannelManager close", t);
+      }
+      CookieStore cookieStore = config.getCookieStore();
+      if (cookieStore != null) {
+        cookieStore.decrementAndGet();
       }
       if (allowStopNettyTimer) {
         try {
@@ -194,7 +212,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
       try {
         List<Cookie> cookies = config.getCookieStore().get(request.getUri());
         if (!cookies.isEmpty()) {
-          RequestBuilder requestBuilder = new RequestBuilder(request);
+          RequestBuilder requestBuilder = request.toBuilder();
           for (Cookie cookie : cookies) {
             requestBuilder.addOrReplaceCookie(cookie);
           }
@@ -264,7 +282,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     }
 
     if (request.getRangeOffset() != 0) {
-      RequestBuilder builder = new RequestBuilder(request);
+      RequestBuilder builder = request.toBuilder();
       builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
       request = builder.build();
     }

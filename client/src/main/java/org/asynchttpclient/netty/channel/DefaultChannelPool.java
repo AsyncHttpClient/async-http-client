@@ -222,7 +222,7 @@ public final class DefaultChannelPool implements ChannelPool {
             .map(idle -> idle.getChannel().remoteAddress())
             .filter(a -> a.getClass() == InetSocketAddress.class)
             .map(a -> (InetSocketAddress) a)
-            .map(InetSocketAddress::getHostName)
+            .map(InetSocketAddress::getHostString)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
   }
 

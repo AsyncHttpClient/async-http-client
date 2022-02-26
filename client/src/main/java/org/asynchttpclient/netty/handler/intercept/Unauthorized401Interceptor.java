@@ -77,7 +77,7 @@ public class Unauthorized401Interceptor {
 
     // FIXME what's this???
     future.setChannelState(ChannelState.NEW);
-    HttpHeaders requestHeaders = new DefaultHttpHeaders(false).add(request.getHeaders());
+    HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
     switch (realm.getScheme()) {
       case BASIC:
@@ -162,7 +162,7 @@ public class Unauthorized401Interceptor {
         throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
     }
 
-    final Request nextRequest = new RequestBuilder(future.getCurrentRequest()).setHeaders(requestHeaders).build();
+    final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
 
     LOGGER.debug("Sending authentication to {}", request.getUri());
     if (future.isKeepAlive()

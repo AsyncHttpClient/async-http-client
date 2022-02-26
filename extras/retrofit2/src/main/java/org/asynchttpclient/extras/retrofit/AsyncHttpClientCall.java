@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 @Value
 @Builder(toBuilder = true)
 @Slf4j
-class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
+public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
   private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
 
   /**

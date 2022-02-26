@@ -21,7 +21,7 @@ import static org.testng.Assert.assertEquals;
 /**
  * @author Benjamin Hanzelmann
  */
-public class PropertiesBasedResumableProcesserTest {
+public class PropertiesBasedResumableProcessorTest {
 
   @Test
   public void testSaveLoad() {

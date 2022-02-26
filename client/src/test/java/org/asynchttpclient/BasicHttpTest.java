@@ -788,7 +788,7 @@ public class BasicHttpTest extends HttpTest {
   }
 
   @Test
-  public void nonBlockingNestedRequetsFromIoThreadAreFine() throws Throwable {
+  public void nonBlockingNestedRequestsFromIoThreadAreFine() throws Throwable {
     withClient().run(client ->
       withServer(server).run(server -> {
 

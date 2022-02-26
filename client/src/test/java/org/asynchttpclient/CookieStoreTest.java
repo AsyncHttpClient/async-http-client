@@ -17,6 +17,8 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.uri.Uri;
@@ -26,9 +28,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertTrue;
+
+import com.google.common.collect.Sets;
 
 public class CookieStoreTest {
 
@@ -46,7 +52,7 @@ public class CookieStoreTest {
   }
 
   @Test
-  public void runAllSequentiallyBecauseNotThreadSafe() {
+  public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
     addCookieWithEmptyPath();
     dontReturnCookieForAnotherDomain();
     returnCookieWhenItWasSetOnSamePath();
@@ -77,6 +83,7 @@ public class CookieStoreTest {
     shouldAlsoServeNonSecureCookiesBasedOnTheUriScheme();
     shouldNotServeSecureCookiesForDefaultRetrievedHttpUriScheme();
     shouldServeSecureCookiesForSpecificallyRetrievedHttpUriScheme();
+    shouldCleanExpiredCookieFromUnderlyingDataStructure();
   }
 
   private void addCookieWithEmptyPath() {
@@ -284,8 +291,9 @@ public class CookieStoreTest {
     assertTrue(cookies1.size() == 2);
     assertTrue(cookies1.stream().filter(c -> c.value().equals("FOO") || c.value().equals("BAR")).count() == 2);
 
-    String result = ClientCookieEncoder.LAX.encode(cookies1.get(0), cookies1.get(1));
-    assertTrue(result.equals("JSESSIONID=FOO; JSESSIONID=BAR"));
+    List<String> encodedCookieStrings = cookies1.stream().map(ClientCookieEncoder.LAX::encode).collect(Collectors.toList());
+    assertTrue(encodedCookieStrings.contains("JSESSIONID=FOO"));
+    assertTrue(encodedCookieStrings.contains("JSESSIONID=BAR"));
   }
 
   // rfc6265#section-1 Cookies for a given host are shared  across all the ports on that host
@@ -336,5 +344,27 @@ public class CookieStoreTest {
     assertTrue(store.get(uri).size() == 1);
     assertTrue(store.get(uri).get(0).value().equals("VALUE3"));
     assertTrue(store.get(uri).get(0).isSecure());
+  }
+
+  private void shouldCleanExpiredCookieFromUnderlyingDataStructure() throws Exception {
+    ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+    store.add(Uri.create("https://foo.org/moodle/"), getCookie("JSESSIONID", "FOO", 1));
+    store.add(Uri.create("https://bar.org/moodle/"), getCookie("JSESSIONID", "BAR", 1));
+    store.add(Uri.create("https://bar.org/moodle/"), new DefaultCookie("UNEXPIRED_BAR", "BAR"));
+    store.add(Uri.create("https://foobar.org/moodle/"), new DefaultCookie("UNEXPIRED_FOOBAR", "FOOBAR"));
+
+
+    assertTrue(store.getAll().size() == 4);
+    Thread.sleep(2000);
+    store.evictExpired();
+    assertTrue(store.getUnderlying().size() == 2);
+    Collection<String> unexpiredCookieNames = store.getAll().stream().map(Cookie::name).collect(Collectors.toList());
+    assertTrue(unexpiredCookieNames.containsAll(Sets.newHashSet("UNEXPIRED_BAR", "UNEXPIRED_FOOBAR")));
+  }
+
+  private static Cookie getCookie(String key, String value, int maxAge) {
+    DefaultCookie cookie = new DefaultCookie(key, value);
+    cookie.setMaxAge(maxAge);
+    return cookie;
   }
 }

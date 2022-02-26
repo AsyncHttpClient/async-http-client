@@ -165,6 +165,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public int expiredCookieEvictionDelay() {
+    return getIntegerOpt(EXPIRED_COOKIE_EVICTION_DELAY).orElse(defaultExpiredCookieEvictionDelay());
+  }
+
+  @Override
   public int getMaxRequestRetry() {
     return getIntegerOpt(MAX_REQUEST_RETRY_CONFIG).orElse(defaultMaxRequestRetry());
   }
@@ -340,6 +345,16 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public long getHashedWheelTimerTickDuration() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
+  }
+
+  @Override
+  public int getHashedWheelTimerSize() {
+    return getIntegerOpt(HASHED_WHEEL_TIMER_SIZE).orElse(defaultHashedWheelTimerSize());
+  }
+
+  @Override
   public KeepAliveStrategy getKeepAliveStrategy() {
     return new DefaultKeepAliveStrategy();
   }
@@ -367,6 +382,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   @Override
   public boolean isSoReuseAddress() {
     return getBooleanOpt(SO_REUSE_ADDRESS_CONFIG).orElse(defaultSoReuseAddress());
+  }
+
+  @Override
+  public boolean isSoKeepAlive() {
+    return getBooleanOpt(SO_KEEP_ALIVE_CONFIG).orElse(defaultSoKeepAlive());
   }
 
   @Override

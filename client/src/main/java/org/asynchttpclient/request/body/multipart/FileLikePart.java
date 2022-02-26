@@ -47,14 +47,14 @@ public abstract class FileLikePart extends PartBase {
    * @param charset           the charset encoding for this part
    * @param fileName          the fileName
    * @param contentId         the content id
-   * @param transfertEncoding the transfer encoding
+   * @param transferEncoding the transfer encoding
    */
-  public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transfertEncoding) {
+  public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
     super(name,
             computeContentType(contentType, fileName),
             charset,
             contentId,
-            transfertEncoding);
+            transferEncoding);
     this.fileName = fileName;
   }
 

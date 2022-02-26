@@ -30,6 +30,7 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {
@@ -38,8 +39,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     super(config, channelManager, requestSender);
   }
 
-  private boolean abortAfterHandlingStatus(//
-                                           AsyncHandler<?> handler,
+  private boolean abortAfterHandlingStatus(AsyncHandler<?> handler,
                                            NettyResponseStatus status) throws Exception {
     return handler.onStatusReceived(status) == State.ABORT;
   }
@@ -69,7 +69,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
     logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
 
-    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive(future.getTargetRequest(), httpRequest, response));
+    future.setKeepAlive(config.getKeepAliveStrategy().keepAlive((InetSocketAddress) channel.remoteAddress(), future.getTargetRequest(), httpRequest, response));
 
     NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
     HttpHeaders responseHeaders = response.headers();

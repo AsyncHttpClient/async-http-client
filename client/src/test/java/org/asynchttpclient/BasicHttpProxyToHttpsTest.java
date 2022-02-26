@@ -31,18 +31,20 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHENTICATE;
-import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.asynchttpclient.Dsl.*;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 /**
- * Test that validates that when having an HTTP proxy and trying to access an HTTPS through the proxy the proxy credentials should be passed during the CONNECT request.
+ * Test that validates that when having an HTTP proxy and trying to access an HTTPS
+ * through the proxy the proxy credentials and a custom user-agent (if set) should be passed during the CONNECT request.
  */
 public class BasicHttpProxyToHttpsTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpProxyToHttpsTest.class);
+  private static final String CUSTOM_USER_AGENT = "custom-user-agent";
 
   private int httpPort;
   private int proxyPort;
@@ -66,13 +68,24 @@ public class BasicHttpProxyToHttpsTest {
     ConnectHandler connectHandler = new ConnectHandler() {
 
       @Override
+      // This proxy receives a CONNECT request from the client before making the real request for the target host.
       protected boolean handleAuthentication(HttpServletRequest request, HttpServletResponse response, String address) {
+
+        // If the userAgent of the CONNECT request is the same as the default userAgent,
+        // then the custom userAgent was not properly propagated and the test should fail.
+        String userAgent = request.getHeader(USER_AGENT.toString());
+        if(userAgent.equals(defaultUserAgent())) {
+          return false;
+        }
+
+        // If the authentication failed, the test should also fail.
         String authorization = request.getHeader(PROXY_AUTHORIZATION.toString());
         if (authorization == null) {
           response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
           response.setHeader(PROXY_AUTHENTICATE.toString(), "Basic realm=\"Fake Realm\"");
           return false;
-        } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
+        }
+         else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
           return true;
         }
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -98,6 +111,7 @@ public class BasicHttpProxyToHttpsTest {
       String targetUrl = "https://localhost:" + httpPort + "/foo/bar";
       Request request = get(targetUrl)
               .setProxyServer(proxyServer("127.0.0.1", proxyPort).setRealm(realm(AuthScheme.BASIC, "johndoe", "pass")))
+              .setHeader("user-agent", CUSTOM_USER_AGENT)
               // .setRealm(realm(AuthScheme.BASIC, "user", "passwd"))
               .build();
       Future<Response> responseFuture = client.executeRequest(request);
