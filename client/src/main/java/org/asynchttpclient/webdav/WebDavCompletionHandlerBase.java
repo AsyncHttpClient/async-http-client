@@ -14,7 +14,6 @@
 package org.asynchttpclient.webdav;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
@@ -42,10 +41,23 @@ import java.util.List;
  * @param <T> the result type
  */
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
-  private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(WebDavCompletionHandlerBase.class);
+  private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
   private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
   private HttpResponseStatus status;
   private HttpHeaders headers;
+
+  static {
+    DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+    if (Boolean.getBoolean("org.asynchttpclient.webdav.enableDtd")) {
+      try {
+        DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      } catch (ParserConfigurationException e) {
+        LOGGER.error("Failed to disable doctype declaration");
+        throw new ExceptionInInitializerError(e);
+      }
+    }
+  }
 
   /**
    * {@inheritDoc}
@@ -75,13 +87,12 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
   }
 
   private Document readXMLResponse(InputStream stream) {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     Document document;
     try {
-      document = factory.newDocumentBuilder().parse(stream);
+      document = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(stream);
       parse(document);
     } catch (SAXException | IOException | ParserConfigurationException e) {
-      logger.error(e.getMessage(), e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
     return document;
@@ -94,7 +105,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
       Node node = statusNode.item(i);
 
       String value = node.getFirstChild().getNodeValue();
-      int statusCode = Integer.valueOf(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
+      int statusCode = Integer.parseInt(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
       String statusText = value.substring(value.lastIndexOf(" "));
       status = new HttpStatusWrapper(status, statusText, statusCode);
     }
@@ -122,7 +133,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
    */
   @Override
   public void onThrowable(Throwable t) {
-    logger.debug(t.getMessage(), t);
+    LOGGER.debug(t.getMessage(), t);
   }
 
   /**
@@ -134,7 +145,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
    */
   abstract public T onCompleted(WebDavResponse response) throws Exception;
 
-  private class HttpStatusWrapper extends HttpResponseStatus {
+  private static class HttpStatusWrapper extends HttpResponseStatus {
 
     private final HttpResponseStatus wrapped;
 

@@ -101,7 +101,7 @@ public class FilterTest extends AbstractBasicTest {
     ResponseFilter responseFilter = new ResponseFilter() {
       public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (replay.getAndSet(false)) {
-          Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
+          Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
         }
         return ctx;
@@ -123,7 +123,7 @@ public class FilterTest extends AbstractBasicTest {
     ResponseFilter responseFilter = new ResponseFilter() {
       public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
-          Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
+          Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
         }
         return ctx;
@@ -145,7 +145,7 @@ public class FilterTest extends AbstractBasicTest {
     ResponseFilter responseFilter = new ResponseFilter() {
       public <T> FilterContext<T> filter(FilterContext<T> ctx) {
         if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().get("Ping").equals("Pong") && replay.getAndSet(false)) {
-          Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
+          Request request = ctx.getRequest().toBuilder().addHeader("Ping", "Pong").build();
           return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
         }
         return ctx;

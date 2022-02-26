@@ -428,6 +428,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
       }));
   }
 
+  // This test is flaky - see https://github.com/AsyncHttpClient/async-http-client/issues/1728#issuecomment-699962325
+  // For now, just run again if fails
   @Test(groups = "online")
   public void asyncOptionsTest() throws Throwable {
 
@@ -436,7 +438,10 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
         final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
+        // Some responses contain the TRACE method, some do not - account for both
+          // FIXME: Actually refactor this test to account for both cases
         final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
+        final String[] expectedWithTrace = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
         Future<String> f = client.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
           @Override
@@ -455,10 +460,16 @@ public class AsyncStreamHandlerTest extends HttpTest {
         HttpHeaders h = responseHeaders.get();
         assertNotNull(h);
         String[] values = h.get(ALLOW).split(",|, ");
-        assertNotNull(values);
-        assertEquals(values.length, expected.length);
+          assertNotNull(values);
+        // Some responses contain the TRACE method, some do not - account for both
+        assert(values.length == expected.length || values.length == expectedWithTrace.length);
         Arrays.sort(values);
-        assertEquals(values, expected);
+        // Some responses contain the TRACE method, some do not - account for both
+          if(values.length == expected.length) {
+              assertEquals(values, expected);
+          } else {
+              assertEquals(values, expectedWithTrace);
+          }
       }));
   }
 

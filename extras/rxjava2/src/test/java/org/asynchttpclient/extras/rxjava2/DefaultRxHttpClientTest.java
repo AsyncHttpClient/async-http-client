@@ -61,7 +61,7 @@ public class DefaultRxHttpClientTest {
   private ArgumentCaptor<AsyncHandler<Object>> handlerCaptor;
 
   @Mock
-  private ListenableFuture<Object> resposeFuture;
+  private ListenableFuture<Object> responseFuture;
 
   @InjectMocks
   private DefaultRxHttpClient underTest;
@@ -148,7 +148,7 @@ public class DefaultRxHttpClientTest {
   @Test
   public void cancelsResponseFutureOnDispose() throws Exception {
     given(handlerSupplier.get()).willReturn(handler);
-    given(asyncHttpClient.executeRequest(eq(request), any())).willReturn(resposeFuture);
+    given(asyncHttpClient.executeRequest(eq(request), any())).willReturn(responseFuture);
 
     /* when */
     underTest.prepare(request, handlerSupplier).subscribe().dispose();
@@ -156,7 +156,7 @@ public class DefaultRxHttpClientTest {
     // then
     then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
     final AsyncHandler<Object> bridge = handlerCaptor.getValue();
-    then(resposeFuture).should().cancel(true);
+    then(responseFuture).should().cancel(true);
     verifyZeroInteractions(handler);
     assertThat(bridge.onStatusReceived(null), is(AsyncHandler.State.ABORT));
     verify(handler).onThrowable(isA(DisposedException.class));

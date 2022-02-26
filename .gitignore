@@ -18,6 +18,7 @@ test-output
 MANIFEST.MF
 work
 atlassian-ide-plugin.xml
+/bom/.flattened-pom.xml
 
 # Cached artifacts
 /build-cache/*

@@ -16,11 +16,15 @@
  */
 package org.asynchttpclient.proxy;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Request;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -36,15 +40,22 @@ public class ProxyServer {
   private final Realm realm;
   private final List<String> nonProxyHosts;
   private final ProxyType proxyType;
+  private final Function<Request, HttpHeaders> customHeaders;
 
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
-                     ProxyType proxyType) {
+                     ProxyType proxyType, Function<Request, HttpHeaders> customHeaders) {
     this.host = host;
     this.port = port;
     this.securedPort = securedPort;
     this.realm = realm;
     this.nonProxyHosts = nonProxyHosts;
     this.proxyType = proxyType;
+    this.customHeaders = customHeaders;
+  }
+
+  public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
+                     ProxyType proxyType) {
+    this(host, port, securedPort, realm, nonProxyHosts, proxyType, null);
   }
 
   public String getHost() {
@@ -69,6 +80,10 @@ public class ProxyServer {
 
   public ProxyType getProxyType() {
     return proxyType;
+  }
+
+  public Function<Request, HttpHeaders> getCustomHeaders() {
+    return customHeaders;
   }
 
   /**
@@ -118,6 +133,7 @@ public class ProxyServer {
     private Realm realm;
     private List<String> nonProxyHosts;
     private ProxyType proxyType;
+    private Function<Request, HttpHeaders> customHeaders;
 
     public Builder(String host, int port) {
       this.host = host;
@@ -157,11 +173,16 @@ public class ProxyServer {
       return this;
     }
 
+    public Builder setCustomHeaders(Function<Request, HttpHeaders> customHeaders) {
+      this.customHeaders = customHeaders;
+      return this;
+    }
+
     public ProxyServer build() {
       List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
               : Collections.emptyList();
       ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
-      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType);
+      return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType, customHeaders);
     }
   }
 }

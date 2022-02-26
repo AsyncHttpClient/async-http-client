@@ -72,7 +72,7 @@ public class RequestBuilderTest {
   public void testChaining() {
     Request request = get("http://foo.com").addQueryParam("x", "value").build();
 
-    Request request2 = new RequestBuilder(request).build();
+    Request request2 = request.toBuilder().build();
 
     assertEquals(request2.getUri(), request.getUri());
   }

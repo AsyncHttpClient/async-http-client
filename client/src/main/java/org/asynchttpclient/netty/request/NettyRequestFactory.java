@@ -140,6 +140,7 @@ public final class NettyRequestFactory {
     if (connect) {
       // assign proxy-auth as configured on request
       headers.set(PROXY_AUTHORIZATION, request.getHeaders().getAll(PROXY_AUTHORIZATION));
+      headers.set(USER_AGENT, request.getHeaders().getAll(USER_AGENT));
 
     } else {
       // assign headers as configured on request

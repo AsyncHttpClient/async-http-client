@@ -366,7 +366,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
   }
 
   public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
-    TIMEOUTS_HOLDER_FIELD.set(this, timeoutsHolder);
+    TimeoutsHolder ref = TIMEOUTS_HOLDER_FIELD.getAndSet(this, timeoutsHolder);
+    if (ref != null) {
+      ref.cancel();
+    }
   }
 
   public boolean isInAuth() {

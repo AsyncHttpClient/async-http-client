@@ -29,7 +29,7 @@ public interface ResumableListener {
   void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
 
   /**
-   * Invoked when all the bytes has been sucessfully transferred.
+   * Invoked when all the bytes has been successfully transferred.
    */
   void onAllBytesReceived();
 
