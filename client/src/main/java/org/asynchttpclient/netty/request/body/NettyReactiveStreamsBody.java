@@ -15,10 +15,13 @@ package org.asynchttpclient.netty.request.body;
 import com.typesafe.netty.HandlerSubscriber;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.channel.ChannelManager;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -56,7 +59,8 @@ public class NettyReactiveStreamsBody implements NettyBody {
     } else {
       future.setStreamConsumed(true);
       NettySubscriber subscriber = new NettySubscriber(channel, future);
-      channel.pipeline().addLast(NAME_IN_CHANNEL_PIPELINE, subscriber);
+      // we need to put this handler before HttpHandler to handle LastHttpContent on our own (see NettySubscriber.channelRead)
+      channel.pipeline().addBefore(ChannelManager.AHC_HTTP_HANDLER, NAME_IN_CHANNEL_PIPELINE, subscriber);
       publisher.subscribe(new SubscriberAdapter(subscriber));
       subscriber.delayedStart();
     }
@@ -98,10 +102,21 @@ public class NettyReactiveStreamsBody implements NettyBody {
       public void cancel() {}
       public void request(long l) {}
     };
-      
+
     private final Channel channel;
     private final NettyResponseFuture<?> future;
-    private AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();      
+    private final AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();
+    private final AtomicReference<Object> lastContent = new AtomicReference<>(null);
+    private static final Object BODY_SENT_PLACEHOLDER = new Object();
+    private static class HttpContentAndContext {
+        private final ChannelHandlerContext ctx;
+        private final LastHttpContent lastHttpContent;
+
+        private HttpContentAndContext(ChannelHandlerContext ctx, LastHttpContent lastHttpContent) {
+            this.ctx = ctx;
+            this.lastHttpContent = lastHttpContent;
+        }
+    }
 
     NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
       super(channel.eventLoop());
@@ -110,9 +125,32 @@ public class NettyReactiveStreamsBody implements NettyBody {
     }
 
     @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (msg instanceof LastHttpContent) {
+        // if last http content is received before we acknowledged sending of request last http content,
+        // channel will be returned to pool and possible will be used by other thread for request.
+        // That request will add its own NettySubscriber and will crash.
+        // So we keep it here until our request is done.
+        if (this.lastContent.compareAndSet(null, new HttpContentAndContext(ctx, (LastHttpContent) msg))) {
+          return;
+        }
+      }
+      super.channelRead(ctx, msg);
+    }
+
+    @Override
     protected void complete() {
-      channel.eventLoop().execute(() -> channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
-              .addListener(future -> removeFromPipeline()));
+      removeFromPipeline();
+      channel.eventLoop().execute(() -> {
+        ChannelPromise promise = channel.newPromise().addListener(future -> {
+          if (!lastContent.compareAndSet(null, BODY_SENT_PLACEHOLDER)) {
+            // LastHttpContent arrived before we sent full request, we should reproduce its read
+            HttpContentAndContext contentAndContext = (HttpContentAndContext) lastContent.get();
+            channelRead(contentAndContext.ctx, contentAndContext.lastHttpContent);
+          }
+        });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, promise);
+      });
     }
 
     @Override
