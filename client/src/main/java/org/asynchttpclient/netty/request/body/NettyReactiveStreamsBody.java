@@ -126,16 +126,23 @@ public class NettyReactiveStreamsBody implements NettyBody {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      if (msg instanceof LastHttpContent) {
-        // if last http content is received before we acknowledged sending of request last http content,
-        // channel will be returned to pool and possible will be used by other thread for request.
-        // That request will add its own NettySubscriber and will crash.
-        // So we keep it here until our request is done.
-        if (this.lastContent.compareAndSet(null, new HttpContentAndContext(ctx, (LastHttpContent) msg))) {
-          return;
-        }
+      if (!(msg instanceof LastHttpContent)) {
+        super.channelRead(ctx, msg);
+        return;
       }
-      super.channelRead(ctx, msg);
+      // if last http content is received before we acknowledged sending of request last http content,
+      // channel will be returned to pool and possible will be used by other thread for request.
+      // That request will add its own NettySubscriber and will crash.
+      // So we keep it here until our request is done.
+      if (!this.lastContent.compareAndSet(null, new HttpContentAndContext(ctx, LastHttpContent.EMPTY_LAST_CONTENT))) {
+        super.channelRead(ctx, msg);
+        return;
+      }
+      HttpContent last = (HttpContent) msg;
+      if (last.content().readableBytes() > 0) {
+        HttpContent lastPart = new DefaultHttpContent(last.content());
+        super.channelRead(ctx, lastPart);
+      }
     }
 
     @Override
