@@ -1,3 +1,7 @@
+# Looking for a new maintainer
+
+Due to lack of time on my end and this repo being dead for most of the last couple of years, I am bringing the repo back up for maintenance. Reach out to me on Twitter - @TomGranot - for more info.
+
 # Async Http Client [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
 
 Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
