@@ -5,13 +5,13 @@ jdk:
 before_script:
   - travis/before_script.sh
 
-script: 
+script:
   - mvn test javadoc:javadoc -Ptest-output
   - find $HOME/.m2 -name "_remote.repositories" | xargs rm
   - find $HOME/.m2 -name "resolver-status.properties" | xargs rm -f
-  
+
 # If building master, Publish to Sonatype
-after_success: 
+after_success:
   - travis/after_success.sh
 
 sudo: false

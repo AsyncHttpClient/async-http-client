@@ -21,19 +21,19 @@ import javax.net.ssl.SSLParameters;
 
 public abstract class SslEngineFactoryBase implements SslEngineFactory {
 
-  protected String domain(String hostname) {
-    int fqdnLength = hostname.length() - 1;
-    return hostname.charAt(fqdnLength) == '.' ?
-            hostname.substring(0, fqdnLength) :
-            hostname;
-  }
-
-  protected void configureSslEngine(SSLEngine sslEngine, AsyncHttpClientConfig config) {
-    sslEngine.setUseClientMode(true);
-    if (!config.isDisableHttpsEndpointIdentificationAlgorithm()) {
-      SSLParameters params = sslEngine.getSSLParameters();
-      params.setEndpointIdentificationAlgorithm("HTTPS");
-      sslEngine.setSSLParameters(params);
+    protected String domain(String hostname) {
+        int fqdnLength = hostname.length() - 1;
+        return hostname.charAt(fqdnLength) == '.' ?
+                hostname.substring(0, fqdnLength) :
+                hostname;
     }
-  }
+
+    protected void configureSslEngine(SSLEngine sslEngine, AsyncHttpClientConfig config) {
+        sslEngine.setUseClientMode(true);
+        if (!config.isDisableHttpsEndpointIdentificationAlgorithm()) {
+            SSLParameters params = sslEngine.getSSLParameters();
+            params.setEndpointIdentificationAlgorithm("HTTPS");
+            sslEngine.setSSLParameters(params);
+        }
+    }
 }

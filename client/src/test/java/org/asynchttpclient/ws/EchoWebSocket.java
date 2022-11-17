@@ -20,53 +20,54 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class EchoWebSocket extends WebSocketAdapter {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(EchoWebSocket.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EchoWebSocket.class);
 
-  @Override
-  public void onWebSocketConnect(Session sess) {
-    super.onWebSocketConnect(sess);
-    sess.setIdleTimeout(10000);
-  }
-
-  @Override
-  public void onWebSocketClose(int statusCode, String reason) {
-    getSession().close();
-    super.onWebSocketClose(statusCode, reason);
-  }
-
-  @Override
-  public void onWebSocketBinary(byte[] payload, int offset, int len) {
-    if (isNotConnected()) {
-      return;
-    }
-    try {
-      LOGGER.debug("Received binary frame of size {}: {}", len, new String(payload, offset, len, UTF_8));
-      getRemote().sendBytes(ByteBuffer.wrap(payload, offset, len));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  @Override
-  public void onWebSocketText(String message) {
-    if (isNotConnected()) {
-      return;
+    @Override
+    public void onWebSocketConnect(Session sess) {
+        super.onWebSocketConnect(sess);
+        sess.setIdleTimeout(10000);
     }
 
-    if (message.equals("CLOSE")) {
-      getSession().close();
-      return;
+    @Override
+    public void onWebSocketClose(int statusCode, String reason) {
+        getSession().close();
+        super.onWebSocketClose(statusCode, reason);
     }
 
-    try {
-      LOGGER.debug("Received text frame of size: {}", message);
-      getRemote().sendString(message);
-    } catch (IOException e) {
-      e.printStackTrace();
+    @Override
+    public void onWebSocketBinary(byte[] payload, int offset, int len) {
+        if (isNotConnected()) {
+            return;
+        }
+        try {
+            LOGGER.debug("Received binary frame of size {}: {}", len, new String(payload, offset, len, UTF_8));
+            getRemote().sendBytes(ByteBuffer.wrap(payload, offset, len));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-  }
+
+    @Override
+    public void onWebSocketText(String message) {
+        if (isNotConnected()) {
+            return;
+        }
+
+        if (message.equals("CLOSE")) {
+            getSession().close();
+            return;
+        }
+
+        try {
+            LOGGER.debug("Received text frame of size: {}", message);
+            getRemote().sendString(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -13,26 +13,27 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <artifactId>async-http-client-extras-parent</artifactId>
-    <groupId>org.asynchttpclient</groupId>
-    <version>2.12.4-SNAPSHOT</version>
-  </parent>
-  <artifactId>async-http-client-extras-jdeferred</artifactId>
-  <name>Asynchronous Http Client JDeferred Extras</name>
-  <description>The Async Http Client jDeffered Extras.</description>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>async-http-client-extras-parent</artifactId>
+        <groupId>org.asynchttpclient</groupId>
+        <version>2.12.4-SNAPSHOT</version>
+    </parent>
+    <artifactId>async-http-client-extras-jdeferred</artifactId>
+    <name>Asynchronous Http Client JDeferred Extras</name>
+    <description>The Async Http Client jDeffered Extras.</description>
 
-  <properties>
-    <javaModuleName>org.asynchttpclient.extras.jdeferred</javaModuleName>
-  </properties>
+    <properties>
+        <javaModuleName>org.asynchttpclient.extras.jdeferred</javaModuleName>
+    </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jdeferred</groupId>
-      <artifactId>jdeferred-core</artifactId>
-      <version>1.2.6</version>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>org.jdeferred</groupId>
+            <artifactId>jdeferred-core</artifactId>
+            <version>1.2.6</version>
+        </dependency>
+    </dependencies>
 </project>

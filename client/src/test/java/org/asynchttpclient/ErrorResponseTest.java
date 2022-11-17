@@ -16,7 +16,6 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -39,36 +38,36 @@ import static org.testng.Assert.assertNotNull;
  * @author Tatu Saloranta
  */
 public class ErrorResponseTest extends AbstractBasicTest {
-  final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
+    final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new ErrorHandler();
-  }
-
-  @Test(groups = "standalone")
-  public void testQueryParameters() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
-      Response resp = f.get(3, TimeUnit.SECONDS);
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), 400);
-      assertEquals(resp.getResponseBody(), BAD_REQUEST_STR);
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new ErrorHandler();
     }
-  }
 
-  private static class ErrorHandler extends AbstractHandler {
-    public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-      try {
-        Thread.sleep(210L);
-      } catch (InterruptedException e) {
-        //
-      }
-      response.setContentType("text/plain");
-      response.setStatus(400);
-      OutputStream out = response.getOutputStream();
-      out.write(BAD_REQUEST_STR.getBytes(UTF_8));
-      out.flush();
+    @Test(groups = "standalone")
+    public void testQueryParameters() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), 400);
+            assertEquals(resp.getResponseBody(), BAD_REQUEST_STR);
+        }
     }
-  }
+
+    private static class ErrorHandler extends AbstractHandler {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            try {
+                Thread.sleep(210L);
+            } catch (InterruptedException e) {
+                //
+            }
+            response.setContentType("text/plain");
+            response.setStatus(400);
+            OutputStream out = response.getOutputStream();
+            out.write(BAD_REQUEST_STR.getBytes(UTF_8));
+            out.flush();
+        }
+    }
 }

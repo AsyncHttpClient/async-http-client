@@ -35,64 +35,64 @@ import static org.testng.Assert.assertEquals;
 
 public class RedirectTest extends AbstractBasicWebSocketTest {
 
-  @BeforeClass
-  @Override
-  public void setUpGlobal() throws Exception {
+    @BeforeClass
+    @Override
+    public void setUpGlobal() throws Exception {
 
-    server = new Server();
-    ServerConnector connector1 = addHttpConnector(server);
-    ServerConnector connector2 = addHttpConnector(server);
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
+        ServerConnector connector2 = addHttpConnector(server);
 
-    HandlerList list = new HandlerList();
-    list.addHandler(new AbstractHandler() {
-      @Override
-      public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
-        if (request.getLocalPort() == port2) {
-          httpServletResponse.sendRedirect(getTargetUrl());
-        }
-      }
-    });
-    list.addHandler(configureHandler());
-    server.setHandler(list);
+        HandlerList list = new HandlerList();
+        list.addHandler(new AbstractHandler() {
+            @Override
+            public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
+                if (request.getLocalPort() == port2) {
+                    httpServletResponse.sendRedirect(getTargetUrl());
+                }
+            }
+        });
+        list.addHandler(configureHandler());
+        server.setHandler(list);
 
-    server.start();
-    port1 = connector1.getLocalPort();
-    port2 = connector2.getLocalPort();
-    logger.info("Local HTTP server started successfully");
-  }
-
-  @Test(timeOut = 60000)
-  public void testRedirectToWSResource() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<String> text = new AtomicReference<>("");
-
-      WebSocket websocket = c.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
-
-        @Override
-        public void onOpen(WebSocket websocket) {
-          text.set("OnOpen");
-          latch.countDown();
-        }
-
-        @Override
-        public void onClose(WebSocket websocket, int code, String reason) {
-        }
-
-        @Override
-        public void onError(Throwable t) {
-          t.printStackTrace();
-          latch.countDown();
-        }
-      }).build()).get();
-
-      latch.await();
-      assertEquals(text.get(), "OnOpen");
-      websocket.sendCloseFrame();
+        server.start();
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
+        logger.info("Local HTTP server started successfully");
     }
-  }
 
-  private String getRedirectURL() {
-    return String.format("ws://localhost:%d/", port2);
-  }
+    @Test(timeOut = 60000)
+    public void testRedirectToWSResource() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<>("");
+
+            WebSocket websocket = c.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                    text.set("OnOpen");
+                    latch.countDown();
+                }
+
+                @Override
+                public void onClose(WebSocket websocket, int code, String reason) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                    latch.countDown();
+                }
+            }).build()).get();
+
+            latch.await();
+            assertEquals(text.get(), "OnOpen");
+            websocket.sendCloseFrame();
+        }
+    }
+
+    private String getRedirectURL() {
+        return String.format("ws://localhost:%d/", port2);
+    }
 }

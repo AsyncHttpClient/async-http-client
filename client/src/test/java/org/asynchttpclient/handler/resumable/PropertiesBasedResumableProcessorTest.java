@@ -23,29 +23,29 @@ import static org.testng.Assert.assertEquals;
  */
 public class PropertiesBasedResumableProcessorTest {
 
-  @Test
-  public void testSaveLoad() {
-    PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
-    p.put("http://localhost/test.url", 15L);
-    p.put("http://localhost/test2.url", 50L);
-    p.save(null);
-    p = new PropertiesBasedResumableProcessor();
-    Map<String, Long> m = p.load();
-    assertEquals(m.size(), 2);
-    assertEquals(m.get("http://localhost/test.url"), Long.valueOf(15L));
-    assertEquals(m.get("http://localhost/test2.url"), Long.valueOf(50L));
-  }
+    @Test
+    public void testSaveLoad() {
+        PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
+        p.put("http://localhost/test.url", 15L);
+        p.put("http://localhost/test2.url", 50L);
+        p.save(null);
+        p = new PropertiesBasedResumableProcessor();
+        Map<String, Long> m = p.load();
+        assertEquals(m.size(), 2);
+        assertEquals(m.get("http://localhost/test.url"), Long.valueOf(15L));
+        assertEquals(m.get("http://localhost/test2.url"), Long.valueOf(50L));
+    }
 
-  @Test
-  public void testRemove() {
-    PropertiesBasedResumableProcessor propertiesProcessor = new PropertiesBasedResumableProcessor();
-    propertiesProcessor.put("http://localhost/test.url", 15L);
-    propertiesProcessor.put("http://localhost/test2.url", 50L);
-    propertiesProcessor.remove("http://localhost/test.url");
-    propertiesProcessor.save(null);
-    propertiesProcessor = new PropertiesBasedResumableProcessor();
-    Map<String, Long> propertiesMap = propertiesProcessor.load();
-    assertEquals(propertiesMap.size(), 1);
-    assertEquals(propertiesMap.get("http://localhost/test2.url"), Long.valueOf(50L));
-  }
+    @Test
+    public void testRemove() {
+        PropertiesBasedResumableProcessor propertiesProcessor = new PropertiesBasedResumableProcessor();
+        propertiesProcessor.put("http://localhost/test.url", 15L);
+        propertiesProcessor.put("http://localhost/test2.url", 50L);
+        propertiesProcessor.remove("http://localhost/test.url");
+        propertiesProcessor.save(null);
+        propertiesProcessor = new PropertiesBasedResumableProcessor();
+        Map<String, Long> propertiesMap = propertiesProcessor.load();
+        assertEquals(propertiesMap.size(), 1);
+        assertEquals(propertiesMap.get("http://localhost/test2.url"), Long.valueOf(50L));
+    }
 }

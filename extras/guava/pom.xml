@@ -1,25 +1,26 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <groupId>org.asynchttpclient</groupId>
-    <artifactId>async-http-client-extras-parent</artifactId>
-    <version>2.12.4-SNAPSHOT</version>
-  </parent>
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>async-http-client-extras-guava</artifactId>
-  <name>Asynchronous Http Client Guava Extras</name>
-  <description>
-    The Async Http Client Guava Extras.
-  </description>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.asynchttpclient</groupId>
+        <artifactId>async-http-client-extras-parent</artifactId>
+        <version>2.12.4-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>async-http-client-extras-guava</artifactId>
+    <name>Asynchronous Http Client Guava Extras</name>
+    <description>
+        The Async Http Client Guava Extras.
+    </description>
 
-  <properties>
-    <javaModuleName>org.asynchttpclient.extras.guava</javaModuleName>
-  </properties>
+    <properties>
+        <javaModuleName>org.asynchttpclient.extras.guava</javaModuleName>
+    </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>28.2-jre</version>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.2-jre</version>
+        </dependency>
+    </dependencies>
 </project>

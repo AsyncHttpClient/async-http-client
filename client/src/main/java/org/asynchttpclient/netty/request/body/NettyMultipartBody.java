@@ -24,19 +24,19 @@ import static org.asynchttpclient.request.body.multipart.MultipartUtils.newMulti
 
 public class NettyMultipartBody extends NettyBodyBody {
 
-  private final String contentTypeOverride;
+    private final String contentTypeOverride;
 
-  public NettyMultipartBody(List<Part> parts, HttpHeaders headers, AsyncHttpClientConfig config) {
-    this(newMultipartBody(parts, headers), config);
-  }
+    public NettyMultipartBody(List<Part> parts, HttpHeaders headers, AsyncHttpClientConfig config) {
+        this(newMultipartBody(parts, headers), config);
+    }
 
-  private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
-    super(body, config);
-    contentTypeOverride = body.getContentType();
-  }
+    private NettyMultipartBody(MultipartBody body, AsyncHttpClientConfig config) {
+        super(body, config);
+        contentTypeOverride = body.getContentType();
+    }
 
-  @Override
-  public String getContentTypeOverride() {
-    return contentTypeOverride;
-  }
+    @Override
+    public String getContentTypeOverride() {
+        return contentTypeOverride;
+    }
 }

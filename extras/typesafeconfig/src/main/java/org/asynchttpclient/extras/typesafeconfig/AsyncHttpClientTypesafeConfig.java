@@ -18,7 +18,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
-import io.netty.util.Timer;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.SslEngineFactory;
@@ -34,405 +33,515 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Timer;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ACQUIRE_FREE_CHANNEL_TIMEOUT;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.CHUNKED_FILE_CHUNK_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.COMPRESSION_ENFORCED_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.CONNECTION_POOL_CLEANER_PERIOD_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.CONNECTION_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.CONNECTION_TTL_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.DISABLE_HTTPS_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.DISABLE_ZERO_COPY_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ENABLED_CIPHER_SUITES_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ENABLED_PROTOCOLS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ENABLE_WEBSOCKET_COMPRESSION_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.EXPIRED_COOKIE_EVICTION_DELAY;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.FILTER_INSECURE_CIPHER_SUITES_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.FOLLOW_REDIRECT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HANDSHAKE_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HASHED_WHEEL_TIMER_SIZE;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HASHED_WHEEL_TIMER_TICK_DURATION;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.IO_THREADS_COUNT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.KEEP_ALIVE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.KEEP_ENCODING_HEADER_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.MAX_CONNECTIONS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.MAX_CONNECTIONS_PER_HOST_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.MAX_REDIRECTS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.MAX_REQUEST_RETRY_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.READ_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.REQUEST_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SHUTDOWN_QUIET_PERIOD_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SHUTDOWN_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SO_KEEP_ALIVE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SO_LINGER_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SO_RCV_BUF_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SO_REUSE_ADDRESS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SO_SND_BUF_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SSL_SESSION_CACHE_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.SSL_SESSION_TIMEOUT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.STRICT_302_HANDLING_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.TCP_NO_DELAY_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.THREAD_POOL_NAME_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.USER_AGENT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.USE_INSECURE_TRUST_MANAGER_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.USE_LAX_COOKIE_ENCODER_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.USE_NATIVE_TRANSPORT_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.USE_OPEN_SSL_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.VALIDATE_RESPONSE_HEADERS_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.WEBSOCKET_MAX_BUFFER_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.WEBSOCKET_MAX_FRAME_SIZE_CONFIG;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAcquireFreeChannelTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAggregateWebSocketFrameFragments;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultChunkedFileChunkSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultCompressionEnforced;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionPoolCleanerPeriod;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionTtl;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableHttpsEndpointIdentificationAlgorithm;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableZeroCopy;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnableWebSocketCompression;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledCipherSuites;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecInitialBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxChunkSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxHeaderSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxInitialLineLength;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultIoThreadsCount;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepAlive;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepEncodingHeader;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnections;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRedirects;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoKeepAlive;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoLinger;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoRcvBuf;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoReuseAddress;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoSndBuf;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionCacheSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseLaxCookieEncoder;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseNativeTransport;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOpenSsl;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUserAgent;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultValidateResponseHeaders;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxFrameSize;
 
 public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
-  private final Config config;
-
-  public AsyncHttpClientTypesafeConfig(Config config) {
-    this.config = config;
-  }
-
-  @Override
-  public String getAhcVersion() {
-    return AsyncHttpClientConfigDefaults.AHC_VERSION;
-  }
-
-  @Override
-  public String getThreadPoolName() {
-    return getStringOpt(THREAD_POOL_NAME_CONFIG).orElse(defaultThreadPoolName());
-  }
-
-  @Override
-  public int getMaxConnections() {
-    return getIntegerOpt(MAX_CONNECTIONS_CONFIG).orElse(defaultMaxConnections());
-  }
-
-  @Override
-  public int getMaxConnectionsPerHost() {
-    return getIntegerOpt(MAX_CONNECTIONS_PER_HOST_CONFIG).orElse(defaultMaxConnectionsPerHost());
-  }
-
-  @Override
-  public int getAcquireFreeChannelTimeout() {
-    return getIntegerOpt(ACQUIRE_FREE_CHANNEL_TIMEOUT).orElse(defaultAcquireFreeChannelTimeout());
-  }
-
-  @Override
-  public int getConnectTimeout() {
-    return getIntegerOpt(CONNECTION_TIMEOUT_CONFIG).orElse(defaultConnectTimeout());
-  }
-
-  @Override
-  public int getReadTimeout() {
-    return getIntegerOpt(READ_TIMEOUT_CONFIG).orElse(defaultReadTimeout());
-  }
-
-  @Override
-  public int getPooledConnectionIdleTimeout() {
-    return getIntegerOpt(POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG).orElse(defaultPooledConnectionIdleTimeout());
-  }
-
-  @Override
-  public int getConnectionPoolCleanerPeriod() {
-    return getIntegerOpt(CONNECTION_POOL_CLEANER_PERIOD_CONFIG).orElse(defaultConnectionPoolCleanerPeriod());
-  }
-
-  @Override
-  public int getRequestTimeout() {
-    return getIntegerOpt(REQUEST_TIMEOUT_CONFIG).orElse(defaultRequestTimeout());
-  }
-
-  @Override
-  public boolean isFollowRedirect() {
-    return getBooleanOpt(FOLLOW_REDIRECT_CONFIG).orElse(defaultFollowRedirect());
-  }
-
-  @Override
-  public int getMaxRedirects() {
-    return getIntegerOpt(MAX_REDIRECTS_CONFIG).orElse(defaultMaxRedirects());
-  }
-
-  @Override
-  public boolean isKeepAlive() {
-    return getBooleanOpt(KEEP_ALIVE_CONFIG).orElse(defaultKeepAlive());
-  }
-
-  @Override
-  public String getUserAgent() {
-    return getStringOpt(USER_AGENT_CONFIG).orElse(defaultUserAgent());
-  }
-
-  @Override
-  public boolean isCompressionEnforced() {
-    return getBooleanOpt(COMPRESSION_ENFORCED_CONFIG).orElse(defaultCompressionEnforced());
-  }
-
-  @Override
-  public ThreadFactory getThreadFactory() {
-    return null;
-  }
-
-  @Override
-  public ProxyServerSelector getProxyServerSelector() {
-    return ProxyServerSelector.NO_PROXY_SELECTOR;
-  }
-
-  @Override
-  public SslContext getSslContext() {
-    return null;
-  }
-
-  @Override
-  public Realm getRealm() {
-    return null;
-  }
-
-  @Override
-  public List<RequestFilter> getRequestFilters() {
-    return new LinkedList<>();
-  }
-
-  @Override
-  public List<ResponseFilter> getResponseFilters() {
-    return new LinkedList<>();
-  }
-
-  @Override
-  public List<IOExceptionFilter> getIoExceptionFilters() {
-    return new LinkedList<>();
-  }
-
-  @Override
-  public CookieStore getCookieStore() {
-    return new ThreadSafeCookieStore();
-  }
-
-  @Override
-  public int expiredCookieEvictionDelay() {
-    return getIntegerOpt(EXPIRED_COOKIE_EVICTION_DELAY).orElse(defaultExpiredCookieEvictionDelay());
-  }
-
-  @Override
-  public int getMaxRequestRetry() {
-    return getIntegerOpt(MAX_REQUEST_RETRY_CONFIG).orElse(defaultMaxRequestRetry());
-  }
-
-  @Override
-  public boolean isDisableUrlEncodingForBoundRequests() {
-    return getBooleanOpt(DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG).orElse(defaultDisableUrlEncodingForBoundRequests());
-  }
-
-  @Override
-  public boolean isUseLaxCookieEncoder() {
-    return getBooleanOpt(USE_LAX_COOKIE_ENCODER_CONFIG).orElse(defaultUseLaxCookieEncoder());
-  }
-
-  @Override
-  public boolean isStrict302Handling() {
-    return getBooleanOpt(STRICT_302_HANDLING_CONFIG).orElse(defaultStrict302Handling());
-  }
-
-  @Override
-  public int getConnectionTtl() {
-    return getIntegerOpt(CONNECTION_TTL_CONFIG).orElse(defaultConnectionTtl());
-  }
-
-  @Override
-  public boolean isUseOpenSsl() {
-    return getBooleanOpt(USE_OPEN_SSL_CONFIG).orElse(defaultUseOpenSsl());
-  }
-
-  @Override
-  public boolean isUseInsecureTrustManager() {
-    return getBooleanOpt(USE_INSECURE_TRUST_MANAGER_CONFIG).orElse(defaultUseInsecureTrustManager());
-  }
-
-  @Override
-  public boolean isDisableHttpsEndpointIdentificationAlgorithm() {
-    return getBooleanOpt(DISABLE_HTTPS_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG).orElse(defaultDisableHttpsEndpointIdentificationAlgorithm());
-  }
-
-  @Override
-  public String[] getEnabledProtocols() {
-    return getListOpt(ENABLED_PROTOCOLS_CONFIG).map(list -> list.toArray(new String[0])).orElse(defaultEnabledProtocols());
-  }
-
-  @Override
-  public String[] getEnabledCipherSuites() {
-    return getListOpt(ENABLED_CIPHER_SUITES_CONFIG).map(list -> list.toArray(new String[0])).orElse(defaultEnabledCipherSuites());
-  }
-
-  @Override
-  public boolean isFilterInsecureCipherSuites() {
-    return getBooleanOpt(FILTER_INSECURE_CIPHER_SUITES_CONFIG).orElse(defaultFilterInsecureCipherSuites());
-  }
-
-  @Override
-  public int getSslSessionCacheSize() {
-    return getIntegerOpt(SSL_SESSION_CACHE_SIZE_CONFIG).orElse(defaultSslSessionCacheSize());
-  }
-
-  @Override
-  public int getSslSessionTimeout() {
-    return getIntegerOpt(SSL_SESSION_TIMEOUT_CONFIG).orElse(defaultSslSessionTimeout());
-  }
-
-  @Override
-  public int getHttpClientCodecMaxInitialLineLength() {
-    return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH_CONFIG).orElse(defaultHttpClientCodecMaxInitialLineLength());
-  }
-
-  @Override
-  public int getHttpClientCodecMaxHeaderSize() {
-    return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE_CONFIG).orElse(defaultHttpClientCodecMaxHeaderSize());
-  }
-
-  @Override
-  public int getHttpClientCodecMaxChunkSize() {
-    return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE_CONFIG).orElse(defaultHttpClientCodecMaxChunkSize());
-  }
-
-  @Override
-  public int getHttpClientCodecInitialBufferSize() {
-    return getIntegerOpt(HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG).orElse(defaultHttpClientCodecInitialBufferSize());
-  }
-
-  @Override
-  public boolean isDisableZeroCopy() {
-    return getBooleanOpt(DISABLE_ZERO_COPY_CONFIG).orElse(defaultDisableZeroCopy());
-  }
-
-  @Override
-  public int getHandshakeTimeout() {
-    return getIntegerOpt(HANDSHAKE_TIMEOUT_CONFIG).orElse(defaultHandshakeTimeout());
-  }
-
-  @Override
-  public SslEngineFactory getSslEngineFactory() {
-    return null;
-  }
-
-  @Override
-  public int getChunkedFileChunkSize() {
-    return getIntegerOpt(CHUNKED_FILE_CHUNK_SIZE_CONFIG).orElse(defaultChunkedFileChunkSize());
-  }
-
-  @Override
-  public int getWebSocketMaxBufferSize() {
-    return getIntegerOpt(WEBSOCKET_MAX_BUFFER_SIZE_CONFIG).orElse(defaultWebSocketMaxBufferSize());
-  }
-
-  @Override
-  public int getWebSocketMaxFrameSize() {
-    return getIntegerOpt(WEBSOCKET_MAX_FRAME_SIZE_CONFIG).orElse(defaultWebSocketMaxFrameSize());
-  }
-
-  @Override
-  public boolean isKeepEncodingHeader() {
-    return getBooleanOpt(KEEP_ENCODING_HEADER_CONFIG).orElse(defaultKeepEncodingHeader());
-  }
-
-  @Override
-  public int getShutdownQuietPeriod() {
-    return getIntegerOpt(SHUTDOWN_QUIET_PERIOD_CONFIG).orElse(defaultShutdownQuietPeriod());
-  }
-
-  @Override
-  public int getShutdownTimeout() {
-    return getIntegerOpt(SHUTDOWN_TIMEOUT_CONFIG).orElse(defaultShutdownTimeout());
-  }
-
-  @Override
-  public Map<ChannelOption<Object>, Object> getChannelOptions() {
-    return Collections.emptyMap();
-  }
-
-  @Override
-  public EventLoopGroup getEventLoopGroup() {
-    return null;
-  }
-
-  @Override
-  public boolean isUseNativeTransport() {
-    return getBooleanOpt(USE_NATIVE_TRANSPORT_CONFIG).orElse(defaultUseNativeTransport());
-  }
-
-  @Override
-  public Consumer<Channel> getHttpAdditionalChannelInitializer() {
-    return null;
-  }
-
-  @Override
-  public Consumer<Channel> getWsAdditionalChannelInitializer() {
-    return null;
-  }
-
-  @Override
-  public ResponseBodyPartFactory getResponseBodyPartFactory() {
-    return ResponseBodyPartFactory.EAGER;
-  }
-
-  @Override
-  public ChannelPool getChannelPool() {
-    return null;
-  }
-
-  @Override
-  public ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
-    return null;
-  }
-
-  @Override
-  public Timer getNettyTimer() {
-    return null;
-  }
-
-  @Override
-  public long getHashedWheelTimerTickDuration() {
-    return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
-  }
-
-  @Override
-  public int getHashedWheelTimerSize() {
-    return getIntegerOpt(HASHED_WHEEL_TIMER_SIZE).orElse(defaultHashedWheelTimerSize());
-  }
-
-  @Override
-  public KeepAliveStrategy getKeepAliveStrategy() {
-    return new DefaultKeepAliveStrategy();
-  }
-
-  @Override
-  public boolean isValidateResponseHeaders() {
-    return getBooleanOpt(VALIDATE_RESPONSE_HEADERS_CONFIG).orElse(defaultValidateResponseHeaders());
-  }
-
-  @Override
-  public boolean isAggregateWebSocketFrameFragments() {
-    return getBooleanOpt(AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG).orElse(defaultAggregateWebSocketFrameFragments());
-  }
-
-  @Override
-  public boolean isEnableWebSocketCompression() {
-    return getBooleanOpt(ENABLE_WEBSOCKET_COMPRESSION_CONFIG).orElse(defaultEnableWebSocketCompression());
-  }
-
-  @Override
-  public boolean isTcpNoDelay() {
-    return getBooleanOpt(TCP_NO_DELAY_CONFIG).orElse(defaultTcpNoDelay());
-  }
-
-  @Override
-  public boolean isSoReuseAddress() {
-    return getBooleanOpt(SO_REUSE_ADDRESS_CONFIG).orElse(defaultSoReuseAddress());
-  }
-
-  @Override
-  public boolean isSoKeepAlive() {
-    return getBooleanOpt(SO_KEEP_ALIVE_CONFIG).orElse(defaultSoKeepAlive());
-  }
-
-  @Override
-  public int getSoLinger() {
-    return getIntegerOpt(SO_LINGER_CONFIG).orElse(defaultSoLinger());
-  }
-
-  @Override
-  public int getSoSndBuf() {
-    return getIntegerOpt(SO_SND_BUF_CONFIG).orElse(defaultSoSndBuf());
-  }
-
-  @Override
-  public int getSoRcvBuf() {
-    return getIntegerOpt(SO_RCV_BUF_CONFIG).orElse(defaultSoRcvBuf());
-  }
-
-  @Override
-  public ByteBufAllocator getAllocator() {
-    return null;
-  }
-
-  @Override
-  public int getIoThreadsCount() {
-    return getIntegerOpt(IO_THREADS_COUNT_CONFIG).orElse(defaultIoThreadsCount());
-  }
-
-  private Optional<String> getStringOpt(String key) {
-    return getOpt(config::getString, key);
-  }
-
-  private Optional<Boolean> getBooleanOpt(String key) {
-    return getOpt(config::getBoolean, key);
-  }
-
-  private Optional<Integer> getIntegerOpt(String key) {
-    return getOpt(config::getInt, key);
-  }
-
-  private Optional<List<String>> getListOpt(String key) {
-    return getOpt(config::getStringList, key);
-  }
-
-  private <T> Optional<T> getOpt(Function<String, T> func, String key) {
-    return config.hasPath(key)
-            ? Optional.ofNullable(func.apply(key))
-            : Optional.empty();
-  }
+    private final Config config;
+
+    public AsyncHttpClientTypesafeConfig(Config config) {
+        this.config = config;
+    }
+
+    @Override
+    public String getAhcVersion() {
+        return AsyncHttpClientConfigDefaults.AHC_VERSION;
+    }
+
+    @Override
+    public String getThreadPoolName() {
+        return getStringOpt(THREAD_POOL_NAME_CONFIG).orElse(defaultThreadPoolName());
+    }
+
+    @Override
+    public int getMaxConnections() {
+        return getIntegerOpt(MAX_CONNECTIONS_CONFIG).orElse(defaultMaxConnections());
+    }
+
+    @Override
+    public int getMaxConnectionsPerHost() {
+        return getIntegerOpt(MAX_CONNECTIONS_PER_HOST_CONFIG).orElse(defaultMaxConnectionsPerHost());
+    }
+
+    @Override
+    public int getAcquireFreeChannelTimeout() {
+        return getIntegerOpt(ACQUIRE_FREE_CHANNEL_TIMEOUT).orElse(defaultAcquireFreeChannelTimeout());
+    }
+
+    @Override
+    public int getConnectTimeout() {
+        return getIntegerOpt(CONNECTION_TIMEOUT_CONFIG).orElse(defaultConnectTimeout());
+    }
+
+    @Override
+    public int getReadTimeout() {
+        return getIntegerOpt(READ_TIMEOUT_CONFIG).orElse(defaultReadTimeout());
+    }
+
+    @Override
+    public int getPooledConnectionIdleTimeout() {
+        return getIntegerOpt(POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG).orElse(defaultPooledConnectionIdleTimeout());
+    }
+
+    @Override
+    public int getConnectionPoolCleanerPeriod() {
+        return getIntegerOpt(CONNECTION_POOL_CLEANER_PERIOD_CONFIG).orElse(defaultConnectionPoolCleanerPeriod());
+    }
+
+    @Override
+    public int getRequestTimeout() {
+        return getIntegerOpt(REQUEST_TIMEOUT_CONFIG).orElse(defaultRequestTimeout());
+    }
+
+    @Override
+    public boolean isFollowRedirect() {
+        return getBooleanOpt(FOLLOW_REDIRECT_CONFIG).orElse(defaultFollowRedirect());
+    }
+
+    @Override
+    public int getMaxRedirects() {
+        return getIntegerOpt(MAX_REDIRECTS_CONFIG).orElse(defaultMaxRedirects());
+    }
+
+    @Override
+    public boolean isKeepAlive() {
+        return getBooleanOpt(KEEP_ALIVE_CONFIG).orElse(defaultKeepAlive());
+    }
+
+    @Override
+    public String getUserAgent() {
+        return getStringOpt(USER_AGENT_CONFIG).orElse(defaultUserAgent());
+    }
+
+    @Override
+    public boolean isCompressionEnforced() {
+        return getBooleanOpt(COMPRESSION_ENFORCED_CONFIG).orElse(defaultCompressionEnforced());
+    }
+
+    @Override
+    public ThreadFactory getThreadFactory() {
+        return null;
+    }
+
+    @Override
+    public ProxyServerSelector getProxyServerSelector() {
+        return ProxyServerSelector.NO_PROXY_SELECTOR;
+    }
+
+    @Override
+    public SslContext getSslContext() {
+        return null;
+    }
+
+    @Override
+    public Realm getRealm() {
+        return null;
+    }
+
+    @Override
+    public List<RequestFilter> getRequestFilters() {
+        return new LinkedList<>();
+    }
+
+    @Override
+    public List<ResponseFilter> getResponseFilters() {
+        return new LinkedList<>();
+    }
+
+    @Override
+    public List<IOExceptionFilter> getIoExceptionFilters() {
+        return new LinkedList<>();
+    }
+
+    @Override
+    public CookieStore getCookieStore() {
+        return new ThreadSafeCookieStore();
+    }
+
+    @Override
+    public int expiredCookieEvictionDelay() {
+        return getIntegerOpt(EXPIRED_COOKIE_EVICTION_DELAY).orElse(defaultExpiredCookieEvictionDelay());
+    }
+
+    @Override
+    public int getMaxRequestRetry() {
+        return getIntegerOpt(MAX_REQUEST_RETRY_CONFIG).orElse(defaultMaxRequestRetry());
+    }
+
+    @Override
+    public boolean isDisableUrlEncodingForBoundRequests() {
+        return getBooleanOpt(DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG).orElse(defaultDisableUrlEncodingForBoundRequests());
+    }
+
+    @Override
+    public boolean isUseLaxCookieEncoder() {
+        return getBooleanOpt(USE_LAX_COOKIE_ENCODER_CONFIG).orElse(defaultUseLaxCookieEncoder());
+    }
+
+    @Override
+    public boolean isStrict302Handling() {
+        return getBooleanOpt(STRICT_302_HANDLING_CONFIG).orElse(defaultStrict302Handling());
+    }
+
+    @Override
+    public int getConnectionTtl() {
+        return getIntegerOpt(CONNECTION_TTL_CONFIG).orElse(defaultConnectionTtl());
+    }
+
+    @Override
+    public boolean isUseOpenSsl() {
+        return getBooleanOpt(USE_OPEN_SSL_CONFIG).orElse(defaultUseOpenSsl());
+    }
+
+    @Override
+    public boolean isUseInsecureTrustManager() {
+        return getBooleanOpt(USE_INSECURE_TRUST_MANAGER_CONFIG).orElse(defaultUseInsecureTrustManager());
+    }
+
+    @Override
+    public boolean isDisableHttpsEndpointIdentificationAlgorithm() {
+        return getBooleanOpt(DISABLE_HTTPS_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG).orElse(defaultDisableHttpsEndpointIdentificationAlgorithm());
+    }
+
+    @Override
+    public String[] getEnabledProtocols() {
+        return getListOpt(ENABLED_PROTOCOLS_CONFIG).map(list -> list.toArray(new String[0])).orElse(defaultEnabledProtocols());
+    }
+
+    @Override
+    public String[] getEnabledCipherSuites() {
+        return getListOpt(ENABLED_CIPHER_SUITES_CONFIG).map(list -> list.toArray(new String[0])).orElse(defaultEnabledCipherSuites());
+    }
+
+    @Override
+    public boolean isFilterInsecureCipherSuites() {
+        return getBooleanOpt(FILTER_INSECURE_CIPHER_SUITES_CONFIG).orElse(defaultFilterInsecureCipherSuites());
+    }
+
+    @Override
+    public int getSslSessionCacheSize() {
+        return getIntegerOpt(SSL_SESSION_CACHE_SIZE_CONFIG).orElse(defaultSslSessionCacheSize());
+    }
+
+    @Override
+    public int getSslSessionTimeout() {
+        return getIntegerOpt(SSL_SESSION_TIMEOUT_CONFIG).orElse(defaultSslSessionTimeout());
+    }
+
+    @Override
+    public int getHttpClientCodecMaxInitialLineLength() {
+        return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH_CONFIG).orElse(defaultHttpClientCodecMaxInitialLineLength());
+    }
+
+    @Override
+    public int getHttpClientCodecMaxHeaderSize() {
+        return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE_CONFIG).orElse(defaultHttpClientCodecMaxHeaderSize());
+    }
+
+    @Override
+    public int getHttpClientCodecMaxChunkSize() {
+        return getIntegerOpt(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE_CONFIG).orElse(defaultHttpClientCodecMaxChunkSize());
+    }
+
+    @Override
+    public int getHttpClientCodecInitialBufferSize() {
+        return getIntegerOpt(HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG).orElse(defaultHttpClientCodecInitialBufferSize());
+    }
+
+    @Override
+    public boolean isDisableZeroCopy() {
+        return getBooleanOpt(DISABLE_ZERO_COPY_CONFIG).orElse(defaultDisableZeroCopy());
+    }
+
+    @Override
+    public int getHandshakeTimeout() {
+        return getIntegerOpt(HANDSHAKE_TIMEOUT_CONFIG).orElse(defaultHandshakeTimeout());
+    }
+
+    @Override
+    public SslEngineFactory getSslEngineFactory() {
+        return null;
+    }
+
+    @Override
+    public int getChunkedFileChunkSize() {
+        return getIntegerOpt(CHUNKED_FILE_CHUNK_SIZE_CONFIG).orElse(defaultChunkedFileChunkSize());
+    }
+
+    @Override
+    public int getWebSocketMaxBufferSize() {
+        return getIntegerOpt(WEBSOCKET_MAX_BUFFER_SIZE_CONFIG).orElse(defaultWebSocketMaxBufferSize());
+    }
+
+    @Override
+    public int getWebSocketMaxFrameSize() {
+        return getIntegerOpt(WEBSOCKET_MAX_FRAME_SIZE_CONFIG).orElse(defaultWebSocketMaxFrameSize());
+    }
+
+    @Override
+    public boolean isKeepEncodingHeader() {
+        return getBooleanOpt(KEEP_ENCODING_HEADER_CONFIG).orElse(defaultKeepEncodingHeader());
+    }
+
+    @Override
+    public int getShutdownQuietPeriod() {
+        return getIntegerOpt(SHUTDOWN_QUIET_PERIOD_CONFIG).orElse(defaultShutdownQuietPeriod());
+    }
+
+    @Override
+    public int getShutdownTimeout() {
+        return getIntegerOpt(SHUTDOWN_TIMEOUT_CONFIG).orElse(defaultShutdownTimeout());
+    }
+
+    @Override
+    public Map<ChannelOption<Object>, Object> getChannelOptions() {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public EventLoopGroup getEventLoopGroup() {
+        return null;
+    }
+
+    @Override
+    public boolean isUseNativeTransport() {
+        return getBooleanOpt(USE_NATIVE_TRANSPORT_CONFIG).orElse(defaultUseNativeTransport());
+    }
+
+    @Override
+    public Consumer<Channel> getHttpAdditionalChannelInitializer() {
+        return null;
+    }
+
+    @Override
+    public Consumer<Channel> getWsAdditionalChannelInitializer() {
+        return null;
+    }
+
+    @Override
+    public ResponseBodyPartFactory getResponseBodyPartFactory() {
+        return ResponseBodyPartFactory.EAGER;
+    }
+
+    @Override
+    public ChannelPool getChannelPool() {
+        return null;
+    }
+
+    @Override
+    public ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
+        return null;
+    }
+
+    @Override
+    public Timer getNettyTimer() {
+        return null;
+    }
+
+    @Override
+    public long getHashedWheelTimerTickDuration() {
+        return getIntegerOpt(HASHED_WHEEL_TIMER_TICK_DURATION).orElse(defaultHashedWheelTimerTickDuration());
+    }
+
+    @Override
+    public int getHashedWheelTimerSize() {
+        return getIntegerOpt(HASHED_WHEEL_TIMER_SIZE).orElse(defaultHashedWheelTimerSize());
+    }
+
+    @Override
+    public KeepAliveStrategy getKeepAliveStrategy() {
+        return new DefaultKeepAliveStrategy();
+    }
+
+    @Override
+    public boolean isValidateResponseHeaders() {
+        return getBooleanOpt(VALIDATE_RESPONSE_HEADERS_CONFIG).orElse(defaultValidateResponseHeaders());
+    }
+
+    @Override
+    public boolean isAggregateWebSocketFrameFragments() {
+        return getBooleanOpt(AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG).orElse(defaultAggregateWebSocketFrameFragments());
+    }
+
+    @Override
+    public boolean isEnableWebSocketCompression() {
+        return getBooleanOpt(ENABLE_WEBSOCKET_COMPRESSION_CONFIG).orElse(defaultEnableWebSocketCompression());
+    }
+
+    @Override
+    public boolean isTcpNoDelay() {
+        return getBooleanOpt(TCP_NO_DELAY_CONFIG).orElse(defaultTcpNoDelay());
+    }
+
+    @Override
+    public boolean isSoReuseAddress() {
+        return getBooleanOpt(SO_REUSE_ADDRESS_CONFIG).orElse(defaultSoReuseAddress());
+    }
+
+    @Override
+    public boolean isSoKeepAlive() {
+        return getBooleanOpt(SO_KEEP_ALIVE_CONFIG).orElse(defaultSoKeepAlive());
+    }
+
+    @Override
+    public int getSoLinger() {
+        return getIntegerOpt(SO_LINGER_CONFIG).orElse(defaultSoLinger());
+    }
+
+    @Override
+    public int getSoSndBuf() {
+        return getIntegerOpt(SO_SND_BUF_CONFIG).orElse(defaultSoSndBuf());
+    }
+
+    @Override
+    public int getSoRcvBuf() {
+        return getIntegerOpt(SO_RCV_BUF_CONFIG).orElse(defaultSoRcvBuf());
+    }
+
+    @Override
+    public ByteBufAllocator getAllocator() {
+        return null;
+    }
+
+    @Override
+    public int getIoThreadsCount() {
+        return getIntegerOpt(IO_THREADS_COUNT_CONFIG).orElse(defaultIoThreadsCount());
+    }
+
+    private Optional<String> getStringOpt(String key) {
+        return getOpt(config::getString, key);
+    }
+
+    private Optional<Boolean> getBooleanOpt(String key) {
+        return getOpt(config::getBoolean, key);
+    }
+
+    private Optional<Integer> getIntegerOpt(String key) {
+        return getOpt(config::getInt, key);
+    }
+
+    private Optional<List<String>> getListOpt(String key) {
+        return getOpt(config::getStringList, key);
+    }
+
+    private <T> Optional<T> getOpt(Function<String, T> func, String key) {
+        return config.hasPath(key)
+                ? Optional.ofNullable(func.apply(key))
+                : Optional.empty();
+    }
 }

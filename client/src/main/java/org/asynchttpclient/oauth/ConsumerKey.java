@@ -19,25 +19,25 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
  * Value class for OAuth consumer keys.
  */
 public class ConsumerKey {
-  private final String key;
-  private final String secret;
-  private final String percentEncodedKey;
+    private final String key;
+    private final String secret;
+    private final String percentEncodedKey;
 
-  public ConsumerKey(String key, String secret) {
-    this.key = key;
-    this.secret = secret;
-    this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
-  }
+    public ConsumerKey(String key, String secret) {
+        this.key = key;
+        this.secret = secret;
+        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
+    }
 
-  public String getKey() {
-    return key;
-  }
+    public String getKey() {
+        return key;
+    }
 
-  public String getSecret() {
-    return secret;
-  }
+    public String getSecret() {
+        return secret;
+    }
 
-  public String getPercentEncodedKey() {
-    return percentEncodedKey;
-  }
+    public String getPercentEncodedKey() {
+        return percentEncodedKey;
+    }
 }

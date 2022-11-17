@@ -35,46 +35,46 @@ import static org.testng.Assert.assertEquals;
 
 public class FilePartLargeFileTest extends AbstractBasicTest {
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new AbstractHandler() {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        ServletInputStream in = req.getInputStream();
-        byte[] b = new byte[8192];
+                ServletInputStream in = req.getInputStream();
+                byte[] b = new byte[8192];
 
-        int count;
-        int total = 0;
-        while ((count = in.read(b)) != -1) {
-          b = new byte[8192];
-          total += count;
+                int count;
+                int total = 0;
+                while ((count = in.read(b)) != -1) {
+                    b = new byte[8192];
+                    total += count;
+                }
+                resp.setStatus(200);
+                resp.addHeader("X-TRANSFERRED", String.valueOf(total));
+                resp.getOutputStream().flush();
+                resp.getOutputStream().close();
+
+                baseRequest.setHandled(true);
+            }
+        };
+    }
+
+    @Test
+    public void testPutImageFile() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
         }
-        resp.setStatus(200);
-        resp.addHeader("X-TRANSFERRED", String.valueOf(total));
-        resp.getOutputStream().flush();
-        resp.getOutputStream().close();
-
-        baseRequest.setHandled(true);
-      }
-    };
-  }
-
-  @Test
-  public void testPutImageFile() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
     }
-  }
 
-  @Test
-  public void testPutLargeTextFile() throws Exception {
-    File file = createTempFile(1024 * 1024);
+    @Test
+    public void testPutLargeTextFile() throws Exception {
+        File file = createTempFile(1024 * 1024);
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        }
     }
-  }
 }

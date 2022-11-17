@@ -23,72 +23,72 @@ import java.nio.channels.WritableByteChannel;
 
 public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
-  // lazy
-  private ByteBuf contentBuffer;
+    // lazy
+    private ByteBuf contentBuffer;
 
-  public MessageEndMultipartPart(byte[] boundary) {
-    super(null, boundary);
-    state = MultipartState.PRE_CONTENT;
-  }
-
-  @Override
-  public long transferTo(ByteBuf target) {
-    return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
-  }
-
-  @Override
-  public long transferTo(WritableByteChannel target) throws IOException {
-    slowTarget = false;
-    return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
-  }
-
-  private ByteBuf lazyLoadContentBuffer() {
-    if (contentBuffer == null) {
-      contentBuffer = ByteBufAllocator.DEFAULT.buffer((int) getContentLength());
-      contentBuffer.writeBytes(EXTRA_BYTES).writeBytes(boundary).writeBytes(EXTRA_BYTES).writeBytes(CRLF_BYTES);
+    public MessageEndMultipartPart(byte[] boundary) {
+        super(null, boundary);
+        state = MultipartState.PRE_CONTENT;
     }
-    return contentBuffer;
-  }
 
-  @Override
-  protected int computePreContentLength() {
-    return 0;
-  }
+    @Override
+    public long transferTo(ByteBuf target) {
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
+    }
 
-  @Override
-  protected ByteBuf computePreContentBytes(int preContentLength) {
-    return Unpooled.EMPTY_BUFFER;
-  }
+    @Override
+    public long transferTo(WritableByteChannel target) throws IOException {
+        slowTarget = false;
+        return transfer(lazyLoadContentBuffer(), target, MultipartState.DONE);
+    }
 
-  @Override
-  protected int computePostContentLength() {
-    return 0;
-  }
+    private ByteBuf lazyLoadContentBuffer() {
+        if (contentBuffer == null) {
+            contentBuffer = ByteBufAllocator.DEFAULT.buffer((int) getContentLength());
+            contentBuffer.writeBytes(EXTRA_BYTES).writeBytes(boundary).writeBytes(EXTRA_BYTES).writeBytes(CRLF_BYTES);
+        }
+        return contentBuffer;
+    }
 
-  @Override
-  protected ByteBuf computePostContentBytes(int postContentLength) {
-    return Unpooled.EMPTY_BUFFER;
-  }
+    @Override
+    protected int computePreContentLength() {
+        return 0;
+    }
 
-  @Override
-  protected long getContentLength() {
-    return EXTRA_BYTES.length + boundary.length + EXTRA_BYTES.length + CRLF_BYTES.length;
-  }
+    @Override
+    protected ByteBuf computePreContentBytes(int preContentLength) {
+        return Unpooled.EMPTY_BUFFER;
+    }
 
-  @Override
-  protected long transferContentTo(ByteBuf target) {
-    throw new UnsupportedOperationException("Not supposed to be called");
-  }
+    @Override
+    protected int computePostContentLength() {
+        return 0;
+    }
 
-  @Override
-  protected long transferContentTo(WritableByteChannel target) {
-    throw new UnsupportedOperationException("Not supposed to be called");
-  }
+    @Override
+    protected ByteBuf computePostContentBytes(int postContentLength) {
+        return Unpooled.EMPTY_BUFFER;
+    }
 
-  @Override
-  public void close() {
-    super.close();
-    if (contentBuffer != null)
-      contentBuffer.release();
-  }
+    @Override
+    protected long getContentLength() {
+        return EXTRA_BYTES.length + boundary.length + EXTRA_BYTES.length + CRLF_BYTES.length;
+    }
+
+    @Override
+    protected long transferContentTo(ByteBuf target) {
+        throw new UnsupportedOperationException("Not supposed to be called");
+    }
+
+    @Override
+    protected long transferContentTo(WritableByteChannel target) {
+        throw new UnsupportedOperationException("Not supposed to be called");
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        if (contentBuffer != null)
+            contentBuffer.release();
+    }
 }

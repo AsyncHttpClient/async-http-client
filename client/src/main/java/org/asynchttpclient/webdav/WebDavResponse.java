@@ -29,92 +29,92 @@ import java.util.List;
  */
 public class WebDavResponse implements Response {
 
-  private final Response response;
-  private final Document document;
+    private final Response response;
+    private final Document document;
 
-  WebDavResponse(Response response, Document document) {
-    this.response = response;
-    this.document = document;
-  }
+    WebDavResponse(Response response, Document document) {
+        this.response = response;
+        this.document = document;
+    }
 
-  public int getStatusCode() {
-    return response.getStatusCode();
-  }
+    public int getStatusCode() {
+        return response.getStatusCode();
+    }
 
-  public String getStatusText() {
-    return response.getStatusText();
-  }
+    public String getStatusText() {
+        return response.getStatusText();
+    }
 
-  @Override
-  public byte[] getResponseBodyAsBytes() {
-    return response.getResponseBodyAsBytes();
-  }
+    @Override
+    public byte[] getResponseBodyAsBytes() {
+        return response.getResponseBodyAsBytes();
+    }
 
-  public ByteBuffer getResponseBodyAsByteBuffer() {
-    return response.getResponseBodyAsByteBuffer();
-  }
+    public ByteBuffer getResponseBodyAsByteBuffer() {
+        return response.getResponseBodyAsByteBuffer();
+    }
 
-  public InputStream getResponseBodyAsStream() {
-    return response.getResponseBodyAsStream();
-  }
+    public InputStream getResponseBodyAsStream() {
+        return response.getResponseBodyAsStream();
+    }
 
-  public String getResponseBody() {
-    return response.getResponseBody();
-  }
+    public String getResponseBody() {
+        return response.getResponseBody();
+    }
 
-  public String getResponseBody(Charset charset) {
-    return response.getResponseBody(charset);
-  }
+    public String getResponseBody(Charset charset) {
+        return response.getResponseBody(charset);
+    }
 
-  public Uri getUri() {
-    return response.getUri();
-  }
+    public Uri getUri() {
+        return response.getUri();
+    }
 
-  public String getContentType() {
-    return response.getContentType();
-  }
+    public String getContentType() {
+        return response.getContentType();
+    }
 
-  public String getHeader(CharSequence name) {
-    return response.getHeader(name);
-  }
+    public String getHeader(CharSequence name) {
+        return response.getHeader(name);
+    }
 
-  public List<String> getHeaders(CharSequence name) {
-    return response.getHeaders(name);
-  }
+    public List<String> getHeaders(CharSequence name) {
+        return response.getHeaders(name);
+    }
 
-  public HttpHeaders getHeaders() {
-    return response.getHeaders();
-  }
+    public HttpHeaders getHeaders() {
+        return response.getHeaders();
+    }
 
-  public boolean isRedirected() {
-    return response.isRedirected();
-  }
+    public boolean isRedirected() {
+        return response.isRedirected();
+    }
 
-  public List<Cookie> getCookies() {
-    return response.getCookies();
-  }
+    public List<Cookie> getCookies() {
+        return response.getCookies();
+    }
 
-  public boolean hasResponseStatus() {
-    return response.hasResponseStatus();
-  }
+    public boolean hasResponseStatus() {
+        return response.hasResponseStatus();
+    }
 
-  public boolean hasResponseHeaders() {
-    return response.hasResponseHeaders();
-  }
+    public boolean hasResponseHeaders() {
+        return response.hasResponseHeaders();
+    }
 
-  public boolean hasResponseBody() {
-    return response.hasResponseBody();
-  }
+    public boolean hasResponseBody() {
+        return response.hasResponseBody();
+    }
 
-  public SocketAddress getRemoteAddress() {
-    return response.getRemoteAddress();
-  }
+    public SocketAddress getRemoteAddress() {
+        return response.getRemoteAddress();
+    }
 
-  public SocketAddress getLocalAddress() {
-    return response.getLocalAddress();
-  }
+    public SocketAddress getLocalAddress() {
+        return response.getLocalAddress();
+    }
 
-  public Document getBodyAsXML() {
-    return document;
-  }
+    public Document getBodyAsXML() {
+        return document;
+    }
 }

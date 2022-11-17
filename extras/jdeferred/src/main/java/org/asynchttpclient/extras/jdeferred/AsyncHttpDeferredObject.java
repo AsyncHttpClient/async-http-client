@@ -15,41 +15,43 @@
  */
 package org.asynchttpclient.extras.jdeferred;
 
-import org.asynchttpclient.*;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Response;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DeferredObject;
 
-import java.io.IOException;
-
 public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable, HttpProgress> {
-  public AsyncHttpDeferredObject(BoundRequestBuilder builder) {
-    builder.execute(new AsyncCompletionHandler<Void>() {
-      @Override
-      public Void onCompleted(Response response) {
-        AsyncHttpDeferredObject.this.resolve(response);
-        return null;
-      }
+    public AsyncHttpDeferredObject(BoundRequestBuilder builder) {
+        builder.execute(new AsyncCompletionHandler<Void>() {
+            @Override
+            public Void onCompleted(Response response) {
+                AsyncHttpDeferredObject.this.resolve(response);
+                return null;
+            }
 
-      @Override
-      public void onThrowable(Throwable t) {
-        AsyncHttpDeferredObject.this.reject(t);
-      }
+            @Override
+            public void onThrowable(Throwable t) {
+                AsyncHttpDeferredObject.this.reject(t);
+            }
 
-      @Override
-      public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {
-        AsyncHttpDeferredObject.this.notify(new ContentWriteProgress(amount, current, total));
-        return super.onContentWriteProgress(amount, current, total);
-      }
+            @Override
+            public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {
+                AsyncHttpDeferredObject.this.notify(new ContentWriteProgress(amount, current, total));
+                return super.onContentWriteProgress(amount, current, total);
+            }
 
-      @Override
-      public AsyncHandler.State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-        AsyncHttpDeferredObject.this.notify(new HttpResponseBodyPartProgress(content));
-        return super.onBodyPartReceived(content);
-      }
-    });
-  }
+            @Override
+            public AsyncHandler.State onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                AsyncHttpDeferredObject.this.notify(new HttpResponseBodyPartProgress(content));
+                return super.onBodyPartReceived(content);
+            }
+        });
+    }
 
-  public static Promise<Response, Throwable, HttpProgress> promise(final BoundRequestBuilder builder) {
-    return new AsyncHttpDeferredObject(builder).promise();
-  }
+    public static Promise<Response, Throwable, HttpProgress> promise(final BoundRequestBuilder builder) {
+        return new AsyncHttpDeferredObject(builder).promise();
+    }
 }

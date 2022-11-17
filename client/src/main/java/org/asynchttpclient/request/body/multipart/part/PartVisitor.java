@@ -16,44 +16,44 @@ import io.netty.buffer.ByteBuf;
 
 public interface PartVisitor {
 
-  void withBytes(byte[] bytes);
+    void withBytes(byte[] bytes);
 
-  void withByte(byte b);
+    void withByte(byte b);
 
-  class CounterPartVisitor implements PartVisitor {
+    class CounterPartVisitor implements PartVisitor {
 
-    private int count = 0;
+        private int count = 0;
 
-    @Override
-    public void withBytes(byte[] bytes) {
-      count += bytes.length;
+        @Override
+        public void withBytes(byte[] bytes) {
+            count += bytes.length;
+        }
+
+        @Override
+        public void withByte(byte b) {
+            count++;
+        }
+
+        public int getCount() {
+            return count;
+        }
     }
 
-    @Override
-    public void withByte(byte b) {
-      count++;
-    }
+    class ByteBufVisitor implements PartVisitor {
+        private final ByteBuf target;
 
-    public int getCount() {
-      return count;
-    }
-  }
+        public ByteBufVisitor(ByteBuf target) {
+            this.target = target;
+        }
 
-  class ByteBufVisitor implements PartVisitor {
-    private final ByteBuf target;
+        @Override
+        public void withBytes(byte[] bytes) {
+            target.writeBytes(bytes);
+        }
 
-    public ByteBufVisitor(ByteBuf target) {
-      this.target = target;
+        @Override
+        public void withByte(byte b) {
+            target.writeByte(b);
+        }
     }
-
-    @Override
-    public void withBytes(byte[] bytes) {
-      target.writeBytes(bytes);
-    }
-
-    @Override
-    public void withByte(byte b) {
-      target.writeByte(b);
-    }
-  }
 }

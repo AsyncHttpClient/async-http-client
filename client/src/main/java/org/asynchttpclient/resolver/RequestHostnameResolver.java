@@ -29,57 +29,57 @@ import java.util.List;
 
 public enum RequestHostnameResolver {
 
-  INSTANCE;
+    INSTANCE;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RequestHostnameResolver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestHostnameResolver.class);
 
-  public Future<List<InetSocketAddress>> resolve(NameResolver<InetAddress> nameResolver, InetSocketAddress unresolvedAddress, AsyncHandler<?> asyncHandler) {
+    public Future<List<InetSocketAddress>> resolve(NameResolver<InetAddress> nameResolver, InetSocketAddress unresolvedAddress, AsyncHandler<?> asyncHandler) {
 
-    final String hostname = unresolvedAddress.getHostString();
-    final int port = unresolvedAddress.getPort();
-    final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+        final String hostname = unresolvedAddress.getHostString();
+        final int port = unresolvedAddress.getPort();
+        final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
-    try {
-      asyncHandler.onHostnameResolutionAttempt(hostname);
-    } catch (Exception e) {
-      LOGGER.error("onHostnameResolutionAttempt crashed", e);
-      promise.tryFailure(e);
-      return promise;
+        try {
+            asyncHandler.onHostnameResolutionAttempt(hostname);
+        } catch (Exception e) {
+            LOGGER.error("onHostnameResolutionAttempt crashed", e);
+            promise.tryFailure(e);
+            return promise;
+        }
+
+        final Future<List<InetAddress>> whenResolved = nameResolver.resolveAll(hostname);
+
+        whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
+
+            @Override
+            protected void onSuccess(List<InetAddress> value) {
+                ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
+                for (InetAddress a : value) {
+                    socketAddresses.add(new InetSocketAddress(a, port));
+                }
+                try {
+                    asyncHandler.onHostnameResolutionSuccess(hostname, socketAddresses);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionSuccess crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.trySuccess(socketAddresses);
+            }
+
+            @Override
+            protected void onFailure(Throwable t) {
+                try {
+                    asyncHandler.onHostnameResolutionFailure(hostname, t);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionFailure crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.tryFailure(t);
+            }
+        });
+
+        return promise;
     }
-
-    final Future<List<InetAddress>> whenResolved = nameResolver.resolveAll(hostname);
-
-    whenResolved.addListener(new SimpleFutureListener<List<InetAddress>>() {
-
-      @Override
-      protected void onSuccess(List<InetAddress> value) {
-        ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(value.size());
-        for (InetAddress a : value) {
-          socketAddresses.add(new InetSocketAddress(a, port));
-        }
-        try {
-          asyncHandler.onHostnameResolutionSuccess(hostname, socketAddresses);
-        } catch (Exception e) {
-          LOGGER.error("onHostnameResolutionSuccess crashed", e);
-          promise.tryFailure(e);
-          return;
-        }
-        promise.trySuccess(socketAddresses);
-      }
-
-      @Override
-      protected void onFailure(Throwable t) {
-        try {
-          asyncHandler.onHostnameResolutionFailure(hostname, t);
-        } catch (Exception e) {
-          LOGGER.error("onHostnameResolutionFailure crashed", e);
-          promise.tryFailure(e);
-          return;
-        }
-        promise.tryFailure(t);
-      }
-    });
-
-    return promise;
-  }
 }

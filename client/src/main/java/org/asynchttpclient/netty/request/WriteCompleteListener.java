@@ -19,12 +19,12 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 
 public class WriteCompleteListener extends WriteListener implements GenericFutureListener<ChannelFuture> {
 
-  WriteCompleteListener(NettyResponseFuture<?> future) {
-    super(future, true);
-  }
+    WriteCompleteListener(NettyResponseFuture<?> future) {
+        super(future, true);
+    }
 
-  @Override
-  public void operationComplete(ChannelFuture future) {
-    operationComplete(future.channel(), future.cause());
-  }
+    @Override
+    public void operationComplete(ChannelFuture future) {
+        operationComplete(future.channel(), future.cause());
+    }
 }

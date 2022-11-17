@@ -20,15 +20,15 @@ import java.util.concurrent.ThreadFactory;
 
 enum NioTransportFactory implements TransportFactory<NioSocketChannel, NioEventLoopGroup> {
 
-  INSTANCE;
+    INSTANCE;
 
-  @Override
-  public NioSocketChannel newChannel() {
-    return new NioSocketChannel();
-  }
+    @Override
+    public NioSocketChannel newChannel() {
+        return new NioSocketChannel();
+    }
 
-  @Override
-  public NioEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-    return new NioEventLoopGroup(ioThreadsCount, threadFactory);
-  }
+    @Override
+    public NioEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+        return new NioEventLoopGroup(ioThreadsCount, threadFactory);
+    }
 }

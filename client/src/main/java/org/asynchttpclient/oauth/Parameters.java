@@ -21,30 +21,30 @@ import java.util.List;
 
 final class Parameters {
 
-  private List<Parameter> parameters = new ArrayList<>();
+    private List<Parameter> parameters = new ArrayList<>();
 
-  public Parameters add(String key, String value) {
-    parameters.add(new Parameter(key, value));
-    return this;
-  }
-
-  public void reset() {
-    parameters.clear();
-  }
-
-  String sortAndConcat() {
-    // then sort them (AFTER encoding, important)
-    Collections.sort(parameters);
-
-    // and build parameter section using pre-encoded pieces:
-    StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
-    for (Parameter param : parameters) {
-      encodedParams.append(param.key).append('=').append(param.value).append('&');
+    public Parameters add(String key, String value) {
+        parameters.add(new Parameter(key, value));
+        return this;
     }
-    int length = encodedParams.length();
-    if (length > 0) {
-      encodedParams.setLength(length - 1);
+
+    public void reset() {
+        parameters.clear();
     }
-    return encodedParams.toString();
-  }
+
+    String sortAndConcat() {
+        // then sort them (AFTER encoding, important)
+        Collections.sort(parameters);
+
+        // and build parameter section using pre-encoded pieces:
+        StringBuilder encodedParams = StringBuilderPool.DEFAULT.stringBuilder();
+        for (Parameter param : parameters) {
+            encodedParams.append(param.key).append('=').append(param.value).append('&');
+        }
+        int length = encodedParams.length();
+        if (length > 0) {
+            encodedParams.setLength(length - 1);
+        }
+        return encodedParams.toString();
+    }
 }

@@ -41,143 +41,143 @@ import static org.testng.Assert.assertEquals;
 
 public class ReactiveStreamsDownloadTest {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsDownloadTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsDownloadTest.class);
 
-  private final int serverPort = 8080;
-  private File largeFile;
-  private File smallFile;
+    private final int serverPort = 8080;
+    private File largeFile;
+    private File smallFile;
 
-  @BeforeClass(alwaysRun = true)
-  public void setUpBeforeTest() throws Exception {
-    largeFile = TestUtils.createTempFile(15 * 1024);
-    smallFile = TestUtils.createTempFile(20);
-    HttpStaticFileServer.start(serverPort);
-  }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDown() {
-    HttpStaticFileServer.shutdown();
-  }
-
-  @Test
-  public void streamedResponseLargeFileTest() throws Throwable {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      String largeFileName = "http://localhost:" + serverPort + "/" + largeFile.getName();
-      ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(largeFileName).execute(new SimpleStreamedAsyncHandler());
-      byte[] result = future.get().getBytes();
-      assertEquals(result.length, largeFile.length());
-    }
-  }
-
-  @Test
-  public void streamedResponseSmallFileTest() throws Throwable {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      String smallFileName = "http://localhost:" + serverPort + "/" + smallFile.getName();
-      ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(smallFileName).execute(new SimpleStreamedAsyncHandler());
-      byte[] result = future.get().getBytes();
-      LOGGER.debug("Result file size: " + result.length);
-      assertEquals(result.length, smallFile.length());
-    }
-  }
-
-  static protected class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
-    private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
-
-    SimpleStreamedAsyncHandler() {
-      this(new SimpleSubscriber<>());
+    @BeforeClass(alwaysRun = true)
+    public void setUpBeforeTest() throws Exception {
+        largeFile = TestUtils.createTempFile(15 * 1024);
+        smallFile = TestUtils.createTempFile(20);
+        HttpStaticFileServer.start(serverPort);
     }
 
-    SimpleStreamedAsyncHandler(SimpleSubscriber<HttpResponseBodyPart> subscriber) {
-      this.subscriber = subscriber;
+    @AfterClass(alwaysRun = true)
+    public void tearDown() {
+        HttpStaticFileServer.shutdown();
     }
 
-    @Override
-    public State onStream(Publisher<HttpResponseBodyPart> publisher) {
-      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onStream");
-      publisher.subscribe(subscriber);
-      return State.CONTINUE;
+    @Test
+    public void streamedResponseLargeFileTest() throws Throwable {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            String largeFileName = "http://localhost:" + serverPort + "/" + largeFile.getName();
+            ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(largeFileName).execute(new SimpleStreamedAsyncHandler());
+            byte[] result = future.get().getBytes();
+            assertEquals(result.length, largeFile.length());
+        }
     }
 
-    @Override
-    public void onThrowable(Throwable t) {
-      throw new AssertionError(t);
+    @Test
+    public void streamedResponseSmallFileTest() throws Throwable {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            String smallFileName = "http://localhost:" + serverPort + "/" + smallFile.getName();
+            ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(smallFileName).execute(new SimpleStreamedAsyncHandler());
+            byte[] result = future.get().getBytes();
+            LOGGER.debug("Result file size: " + result.length);
+            assertEquals(result.length, smallFile.length());
+        }
     }
 
-    @Override
-    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
-      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onBodyPartReceived");
-      throw new AssertionError("Should not have received body part");
+    static protected class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
+        private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
+
+        SimpleStreamedAsyncHandler() {
+            this(new SimpleSubscriber<>());
+        }
+
+        SimpleStreamedAsyncHandler(SimpleSubscriber<HttpResponseBodyPart> subscriber) {
+            this.subscriber = subscriber;
+        }
+
+        @Override
+        public State onStream(Publisher<HttpResponseBodyPart> publisher) {
+            LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onStream");
+            publisher.subscribe(subscriber);
+            return State.CONTINUE;
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            throw new AssertionError(t);
+        }
+
+        @Override
+        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
+            LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onBodyPartReceived");
+            throw new AssertionError("Should not have received body part");
+        }
+
+        @Override
+        public State onStatusReceived(HttpResponseStatus responseStatus) {
+            return State.CONTINUE;
+        }
+
+        @Override
+        public State onHeadersReceived(HttpHeaders headers) {
+            return State.CONTINUE;
+        }
+
+        @Override
+        public SimpleStreamedAsyncHandler onCompleted() {
+            LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onSubscribe");
+            return this;
+        }
+
+        public byte[] getBytes() throws Throwable {
+            List<HttpResponseBodyPart> bodyParts = subscriber.getElements();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            for (HttpResponseBodyPart part : bodyParts) {
+                bytes.write(part.getBodyPartBytes());
+            }
+            return bytes.toByteArray();
+        }
     }
 
-    @Override
-    public State onStatusReceived(HttpResponseStatus responseStatus) {
-      return State.CONTINUE;
-    }
+    /**
+     * Simple subscriber that requests and buffers one element at a time.
+     */
+    static protected class SimpleSubscriber<T> implements Subscriber<T> {
+        private final List<T> elements = Collections.synchronizedList(new ArrayList<>());
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private volatile Subscription subscription;
+        private volatile Throwable error;
 
-    @Override
-    public State onHeadersReceived(HttpHeaders headers) {
-      return State.CONTINUE;
-    }
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            LOGGER.debug("SimpleSubscriber onSubscribe");
+            this.subscription = subscription;
+            subscription.request(1);
+        }
 
-    @Override
-    public SimpleStreamedAsyncHandler onCompleted() {
-      LOGGER.debug("SimpleStreamedAsyncHandlerOnCompleted onSubscribe");
-      return this;
-    }
+        @Override
+        public void onNext(T t) {
+            LOGGER.debug("SimpleSubscriber onNext");
+            elements.add(t);
+            subscription.request(1);
+        }
 
-    public byte[] getBytes() throws Throwable {
-      List<HttpResponseBodyPart> bodyParts = subscriber.getElements();
-      ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-      for (HttpResponseBodyPart part : bodyParts) {
-        bytes.write(part.getBodyPartBytes());
-      }
-      return bytes.toByteArray();
-    }
-  }
+        @Override
+        public void onError(Throwable error) {
+            LOGGER.error("SimpleSubscriber onError");
+            this.error = error;
+            latch.countDown();
+        }
 
-  /**
-   * Simple subscriber that requests and buffers one element at a time.
-   */
-  static protected class SimpleSubscriber<T> implements Subscriber<T> {
-    private final List<T> elements = Collections.synchronizedList(new ArrayList<>());
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private volatile Subscription subscription;
-    private volatile Throwable error;
+        @Override
+        public void onComplete() {
+            LOGGER.debug("SimpleSubscriber onComplete");
+            latch.countDown();
+        }
 
-    @Override
-    public void onSubscribe(Subscription subscription) {
-      LOGGER.debug("SimpleSubscriber onSubscribe");
-      this.subscription = subscription;
-      subscription.request(1);
+        public List<T> getElements() throws Throwable {
+            latch.await();
+            if (error != null) {
+                throw error;
+            } else {
+                return elements;
+            }
+        }
     }
-
-    @Override
-    public void onNext(T t) {
-      LOGGER.debug("SimpleSubscriber onNext");
-      elements.add(t);
-      subscription.request(1);
-    }
-
-    @Override
-    public void onError(Throwable error) {
-      LOGGER.error("SimpleSubscriber onError");
-      this.error = error;
-      latch.countDown();
-    }
-
-    @Override
-    public void onComplete() {
-      LOGGER.debug("SimpleSubscriber onComplete");
-      latch.countDown();
-    }
-
-    public List<T> getElements() throws Throwable {
-      latch.await();
-      if (error != null) {
-        throw error;
-      } else {
-        return elements;
-      }
-    }
-  }
 }

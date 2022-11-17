@@ -25,67 +25,67 @@ import java.net.SocketAddress;
  */
 public class NettyResponseStatus extends HttpResponseStatus {
 
-  private final HttpResponse response;
-  private final SocketAddress remoteAddress;
-  private final SocketAddress localAddress;
+    private final HttpResponse response;
+    private final SocketAddress remoteAddress;
+    private final SocketAddress localAddress;
 
-  public NettyResponseStatus(Uri uri, HttpResponse response, Channel channel) {
-    super(uri);
-    this.response = response;
-    if (channel != null) {
-      remoteAddress = channel.remoteAddress();
-      localAddress = channel.localAddress();
-    } else {
-      remoteAddress = null;
-      localAddress = null;
+    public NettyResponseStatus(Uri uri, HttpResponse response, Channel channel) {
+        super(uri);
+        this.response = response;
+        if (channel != null) {
+            remoteAddress = channel.remoteAddress();
+            localAddress = channel.localAddress();
+        } else {
+            remoteAddress = null;
+            localAddress = null;
+        }
     }
-  }
 
-  /**
-   * Return the response status code
-   *
-   * @return the response status code
-   */
-  public int getStatusCode() {
-    return response.status().code();
-  }
+    /**
+     * Return the response status code
+     *
+     * @return the response status code
+     */
+    public int getStatusCode() {
+        return response.status().code();
+    }
 
-  /**
-   * Return the response status text
-   *
-   * @return the response status text
-   */
-  public String getStatusText() {
-    return response.status().reasonPhrase();
-  }
+    /**
+     * Return the response status text
+     *
+     * @return the response status text
+     */
+    public String getStatusText() {
+        return response.status().reasonPhrase();
+    }
 
-  @Override
-  public String getProtocolName() {
-    return response.protocolVersion().protocolName();
-  }
+    @Override
+    public String getProtocolName() {
+        return response.protocolVersion().protocolName();
+    }
 
-  @Override
-  public int getProtocolMajorVersion() {
-    return response.protocolVersion().majorVersion();
-  }
+    @Override
+    public int getProtocolMajorVersion() {
+        return response.protocolVersion().majorVersion();
+    }
 
-  @Override
-  public int getProtocolMinorVersion() {
-    return response.protocolVersion().minorVersion();
-  }
+    @Override
+    public int getProtocolMinorVersion() {
+        return response.protocolVersion().minorVersion();
+    }
 
-  @Override
-  public String getProtocolText() {
-    return response.protocolVersion().text();
-  }
+    @Override
+    public String getProtocolText() {
+        return response.protocolVersion().text();
+    }
 
-  @Override
-  public SocketAddress getRemoteAddress() {
-    return remoteAddress;
-  }
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return remoteAddress;
+    }
 
-  @Override
-  public SocketAddress getLocalAddress() {
-    return localAddress;
-  }
+    @Override
+    public SocketAddress getLocalAddress() {
+        return localAddress;
+    }
 }

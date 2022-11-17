@@ -19,5 +19,5 @@ package org.asynchttpclient.extras.simple;
  */
 public interface ThrowableHandler {
 
-  void onThrowable(Throwable t);
+    void onThrowable(Throwable t);
 }

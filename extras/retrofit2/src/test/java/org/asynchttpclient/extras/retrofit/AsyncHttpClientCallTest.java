@@ -60,8 +60,8 @@ public class AsyncHttpClientCallTest {
 
     @BeforeMethod
     void setup() {
-      httpClient = mock(AsyncHttpClient.class);
-      when(httpClient.getConfig()).thenReturn(DEFAULT_AHC_CONFIG);
+        httpClient = mock(AsyncHttpClient.class);
+        when(httpClient.getConfig()).thenReturn(DEFAULT_AHC_CONFIG);
     }
 
     @Test(expectedExceptions = NullPointerException.class, dataProvider = "first")
@@ -304,14 +304,14 @@ public class AsyncHttpClientCallTest {
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*returned null.")
     void getHttpClientShouldThrowISEIfSupplierReturnsNull() {
-      // given:
-      val call = AsyncHttpClientCall.builder()
-              .httpClientSupplier(() -> null)
-              .request(requestWithBody())
-              .build();
+        // given:
+        val call = AsyncHttpClientCall.builder()
+                .httpClientSupplier(() -> null)
+                .request(requestWithBody())
+                .build();
 
-      // when: should throw ISE
-      call.getHttpClient();
+        // when: should throw ISE
+        call.getHttpClient();
     }
 
     @Test

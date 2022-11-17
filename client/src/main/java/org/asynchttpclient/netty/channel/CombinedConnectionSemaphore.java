@@ -20,50 +20,50 @@ import java.util.concurrent.TimeUnit;
  * A combined {@link ConnectionSemaphore} with two limits - a global limit and a per-host limit
  */
 public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
-  protected final MaxConnectionSemaphore globalMaxConnectionSemaphore;
+    protected final MaxConnectionSemaphore globalMaxConnectionSemaphore;
 
-  CombinedConnectionSemaphore(int maxConnections, int maxConnectionsPerHost, int acquireTimeout) {
-    super(maxConnectionsPerHost, acquireTimeout);
-    this.globalMaxConnectionSemaphore = new MaxConnectionSemaphore(maxConnections, acquireTimeout);
-  }
-
-  @Override
-  public void acquireChannelLock(Object partitionKey) throws IOException {
-    long remainingTime = super.acquireTimeout > 0 ? acquireGlobalTimed(partitionKey) : acquireGlobal(partitionKey);
-
-    try {
-      if (remainingTime < 0 || !getFreeConnectionsForHost(partitionKey).tryAcquire(remainingTime, TimeUnit.MILLISECONDS)) {
-        releaseGlobal(partitionKey);
-        throw tooManyConnectionsPerHost;
-      }
-    } catch (InterruptedException e) {
-      releaseGlobal(partitionKey);
-      throw new RuntimeException(e);
+    CombinedConnectionSemaphore(int maxConnections, int maxConnectionsPerHost, int acquireTimeout) {
+        super(maxConnectionsPerHost, acquireTimeout);
+        this.globalMaxConnectionSemaphore = new MaxConnectionSemaphore(maxConnections, acquireTimeout);
     }
-  }
 
-  protected void releaseGlobal(Object partitionKey) {
-    this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
-  }
+    @Override
+    public void acquireChannelLock(Object partitionKey) throws IOException {
+        long remainingTime = super.acquireTimeout > 0 ? acquireGlobalTimed(partitionKey) : acquireGlobal(partitionKey);
 
-  protected long acquireGlobal(Object partitionKey) throws IOException {
-    this.globalMaxConnectionSemaphore.acquireChannelLock(partitionKey);
-    return 0;
-  }
+        try {
+            if (remainingTime < 0 || !getFreeConnectionsForHost(partitionKey).tryAcquire(remainingTime, TimeUnit.MILLISECONDS)) {
+                releaseGlobal(partitionKey);
+                throw tooManyConnectionsPerHost;
+            }
+        } catch (InterruptedException e) {
+            releaseGlobal(partitionKey);
+            throw new RuntimeException(e);
+        }
+    }
 
-  /*
-   * Acquires the global lock and returns the remaining time, in millis, to acquire the per-host lock
-   */
-  protected long acquireGlobalTimed(Object partitionKey) throws IOException {
-    long beforeGlobalAcquire = System.currentTimeMillis();
-    acquireGlobal(partitionKey);
-    long lockTime = System.currentTimeMillis() - beforeGlobalAcquire;
-    return this.acquireTimeout - lockTime;
-  }
+    protected void releaseGlobal(Object partitionKey) {
+        this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
+    }
 
-  @Override
-  public void releaseChannelLock(Object partitionKey) {
-    this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
-    super.releaseChannelLock(partitionKey);
-  }
+    protected long acquireGlobal(Object partitionKey) throws IOException {
+        this.globalMaxConnectionSemaphore.acquireChannelLock(partitionKey);
+        return 0;
+    }
+
+    /*
+     * Acquires the global lock and returns the remaining time, in millis, to acquire the per-host lock
+     */
+    protected long acquireGlobalTimed(Object partitionKey) throws IOException {
+        long beforeGlobalAcquire = System.currentTimeMillis();
+        acquireGlobal(partitionKey);
+        long lockTime = System.currentTimeMillis() - beforeGlobalAcquire;
+        return this.acquireTimeout - lockTime;
+    }
+
+    @Override
+    public void releaseChannelLock(Object partitionKey) {
+        this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
+        super.releaseChannelLock(partitionKey);
+    }
 }

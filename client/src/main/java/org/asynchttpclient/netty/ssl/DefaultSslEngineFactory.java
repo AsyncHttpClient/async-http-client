@@ -30,64 +30,64 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
-  private volatile SslContext sslContext;
+    private volatile SslContext sslContext;
 
-  private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
-    if (config.getSslContext() != null) {
-      return config.getSslContext();
+    private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
+        if (config.getSslContext() != null) {
+            return config.getSslContext();
+        }
+
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
+                .sslProvider(config.isUseOpenSsl() ? SslProvider.OPENSSL : SslProvider.JDK)
+                .sessionCacheSize(config.getSslSessionCacheSize())
+                .sessionTimeout(config.getSslSessionTimeout());
+
+        if (isNonEmpty(config.getEnabledProtocols())) {
+            sslContextBuilder.protocols(config.getEnabledProtocols());
+        }
+
+        if (isNonEmpty(config.getEnabledCipherSuites())) {
+            sslContextBuilder.ciphers(Arrays.asList(config.getEnabledCipherSuites()));
+        } else if (!config.isFilterInsecureCipherSuites()) {
+            sslContextBuilder.ciphers(null, IdentityCipherSuiteFilter.INSTANCE_DEFAULTING_TO_SUPPORTED_CIPHERS);
+        }
+
+        if (config.isUseInsecureTrustManager()) {
+            sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+        }
+
+        return configureSslContextBuilder(sslContextBuilder).build();
     }
 
-    SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
-            .sslProvider(config.isUseOpenSsl() ? SslProvider.OPENSSL : SslProvider.JDK)
-            .sessionCacheSize(config.getSslSessionCacheSize())
-            .sessionTimeout(config.getSslSessionTimeout());
-
-    if (isNonEmpty(config.getEnabledProtocols())) {
-      sslContextBuilder.protocols(config.getEnabledProtocols());
+    @Override
+    public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
+        SSLEngine sslEngine =
+                config.isDisableHttpsEndpointIdentificationAlgorithm() ?
+                        sslContext.newEngine(ByteBufAllocator.DEFAULT) :
+                        sslContext.newEngine(ByteBufAllocator.DEFAULT, domain(peerHost), peerPort);
+        configureSslEngine(sslEngine, config);
+        return sslEngine;
     }
 
-    if (isNonEmpty(config.getEnabledCipherSuites())) {
-      sslContextBuilder.ciphers(Arrays.asList(config.getEnabledCipherSuites()));
-    } else if (!config.isFilterInsecureCipherSuites()) {
-      sslContextBuilder.ciphers(null, IdentityCipherSuiteFilter.INSTANCE_DEFAULTING_TO_SUPPORTED_CIPHERS);
+    @Override
+    public void init(AsyncHttpClientConfig config) throws SSLException {
+        sslContext = buildSslContext(config);
     }
 
-    if (config.isUseInsecureTrustManager()) {
-      sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+    @Override
+    public void destroy() {
+        ReferenceCountUtil.release(sslContext);
     }
 
-    return configureSslContextBuilder(sslContextBuilder).build();
-  }
-
-  @Override
-  public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
-    SSLEngine sslEngine =
-      config.isDisableHttpsEndpointIdentificationAlgorithm() ?
-        sslContext.newEngine(ByteBufAllocator.DEFAULT) :
-        sslContext.newEngine(ByteBufAllocator.DEFAULT, domain(peerHost), peerPort);
-    configureSslEngine(sslEngine, config);
-    return sslEngine;
-  }
-
-  @Override
-  public void init(AsyncHttpClientConfig config) throws SSLException {
-    sslContext = buildSslContext(config);
-  }
-
-  @Override
-  public void destroy() {
-    ReferenceCountUtil.release(sslContext);
-  }
-
-  /**
-   * The last step of configuring the SslContextBuilder used to create an SslContext when no context is provided in the {@link AsyncHttpClientConfig}. This defaults to no-op and
-   * is intended to be overridden as needed.
-   *
-   * @param builder builder with normal configuration applied
-   * @return builder to be used to build context (can be the same object as the input)
-   */
-  protected SslContextBuilder configureSslContextBuilder(SslContextBuilder builder) {
-    // default to no op
-    return builder;
-  }
+    /**
+     * The last step of configuring the SslContextBuilder used to create an SslContext when no context is provided in the {@link AsyncHttpClientConfig}. This defaults to no-op and
+     * is intended to be overridden as needed.
+     *
+     * @param builder builder with normal configuration applied
+     * @return builder to be used to build context (can be the same object as the input)
+     */
+    protected SslContextBuilder configureSslContextBuilder(SslContextBuilder builder) {
+        // default to no op
+        return builder;
+    }
 }

@@ -25,30 +25,30 @@ import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
  */
 public class EagerResponseBodyPart extends HttpResponseBodyPart {
 
-  private final byte[] bytes;
+    private final byte[] bytes;
 
-  public EagerResponseBodyPart(ByteBuf buf, boolean last) {
-    super(last);
-    bytes = byteBuf2Bytes(buf);
-  }
+    public EagerResponseBodyPart(ByteBuf buf, boolean last) {
+        super(last);
+        bytes = byteBuf2Bytes(buf);
+    }
 
-  /**
-   * Return the response body's part bytes received.
-   *
-   * @return the response body's part bytes received.
-   */
-  @Override
-  public byte[] getBodyPartBytes() {
-    return bytes;
-  }
+    /**
+     * Return the response body's part bytes received.
+     *
+     * @return the response body's part bytes received.
+     */
+    @Override
+    public byte[] getBodyPartBytes() {
+        return bytes;
+    }
 
-  @Override
-  public int length() {
-    return bytes.length;
-  }
+    @Override
+    public int length() {
+        return bytes.length;
+    }
 
-  @Override
-  public ByteBuffer getBodyByteBuffer() {
-    return ByteBuffer.wrap(bytes);
-  }
+    @Override
+    public ByteBuffer getBodyByteBuffer() {
+        return ByteBuffer.wrap(bytes);
+    }
 }

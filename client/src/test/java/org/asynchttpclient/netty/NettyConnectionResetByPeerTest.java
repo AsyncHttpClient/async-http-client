@@ -11,18 +11,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.testng.Assert.assertTrue;
 
 public class NettyConnectionResetByPeerTest {
 
@@ -40,8 +36,8 @@ public class NettyConnectionResetByPeerTest {
                     .setRequestTimeout(1500)
                     .build();
             new DefaultAsyncHttpClient(config).executeRequest(
-                    new RequestBuilder("GET").setUrl(resettingServerAddress)
-            )
+                            new RequestBuilder("GET").setUrl(resettingServerAddress)
+                    )
                     .get();
         } catch (ExecutionException e) {
             Throwable ex = e.getCause();

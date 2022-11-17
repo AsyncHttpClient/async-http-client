@@ -24,50 +24,50 @@ import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
-  private final long readTimeout;
+    private final long readTimeout;
 
-  ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
-                       NettyRequestSender requestSender,
-                       TimeoutsHolder timeoutsHolder,
-                       int readTimeout) {
-    super(nettyResponseFuture, requestSender, timeoutsHolder);
-    this.readTimeout = readTimeout;
-  }
-
-  public void run(Timeout timeout) {
-
-    if (done.getAndSet(true) || requestSender.isClosed())
-      return;
-
-    if (nettyResponseFuture.isDone()) {
-      timeoutsHolder.cancel();
-      return;
+    ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
+                         NettyRequestSender requestSender,
+                         TimeoutsHolder timeoutsHolder,
+                         int readTimeout) {
+        super(nettyResponseFuture, requestSender, timeoutsHolder);
+        this.readTimeout = readTimeout;
     }
 
-    long now = unpreciseMillisTime();
+    public void run(Timeout timeout) {
 
-    long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
-    long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
+        if (done.getAndSet(true) || requestSender.isClosed())
+            return;
 
-    if (durationBeforeCurrentReadTimeout <= 0L && !isReactiveWithNoOutstandingRequest()) {
-      // idleConnectTimeout reached
-      StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
-      appendRemoteAddress(sb);
-      String message = sb.append(" after ").append(readTimeout).append(" ms").toString();
-      long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-      expire(message, durationSinceLastTouch);
-      // cancel request timeout sibling
-      timeoutsHolder.cancel();
+        if (nettyResponseFuture.isDone()) {
+            timeoutsHolder.cancel();
+            return;
+        }
 
-    } else {
-      done.set(false);
-      timeoutsHolder.startReadTimeout(this);
+        long now = unpreciseMillisTime();
+
+        long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
+        long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
+
+        if (durationBeforeCurrentReadTimeout <= 0L && !isReactiveWithNoOutstandingRequest()) {
+            // idleConnectTimeout reached
+            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
+            appendRemoteAddress(sb);
+            String message = sb.append(" after ").append(readTimeout).append(" ms").toString();
+            long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
+            expire(message, durationSinceLastTouch);
+            // cancel request timeout sibling
+            timeoutsHolder.cancel();
+
+        } else {
+            done.set(false);
+            timeoutsHolder.startReadTimeout(this);
+        }
     }
-  }
 
-  private boolean isReactiveWithNoOutstandingRequest() {
-    Object attribute = Channels.getAttribute(nettyResponseFuture.channel());
-    return attribute instanceof StreamedResponsePublisher &&
-            !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
-  }
+    private boolean isReactiveWithNoOutstandingRequest() {
+        Object attribute = Channels.getAttribute(nettyResponseFuture.channel());
+        return attribute instanceof StreamedResponsePublisher &&
+                !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
+    }
 }

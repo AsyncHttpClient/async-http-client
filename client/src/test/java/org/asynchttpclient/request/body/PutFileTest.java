@@ -32,42 +32,42 @@ import static org.testng.Assert.assertEquals;
 
 public class PutFileTest extends AbstractBasicTest {
 
-  private void put(int fileSize) throws Exception {
-    File file = createTempFile(fileSize);
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
-      Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
-      assertEquals(response.getStatusCode(), 200);
+    private void put(int fileSize) throws Exception {
+        File file = createTempFile(fileSize);
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        }
     }
-  }
 
-  @Test
-  public void testPutLargeFile() throws Exception {
-    put(1024 * 1024);
-  }
+    @Test
+    public void testPutLargeFile() throws Exception {
+        put(1024 * 1024);
+    }
 
-  @Test
-  public void testPutSmallFile() throws Exception {
-    put(1024);
-  }
+    @Test
+    public void testPutSmallFile() throws Exception {
+        put(1024);
+    }
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new AbstractHandler() {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        InputStream is = baseRequest.getInputStream();
-        int read;
-        do {
-          // drain upload
-          read = is.read();
-        } while (read >= 0);
+                InputStream is = baseRequest.getInputStream();
+                int read;
+                do {
+                    // drain upload
+                    read = is.read();
+                } while (read >= 0);
 
-        response.setStatus(200);
-        response.getOutputStream().flush();
-        response.getOutputStream().close();
-        baseRequest.setHandled(true);
-      }
-    };
-  }
+                response.setStatus(200);
+                response.getOutputStream().flush();
+                response.getOutputStream().close();
+                baseRequest.setHandled(true);
+            }
+        };
+    }
 }

@@ -23,34 +23,34 @@ import java.nio.ByteBuffer;
  */
 public class LazyResponseBodyPart extends HttpResponseBodyPart {
 
-  private final ByteBuf buf;
+    private final ByteBuf buf;
 
-  public LazyResponseBodyPart(ByteBuf buf, boolean last) {
-    super(last);
-    this.buf = buf;
-  }
+    public LazyResponseBodyPart(ByteBuf buf, boolean last) {
+        super(last);
+        this.buf = buf;
+    }
 
-  public ByteBuf getBuf() {
-    return buf;
-  }
+    public ByteBuf getBuf() {
+        return buf;
+    }
 
-  @Override
-  public int length() {
-    return buf.readableBytes();
-  }
+    @Override
+    public int length() {
+        return buf.readableBytes();
+    }
 
-  /**
-   * Return the response body's part bytes received.
-   *
-   * @return the response body's part bytes received.
-   */
-  @Override
-  public byte[] getBodyPartBytes() {
-    return ByteBufUtils.byteBuf2Bytes(buf.duplicate());
-  }
+    /**
+     * Return the response body's part bytes received.
+     *
+     * @return the response body's part bytes received.
+     */
+    @Override
+    public byte[] getBodyPartBytes() {
+        return ByteBufUtils.byteBuf2Bytes(buf.duplicate());
+    }
 
-  @Override
-  public ByteBuffer getBodyByteBuffer() {
-    return buf.nioBuffer();
-  }
+    @Override
+    public ByteBuffer getBodyByteBuffer() {
+        return buf.nioBuffer();
+    }
 }

@@ -33,59 +33,59 @@ import java.util.function.Predicate;
  * @since 2.1
  */
 public interface CookieStore extends Counted {
-  /**
-   * Adds one {@link Cookie} to the store. This is called for every incoming HTTP response.
-   * If the given cookie has already expired it will not be added.
-   *
-   * <p>A cookie to store may or may not be associated with an URI. If it
-   * is not associated with an URI, the cookie's domain and path attribute
-   * will indicate where it comes from. If it is associated with an URI and
-   * its domain and path attribute are not specified, given URI will indicate
-   * where this cookie comes from.
-   *
-   * <p>If a cookie corresponding to the given URI already exists,
-   * then it is replaced with the new one.
-   *
-   * @param uri    the {@link Uri uri} this cookie associated with. if {@code null}, this cookie will not be associated with an URI
-   * @param cookie the {@link Cookie cookie} to be added
-   */
-  void add(Uri uri, Cookie cookie);
+    /**
+     * Adds one {@link Cookie} to the store. This is called for every incoming HTTP response.
+     * If the given cookie has already expired it will not be added.
+     *
+     * <p>A cookie to store may or may not be associated with an URI. If it
+     * is not associated with an URI, the cookie's domain and path attribute
+     * will indicate where it comes from. If it is associated with an URI and
+     * its domain and path attribute are not specified, given URI will indicate
+     * where this cookie comes from.
+     *
+     * <p>If a cookie corresponding to the given URI already exists,
+     * then it is replaced with the new one.
+     *
+     * @param uri    the {@link Uri uri} this cookie associated with. if {@code null}, this cookie will not be associated with an URI
+     * @param cookie the {@link Cookie cookie} to be added
+     */
+    void add(Uri uri, Cookie cookie);
 
-  /**
-   * Retrieve cookies associated with given URI, or whose domain matches the given URI. Only cookies that
-   * have not expired are returned. This is called for every outgoing HTTP request.
-   *
-   * @param uri the {@link Uri uri} associated with the cookies to be returned
-   * @return an immutable list of Cookie, return empty list if no cookies match the given URI
-   */
-  List<Cookie> get(Uri uri);
+    /**
+     * Retrieve cookies associated with given URI, or whose domain matches the given URI. Only cookies that
+     * have not expired are returned. This is called for every outgoing HTTP request.
+     *
+     * @param uri the {@link Uri uri} associated with the cookies to be returned
+     * @return an immutable list of Cookie, return empty list if no cookies match the given URI
+     */
+    List<Cookie> get(Uri uri);
 
-  /**
-   * Get all not-expired cookies in cookie store.
-   *
-   * @return an immutable list of http cookies;
-   * return empty list if there's no http cookie in store
-   */
-  List<Cookie> getAll();
+    /**
+     * Get all not-expired cookies in cookie store.
+     *
+     * @return an immutable list of http cookies;
+     * return empty list if there's no http cookie in store
+     */
+    List<Cookie> getAll();
 
-  /**
-   * Remove a cookie from store.
-   *
-   * @param predicate that indicates what cookies to remove
-   * @return {@code true} if this store contained the specified cookie
-   * @throws NullPointerException if {@code cookie} is {@code null}
-   */
-  boolean remove(Predicate<Cookie> predicate);
+    /**
+     * Remove a cookie from store.
+     *
+     * @param predicate that indicates what cookies to remove
+     * @return {@code true} if this store contained the specified cookie
+     * @throws NullPointerException if {@code cookie} is {@code null}
+     */
+    boolean remove(Predicate<Cookie> predicate);
 
-  /**
-   * Remove all cookies in this cookie store.
-   *
-   * @return true if any cookies were purged.
-   */
-  boolean clear();
+    /**
+     * Remove all cookies in this cookie store.
+     *
+     * @return true if any cookies were purged.
+     */
+    boolean clear();
 
-  /**
-   * Evicts all the cookies that expired as of the time this method is run.
-   */
-  void evictExpired();
+    /**
+     * Evicts all the cookies that expired as of the time this method is run.
+     */
+    void evictExpired();
 }

@@ -19,9 +19,9 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 @SuppressWarnings("serial")
 public final class RemotelyClosedException extends IOException {
 
-  public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
+    public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
 
-  private RemotelyClosedException() {
-    super("Remotely closed");
-  }
+    private RemotelyClosedException() {
+        super("Remotely closed");
+    }
 }

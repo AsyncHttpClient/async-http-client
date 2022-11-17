@@ -27,36 +27,36 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  */
 public class PerHostConnectionSemaphore implements ConnectionSemaphore {
 
-  protected final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
-  protected final int maxConnectionsPerHost;
-  protected final IOException tooManyConnectionsPerHost;
-  protected final int acquireTimeout;
+    protected final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
+    protected final int maxConnectionsPerHost;
+    protected final IOException tooManyConnectionsPerHost;
+    protected final int acquireTimeout;
 
-  PerHostConnectionSemaphore(int maxConnectionsPerHost, int acquireTimeout) {
-    tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(maxConnectionsPerHost), PerHostConnectionSemaphore.class, "acquireChannelLock");
-    this.maxConnectionsPerHost = maxConnectionsPerHost;
-    this.acquireTimeout = Math.max(0, acquireTimeout);
-  }
-
-  @Override
-  public void acquireChannelLock(Object partitionKey) throws IOException {
-    try {
-      if (!getFreeConnectionsForHost(partitionKey).tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
-        throw tooManyConnectionsPerHost;
-      }
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    PerHostConnectionSemaphore(int maxConnectionsPerHost, int acquireTimeout) {
+        tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(maxConnectionsPerHost), PerHostConnectionSemaphore.class, "acquireChannelLock");
+        this.maxConnectionsPerHost = maxConnectionsPerHost;
+        this.acquireTimeout = Math.max(0, acquireTimeout);
     }
-  }
 
-  @Override
-  public void releaseChannelLock(Object partitionKey) {
-    getFreeConnectionsForHost(partitionKey).release();
-  }
+    @Override
+    public void acquireChannelLock(Object partitionKey) throws IOException {
+        try {
+            if (!getFreeConnectionsForHost(partitionKey).tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
+                throw tooManyConnectionsPerHost;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-  protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
-    return maxConnectionsPerHost > 0 ?
-            freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(maxConnectionsPerHost)) :
-            InfiniteSemaphore.INSTANCE;
-  }
+    @Override
+    public void releaseChannelLock(Object partitionKey) {
+        getFreeConnectionsForHost(partitionKey).release();
+    }
+
+    protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
+        return maxConnectionsPerHost > 0 ?
+                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(maxConnectionsPerHost)) :
+                InfiniteSemaphore.INSTANCE;
+    }
 }

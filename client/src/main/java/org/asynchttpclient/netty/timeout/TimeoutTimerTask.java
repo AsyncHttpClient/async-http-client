@@ -25,40 +25,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class TimeoutTimerTask implements TimerTask {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
-  protected final AtomicBoolean done = new AtomicBoolean();
-  protected final NettyRequestSender requestSender;
-  final TimeoutsHolder timeoutsHolder;
-  volatile NettyResponseFuture<?> nettyResponseFuture;
+    protected final AtomicBoolean done = new AtomicBoolean();
+    protected final NettyRequestSender requestSender;
+    final TimeoutsHolder timeoutsHolder;
+    volatile NettyResponseFuture<?> nettyResponseFuture;
 
-  TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
-    this.nettyResponseFuture = nettyResponseFuture;
-    this.requestSender = requestSender;
-    this.timeoutsHolder = timeoutsHolder;
-  }
-
-  void expire(String message, long time) {
-    LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
-    requestSender.abort(nettyResponseFuture.channel(), nettyResponseFuture, new TimeoutException(message));
-  }
-
-  /**
-   * When the timeout is cancelled, it could still be referenced for quite some time in the Timer. Holding a reference to the future might mean holding a reference to the
-   * channel, and heavy objects such as SslEngines
-   */
-  public void clean() {
-    if (done.compareAndSet(false, true)) {
-      nettyResponseFuture = null;
+    TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
+        this.nettyResponseFuture = nettyResponseFuture;
+        this.requestSender = requestSender;
+        this.timeoutsHolder = timeoutsHolder;
     }
-  }
 
-  void appendRemoteAddress(StringBuilder sb) {
-    InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
-    sb.append(remoteAddress.getHostString());
-    if (!remoteAddress.isUnresolved()) {
-      sb.append('/').append(remoteAddress.getAddress().getHostAddress());
+    void expire(String message, long time) {
+        LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
+        requestSender.abort(nettyResponseFuture.channel(), nettyResponseFuture, new TimeoutException(message));
     }
-    sb.append(':').append(remoteAddress.getPort());
-  }
+
+    /**
+     * When the timeout is cancelled, it could still be referenced for quite some time in the Timer. Holding a reference to the future might mean holding a reference to the
+     * channel, and heavy objects such as SslEngines
+     */
+    public void clean() {
+        if (done.compareAndSet(false, true)) {
+            nettyResponseFuture = null;
+        }
+    }
+
+    void appendRemoteAddress(StringBuilder sb) {
+        InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
+        sb.append(remoteAddress.getHostString());
+        if (!remoteAddress.isUnresolved()) {
+            sb.append('/').append(remoteAddress.getAddress().getHostAddress());
+        }
+        sb.append(':').append(remoteAddress.getPort());
+    }
 }

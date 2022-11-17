@@ -16,7 +16,6 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -38,40 +37,40 @@ import static org.testng.Assert.assertNotNull;
  */
 public class Expect100ContinueTest extends AbstractBasicTest {
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new ZeroCopyHandler();
-  }
-
-  @Test
-  public void Expect100Continue() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.preparePut("http://localhost:" + port1 + "/")
-              .setHeader(EXPECT, HttpHeaderValues.CONTINUE)
-              .setBody(SIMPLE_TEXT_FILE)
-              .execute();
-      Response resp = f.get();
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-      assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new ZeroCopyHandler();
     }
-  }
 
-  private static class ZeroCopyHandler extends AbstractHandler {
-    public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-
-      int size = 10 * 1024;
-      if (httpRequest.getContentLength() > 0) {
-        size = httpRequest.getContentLength();
-      }
-      byte[] bytes = new byte[size];
-      if (bytes.length > 0) {
-        final int read = httpRequest.getInputStream().read(bytes);
-        httpResponse.getOutputStream().write(bytes, 0, read);
-      }
-
-      httpResponse.setStatus(200);
-      httpResponse.getOutputStream().flush();
+    @Test
+    public void Expect100Continue() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.preparePut("http://localhost:" + port1 + "/")
+                    .setHeader(EXPECT, HttpHeaderValues.CONTINUE)
+                    .setBody(SIMPLE_TEXT_FILE)
+                    .execute();
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+        }
     }
-  }
+
+    private static class ZeroCopyHandler extends AbstractHandler {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+
+            int size = 10 * 1024;
+            if (httpRequest.getContentLength() > 0) {
+                size = httpRequest.getContentLength();
+            }
+            byte[] bytes = new byte[size];
+            if (bytes.length > 0) {
+                final int read = httpRequest.getInputStream().read(bytes);
+                httpResponse.getOutputStream().write(bytes, 0, read);
+            }
+
+            httpResponse.setStatus(200);
+            httpResponse.getOutputStream().flush();
+        }
+    }
 }

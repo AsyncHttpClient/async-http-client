@@ -20,11 +20,11 @@ import java.io.IOException;
  */
 public class NoopConnectionSemaphore implements ConnectionSemaphore {
 
-  @Override
-  public void acquireChannelLock(Object partitionKey) throws IOException {
-  }
+    @Override
+    public void acquireChannelLock(Object partitionKey) throws IOException {
+    }
 
-  @Override
-  public void releaseChannelLock(Object partitionKey) {
-  }
+    @Override
+    public void releaseChannelLock(Object partitionKey) {
+    }
 }

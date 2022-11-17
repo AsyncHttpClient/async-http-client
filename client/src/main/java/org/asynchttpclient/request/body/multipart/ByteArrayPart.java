@@ -18,34 +18,34 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 public class ByteArrayPart extends FileLikePart {
 
-  private final byte[] bytes;
+    private final byte[] bytes;
 
-  public ByteArrayPart(String name, byte[] bytes) {
-    this(name, bytes, null);
-  }
+    public ByteArrayPart(String name, byte[] bytes) {
+        this(name, bytes, null);
+    }
 
-  public ByteArrayPart(String name, byte[] bytes, String contentType) {
-    this(name, bytes, contentType, null);
-  }
+    public ByteArrayPart(String name, byte[] bytes, String contentType) {
+        this(name, bytes, contentType, null);
+    }
 
-  public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset) {
-    this(name, bytes, contentType, charset, null);
-  }
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset) {
+        this(name, bytes, contentType, charset, null);
+    }
 
-  public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName) {
-    this(name, bytes, contentType, charset, fileName, null);
-  }
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName) {
+        this(name, bytes, contentType, charset, fileName, null);
+    }
 
-  public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId) {
-    this(name, bytes, contentType, charset, fileName, contentId, null);
-  }
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId) {
+        this(name, bytes, contentType, charset, fileName, contentId, null);
+    }
 
-  public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
-    super(name, contentType, charset, fileName, contentId, transferEncoding);
-    this.bytes = assertNotNull(bytes, "bytes");
-  }
+    public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+        super(name, contentType, charset, fileName, contentId, transferEncoding);
+        this.bytes = assertNotNull(bytes, "bytes");
+    }
 
-  public byte[] getBytes() {
-    return bytes;
-  }
+    public byte[] getBytes() {
+        return bytes;
+    }
 }

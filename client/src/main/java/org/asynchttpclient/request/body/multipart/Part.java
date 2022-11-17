@@ -19,51 +19,51 @@ import java.util.List;
 
 public interface Part {
 
-  /**
-   * Return the name of this part.
-   *
-   * @return The name.
-   */
-  String getName();
+    /**
+     * Return the name of this part.
+     *
+     * @return The name.
+     */
+    String getName();
 
-  /**
-   * Returns the content type of this part.
-   *
-   * @return the content type, or <code>null</code> to exclude the content
-   * type header
-   */
-  String getContentType();
+    /**
+     * Returns the content type of this part.
+     *
+     * @return the content type, or <code>null</code> to exclude the content
+     * type header
+     */
+    String getContentType();
 
-  /**
-   * Return the character encoding of this part.
-   *
-   * @return the character encoding, or <code>null</code> to exclude the
-   * character encoding header
-   */
-  Charset getCharset();
+    /**
+     * Return the character encoding of this part.
+     *
+     * @return the character encoding, or <code>null</code> to exclude the
+     * character encoding header
+     */
+    Charset getCharset();
 
-  /**
-   * Return the transfer encoding of this part.
-   *
-   * @return the transfer encoding, or <code>null</code> to exclude the
-   * transfer encoding header
-   */
-  String getTransferEncoding();
+    /**
+     * Return the transfer encoding of this part.
+     *
+     * @return the transfer encoding, or <code>null</code> to exclude the
+     * transfer encoding header
+     */
+    String getTransferEncoding();
 
-  /**
-   * Return the content ID of this part.
-   *
-   * @return the content ID, or <code>null</code> to exclude the content ID
-   * header
-   */
-  String getContentId();
+    /**
+     * Return the content ID of this part.
+     *
+     * @return the content ID, or <code>null</code> to exclude the content ID
+     * header
+     */
+    String getContentId();
 
-  /**
-   * Gets the disposition-type to be used in Content-Disposition header
-   *
-   * @return the disposition-type
-   */
-  String getDispositionType();
+    /**
+     * Gets the disposition-type to be used in Content-Disposition header
+     *
+     * @return the disposition-type
+     */
+    String getDispositionType();
 
-  List<Param> getCustomHeaders();
+    List<Param> getCustomHeaders();
 }
