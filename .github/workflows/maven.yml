@@ -1,11 +1,9 @@
 # This workflow is designed to build PRs for AHC. Note that it does not actually publish AHC, just builds and test it.
 # Docs: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Test PR
+name: Build and Test PR
 
 on:
-  pull_request:
-    branches: *
   push:
   workflow_dispatch:
     inputs:
