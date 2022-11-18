@@ -156,7 +156,8 @@ public class WebdavTest {
             response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 207);
-            assertTrue(response.getResponseBody().contains("HTTP/1.1 200 OK"), "Got " + response.getResponseBody());
+            String body = response.getResponseBody();
+            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
         }
     }
 
@@ -185,7 +186,8 @@ public class WebdavTest {
             }).get();
 
             assertEquals(webDavResponse.getStatusCode(), 207);
-            assertTrue(webDavResponse.getResponseBody().contains("HTTP/1.1 200 OK"), "Got " + response.getResponseBody());
+            String body = webDavResponse.getResponseBody();
+            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
         }
     }
 }

@@ -76,8 +76,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
-
-            String expectedMessage = "DNS name not found";
+            String expectedMessage = "No such host is known";
             assertTrue(e.getCause().toString().contains(expectedMessage));
             throw e.getCause();
         }

@@ -13,11 +13,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import org.asynchttpclient.AbstractBasicTest;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BasicAuthTest;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.Response;
+import org.asynchttpclient.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -25,8 +21,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
@@ -36,11 +30,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.basicAuthRealm;
-import static org.asynchttpclient.test.TestUtils.ADMIN;
-import static org.asynchttpclient.test.TestUtils.USER;
-import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
-import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.asynchttpclient.test.TestUtils.createTempFile;
+import static org.asynchttpclient.test.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -62,35 +52,28 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         return new BasicAuthTest.SimpleHandler();
     }
 
-    private void expectExecutionException(Function<BoundRequestBuilder, BoundRequestBuilder> f) throws Throwable {
+    private void expectHttpResponse(Function<BoundRequestBuilder, BoundRequestBuilder> f, int expectedResponseCode) throws Throwable {
         File file = createTempFile(1024 * 1024);
 
-        ExecutionException executionException = null;
         try (AsyncHttpClient client = asyncHttpClient()) {
-            try {
-                for (int i = 0; i < 20; i++) {
-                    f.apply(client.preparePut(getTargetUrl())
-                                    .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
-                            .execute()
-                            .get();
-                }
-            } catch (ExecutionException e) {
-                executionException = e;
+            for (int i = 0; i < 20; i++) {
+                Response response = f.apply(client.preparePut(getTargetUrl())
+                                .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
+                        .execute()
+                        .get();
+                assertEquals(response.getStatusCode(), expectedResponseCode);
             }
         }
-
-        assertNotNull(executionException, "Expected ExecutionException");
-        throw executionException.getCause();
     }
 
-    @Test(expectedExceptions = IOException.class)
+    @Test
     public void noRealmCausesServerToCloseSocket() throws Throwable {
-        expectExecutionException(rb -> rb);
+        expectHttpResponse(rb -> rb, 401);
     }
 
-    @Test(expectedExceptions = IOException.class)
+    @Test
     public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Throwable {
-        expectExecutionException(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)));
+        expectHttpResponse(rb -> rb.setRealm(basicAuthRealm(USER, "NOT-ADMIN")), 401);
     }
 
     private void expectSuccess(Function<BoundRequestBuilder, BoundRequestBuilder> f) throws Exception {

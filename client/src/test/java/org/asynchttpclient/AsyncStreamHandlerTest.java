@@ -459,16 +459,18 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     f.get(20, TimeUnit.SECONDS);
                     HttpHeaders h = responseHeaders.get();
                     assertNotNull(h);
-                    String[] values = h.get(ALLOW).split(",|, ");
-                    assertNotNull(values);
-                    // Some responses contain the TRACE method, some do not - account for both
-                    assert (values.length == expected.length || values.length == expectedWithTrace.length);
-                    Arrays.sort(values);
-                    // Some responses contain the TRACE method, some do not - account for both
-                    if (values.length == expected.length) {
-                        assertEquals(values, expected);
-                    } else {
-                        assertEquals(values, expectedWithTrace);
+                    if (h.contains(ALLOW)) {
+                        String[] values = h.get(ALLOW).split(",|, ");
+                        assertNotNull(values);
+                        // Some responses contain the TRACE method, some do not - account for both
+                        assert (values.length == expected.length || values.length == expectedWithTrace.length);
+                        Arrays.sort(values);
+                        // Some responses contain the TRACE method, some do not - account for both
+                        if (values.length == expected.length) {
+                            assertEquals(values, expected);
+                        } else {
+                            assertEquals(values, expectedWithTrace);
+                        }
                     }
                 }));
     }
