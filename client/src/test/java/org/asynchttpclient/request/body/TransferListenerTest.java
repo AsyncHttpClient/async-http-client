@@ -40,194 +40,194 @@ import static org.testng.Assert.*;
 
 public class TransferListenerTest extends AbstractBasicTest {
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new BasicHandler();
-  }
-
-  @Test
-  public void basicGetTest() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      final AtomicReference<Throwable> throwable = new AtomicReference<>();
-      final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
-      final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
-      final AtomicReference<byte[]> bb = new AtomicReference<>();
-      final AtomicBoolean completed = new AtomicBoolean(false);
-
-      TransferCompletionHandler tl = new TransferCompletionHandler();
-      tl.addTransferListener(new TransferListener() {
-
-        public void onRequestHeadersSent(HttpHeaders headers) {
-          hSent.set(headers);
-        }
-
-        public void onResponseHeadersReceived(HttpHeaders headers) {
-          hRead.set(headers);
-        }
-
-        public void onBytesReceived(byte[] b) {
-          if (b.length != 0)
-            bb.set(b);
-        }
-
-        public void onBytesSent(long amount, long current, long total) {
-        }
-
-        public void onRequestResponseCompleted() {
-          completed.set(true);
-        }
-
-        public void onThrowable(Throwable t) {
-          throwable.set(t);
-        }
-      });
-
-      Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
-
-      assertNotNull(response);
-      assertEquals(response.getStatusCode(), 200);
-      assertNotNull(hRead.get());
-      assertNotNull(hSent.get());
-      assertNull(bb.get());
-      assertNull(throwable.get());
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new BasicHandler();
     }
-  }
 
-  @Test
-  public void basicPutFileTest() throws Exception {
-    final AtomicReference<Throwable> throwable = new AtomicReference<>();
-    final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
-    final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
-    final AtomicInteger bbReceivedLength = new AtomicInteger(0);
-    final AtomicLong bbSentLength = new AtomicLong(0L);
+    @Test
+    public void basicGetTest() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
+            final AtomicReference<byte[]> bb = new AtomicReference<>();
+            final AtomicBoolean completed = new AtomicBoolean(false);
 
-    final AtomicBoolean completed = new AtomicBoolean(false);
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
 
-    File file = createTempFile(1024 * 100 * 10);
+                public void onRequestHeadersSent(HttpHeaders headers) {
+                    hSent.set(headers);
+                }
 
-    int timeout = (int) (file.length() / 1000);
+                public void onResponseHeadersReceived(HttpHeaders headers) {
+                    hRead.set(headers);
+                }
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(timeout))) {
-      TransferCompletionHandler tl = new TransferCompletionHandler();
-      tl.addTransferListener(new TransferListener() {
+                public void onBytesReceived(byte[] b) {
+                    if (b.length != 0)
+                        bb.set(b);
+                }
 
-        public void onRequestHeadersSent(HttpHeaders headers) {
-          hSent.set(headers);
+                public void onBytesSent(long amount, long current, long total) {
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertNull(bb.get());
+            assertNull(throwable.get());
         }
-
-        public void onResponseHeadersReceived(HttpHeaders headers) {
-          hRead.set(headers);
-        }
-
-        public void onBytesReceived(byte[] b) {
-          bbReceivedLength.addAndGet(b.length);
-        }
-
-        public void onBytesSent(long amount, long current, long total) {
-          bbSentLength.addAndGet(amount);
-        }
-
-        public void onRequestResponseCompleted() {
-          completed.set(true);
-        }
-
-        public void onThrowable(Throwable t) {
-          throwable.set(t);
-        }
-      });
-
-      Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
-
-      assertNotNull(response);
-      assertEquals(response.getStatusCode(), 200);
-      assertNotNull(hRead.get());
-      assertNotNull(hSent.get());
-      assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
-      assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
     }
-  }
 
-  @Test
-  public void basicPutFileBodyGeneratorTest() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      final AtomicReference<Throwable> throwable = new AtomicReference<>();
-      final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
-      final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
-      final AtomicInteger bbReceivedLength = new AtomicInteger(0);
-      final AtomicLong bbSentLength = new AtomicLong(0L);
+    @Test
+    public void basicPutFileTest() throws Exception {
+        final AtomicReference<Throwable> throwable = new AtomicReference<>();
+        final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+        final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
+        final AtomicInteger bbReceivedLength = new AtomicInteger(0);
+        final AtomicLong bbSentLength = new AtomicLong(0L);
 
-      final AtomicBoolean completed = new AtomicBoolean(false);
+        final AtomicBoolean completed = new AtomicBoolean(false);
 
-      File file = createTempFile(1024 * 100 * 10);
+        File file = createTempFile(1024 * 100 * 10);
 
-      TransferCompletionHandler tl = new TransferCompletionHandler();
-      tl.addTransferListener(new TransferListener() {
+        int timeout = (int) (file.length() / 1000);
 
-        public void onRequestHeadersSent(HttpHeaders headers) {
-          hSent.set(headers);
+        try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(timeout))) {
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
+
+                public void onRequestHeadersSent(HttpHeaders headers) {
+                    hSent.set(headers);
+                }
+
+                public void onResponseHeadersReceived(HttpHeaders headers) {
+                    hRead.set(headers);
+                }
+
+                public void onBytesReceived(byte[] b) {
+                    bbReceivedLength.addAndGet(b.length);
+                }
+
+                public void onBytesSent(long amount, long current, long total) {
+                    bbSentLength.addAndGet(amount);
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
+            assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
         }
-
-        public void onResponseHeadersReceived(HttpHeaders headers) {
-          hRead.set(headers);
-        }
-
-        public void onBytesReceived(byte[] b) {
-          bbReceivedLength.addAndGet(b.length);
-        }
-
-        public void onBytesSent(long amount, long current, long total) {
-          bbSentLength.addAndGet(amount);
-        }
-
-        public void onRequestResponseCompleted() {
-          completed.set(true);
-        }
-
-        public void onThrowable(Throwable t) {
-          throwable.set(t);
-        }
-      });
-
-      Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
-
-      assertNotNull(response);
-      assertEquals(response.getStatusCode(), 200);
-      assertNotNull(hRead.get());
-      assertNotNull(hSent.get());
-      assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
-      assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
     }
-  }
 
-  private class BasicHandler extends AbstractHandler {
+    @Test
+    public void basicPutFileBodyGeneratorTest() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
+            final AtomicReference<HttpHeaders> hRead = new AtomicReference<>();
+            final AtomicInteger bbReceivedLength = new AtomicInteger(0);
+            final AtomicLong bbSentLength = new AtomicLong(0L);
 
-    public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+            final AtomicBoolean completed = new AtomicBoolean(false);
 
-      Enumeration<?> e = httpRequest.getHeaderNames();
-      String param;
-      while (e.hasMoreElements()) {
-        param = e.nextElement().toString();
-        httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
-      }
+            File file = createTempFile(1024 * 100 * 10);
 
-      int size = 10 * 1024;
-      if (httpRequest.getContentLength() > 0) {
-        size = httpRequest.getContentLength();
-      }
-      byte[] bytes = new byte[size];
-      if (bytes.length > 0) {
-        int read = 0;
-        while (read != -1) {
-          read = httpRequest.getInputStream().read(bytes);
-          if (read > 0) {
-            httpResponse.getOutputStream().write(bytes, 0, read);
-          }
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
+
+                public void onRequestHeadersSent(HttpHeaders headers) {
+                    hSent.set(headers);
+                }
+
+                public void onResponseHeadersReceived(HttpHeaders headers) {
+                    hRead.set(headers);
+                }
+
+                public void onBytesReceived(byte[] b) {
+                    bbReceivedLength.addAndGet(b.length);
+                }
+
+                public void onBytesSent(long amount, long current, long total) {
+                    bbSentLength.addAndGet(amount);
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertEquals(bbReceivedLength.get(), file.length(), "Number of received bytes incorrect");
+            assertEquals(bbSentLength.get(), file.length(), "Number of sent bytes incorrect");
         }
-      }
-
-      httpResponse.setStatus(200);
-      httpResponse.getOutputStream().flush();
-      httpResponse.getOutputStream().close();
     }
-  }
+
+    private class BasicHandler extends AbstractHandler {
+
+        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+
+            Enumeration<?> e = httpRequest.getHeaderNames();
+            String param;
+            while (e.hasMoreElements()) {
+                param = e.nextElement().toString();
+                httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
+            }
+
+            int size = 10 * 1024;
+            if (httpRequest.getContentLength() > 0) {
+                size = httpRequest.getContentLength();
+            }
+            byte[] bytes = new byte[size];
+            if (bytes.length > 0) {
+                int read = 0;
+                while (read != -1) {
+                    read = httpRequest.getInputStream().read(bytes);
+                    if (read > 0) {
+                        httpResponse.getOutputStream().write(bytes, 0, read);
+                    }
+                }
+            }
+
+            httpResponse.setStatus(200);
+            httpResponse.getOutputStream().flush();
+            httpResponse.getOutputStream().close();
+        }
+    }
 }

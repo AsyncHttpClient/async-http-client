@@ -15,10 +15,11 @@ package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.nio.charset.Charset;
-import org.testng.annotations.Test;
 import org.testng.Assert;
+import org.testng.annotations.Test;
 import org.testng.internal.junit.ArrayAsserts;
+
+import java.nio.charset.Charset;
 
 public class ByteBufUtilsTests {
 

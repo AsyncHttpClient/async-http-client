@@ -28,86 +28,86 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public class NettyChannelConnector {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
 
-  private static final AtomicIntegerFieldUpdater<NettyChannelConnector> I_UPDATER = AtomicIntegerFieldUpdater
-          .newUpdater(NettyChannelConnector.class, "i");
+    private static final AtomicIntegerFieldUpdater<NettyChannelConnector> I_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(NettyChannelConnector.class, "i");
 
-  private final AsyncHandler<?> asyncHandler;
-  private final InetSocketAddress localAddress;
-  private final List<InetSocketAddress> remoteAddresses;
-  private final AsyncHttpClientState clientState;
-  private volatile int i = 0;
+    private final AsyncHandler<?> asyncHandler;
+    private final InetSocketAddress localAddress;
+    private final List<InetSocketAddress> remoteAddresses;
+    private final AsyncHttpClientState clientState;
+    private volatile int i = 0;
 
-  public NettyChannelConnector(InetAddress localAddress,
-                               List<InetSocketAddress> remoteAddresses,
-                               AsyncHandler<?> asyncHandler,
-                               AsyncHttpClientState clientState) {
-    this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
-    this.remoteAddresses = remoteAddresses;
-    this.asyncHandler = asyncHandler;
-    this.clientState = clientState;
-  }
-
-  private boolean pickNextRemoteAddress() {
-    I_UPDATER.incrementAndGet(this);
-    return i < remoteAddresses.size();
-  }
-
-  public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
-    final InetSocketAddress remoteAddress = remoteAddresses.get(i);
-
-    try {
-      asyncHandler.onTcpConnectAttempt(remoteAddress);
-    } catch (Exception e) {
-      LOGGER.error("onTcpConnectAttempt crashed", e);
-      connectListener.onFailure(null, e);
-      return;
+    public NettyChannelConnector(InetAddress localAddress,
+                                 List<InetSocketAddress> remoteAddresses,
+                                 AsyncHandler<?> asyncHandler,
+                                 AsyncHttpClientState clientState) {
+        this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
+        this.remoteAddresses = remoteAddresses;
+        this.asyncHandler = asyncHandler;
+        this.clientState = clientState;
     }
 
-    try {
-      connect0(bootstrap, connectListener, remoteAddress);
-    } catch (RejectedExecutionException e) {
-      if (clientState.isClosed()) {
-        LOGGER.info("Connect crash but engine is shutting down");
-      } else {
-        connectListener.onFailure(null, e);
-      }
+    private boolean pickNextRemoteAddress() {
+        I_UPDATER.incrementAndGet(this);
+        return i < remoteAddresses.size();
     }
-  }
 
-  private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
+    public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
+        final InetSocketAddress remoteAddress = remoteAddresses.get(i);
 
-    bootstrap.connect(remoteAddress, localAddress)
-            .addListener(new SimpleChannelFutureListener() {
-              @Override
-              public void onSuccess(Channel channel) {
-                try {
-                  asyncHandler.onTcpConnectSuccess(remoteAddress, channel);
-                } catch (Exception e) {
-                  LOGGER.error("onTcpConnectSuccess crashed", e);
-                  connectListener.onFailure(channel, e);
-                  return;
-                }
-                connectListener.onSuccess(channel, remoteAddress);
-              }
+        try {
+            asyncHandler.onTcpConnectAttempt(remoteAddress);
+        } catch (Exception e) {
+            LOGGER.error("onTcpConnectAttempt crashed", e);
+            connectListener.onFailure(null, e);
+            return;
+        }
 
-              @Override
-              public void onFailure(Channel channel, Throwable t) {
-                try {
-                  asyncHandler.onTcpConnectFailure(remoteAddress, t);
-                } catch (Exception e) {
-                  LOGGER.error("onTcpConnectFailure crashed", e);
-                  connectListener.onFailure(channel, e);
-                  return;
-                }
-                boolean retry = pickNextRemoteAddress();
-                if (retry) {
-                  NettyChannelConnector.this.connect(bootstrap, connectListener);
-                } else {
-                  connectListener.onFailure(channel, t);
-                }
-              }
-            });
-  }
+        try {
+            connect0(bootstrap, connectListener, remoteAddress);
+        } catch (RejectedExecutionException e) {
+            if (clientState.isClosed()) {
+                LOGGER.info("Connect crash but engine is shutting down");
+            } else {
+                connectListener.onFailure(null, e);
+            }
+        }
+    }
+
+    private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
+
+        bootstrap.connect(remoteAddress, localAddress)
+                .addListener(new SimpleChannelFutureListener() {
+                    @Override
+                    public void onSuccess(Channel channel) {
+                        try {
+                            asyncHandler.onTcpConnectSuccess(remoteAddress, channel);
+                        } catch (Exception e) {
+                            LOGGER.error("onTcpConnectSuccess crashed", e);
+                            connectListener.onFailure(channel, e);
+                            return;
+                        }
+                        connectListener.onSuccess(channel, remoteAddress);
+                    }
+
+                    @Override
+                    public void onFailure(Channel channel, Throwable t) {
+                        try {
+                            asyncHandler.onTcpConnectFailure(remoteAddress, t);
+                        } catch (Exception e) {
+                            LOGGER.error("onTcpConnectFailure crashed", e);
+                            connectListener.onFailure(channel, e);
+                            return;
+                        }
+                        boolean retry = pickNextRemoteAddress();
+                        if (retry) {
+                            NettyChannelConnector.this.connect(bootstrap, connectListener);
+                        } else {
+                            connectListener.onFailure(channel, t);
+                        }
+                    }
+                });
+    }
 }

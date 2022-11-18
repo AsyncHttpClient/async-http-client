@@ -21,24 +21,24 @@ import java.util.concurrent.ThreadFactory;
 
 class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQueueEventLoopGroup> {
 
-  KQueueTransportFactory() {
-    try {
-      Class.forName("io.netty.channel.kqueue.KQueue");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("The kqueue transport is not available");
+    KQueueTransportFactory() {
+        try {
+            Class.forName("io.netty.channel.kqueue.KQueue");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("The kqueue transport is not available");
+        }
+        if (!KQueue.isAvailable()) {
+            throw new IllegalStateException("The kqueue transport is not supported");
+        }
     }
-    if (!KQueue.isAvailable()) {
-      throw new IllegalStateException("The kqueue transport is not supported");
+
+    @Override
+    public KQueueSocketChannel newChannel() {
+        return new KQueueSocketChannel();
     }
-  }
 
-  @Override
-  public KQueueSocketChannel newChannel() {
-    return new KQueueSocketChannel();
-  }
-
-  @Override
-  public KQueueEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-    return new KQueueEventLoopGroup(ioThreadsCount, threadFactory);
-  }
+    @Override
+    public KQueueEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+        return new KQueueEventLoopGroup(ioThreadsCount, threadFactory);
+    }
 }

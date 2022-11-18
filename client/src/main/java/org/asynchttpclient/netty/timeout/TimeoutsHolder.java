@@ -29,84 +29,84 @@ import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class TimeoutsHolder {
 
-  private final Timeout requestTimeout;
-  private final AtomicBoolean cancelled = new AtomicBoolean();
-  private final Timer nettyTimer;
-  private final NettyRequestSender requestSender;
-  private final long requestTimeoutMillisTime;
-  private final int readTimeoutValue;
-  private volatile Timeout readTimeout;
-  private volatile NettyResponseFuture<?> nettyResponseFuture;
-  private volatile InetSocketAddress remoteAddress;
+    private final Timeout requestTimeout;
+    private final AtomicBoolean cancelled = new AtomicBoolean();
+    private final Timer nettyTimer;
+    private final NettyRequestSender requestSender;
+    private final long requestTimeoutMillisTime;
+    private final int readTimeoutValue;
+    private volatile Timeout readTimeout;
+    private volatile NettyResponseFuture<?> nettyResponseFuture;
+    private volatile InetSocketAddress remoteAddress;
 
-  public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
-    this.nettyTimer = nettyTimer;
-    this.nettyResponseFuture = nettyResponseFuture;
-    this.requestSender = requestSender;
-    this.remoteAddress = originalRemoteAddress;
+    public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
+        this.nettyTimer = nettyTimer;
+        this.nettyResponseFuture = nettyResponseFuture;
+        this.requestSender = requestSender;
+        this.remoteAddress = originalRemoteAddress;
 
-    final Request targetRequest = nettyResponseFuture.getTargetRequest();
+        final Request targetRequest = nettyResponseFuture.getTargetRequest();
 
-    final int readTimeoutInMs = targetRequest.getReadTimeout();
-    this.readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
+        final int readTimeoutInMs = targetRequest.getReadTimeout();
+        this.readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
 
-    int requestTimeoutInMs = targetRequest.getRequestTimeout();
-    if (requestTimeoutInMs == 0) {
-      requestTimeoutInMs = config.getRequestTimeout();
+        int requestTimeoutInMs = targetRequest.getRequestTimeout();
+        if (requestTimeoutInMs == 0) {
+            requestTimeoutInMs = config.getRequestTimeout();
+        }
+
+        if (requestTimeoutInMs != -1) {
+            requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
+            requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
+        } else {
+            requestTimeoutMillisTime = -1L;
+            requestTimeout = null;
+        }
     }
 
-    if (requestTimeoutInMs != -1) {
-      requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
-      requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
-    } else {
-      requestTimeoutMillisTime = -1L;
-      requestTimeout = null;
+    public void setResolvedRemoteAddress(InetSocketAddress address) {
+        remoteAddress = address;
     }
-  }
 
-  public void setResolvedRemoteAddress(InetSocketAddress address) {
-    remoteAddress = address;
-  }
-
-  InetSocketAddress remoteAddress() {
-    return remoteAddress;
-  }
-
-  public void startReadTimeout() {
-    if (readTimeoutValue != -1) {
-      startReadTimeout(null);
+    InetSocketAddress remoteAddress() {
+        return remoteAddress;
     }
-  }
 
-  void startReadTimeout(ReadTimeoutTimerTask task) {
-    if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue < (requestTimeoutMillisTime - unpreciseMillisTime()))) {
-      // only schedule a new readTimeout if the requestTimeout doesn't happen first
-      if (task == null) {
-        // first call triggered from outside (else is read timeout is re-scheduling itself)
-        task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
-      }
-      this.readTimeout = newTimeout(task, readTimeoutValue);
-
-    } else if (task != null) {
-      // read timeout couldn't re-scheduling itself, clean up
-      task.clean();
+    public void startReadTimeout() {
+        if (readTimeoutValue != -1) {
+            startReadTimeout(null);
+        }
     }
-  }
 
-  public void cancel() {
-    if (cancelled.compareAndSet(false, true)) {
-      if (requestTimeout != null) {
-        requestTimeout.cancel();
-        RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
-      }
-      if (readTimeout != null) {
-        readTimeout.cancel();
-        ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
-      }
+    void startReadTimeout(ReadTimeoutTimerTask task) {
+        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue < (requestTimeoutMillisTime - unpreciseMillisTime()))) {
+            // only schedule a new readTimeout if the requestTimeout doesn't happen first
+            if (task == null) {
+                // first call triggered from outside (else is read timeout is re-scheduling itself)
+                task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
+            }
+            this.readTimeout = newTimeout(task, readTimeoutValue);
+
+        } else if (task != null) {
+            // read timeout couldn't re-scheduling itself, clean up
+            task.clean();
+        }
     }
-  }
 
-  private Timeout newTimeout(TimerTask task, long delay) {
-    return requestSender.isClosed() ? null : nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
-  }
+    public void cancel() {
+        if (cancelled.compareAndSet(false, true)) {
+            if (requestTimeout != null) {
+                requestTimeout.cancel();
+                RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
+            }
+            if (readTimeout != null) {
+                readTimeout.cancel();
+                ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
+            }
+        }
+    }
+
+    private Timeout newTimeout(TimerTask task, long delay) {
+        return requestSender.isClosed() ? null : nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS);
+    }
 }

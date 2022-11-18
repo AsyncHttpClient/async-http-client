@@ -20,16 +20,16 @@ import javax.net.ssl.SSLEngine;
 
 public class JsseSslEngineFactory extends SslEngineFactoryBase {
 
-  private final SSLContext sslContext;
+    private final SSLContext sslContext;
 
-  public JsseSslEngineFactory(SSLContext sslContext) {
-    this.sslContext = sslContext;
-  }
+    public JsseSslEngineFactory(SSLContext sslContext) {
+        this.sslContext = sslContext;
+    }
 
-  @Override
-  public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
-    SSLEngine sslEngine = sslContext.createSSLEngine(domain(peerHost), peerPort);
-    configureSslEngine(sslEngine, config);
-    return sslEngine;
-  }
+    @Override
+    public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
+        SSLEngine sslEngine = sslContext.createSSLEngine(domain(peerHost), peerPort);
+        configureSslEngine(sslEngine, config);
+        return sslEngine;
+    }
 }

@@ -28,57 +28,57 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 public abstract class AbstractBasicTest {
 
-  protected final static int TIMEOUT = 30;
+    protected static final int TIMEOUT = 30;
 
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-  protected Server server;
-  protected int port1 = -1;
-  protected int port2 = -1;
+    protected Server server;
+    protected int port1 = -1;
+    protected int port2 = -1;
 
-  @BeforeClass(alwaysRun = true)
-  public void setUpGlobal() throws Exception {
-    server = new Server();
-    ServerConnector connector1 = addHttpConnector(server);
-    server.setHandler(configureHandler());
-    ServerConnector connector2 = addHttpConnector(server);
-    server.start();
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
+        server.setHandler(configureHandler());
+        ServerConnector connector2 = addHttpConnector(server);
+        server.start();
 
-    port1 = connector1.getLocalPort();
-    port2 = connector2.getLocalPort();
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
 
-    logger.info("Local HTTP server started successfully");
-  }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws Exception {
-    if (server != null) {
-      server.stop();
-    }
-  }
-
-  protected String getTargetUrl() {
-    return String.format("http://localhost:%d/foo/test", port1);
-  }
-
-  protected String getTargetUrl2() {
-    return String.format("https://localhost:%d/foo/test", port2);
-  }
-
-  public AbstractHandler configureHandler() throws Exception {
-    return new EchoHandler();
-  }
-
-  public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
-
-    @Override
-    public Response onCompleted(Response response) throws Exception {
-      return response;
+        logger.info("Local HTTP server started successfully");
     }
 
-    @Override
-    public void onThrowable(Throwable t) {
-      t.printStackTrace();
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        if (server != null) {
+            server.stop();
+        }
     }
-  }
+
+    protected String getTargetUrl() {
+        return String.format("http://localhost:%d/foo/test", port1);
+    }
+
+    protected String getTargetUrl2() {
+        return String.format("https://localhost:%d/foo/test", port2);
+    }
+
+    public AbstractHandler configureHandler() throws Exception {
+        return new EchoHandler();
+    }
+
+    public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
+
+        @Override
+        public Response onCompleted(Response response) throws Exception {
+            return response;
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            t.printStackTrace();
+        }
+    }
 }

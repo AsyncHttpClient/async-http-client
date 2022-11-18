@@ -54,147 +54,147 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * </blockquote>
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
-  private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
-  private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<>();
-  private final boolean accumulateResponseBytes;
-  private HttpHeaders headers;
+    private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
+    private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<>();
+    private final boolean accumulateResponseBytes;
+    private HttpHeaders headers;
 
-  /**
-   * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
-   * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} will throw an IllegalStateException if called.
-   */
-  public TransferCompletionHandler() {
-    this(false);
-  }
-
-  /**
-   * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when {@link org.asynchttpclient.Response#getResponseBody()} get called. The
-   * default is false.
-   *
-   * @param accumulateResponseBytes true to accumulates bytes in memory.
-   */
-  public TransferCompletionHandler(boolean accumulateResponseBytes) {
-    this.accumulateResponseBytes = accumulateResponseBytes;
-  }
-
-  public TransferCompletionHandler addTransferListener(TransferListener t) {
-    listeners.offer(t);
-    return this;
-  }
-
-  public TransferCompletionHandler removeTransferListener(TransferListener t) {
-    listeners.remove(t);
-    return this;
-  }
-
-  public void headers(HttpHeaders headers) {
-    this.headers = headers;
-  }
-
-  @Override
-  public State onHeadersReceived(final HttpHeaders headers) throws Exception {
-    fireOnHeaderReceived(headers);
-    return super.onHeadersReceived(headers);
-  }
-
-  @Override
-  public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
-    fireOnHeaderReceived(headers);
-    return super.onHeadersReceived(headers);
-  }
-
-  @Override
-  public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-    State s = State.CONTINUE;
-    if (accumulateResponseBytes) {
-      s = super.onBodyPartReceived(content);
+    /**
+     * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
+     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} will throw an IllegalStateException if called.
+     */
+    public TransferCompletionHandler() {
+        this(false);
     }
-    fireOnBytesReceived(content.getBodyPartBytes());
-    return s;
-  }
 
-  @Override
-  public Response onCompleted(Response response) throws Exception {
-    fireOnEnd();
-    return response;
-  }
-
-  @Override
-  public State onHeadersWritten() {
-    if (headers != null) {
-      fireOnHeadersSent(headers);
+    /**
+     * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when {@link org.asynchttpclient.Response#getResponseBody()} get called. The
+     * default is false.
+     *
+     * @param accumulateResponseBytes true to accumulates bytes in memory.
+     */
+    public TransferCompletionHandler(boolean accumulateResponseBytes) {
+        this.accumulateResponseBytes = accumulateResponseBytes;
     }
-    return State.CONTINUE;
-  }
 
-  @Override
-  public State onContentWriteProgress(long amount, long current, long total) {
-    fireOnBytesSent(amount, current, total);
-    return State.CONTINUE;
-  }
-
-  @Override
-  public void onThrowable(Throwable t) {
-    fireOnThrowable(t);
-  }
-
-  private void fireOnHeadersSent(HttpHeaders headers) {
-    for (TransferListener l : listeners) {
-      try {
-        l.onRequestHeadersSent(headers);
-      } catch (Throwable t) {
-        l.onThrowable(t);
-      }
+    public TransferCompletionHandler addTransferListener(TransferListener t) {
+        listeners.offer(t);
+        return this;
     }
-  }
 
-  private void fireOnHeaderReceived(HttpHeaders headers) {
-    for (TransferListener l : listeners) {
-      try {
-        l.onResponseHeadersReceived(headers);
-      } catch (Throwable t) {
-        l.onThrowable(t);
-      }
+    public TransferCompletionHandler removeTransferListener(TransferListener t) {
+        listeners.remove(t);
+        return this;
     }
-  }
 
-  private void fireOnEnd() {
-    for (TransferListener l : listeners) {
-      try {
-        l.onRequestResponseCompleted();
-      } catch (Throwable t) {
-        l.onThrowable(t);
-      }
+    public void headers(HttpHeaders headers) {
+        this.headers = headers;
     }
-  }
 
-  private void fireOnBytesReceived(byte[] b) {
-    for (TransferListener l : listeners) {
-      try {
-        l.onBytesReceived(b);
-      } catch (Throwable t) {
-        l.onThrowable(t);
-      }
+    @Override
+    public State onHeadersReceived(final HttpHeaders headers) throws Exception {
+        fireOnHeaderReceived(headers);
+        return super.onHeadersReceived(headers);
     }
-  }
 
-  private void fireOnBytesSent(long amount, long current, long total) {
-    for (TransferListener l : listeners) {
-      try {
-        l.onBytesSent(amount, current, total);
-      } catch (Throwable t) {
-        l.onThrowable(t);
-      }
+    @Override
+    public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+        fireOnHeaderReceived(headers);
+        return super.onHeadersReceived(headers);
     }
-  }
 
-  private void fireOnThrowable(Throwable t) {
-    for (TransferListener l : listeners) {
-      try {
-        l.onThrowable(t);
-      } catch (Throwable t2) {
-        logger.warn("onThrowable", t2);
-      }
+    @Override
+    public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        State s = State.CONTINUE;
+        if (accumulateResponseBytes) {
+            s = super.onBodyPartReceived(content);
+        }
+        fireOnBytesReceived(content.getBodyPartBytes());
+        return s;
     }
-  }
+
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+        fireOnEnd();
+        return response;
+    }
+
+    @Override
+    public State onHeadersWritten() {
+        if (headers != null) {
+            fireOnHeadersSent(headers);
+        }
+        return State.CONTINUE;
+    }
+
+    @Override
+    public State onContentWriteProgress(long amount, long current, long total) {
+        fireOnBytesSent(amount, current, total);
+        return State.CONTINUE;
+    }
+
+    @Override
+    public void onThrowable(Throwable t) {
+        fireOnThrowable(t);
+    }
+
+    private void fireOnHeadersSent(HttpHeaders headers) {
+        for (TransferListener l : listeners) {
+            try {
+                l.onRequestHeadersSent(headers);
+            } catch (Throwable t) {
+                l.onThrowable(t);
+            }
+        }
+    }
+
+    private void fireOnHeaderReceived(HttpHeaders headers) {
+        for (TransferListener l : listeners) {
+            try {
+                l.onResponseHeadersReceived(headers);
+            } catch (Throwable t) {
+                l.onThrowable(t);
+            }
+        }
+    }
+
+    private void fireOnEnd() {
+        for (TransferListener l : listeners) {
+            try {
+                l.onRequestResponseCompleted();
+            } catch (Throwable t) {
+                l.onThrowable(t);
+            }
+        }
+    }
+
+    private void fireOnBytesReceived(byte[] b) {
+        for (TransferListener l : listeners) {
+            try {
+                l.onBytesReceived(b);
+            } catch (Throwable t) {
+                l.onThrowable(t);
+            }
+        }
+    }
+
+    private void fireOnBytesSent(long amount, long current, long total) {
+        for (TransferListener l : listeners) {
+            try {
+                l.onBytesSent(amount, current, total);
+            } catch (Throwable t) {
+                l.onThrowable(t);
+            }
+        }
+    }
+
+    private void fireOnThrowable(Throwable t) {
+        for (TransferListener l : listeners) {
+            try {
+                l.onThrowable(t);
+            } catch (Throwable t2) {
+                logger.warn("onThrowable", t2);
+            }
+        }
+    }
 }

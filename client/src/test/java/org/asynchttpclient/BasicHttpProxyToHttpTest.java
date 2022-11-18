@@ -36,7 +36,10 @@ import java.util.concurrent.Future;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHENTICATE;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.get;
+import static org.asynchttpclient.Dsl.proxyServer;
+import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 /**
@@ -44,89 +47,89 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
  */
 public class BasicHttpProxyToHttpTest {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpProxyToHttpTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpProxyToHttpTest.class);
 
-  private int httpPort;
-  private int proxyPort;
+    private int httpPort;
+    private int proxyPort;
 
-  private Server httpServer;
-  private Server proxy;
+    private Server httpServer;
+    private Server proxy;
 
-  @BeforeClass
-  public void setUpGlobal() throws Exception {
+    @BeforeClass
+    public void setUpGlobal() throws Exception {
 
-    httpServer = new Server();
-    ServerConnector connector1 = addHttpConnector(httpServer);
-    httpServer.setHandler(new EchoHandler());
-    httpServer.start();
-    httpPort = connector1.getLocalPort();
+        httpServer = new Server();
+        ServerConnector connector1 = addHttpConnector(httpServer);
+        httpServer.setHandler(new EchoHandler());
+        httpServer.start();
+        httpPort = connector1.getLocalPort();
 
-    proxy = new Server();
-    ServerConnector connector2 = addHttpConnector(proxy);
-    ServletHandler servletHandler = new ServletHandler();
-    ServletHolder servletHolder = servletHandler.addServletWithMapping(BasicAuthProxyServlet.class, "/*");
-    servletHolder.setInitParameter("maxThreads", "20");
-    proxy.setHandler(servletHandler);
-    proxy.start();
-    proxyPort = connector2.getLocalPort();
+        proxy = new Server();
+        ServerConnector connector2 = addHttpConnector(proxy);
+        ServletHandler servletHandler = new ServletHandler();
+        ServletHolder servletHolder = servletHandler.addServletWithMapping(BasicAuthProxyServlet.class, "/*");
+        servletHolder.setInitParameter("maxThreads", "20");
+        proxy.setHandler(servletHandler);
+        proxy.start();
+        proxyPort = connector2.getLocalPort();
 
-    LOGGER.info("Local HTTP Server (" + httpPort + "), Proxy (" + proxyPort + ") started successfully");
-  }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() {
-    if (proxy != null) {
-      try {
-        proxy.stop();
-      } catch (Exception e) {
-        LOGGER.error("Failed to properly close proxy", e);
-      }
+        LOGGER.info("Local HTTP Server (" + httpPort + "), Proxy (" + proxyPort + ") started successfully");
     }
-    if (httpServer != null) {
-      try {
-        httpServer.stop();
-      } catch (Exception e) {
-        LOGGER.error("Failed to properly close server", e);
-      }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() {
+        if (proxy != null) {
+            try {
+                proxy.stop();
+            } catch (Exception e) {
+                LOGGER.error("Failed to properly close proxy", e);
+            }
+        }
+        if (httpServer != null) {
+            try {
+                httpServer.stop();
+            } catch (Exception e) {
+                LOGGER.error("Failed to properly close server", e);
+            }
+        }
     }
-  }
 
-  @Test
-  public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws IOException, InterruptedException, ExecutionException {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      String targetUrl = "http://localhost:" + httpPort + "/foo/bar";
-      Request request = get(targetUrl)
-              .setProxyServer(proxyServer("127.0.0.1", proxyPort).setRealm(realm(AuthScheme.BASIC, "johndoe", "pass")))
-              // .setRealm(realm(AuthScheme.BASIC, "user", "passwd"))
-              .build();
-      Future<Response> responseFuture = client.executeRequest(request);
-      Response response = responseFuture.get();
+    @Test
+    public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws IOException, InterruptedException, ExecutionException {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String targetUrl = "http://localhost:" + httpPort + "/foo/bar";
+            Request request = get(targetUrl)
+                    .setProxyServer(proxyServer("127.0.0.1", proxyPort).setRealm(realm(AuthScheme.BASIC, "johndoe", "pass")))
+                    // .setRealm(realm(AuthScheme.BASIC, "user", "passwd"))
+                    .build();
+            Future<Response> responseFuture = client.executeRequest(request);
+            Response response = responseFuture.get();
 
-      Assert.assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-      Assert.assertEquals("/foo/bar", response.getHeader("X-pathInfo"));
+            Assert.assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            Assert.assertEquals("/foo/bar", response.getHeader("X-pathInfo"));
+        }
     }
-  }
 
-  @SuppressWarnings("serial")
-  public static class BasicAuthProxyServlet extends ProxyServlet {
+    @SuppressWarnings("serial")
+    public static class BasicAuthProxyServlet extends ProxyServlet {
 
-    @Override
-    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
-      LOGGER.debug(">>> got a request !");
+        @Override
+        protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
+            LOGGER.debug(">>> got a request !");
 
-      String authorization = request.getHeader(PROXY_AUTHORIZATION.toString());
-      if (authorization == null) {
-        response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
-        response.setHeader(PROXY_AUTHENTICATE.toString(), "Basic realm=\"Fake Realm\"");
-        response.getOutputStream().flush();
+            String authorization = request.getHeader(PROXY_AUTHORIZATION.toString());
+            if (authorization == null) {
+                response.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
+                response.setHeader(PROXY_AUTHENTICATE.toString(), "Basic realm=\"Fake Realm\"");
+                response.getOutputStream().flush();
 
-      } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
-        super.service(request, response);
+            } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
+                super.service(request, response);
 
-      } else {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getOutputStream().flush();
-      }
+            } else {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getOutputStream().flush();
+            }
+        }
     }
-  }
 }

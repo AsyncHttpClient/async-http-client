@@ -23,33 +23,33 @@ import java.security.NoSuchAlgorithmException;
 
 class StaticOAuthSignatureCalculator implements SignatureCalculator {
 
-  private final ConsumerKey consumerKey;
-  private final RequestToken requestToken;
-  private final String nonce;
-  private final long timestamp;
+    private final ConsumerKey consumerKey;
+    private final RequestToken requestToken;
+    private final String nonce;
+    private final long timestamp;
 
-  StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
-    this.consumerKey = consumerKey;
-    this.requestToken = requestToken;
-    this.nonce = nonce;
-    this.timestamp = timestamp;
-  }
-
-  @Override
-  public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
-    try {
-      String authorization = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(
-        consumerKey,
-        requestToken,
-        request.getUri(),
-        request.getMethod(),
-        request.getFormParams(),
-        request.getQueryParams(),
-        timestamp,
-        nonce);
-      requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
-    } catch (InvalidKeyException | NoSuchAlgorithmException e) {
-      throw new IllegalArgumentException(e);
+    StaticOAuthSignatureCalculator(ConsumerKey consumerKey, RequestToken requestToken, String nonce, long timestamp) {
+        this.consumerKey = consumerKey;
+        this.requestToken = requestToken;
+        this.nonce = nonce;
+        this.timestamp = timestamp;
     }
-  }
+
+    @Override
+    public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
+        try {
+            String authorization = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(
+                    consumerKey,
+                    requestToken,
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getFormParams(),
+                    request.getQueryParams(),
+                    timestamp,
+                    nonce);
+            requestBuilder.setHeader(HttpHeaderNames.AUTHORIZATION, authorization);
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
 }

@@ -46,146 +46,146 @@ import java.util.List;
  */
 public interface Request {
 
-  /**
-   * @return the request's HTTP method (GET, POST, etc.)
-   */
-  String getMethod();
+    /**
+     * @return the request's HTTP method (GET, POST, etc.)
+     */
+    String getMethod();
 
-  /**
-   * @return the uri
-   */
-  Uri getUri();
+    /**
+     * @return the uri
+     */
+    Uri getUri();
 
-  /**
-   * @return the url (the uri's String form)
-   */
-  String getUrl();
+    /**
+     * @return the url (the uri's String form)
+     */
+    String getUrl();
 
-  /**
-   * @return the InetAddress to be used to bypass uri's hostname resolution
-   */
-  InetAddress getAddress();
+    /**
+     * @return the InetAddress to be used to bypass uri's hostname resolution
+     */
+    InetAddress getAddress();
 
-  /**
-   * @return the local address to bind from
-   */
-  InetAddress getLocalAddress();
+    /**
+     * @return the local address to bind from
+     */
+    InetAddress getLocalAddress();
 
-  /**
-   * @return the HTTP headers
-   */
-  HttpHeaders getHeaders();
+    /**
+     * @return the HTTP headers
+     */
+    HttpHeaders getHeaders();
 
-  /**
-   * @return the HTTP cookies
-   */
-  List<Cookie> getCookies();
+    /**
+     * @return the HTTP cookies
+     */
+    List<Cookie> getCookies();
 
-  /**
-   * @return the request's body byte array (only non null if it was set this way)
-   */
-  byte[] getByteData();
+    /**
+     * @return the request's body byte array (only non null if it was set this way)
+     */
+    byte[] getByteData();
 
-  /**
-   * @return the request's body array of byte arrays (only non null if it was set this way)
-   */
-  List<byte[]> getCompositeByteData();
+    /**
+     * @return the request's body array of byte arrays (only non null if it was set this way)
+     */
+    List<byte[]> getCompositeByteData();
 
-  /**
-   * @return the request's body string (only non null if it was set this way)
-   */
-  String getStringData();
+    /**
+     * @return the request's body string (only non null if it was set this way)
+     */
+    String getStringData();
 
-  /**
-   * @return the request's body ByteBuffer (only non null if it was set this way)
-   */
-  ByteBuffer getByteBufferData();
+    /**
+     * @return the request's body ByteBuffer (only non null if it was set this way)
+     */
+    ByteBuffer getByteBufferData();
 
-  /**
-   * @return the request's body InputStream (only non null if it was set this way)
-   */
-  InputStream getStreamData();
+    /**
+     * @return the request's body InputStream (only non null if it was set this way)
+     */
+    InputStream getStreamData();
 
-  /**
-   * @return the request's body BodyGenerator (only non null if it was set this way)
-   */
-  BodyGenerator getBodyGenerator();
+    /**
+     * @return the request's body BodyGenerator (only non null if it was set this way)
+     */
+    BodyGenerator getBodyGenerator();
 
-  /**
-   * @return the request's form parameters
-   */
-  List<Param> getFormParams();
+    /**
+     * @return the request's form parameters
+     */
+    List<Param> getFormParams();
 
-  /**
-   * @return the multipart parts
-   */
-  List<Part> getBodyParts();
+    /**
+     * @return the multipart parts
+     */
+    List<Part> getBodyParts();
 
-  /**
-   * @return the virtual host to connect to
-   */
-  String getVirtualHost();
+    /**
+     * @return the virtual host to connect to
+     */
+    String getVirtualHost();
 
-  /**
-   * @return the query params resolved from the url/uri
-   */
-  List<Param> getQueryParams();
+    /**
+     * @return the query params resolved from the url/uri
+     */
+    List<Param> getQueryParams();
 
-  /**
-   * @return the proxy server to be used to perform this request (overrides the one defined in config)
-   */
-  ProxyServer getProxyServer();
+    /**
+     * @return the proxy server to be used to perform this request (overrides the one defined in config)
+     */
+    ProxyServer getProxyServer();
 
-  /**
-   * @return the realm to be used to perform this request (overrides the one defined in config)
-   */
-  Realm getRealm();
+    /**
+     * @return the realm to be used to perform this request (overrides the one defined in config)
+     */
+    Realm getRealm();
 
-  /**
-   * @return the file to be uploaded
-   */
-  File getFile();
+    /**
+     * @return the file to be uploaded
+     */
+    File getFile();
 
-  /**
-   * @return if this request is to follow redirects. Non null values means "override config value".
-   */
-  Boolean getFollowRedirect();
+    /**
+     * @return if this request is to follow redirects. Non null values means "override config value".
+     */
+    Boolean getFollowRedirect();
 
-  /**
-   * @return the request timeout. Non zero values means "override config value".
-   */
-  int getRequestTimeout();
+    /**
+     * @return the request timeout. Non zero values means "override config value".
+     */
+    int getRequestTimeout();
 
-  /**
-   * @return the read timeout. Non zero values means "override config value".
-   */
-  int getReadTimeout();
+    /**
+     * @return the read timeout. Non zero values means "override config value".
+     */
+    int getReadTimeout();
 
-  /**
-   * @return the range header value, or 0 is not set.
-   */
-  long getRangeOffset();
+    /**
+     * @return the range header value, or 0 is not set.
+     */
+    long getRangeOffset();
 
-  /**
-   * @return the charset value used when decoding the request's body.
-   */
-  Charset getCharset();
+    /**
+     * @return the charset value used when decoding the request's body.
+     */
+    Charset getCharset();
 
-  /**
-   * @return the strategy to compute ChannelPool's keys
-   */
-  ChannelPoolPartitioning getChannelPoolPartitioning();
+    /**
+     * @return the strategy to compute ChannelPool's keys
+     */
+    ChannelPoolPartitioning getChannelPoolPartitioning();
 
-  /**
-   * @return the NameResolver to be used to resolve hostnams's IP
-   */
-  NameResolver<InetAddress> getNameResolver();
+    /**
+     * @return the NameResolver to be used to resolve hostnams's IP
+     */
+    NameResolver<InetAddress> getNameResolver();
 
-  /**
-   * @return a new request builder using this request as a prototype
-   */
-  @SuppressWarnings("deprecation")
-  default RequestBuilder toBuilder() {
-    return new RequestBuilder(this);
-  }
+    /**
+     * @return a new request builder using this request as a prototype
+     */
+    @SuppressWarnings("deprecation")
+    default RequestBuilder toBuilder() {
+        return new RequestBuilder(this);
+    }
 }

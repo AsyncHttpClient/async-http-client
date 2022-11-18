@@ -28,66 +28,66 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
  */
 class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
 
-  private final RandomAccessBody body;
-  private long transferred;
+    private final RandomAccessBody body;
+    private long transferred;
 
-  BodyFileRegion(RandomAccessBody body) {
-    this.body = assertNotNull(body, "body");
-  }
-
-  @Override
-  public long position() {
-    return 0;
-  }
-
-  @Override
-  public long count() {
-    return body.getContentLength();
-  }
-
-  @Override
-  public long transfered() {
-    return transferred();
-  }
-
-  @Override
-  public long transferred() {
-    return transferred;
-  }
-
-  @Override
-  public FileRegion retain() {
-    super.retain();
-    return this;
-  }
-
-  @Override
-  public FileRegion retain(int arg0) {
-    super.retain(arg0);
-    return this;
-  }
-
-  @Override
-  public FileRegion touch() {
-    return this;
-  }
-
-  @Override
-  public FileRegion touch(Object arg0) {
-    return this;
-  }
-
-  @Override
-  public long transferTo(WritableByteChannel target, long position) throws IOException {
-    long written = body.transferTo(target);
-    if (written > 0) {
-      transferred += written;
+    BodyFileRegion(RandomAccessBody body) {
+        this.body = assertNotNull(body, "body");
     }
-    return written;
-  }
 
-  @Override
-  protected void deallocate() {
-    closeSilently(body);
-  }
+    @Override
+    public long position() {
+        return 0;
+    }
+
+    @Override
+    public long count() {
+        return body.getContentLength();
+    }
+
+    @Override
+    public long transfered() {
+        return transferred();
+    }
+
+    @Override
+    public long transferred() {
+        return transferred;
+    }
+
+    @Override
+    public FileRegion retain() {
+        super.retain();
+        return this;
+    }
+
+    @Override
+    public FileRegion retain(int arg0) {
+        super.retain(arg0);
+        return this;
+    }
+
+    @Override
+    public FileRegion touch() {
+        return this;
+    }
+
+    @Override
+    public FileRegion touch(Object arg0) {
+        return this;
+    }
+
+    @Override
+    public long transferTo(WritableByteChannel target, long position) throws IOException {
+        long written = body.transferTo(target);
+        if (written > 0) {
+            transferred += written;
+        }
+        return written;
+    }
+
+    @Override
+    protected void deallocate() {
+        closeSilently(body);
+    }
 }

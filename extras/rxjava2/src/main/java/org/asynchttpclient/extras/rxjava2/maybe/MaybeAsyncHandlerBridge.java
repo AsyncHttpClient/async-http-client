@@ -20,15 +20,15 @@ import static java.util.Objects.requireNonNull;
 
 public final class MaybeAsyncHandlerBridge<T> extends AbstractMaybeAsyncHandlerBridge<T> {
 
-  private final AsyncHandler<? extends T> delegate;
+    private final AsyncHandler<? extends T> delegate;
 
-  public MaybeAsyncHandlerBridge(MaybeEmitter<T> emitter, AsyncHandler<? extends T> delegate) {
-    super(emitter);
-    this.delegate = requireNonNull(delegate);
-  }
+    public MaybeAsyncHandlerBridge(MaybeEmitter<T> emitter, AsyncHandler<? extends T> delegate) {
+        super(emitter);
+        this.delegate = requireNonNull(delegate);
+    }
 
-  @Override
-  protected AsyncHandler<? extends T> delegate() {
-    return delegate;
-  }
+    @Override
+    protected AsyncHandler<? extends T> delegate() {
+        return delegate;
+    }
 }

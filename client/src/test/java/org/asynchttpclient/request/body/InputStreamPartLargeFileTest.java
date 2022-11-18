@@ -24,7 +24,11 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -35,70 +39,70 @@ import static org.testng.Assert.assertEquals;
 
 public class InputStreamPartLargeFileTest extends AbstractBasicTest {
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new AbstractHandler() {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new AbstractHandler() {
 
-      public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        ServletInputStream in = req.getInputStream();
-        byte[] b = new byte[8192];
+                ServletInputStream in = req.getInputStream();
+                byte[] b = new byte[8192];
 
-        int count;
-        int total = 0;
-        while ((count = in.read(b)) != -1) {
-          b = new byte[8192];
-          total += count;
+                int count;
+                int total = 0;
+                while ((count = in.read(b)) != -1) {
+                    b = new byte[8192];
+                    total += count;
+                }
+                resp.setStatus(200);
+                resp.addHeader("X-TRANSFERRED", String.valueOf(total));
+                resp.getOutputStream().flush();
+                resp.getOutputStream().close();
+
+                baseRequest.setHandled(true);
+            }
+        };
+    }
+
+    @Test
+    public void testPutImageFile() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
         }
-        resp.setStatus(200);
-        resp.addHeader("X-TRANSFERRED", String.valueOf(total));
-        resp.getOutputStream().flush();
-        resp.getOutputStream().close();
-
-        baseRequest.setHandled(true);
-      }
-    };
-  }
-
-  @Test
-  public void testPutImageFile() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
-      Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
     }
-  }
 
-  @Test
-  public void testPutImageFileUnknownSize() throws Exception {
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
-      Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
+    @Test
+    public void testPutImageFileUnknownSize() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        }
     }
-  }
 
-  @Test
-  public void testPutLargeTextFile() throws Exception {
-    File file = createTempFile(1024 * 1024);
-    InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+    @Test
+    public void testPutLargeTextFile() throws Exception {
+        File file = createTempFile(1024 * 1024);
+        InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl())
-              .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(), "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            Response response = client.preparePut(getTargetUrl())
+                    .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(), "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        }
     }
-  }
 
-  @Test
-  public void testPutLargeTextFileUnknownSize() throws Exception {
-    File file = createTempFile(1024 * 1024);
-    InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+    @Test
+    public void testPutLargeTextFileUnknownSize() throws Exception {
+        File file = createTempFile(1024 * 1024);
+        InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-    try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-      Response response = client.preparePut(getTargetUrl())
-              .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
-      assertEquals(response.getStatusCode(), 200);
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+            Response response = client.preparePut(getTargetUrl())
+                    .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1, "application/octet-stream", UTF_8)).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        }
     }
-  }
 }

@@ -19,16 +19,16 @@ import static java.util.Objects.requireNonNull;
 
 final class AsyncSingleSubscriberBridge<T> extends AbstractSingleSubscriberBridge<T> {
 
-  private final AsyncHandler<? extends T> delegate;
+    private final AsyncHandler<? extends T> delegate;
 
-  public AsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, AsyncHandler<? extends T> delegate) {
-    super(subscriber);
-    this.delegate = requireNonNull(delegate);
-  }
+    public AsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, AsyncHandler<? extends T> delegate) {
+        super(subscriber);
+        this.delegate = requireNonNull(delegate);
+    }
 
-  @Override
-  protected AsyncHandler<? extends T> delegate() {
-    return delegate;
-  }
+    @Override
+    protected AsyncHandler<? extends T> delegate() {
+        return delegate;
+    }
 
 }

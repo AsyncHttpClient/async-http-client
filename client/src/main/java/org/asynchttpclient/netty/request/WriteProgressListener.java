@@ -19,34 +19,34 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 
 public class WriteProgressListener extends WriteListener implements ChannelProgressiveFutureListener {
 
-  private final long expectedTotal;
-  private long lastProgress = 0L;
+    private final long expectedTotal;
+    private long lastProgress = 0L;
 
-  public WriteProgressListener(NettyResponseFuture<?> future,
-                               boolean notifyHeaders,
-                               long expectedTotal) {
-    super(future, notifyHeaders);
-    this.expectedTotal = expectedTotal;
-  }
-
-  @Override
-  public void operationComplete(ChannelProgressiveFuture cf) {
-    operationComplete(cf.channel(), cf.cause());
-  }
-
-  @Override
-  public void operationProgressed(ChannelProgressiveFuture f, long progress, long total) {
-    future.touch();
-
-    if (progressAsyncHandler != null && !notifyHeaders) {
-      long lastLastProgress = lastProgress;
-      lastProgress = progress;
-      if (total < 0) {
-        total = expectedTotal;
-      }
-      if (progress != lastLastProgress) {
-        progressAsyncHandler.onContentWriteProgress(progress - lastLastProgress, progress, total);
-      }
+    public WriteProgressListener(NettyResponseFuture<?> future,
+                                 boolean notifyHeaders,
+                                 long expectedTotal) {
+        super(future, notifyHeaders);
+        this.expectedTotal = expectedTotal;
     }
-  }
+
+    @Override
+    public void operationComplete(ChannelProgressiveFuture cf) {
+        operationComplete(cf.channel(), cf.cause());
+    }
+
+    @Override
+    public void operationProgressed(ChannelProgressiveFuture f, long progress, long total) {
+        future.touch();
+
+        if (progressAsyncHandler != null && !notifyHeaders) {
+            long lastLastProgress = lastProgress;
+            lastProgress = progress;
+            if (total < 0) {
+                total = expectedTotal;
+            }
+            if (progress != lastLastProgress) {
+                progressAsyncHandler.onContentWriteProgress(progress - lastLastProgress, progress, total);
+            }
+        }
+    }
 }

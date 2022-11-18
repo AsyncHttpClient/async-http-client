@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import javax.activation.MimetypesFileTypeMap;
+import jakarta.activation.MimetypesFileTypeMap;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -24,50 +25,50 @@ import static org.asynchttpclient.util.MiscUtils.withDefault;
  */
 public abstract class FileLikePart extends PartBase {
 
-  private static final MimetypesFileTypeMap MIME_TYPES_FILE_TYPE_MAP;
+    private static final MimetypesFileTypeMap MIME_TYPES_FILE_TYPE_MAP;
 
-  static {
-    try (InputStream is = FileLikePart.class.getResourceAsStream("ahc-mime.types")) {
-      MIME_TYPES_FILE_TYPE_MAP = new MimetypesFileTypeMap(is);
-    } catch (IOException e) {
-      throw new ExceptionInInitializerError(e);
+    static {
+        try (InputStream is = FileLikePart.class.getResourceAsStream("ahc-mime.types")) {
+            MIME_TYPES_FILE_TYPE_MAP = new MimetypesFileTypeMap(is);
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
-  }
 
-  /**
-   * Default content encoding of file attachments.
-   */
-  private String fileName;
+    /**
+     * Default content encoding of file attachments.
+     */
+    private final String fileName;
 
-  /**
-   * FilePart Constructor.
-   *
-   * @param name              the name for this part
-   * @param contentType       the content type for this part, if <code>null</code> try to figure out from the fileName mime type
-   * @param charset           the charset encoding for this part
-   * @param fileName          the fileName
-   * @param contentId         the content id
-   * @param transferEncoding the transfer encoding
-   */
-  public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
-    super(name,
-            computeContentType(contentType, fileName),
-            charset,
-            contentId,
-            transferEncoding);
-    this.fileName = fileName;
-  }
+    /**
+     * FilePart Constructor.
+     *
+     * @param name             the name for this part
+     * @param contentType      the content type for this part, if <code>null</code> try to figure out from the fileName mime type
+     * @param charset          the charset encoding for this part
+     * @param fileName         the fileName
+     * @param contentId        the content id
+     * @param transferEncoding the transfer encoding
+     */
+    public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+        super(name,
+                computeContentType(contentType, fileName),
+                charset,
+                contentId,
+                transferEncoding);
+        this.fileName = fileName;
+    }
 
-  private static String computeContentType(String contentType, String fileName) {
-    return contentType != null ? contentType : MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
-  }
+    private static String computeContentType(String contentType, String fileName) {
+        return contentType != null ? contentType : MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
+    }
 
-  public String getFileName() {
-    return fileName;
-  }
+    public String getFileName() {
+        return fileName;
+    }
 
-  @Override
-  public String toString() {
-    return super.toString() + " filename=" + fileName;
-  }
+    @Override
+    public String toString() {
+        return super.toString() + " filename=" + fileName;
+    }
 }

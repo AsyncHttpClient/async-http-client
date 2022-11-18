@@ -26,108 +26,108 @@ import static org.testng.Assert.assertNotNull;
 
 public class AsyncHttpObservableTest {
 
-  @Test
-  public void testToObservableNoError() {
-    final TestSubscriber<Response> tester = new TestSubscriber<>();
+    @Test
+    public void testToObservableNoError() {
+        final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("https://gatling.io"));
-      o1.subscribe(tester);
-      tester.awaitTerminalEvent();
-      tester.assertTerminalEvent();
-      tester.assertNoErrors();
-      tester.assertCompleted();
-      List<Response> responses = tester.getOnNextEvents();
-      assertNotNull(responses);
-      assertEquals(responses.size(), 1);
-      assertEquals(responses.get(0).getStatusCode(), 200);
-    } catch (Exception e) {
-      Thread.currentThread().interrupt();
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("https://gatling.io"));
+            o1.subscribe(tester);
+            tester.awaitTerminalEvent();
+            tester.assertTerminalEvent();
+            tester.assertNoErrors();
+            tester.assertCompleted();
+            List<Response> responses = tester.getOnNextEvents();
+            assertNotNull(responses);
+            assertEquals(responses.size(), 1);
+            assertEquals(responses.get(0).getStatusCode(), 200);
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
-  }
 
-  @Test
-  public void testToObservableError() {
-    final TestSubscriber<Response> tester = new TestSubscriber<>();
+    @Test
+    public void testToObservableError() {
+        final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("https://gatling.io/ttfn"));
-      o1.subscribe(tester);
-      tester.awaitTerminalEvent();
-      tester.assertTerminalEvent();
-      tester.assertNoErrors();
-      tester.assertCompleted();
-      List<Response> responses = tester.getOnNextEvents();
-      assertNotNull(responses);
-      assertEquals(responses.size(), 1);
-      assertEquals(responses.get(0).getStatusCode(), 404);
-    } catch (Exception e) {
-      Thread.currentThread().interrupt();
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Observable<Response> o1 = AsyncHttpObservable.toObservable(() -> client.prepareGet("https://gatling.io/ttfn"));
+            o1.subscribe(tester);
+            tester.awaitTerminalEvent();
+            tester.assertTerminalEvent();
+            tester.assertNoErrors();
+            tester.assertCompleted();
+            List<Response> responses = tester.getOnNextEvents();
+            assertNotNull(responses);
+            assertEquals(responses.size(), 1);
+            assertEquals(responses.get(0).getStatusCode(), 404);
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
-  }
 
-  @Test
-  public void testObserveNoError() {
-    final TestSubscriber<Response> tester = new TestSubscriber<>();
+    @Test
+    public void testObserveNoError() {
+        final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io"));
-      o1.subscribe(tester);
-      tester.awaitTerminalEvent();
-      tester.assertTerminalEvent();
-      tester.assertNoErrors();
-      tester.assertCompleted();
-      List<Response> responses = tester.getOnNextEvents();
-      assertNotNull(responses);
-      assertEquals(responses.size(), 1);
-      assertEquals(responses.get(0).getStatusCode(), 200);
-    } catch (Exception e) {
-      Thread.currentThread().interrupt();
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io"));
+            o1.subscribe(tester);
+            tester.awaitTerminalEvent();
+            tester.assertTerminalEvent();
+            tester.assertNoErrors();
+            tester.assertCompleted();
+            List<Response> responses = tester.getOnNextEvents();
+            assertNotNull(responses);
+            assertEquals(responses.size(), 1);
+            assertEquals(responses.get(0).getStatusCode(), 200);
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
-  }
 
-  @Test
-  public void testObserveError() {
-    final TestSubscriber<Response> tester = new TestSubscriber<>();
+    @Test
+    public void testObserveError() {
+        final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io/ttfn"));
-      o1.subscribe(tester);
-      tester.awaitTerminalEvent();
-      tester.assertTerminalEvent();
-      tester.assertNoErrors();
-      tester.assertCompleted();
-      List<Response> responses = tester.getOnNextEvents();
-      assertNotNull(responses);
-      assertEquals(responses.size(), 1);
-      assertEquals(responses.get(0).getStatusCode(), 404);
-    } catch (Exception e) {
-      Thread.currentThread().interrupt();
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io/ttfn"));
+            o1.subscribe(tester);
+            tester.awaitTerminalEvent();
+            tester.assertTerminalEvent();
+            tester.assertNoErrors();
+            tester.assertCompleted();
+            List<Response> responses = tester.getOnNextEvents();
+            assertNotNull(responses);
+            assertEquals(responses.size(), 1);
+            assertEquals(responses.get(0).getStatusCode(), 404);
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
-  }
 
-  @Test
-  public void testObserveMultiple() {
-    final TestSubscriber<Response> tester = new TestSubscriber<>();
+    @Test
+    public void testObserveMultiple() {
+        final TestSubscriber<Response> tester = new TestSubscriber<>();
 
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io"));
-      Observable<Response> o2 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.wisc.edu").setFollowRedirect(true));
-      Observable<Response> o3 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.umn.edu").setFollowRedirect(true));
-      Observable<Response> all = Observable.merge(o1, o2, o3);
-      all.subscribe(tester);
-      tester.awaitTerminalEvent();
-      tester.assertTerminalEvent();
-      tester.assertNoErrors();
-      tester.assertCompleted();
-      List<Response> responses = tester.getOnNextEvents();
-      assertNotNull(responses);
-      assertEquals(responses.size(), 3);
-      for (Response response : responses) {
-        assertEquals(response.getStatusCode(), 200);
-      }
-    } catch (Exception e) {
-      Thread.currentThread().interrupt();
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Observable<Response> o1 = AsyncHttpObservable.observe(() -> client.prepareGet("https://gatling.io"));
+            Observable<Response> o2 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.wisc.edu").setFollowRedirect(true));
+            Observable<Response> o3 = AsyncHttpObservable.observe(() -> client.prepareGet("http://www.umn.edu").setFollowRedirect(true));
+            Observable<Response> all = Observable.merge(o1, o2, o3);
+            all.subscribe(tester);
+            tester.awaitTerminalEvent();
+            tester.assertTerminalEvent();
+            tester.assertNoErrors();
+            tester.assertCompleted();
+            List<Response> responses = tester.getOnNextEvents();
+            assertNotNull(responses);
+            assertEquals(responses.size(), 3);
+            for (Response response : responses) {
+                assertEquals(response.getStatusCode(), 200);
+            }
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
-  }
 }

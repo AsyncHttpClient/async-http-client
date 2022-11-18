@@ -15,10 +15,10 @@ package org.asynchttpclient.util;
 
 public final class DateUtils {
 
-  private DateUtils() {
-  }
+    private DateUtils() {
+    }
 
-  public static long unpreciseMillisTime() {
-    return System.currentTimeMillis();
-  }
+    public static long unpreciseMillisTime() {
+        return System.currentTimeMillis();
+    }
 }

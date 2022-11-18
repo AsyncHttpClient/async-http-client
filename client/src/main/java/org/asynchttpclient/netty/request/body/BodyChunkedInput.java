@@ -26,70 +26,70 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
  */
 public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
-  public static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
+    public static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 
-  private final Body body;
-  private final int chunkSize;
-  private final long contentLength;
-  private boolean endOfInput;
-  private long progress = 0L;
+    private final Body body;
+    private final int chunkSize;
+    private final long contentLength;
+    private boolean endOfInput;
+    private long progress = 0L;
 
-  BodyChunkedInput(Body body) {
-    this.body = assertNotNull(body, "body");
-    this.contentLength = body.getContentLength();
-    if (contentLength <= 0)
-      chunkSize = DEFAULT_CHUNK_SIZE;
-    else
-      chunkSize = (int) Math.min(contentLength, (long) DEFAULT_CHUNK_SIZE);
-  }
-
-  @Override
-  @Deprecated
-  public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception {
-    return readChunk(ctx.alloc());
-  }
-
-  @Override
-  public ByteBuf readChunk(ByteBufAllocator alloc) throws Exception {
-
-    if (endOfInput)
-      return null;
-
-    ByteBuf buffer = alloc.buffer(chunkSize);
-    Body.BodyState state = body.transferTo(buffer);
-    progress += buffer.writerIndex();
-    switch (state) {
-      case STOP:
-        endOfInput = true;
-        return buffer;
-      case SUSPEND:
-        // this will suspend the stream in ChunkedWriteHandler
-        buffer.release();
-        return null;
-      case CONTINUE:
-        return buffer;
-      default:
-        throw new IllegalStateException("Unknown state: " + state);
+    BodyChunkedInput(Body body) {
+        this.body = assertNotNull(body, "body");
+        this.contentLength = body.getContentLength();
+        if (contentLength <= 0)
+            chunkSize = DEFAULT_CHUNK_SIZE;
+        else
+            chunkSize = (int) Math.min(contentLength, (long) DEFAULT_CHUNK_SIZE);
     }
-  }
 
-  @Override
-  public boolean isEndOfInput() {
-    return endOfInput;
-  }
+    @Override
+    @Deprecated
+    public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception {
+        return readChunk(ctx.alloc());
+    }
 
-  @Override
-  public void close() throws Exception {
-    body.close();
-  }
+    @Override
+    public ByteBuf readChunk(ByteBufAllocator alloc) throws Exception {
 
-  @Override
-  public long length() {
-    return contentLength;
-  }
+        if (endOfInput)
+            return null;
 
-  @Override
-  public long progress() {
-    return progress;
-  }
+        ByteBuf buffer = alloc.buffer(chunkSize);
+        Body.BodyState state = body.transferTo(buffer);
+        progress += buffer.writerIndex();
+        switch (state) {
+            case STOP:
+                endOfInput = true;
+                return buffer;
+            case SUSPEND:
+                // this will suspend the stream in ChunkedWriteHandler
+                buffer.release();
+                return null;
+            case CONTINUE:
+                return buffer;
+            default:
+                throw new IllegalStateException("Unknown state: " + state);
+        }
+    }
+
+    @Override
+    public boolean isEndOfInput() {
+        return endOfInput;
+    }
+
+    @Override
+    public void close() throws Exception {
+        body.close();
+    }
+
+    @Override
+    public long length() {
+        return contentLength;
+    }
+
+    @Override
+    public long progress() {
+        return progress;
+    }
 }

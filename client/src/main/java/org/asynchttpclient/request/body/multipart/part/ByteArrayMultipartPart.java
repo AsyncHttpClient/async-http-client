@@ -22,31 +22,31 @@ import java.nio.channels.WritableByteChannel;
 
 public class ByteArrayMultipartPart extends FileLikeMultipartPart<ByteArrayPart> {
 
-  private final ByteBuf contentBuffer;
+    private final ByteBuf contentBuffer;
 
-  public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
-    super(part, boundary);
-    contentBuffer = Unpooled.wrappedBuffer(part.getBytes());
-  }
+    public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
+        super(part, boundary);
+        contentBuffer = Unpooled.wrappedBuffer(part.getBytes());
+    }
 
-  @Override
-  protected long getContentLength() {
-    return part.getBytes().length;
-  }
+    @Override
+    protected long getContentLength() {
+        return part.getBytes().length;
+    }
 
-  @Override
-  protected long transferContentTo(ByteBuf target) {
-    return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
-  }
+    @Override
+    protected long transferContentTo(ByteBuf target) {
+        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+    }
 
-  @Override
-  protected long transferContentTo(WritableByteChannel target) throws IOException {
-    return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
-  }
+    @Override
+    protected long transferContentTo(WritableByteChannel target) throws IOException {
+        return transfer(contentBuffer, target, MultipartState.POST_CONTENT);
+    }
 
-  @Override
-  public void close() {
-    super.close();
-    contentBuffer.release();
-  }
+    @Override
+    public void close() {
+        super.close();
+        contentBuffer.release();
+    }
 }

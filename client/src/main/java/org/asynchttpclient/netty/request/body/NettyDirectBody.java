@@ -19,10 +19,10 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 
 public abstract class NettyDirectBody implements NettyBody {
 
-  public abstract ByteBuf byteBuf();
+    public abstract ByteBuf byteBuf();
 
-  @Override
-  public void write(Channel channel, NettyResponseFuture<?> future) {
-    throw new UnsupportedOperationException("This kind of body is supposed to be written directly");
-  }
+    @Override
+    public void write(Channel channel, NettyResponseFuture<?> future) {
+        throw new UnsupportedOperationException("This kind of body is supposed to be written directly");
+    }
 }

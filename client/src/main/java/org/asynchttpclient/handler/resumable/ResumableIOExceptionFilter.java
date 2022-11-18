@@ -20,13 +20,13 @@ import org.asynchttpclient.filter.IOExceptionFilter;
  * Simple {@link org.asynchttpclient.filter.IOExceptionFilter} that replay the current {@link org.asynchttpclient.Request} using a {@link ResumableAsyncHandler}
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
-  public <T> FilterContext<T> filter(FilterContext<T> ctx) {
-    if (ctx.getIOException() != null && ctx.getAsyncHandler() instanceof ResumableAsyncHandler) {
+    public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+        if (ctx.getIOException() != null && ctx.getAsyncHandler() instanceof ResumableAsyncHandler) {
 
-      Request request = ResumableAsyncHandler.class.cast(ctx.getAsyncHandler()).adjustRequestRange(ctx.getRequest());
+            Request request = ResumableAsyncHandler.class.cast(ctx.getAsyncHandler()).adjustRequestRange(ctx.getRequest());
 
-      return new FilterContext.FilterContextBuilder<>(ctx).request(request).replayRequest(true).build();
+            return new FilterContext.FilterContextBuilder<>(ctx).request(request).replayRequest(true).build();
+        }
+        return ctx;
     }
-    return ctx;
-  }
 }

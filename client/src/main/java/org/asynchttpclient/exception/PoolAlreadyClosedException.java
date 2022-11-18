@@ -19,9 +19,9 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 @SuppressWarnings("serial")
 public class PoolAlreadyClosedException extends IOException {
 
-  public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
+    public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
 
-  private PoolAlreadyClosedException() {
-    super("Pool is already closed");
-  }
+    private PoolAlreadyClosedException() {
+        super("Pool is already closed");
+    }
 }

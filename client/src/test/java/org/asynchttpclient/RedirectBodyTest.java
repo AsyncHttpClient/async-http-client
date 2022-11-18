@@ -14,10 +14,10 @@
 package org.asynchttpclient;
 
 import org.apache.commons.io.IOUtils;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,90 +33,90 @@ import static org.testng.Assert.assertNull;
 
 public class RedirectBodyTest extends AbstractBasicTest {
 
-  private volatile boolean redirectAlreadyPerformed;
-  private volatile String receivedContentType;
+    private volatile boolean redirectAlreadyPerformed;
+    private volatile String receivedContentType;
 
-  @BeforeMethod
-  public void setUp() {
-    redirectAlreadyPerformed = false;
-    receivedContentType = null;
-  }
+    @BeforeMethod
+    public void setUp() {
+        redirectAlreadyPerformed = false;
+        receivedContentType = null;
+    }
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new AbstractHandler() {
-      @Override
-      public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new AbstractHandler() {
+            @Override
+            public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
 
-        String redirectHeader = httpRequest.getHeader("X-REDIRECT");
-        if (redirectHeader != null && !redirectAlreadyPerformed) {
-          redirectAlreadyPerformed = true;
-          httpResponse.setStatus(Integer.valueOf(redirectHeader));
-          httpResponse.setContentLength(0);
-          httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
+                String redirectHeader = httpRequest.getHeader("X-REDIRECT");
+                if (redirectHeader != null && !redirectAlreadyPerformed) {
+                    redirectAlreadyPerformed = true;
+                    httpResponse.setStatus(Integer.valueOf(redirectHeader));
+                    httpResponse.setContentLength(0);
+                    httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
 
-        } else {
-          receivedContentType = request.getContentType();
-          httpResponse.setStatus(200);
-          int len = request.getContentLength();
-          httpResponse.setContentLength(len);
-          if (len > 0) {
-            byte[] buffer = new byte[len];
-            IOUtils.read(request.getInputStream(), buffer);
-            httpResponse.getOutputStream().write(buffer);
-          }
+                } else {
+                    receivedContentType = request.getContentType();
+                    httpResponse.setStatus(200);
+                    int len = request.getContentLength();
+                    httpResponse.setContentLength(len);
+                    if (len > 0) {
+                        byte[] buffer = new byte[len];
+                        IOUtils.read(request.getInputStream(), buffer);
+                        httpResponse.getOutputStream().write(buffer);
+                    }
+                }
+                httpResponse.getOutputStream().flush();
+                httpResponse.getOutputStream().close();
+            }
+        };
+    }
+
+    @Test
+    public void regular301LosesBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
+
+            Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "301").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(response.getResponseBody(), "");
+            assertNull(receivedContentType);
         }
-        httpResponse.getOutputStream().flush();
-        httpResponse.getOutputStream().close();
-      }
-    };
-  }
-
-  @Test
-  public void regular301LosesBody() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-      String body = "hello there";
-      String contentType = "text/plain; charset=UTF-8";
-
-      Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "301").execute().get(TIMEOUT, TimeUnit.SECONDS);
-      assertEquals(response.getResponseBody(), "");
-      assertNull(receivedContentType);
     }
-  }
 
-  @Test
-  public void regular302LosesBody() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-      String body = "hello there";
-      String contentType = "text/plain; charset=UTF-8";
+    @Test
+    public void regular302LosesBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
 
-      Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
-      assertEquals(response.getResponseBody(), "");
-      assertNull(receivedContentType);
+            Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(response.getResponseBody(), "");
+            assertNull(receivedContentType);
+        }
     }
-  }
 
-  @Test
-  public void regular302StrictKeepsBody() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
-      String body = "hello there";
-      String contentType = "text/plain; charset=UTF-8";
+    @Test
+    public void regular302StrictKeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
 
-      Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
-      assertEquals(response.getResponseBody(), body);
-      assertEquals(receivedContentType, contentType);
+            Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(response.getResponseBody(), body);
+            assertEquals(receivedContentType, contentType);
+        }
     }
-  }
 
-  @Test
-  public void regular307KeepsBody() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-      String body = "hello there";
-      String contentType = "text/plain; charset=UTF-8";
+    @Test
+    public void regular307KeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
 
-      Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "307").execute().get(TIMEOUT, TimeUnit.SECONDS);
-      assertEquals(response.getResponseBody(), body);
-      assertEquals(receivedContentType, contentType);
+            Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "307").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(response.getResponseBody(), body);
+            assertEquals(receivedContentType, contentType);
+        }
     }
-  }
 }

@@ -27,32 +27,32 @@ import org.slf4j.LoggerFactory;
 
 public final class HttpStaticFileServer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(HttpStaticFileServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpStaticFileServer.class);
 
-  static private EventLoopGroup bossGroup;
-  static private EventLoopGroup workerGroup;
+    static private EventLoopGroup bossGroup;
+    static private EventLoopGroup workerGroup;
 
-  public static void start(int port) throws Exception {
-    bossGroup = new NioEventLoopGroup(1);
-    workerGroup = new NioEventLoopGroup();
-    ServerBootstrap b = new ServerBootstrap();
-    b.group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .handler(new LoggingHandler(LogLevel.INFO))
-            .childHandler(new HttpStaticFileServerInitializer());
+    public static void start(int port) throws Exception {
+        bossGroup = new NioEventLoopGroup(1);
+        workerGroup = new NioEventLoopGroup();
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new HttpStaticFileServerInitializer());
 
-    b.bind(port).sync().channel();
-    LOGGER.info("Open your web browser and navigate to " + ("http") + "://localhost:" + port + '/');
-  }
-
-  public static void shutdown() {
-    Future<?> bossFuture = bossGroup.shutdownGracefully();
-    Future<?> workerFuture = workerGroup.shutdownGracefully();
-    try {
-      bossFuture.await();
-      workerFuture.await();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+        b.bind(port).sync().channel();
+        LOGGER.info("Open your web browser and navigate to " + ("http") + "://localhost:" + port + '/');
     }
-  }
+
+    public static void shutdown() {
+        Future<?> bossFuture = bossGroup.shutdownGracefully();
+        Future<?> workerFuture = workerGroup.shutdownGracefully();
+        try {
+            bossFuture.await();
+            workerFuture.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

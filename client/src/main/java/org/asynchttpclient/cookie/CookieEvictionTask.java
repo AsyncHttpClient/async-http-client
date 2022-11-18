@@ -1,11 +1,10 @@
 package org.asynchttpclient.cookie;
 
-import java.util.concurrent.TimeUnit;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
-
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import org.asynchttpclient.AsyncHttpClientConfig;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Evicts expired cookies from the {@linkplain CookieStore} periodically.

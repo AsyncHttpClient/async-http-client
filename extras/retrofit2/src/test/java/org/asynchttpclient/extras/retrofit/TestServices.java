@@ -26,40 +26,40 @@ import java.util.List;
  * Github DTOs and services.
  */
 class TestServices {
-  /**
-   * Synchronous interface
-   */
-  public interface GithubSync {
-    @GET("/repos/{owner}/{repo}/contributors")
-    Call<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-  }
+    /**
+     * Synchronous interface
+     */
+    public interface GithubSync {
+        @GET("/repos/{owner}/{repo}/contributors")
+        Call<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+    }
 
-  /**
-   * RxJava 1.x reactive interface
-   */
-  public interface GithubRxJava1 {
-    @GET("/repos/{owner}/{repo}/contributors")
-    Observable<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-  }
+    /**
+     * RxJava 1.x reactive interface
+     */
+    public interface GithubRxJava1 {
+        @GET("/repos/{owner}/{repo}/contributors")
+        Observable<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+    }
 
-  /**
-   * RxJava 2.x reactive interface
-   */
-  public interface GithubRxJava2 {
-    @GET("/repos/{owner}/{repo}/contributors")
-    io.reactivex.Single<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
-  }
+    /**
+     * RxJava 2.x reactive interface
+     */
+    public interface GithubRxJava2 {
+        @GET("/repos/{owner}/{repo}/contributors")
+        io.reactivex.Single<List<Contributor>> contributors(@Path("owner") String owner, @Path("repo") String repo);
+    }
 
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  static class Contributor implements Serializable {
-    private static final long serialVersionUID = 1;
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class Contributor implements Serializable {
+        private static final long serialVersionUID = 1;
 
-    @NonNull
-    String login;
+        @NonNull
+        String login;
 
-    int contributions;
-  }
+        int contributions;
+    }
 }

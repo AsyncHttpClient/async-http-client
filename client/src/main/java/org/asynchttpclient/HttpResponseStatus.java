@@ -25,84 +25,84 @@ import java.net.SocketAddress;
  */
 public abstract class HttpResponseStatus {
 
-  private final Uri uri;
+    private final Uri uri;
 
-  public HttpResponseStatus(Uri uri) {
-    this.uri = uri;
-  }
+    public HttpResponseStatus(Uri uri) {
+        this.uri = uri;
+    }
 
-  /**
-   * Return the request {@link Uri}
-   *
-   * @return the request {@link Uri}
-   */
-  public Uri getUri() {
-    return uri;
-  }
+    /**
+     * Return the request {@link Uri}
+     *
+     * @return the request {@link Uri}
+     */
+    public Uri getUri() {
+        return uri;
+    }
 
-  /**
-   * Return the response status code
-   *
-   * @return the response status code
-   */
-  public abstract int getStatusCode();
+    /**
+     * Return the response status code
+     *
+     * @return the response status code
+     */
+    public abstract int getStatusCode();
 
-  /**
-   * Return the response status text
-   *
-   * @return the response status text
-   */
-  public abstract String getStatusText();
+    /**
+     * Return the response status text
+     *
+     * @return the response status text
+     */
+    public abstract String getStatusText();
 
-  /**
-   * Protocol name from status line.
-   *
-   * @return Protocol name.
-   */
-  public abstract String getProtocolName();
+    /**
+     * Protocol name from status line.
+     *
+     * @return Protocol name.
+     */
+    public abstract String getProtocolName();
 
-  /**
-   * Protocol major version.
-   *
-   * @return Major version.
-   */
-  public abstract int getProtocolMajorVersion();
+    /**
+     * Protocol major version.
+     *
+     * @return Major version.
+     */
+    public abstract int getProtocolMajorVersion();
 
-  /**
-   * Protocol minor version.
-   *
-   * @return Minor version.
-   */
-  public abstract int getProtocolMinorVersion();
+    /**
+     * Protocol minor version.
+     *
+     * @return Minor version.
+     */
+    public abstract int getProtocolMinorVersion();
 
-  /**
-   * Full protocol name + version
-   *
-   * @return protocol name + version
-   */
-  public abstract String getProtocolText();
+    /**
+     * Full protocol name + version
+     *
+     * @return protocol name + version
+     */
+    public abstract String getProtocolText();
 
-  /**
-   * Get remote address client initiated request to.
-   *
-   * @return remote address client initiated request to, may be {@code null}
-   * if asynchronous provider is unable to provide the remote address
-   */
-  public abstract SocketAddress getRemoteAddress();
+    /**
+     * Get remote address client initiated request to.
+     *
+     * @return remote address client initiated request to, may be {@code null}
+     * if asynchronous provider is unable to provide the remote address
+     */
+    public abstract SocketAddress getRemoteAddress();
 
-  /**
-   * Get local address client initiated request from.
-   *
-   * @return local address client initiated request from, may be {@code null}
-   * if asynchronous provider is unable to provide the local address
-   */
-  public abstract SocketAddress getLocalAddress();
+    /**
+     * Get local address client initiated request from.
+     *
+     * @return local address client initiated request from, may be {@code null}
+     * if asynchronous provider is unable to provide the local address
+     */
+    public abstract SocketAddress getLocalAddress();
 
-  /**
-   * Code followed by text.
-   */
-  @Override
-  public String toString() {
-    return getStatusCode() + " " + getStatusText();
-  }
+    /**
+     * Code followed by text.
+     */
+    @Override
+    public String toString() {
+        return getStatusCode() + " " + getStatusText();
+    }
 }

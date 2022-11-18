@@ -12,7 +12,11 @@
  */
 package org.asynchttpclient.proxy;
 
-import org.asynchttpclient.*;
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
@@ -23,7 +27,11 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.get;
+import static org.asynchttpclient.Dsl.post;
+import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
@@ -34,99 +42,99 @@ import static org.testng.Assert.assertEquals;
  */
 public class HttpsProxyTest extends AbstractBasicTest {
 
-  private Server server2;
+    private Server server2;
 
-  public AbstractHandler configureHandler() throws Exception {
-    return new ConnectHandler();
-  }
-
-  @BeforeClass(alwaysRun = true)
-  public void setUpGlobal() throws Exception {
-    server = new Server();
-    ServerConnector connector = addHttpConnector(server);
-    server.setHandler(configureHandler());
-    server.start();
-    port1 = connector.getLocalPort();
-
-    server2 = new Server();
-    ServerConnector connector2 = addHttpsConnector(server2);
-    server2.setHandler(new EchoHandler());
-    server2.start();
-    port2 = connector2.getLocalPort();
-
-    logger.info("Local HTTP server started successfully");
-  }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws Exception {
-    server.stop();
-    server2.stop();
-  }
-
-  @Test
-  public void testRequestProxy() throws Exception {
-
-    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
-      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
-      Response r = asyncHttpClient.executeRequest(rb.build()).get();
-      assertEquals(r.getStatusCode(), 200);
+    public AbstractHandler configureHandler() throws Exception {
+        return new ConnectHandler();
     }
-  }
 
-  @Test
-  public void testConfigProxy() throws Exception {
-    AsyncHttpClientConfig config = config()
-            .setFollowRedirect(true)
-            .setProxyServer(proxyServer("localhost", port1).build())
-            .setUseInsecureTrustManager(true)
-            .build();
-    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-      Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
-      assertEquals(r.getStatusCode(), 200);
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
+        server.setHandler(configureHandler());
+        server.start();
+        port1 = connector.getLocalPort();
+
+        server2 = new Server();
+        ServerConnector connector2 = addHttpsConnector(server2);
+        server2.setHandler(new EchoHandler());
+        server2.start();
+        port2 = connector2.getLocalPort();
+
+        logger.info("Local HTTP server started successfully");
     }
-  }
 
-  @Test
-  public void testNoDirectRequestBodyWithProxy() throws Exception {
-    AsyncHttpClientConfig config = config()
-      .setFollowRedirect(true)
-      .setProxyServer(proxyServer("localhost", port1).build())
-      .setUseInsecureTrustManager(true)
-      .build();
-    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-      Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
-      assertEquals(r.getStatusCode(), 200);
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        server.stop();
+        server2.stop();
     }
-  }
 
-  @Test
-  public void testDecompressBodyWithProxy() throws Exception {
-    AsyncHttpClientConfig config = config()
-      .setFollowRedirect(true)
-      .setProxyServer(proxyServer("localhost", port1).build())
-      .setUseInsecureTrustManager(true)
-      .build();
-    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-      String body = "hello world";
-      Response r = asyncHttpClient.executeRequest(post(getTargetUrl2())
-        .setHeader("X-COMPRESS", "true")
-        .setBody(body)).get();
-      assertEquals(r.getStatusCode(), 200);
-      assertEquals(r.getResponseBody(), body);
+    @Test
+    public void testRequestProxy() throws Exception {
+
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
+            Response r = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(r.getStatusCode(), 200);
+        }
     }
-  }
 
-  @Test
-  public void testPooledConnectionsWithProxy() throws Exception {
-
-    try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
-      RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
-
-      Response r1 = asyncHttpClient.executeRequest(rb.build()).get();
-      assertEquals(r1.getStatusCode(), 200);
-
-      Response r2 = asyncHttpClient.executeRequest(rb.build()).get();
-      assertEquals(r2.getStatusCode(), 200);
+    @Test
+    public void testConfigProxy() throws Exception {
+        AsyncHttpClientConfig config = config()
+                .setFollowRedirect(true)
+                .setProxyServer(proxyServer("localhost", port1).build())
+                .setUseInsecureTrustManager(true)
+                .build();
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+            Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
+            assertEquals(r.getStatusCode(), 200);
+        }
     }
-  }
+
+    @Test
+    public void testNoDirectRequestBodyWithProxy() throws Exception {
+        AsyncHttpClientConfig config = config()
+                .setFollowRedirect(true)
+                .setProxyServer(proxyServer("localhost", port1).build())
+                .setUseInsecureTrustManager(true)
+                .build();
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+            Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
+            assertEquals(r.getStatusCode(), 200);
+        }
+    }
+
+    @Test
+    public void testDecompressBodyWithProxy() throws Exception {
+        AsyncHttpClientConfig config = config()
+                .setFollowRedirect(true)
+                .setProxyServer(proxyServer("localhost", port1).build())
+                .setUseInsecureTrustManager(true)
+                .build();
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+            String body = "hello world";
+            Response r = asyncHttpClient.executeRequest(post(getTargetUrl2())
+                    .setHeader("X-COMPRESS", "true")
+                    .setBody(body)).get();
+            assertEquals(r.getStatusCode(), 200);
+            assertEquals(r.getResponseBody(), body);
+        }
+    }
+
+    @Test
+    public void testPooledConnectionsWithProxy() throws Exception {
+
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
+
+            Response r1 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(r1.getStatusCode(), 200);
+
+            Response r2 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(r2.getStatusCode(), 200);
+        }
+    }
 }

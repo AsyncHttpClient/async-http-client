@@ -21,25 +21,25 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
  * confidential ("secret") part.
  */
 public class RequestToken {
-  private final String key;
-  private final String secret;
-  private final String percentEncodedKey;
+    private final String key;
+    private final String secret;
+    private final String percentEncodedKey;
 
-  public RequestToken(String key, String token) {
-    this.key = key;
-    this.secret = token;
-    this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
-  }
+    public RequestToken(String key, String token) {
+        this.key = key;
+        this.secret = token;
+        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
+    }
 
-  public String getKey() {
-    return key;
-  }
+    public String getKey() {
+        return key;
+    }
 
-  public String getSecret() {
-    return secret;
-  }
+    public String getSecret() {
+        return secret;
+    }
 
-  public String getPercentEncodedKey() {
-    return percentEncodedKey;
-  }
+    public String getPercentEncodedKey() {
+        return percentEncodedKey;
+    }
 }

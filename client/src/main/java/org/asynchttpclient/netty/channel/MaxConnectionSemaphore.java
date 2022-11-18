@@ -29,29 +29,29 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  */
 public class MaxConnectionSemaphore implements ConnectionSemaphore {
 
-  protected final Semaphore freeChannels;
-  protected final IOException tooManyConnections;
-  protected final int acquireTimeout;
+    protected final Semaphore freeChannels;
+    protected final IOException tooManyConnections;
+    protected final int acquireTimeout;
 
-  MaxConnectionSemaphore(int maxConnections, int acquireTimeout) {
-    tooManyConnections = unknownStackTrace(new TooManyConnectionsException(maxConnections), MaxConnectionSemaphore.class, "acquireChannelLock");
-    freeChannels = maxConnections > 0 ? new Semaphore(maxConnections) : InfiniteSemaphore.INSTANCE;
-    this.acquireTimeout = Math.max(0, acquireTimeout);
-  }
-
-  @Override
-  public void acquireChannelLock(Object partitionKey) throws IOException {
-    try {
-      if (!freeChannels.tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
-        throw tooManyConnections;
-      }
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    MaxConnectionSemaphore(int maxConnections, int acquireTimeout) {
+        tooManyConnections = unknownStackTrace(new TooManyConnectionsException(maxConnections), MaxConnectionSemaphore.class, "acquireChannelLock");
+        freeChannels = maxConnections > 0 ? new Semaphore(maxConnections) : InfiniteSemaphore.INSTANCE;
+        this.acquireTimeout = Math.max(0, acquireTimeout);
     }
-  }
 
-  @Override
-  public void releaseChannelLock(Object partitionKey) {
-    freeChannels.release();
-  }
+    @Override
+    public void acquireChannelLock(Object partitionKey) throws IOException {
+        try {
+            if (!freeChannels.tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
+                throw tooManyConnections;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void releaseChannelLock(Object partitionKey) {
+        freeChannels.release();
+    }
 }

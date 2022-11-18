@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -42,83 +42,83 @@ import static org.testng.Assert.assertNotNull;
  */
 public class PostWithQueryStringTest extends AbstractBasicTest {
 
-  @Test
-  public void postWithQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
-      Response resp = f.get(3, TimeUnit.SECONDS);
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-    }
-  }
-
-  @Test
-  public void postWithNullQueryParam() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
-
-        @Override
-        public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-          if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c&d=e")) {
-            throw new IOException("failed to parse the query properly");
-          }
-          return super.onStatusReceived(status);
+    @Test
+    public void postWithQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         }
-
-      });
-      Response resp = f.get(3, TimeUnit.SECONDS);
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
     }
-  }
 
-  @Test
-  public void postWithEmptyParamsQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+    @Test
+    public void postWithNullQueryParam() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-        @Override
-        public State onStatusReceived(final HttpResponseStatus status) throws Exception {
-          if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c=&d=e")) {
-            throw new IOException("failed to parse the query properly");
-          }
-          return super.onStatusReceived(status);
+                @Override
+                public State onStatusReceived(final HttpResponseStatus status) throws Exception {
+                    if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c&d=e")) {
+                        throw new IOException("failed to parse the query properly");
+                    }
+                    return super.onStatusReceived(status);
+                }
+
+            });
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         }
-
-      });
-      Response resp = f.get(3, TimeUnit.SECONDS);
-      assertNotNull(resp);
-      assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
     }
-  }
 
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    return new PostWithQueryStringHandler();
-  }
+    @Test
+    public void postWithEmptyParamsQueryString() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-  /**
-   * POST with QueryString server part.
-   */
-  private class PostWithQueryStringHandler extends AbstractHandler {
-    public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-      if ("POST".equalsIgnoreCase(request.getMethod())) {
-        String qs = request.getQueryString();
-        if (isNonEmpty(qs) && request.getContentLength() == 3) {
-          ServletInputStream is = request.getInputStream();
-          response.setStatus(HttpServletResponse.SC_OK);
-          byte buf[] = new byte[is.available()];
-          is.readLine(buf, 0, is.available());
-          ServletOutputStream os = response.getOutputStream();
-          os.println(new String(buf));
-          os.flush();
-          os.close();
-        } else {
-          response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                @Override
+                public State onStatusReceived(final HttpResponseStatus status) throws Exception {
+                    if (!status.getUri().toUrl().equals("http://localhost:" + port1 + "/?a=b&c=&d=e")) {
+                        throw new IOException("failed to parse the query properly");
+                    }
+                    return super.onStatusReceived(status);
+                }
+
+            });
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         }
-      } else { // this handler is to handle POST request
-        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-      }
     }
-  }
+
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new PostWithQueryStringHandler();
+    }
+
+    /**
+     * POST with QueryString server part.
+     */
+    private class PostWithQueryStringHandler extends AbstractHandler {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            if ("POST".equalsIgnoreCase(request.getMethod())) {
+                String qs = request.getQueryString();
+                if (isNonEmpty(qs) && request.getContentLength() == 3) {
+                    ServletInputStream is = request.getInputStream();
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    byte buf[] = new byte[is.available()];
+                    is.readLine(buf, 0, is.available());
+                    ServletOutputStream os = response.getOutputStream();
+                    os.println(new String(buf));
+                    os.flush();
+                    os.close();
+                } else {
+                    response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                }
+            } else { // this handler is to handle POST request
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            }
+        }
+    }
 }

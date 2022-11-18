@@ -29,73 +29,73 @@ import java.io.InputStream;
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
-  private final InputStream inputStream;
-  private final long contentLength;
-
-  public InputStreamBodyGenerator(InputStream inputStream) {
-    this(inputStream, -1L);
-  }
-
-  public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
-    this.inputStream = inputStream;
-    this.contentLength = contentLength;
-  }
-
-  public InputStream getInputStream() {
-    return inputStream;
-  }
-
-  public long getContentLength() {
-    return contentLength;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Body createBody() {
-    return new InputStreamBody(inputStream, contentLength);
-  }
-
-  private class InputStreamBody implements Body {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
     private final long contentLength;
-    private byte[] chunk;
 
-    private InputStreamBody(InputStream inputStream, long contentLength) {
-      this.inputStream = inputStream;
-      this.contentLength = contentLength;
+    public InputStreamBodyGenerator(InputStream inputStream) {
+        this(inputStream, -1L);
+    }
+
+    public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
+        this.inputStream = inputStream;
+        this.contentLength = contentLength;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
     }
 
     public long getContentLength() {
-      return contentLength;
+        return contentLength;
     }
 
-    public BodyState transferTo(ByteBuf target) {
-
-      // To be safe.
-      chunk = new byte[target.writableBytes() - 10];
-
-      int read = -1;
-      boolean write = false;
-      try {
-        read = inputStream.read(chunk);
-      } catch (IOException ex) {
-        LOGGER.warn("Unable to read", ex);
-      }
-
-      if (read > 0) {
-        target.writeBytes(chunk, 0, read);
-        write = true;
-      }
-      return write ? BodyState.CONTINUE : BodyState.STOP;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Body createBody() {
+        return new InputStreamBody(inputStream, contentLength);
     }
 
-    public void close() throws IOException {
-      inputStream.close();
+    private class InputStreamBody implements Body {
+
+        private final InputStream inputStream;
+        private final long contentLength;
+        private byte[] chunk;
+
+        private InputStreamBody(InputStream inputStream, long contentLength) {
+            this.inputStream = inputStream;
+            this.contentLength = contentLength;
+        }
+
+        public long getContentLength() {
+            return contentLength;
+        }
+
+        public BodyState transferTo(ByteBuf target) {
+
+            // To be safe.
+            chunk = new byte[target.writableBytes() - 10];
+
+            int read = -1;
+            boolean write = false;
+            try {
+                read = inputStream.read(chunk);
+            } catch (IOException ex) {
+                LOGGER.warn("Unable to read", ex);
+            }
+
+            if (read > 0) {
+                target.writeBytes(chunk, 0, read);
+                write = true;
+            }
+            return write ? BodyState.CONTINUE : BodyState.STOP;
+        }
+
+        public void close() throws IOException {
+            inputStream.close();
+        }
     }
-  }
 }
 

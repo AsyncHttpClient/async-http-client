@@ -21,24 +21,24 @@ import java.util.concurrent.ThreadFactory;
 
 class EpollTransportFactory implements TransportFactory<EpollSocketChannel, EpollEventLoopGroup> {
 
-  EpollTransportFactory() {
-    try {
-      Class.forName("io.netty.channel.epoll.Epoll");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("The epoll transport is not available");
+    EpollTransportFactory() {
+        try {
+            Class.forName("io.netty.channel.epoll.Epoll");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("The epoll transport is not available");
+        }
+        if (!Epoll.isAvailable()) {
+            throw new IllegalStateException("The epoll transport is not supported");
+        }
     }
-    if (!Epoll.isAvailable()) {
-      throw new IllegalStateException("The epoll transport is not supported");
+
+    @Override
+    public EpollSocketChannel newChannel() {
+        return new EpollSocketChannel();
     }
-  }
 
-  @Override
-  public EpollSocketChannel newChannel() {
-    return new EpollSocketChannel();
-  }
-
-  @Override
-  public EpollEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-    return new EpollEventLoopGroup(ioThreadsCount, threadFactory);
-  }
+    @Override
+    public EpollEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+        return new EpollEventLoopGroup(ioThreadsCount, threadFactory);
+    }
 }

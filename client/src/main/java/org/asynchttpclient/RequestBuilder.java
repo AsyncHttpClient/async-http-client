@@ -23,32 +23,32 @@ import static org.asynchttpclient.util.HttpConstants.Methods.GET;
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 
-  public RequestBuilder() {
-    this(GET);
-  }
+    public RequestBuilder() {
+        this(GET);
+    }
 
-  public RequestBuilder(String method) {
-    this(method, false);
-  }
+    public RequestBuilder(String method) {
+        this(method, false);
+    }
 
-  public RequestBuilder(String method, boolean disableUrlEncoding) {
-    super(method, disableUrlEncoding);
-  }
+    public RequestBuilder(String method, boolean disableUrlEncoding) {
+        super(method, disableUrlEncoding);
+    }
 
-  public RequestBuilder(String method, boolean disableUrlEncoding, boolean validateHeaders) {
-    super(method, disableUrlEncoding, validateHeaders);
-  }
+    public RequestBuilder(String method, boolean disableUrlEncoding, boolean validateHeaders) {
+        super(method, disableUrlEncoding, validateHeaders);
+    }
 
-  /**
-   * @deprecated Use request.toBuilder() instead
-   */
-  @Deprecated
-  public RequestBuilder(Request prototype) {
-    super(prototype);
-  }
+    /**
+     * @deprecated Use request.toBuilder() instead
+     */
+    @Deprecated
+    public RequestBuilder(Request prototype) {
+        super(prototype);
+    }
 
-  @Deprecated
-  public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
-    super(prototype, disableUrlEncoding, validateHeaders);
-  }
+    @Deprecated
+    public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
+        super(prototype, disableUrlEncoding, validateHeaders);
+    }
 }

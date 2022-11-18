@@ -28,28 +28,28 @@ import static org.testng.Assert.assertEquals;
 
 public class CustomRemoteAddressTest extends HttpTest {
 
-  private static HttpServer server;
+    private static HttpServer server;
 
-  @BeforeClass
-  public static void start() throws Throwable {
-    server = new HttpServer();
-    server.start();
-  }
+    @BeforeClass
+    public static void start() throws Throwable {
+        server = new HttpServer();
+        server.start();
+    }
 
-  @AfterClass
-  public static void stop() throws Throwable {
-    server.close();
-  }
+    @AfterClass
+    public static void stop() throws Throwable {
+        server.close();
+    }
 
-  @Test
-  public void getRootUrlWithCustomRemoteAddress() throws Throwable {
-    withClient().run(client ->
-      withServer(server).run(server -> {
-        String url = server.getHttpUrl();
-        server.enqueueOk();
-        RequestBuilder request = get(url).setAddress(SocketUtils.addressByName("localhost"));
-        Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter()).get(TIMEOUT, SECONDS);
-        assertEquals(response.getStatusCode(), 200);
-      }));
-  }
+    @Test
+    public void getRootUrlWithCustomRemoteAddress() throws Throwable {
+        withClient().run(client ->
+                withServer(server).run(server -> {
+                    String url = server.getHttpUrl();
+                    server.enqueueOk();
+                    RequestBuilder request = get(url).setAddress(SocketUtils.addressByName("localhost"));
+                    Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter()).get(TIMEOUT, SECONDS);
+                    assertEquals(response.getStatusCode(), 200);
+                }));
+    }
 }

@@ -29,51 +29,51 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyInputStreamBody implements NettyBody {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
-  private final InputStream inputStream;
-  private final long contentLength;
+    private final InputStream inputStream;
+    private final long contentLength;
 
-  public NettyInputStreamBody(InputStream inputStream) {
-    this(inputStream, -1L);
-  }
-
-  public NettyInputStreamBody(InputStream inputStream, long contentLength) {
-    this.inputStream = inputStream;
-    this.contentLength = contentLength;
-  }
-
-  public InputStream getInputStream() {
-    return inputStream;
-  }
-
-  @Override
-  public long getContentLength() {
-    return contentLength;
-  }
-
-  @Override
-  public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
-    final InputStream is = inputStream;
-
-    if (future.isStreamConsumed()) {
-      if (is.markSupported())
-        is.reset();
-      else {
-        LOGGER.warn("Stream has already been consumed and cannot be reset");
-        return;
-      }
-    } else {
-      future.setStreamConsumed(true);
+    public NettyInputStreamBody(InputStream inputStream) {
+        this(inputStream, -1L);
     }
 
-    channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
-            new WriteProgressListener(future, false, getContentLength()) {
-              public void operationComplete(ChannelProgressiveFuture cf) {
-                closeSilently(is);
-                super.operationComplete(cf);
-              }
-            });
-    channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
-  }
+    public NettyInputStreamBody(InputStream inputStream, long contentLength) {
+        this.inputStream = inputStream;
+        this.contentLength = contentLength;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    @Override
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    @Override
+    public void write(Channel channel, NettyResponseFuture<?> future) throws IOException {
+        final InputStream is = inputStream;
+
+        if (future.isStreamConsumed()) {
+            if (is.markSupported())
+                is.reset();
+            else {
+                LOGGER.warn("Stream has already been consumed and cannot be reset");
+                return;
+            }
+        } else {
+            future.setStreamConsumed(true);
+        }
+
+        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
+                new WriteProgressListener(future, false, getContentLength()) {
+                    public void operationComplete(ChannelProgressiveFuture cf) {
+                        closeSilently(is);
+                        super.operationComplete(cf);
+                    }
+                });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
+    }
 }

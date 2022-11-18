@@ -22,7 +22,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.RequestBuilder;
 import org.testng.annotations.Test;
 
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -33,194 +32,195 @@ import static org.testng.Assert.*;
 
 @Slf4j
 public class AsyncHttpClientCallFactoryTest {
-  private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
-  private static final String JSON_BODY = "{\"foo\": \"bar\"}";
-  private static final RequestBody BODY = RequestBody.create(MEDIA_TYPE, JSON_BODY);
-  private static final String URL = "http://localhost:11000/foo/bar?a=b&c=d";
-  private static final Request REQUEST = new Request.Builder()
-          .post(BODY)
-          .addHeader("X-Foo", "Bar")
-          .url(URL)
-          .build();
-  @Test
-  void newCallShouldProduceExpectedResult() {
-    // given
-    val request = new Request.Builder().url("http://www.google.com/").build();
-    val httpClient = mock(AsyncHttpClient.class);
-
-    Consumer<Request> onRequestStart = createConsumer(new AtomicInteger());
-    Consumer<Throwable> onRequestFailure = createConsumer(new AtomicInteger());
-    Consumer<Response> onRequestSuccess = createConsumer(new AtomicInteger());
-    Consumer<RequestBuilder> requestCustomizer = createConsumer(new AtomicInteger());
-
-    // first call customizer
-    val customizer1Called = new AtomicInteger();
-    Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer1 = builder -> {
-      builder.onRequestStart(onRequestStart)
-              .onRequestFailure(onRequestFailure)
-              .onRequestSuccess(onRequestSuccess);
-      customizer1Called.incrementAndGet();
-    };
-
-    // first call customizer
-    val customizer2Called = new AtomicInteger();
-    Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer2 = builder -> {
-      builder.requestCustomizer(requestCustomizer);
-      customizer2Called.incrementAndGet();
-    };
-
-    // when: create call factory
-    val factory = AsyncHttpClientCallFactory.builder()
-            .httpClient(httpClient)
-            .callCustomizer(callBuilderConsumer1)
-            .callCustomizer(callBuilderConsumer2)
+    private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
+    private static final String JSON_BODY = "{\"foo\": \"bar\"}";
+    private static final RequestBody BODY = RequestBody.create(MEDIA_TYPE, JSON_BODY);
+    private static final String URL = "http://localhost:11000/foo/bar?a=b&c=d";
+    private static final Request REQUEST = new Request.Builder()
+            .post(BODY)
+            .addHeader("X-Foo", "Bar")
+            .url(URL)
             .build();
 
-    // then
-    assertTrue(factory.getHttpClient() == httpClient);
-    assertTrue(factory.getCallCustomizers().size() == 2);
-    assertTrue(customizer1Called.get() == 0);
-    assertTrue(customizer2Called.get() == 0);
+    @Test
+    void newCallShouldProduceExpectedResult() {
+        // given
+        val request = new Request.Builder().url("http://www.google.com/").build();
+        val httpClient = mock(AsyncHttpClient.class);
 
-    // when
-    val call = (AsyncHttpClientCall) factory.newCall(request);
+        Consumer<Request> onRequestStart = createConsumer(new AtomicInteger());
+        Consumer<Throwable> onRequestFailure = createConsumer(new AtomicInteger());
+        Consumer<Response> onRequestSuccess = createConsumer(new AtomicInteger());
+        Consumer<RequestBuilder> requestCustomizer = createConsumer(new AtomicInteger());
 
-    // then
-    assertNotNull(call);
-    assertTrue(customizer1Called.get() == 1);
-    assertTrue(customizer2Called.get() == 1);
+        // first call customizer
+        val customizer1Called = new AtomicInteger();
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer1 = builder -> {
+            builder.onRequestStart(onRequestStart)
+                    .onRequestFailure(onRequestFailure)
+                    .onRequestSuccess(onRequestSuccess);
+            customizer1Called.incrementAndGet();
+        };
 
-    assertTrue(call.request() == request);
-    assertTrue(call.getHttpClient() == httpClient);
+        // first call customizer
+        val customizer2Called = new AtomicInteger();
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callBuilderConsumer2 = builder -> {
+            builder.requestCustomizer(requestCustomizer);
+            customizer2Called.incrementAndGet();
+        };
 
-    assertEquals(call.getOnRequestStart().get(0), onRequestStart);
-    assertEquals(call.getOnRequestFailure().get(0), onRequestFailure);
-    assertEquals(call.getOnRequestSuccess().get(0), onRequestSuccess);
-    assertEquals(call.getRequestCustomizers().get(0), requestCustomizer);
-  }
+        // when: create call factory
+        val factory = AsyncHttpClientCallFactory.builder()
+                .httpClient(httpClient)
+                .callCustomizer(callBuilderConsumer1)
+                .callCustomizer(callBuilderConsumer2)
+                .build();
 
-  @Test
-  void shouldApplyAllConsumersToCallBeingConstructed() {
-    // given
-    val httpClient = mock(AsyncHttpClient.class);
+        // then
+        assertTrue(factory.getHttpClient() == httpClient);
+        assertTrue(factory.getCallCustomizers().size() == 2);
+        assertTrue(customizer1Called.get() == 0);
+        assertTrue(customizer2Called.get() == 0);
 
-    val rewriteUrl = "http://foo.bar.com/";
-    val headerName = "X-Header";
-    val headerValue = UUID.randomUUID().toString();
+        // when
+        val call = (AsyncHttpClientCall) factory.newCall(request);
 
-    val numCustomized = new AtomicInteger();
-    val numRequestStart = new AtomicInteger();
-    val numRequestSuccess = new AtomicInteger();
-    val numRequestFailure = new AtomicInteger();
+        // then
+        assertNotNull(call);
+        assertTrue(customizer1Called.get() == 1);
+        assertTrue(customizer2Called.get() == 1);
 
-    Consumer<RequestBuilder> requestCustomizer = requestBuilder -> {
-      requestBuilder.setUrl(rewriteUrl)
-              .setHeader(headerName, headerValue);
-      numCustomized.incrementAndGet();
-    };
+        assertTrue(call.request() == request);
+        assertTrue(call.getHttpClient() == httpClient);
 
-    Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder ->
-            callBuilder
-                    .requestCustomizer(requestCustomizer)
-                    .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
-                    .onRequestSuccess(createConsumer(numRequestSuccess))
-                    .onRequestFailure(createConsumer(numRequestFailure))
-                    .onRequestStart(createConsumer(numRequestStart));
+        assertEquals(call.getOnRequestStart().get(0), onRequestStart);
+        assertEquals(call.getOnRequestFailure().get(0), onRequestFailure);
+        assertEquals(call.getOnRequestSuccess().get(0), onRequestSuccess);
+        assertEquals(call.getRequestCustomizers().get(0), requestCustomizer);
+    }
 
-    // create factory
-    val factory = AsyncHttpClientCallFactory.builder()
-            .callCustomizer(callCustomizer)
-            .httpClient(httpClient)
-            .build();
+    @Test
+    void shouldApplyAllConsumersToCallBeingConstructed() {
+        // given
+        val httpClient = mock(AsyncHttpClient.class);
 
-    // when
-    val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
-    val callRequest = call.createRequest(call.request());
+        val rewriteUrl = "http://foo.bar.com/";
+        val headerName = "X-Header";
+        val headerValue = UUID.randomUUID().toString();
 
-    // then
-    assertTrue(numCustomized.get() == 1);
-    assertTrue(numRequestStart.get() == 0);
-    assertTrue(numRequestSuccess.get() == 0);
-    assertTrue(numRequestFailure.get() == 0);
+        val numCustomized = new AtomicInteger();
+        val numRequestStart = new AtomicInteger();
+        val numRequestSuccess = new AtomicInteger();
+        val numRequestFailure = new AtomicInteger();
 
-    // let's see whether request customizers did their job
-    // final async-http-client request should have modified URL and one
-    // additional header value.
-    assertEquals(callRequest.getUrl(), rewriteUrl);
-    assertEquals(callRequest.getHeaders().get(headerName), headerValue);
+        Consumer<RequestBuilder> requestCustomizer = requestBuilder -> {
+            requestBuilder.setUrl(rewriteUrl)
+                    .setHeader(headerName, headerValue);
+            numCustomized.incrementAndGet();
+        };
 
-    // final call should have additional consumers set
-    assertNotNull(call.getOnRequestStart());
-    assertTrue(call.getOnRequestStart().size() == 1);
+        Consumer<AsyncHttpClientCall.AsyncHttpClientCallBuilder> callCustomizer = callBuilder ->
+                callBuilder
+                        .requestCustomizer(requestCustomizer)
+                        .requestCustomizer(rb -> log.warn("I'm customizing: {}", rb))
+                        .onRequestSuccess(createConsumer(numRequestSuccess))
+                        .onRequestFailure(createConsumer(numRequestFailure))
+                        .onRequestStart(createConsumer(numRequestStart));
 
-    assertNotNull(call.getOnRequestSuccess());
-    assertTrue(call.getOnRequestSuccess().size() == 1);
+        // create factory
+        val factory = AsyncHttpClientCallFactory.builder()
+                .callCustomizer(callCustomizer)
+                .httpClient(httpClient)
+                .build();
 
-    assertNotNull(call.getOnRequestFailure());
-    assertTrue(call.getOnRequestFailure().size() == 1);
+        // when
+        val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+        val callRequest = call.createRequest(call.request());
 
-    assertNotNull(call.getRequestCustomizers());
-    assertTrue(call.getRequestCustomizers().size() == 2);
-  }
+        // then
+        assertTrue(numCustomized.get() == 1);
+        assertTrue(numRequestStart.get() == 0);
+        assertTrue(numRequestSuccess.get() == 0);
+        assertTrue(numRequestFailure.get() == 0);
 
-  @Test(expectedExceptions = NullPointerException.class,
-          expectedExceptionsMessageRegExp = "httpClientSupplier is marked non-null but is null")
-  void shouldThrowISEIfHttpClientIsNotDefined() {
-    // given
-    val factory = AsyncHttpClientCallFactory.builder()
-            .build();
+        // let's see whether request customizers did their job
+        // final async-http-client request should have modified URL and one
+        // additional header value.
+        assertEquals(callRequest.getUrl(), rewriteUrl);
+        assertEquals(callRequest.getHeaders().get(headerName), headerValue);
 
-    // when
-    val httpClient = factory.getHttpClient();
+        // final call should have additional consumers set
+        assertNotNull(call.getOnRequestStart());
+        assertTrue(call.getOnRequestStart().size() == 1);
 
-    // then
-    assertNull(httpClient);
-  }
+        assertNotNull(call.getOnRequestSuccess());
+        assertTrue(call.getOnRequestSuccess().size() == 1);
 
-  @Test
-  void shouldUseHttpClientInstanceIfSupplierIsNotAvailable() {
-    // given
-    val httpClient = mock(AsyncHttpClient.class);
+        assertNotNull(call.getOnRequestFailure());
+        assertTrue(call.getOnRequestFailure().size() == 1);
 
-    val factory = AsyncHttpClientCallFactory.builder()
-            .httpClient(httpClient)
-            .build();
+        assertNotNull(call.getRequestCustomizers());
+        assertTrue(call.getRequestCustomizers().size() == 2);
+    }
 
-    // when
-    val usedHttpClient = factory.getHttpClient();
+    @Test(expectedExceptions = NullPointerException.class,
+            expectedExceptionsMessageRegExp = "httpClientSupplier is marked non-null but is null")
+    void shouldThrowISEIfHttpClientIsNotDefined() {
+        // given
+        val factory = AsyncHttpClientCallFactory.builder()
+                .build();
 
-    // then
-    assertTrue(usedHttpClient == httpClient);
+        // when
+        val httpClient = factory.getHttpClient();
 
-    // when
-    val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+        // then
+        assertNull(httpClient);
+    }
 
-    // then: call should contain correct http client
-    assertTrue(call.getHttpClient()== httpClient);
-  }
+    @Test
+    void shouldUseHttpClientInstanceIfSupplierIsNotAvailable() {
+        // given
+        val httpClient = mock(AsyncHttpClient.class);
 
-  @Test
-  void shouldPreferHttpClientSupplierOverHttpClient() {
-    // given
-    val httpClientA = mock(AsyncHttpClient.class);
-    val httpClientB = mock(AsyncHttpClient.class);
+        val factory = AsyncHttpClientCallFactory.builder()
+                .httpClient(httpClient)
+                .build();
 
-    val factory = AsyncHttpClientCallFactory.builder()
-            .httpClient(httpClientA)
-            .httpClientSupplier(() -> httpClientB)
-            .build();
+        // when
+        val usedHttpClient = factory.getHttpClient();
 
-    // when
-    val usedHttpClient = factory.getHttpClient();
+        // then
+        assertTrue(usedHttpClient == httpClient);
 
-    // then
-    assertTrue(usedHttpClient == httpClientB);
+        // when
+        val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
 
-    // when: try to create new call
-    val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+        // then: call should contain correct http client
+        assertTrue(call.getHttpClient() == httpClient);
+    }
 
-    // then: call should contain correct http client
-    assertNotNull(call);
-    assertTrue(call.getHttpClient() == httpClientB);
-  }
+    @Test
+    void shouldPreferHttpClientSupplierOverHttpClient() {
+        // given
+        val httpClientA = mock(AsyncHttpClient.class);
+        val httpClientB = mock(AsyncHttpClient.class);
+
+        val factory = AsyncHttpClientCallFactory.builder()
+                .httpClient(httpClientA)
+                .httpClientSupplier(() -> httpClientB)
+                .build();
+
+        // when
+        val usedHttpClient = factory.getHttpClient();
+
+        // then
+        assertTrue(usedHttpClient == httpClientB);
+
+        // when: try to create new call
+        val call = (AsyncHttpClientCall) factory.newCall(REQUEST);
+
+        // then: call should contain correct http client
+        assertNotNull(call);
+        assertTrue(call.getHttpClient() == httpClientB);
+    }
 }

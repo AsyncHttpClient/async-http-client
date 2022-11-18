@@ -21,6 +21,6 @@ import java.util.concurrent.ThreadFactory;
 
 public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
-  L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
+    L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
 
 }

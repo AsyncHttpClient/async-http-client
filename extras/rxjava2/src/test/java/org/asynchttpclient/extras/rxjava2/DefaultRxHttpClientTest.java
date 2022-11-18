@@ -42,124 +42,124 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class DefaultRxHttpClientTest {
 
-  @Mock
-  private AsyncHttpClient asyncHttpClient;
+    @Mock
+    private AsyncHttpClient asyncHttpClient;
 
-  @Mock
-  private Request request;
+    @Mock
+    private Request request;
 
-  @Mock
-  private Supplier<AsyncHandler<Object>> handlerSupplier;
+    @Mock
+    private Supplier<AsyncHandler<Object>> handlerSupplier;
 
-  @Mock
-  private AsyncHandler<Object> handler;
+    @Mock
+    private AsyncHandler<Object> handler;
 
-  @Mock
-  private ProgressAsyncHandler<Object> progressHandler;
+    @Mock
+    private ProgressAsyncHandler<Object> progressHandler;
 
-  @Captor
-  private ArgumentCaptor<AsyncHandler<Object>> handlerCaptor;
+    @Captor
+    private ArgumentCaptor<AsyncHandler<Object>> handlerCaptor;
 
-  @Mock
-  private ListenableFuture<Object> responseFuture;
+    @Mock
+    private ListenableFuture<Object> responseFuture;
 
-  @InjectMocks
-  private DefaultRxHttpClient underTest;
+    @InjectMocks
+    private DefaultRxHttpClient underTest;
 
-  @BeforeMethod
-  public void initializeTest() {
-    underTest = null; // we want a fresh instance for each test
-    MockitoAnnotations.initMocks(this);
-  }
+    @BeforeMethod
+    public void initializeTest() {
+        underTest = null; // we want a fresh instance for each test
+        MockitoAnnotations.initMocks(this);
+    }
 
-  @Test(expectedExceptions = NullPointerException.class)
-  public void rejectsNullClient() {
-    new DefaultRxHttpClient(null);
-  }
+    @Test(expectedExceptions = NullPointerException.class)
+    public void rejectsNullClient() {
+        new DefaultRxHttpClient(null);
+    }
 
-  @Test(expectedExceptions = NullPointerException.class)
-  public void rejectsNullRequest() {
-    underTest.prepare(null, handlerSupplier);
-  }
+    @Test(expectedExceptions = NullPointerException.class)
+    public void rejectsNullRequest() {
+        underTest.prepare(null, handlerSupplier);
+    }
 
-  @Test(expectedExceptions = NullPointerException.class)
-  public void rejectsNullHandlerSupplier() {
-    underTest.prepare(request, null);
-  }
+    @Test(expectedExceptions = NullPointerException.class)
+    public void rejectsNullHandlerSupplier() {
+        underTest.prepare(request, null);
+    }
 
-  @Test
-  public void emitsNullPointerExceptionWhenNullHandlerIsSupplied() {
-    // given
-    given(handlerSupplier.get()).willReturn(null);
-    final TestObserver<Object> subscriber = new TestObserver<>();
+    @Test
+    public void emitsNullPointerExceptionWhenNullHandlerIsSupplied() {
+        // given
+        given(handlerSupplier.get()).willReturn(null);
+        final TestObserver<Object> subscriber = new TestObserver<>();
 
-    // when
-    underTest.prepare(request, handlerSupplier).subscribe(subscriber);
+        // when
+        underTest.prepare(request, handlerSupplier).subscribe(subscriber);
 
-    // then
-    subscriber.assertTerminated();
-    subscriber.assertNoValues();
-    subscriber.assertError(NullPointerException.class);
-    then(handlerSupplier).should().get();
-    verifyNoMoreInteractions(handlerSupplier);
-  }
+        // then
+        subscriber.assertTerminated();
+        subscriber.assertNoValues();
+        subscriber.assertError(NullPointerException.class);
+        then(handlerSupplier).should().get();
+        verifyNoMoreInteractions(handlerSupplier);
+    }
 
-  @Test
-  public void usesVanillaAsyncHandler() {
-    // given
-    given(handlerSupplier.get()).willReturn(handler);
+    @Test
+    public void usesVanillaAsyncHandler() {
+        // given
+        given(handlerSupplier.get()).willReturn(handler);
 
-    // when
-    underTest.prepare(request, handlerSupplier).subscribe();
+        // when
+        underTest.prepare(request, handlerSupplier).subscribe();
 
-    // then
-    then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
-    final AsyncHandler<Object> bridge = handlerCaptor.getValue();
-    assertThat(bridge, is(not(instanceOf(ProgressAsyncHandler.class))));
-  }
+        // then
+        then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
+        final AsyncHandler<Object> bridge = handlerCaptor.getValue();
+        assertThat(bridge, is(not(instanceOf(ProgressAsyncHandler.class))));
+    }
 
-  @Test
-  public void usesProgressAsyncHandler() {
-    given(handlerSupplier.get()).willReturn(progressHandler);
+    @Test
+    public void usesProgressAsyncHandler() {
+        given(handlerSupplier.get()).willReturn(progressHandler);
 
-    // when
-    underTest.prepare(request, handlerSupplier).subscribe();
+        // when
+        underTest.prepare(request, handlerSupplier).subscribe();
 
-    // then
-    then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
-    final AsyncHandler<Object> bridge = handlerCaptor.getValue();
-    assertThat(bridge, is(instanceOf(ProgressAsyncHandler.class)));
-  }
+        // then
+        then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
+        final AsyncHandler<Object> bridge = handlerCaptor.getValue();
+        assertThat(bridge, is(instanceOf(ProgressAsyncHandler.class)));
+    }
 
-  @Test
-  public void callsSupplierForEachSubscription() {
-    // given
-    given(handlerSupplier.get()).willReturn(handler);
-    final Maybe<Object> prepared = underTest.prepare(request, handlerSupplier);
+    @Test
+    public void callsSupplierForEachSubscription() {
+        // given
+        given(handlerSupplier.get()).willReturn(handler);
+        final Maybe<Object> prepared = underTest.prepare(request, handlerSupplier);
 
-    // when
-    prepared.subscribe();
-    prepared.subscribe();
+        // when
+        prepared.subscribe();
+        prepared.subscribe();
 
-    // then
-    then(handlerSupplier).should(times(2)).get();
-  }
+        // then
+        then(handlerSupplier).should(times(2)).get();
+    }
 
-  @Test
-  public void cancelsResponseFutureOnDispose() throws Exception {
-    given(handlerSupplier.get()).willReturn(handler);
-    given(asyncHttpClient.executeRequest(eq(request), any())).willReturn(responseFuture);
+    @Test
+    public void cancelsResponseFutureOnDispose() throws Exception {
+        given(handlerSupplier.get()).willReturn(handler);
+        given(asyncHttpClient.executeRequest(eq(request), any())).willReturn(responseFuture);
 
-    /* when */
-    underTest.prepare(request, handlerSupplier).subscribe().dispose();
+        /* when */
+        underTest.prepare(request, handlerSupplier).subscribe().dispose();
 
-    // then
-    then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
-    final AsyncHandler<Object> bridge = handlerCaptor.getValue();
-    then(responseFuture).should().cancel(true);
-    verifyZeroInteractions(handler);
-    assertThat(bridge.onStatusReceived(null), is(AsyncHandler.State.ABORT));
-    verify(handler).onThrowable(isA(DisposedException.class));
-    verifyNoMoreInteractions(handler);
-  }
+        // then
+        then(asyncHttpClient).should().executeRequest(eq(request), handlerCaptor.capture());
+        final AsyncHandler<Object> bridge = handlerCaptor.getValue();
+        then(responseFuture).should().cancel(true);
+        verifyZeroInteractions(handler);
+        assertThat(bridge.onStatusReceived(null), is(AsyncHandler.State.ABORT));
+        verify(handler).onThrowable(isA(DisposedException.class));
+        verifyNoMoreInteractions(handler);
+    }
 }

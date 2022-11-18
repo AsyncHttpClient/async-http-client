@@ -25,86 +25,86 @@ import java.util.concurrent.TimeUnit;
  */
 public class InfiniteSemaphore extends Semaphore {
 
-  public static final InfiniteSemaphore INSTANCE = new InfiniteSemaphore();
-  private static final long serialVersionUID = 1L;
+    public static final InfiniteSemaphore INSTANCE = new InfiniteSemaphore();
+    private static final long serialVersionUID = 1L;
 
-  private InfiniteSemaphore() {
-    super(Integer.MAX_VALUE);
-  }
+    private InfiniteSemaphore() {
+        super(Integer.MAX_VALUE);
+    }
 
-  @Override
-  public void acquire() {
-    // NO-OP
-  }
+    @Override
+    public void acquire() {
+        // NO-OP
+    }
 
-  @Override
-  public void acquireUninterruptibly() {
-    // NO-OP
-  }
+    @Override
+    public void acquireUninterruptibly() {
+        // NO-OP
+    }
 
-  @Override
-  public boolean tryAcquire() {
-    return true;
-  }
+    @Override
+    public boolean tryAcquire() {
+        return true;
+    }
 
-  @Override
-  public boolean tryAcquire(long timeout, TimeUnit unit) {
-    return true;
-  }
+    @Override
+    public boolean tryAcquire(long timeout, TimeUnit unit) {
+        return true;
+    }
 
-  @Override
-  public void release() {
-    // NO-OP
-  }
+    @Override
+    public void release() {
+        // NO-OP
+    }
 
-  @Override
-  public void acquire(int permits) {
-    // NO-OP
-  }
+    @Override
+    public void acquire(int permits) {
+        // NO-OP
+    }
 
-  @Override
-  public void acquireUninterruptibly(int permits) {
-    // NO-OP
-  }
+    @Override
+    public void acquireUninterruptibly(int permits) {
+        // NO-OP
+    }
 
-  @Override
-  public boolean tryAcquire(int permits) {
-    return true;
-  }
+    @Override
+    public boolean tryAcquire(int permits) {
+        return true;
+    }
 
-  @Override
-  public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-    return true;
-  }
+    @Override
+    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
+        return true;
+    }
 
-  @Override
-  public void release(int permits) {
-    // NO-OP
-  }
+    @Override
+    public void release(int permits) {
+        // NO-OP
+    }
 
-  @Override
-  public int availablePermits() {
-    return Integer.MAX_VALUE;
-  }
+    @Override
+    public int availablePermits() {
+        return Integer.MAX_VALUE;
+    }
 
-  @Override
-  public int drainPermits() {
-    return Integer.MAX_VALUE;
-  }
+    @Override
+    public int drainPermits() {
+        return Integer.MAX_VALUE;
+    }
 
-  @Override
-  protected void reducePermits(int reduction) {
-    // NO-OP
-  }
+    @Override
+    protected void reducePermits(int reduction) {
+        // NO-OP
+    }
 
-  @Override
-  public boolean isFair() {
-    return true;
-  }
+    @Override
+    public boolean isFair() {
+        return true;
+    }
 
-  @Override
-  protected Collection<Thread> getQueuedThreads() {
-    return Collections.emptyList();
-  }
+    @Override
+    protected Collection<Thread> getQueuedThreads() {
+        return Collections.emptyList();
+    }
 }
 

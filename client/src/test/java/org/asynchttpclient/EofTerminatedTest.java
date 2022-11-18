@@ -14,10 +14,10 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,29 +31,29 @@ import static org.asynchttpclient.Dsl.config;
 
 public class EofTerminatedTest extends AbstractBasicTest {
 
-  protected String getTargetUrl() {
-    return String.format("http://localhost:%d/", port1);
-  }
-
-  @Override
-  public AbstractHandler configureHandler() throws Exception {
-    GzipHandler gzipHandler = new GzipHandler();
-    gzipHandler.setHandler(new StreamHandler());
-    return gzipHandler;
-  }
-
-  @Test
-  public void testEolTerminatedResponse() throws Exception {
-    try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
-      ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
-              .get();
+    protected String getTargetUrl() {
+        return String.format("http://localhost:%d/", port1);
     }
-  }
 
-  private static class StreamHandler extends AbstractHandler {
     @Override
-    public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-      request.getResponse().getHttpOutput().sendContent(EofTerminatedTest.class.getClassLoader().getResourceAsStream("SimpleTextFile.txt"));
+    public AbstractHandler configureHandler() throws Exception {
+        GzipHandler gzipHandler = new GzipHandler();
+        gzipHandler.setHandler(new StreamHandler());
+        return gzipHandler;
     }
-  }
+
+    @Test
+    public void testEolTerminatedResponse() throws Exception {
+        try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
+            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
+                    .get();
+        }
+    }
+
+    private static class StreamHandler extends AbstractHandler {
+        @Override
+        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+            request.getResponse().getHttpOutput().sendContent(EofTerminatedTest.class.getClassLoader().getResourceAsStream("SimpleTextFile.txt"));
+        }
+    }
 }

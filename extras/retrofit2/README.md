@@ -20,10 +20,13 @@ or [Gradle][3]:
 compile "org.asynchttpclient:async-http-client-extras-retrofit2:latest.version"
 ```
 
- [1]: http://square.github.io/retrofit/
- [2]: https://search.maven.org/remote_content?g=org.asynchttpclient&a=async-http-client-extras-retrofit2&v=LATEST
- [3]: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.asynchttpclient%22%20a%3A%22async-http-client-extras-retrofit2%22
- [snap]: https://oss.sonatype.org/content/repositories/snapshots/
+[1]: http://square.github.io/retrofit/
+
+[2]: https://search.maven.org/remote_content?g=org.asynchttpclient&a=async-http-client-extras-retrofit2&v=LATEST
+
+[3]: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.asynchttpclient%22%20a%3A%22async-http-client-extras-retrofit2%22
+
+[snap]: https://oss.sonatype.org/content/repositories/snapshots/
 
 ## Example usage
 

@@ -21,19 +21,19 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDigest;
 
 public final class WebSocketUtils {
-  private static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    private static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-  public static String getWebSocketKey() {
-    byte[] nonce = new byte[16];
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-    for (int i = 0; i < nonce.length; i++) {
-      nonce[i] = (byte) random.nextInt(256);
+    public static String getWebSocketKey() {
+        byte[] nonce = new byte[16];
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int i = 0; i < nonce.length; i++) {
+            nonce[i] = (byte) random.nextInt(256);
+        }
+        return Base64.getEncoder().encodeToString(nonce);
     }
-    return Base64.getEncoder().encodeToString(nonce);
-  }
 
-  public static String getAcceptKey(String key) {
-    return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest(
-              (key + MAGIC_GUID).getBytes(US_ASCII)));
-  }
+    public static String getAcceptKey(String key) {
+        return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest(
+                (key + MAGIC_GUID).getBytes(US_ASCII)));
+    }
 }
