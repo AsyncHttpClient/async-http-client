@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

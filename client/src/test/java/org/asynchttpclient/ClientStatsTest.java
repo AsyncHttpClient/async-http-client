@@ -29,7 +29,7 @@ import static org.testng.Assert.assertNull;
  */
 public class ClientStatsTest extends AbstractBasicTest {
 
-    private final static String hostname = "localhost";
+    private static final String hostname = "localhost";
 
     @Test
     public void testClientStatus() throws Throwable {

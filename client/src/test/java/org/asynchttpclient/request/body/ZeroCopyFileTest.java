@@ -20,10 +20,10 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BasicHttpsTest;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +39,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link BasicHttpsTest}

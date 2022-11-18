@@ -226,8 +226,9 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
 
         /* when */
         underTest.onThrowable(new RuntimeException("unwanted"));
+
         /* then */
-        inOrder.verify(emitter, never()).onError(any());
+        inOrder.verify(emitter, never()).onError(ArgumentMatchers.any());
     }
 
     @Test
@@ -238,7 +239,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
 
         /* when */
         underTest.onThrowable(null);
-        then(emitter).should(never()).onError(any());
+        then(emitter).should(never()).onError(ArgumentMatchers.any());
     }
 
     @Test
@@ -267,7 +268,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
         /* when */
         underTest.onThrowable(new RuntimeException("ignored"));
         /* then */
-        verify(emitter, never()).onError(any());
+        verify(emitter, never()).onError(ArgumentMatchers.any());
     }
 
     @Test
@@ -332,7 +333,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
         final AsyncHandler.State firstState = httpEvent.call();
         /* then */
         assertThat(firstState, is(State.ABORT));
-        then(delegate).should(only()).onThrowable(isA(DisposedException.class));
+        then(delegate).should(only()).onThrowable(ArgumentMatchers.isA(DisposedException.class));
 
         /* when */
         final AsyncHandler.State secondState = httpEvent.call();
@@ -370,7 +371,7 @@ public class AbstractMaybeAsyncHandlerBridgeTest {
         /* when */
         event.run();
         /* then */
-        then(delegate).should(only()).onThrowable(isA(DisposedException.class));
+        then(delegate).should(only()).onThrowable(ArgumentMatchers.isA(DisposedException.class));
 
         /* when */
         event.run();

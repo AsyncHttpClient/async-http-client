@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

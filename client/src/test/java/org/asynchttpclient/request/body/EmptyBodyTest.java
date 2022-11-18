@@ -119,7 +119,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
     }
 
     private class NoBodyResponseHandler extends AbstractHandler {
-        public void handle(String s, Request request, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+        public void handle(String s, org.eclipse.jetty.server.Request request, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 
             if (!req.getMethod().equalsIgnoreCase("PUT")) {
                 resp.setStatus(HttpServletResponse.SC_OK);

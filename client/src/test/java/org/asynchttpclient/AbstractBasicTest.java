@@ -28,7 +28,7 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 public abstract class AbstractBasicTest {
 
-    protected final static int TIMEOUT = 30;
+    protected static final int TIMEOUT = 30;
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 

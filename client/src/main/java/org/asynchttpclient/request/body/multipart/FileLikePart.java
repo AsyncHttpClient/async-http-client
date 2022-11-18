@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import javax.activation.MimetypesFileTypeMap;
+import jakarta.activation.MimetypesFileTypeMap;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -37,7 +38,7 @@ public abstract class FileLikePart extends PartBase {
     /**
      * Default content encoding of file attachments.
      */
-    private String fileName;
+    private final String fileName;
 
     /**
      * FilePart Constructor.

@@ -17,6 +17,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
@@ -39,6 +40,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new AbstractHandler() {
 
+            @Override
             public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
                 int MAX_BODY_SIZE = 1024; // Can only handle bodies of up to 1024 bytes.
                 byte[] b = new byte[MAX_BODY_SIZE];

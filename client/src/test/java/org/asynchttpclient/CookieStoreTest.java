@@ -14,7 +14,6 @@
 
 package org.asynchttpclient;
 
-import com.google.common.collect.Sets;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -29,7 +28,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertTrue;
@@ -357,7 +358,7 @@ public class CookieStoreTest {
         store.evictExpired();
         assertTrue(store.getUnderlying().size() == 2);
         Collection<String> unexpiredCookieNames = store.getAll().stream().map(Cookie::name).collect(Collectors.toList());
-        assertTrue(unexpiredCookieNames.containsAll(Sets.newHashSet("UNEXPIRED_BAR", "UNEXPIRED_FOOBAR")));
+        assertTrue(unexpiredCookieNames.containsAll(Set.of("UNEXPIRED_BAR", "UNEXPIRED_FOOBAR")));
     }
 
     private static Cookie getCookie(String key, String value, int maxAge) {
