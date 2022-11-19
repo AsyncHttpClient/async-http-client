@@ -15,12 +15,13 @@
  */
 package org.asynchttpclient;
 
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -34,16 +35,16 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     // FIXME super NOT threadsafe!!!
-    private final AtomicBoolean redirectDone = new AtomicBoolean(false);
+    private static final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         ServerConnector connector2 = addHttpsConnector(server);
@@ -62,7 +63,8 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         relativeLocationUrl();
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -79,7 +81,8 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -102,7 +105,8 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -119,8 +123,9 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    private class Relative302Handler extends AbstractHandler {
+    private static class Relative302Handler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;
@@ -138,7 +143,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 }
             }
 
-            if (r.getScheme().equalsIgnoreCase("https")) {
+            if ("https".equalsIgnoreCase(r.getScheme())) {
                 httpResponse.addHeader("X-httpToHttps", "PASS");
                 redirectDone.getAndSet(false);
             }

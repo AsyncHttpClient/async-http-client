@@ -12,13 +12,14 @@
  */
 package org.asynchttpclient;
 
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +40,7 @@ import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
 
@@ -46,12 +48,10 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     private static final int SHORT_FUTURE_TIMEOUT = 500; // shorter than REQUEST_TIMEOUT
     private static final int LONG_FUTURE_TIMEOUT = 1500; // longer than REQUEST_TIMEOUT
 
-    private Server server2;
+    private static Server server2;
 
-    @BeforeClass(alwaysRun = true)
-    @Override
-    public void setUpGlobal() throws Exception {
-
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -67,77 +67,71 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        super.tearDownGlobal();
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
+        AbstractBasicTest.tearDownGlobal();
         server2.stop();
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void basicAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            throw e.getCause();
+            assertThrows(TimeoutException.class, () -> execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void basicPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            throw e.getCause();
+            assertThrows(TimeoutException.class, () -> execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void digestAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            throw e.getCause();
+            assertThrows(TimeoutException.class, () -> execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class, enabled = false)
+    @Disabled
+    @Test
     public void digestPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, false, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            throw e.getCause();
+            assertThrows(TimeoutException.class, () -> execute(client, false, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void basicAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, true, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+            assertThrows(TimeoutException.class, () -> execute(client, true, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void basicPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, true, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+            assertThrows(TimeoutException.class, () -> execute(client, true, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void digestAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, false, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+            assertThrows(TimeoutException.class, () -> execute(client, false, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @Test(expectedExceptions = TimeoutException.class, enabled = false)
+    @Disabled
+    @Test
     public void digestPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            execute(client, false, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+            assertThrows(TimeoutException.class, () -> execute(client, false, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    private AsyncHttpClient newClient() {
+    private static AsyncHttpClient newClient() {
         return asyncHttpClient(config().setRequestTimeout(REQUEST_TIMEOUT));
     }
 
@@ -162,23 +156,22 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).execute();
     }
 
-    @Override
-    protected String getTargetUrl() {
-        return "http://localhost:" + port1 + "/";
+    protected static String getTargetUrl() {
+        return "http://localhost:" + port1 + '/';
     }
 
     @Override
     protected String getTargetUrl2() {
-        return "http://localhost:" + port2 + "/";
+        return "http://localhost:" + port2 + '/';
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new IncompleteResponseHandler();
     }
 
-    private class IncompleteResponseHandler extends AbstractHandler {
+    private static class IncompleteResponseHandler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             // NOTE: handler sends less bytes than are given in Content-Length, which should lead to timeout
             response.setStatus(200);

@@ -19,9 +19,10 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -31,14 +32,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.ALLOW;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.AsyncHandlerAdapter;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.test.TestUtils.TIMEOUT;
 import static org.asynchttpclient.test.TestUtils.assertContentTypesEquals;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AsyncStreamHandlerTest extends HttpTest {
 
@@ -46,13 +54,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
     private static HttpServer server;
 
-    @BeforeClass
+    @BeforeAll
     public static void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() throws Throwable {
         server.close();
     }
@@ -90,14 +98,14 @@ public class AsyncStreamHandlerTest extends HttpTest {
                             .setHeader(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)
                             .addFormParam("param_1", "value_1")
                             .execute(new AsyncHandlerAdapter() {
-                                private StringBuilder builder = new StringBuilder();
+                                private final StringBuilder builder = new StringBuilder();
 
                                 @Override
                                 public State onHeadersReceived(HttpHeaders headers) {
                                     assertContentTypesEquals(headers.get(CONTENT_TYPE), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                                     for (Map.Entry<String, String> header : headers) {
                                         if (header.getKey().startsWith("X-param")) {
-                                            builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+                                            builder.append(header.getKey().substring(2)).append('=').append(header.getValue()).append('&');
                                         }
                                     }
                                     return State.CONTINUE;
@@ -177,7 +185,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     String responseBody = client.preparePost(getTargetUrl())
                             .addFormParam("param_1", "value_1")
                             .execute(new AsyncHandlerAdapter() {
-                                private StringBuilder builder = new StringBuilder();
+                                private final StringBuilder builder = new StringBuilder();
 
                                 @Override
                                 public State onHeadersReceived(HttpHeaders headers) {
@@ -185,7 +193,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                                     onHeadersReceived.set(true);
                                     for (Map.Entry<String, String> header : headers) {
                                         if (header.getKey().startsWith("X-param")) {
-                                            builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+                                            builder.append(header.getKey().substring(2)).append('=').append(header.getValue()).append('&');
                                         }
                                     }
                                     return State.CONTINUE;
@@ -265,14 +273,14 @@ public class AsyncStreamHandlerTest extends HttpTest {
                             .addFormParam("param_1", "value_1");
 
                     Future<String> f = rb.execute(new AsyncHandlerAdapter() {
-                        private StringBuilder builder = new StringBuilder();
+                        private final StringBuilder builder = new StringBuilder();
 
                         @Override
                         public State onHeadersReceived(HttpHeaders headers) {
                             responseHeaders.set(headers);
                             for (Map.Entry<String, String> header : headers) {
                                 if (header.getKey().startsWith("X-param")) {
-                                    builder.append(header.getKey().substring(2)).append("=").append(header.getValue()).append("&");
+                                    builder.append(header.getKey().substring(2)).append('=').append(header.getValue()).append('&');
                                 }
                             }
                             return State.CONTINUE;
@@ -305,7 +313,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                     // Let do the same again
                     f = rb.execute(new AsyncHandlerAdapter() {
-                        private StringBuilder builder = new StringBuilder();
+                        private final StringBuilder builder = new StringBuilder();
 
                         @Override
                         public State onHeadersReceived(HttpHeaders headers) {
@@ -357,7 +365,8 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @Test(timeOut = 3000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 3000)
     public void asyncStreamJustStatusLine() throws Throwable {
 
         withClient().run(client ->
@@ -368,7 +377,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     final int STATUS = 0;
                     final int COMPLETED = 1;
                     final int OTHER = 2;
-                    final boolean[] whatCalled = new boolean[]{false, false, false};
+                    final boolean[] whatCalled = {false, false, false};
                     final CountDownLatch latch = new CountDownLatch(1);
                     Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
                         private int status = -1;
@@ -430,7 +439,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
     // This test is flaky - see https://github.com/AsyncHttpClient/async-http-client/issues/1728#issuecomment-699962325
     // For now, just run again if fails
-    @Test(groups = "online")
+    @Test
     public void asyncOptionsTest() throws Throwable {
 
         withClient().run(client ->
@@ -463,13 +472,13 @@ public class AsyncStreamHandlerTest extends HttpTest {
                         String[] values = h.get(ALLOW).split(",|, ");
                         assertNotNull(values);
                         // Some responses contain the TRACE method, some do not - account for both
-                        assert (values.length == expected.length || values.length == expectedWithTrace.length);
+                        assert values.length == expected.length || values.length == expectedWithTrace.length;
                         Arrays.sort(values);
                         // Some responses contain the TRACE method, some do not - account for both
                         if (values.length == expected.length) {
-                            assertEquals(values, expected);
+                            assertArrayEquals(values, expected);
                         } else {
-                            assertEquals(values, expectedWithTrace);
+                            assertArrayEquals(values, expectedWithTrace);
                         }
                     }
                 }));
@@ -484,27 +493,32 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
                     Response r = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
 
-                        private Response.ResponseBuilder builder = new Response.ResponseBuilder();
+                        private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
 
+                        @Override
                         public State onHeadersReceived(HttpHeaders headers) {
                             builder.accumulate(headers);
                             return State.CONTINUE;
                         }
 
+                        @Override
                         public void onThrowable(Throwable t) {
                         }
 
+                        @Override
                         public State onBodyPartReceived(HttpResponseBodyPart content) {
                             builder.accumulate(content);
                             return content.isLast() ? State.ABORT : State.CONTINUE;
                         }
 
+                        @Override
                         public State onStatusReceived(HttpResponseStatus responseStatus) {
                             builder.accumulate(responseStatus);
 
                             return State.CONTINUE;
                         }
 
+                        @Override
                         public Response onCompleted() {
                             return builder.build();
                         }

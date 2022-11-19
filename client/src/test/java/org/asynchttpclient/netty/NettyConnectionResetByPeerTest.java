@@ -3,8 +3,8 @@ package org.asynchttpclient.netty;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,36 +13,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NettyConnectionResetByPeerTest {
 
-    private String resettingServerAddress;
+    private static String resettingServerAddress;
 
-    @BeforeTest
-    public void setUp() {
+    @BeforeAll
+    public static void setUp() {
         resettingServerAddress = createResettingServer();
     }
 
     @Test
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
-        try {
-            DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
-                    .setRequestTimeout(1500)
-                    .build();
-            new DefaultAsyncHttpClient(config).executeRequest(
-                            new RequestBuilder("GET").setUrl(resettingServerAddress)
-                    )
-                    .get();
-        } catch (ExecutionException e) {
-            Throwable ex = e.getCause();
-            assertThat(ex, is(instanceOf(IOException.class)));
-        }
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setRequestTimeout(1500)
+                .build();
+
+        assertThrows(IOException.class, () -> new DefaultAsyncHttpClient(config).executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get());
     }
 
     private static String createResettingServer() {
@@ -100,5 +90,4 @@ public class NettyConnectionResetByPeerTest {
         int length = inputStream.read(buffer);
         return Arrays.copyOf(buffer, length);
     }
-
 }

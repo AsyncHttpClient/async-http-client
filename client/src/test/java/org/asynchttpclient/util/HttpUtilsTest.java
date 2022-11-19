@@ -21,7 +21,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.uri.Uri;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -33,7 +33,10 @@ import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpUtilsTest {
 
@@ -49,25 +52,25 @@ public class HttpUtilsTest {
     @Test
     public void testExtractCharsetWithoutQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=iso-8859-1");
-        assertEquals(charset, ISO_8859_1);
+        assertEquals(ISO_8859_1, charset);
     }
 
     @Test
     public void testExtractCharsetWithSingleQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset='iso-8859-1'");
-        assertEquals(charset, ISO_8859_1);
+        assertEquals(ISO_8859_1, charset);
     }
 
     @Test
     public void testExtractCharsetWithDoubleQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=\"iso-8859-1\"");
-        assertEquals(charset, ISO_8859_1);
+        assertEquals(ISO_8859_1, charset);
     }
 
     @Test
     public void testExtractCharsetWithDoubleQuotesAndSpaces() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset= \"iso-8859-1\" ");
-        assertEquals(charset, ISO_8859_1);
+        assertEquals(ISO_8859_1, charset);
     }
 
     @Test
@@ -80,7 +83,7 @@ public class HttpUtilsTest {
     public void testGetHostHeader() {
         Uri uri = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
         String hostHeader = HttpUtils.hostHeader(uri);
-        assertEquals(hostHeader, "stackoverflow.com", "Incorrect hostHeader returned");
+        assertEquals("stackoverflow.com", hostHeader, "Incorrect hostHeader returned");
     }
 
     @Test
@@ -115,14 +118,14 @@ public class HttpUtilsTest {
         assertFalse(followRedirect, "Follow redirect value set in request should be given priority");
     }
 
-    private void formUrlEncoding(Charset charset) throws Exception {
+    private static void formUrlEncoding(Charset charset) throws Exception {
         String key = "key";
         String value = "中文";
         List<Param> params = new ArrayList<>();
         params.add(new Param(key, value));
         ByteBuffer ahcBytes = HttpUtils.urlEncodeFormParams(params, charset);
         String ahcString = toUsAsciiString(ahcBytes);
-        String jdkString = key + "=" + URLEncoder.encode(value, charset.name());
+        String jdkString = key + '=' + URLEncoder.encode(value, charset);
         assertEquals(ahcString, jdkString);
     }
 
@@ -138,31 +141,31 @@ public class HttpUtilsTest {
 
     @Test
     public void computeOriginForPlainUriWithImplicitPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com/bar")), "http://foo.com");
+        assertEquals("http://foo.com", HttpUtils.originHeader(Uri.create("ws://foo.com/bar")));
     }
 
     @Test
     public void computeOriginForPlainUriWithDefaultPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com:80/bar")), "http://foo.com");
+        assertEquals("http://foo.com", HttpUtils.originHeader(Uri.create("ws://foo.com:80/bar")));
     }
 
     @Test
     public void computeOriginForPlainUriWithNonDefaultPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("ws://foo.com:81/bar")), "http://foo.com:81");
+        assertEquals("http://foo.com:81", HttpUtils.originHeader(Uri.create("ws://foo.com:81/bar")));
     }
 
     @Test
     public void computeOriginForSecuredUriWithImplicitPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com/bar")), "https://foo.com");
+        assertEquals("https://foo.com", HttpUtils.originHeader(Uri.create("wss://foo.com/bar")));
     }
 
     @Test
     public void computeOriginForSecuredUriWithDefaultPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com:443/bar")), "https://foo.com");
+        assertEquals("https://foo.com", HttpUtils.originHeader(Uri.create("wss://foo.com:443/bar")));
     }
 
     @Test
     public void computeOriginForSecuredUriWithNonDefaultPort() {
-        assertEquals(HttpUtils.originHeader(Uri.create("wss://foo.com:444/bar")), "https://foo.com:444");
+        assertEquals("https://foo.com:444", HttpUtils.originHeader(Uri.create("wss://foo.com:444/bar")));
     }
 }

@@ -13,12 +13,16 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import org.asynchttpclient.*;
+import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BasicAuthTest;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.function.Function;
@@ -30,15 +34,17 @@ import static io.netty.handler.codec.http.HttpHeaderValues.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.basicAuthRealm;
-import static org.asynchttpclient.test.TestUtils.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.asynchttpclient.test.TestUtils.ADMIN;
+import static org.asynchttpclient.test.TestUtils.USER;
+import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.createTempFile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultipartBasicAuthTest extends AbstractBasicTest {
 
-    @BeforeClass(alwaysRun = true)
-    @Override
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -47,8 +53,7 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new BasicAuthTest.SimpleHandler();
     }
 
@@ -61,7 +66,7 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
                                 .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
                         .execute()
                         .get();
-                assertEquals(response.getStatusCode(), expectedResponseCode);
+                assertEquals(expectedResponseCode, response.getStatusCode());
             }
         }
     }

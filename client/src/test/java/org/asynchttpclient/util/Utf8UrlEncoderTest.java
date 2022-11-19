@@ -13,22 +13,23 @@
  */
 package org.asynchttpclient.util;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Utf8UrlEncoderTest {
+
     @Test
     public void testBasics() {
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("foobar"), "foobar");
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("a&b"), "a%26b");
-        assertEquals(Utf8UrlEncoder.encodeQueryElement("a+b"), "a%2Bb");
+        assertEquals("foobar", Utf8UrlEncoder.encodeQueryElement("foobar"));
+        assertEquals("a%26b", Utf8UrlEncoder.encodeQueryElement("a&b"));
+        assertEquals("a%2Bb", Utf8UrlEncoder.encodeQueryElement("a+b"));
     }
 
     @Test
     public void testPercentageEncoding() {
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foobar"), "foobar");
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"), "foo%2Abar");
-        assertEquals(Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"), "foo~b_ar");
+        assertEquals("foobar", Utf8UrlEncoder.percentEncodeQueryElement("foobar"));
+        assertEquals("foo%2Abar", Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"));
+        assertEquals("foo~b_ar", Utf8UrlEncoder.percentEncodeQueryElement("foo~b_ar"));
     }
 }

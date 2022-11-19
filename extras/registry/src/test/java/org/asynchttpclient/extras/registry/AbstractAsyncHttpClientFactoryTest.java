@@ -20,16 +20,18 @@ import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractAsyncHttpClientFactoryTest {
 
@@ -37,10 +39,10 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     public static final String BAD_CLIENT_CLASS_NAME = "org.asynchttpclient.extras.registry.BadAsyncHttpClient";
     public static final String NON_EXISTENT_CLIENT_CLASS_NAME = "org.asynchttpclient.extras.registry.NonExistentAsyncHttpClient";
 
-    private Server server;
-    private int port;
+    private static Server server;
+    private static int port;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         PA.setValue(AsyncHttpClientFactory.class, "instantiated", false);
         PA.setValue(AsyncHttpClientFactory.class, "asyncHttpClientImplClass", null);
@@ -48,8 +50,8 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         AsyncHttpClientConfigHelper.reloadProperties();
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpBeforeTest() throws Exception {
+    @BeforeAll
+    public static void setUpBeforeTest() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new EchoHandler());
@@ -57,11 +59,16 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         port = connector.getLocalPort();
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDown() throws Exception {
-        setUp();
-        if (server != null)
+    @AfterAll
+    public static void tearDown() throws Exception {
+        PA.setValue(AsyncHttpClientFactory.class, "instantiated", false);
+        PA.setValue(AsyncHttpClientFactory.class, "asyncHttpClientImplClass", null);
+        System.clearProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
+        AsyncHttpClientConfigHelper.reloadProperties();
+
+        if (server != null) {
             server.stop();
+        }
     }
 
     /**
@@ -71,7 +78,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     @Test
     public void testGetAsyncHttpClient() throws Exception {
         try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
+            assertEquals(asyncHttpClient.getClass(), DefaultAsyncHttpClient.class);
             assertClientWorks(asyncHttpClient);
         }
     }
@@ -79,7 +86,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     @Test
     public void testGetAsyncHttpClientConfig() throws Exception {
         try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
+            assertEquals(asyncHttpClient.getClass(), DefaultAsyncHttpClient.class);
             assertClientWorks(asyncHttpClient);
         }
     }
@@ -87,7 +94,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     @Test
     public void testGetAsyncHttpClientProvider() throws Exception {
         try (AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(asyncHttpClient.getClass().equals(DefaultAsyncHttpClient.class));
+            assertEquals(asyncHttpClient.getClass(), DefaultAsyncHttpClient.class);
             assertClientWorks(asyncHttpClient);
         }
     }
@@ -103,7 +110,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
         try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(ahc.getClass().equals(TestAsyncHttpClient.class));
+            assertEquals(ahc.getClass(), TestAsyncHttpClient.class);
         }
     }
 
@@ -112,7 +119,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
         try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(ahc.getClass().equals(TestAsyncHttpClient.class));
+            assertEquals(ahc.getClass(), TestAsyncHttpClient.class);
         }
     }
 
@@ -121,7 +128,7 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, TEST_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
         try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.assertTrue(ahc.getClass().equals(TestAsyncHttpClient.class));
+            assertEquals(ahc.getClass(), TestAsyncHttpClient.class);
         }
     }
 
@@ -131,13 +138,11 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
      * If any of the constructors of the class fail then a AsyncHttpClientException is thrown.
      */
     // ===================================================================================================================================
-    @Test(expectedExceptions = BadAsyncHttpClientException.class)
+    @Test
     public void testFactoryWithBadAsyncHttpClient() throws IOException {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, BAD_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
-        try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            Assert.fail("BadAsyncHttpClientException should have been thrown before this point");
-        }
+        assertThrows(BadAsyncHttpClientException.class, () -> AsyncHttpClientFactory.getAsyncHttpClient());
     }
 
     @Test
@@ -169,20 +174,17 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
     /*
      * If the system property exists instantiate the class else if the class is not found throw an AsyncHttpClientException.
      */
-    @Test(expectedExceptions = AsyncHttpClientImplException.class)
+    @Test
     public void testFactoryWithNonExistentAsyncHttpClient() throws IOException {
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, NON_EXISTENT_CLIENT_CLASS_NAME);
         AsyncHttpClientConfigHelper.reloadProperties();
-        try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
-            //
-        }
-        Assert.fail("AsyncHttpClientImplException should have been thrown before this point");
+        assertThrows(AsyncHttpClientImplException.class, () -> AsyncHttpClientFactory.getAsyncHttpClient());
     }
 
     /**
      * If property is specified but the class can’t be created or found for any reason subsequent calls should throw an AsyncClientException.
      */
-    @Test(expectedExceptions = AsyncHttpClientImplException.class)
+    @Test
     public void testRepeatedCallsToBadAsyncHttpClient() throws IOException {
         boolean exceptionCaught = false;
         System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, NON_EXISTENT_CLIENT_CLASS_NAME);
@@ -192,24 +194,23 @@ public abstract class AbstractAsyncHttpClientFactoryTest {
         } catch (AsyncHttpClientImplException e) {
             exceptionCaught = true;
         }
-        Assert.assertTrue(exceptionCaught, "Didn't catch exception the first time");
+        assertTrue(exceptionCaught, "Didn't catch exception the first time");
         exceptionCaught = false;
         try (AsyncHttpClient ahc = AsyncHttpClientFactory.getAsyncHttpClient()) {
             //
         } catch (AsyncHttpClientImplException e) {
             exceptionCaught = true;
         }
-        Assert.assertTrue(exceptionCaught, "Didn't catch exception the second time");
+        assertTrue(exceptionCaught, "Didn't catch exception the second time");
     }
 
     private void assertClientWorks(AsyncHttpClient asyncHttpClient) throws Exception {
         Response response = asyncHttpClient.prepareGet("http://localhost:" + port + "/foo/test").execute().get();
-        Assert.assertEquals(200, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
     }
 
     private void assertException(AsyncHttpClientImplException e) {
         InvocationTargetException t = (InvocationTargetException) e.getCause();
-        Assert.assertTrue(t.getCause() instanceof BadAsyncHttpClientException);
+        assertTrue(t.getCause() instanceof BadAsyncHttpClientException);
     }
-
 }

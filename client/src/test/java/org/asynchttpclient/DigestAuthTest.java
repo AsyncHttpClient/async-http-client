@@ -12,21 +12,19 @@
  */
 package org.asynchttpclient;
 
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.digestAuthRealm;
@@ -34,14 +32,13 @@ import static org.asynchttpclient.test.TestUtils.ADMIN;
 import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DigestAuthTest extends AbstractBasicTest {
 
-    @BeforeClass(alwaysRun = true)
-    @Override
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         addDigestAuthHandler(server, configureHandler());
@@ -50,15 +47,14 @@ public class DigestAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
 
     @Test
-    public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void digestAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -69,9 +65,9 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void digestAuthTestWithoutScheme() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())
                     .execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -82,9 +78,9 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void digestAuthNegativeTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/")
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm("fake", ADMIN).build())
                     .execute();
             Response resp = f.get(20, TimeUnit.SECONDS);
@@ -94,6 +90,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
 
     private static class SimpleHandler extends AbstractHandler {
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             response.addHeader("X-Auth", request.getHeader("Authorization"));
             response.setStatus(200);

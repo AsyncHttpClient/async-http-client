@@ -21,8 +21,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,13 +31,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
 
-    @Test(groups = "online")
+    @Test
     public void testMaxTotalConnectionsExceedingException() throws IOException {
-        String[] urls = new String[]{"https://google.com", "https://github.com"};
+        String[] urls = {"https://google.com", "https://github.com"};
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(1000)
@@ -67,14 +68,14 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
                 }
             }
 
-            Assert.assertEquals(1, i);
-            Assert.assertTrue(caughtError);
+            assertEquals(1, i);
+            assertTrue(caughtError);
         }
     }
 
-    @Test(groups = "online")
+    @Test
     public void testMaxTotalConnections() throws Exception {
-        String[] urls = new String[]{"https://www.google.com", "https://www.youtube.com"};
+        String[] urls = {"https://www.google.com", "https://www.youtube.com"};
 
         final CountDownLatch latch = new CountDownLatch(2);
         final AtomicReference<Throwable> ex = new AtomicReference<>();

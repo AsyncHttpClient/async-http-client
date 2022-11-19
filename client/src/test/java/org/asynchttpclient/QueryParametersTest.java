@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,16 +25,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Testing query parameters support.
@@ -42,13 +40,13 @@ import static org.testng.Assert.assertNotNull;
  * @author Hubert Iwaniuk
  */
 public class QueryParametersTest extends AbstractBasicTest {
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+
+    public static AbstractHandler configureHandler() throws Exception {
         return new QueryStringHandler();
     }
 
     @Test
-    public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -60,15 +58,15 @@ public class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test
-    public void testUrlRequestParametersEncoding() throws IOException, ExecutionException, InterruptedException {
+    public void testUrlRequestParametersEncoding() throws Exception {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8.name());
+            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8);
             logger.info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
-            String s = URLDecoder.decode(response.getHeader("q"), UTF_8.name());
+            String s = URLDecoder.decode(response.getHeader("q"), UTF_8);
             assertEquals(s, REQUEST_PARAM);
         }
     }
@@ -83,13 +81,14 @@ public class QueryParametersTest extends AbstractBasicTest {
         }
     }
 
-    private class QueryStringHandler extends AbstractHandler {
+    private static class QueryStringHandler extends AbstractHandler {
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
                 if (isNonEmpty(qs)) {
                     for (String qnv : qs.split("&")) {
-                        String nv[] = qnv.split("=");
+                        String[] nv = qnv.split("=");
                         response.addHeader(nv[0], nv[1]);
                     }
                     response.setStatus(HttpServletResponse.SC_OK);

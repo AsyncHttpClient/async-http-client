@@ -17,26 +17,26 @@ import io.netty.util.internal.SocketUtils;
 import org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.TIMEOUT;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CustomRemoteAddressTest extends HttpTest {
 
     private static HttpServer server;
 
-    @BeforeClass
+    @BeforeAll
     public static void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() throws Throwable {
         server.close();
     }

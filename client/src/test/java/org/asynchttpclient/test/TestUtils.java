@@ -57,7 +57,7 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -75,18 +75,18 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestUtils {
 
-    public final static int TIMEOUT = 30;
+    public static final int TIMEOUT = 30;
     public static final String USER = "user";
     public static final String ADMIN = "admin";
     public static final String TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET = "text/html;charset=UTF-8";
     public static final String TEXT_HTML_CONTENT_TYPE_WITH_ISO_8859_1_CHARSET = "text/html;charset=ISO-8859-1";
     public static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
-    private static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
+    private static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(StandardCharsets.UTF_16);
     public static final File LARGE_IMAGE_FILE;
     public static final byte[] LARGE_IMAGE_BYTES;
     public static final String LARGE_IMAGE_BYTES_MD5;
@@ -100,12 +100,15 @@ public class TestUtils {
             TMP_DIR.deleteOnExit();
             LARGE_IMAGE_FILE = resourceAsFile("300k.png");
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
-            LARGE_IMAGE_BYTES_MD5 = TestUtils.md5(LARGE_IMAGE_BYTES);
+            LARGE_IMAGE_BYTES_MD5 = md5(LARGE_IMAGE_BYTES);
             SIMPLE_TEXT_FILE = resourceAsFile("SimpleTextFile.txt");
             SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, UTF_8);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
+    }
+
+    private TestUtils() {
     }
 
     public static synchronized int findFreePort() throws IOException {
@@ -130,7 +133,7 @@ public class TestUtils {
     }
 
     public static File createTempFile(int approxSize) throws IOException {
-        long repeats = approxSize / TestUtils.PATTERN_BYTES.length + 1;
+        long repeats = approxSize / PATTERN_BYTES.length + 1;
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP_DIR);
         tmpFile.deleteOnExit();
         try (OutputStream out = Files.newOutputStream(tmpFile.toPath())) {
@@ -139,7 +142,7 @@ public class TestUtils {
             }
 
             long expectedFileSize = PATTERN_BYTES.length * repeats;
-            assertEquals(tmpFile.length(), expectedFileSize, "Invalid file length");
+            assertEquals(expectedFileSize, tmpFile.length(), "Invalid file length");
 
             return tmpFile;
         }
@@ -152,7 +155,6 @@ public class TestUtils {
     }
 
     public static ServerConnector addHttpsConnector(Server server) throws IOException, URISyntaxException {
-
         String keyStoreFile = resourceAsFile("ssltest-keystore.jks").getAbsolutePath();
         SslContextFactory sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setKeyStorePath(keyStoreFile);
@@ -182,7 +184,6 @@ public class TestUtils {
     }
 
     private static void addAuthHandler(Server server, String auth, LoginAuthenticator authenticator, Handler handler) {
-
         server.addBean(LOGIN_SERVICE);
 
         Constraint constraint = new Constraint();
@@ -215,7 +216,7 @@ public class TestUtils {
             char[] keyStorePassword = "changeit".toCharArray();
             ks.load(keyStoreStream, keyStorePassword);
         }
-        assert (ks.size() > 0);
+        assert ks.size() > 0;
 
         // Set up key manager factory to use our key store
         char[] certificatePassword = "changeit".toCharArray();
@@ -232,7 +233,7 @@ public class TestUtils {
             char[] keyStorePassword = "changeit".toCharArray();
             ks.load(keyStoreStream, keyStorePassword);
         }
-        assert (ks.size() > 0);
+        assert ks.size() > 0;
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ks);
@@ -244,10 +245,9 @@ public class TestUtils {
     }
 
     public static SslEngineFactory createSslEngineFactory(AtomicBoolean trust) {
-
         try {
             KeyManager[] keyManagers = createKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[]{dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0])};
+            TrustManager[] trustManagers = {dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0])};
             SecureRandom secureRandom = new SecureRandom();
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -285,7 +285,8 @@ public class TestUtils {
     }
 
     public static void assertContentTypesEquals(String actual, String expected) {
-        assertEquals(actual.replace("; ", "").toLowerCase(Locale.ENGLISH), expected.replace("; ", "").toLowerCase(Locale.ENGLISH), "Unexpected content-type");
+        assertEquals(actual.replace("; ", "").toLowerCase(Locale.ENGLISH),
+                expected.replace("; ", "").toLowerCase(Locale.ENGLISH), "Unexpected content-type");
     }
 
     public static void writeResponseBody(HttpServletResponse response, String body) {

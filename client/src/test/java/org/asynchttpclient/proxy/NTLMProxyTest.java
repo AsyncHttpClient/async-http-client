@@ -16,18 +16,16 @@ package org.asynchttpclient.proxy;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,26 +33,25 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.ntlmAuthRealm;
 import static org.asynchttpclient.Dsl.proxyServer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NTLMProxyTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new NTLMProxyHandler();
     }
 
     @Test
-    public void ntlmProxyTest() throws IOException, InterruptedException, ExecutionException {
-
+    public void ntlmProxyTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();
+            org.asynchttpclient.Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
-            Assert.assertEquals(status, 200);
+            assertEquals(200, status);
         }
     }
 
-    private ProxyServer ntlmProxy() {
+    private static ProxyServer ntlmProxy() {
         Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")
                 .setNtlmDomain("Ursa-Minor")
                 .setNtlmHost("LightCity")
@@ -64,14 +61,13 @@ public class NTLMProxyTest extends AbstractBasicTest {
 
     public static class NTLMProxyHandler extends AbstractHandler {
 
-        private AtomicInteger state = new AtomicInteger();
+        private final AtomicInteger state = new AtomicInteger();
 
         @Override
-        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException,
+        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException,
                 ServletException {
 
             String authorization = httpRequest.getHeader("Proxy-Authorization");
-
             boolean asExpected = false;
 
             switch (state.getAndIncrement()) {
@@ -82,23 +78,20 @@ public class NTLMProxyTest extends AbstractBasicTest {
                         asExpected = true;
                     }
                     break;
-
                 case 1:
-                    if (authorization.equals("NTLM TlRMTVNTUAABAAAAAYIIogAAAAAoAAAAAAAAACgAAAAFASgKAAAADw==")) {
+                    if ("NTLM TlRMTVNTUAABAAAAAYIIogAAAAAoAAAAAAAAACgAAAAFASgKAAAADw==".equals(authorization)) {
                         httpResponse.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
                         httpResponse.setHeader("Proxy-Authenticate", "NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
                         asExpected = true;
                     }
                     break;
-
                 case 2:
-                    if (authorization
-                            .equals("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAEkARwBIAFQAQwBJAFQAWQA=")) {
+                    if ("NTLM TlRMTVNTUAADAAAAGAAYAEgAAAAYABgAYAAAABQAFAB4AAAADAAMAIwAAAASABIAmAAAAAAAAACqAAAAAYIAAgUBKAoAAAAPrYfKbe/jRoW5xDxHeoxC1gBmfWiS5+iX4OAN4xBKG/IFPwfH3agtPEia6YnhsADTVQBSAFMAQQAtAE0ASQBOAE8AUgBaAGEAcABoAG8AZABMAEkARwBIAFQAQwBJAFQAWQA="
+                            .equals(authorization)) {
                         httpResponse.setStatus(HttpStatus.OK_200);
                         asExpected = true;
                     }
                     break;
-
                 default:
             }
 

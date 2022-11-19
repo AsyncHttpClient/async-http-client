@@ -18,7 +18,6 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.request.NettyRequest;
-import org.testng.Assert;
 
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
@@ -27,6 +26,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class EventCollectingHandler extends AsyncCompletionHandlerBase {
 
@@ -51,11 +53,11 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
     private static final String RETRY_EVENT = "Retry";
 
     public Queue<String> firedEvents = new ConcurrentLinkedQueue<>();
-    private CountDownLatch completionLatch = new CountDownLatch(1);
+    private final CountDownLatch completionLatch = new CountDownLatch(1);
 
     public void waitForCompletion(int timeout, TimeUnit unit) throws InterruptedException {
         if (!completionLatch.await(timeout, unit)) {
-            Assert.fail("Timeout out");
+            fail("Timeout out");
         }
     }
 
@@ -130,7 +132,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public void onTlsHandshakeSuccess(SSLSession sslSession) {
-        Assert.assertNotNull(sslSession);
+        assertNotNull(sslSession);
         firedEvents.add(TLS_HANDSHAKE_SUCCESS_EVENT);
     }
 

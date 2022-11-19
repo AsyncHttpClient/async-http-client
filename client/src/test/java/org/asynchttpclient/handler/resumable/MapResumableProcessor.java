@@ -15,21 +15,23 @@ package org.asynchttpclient.handler.resumable;
 
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler.ResumableProcessor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author Benjamin Hanzelmann
  */
-public class MapResumableProcessor
-        implements ResumableProcessor {
+public class MapResumableProcessor implements ResumableProcessor {
 
-    private Map<String, Long> map = new HashMap<>();
+    private final Map<String, Long> map = new HashMap<>();
 
+    @Override
     public void put(String key, long transferredBytes) {
         map.put(key, transferredBytes);
     }
 
+    @Override
     public void remove(String key) {
         map.remove(key);
     }
@@ -37,6 +39,7 @@ public class MapResumableProcessor
     /**
      * NOOP
      */
+    @Override
     public void save(Map<String, Long> map) {
 
     }
@@ -44,7 +47,8 @@ public class MapResumableProcessor
     /**
      * NOOP
      */
+    @Override
     public Map<String, Long> load() {
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 }

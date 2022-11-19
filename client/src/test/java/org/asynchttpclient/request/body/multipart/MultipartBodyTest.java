@@ -17,7 +17,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -34,13 +34,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class MultipartBodyTest {
 
     private static final List<Part> PARTS = new ArrayList<>();
-    private static long MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE;
+    private static final long MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE;
 
     static {
         try {
@@ -128,7 +128,7 @@ public class MultipartBodyTest {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
                 long transferred = transferWithCopy(multipartBody, bufferLength);
-                assertEquals(transferred, multipartBody.getContentLength());
+                assertEquals(multipartBody.getContentLength(), transferred);
             }
         }
     }
@@ -138,7 +138,7 @@ public class MultipartBodyTest {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
                 long transferred = transferZeroCopy(multipartBody, bufferLength);
-                assertEquals(transferred, multipartBody.getContentLength());
+                assertEquals(multipartBody.getContentLength(), transferred);
             }
         }
     }

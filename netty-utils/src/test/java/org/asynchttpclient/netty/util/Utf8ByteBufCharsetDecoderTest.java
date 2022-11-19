@@ -15,13 +15,15 @@ package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class Utf8ByteBufCharsetDecoderTest {
 
@@ -31,7 +33,7 @@ public class Utf8ByteBufCharsetDecoderTest {
         ByteBuf buf = Unpooled.wrappedBuffer(inputBytes);
         try {
             byte[] output = ByteBufUtils.byteBuf2Bytes(buf);
-            assertEquals(output, inputBytes);
+            assertArrayEquals(output, inputBytes);
         } finally {
             buf.release();
         }
@@ -44,7 +46,7 @@ public class Utf8ByteBufCharsetDecoderTest {
         try {
             buf.writeBytes(inputBytes);
             byte[] output = ByteBufUtils.byteBuf2Bytes(buf);
-            assertEquals(output, inputBytes);
+            assertArrayEquals(output, inputBytes);
         } finally {
             buf.release();
         }

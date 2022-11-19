@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ComplexClientTest extends AbstractBasicTest {
 
@@ -45,7 +45,8 @@ public class ComplexClientTest extends AbstractBasicTest {
     public void urlWithoutSlashTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String body = "hello there";
-            Response response = c.preparePost(String.format("http://localhost:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = c.preparePost(String.format("http://localhost:%d/foo/test", port1)).setBody(body)
+                    .setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
         }
     }

@@ -24,7 +24,8 @@ import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.testserver.SocksProxy;
 import org.asynchttpclient.util.ProxyUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -49,7 +49,10 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.proxyServer;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Proxy usage tests.
@@ -57,20 +60,21 @@ import static org.testng.Assert.*;
  * @author Hubert Iwaniuk
  */
 public class ProxyTest extends AbstractBasicTest {
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+
+
+    public static AbstractHandler configureHandler() throws Exception {
         return new ProxyHandler();
     }
 
     @Test
-    public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testRequestLevelProxy() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("localhost", port1)).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("target"), "/");
+            assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
+            assertEquals("/", resp.getHeader("target"));
         }
     }
 
@@ -102,7 +106,7 @@ public class ProxyTest extends AbstractBasicTest {
     // }
 
     @Test
-    public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testGlobalProxy() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1)))) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).execute();
@@ -114,7 +118,7 @@ public class ProxyTest extends AbstractBasicTest {
     }
 
     @Test
-    public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testBothProxies() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1 - 1)))) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("localhost", port1)).execute();
@@ -127,7 +131,6 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test
     public void testNonProxyHost() {
-
         // // should avoid, it's in non-proxy hosts
         Request req = get("http://somewhere.com/foo").build();
         ProxyServer proxyServer = proxyServer("localhost", 1234).setNonProxyHost("somewhere.com").build();
@@ -145,27 +148,20 @@ public class ProxyTest extends AbstractBasicTest {
     }
 
     @Test
-    public void testNonProxyHostsRequestOverridesConfig() {
-
+    public void testNonProxyHostsRequestOverridesConfig() throws Exception {
         ProxyServer configProxy = proxyServer("localhost", port1 - 1).build();
         ProxyServer requestProxy = proxyServer("localhost", port1).setNonProxyHost("localhost").build();
 
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(configProxy))) {
-            String target = "http://localhost:1234/";
-            client.prepareGet(target).setProxyServer(requestProxy).execute().get();
-            assertFalse(true);
-        } catch (Throwable e) {
-            assertNotNull(e.getCause());
-            assertEquals(e.getCause().getClass(), ConnectException.class);
+            assertThrows(ConnectException.class, () -> client.prepareGet("http://localhost:1234/").setProxyServer(requestProxy).execute().get());
         }
     }
 
     @Test
-    public void testRequestNonProxyHost() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-
+    public void testRequestNonProxyHost() throws Exception {
         ProxyServer proxy = proxyServer("localhost", port1 - 1).setNonProxyHost("localhost").build();
         try (AsyncHttpClient client = asyncHttpClient()) {
-            String target = "http://localhost:" + port1 + "/";
+            String target = "http://localhost:" + port1 + '/';
             Future<Response> f = client.prepareGet(target).setProxyServer(proxy).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
@@ -183,7 +179,8 @@ public class ProxyTest extends AbstractBasicTest {
         testUseProxySelector();
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -195,26 +192,23 @@ public class ProxyTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setUseProxyProperties(true))) {
             String proxifiedtarget = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(proxifiedtarget).execute();
-            Response resp = f.get(3, TimeUnit.SECONDS);
+            Future<Response> responseFuture = client.prepareGet(proxifiedtarget).execute();
+            Response resp = responseFuture.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
 
             String nonProxifiedtarget = "http://localhost:1234/";
-            f = client.prepareGet(nonProxifiedtarget).execute();
-            try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
-            }
+            final Future<Response> secondResponseFuture = client.prepareGet(nonProxifiedtarget).execute();
+
+            assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void testIgnoreProxyPropertiesByDefault() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -226,19 +220,15 @@ public class ProxyTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:1234/";
-            Future<Response> f = client.prepareGet(target).execute();
-            try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
-            }
+            final Future<Response> responseFuture = client.prepareGet(target).execute();
+            assertThrows(Exception.class, () -> responseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -251,26 +241,22 @@ public class ProxyTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             String proxifiedTarget = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(proxifiedTarget).execute();
-            Response resp = f.get(3, TimeUnit.SECONDS);
+            Future<Response> responseFuture = client.prepareGet(proxifiedTarget).execute();
+            Response resp = responseFuture.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
 
             String nonProxifiedTarget = "http://localhost:1234/";
-            f = client.prepareGet(nonProxifiedTarget).execute();
-            try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
-            }
+            Future<Response> secondResponseFuture = client.prepareGet(nonProxifiedTarget).execute();
+            assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void testWildcardNonProxyHosts() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -282,50 +268,44 @@ public class ProxyTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setUseProxyProperties(true))) {
             String nonProxifiedTarget = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(nonProxifiedTarget).execute();
-            try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
-            }
+            Future<Response> secondResponseFuture = client.prepareGet(nonProxifiedTarget).execute();
+            assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         ProxySelector originalProxySelector = ProxySelector.getDefault();
         ProxySelector.setDefault(new ProxySelector() {
+            @Override
             public List<Proxy> select(URI uri) {
-                if (uri.getHost().equals("127.0.0.1")) {
-                    return Arrays.asList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", port1)));
+                if ("127.0.0.1".equals(uri.getHost())) {
+                    return List.of(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", port1)));
                 } else {
                     return Collections.singletonList(Proxy.NO_PROXY);
                 }
             }
 
+            @Override
             public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+                // NO-OP
             }
         });
 
         try (AsyncHttpClient client = asyncHttpClient(config().setUseProxySelector(true))) {
             String proxifiedTarget = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(proxifiedTarget).execute();
-            Response resp = f.get(3, TimeUnit.SECONDS);
+            Future<Response> responseFuture = client.prepareGet(proxifiedTarget).execute();
+            Response resp = responseFuture.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
 
             String nonProxifiedTarget = "http://localhost:1234/";
-            f = client.prepareGet(nonProxifiedTarget).execute();
-            try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
-            }
+            Future<Response> secondResponseFuture = client.prepareGet(nonProxifiedTarget).execute();
+            assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             // FIXME not threadsafe
             ProxySelector.setDefault(originalProxySelector);
@@ -338,19 +318,23 @@ public class ProxyTest extends AbstractBasicTest {
             try {
                 new SocksProxy(60000);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Failed to establish SocksProxy", e);
             }
         }).start();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            String target = "http://localhost:" + port1 + "/";
-            Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4)).execute();
+            String target = "http://localhost:" + port1 + '/';
+            Future<Response> f = client.prepareGet(target)
+                    .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4))
+                    .execute();
 
             assertEquals(200, f.get(60, TimeUnit.SECONDS).getStatusCode());
         }
     }
 
     public static class ProxyHandler extends AbstractHandler {
+
+        @Override
         public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getHttpURI().getPath());

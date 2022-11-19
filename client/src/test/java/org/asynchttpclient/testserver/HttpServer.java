@@ -132,7 +132,7 @@ public class HttpServer implements Closeable {
         void apply(HttpServletResponse response) throws IOException, ServletException;
     }
 
-    public static abstract class AutoFlushHandler extends AbstractHandler {
+    public abstract static class AutoFlushHandler extends AbstractHandler {
 
         private final boolean closeAfterResponse;
 
@@ -191,7 +191,7 @@ public class HttpServer implements Closeable {
 
             response.setStatus(200);
 
-            if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
             }
 
@@ -200,12 +200,14 @@ public class HttpServer implements Closeable {
             response.addHeader("X-ClientPort", String.valueOf(request.getRemotePort()));
 
             String pathInfo = request.getPathInfo();
-            if (pathInfo != null)
+            if (pathInfo != null) {
                 response.addHeader("X-PathInfo", pathInfo);
+            }
 
             String queryString = request.getQueryString();
-            if (queryString != null)
+            if (queryString != null) {
                 response.addHeader("X-QueryString", queryString);
+            }
 
             Enumeration<String> headerNames = request.getHeaderNames();
             while (headerNames.hasMoreElements()) {
@@ -215,7 +217,7 @@ public class HttpServer implements Closeable {
 
             StringBuilder requestBody = new StringBuilder();
             for (Entry<String, String[]> e : baseRequest.getParameterMap().entrySet()) {
-                response.addHeader("X-" + e.getKey(), URLEncoder.encode(e.getValue()[0], StandardCharsets.UTF_8.name()));
+                response.addHeader("X-" + e.getKey(), URLEncoder.encode(e.getValue()[0], StandardCharsets.UTF_8));
             }
 
             Cookie[] cs = request.getCookies();
@@ -251,7 +253,7 @@ public class HttpServer implements Closeable {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-            Handler handler = HttpServer.this.handlers.poll();
+            Handler handler = handlers.poll();
             if (handler == null) {
                 response.sendError(500, "No handler enqueued");
                 response.getOutputStream().flush();

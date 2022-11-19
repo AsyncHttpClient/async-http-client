@@ -18,7 +18,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -35,23 +35,21 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
     private static final int SLEEPTIME_MS = 1000;
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
     }
 
     @Test
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
-
-        int samples = 10;
+        final int samples = 10;
 
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxConnections(1))) {
             final CountDownLatch latch = new CountDownLatch(samples);
@@ -86,8 +84,9 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                             tooManyConnections.add(e);
                         }
 
-                        if (responseFuture != null)
+                        if (responseFuture != null) {
                             responseFuture.get();
+                        }
                     } catch (Exception e) {
                         //
                     } finally {
@@ -96,22 +95,22 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                 }).start();
             }
 
-            try {
-                latch.await(30, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                fail("failed to wait for requests to complete");
-            }
+            assertDoesNotThrow(() -> {
+                assertTrue(latch.await(30, TimeUnit.SECONDS));
+            });
 
-            for (Exception e : tooManyConnections)
+            for (Exception e : tooManyConnections) {
                 logger.error("Exception while calling execute", e);
+            }
 
             assertTrue(tooManyConnections.isEmpty(), "Should not have any connection errors where too many connections have been attempted");
         }
     }
 
-    private class SlowHandler extends AbstractHandler {
-        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response)
-                throws IOException, ServletException {
+    private static class SlowHandler extends AbstractHandler {
+
+        @Override
+        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
             response.setStatus(HttpServletResponse.SC_OK);
             final AsyncContext asyncContext = request.startAsync();
             new Thread(() -> {

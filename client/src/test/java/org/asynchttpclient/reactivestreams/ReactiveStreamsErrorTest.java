@@ -9,14 +9,14 @@ import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,7 +31,9 @@ import java.util.function.Consumer;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReactiveStreamsErrorTest extends AbstractBasicTest {
 
@@ -40,9 +42,9 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
     private static final byte[] BODY_CHUNK = "someBytes".getBytes();
 
     private AsyncHttpClient client;
-    private ServletResponseHandler servletResponseHandler;
+    private static ServletResponseHandler servletResponseHandler;
 
-    @BeforeTest
+    @BeforeEach
     public void initClient() {
         client = asyncHttpClient(config()
                 .setMaxRequestRetry(0)
@@ -50,13 +52,12 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
                 .setReadTimeout(1_000));
     }
 
-    @AfterTest
+    @AfterEach
     public void closeClient() throws Throwable {
         client.close();
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String target, Request r, HttpServletRequest request, HttpServletResponse response) {
@@ -163,7 +164,7 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
 
         subscriber.await();
 
-        assertEquals(subscriber.elements.size(), 2);
+        assertEquals(2, subscriber.elements.size());
     }
 
     @Test
@@ -273,28 +274,26 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
     }
 
     private void expectReadTimeout(Throwable e) {
-        assertTrue(e instanceof TimeoutException,
-                "Expected a read timeout, but got " + e);
-        assertTrue(e.getMessage().contains("Read timeout"),
-                "Expected read timeout, but was " + e);
+        assertTrue(e instanceof TimeoutException, "Expected a read timeout, but got " + e);
+        assertTrue(e.getMessage().contains("Read timeout"), "Expected read timeout, but was " + e);
     }
 
     private void expectRequestTimeout(Throwable e) {
-        assertTrue(e instanceof TimeoutException,
-                "Expected a request timeout, but got " + e);
-        assertTrue(e.getMessage().contains("Request timeout"),
-                "Expected request timeout, but was " + e);
+        assertTrue(e instanceof TimeoutException, "Expected a request timeout, but got " + e);
+        assertTrue(e.getMessage().contains("Request timeout"), "Expected request timeout, but was " + e);
     }
 
     private void execute(ServletResponseHandler responseHandler,
                          Consumer<Publisher<HttpResponseBodyPart>> bodyConsumer) throws Exception {
-        this.servletResponseHandler = responseHandler;
+        servletResponseHandler = responseHandler;
         client.prepareGet(getTargetUrl())
                 .execute(new SimpleStreamer(bodyConsumer))
                 .get(3_500, TimeUnit.MILLISECONDS);
     }
 
+    @FunctionalInterface
     private interface ServletResponseHandler {
+
         void handle(HttpServletResponse response) throws Exception;
     }
 

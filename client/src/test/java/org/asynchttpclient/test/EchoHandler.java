@@ -29,7 +29,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.zip.Deflater;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaderValues.CHUNKED;
 import static io.netty.handler.codec.http.HttpHeaderValues.DEFLATE;
 
@@ -52,7 +54,7 @@ public class EchoHandler extends AbstractHandler {
             httpResponse.setContentType(TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
         }
 
-        if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
         }
 
@@ -63,7 +65,7 @@ public class EchoHandler extends AbstractHandler {
             if (headerName.startsWith("LockThread")) {
                 final int sleepTime = httpRequest.getIntHeader(headerName);
                 try {
-                    Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
+                    Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000L);
                 } catch (InterruptedException ex) {
                     //
                 }
@@ -86,14 +88,16 @@ public class EchoHandler extends AbstractHandler {
         }
 
         String pathInfo = httpRequest.getPathInfo();
-        if (pathInfo != null)
+        if (pathInfo != null) {
             httpResponse.addHeader("X-pathInfo", pathInfo);
+        }
 
         String queryString = httpRequest.getQueryString();
-        if (queryString != null)
+        if (queryString != null) {
             httpResponse.addHeader("X-queryString", queryString);
+        }
 
-        httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
+        httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ':' + httpRequest.getRemotePort());
 
         Cookie[] cs = httpRequest.getCookies();
         if (cs != null) {
@@ -109,7 +113,7 @@ public class EchoHandler extends AbstractHandler {
                 headerName = i.nextElement();
                 httpResponse.addHeader("X-" + headerName, httpRequest.getParameter(headerName));
                 requestBody.append(headerName);
-                requestBody.append("_");
+                requestBody.append('_');
             }
 
             if (requestBody.length() > 0) {

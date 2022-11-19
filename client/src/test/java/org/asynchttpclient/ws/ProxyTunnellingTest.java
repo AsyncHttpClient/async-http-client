@@ -17,10 +17,12 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -28,14 +30,14 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Proxy usage tests.
  */
 public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
 
-    private Server server2;
+    private static Server server2;
 
     private void setUpServers(boolean targetHttps) throws Exception {
         server = new Server();
@@ -54,24 +56,25 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterMethod(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterEach
+    public static void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoWSText() throws Exception {
         runTest(false);
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoWSSText() throws Exception {
         runTest(true);
     }
 
     private void runTest(boolean secure) throws Exception {
-
         setUpServers(secure);
 
         String targetUrl = String.format("%s://localhost:%d/", secure ? "wss" : "ws", port2);
@@ -109,7 +112,7 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
             websocket.sendTextFrame("ECHO");
 
             latch.await();
-            assertEquals(text.get(), "ECHO");
+            assertEquals("ECHO", text.get());
         }
     }
 }

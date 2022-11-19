@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -32,7 +32,11 @@ import java.util.concurrent.TimeoutException;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Per request timeout configuration test.
@@ -43,16 +47,16 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
     private void checkTimeoutMessage(String message, boolean requestTimeout) {
-        if (requestTimeout)
+        if (requestTimeout) {
             assertTrue(message.startsWith("Request timeout"), "error message indicates reason of error but got: " + message);
-        else
+        } else {
             assertTrue(message.startsWith("Read timeout"), "error message indicates reason of error but got: " + message);
+        }
         assertTrue(message.contains("localhost"), "error message contains remote host address but got: " + message);
         assertTrue(message.contains("after 100 ms"), "error message contains timeout configuration value but got: " + message);
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
     }
 
@@ -120,7 +124,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test
     public void testGlobalIdleTimeout() throws IOException {
-        final long times[] = new long[]{-1, -1};
+        final long[] times = {-1, -1};
 
         try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
@@ -147,12 +151,13 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            logger.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.", times[0], times[1], (times[1] - times[0])));
+            logger.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.", times[0], times[1], times[1] - times[0]));
             fail("Timeouted on idle.", e);
         }
     }
 
-    private class SlowHandler extends AbstractHandler {
+    private static class SlowHandler extends AbstractHandler {
+        @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
             response.setStatus(HttpServletResponse.SC_OK);
             final AsyncContext asyncContext = request.startAsync();

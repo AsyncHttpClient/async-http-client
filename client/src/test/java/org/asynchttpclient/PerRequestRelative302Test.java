@@ -16,12 +16,13 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.uri.Uri;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -37,22 +38,25 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PerRequestRelative302Test extends AbstractBasicTest {
 
     // FIXME super NOT threadsafe!!!
-    private final AtomicBoolean isSet = new AtomicBoolean(false);
+    private static final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private static int getPort(Uri uri) {
         int port = uri.getPort();
-        if (port == -1)
-            port = uri.getScheme().equals("http") ? 80 : 443;
+        if (port == -1) {
+            port = "http".equals(uri.getScheme()) ? 80 : 443;
+        }
         return port;
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -63,7 +67,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @Test(groups = "online")
+    @Test
     // FIXME threadsafe
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
@@ -72,7 +76,8 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         redirected302InvalidTest();
     }
 
-    @Test(groups = "online", enabled = false)
+    @Disabled
+    @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -88,7 +93,8 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "online", enabled = false)
+    @Disabled
+    @Test
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -98,17 +104,18 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    private String getBaseUrl(Uri uri) {
+    private static String getBaseUrl(Uri uri) {
         String url = uri.toString();
         int port = uri.getPort();
         if (port == -1) {
             port = getPort(uri);
-            url = url.substring(0, url.length() - 1) + ":" + port;
+            url = url.substring(0, url.length() - 1) + ':' + port;
         }
-        return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
+        return url.substring(0, url.lastIndexOf(':') + String.valueOf(port).length() + 1);
     }
 
-    @Test(groups = "online", enabled = false)
+    @Disabled
+    @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
         Exception e = null;
@@ -125,7 +132,8 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
@@ -137,8 +145,9 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    private class Relative302Handler extends AbstractHandler {
+    private static class Relative302Handler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;

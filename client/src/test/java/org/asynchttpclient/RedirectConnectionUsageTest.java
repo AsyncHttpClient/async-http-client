@@ -19,8 +19,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -33,8 +33,8 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test for multithreaded url fetcher calls that use two separate sets of ssl certificates. This then tests that the certificate settings do not clash (override each other),
@@ -43,12 +43,12 @@ import static org.testng.Assert.assertNotNull;
  * @author dominict
  */
 public class RedirectConnectionUsageTest extends AbstractBasicTest {
-    private String BASE_URL;
+    private static String BASE_URL;
 
-    private String servletEndpointRedirectUrl;
+    private static String servletEndpointRedirectUrl;
 
-    @BeforeClass
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -60,7 +60,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
         server.start();
         port1 = connector.getLocalPort();
 
-        BASE_URL = "http://localhost" + ":" + port1;
+        BASE_URL = "http://localhost" + ':' + port1;
         servletEndpointRedirectUrl = BASE_URL + "/redirect";
     }
 
@@ -88,20 +88,24 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     }
 
     @SuppressWarnings("serial")
+    static
     class MockRedirectHttpServlet extends HttpServlet {
+        @Override
         public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
             res.sendRedirect("/overthere");
         }
     }
 
     @SuppressWarnings("serial")
+    static
     class MockFullResponseHttpServlet extends HttpServlet {
 
         private static final String contentType = "text/xml";
         private static final String xml = "<?xml version=\"1.0\"?><hello date=\"%s\"></hello>";
 
+        @Override
         public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
-            String xmlToReturn = String.format(xml, new Date().toString());
+            String xmlToReturn = String.format(xml, new Date());
 
             res.setStatus(200);
             res.addHeader("Content-Type", contentType);

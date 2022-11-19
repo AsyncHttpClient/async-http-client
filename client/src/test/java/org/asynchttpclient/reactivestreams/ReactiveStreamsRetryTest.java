@@ -19,10 +19,10 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleStreamedAsyncHandler;
 import org.asynchttpclient.reactivestreams.ReactiveStreamsTest.SimpleSubscriber;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReactiveStreamsRetryTest extends AbstractBasicTest {
 
@@ -51,7 +52,8 @@ public class ReactiveStreamsRetryTest extends AbstractBasicTest {
                         public State onStream(Publisher<HttpResponseBodyPart> publisher) {
                             if (!(publisher instanceof StreamedResponsePublisher)) {
                                 throw new IllegalStateException(String.format("publisher %s is expected to be an instance of %s", publisher, StreamedResponsePublisher.class));
-                            } else if (!publisherRef.compareAndSet(null, (StreamedResponsePublisher) publisher)) {
+                            }
+                            if (!publisherRef.compareAndSet(null, (StreamedResponsePublisher) publisher)) {
                                 // abort on retry
                                 return State.ABORT;
                             }
@@ -62,7 +64,7 @@ public class ReactiveStreamsRetryTest extends AbstractBasicTest {
             // before proceeding, wait for the subscriber to receive at least one body chunk
             streamStarted.await();
             // The stream has started, hence `StreamedAsyncHandler.onStream(publisher)` was called, and `publisherRef` was initialized with the `publisher` passed to `onStream`
-            assertTrue(publisherRef.get() != null, "Expected a not null publisher.");
+            assertNotNull(publisherRef.get(), "Expected a not null publisher.");
 
             // close the channel to emulate a connection crash while the response body chunks were being received.
             StreamedResponsePublisher publisher = publisherRef.get();
@@ -80,7 +82,7 @@ public class ReactiveStreamsRetryTest extends AbstractBasicTest {
         }
     }
 
-    private Channel getChannel(StreamedResponsePublisher publisher) throws Exception {
+    private static Channel getChannel(StreamedResponsePublisher publisher) throws Exception {
         Field field = publisher.getClass().getDeclaredField("channel");
         field.setAccessible(true);
         return (Channel) field.get(publisher);

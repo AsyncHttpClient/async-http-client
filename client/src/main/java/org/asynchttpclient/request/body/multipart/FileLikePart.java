@@ -44,13 +44,13 @@ public abstract class FileLikePart extends PartBase {
      * FilePart Constructor.
      *
      * @param name             the name for this part
-     * @param contentType      the content type for this part, if <code>null</code> try to figure out from the fileName mime type
+     * @param contentType      the content type for this part, if {@code null} try to figure out from the fileName mime type
      * @param charset          the charset encoding for this part
      * @param fileName         the fileName
      * @param contentId        the content id
      * @param transferEncoding the transfer encoding
      */
-    public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
+    protected FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name,
                 computeContentType(contentType, fileName),
                 charset,

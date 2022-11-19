@@ -13,13 +13,14 @@
  */
 package org.asynchttpclient.handler.resumable;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class ResumableRandomAccessFileListenerTest {
 
@@ -27,7 +28,7 @@ public class ResumableRandomAccessFileListenerTest {
     public void testOnBytesReceivedBufferHasArray() throws IOException {
         RandomAccessFile file = mock(RandomAccessFile.class);
         ResumableRandomAccessFileListener listener = new ResumableRandomAccessFileListener(file);
-        byte[] array = new byte[]{1, 2, 23, 33};
+        byte[] array = {1, 2, 23, 33};
         ByteBuffer buf = ByteBuffer.wrap(array);
         listener.onBytesReceived(buf);
         verify(file).write(array, 0, 4);
@@ -38,12 +39,11 @@ public class ResumableRandomAccessFileListenerTest {
         RandomAccessFile file = mock(RandomAccessFile.class);
         ResumableRandomAccessFileListener listener = new ResumableRandomAccessFileListener(file);
 
-        byte[] byteArray = new byte[]{1, 2, 23, 33};
+        byte[] byteArray = {1, 2, 23, 33};
         ByteBuffer buf = ByteBuffer.allocateDirect(4);
         buf.put(byteArray);
         buf.flip();
         listener.onBytesReceived(buf);
         verify(file).write(byteArray);
     }
-
 }

@@ -14,7 +14,7 @@ package org.asynchttpclient;
 
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -23,9 +23,10 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.asynchttpclient.Dsl.digestAuthRealm;
 import static org.asynchttpclient.Dsl.realm;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RealmTest {
+
     @Test
     public void testClone() {
         Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)
@@ -68,9 +69,9 @@ public class RealmTest {
                 .setQop(qop)
                 .build();
 
-        String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri.getPath());
-        String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + ha2);
+        String ha1 = getMd5(user + ':' + realm + ':' + pass);
+        String ha2 = getMd5(method + ':' + uri.getPath());
+        String expectedResponse = getMd5(ha1 + ':' + nonce + ':' + ha2);
 
         assertEquals(orig.getResponse(), expectedResponse);
     }
@@ -94,9 +95,9 @@ public class RealmTest {
 
         String nc = orig.getNc();
         String cnonce = orig.getCnonce();
-        String ha1 = getMd5(user + ":" + realm + ":" + pass);
-        String ha2 = getMd5(method + ":" + uri.getPath());
-        String expectedResponse = getMd5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
+        String ha1 = getMd5(user + ':' + realm + ':' + pass);
+        String ha2 = getMd5(method + ':' + uri.getPath());
+        String expectedResponse = getMd5(ha1 + ':' + nonce + ':' + nc + ':' + cnonce + ':' + qop + ':' + ha2);
 
         assertEquals(orig.getResponse(), expectedResponse);
     }

@@ -14,15 +14,15 @@ package org.asynchttpclient.extras.rxjava;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.List;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class AsyncHttpObservableTest {
 

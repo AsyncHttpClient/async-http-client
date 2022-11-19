@@ -3,14 +3,19 @@ package org.asynchttpclient.spnego;
 import org.apache.commons.io.FileUtils;
 import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpnegoEngineTest extends AbstractBasicTest {
     private static SimpleKdcServer kerbyServer;
@@ -22,7 +27,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
     private static File bobKeytab;
     private static File loginConfig;
 
-    @BeforeClass
+    @BeforeAll
     public static void startServers() throws Exception {
         basedir = System.getProperty("basedir");
         if (basedir == null) {
@@ -73,11 +78,11 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                 "alice",
                 null);
         String token = spnegoEngine.generateToken("localhost");
-        Assert.assertNotNull(token);
-        Assert.assertTrue(token.startsWith("YII"));
+        assertNotNull(token);
+        assertTrue(token.startsWith("YII"));
     }
 
-    @Test(expectedExceptions = SpnegoEngineException.class)
+    @Test
     public void testSpnegoGenerateTokenWithUsernamePasswordFail() throws Exception {
         SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
                 "wrong password",
@@ -87,7 +92,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                 null,
                 "alice",
                 null);
-        spnegoEngine.generateToken("localhost");
+        assertThrows(SpnegoEngineException.class, () -> spnegoEngine.generateToken("localhost"));
     }
 
     @Test
@@ -109,8 +114,8 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                 null);
 
         String token = spnegoEngine.generateToken("localhost");
-        Assert.assertNotNull(token);
-        Assert.assertTrue(token.startsWith("YII"));
+        assertNotNull(token);
+        assertTrue(token.startsWith("YII"));
     }
 
     @Test
@@ -124,7 +129,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                     null,
                     null,
                     null);
-            Assert.assertEquals("bob@service.ws.apache.org", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+            assertEquals("bob@service.ws.apache.org", spnegoEngine.getCompleteServicePrincipalName("localhost"));
         }
         {
             SpnegoEngine spnegoEngine = new SpnegoEngine(null,
@@ -135,8 +140,8 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                     null,
                     null,
                     null);
-            Assert.assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
-            Assert.assertTrue(spnegoEngine.getCompleteServicePrincipalName("localhost").startsWith("HTTP@"));
+            assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+            assertTrue(spnegoEngine.getCompleteServicePrincipalName("localhost").startsWith("HTTP@"));
         }
         {
             SpnegoEngine spnegoEngine = new SpnegoEngine(null,
@@ -147,11 +152,11 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                     null,
                     null,
                     null);
-            Assert.assertEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+            assertEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws Exception {
         if (kerbyServer != null) {
             kerbyServer.stop();
