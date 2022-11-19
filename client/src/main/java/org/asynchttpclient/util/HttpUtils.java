@@ -20,7 +20,6 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -123,7 +122,7 @@ public final class HttpUtils {
         return bytes;
     }
 
-    public static String patchContentTypeWithBoundaryAttribute(CharSequence base, byte[] boundary) {
+    public static String patchContentTypeWithBoundaryAttribute(String base, byte[] boundary) {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append(base);
         if (!base.isEmpty() && base.charAt(base.length() - 1) != ';') {
             sb.append(';');

@@ -109,7 +109,7 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf2 = Unpooled.wrappedBuffer(new byte[]{'o'});
 
         try {
-           assertArrayEquals(new char[]{'o'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf1, byteBuf2));
+            assertArrayEquals(new char[]{'o'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf1, byteBuf2));
         } finally {
             byteBuf1.release();
             byteBuf2.release();

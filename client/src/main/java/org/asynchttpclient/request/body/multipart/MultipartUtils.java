@@ -32,7 +32,11 @@ import static org.asynchttpclient.util.HttpUtils.computeMultipartBoundary;
 import static org.asynchttpclient.util.HttpUtils.patchContentTypeWithBoundaryAttribute;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-public class MultipartUtils {
+public final class MultipartUtils {
+
+    private MultipartUtils() {
+        // Prevent outside initialization
+    }
 
     /**
      * Creates a new multipart entity containing the given parts.
@@ -61,7 +65,7 @@ public class MultipartUtils {
             }
         } else {
             boundary = computeMultipartBoundary();
-            contentType = patchContentTypeWithBoundaryAttribute(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
+            contentType = patchContentTypeWithBoundaryAttribute(HttpHeaderValues.MULTIPART_FORM_DATA.toString(), boundary);
         }
 
         List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
